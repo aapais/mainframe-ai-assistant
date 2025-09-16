@@ -1,0 +1,295 @@
+{
+  "entries": [
+    {
+      "id": "workflow-test-1",
+      "title": "VSAM Status 35 File Not Found",
+      "problem": "VSAM file cannot be located by the system",
+      "solution": "Check dataset cataloging and verify file existence",
+      "category": "VSAM",
+      "tags": ["vsam", "status-35", "file-not-found"],
+      "created": "2024-01-15T10:00:00Z",
+      "lastModified": "2024-01-15T10:00:00Z",
+      "author": "system-admin",
+      "priority": "high",
+      "views": 45,
+      "rating": 4.2
+    },
+    {
+      "id": "workflow-test-2",
+      "title": "JCL Syntax Error in DD Statement",
+      "problem": "Job fails due to syntax error in dataset definition",
+      "solution": "Review DD statement syntax and correct errors",
+      "category": "JCL",
+      "tags": ["jcl", "syntax", "dd-statement"],
+      "created": "2024-01-14T09:30:00Z",
+      "lastModified": "2024-01-14T09:30:00Z",
+      "author": "dev-team",
+      "priority": "medium",
+      "views": 32,
+      "rating": 3.8
+    },
+    {
+      "id": "workflow-test-3",
+      "title": "DB2 Connection Timeout",
+      "problem": "Application cannot connect to DB2 database",
+      "solution": "Increase connection timeout and check network connectivity",
+      "category": "DB2",
+      "tags": ["db2", "connection", "timeout"],
+      "created": "2024-01-13T14:20:00Z",
+      "lastModified": "2024-01-13T14:20:00Z",
+      "author": "dba-team",
+      "priority": "high",
+      "views": 67,
+      "rating": 4.5
+    },
+    {
+      "id": "workflow-test-4",
+      "title": "COBOL Compilation Error",
+      "problem": "COBOL program fails to compile with syntax errors",
+      "solution": "Check program structure and fix syntax issues",
+      "category": "COBOL",
+      "tags": ["cobol", "compilation", "syntax"],
+      "created": "2024-01-12T11:15:00Z",
+      "lastModified": "2024-01-12T11:15:00Z",
+      "author": "cobol-dev",
+      "priority": "medium",
+      "views": 28,
+      "rating": 3.9
+    },
+    {
+      "id": "workflow-test-5",
+      "title": "TSO Session Timeout",
+      "problem": "TSO session times out during long-running processes",
+      "solution": "Adjust session timeout settings and use batch processing",
+      "category": "TSO",
+      "tags": ["tso", "timeout", "session"],
+      "created": "2024-01-11T16:45:00Z",
+      "lastModified": "2024-01-11T16:45:00Z",
+      "author": "system-admin",
+      "priority": "low",
+      "views": 19,
+      "rating": 3.4
+    }
+  ],
+  "workflows": [
+    {
+      "name": "complete-search-workflow",
+      "description": "Full search from query input to result viewing",
+      "steps": [
+        "navigate-to-search",
+        "enter-search-query",
+        "submit-search",
+        "wait-for-results",
+        "select-result",
+        "view-entry-detail"
+      ],
+      "expectedDuration": 10000,
+      "testData": {
+        "query": "VSAM status",
+        "expectedResults": 2,
+        "resultIndex": 0
+      }
+    },
+    {
+      "name": "filter-refinement-workflow",
+      "description": "Apply filters to refine search results",
+      "steps": [
+        "navigate-to-search",
+        "enter-search-query",
+        "apply-category-filter",
+        "apply-tag-filter",
+        "validate-filtered-results",
+        "clear-filters"
+      ],
+      "expectedDuration": 15000,
+      "testData": {
+        "query": "error",
+        "filters": {
+          "category": "VSAM",
+          "tag": "status-35"
+        }
+      }
+    },
+    {
+      "name": "error-recovery-workflow",
+      "description": "Handle and recover from various error states",
+      "steps": [
+        "navigate-to-search",
+        "trigger-network-error",
+        "observe-error-state",
+        "retry-operation",
+        "validate-recovery"
+      ],
+      "expectedDuration": 12000,
+      "testData": {
+        "errorType": "network",
+        "retryAttempts": 2
+      }
+    },
+    {
+      "name": "multi-step-entry-creation",
+      "description": "Create new KB entry through multi-step process",
+      "steps": [
+        "navigate-to-search",
+        "search-nonexistent-item",
+        "trigger-add-entry",
+        "fill-entry-form",
+        "validate-form",
+        "submit-entry",
+        "verify-creation"
+      ],
+      "expectedDuration": 20000,
+      "testData": {
+        "searchQuery": "unique-nonexistent-query",
+        "entryData": {
+          "title": "New Test Entry",
+          "problem": "Test problem description",
+          "solution": "Test solution description",
+          "category": "Testing",
+          "tags": ["test", "new-entry"]
+        }
+      }
+    },
+    {
+      "name": "navigation-persistence-workflow",
+      "description": "Validate navigation state persistence across route changes",
+      "steps": [
+        "navigate-to-search",
+        "perform-search",
+        "apply-filters",
+        "navigate-away",
+        "navigate-back",
+        "validate-state-restoration"
+      ],
+      "expectedDuration": 8000,
+      "testData": {
+        "query": "VSAM error",
+        "filters": {
+          "category": "VSAM",
+          "sort": "date"
+        },
+        "navigateToRoute": "/dashboard"
+      }
+    },
+    {
+      "name": "analytics-interaction-workflow",
+      "description": "Track and analyze user interactions",
+      "steps": [
+        "perform-multiple-searches",
+        "interact-with-entries",
+        "navigate-to-analytics",
+        "view-search-statistics",
+        "filter-analytics",
+        "export-data"
+      ],
+      "expectedDuration": 25000,
+      "testData": {
+        "searches": ["VSAM error", "JCL syntax", "DB2 connection"],
+        "interactions": ["rate-helpful", "copy-solution", "share-entry"]
+      }
+    },
+    {
+      "name": "accessibility-navigation-workflow",
+      "description": "Complete workflow using only keyboard navigation",
+      "steps": [
+        "tab-to-search-input",
+        "type-search-query",
+        "press-enter-to-search",
+        "arrow-navigate-results",
+        "enter-to-select",
+        "tab-through-entry-actions",
+        "escape-to-return"
+      ],
+      "expectedDuration": 12000,
+      "testData": {
+        "query": "keyboard test",
+        "navigationKeys": ["Tab", "Enter", "ArrowDown", "ArrowUp", "Escape"]
+      }
+    },
+    {
+      "name": "mobile-responsive-workflow",
+      "description": "Test workflow on mobile viewport",
+      "steps": [
+        "set-mobile-viewport",
+        "open-mobile-menu",
+        "navigate-to-search",
+        "perform-mobile-search",
+        "view-mobile-results",
+        "access-mobile-analytics"
+      ],
+      "expectedDuration": 15000,
+      "testData": {
+        "viewport": {
+          "width": 375,
+          "height": 667
+        },
+        "query": "mobile test"
+      }
+    }
+  ],
+  "errorScenarios": [
+    {
+      "name": "network-failure",
+      "description": "Simulate network connectivity issues",
+      "triggerMethod": "route-block",
+      "routes": ["/api/search**", "/api/entries**"],
+      "expectedBehavior": "show-error-message-with-retry"
+    },
+    {
+      "name": "api-timeout",
+      "description": "Simulate API response timeout",
+      "triggerMethod": "delayed-response",
+      "delay": 10000,
+      "expectedBehavior": "show-timeout-message"
+    },
+    {
+      "name": "server-error",
+      "description": "Simulate 500 server error",
+      "triggerMethod": "response-status",
+      "statusCode": 500,
+      "expectedBehavior": "show-server-error-message"
+    },
+    {
+      "name": "invalid-data",
+      "description": "Handle malformed API responses",
+      "triggerMethod": "corrupt-response",
+      "expectedBehavior": "graceful-degradation"
+    }
+  ],
+  "performanceBaselines": {
+    "searchResponse": 2000,
+    "navigationTransition": 500,
+    "filterApplication": 1000,
+    "entryDetailLoad": 1500,
+    "formSubmission": 3000
+  },
+  "accessibilityRequirements": {
+    "keyboardNavigation": true,
+    "screenReaderSupport": true,
+    "ariaLabels": true,
+    "colorContrast": "WCAG-AA",
+    "focusManagement": true
+  },
+  "browsers": [
+    "chromium",
+    "firefox",
+    "webkit"
+  ],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "mobile",
+      "width": 375,
+      "height": 667
+    }
+  ]
+}

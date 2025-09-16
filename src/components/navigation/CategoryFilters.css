@@ -1,0 +1,366 @@
+/* Category Filters Styles */
+
+.category-filters {
+  @apply bg-white border border-gray-200 rounded-lg;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Header */
+.filters-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.filters-title {
+  @apply flex items-center gap-2 text-sm font-medium text-gray-900;
+}
+
+.active-count {
+  @apply text-blue-600 font-semibold;
+}
+
+.filters-actions {
+  @apply flex items-center gap-2;
+}
+
+.filters-action-btn {
+  @apply text-xs text-gray-600 hover:text-gray-900 px-2 py-1 rounded hover:bg-gray-100;
+  transition: all 0.2s ease;
+}
+
+/* Search */
+.filter-search {
+  @apply mb-4;
+}
+
+.filter-search-input-container {
+  @apply relative flex items-center;
+}
+
+.filter-search-icon {
+  @apply absolute left-3 w-4 h-4 text-gray-400;
+}
+
+.filter-search-input {
+  @apply w-full pl-9 pr-9 py-2 text-sm border border-gray-300 rounded-md;
+  @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply placeholder-gray-400;
+}
+
+.filter-search-clear {
+  @apply absolute right-2 p-1 text-gray-400 hover:text-gray-600 rounded;
+}
+
+/* Presets */
+.filter-presets {
+  @apply flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-200;
+}
+
+.filter-preset {
+  @apply flex items-center gap-1 px-3 py-1.5 text-xs font-medium;
+  @apply bg-gray-50 text-gray-700 border border-gray-200 rounded-full;
+  @apply hover:bg-gray-100 hover:border-gray-300;
+  @apply focus:ring-2 focus:ring-blue-500 focus:ring-offset-1;
+  transition: all 0.2s ease;
+}
+
+.preset-shortcut {
+  @apply ml-1 px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Filter Groups */
+.filter-group-title {
+  @apply text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2;
+}
+
+.active-filters {
+  @apply mb-4;
+}
+
+.available-filters {
+  /* No additional styles needed */
+}
+
+/* Filter Chips Container */
+.filter-chips {
+  @apply flex flex-wrap gap-2;
+}
+
+/* Filter Chip */
+.filter-chip {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5;
+  @apply text-sm font-medium border rounded-full;
+  @apply transition-all duration-200 ease-in-out;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-1;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Inactive Filter Chip */
+.filter-chip:not(.active) {
+  @apply bg-white text-gray-700 border-gray-300;
+  @apply hover:bg-gray-50 hover:border-gray-400;
+  @apply focus:ring-blue-500;
+}
+
+/* Active Filter Chip */
+.filter-chip.active {
+  @apply bg-blue-50 text-blue-700 border-blue-200;
+  @apply hover:bg-blue-100 hover:border-blue-300;
+  @apply focus:ring-blue-500;
+}
+
+/* System Filter Chip */
+.filter-chip.system {
+  @apply border-amber-300;
+}
+
+.filter-chip.system:not(.active) {
+  @apply bg-amber-50 text-amber-700;
+}
+
+.filter-chip.system.active {
+  @apply bg-amber-100 text-amber-800 border-amber-400;
+}
+
+/* Custom Color Support */
+.filter-chip[style*="--filter-color"] {
+  border-color: var(--filter-color, currentColor);
+}
+
+.filter-chip[style*="--filter-color"]:not(.active) {
+  background-color: color-mix(in srgb, var(--filter-color, currentColor) 10%, white);
+  color: color-mix(in srgb, var(--filter-color, currentColor) 80%, black);
+}
+
+.filter-chip[style*="--filter-color"].active {
+  background-color: color-mix(in srgb, var(--filter-color, currentColor) 20%, white);
+  color: color-mix(in srgb, var(--filter-color, currentColor) 90%, black);
+  border-color: color-mix(in srgb, var(--filter-color, currentColor) 50%, transparent);
+}
+
+/* Filter Chip Elements */
+.filter-chip-icon {
+  @apply flex-shrink-0;
+}
+
+.filter-chip-label {
+  @apply truncate;
+  max-width: 8rem;
+}
+
+.filter-chip-count {
+  @apply inline-flex items-center justify-center min-w-[1rem] h-4 px-1;
+  @apply text-xs font-semibold leading-none;
+  @apply bg-gray-100 text-gray-600 rounded;
+}
+
+.filter-chip.active .filter-chip-count {
+  @apply bg-blue-200 text-blue-700;
+}
+
+.filter-chip.system .filter-chip-count {
+  @apply bg-amber-200 text-amber-700;
+}
+
+.filter-chip-trending {
+  @apply text-sm;
+  filter: hue-rotate(15deg) saturate(1.2);
+}
+
+.filter-chip-remove {
+  @apply ml-1 p-0.5 text-gray-400 hover:text-gray-600;
+  @apply rounded-full hover:bg-white/50;
+  @apply focus:outline-none focus:ring-1 focus:ring-blue-500;
+  transition: all 0.15s ease;
+}
+
+.filter-chip.active .filter-chip-remove {
+  @apply text-blue-400 hover:text-blue-600 hover:bg-blue-200/50;
+}
+
+/* Expand Button */
+.filters-expand-btn {
+  @apply flex items-center gap-2 mt-3 px-3 py-1.5;
+  @apply text-sm text-gray-600 hover:text-gray-900;
+  @apply border border-gray-300 rounded-md hover:bg-gray-50;
+  @apply focus:ring-2 focus:ring-blue-500 focus:ring-offset-1;
+  transition: all 0.2s ease;
+}
+
+/* No Results */
+.filters-no-results {
+  @apply text-center py-4 text-gray-500;
+}
+
+.filters-clear-search {
+  @apply mt-2 text-blue-600 hover:text-blue-700 text-sm underline;
+}
+
+/* Loading State */
+.category-filters.loading .filters-skeleton {
+  @apply flex flex-wrap gap-2;
+}
+
+.filter-chip-skeleton {
+  @apply w-16 h-8 bg-gray-200 rounded-full animate-pulse;
+}
+
+.filter-chip-skeleton:nth-child(2n) {
+  @apply w-20;
+}
+
+.filter-chip-skeleton:nth-child(3n) {
+  @apply w-24;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .category-filters {
+    padding: 0.75rem;
+  }
+
+  .filters-header {
+    @apply flex-col items-start gap-2;
+  }
+
+  .filters-actions {
+    @apply w-full justify-end;
+  }
+
+  .filter-presets {
+    @apply gap-1;
+  }
+
+  .filter-preset {
+    @apply text-xs px-2 py-1;
+  }
+
+  .preset-shortcut {
+    @apply hidden;
+  }
+
+  .filter-chips {
+    @apply gap-1.5;
+  }
+
+  .filter-chip {
+    @apply px-2 py-1 text-xs;
+  }
+
+  .filter-chip-label {
+    max-width: 6rem;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .filter-chip {
+    @apply border-2;
+  }
+
+  .filter-chip.active {
+    @apply bg-blue-600 text-white border-blue-700;
+  }
+
+  .filter-chip:not(.active) {
+    @apply border-gray-600;
+  }
+
+  .filter-chip:focus {
+    @apply ring-4 ring-yellow-400;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .filter-chip,
+  .filters-action-btn,
+  .filter-preset,
+  .filters-expand-btn,
+  .filter-chip-skeleton {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .category-filters {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .filters-title {
+    @apply text-gray-100;
+  }
+
+  .active-count {
+    @apply text-blue-400;
+  }
+
+  .filters-action-btn {
+    @apply text-gray-400 hover:text-gray-200 hover:bg-gray-700;
+  }
+
+  .filter-group-title {
+    @apply text-gray-400;
+  }
+
+  .filter-search-input {
+    @apply bg-gray-700 border-gray-600 text-gray-100;
+    @apply focus:ring-blue-400 focus:border-blue-400;
+  }
+
+  .filter-preset {
+    @apply bg-gray-700 text-gray-300 border-gray-600;
+    @apply hover:bg-gray-600 hover:border-gray-500;
+  }
+
+  .filter-chip:not(.active) {
+    @apply bg-gray-700 text-gray-300 border-gray-600;
+    @apply hover:bg-gray-600 hover:border-gray-500;
+  }
+
+  .filter-chip.active {
+    @apply bg-blue-900/50 text-blue-300 border-blue-600;
+    @apply hover:bg-blue-900/70 hover:border-blue-500;
+  }
+
+  .filter-chip-count {
+    @apply bg-gray-600 text-gray-300;
+  }
+
+  .filter-chip.active .filter-chip-count {
+    @apply bg-blue-800 text-blue-200;
+  }
+
+  .filters-expand-btn {
+    @apply text-gray-400 border-gray-600 hover:text-gray-200 hover:bg-gray-700;
+  }
+
+  .filters-no-results {
+    @apply text-gray-400;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .category-filters {
+    @apply border-gray-400 bg-white;
+  }
+
+  .filter-chip {
+    @apply border-gray-400 bg-white text-black;
+  }
+
+  .filter-chip.active {
+    @apply bg-gray-200 border-gray-600;
+  }
+
+  .filters-expand-btn,
+  .filter-chip-remove,
+  .filters-action-btn {
+    display: none;
+  }
+}

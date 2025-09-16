@@ -1,0 +1,751 @@
+/**
+ * Enhanced Responsive Form Patterns
+ *
+ * Optimized form layouts and components for all devices:
+ * - Mobile-first form design
+ * - Touch-friendly input fields
+ * - Adaptive validation patterns
+ * - Keyboard navigation support
+ * - Screen reader accessibility
+ *
+ * @version 2.0.0
+ * @author Code Quality Analyzer
+ */
+
+/* ===========================
+   FORM VARIABLES
+   =========================== */
+
+:root {
+  /* Input sizing */
+  --input-height-sm: max(32px, 2rem);
+  --input-height-base: max(44px, 2.75rem);
+  --input-height-lg: max(48px, 3rem);
+  --input-padding-x: clamp(0.75rem, 2vw, 1rem);
+  --input-padding-y: clamp(0.5rem, 1.5vw, 0.75rem);
+
+  /* Form spacing */
+  --form-gap: clamp(1rem, 3vw, 1.5rem);
+  --form-group-gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  --label-margin: clamp(0.25rem, 0.5vw, 0.5rem);
+
+  /* Visual styling */
+  --input-border-width: 1px;
+  --input-border-radius: clamp(0.25rem, 0.5vw, 0.5rem);
+  --input-font-size: max(16px, 1rem); /* Prevents zoom on iOS */
+
+  /* Colors */
+  --form-text: var(--color-text-primary, #1f2937);
+  --form-text-secondary: var(--color-text-secondary, #6b7280);
+  --form-bg: var(--color-surface-primary, #ffffff);
+  --form-border: var(--color-border-primary, #d1d5db);
+  --form-border-hover: var(--color-border-secondary, #9ca3af);
+  --form-border-focus: var(--color-action-primary, #3b82f6);
+  --form-border-error: var(--color-error-500, #ef4444);
+  --form-border-success: var(--color-success-500, #10b981);
+  --form-bg-disabled: var(--color-surface-secondary, #f9fafb);
+  --form-text-disabled: var(--color-text-tertiary, #9ca3af);
+
+  /* Focus ring */
+  --form-focus-ring: 0 0 0 3px var(--color-action-primary-alpha, rgb(59 130 246 / 0.1));
+  --form-error-ring: 0 0 0 3px var(--color-error-alpha, rgb(239 68 68 / 0.1));
+  --form-success-ring: 0 0 0 3px var(--color-success-alpha, rgb(16 185 129 / 0.1));
+
+  /* Transitions */
+  --form-transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===========================
+   FORM LAYOUT
+   =========================== */
+
+.responsive-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-gap);
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.responsive-form__container {
+  max-width: min(100%, 600px);
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 2rem);
+}
+
+.responsive-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-gap);
+}
+
+.responsive-form__section-title {
+  font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+  font-weight: 600;
+  color: var(--form-text);
+  margin: 0;
+  padding-bottom: var(--label-margin);
+  border-bottom: 1px solid var(--form-border);
+}
+
+/* Form Groups */
+.responsive-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-group-gap);
+}
+
+.responsive-form__row {
+  display: grid;
+  gap: var(--form-gap);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .responsive-form__row--2-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .responsive-form__row--3-cols {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .responsive-form__row--auto {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+/* ===========================
+   FORM LABELS
+   =========================== */
+
+.responsive-form__label {
+  display: block;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-weight: 500;
+  color: var(--form-text);
+  margin-bottom: var(--label-margin);
+  line-height: 1.5;
+}
+
+.responsive-form__label--required::after {
+  content: ' *';
+  color: var(--form-border-error);
+  font-weight: 600;
+}
+
+.responsive-form__label--inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.responsive-form__label-text {
+  flex: 1;
+}
+
+.responsive-form__label-hint {
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  font-weight: 400;
+  color: var(--form-text-secondary);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+/* ===========================
+   INPUT FIELDS
+   =========================== */
+
+.responsive-form__input {
+  width: 100%;
+  height: var(--input-height-base);
+  padding: var(--input-padding-y) var(--input-padding-x);
+  font-size: var(--input-font-size);
+  font-family: inherit;
+  color: var(--form-text);
+  background: var(--form-bg);
+  border: var(--input-border-width) solid var(--form-border);
+  border-radius: var(--input-border-radius);
+  transition: var(--form-transition);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.responsive-form__input::placeholder {
+  color: var(--form-text-secondary);
+  opacity: 1;
+}
+
+.responsive-form__input:hover {
+  border-color: var(--form-border-hover);
+}
+
+.responsive-form__input:focus {
+  border-color: var(--form-border-focus);
+  box-shadow: var(--form-focus-ring);
+}
+
+.responsive-form__input:disabled {
+  background: var(--form-bg-disabled);
+  color: var(--form-text-disabled);
+  border-color: var(--form-border);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.responsive-form__input:disabled::placeholder {
+  color: var(--form-text-disabled);
+}
+
+/* Input Sizes */
+.responsive-form__input--sm {
+  height: var(--input-height-sm);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.responsive-form__input--lg {
+  height: var(--input-height-lg);
+  padding: 0.75rem 1rem;
+  font-size: 1.125rem;
+}
+
+/* Input States */
+.responsive-form__input--error {
+  border-color: var(--form-border-error);
+  box-shadow: var(--form-error-ring);
+}
+
+.responsive-form__input--error:focus {
+  border-color: var(--form-border-error);
+  box-shadow: var(--form-error-ring);
+}
+
+.responsive-form__input--success {
+  border-color: var(--form-border-success);
+  box-shadow: var(--form-success-ring);
+}
+
+/* ===========================
+   TEXTAREA
+   =========================== */
+
+.responsive-form__textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.responsive-form__textarea--auto-resize {
+  resize: none;
+  overflow-y: hidden;
+}
+
+@media (min-width: 768px) {
+  .responsive-form__textarea {
+    min-height: 140px;
+  }
+}
+
+/* ===========================
+   SELECT DROPDOWN
+   =========================== */
+
+.responsive-form__select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right var(--input-padding-x) center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: calc(var(--input-padding-x) + 2.5rem);
+  cursor: pointer;
+}
+
+.responsive-form__select:disabled {
+  cursor: not-allowed;
+}
+
+/* ===========================
+   CHECKBOX AND RADIO
+   =========================== */
+
+.responsive-form__checkbox,
+.responsive-form__radio {
+  width: max(18px, 1.125rem);
+  height: max(18px, 1.125rem);
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--form-bg);
+  border: var(--input-border-width) solid var(--form-border);
+  transition: var(--form-transition);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.responsive-form__checkbox {
+  border-radius: 0.25rem;
+}
+
+.responsive-form__radio {
+  border-radius: 50%;
+}
+
+.responsive-form__checkbox:hover,
+.responsive-form__radio:hover {
+  border-color: var(--form-border-hover);
+}
+
+.responsive-form__checkbox:focus,
+.responsive-form__radio:focus {
+  border-color: var(--form-border-focus);
+  box-shadow: var(--form-focus-ring);
+  outline: none;
+}
+
+.responsive-form__checkbox:checked,
+.responsive-form__radio:checked {
+  background: var(--form-border-focus);
+  border-color: var(--form-border-focus);
+}
+
+.responsive-form__checkbox:checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 6px;
+  border: 2px solid white;
+  border-top: none;
+  border-right: none;
+  transform: translate(-50%, -65%) rotate(-45deg);
+}
+
+.responsive-form__radio:checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+}
+
+.responsive-form__checkbox:disabled,
+.responsive-form__radio:disabled {
+  background: var(--form-bg-disabled);
+  border-color: var(--form-border);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===========================
+   INPUT WITH ICON
+   =========================== */
+
+.responsive-form__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.responsive-form__input-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--form-text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.responsive-form__input-icon--left {
+  left: var(--input-padding-x);
+}
+
+.responsive-form__input-icon--right {
+  right: var(--input-padding-x);
+}
+
+.responsive-form__input--with-left-icon {
+  padding-left: calc(var(--input-padding-x) + 2.5rem);
+}
+
+.responsive-form__input--with-right-icon {
+  padding-right: calc(var(--input-padding-x) + 2.5rem);
+}
+
+/* ===========================
+   INPUT GROUP
+   =========================== */
+
+.responsive-form__input-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.responsive-form__input-group .responsive-form__input {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.responsive-form__input-group .responsive-form__input:first-child {
+  border-top-left-radius: var(--input-border-radius);
+  border-bottom-left-radius: var(--input-border-radius);
+}
+
+.responsive-form__input-group .responsive-form__input:last-child {
+  border-top-right-radius: var(--input-border-radius);
+  border-bottom-right-radius: var(--input-border-radius);
+  border-right-width: var(--input-border-width);
+}
+
+.responsive-form__input-addon {
+  display: flex;
+  align-items: center;
+  padding: var(--input-padding-y) var(--input-padding-x);
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  color: var(--form-text-secondary);
+  background: var(--form-bg-disabled);
+  border: var(--input-border-width) solid var(--form-border);
+  border-right-width: 0;
+  white-space: nowrap;
+}
+
+.responsive-form__input-addon:first-child {
+  border-top-left-radius: var(--input-border-radius);
+  border-bottom-left-radius: var(--input-border-radius);
+}
+
+.responsive-form__input-addon:last-child {
+  border-top-right-radius: var(--input-border-radius);
+  border-bottom-right-radius: var(--input-border-radius);
+  border-right-width: var(--input-border-width);
+}
+
+/* ===========================
+   FORM VALIDATION
+   =========================== */
+
+.responsive-form__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  color: var(--form-border-error);
+  line-height: 1.4;
+}
+
+.responsive-form__error-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.responsive-form__success {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  color: var(--form-border-success);
+  line-height: 1.4;
+}
+
+.responsive-form__success-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* Error Summary */
+.responsive-form__error-summary {
+  padding: 1rem;
+  background: rgb(254 242 242);
+  border: 1px solid var(--form-border-error);
+  border-radius: var(--input-border-radius);
+  margin-bottom: var(--form-gap);
+}
+
+.responsive-form__error-summary-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--form-border-error);
+  margin: 0 0 0.5rem 0;
+}
+
+.responsive-form__error-summary-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--form-border-error);
+}
+
+.responsive-form__error-summary-list li {
+  margin-bottom: 0.25rem;
+}
+
+/* ===========================
+   FORM ACTIONS
+   =========================== */
+
+.responsive-form__actions {
+  display: flex;
+  gap: clamp(0.75rem, 2vw, 1rem);
+  margin-top: var(--form-gap);
+  padding-top: var(--form-gap);
+  border-top: 1px solid var(--form-border);
+}
+
+.responsive-form__actions--center {
+  justify-content: center;
+}
+
+.responsive-form__actions--end {
+  justify-content: flex-end;
+}
+
+.responsive-form__actions--between {
+  justify-content: space-between;
+}
+
+@media (max-width: 480px) {
+  .responsive-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .responsive-form__actions--center,
+  .responsive-form__actions--end,
+  .responsive-form__actions--between {
+    justify-content: stretch;
+  }
+}
+
+/* ===========================
+   FORM BUTTONS
+   =========================== */
+
+.responsive-form__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--input-height-base);
+  padding: var(--input-padding-y) clamp(1rem, 3vw, 2rem);
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  font-family: inherit;
+  color: white;
+  background: var(--form-border-focus);
+  border: var(--input-border-width) solid var(--form-border-focus);
+  border-radius: var(--input-border-radius);
+  cursor: pointer;
+  transition: var(--form-transition);
+  text-decoration: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.responsive-form__button:hover {
+  background: color-mix(in srgb, var(--form-border-focus) 90%, black);
+  border-color: color-mix(in srgb, var(--form-border-focus) 90%, black);
+}
+
+.responsive-form__button:focus {
+  box-shadow: var(--form-focus-ring);
+}
+
+.responsive-form__button:active {
+  transform: translateY(1px);
+}
+
+.responsive-form__button:disabled {
+  background: var(--form-bg-disabled);
+  border-color: var(--form-border);
+  color: var(--form-text-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.responsive-form__button--secondary {
+  background: var(--form-bg);
+  color: var(--form-text);
+  border-color: var(--form-border);
+}
+
+.responsive-form__button--secondary:hover {
+  background: var(--form-bg-disabled);
+  border-color: var(--form-border-hover);
+}
+
+.responsive-form__button--danger {
+  background: var(--form-border-error);
+  border-color: var(--form-border-error);
+}
+
+.responsive-form__button--danger:hover {
+  background: color-mix(in srgb, var(--form-border-error) 90%, black);
+  border-color: color-mix(in srgb, var(--form-border-error) 90%, black);
+}
+
+/* ===========================
+   FLOATING LABELS
+   =========================== */
+
+.responsive-form__floating {
+  position: relative;
+}
+
+.responsive-form__floating .responsive-form__input {
+  padding-top: 1.625rem;
+  padding-bottom: 0.625rem;
+}
+
+.responsive-form__floating .responsive-form__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  padding: var(--input-padding-y) var(--input-padding-x);
+  margin: 0;
+  font-size: var(--input-font-size);
+  color: var(--form-text-secondary);
+  transform-origin: 0 0;
+  transition: var(--form-transition);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.responsive-form__floating .responsive-form__input:focus ~ .responsive-form__label,
+.responsive-form__floating .responsive-form__input:not(:placeholder-shown) ~ .responsive-form__label {
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  color: var(--form-border-focus);
+}
+
+/* ===========================
+   TOUCH OPTIMIZATIONS
+   =========================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .responsive-form__input,
+  .responsive-form__select,
+  .responsive-form__textarea {
+    min-height: var(--input-height-lg);
+    font-size: max(16px, 1rem); /* Prevents zoom on iOS */
+  }
+
+  .responsive-form__button {
+    min-height: var(--input-height-lg);
+    padding: 0.75rem clamp(1.25rem, 4vw, 2rem);
+  }
+
+  .responsive-form__checkbox,
+  .responsive-form__radio {
+    width: max(22px, 1.375rem);
+    height: max(22px, 1.375rem);
+  }
+
+  /* Enhanced scrolling for long forms */
+  .responsive-form {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ===========================
+   ACCESSIBILITY FEATURES
+   =========================== */
+
+/* Focus visible only */
+.responsive-form__input:focus:not(:focus-visible),
+.responsive-form__select:focus:not(:focus-visible),
+.responsive-form__textarea:focus:not(:focus-visible),
+.responsive-form__checkbox:focus:not(:focus-visible),
+.responsive-form__radio:focus:not(:focus-visible),
+.responsive-form__button:focus:not(:focus-visible) {
+  box-shadow: none;
+  outline: none;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .responsive-form__input,
+  .responsive-form__select,
+  .responsive-form__textarea,
+  .responsive-form__checkbox,
+  .responsive-form__radio,
+  .responsive-form__button {
+    border-width: 2px;
+  }
+
+  .responsive-form__input:focus,
+  .responsive-form__select:focus,
+  .responsive-form__textarea:focus,
+  .responsive-form__checkbox:focus,
+  .responsive-form__radio:focus,
+  .responsive-form__button:focus {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .responsive-form__input,
+  .responsive-form__select,
+  .responsive-form__textarea,
+  .responsive-form__checkbox,
+  .responsive-form__radio,
+  .responsive-form__button,
+  .responsive-form__floating .responsive-form__label {
+    transition: none;
+  }
+
+  .responsive-form__button:active {
+    transform: none;
+  }
+}
+
+/* ===========================
+   PRINT STYLES
+   =========================== */
+
+@media print {
+  .responsive-form__button {
+    display: none;
+  }
+
+  .responsive-form__actions {
+    display: none;
+  }
+
+  .responsive-form__input,
+  .responsive-form__select,
+  .responsive-form__textarea {
+    border: 1px solid black;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .responsive-form__error-summary {
+    background: transparent;
+    border: 2px solid black;
+  }
+}

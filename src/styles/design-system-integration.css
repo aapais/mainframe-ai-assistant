@@ -1,0 +1,411 @@
+/**
+ * Design System Integration - Complete Typography and Spacing Implementation
+ *
+ * This file provides CSS custom property mappings to ensure all components
+ * can use design system tokens consistently across the interface.
+ */
+
+/* ==========================================
+   ROOT VARIABLE MAPPINGS
+   Map design system tokens to component classes
+   ========================================== */
+
+:root {
+  /* Surface Color Mappings for Components */
+  --bg-surface-base: var(--color-surface-base);
+  --bg-surface-elevated: var(--color-surface-elevated);
+  --bg-surface-subtle: var(--color-surface-subtle);
+  --bg-surface-muted: var(--color-surface-muted);
+  --bg-surface-accent: var(--color-surface-accent);
+  --bg-surface-success: var(--color-surface-success);
+  --bg-surface-warning: var(--color-surface-warning);
+  --bg-surface-error: var(--color-surface-error);
+
+  /* Border Color Mappings */
+  --border-color-default: var(--color-border-default);
+  --border-color-subtle: var(--color-border-subtle);
+  --border-color-strong: var(--color-border-strong);
+  --border-color-accent: var(--color-border-accent);
+  --border-color-focus: var(--color-border-focus);
+
+  /* Text Color Mappings */
+  --text-color-primary: var(--color-text-primary);
+  --text-color-secondary: var(--color-text-secondary);
+  --text-color-tertiary: var(--color-text-tertiary);
+  --text-color-placeholder: var(--color-text-placeholder);
+  --text-color-on-primary: var(--color-text-on-primary);
+  --text-color-accent: var(--color-text-accent);
+  --text-color-success: var(--color-text-success);
+  --text-color-warning: var(--color-text-warning);
+  --text-color-error: var(--color-text-error);
+
+  /* Interactive Color Mappings */
+  --bg-interactive-primary: var(--color-interactive-primary);
+  --bg-interactive-primary-hover: var(--color-interactive-primary-hover);
+  --bg-interactive-secondary: var(--color-interactive-secondary);
+  --bg-interactive-secondary-hover: var(--color-interactive-secondary-hover);
+
+  /* Status Color Mappings */
+  --bg-success: var(--color-success);
+  --bg-warning: var(--color-warning);
+  --bg-error: var(--color-error);
+  --bg-primary: var(--color-primary);
+}
+
+/* ==========================================
+   UTILITY CLASSES FOR DESIGN TOKENS
+   Easy-to-use classes for applying design system values
+   ========================================== */
+
+/* Background Color Utilities */
+.bg-surface-base { background-color: var(--color-surface-base); }
+.bg-surface-elevated { background-color: var(--color-surface-elevated); }
+.bg-surface-subtle { background-color: var(--color-surface-subtle); }
+.bg-surface-muted { background-color: var(--color-surface-muted); }
+.bg-surface-accent { background-color: var(--color-surface-accent); }
+.bg-surface-success { background-color: var(--color-surface-success); }
+.bg-surface-warning { background-color: var(--color-surface-warning); }
+.bg-surface-error { background-color: var(--color-surface-error); }
+
+.bg-interactive-primary { background-color: var(--color-interactive-primary); }
+.bg-interactive-primary-hover { background-color: var(--color-interactive-primary-hover); }
+.bg-interactive-secondary { background-color: var(--color-interactive-secondary); }
+.bg-interactive-secondary-hover { background-color: var(--color-interactive-secondary-hover); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-success { background-color: var(--color-success); }
+.bg-warning { background-color: var(--color-warning); }
+.bg-error { background-color: var(--color-error); }
+
+/* Border Color Utilities */
+.border-border-default { border-color: var(--color-border-default); }
+.border-border-subtle { border-color: var(--color-border-subtle); }
+.border-border-strong { border-color: var(--color-border-strong); }
+.border-border-accent { border-color: var(--color-border-accent); }
+.border-border-focus { border-color: var(--color-border-focus); }
+
+/* Text Color Utilities */
+.text-text-primary { color: var(--color-text-primary); }
+.text-text-secondary { color: var(--color-text-secondary); }
+.text-text-tertiary { color: var(--color-text-tertiary); }
+.text-text-placeholder { color: var(--color-text-placeholder); }
+.text-text-on-primary { color: var(--color-text-on-primary); }
+.text-text-accent { color: var(--color-text-accent); }
+.text-text-success { color: var(--color-text-success); }
+.text-text-warning { color: var(--color-text-warning); }
+.text-text-error { color: var(--color-text-error); }
+
+/* Spacing Utilities for Design System Tokens */
+.p-space-component-xs { padding: var(--space-component-xs); }
+.p-space-component-sm { padding: var(--space-component-sm); }
+.p-space-component-md { padding: var(--space-component-md); }
+.p-space-component-lg { padding: var(--space-component-lg); }
+.p-space-component-xl { padding: var(--space-component-xl); }
+
+.px-space-component-xs { padding-left: var(--space-component-xs); padding-right: var(--space-component-xs); }
+.px-space-component-sm { padding-left: var(--space-component-sm); padding-right: var(--space-component-sm); }
+.px-space-component-md { padding-left: var(--space-component-md); padding-right: var(--space-component-md); }
+.px-space-component-lg { padding-left: var(--space-component-lg); padding-right: var(--space-component-lg); }
+
+.py-space-component-xs { padding-top: var(--space-component-xs); padding-bottom: var(--space-component-xs); }
+.py-space-component-sm { padding-top: var(--space-component-sm); padding-bottom: var(--space-component-sm); }
+.py-space-component-md { padding-top: var(--space-component-md); padding-bottom: var(--space-component-md); }
+.py-space-component-lg { padding-top: var(--space-component-lg); padding-bottom: var(--space-component-lg); }
+
+.p-space-layout-xs { padding: var(--space-layout-xs); }
+.p-space-layout-sm { padding: var(--space-layout-sm); }
+.p-space-layout-md { padding: var(--space-layout-md); }
+.p-space-layout-lg { padding: var(--space-layout-lg); }
+
+.px-space-layout-xs { padding-left: var(--space-layout-xs); padding-right: var(--space-layout-xs); }
+.px-space-layout-sm { padding-left: var(--space-layout-sm); padding-right: var(--space-layout-sm); }
+.px-space-layout-md { padding-left: var(--space-layout-md); padding-right: var(--space-layout-md); }
+
+.py-space-layout-xs { padding-top: var(--space-layout-xs); padding-bottom: var(--space-layout-xs); }
+.py-space-layout-sm { padding-top: var(--space-layout-sm); padding-bottom: var(--space-layout-sm); }
+.py-space-layout-md { padding-top: var(--space-layout-md); padding-bottom: var(--space-layout-md); }
+
+/* Margin Utilities */
+.m-space-component-xs { margin: var(--space-component-xs); }
+.m-space-component-sm { margin: var(--space-component-sm); }
+.m-space-component-md { margin: var(--space-component-md); }
+.m-space-component-lg { margin: var(--space-component-lg); }
+
+.mb-space-component-xs { margin-bottom: var(--space-component-xs); }
+.mb-space-component-sm { margin-bottom: var(--space-component-sm); }
+.mb-space-component-md { margin-bottom: var(--space-component-md); }
+.mb-space-component-lg { margin-bottom: var(--space-component-lg); }
+
+.mt-space-component-xs { margin-top: var(--space-component-xs); }
+.mt-space-component-sm { margin-top: var(--space-component-sm); }
+.mt-space-component-md { margin-top: var(--space-component-md); }
+.mt-space-component-lg { margin-top: var(--space-component-lg); }
+
+.ml-space-component-xs { margin-left: var(--space-component-xs); }
+.ml-space-component-sm { margin-left: var(--space-component-sm); }
+.ml-space-component-md { margin-left: var(--space-component-md); }
+.ml-space-component-lg { margin-left: var(--space-component-lg); }
+
+.mr-space-component-xs { margin-right: var(--space-component-xs); }
+.mr-space-component-sm { margin-right: var(--space-component-sm); }
+.mr-space-component-md { margin-right: var(--space-component-md); }
+.mr-space-component-lg { margin-right: var(--space-component-lg); }
+
+/* Gap Utilities */
+.gap-space-component-xs { gap: var(--space-component-xs); }
+.gap-space-component-sm { gap: var(--space-component-sm); }
+.gap-space-component-md { gap: var(--space-component-md); }
+.gap-space-component-lg { gap: var(--space-component-lg); }
+
+/* Basic Spacing Tokens */
+.p-space-1 { padding: var(--space-1); }
+.p-space-2 { padding: var(--space-2); }
+.p-space-4 { padding: var(--space-4); }
+.p-space-6 { padding: var(--space-6); }
+.p-space-8 { padding: var(--space-8); }
+
+.px-space-1 { padding-left: var(--space-1); padding-right: var(--space-1); }
+.px-space-2 { padding-left: var(--space-2); padding-right: var(--space-2); }
+.px-space-4 { padding-left: var(--space-4); padding-right: var(--space-4); }
+
+.py-space-1 { padding-top: var(--space-1); padding-bottom: var(--space-1); }
+.py-space-2 { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+
+/* ==========================================
+   COMPONENT-SPECIFIC INTEGRATION
+   Design system integration for specific components
+   ========================================== */
+
+/* Button Integration */
+.btn-primary {
+  background-color: var(--color-interactive-primary);
+  color: var(--color-text-on-primary);
+  padding: var(--button-padding-md);
+  font-size: var(--button-font-size-md);
+  border-radius: var(--border-radius-button);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-button);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-interactive-primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--color-interactive-secondary);
+  color: var(--color-text-primary);
+  padding: var(--button-padding-md);
+  font-size: var(--button-font-size-md);
+  border-radius: var(--border-radius-button);
+  border: 1px solid var(--color-border-default);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-button);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-interactive-secondary-hover);
+}
+
+/* Input Integration */
+.input-field {
+  padding: var(--input-padding);
+  font-size: var(--input-font-size);
+  line-height: var(--input-line-height);
+  border: var(--input-border-width) solid var(--color-border-default);
+  border-radius: var(--input-border-radius);
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  transition: var(--transition-input);
+}
+
+.input-field:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.input-field::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+/* Card Integration */
+.card {
+  background-color: var(--color-surface-elevated);
+  border: var(--card-border-width) solid var(--color-border-default);
+  border-radius: var(--card-border-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-card);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Modal Integration */
+.modal {
+  background-color: var(--color-surface-elevated);
+  border-radius: var(--modal-border-radius);
+  padding: var(--modal-padding);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Navigation Integration */
+.nav-item {
+  padding: var(--space-component-sm) var(--space-component-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-button);
+  border-radius: var(--border-radius-sm);
+}
+
+.nav-item:hover {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+}
+
+.nav-item.active {
+  background-color: var(--color-surface-accent);
+  color: var(--color-text-accent);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ==========================================
+   ANIMATION AND TRANSITION INTEGRATION
+   Consistent animations using design system tokens
+   ========================================== */
+
+.transition-colors {
+  transition: color var(--duration-normal) var(--easing-smooth),
+              background-color var(--duration-normal) var(--easing-smooth),
+              border-color var(--duration-normal) var(--easing-smooth);
+}
+
+.transition-all-smooth {
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+.duration-normal {
+  transition-duration: var(--duration-normal);
+}
+
+.duration-fast {
+  transition-duration: var(--duration-fast);
+}
+
+.duration-slow {
+  transition-duration: var(--duration-slow);
+}
+
+/* ==========================================
+   RESPONSIVE AND ACCESSIBILITY INTEGRATION
+   Responsive behaviors and accessibility enhancements
+   ========================================== */
+
+@media (max-width: 640px) {
+  /* Adjust component spacing for mobile */
+  .card {
+    padding: var(--card-padding-sm);
+  }
+
+  .modal {
+    padding: var(--space-layout-xs);
+    margin: var(--space-component-md);
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: var(--button-padding-sm);
+    font-size: var(--button-font-size-sm);
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .btn-primary,
+  .btn-secondary,
+  .input-field,
+  .card {
+    border-width: 2px;
+  }
+
+  .nav-item.active {
+    outline: 2px solid var(--color-text-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .transition-colors,
+  .transition-all-smooth,
+  .btn-primary,
+  .btn-secondary,
+  .input-field,
+  .nav-item {
+    transition: none;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* ==========================================
+   FOCUS MANAGEMENT INTEGRATION
+   Consistent focus indicators across components
+   ========================================== */
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+}
+
+.focus-within-ring:focus-within {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* Skip to main content integration */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: var(--space-component-md);
+  background-color: var(--color-interactive-primary);
+  color: var(--color-text-on-primary);
+  padding: var(--space-component-sm) var(--space-component-md);
+  border-radius: var(--border-radius-md);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  z-index: var(--z-index-max);
+  transition: var(--transition-button);
+}
+
+.skip-to-main:focus {
+  top: var(--space-component-md);
+}
+
+/* ==========================================
+   PRINT MEDIA INTEGRATION
+   Design system token overrides for print
+   ========================================== */
+
+@media print {
+  .card {
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    background-color: transparent !important;
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+  }
+
+  .modal {
+    box-shadow: none !important;
+    border: 1px solid #cccccc !important;
+  }
+}

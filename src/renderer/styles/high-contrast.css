@@ -1,0 +1,596 @@
+/**
+ * High Contrast Theme for WCAG 2.1 AA Compliance
+ * Activated when user prefers high contrast or via toggle
+ */
+
+/* High contrast mode activation */
+.high-contrast,
+html.high-contrast,
+html[data-theme="high-contrast"] {
+  /* Override all color custom properties for high contrast */
+  --color-primary: ButtonText;
+  --color-primary-hover: HighlightText;
+  --color-primary-active: HighlightText;
+  --color-primary-disabled: GrayText;
+  
+  --color-secondary: ButtonText;
+  --color-secondary-hover: HighlightText;
+  --color-secondary-active: HighlightText;
+  
+  --color-success: ButtonText;
+  --color-warning: ButtonText;
+  --color-error: ButtonText;
+  --color-info: ButtonText;
+  
+  --color-text-primary: ButtonText;
+  --color-text-secondary: ButtonText;
+  --color-text-tertiary: GrayText;
+  --color-text-disabled: GrayText;
+  --color-text-inverse: ButtonFace;
+  
+  --color-background-primary: ButtonFace;
+  --color-background-secondary: Field;
+  --color-background-tertiary: ButtonFace;
+  --color-background-overlay: Canvas;
+  
+  --color-border: ButtonText;
+  --color-border-light: ButtonText;
+  --color-border-focus: Highlight;
+  
+  --color-link: LinkText;
+  --color-link-hover: LinkText;
+  --color-link-visited: VisitedText;
+  
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+  
+  /* Force high contrast colors */
+  background: ButtonFace !important;
+  color: ButtonText !important;
+}
+
+/* Apply high contrast to all elements */
+.high-contrast *,
+html.high-contrast *,
+html[data-theme="high-contrast"] * {
+  /* Remove all shadows and gradients */
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+  
+  /* Simplify borders */
+  border-color: ButtonText !important;
+}
+
+/* Buttons in high contrast mode */
+.high-contrast .btn,
+.high-contrast button,
+html.high-contrast .btn,
+html.high-contrast button {
+  background: ButtonFace !important;
+  color: ButtonText !important;
+  border: 2px solid ButtonText !important;
+  box-shadow: none !important;
+}
+
+.high-contrast .btn:hover,
+.high-contrast button:hover,
+html.high-contrast .btn:hover,
+html.high-contrast button:hover {
+  background: ButtonHighlight !important;
+  color: ButtonText !important;
+  border-color: ButtonText !important;
+}
+
+.high-contrast .btn:focus,
+.high-contrast button:focus,
+html.high-contrast .btn:focus,
+html.high-contrast button:focus {
+  outline: 3px solid Highlight !important;
+  outline-offset: 2px !important;
+  background: Highlight !important;
+  color: HighlightText !important;
+}
+
+.high-contrast .btn:active,
+.high-contrast button:active,
+html.high-contrast .btn:active,
+html.high-contrast button:active {
+  background: ActiveCaption !important;
+  color: CaptionText !important;
+}
+
+.high-contrast .btn:disabled,
+.high-contrast button:disabled,
+html.high-contrast .btn:disabled,
+html.high-contrast button:disabled {
+  background: ButtonFace !important;
+  color: GrayText !important;
+  border-color: GrayText !important;
+}
+
+/* Primary buttons */
+.high-contrast .btn--primary,
+html.high-contrast .btn--primary {
+  background: ButtonText !important;
+  color: ButtonFace !important;
+  border: 2px solid ButtonText !important;
+}
+
+.high-contrast .btn--primary:hover,
+html.high-contrast .btn--primary:hover {
+  background: Highlight !important;
+  color: HighlightText !important;
+  border-color: Highlight !important;
+}
+
+/* Inputs and form elements */
+.high-contrast input,
+.high-contrast textarea,
+.high-contrast select,
+html.high-contrast input,
+html.high-contrast textarea,
+html.high-contrast select {
+  background: Field !important;
+  color: FieldText !important;
+  border: 2px solid ButtonText !important;
+  box-shadow: none !important;
+}
+
+.high-contrast input:focus,
+.high-contrast textarea:focus,
+.high-contrast select:focus,
+html.high-contrast input:focus,
+html.high-contrast textarea:focus,
+html.high-contrast select:focus {
+  outline: 3px solid Highlight !important;
+  outline-offset: 1px !important;
+  border-color: Highlight !important;
+}
+
+.high-contrast input:disabled,
+.high-contrast textarea:disabled,
+.high-contrast select:disabled,
+html.high-contrast input:disabled,
+html.high-contrast textarea:disabled,
+html.high-contrast select:disabled {
+  background: ButtonFace !important;
+  color: GrayText !important;
+  border-color: GrayText !important;
+}
+
+/* Links */
+.high-contrast a,
+html.high-contrast a {
+  color: LinkText !important;
+  text-decoration: underline !important;
+}
+
+.high-contrast a:visited,
+html.high-contrast a:visited {
+  color: VisitedText !important;
+}
+
+.high-contrast a:hover,
+.high-contrast a:focus,
+html.high-contrast a:hover,
+html.high-contrast a:focus {
+  color: LinkText !important;
+  text-decoration: underline !important;
+  outline: 2px solid Highlight !important;
+  outline-offset: 2px !important;
+}
+
+/* Focus indicators */
+.high-contrast *:focus,
+html.high-contrast *:focus {
+  outline: 3px solid Highlight !important;
+  outline-offset: 2px !important;
+}
+
+.high-contrast *:focus-visible,
+html.high-contrast *:focus-visible {
+  outline: 3px solid Highlight !important;
+  outline-offset: 2px !important;
+}
+
+/* Text selection */
+.high-contrast ::selection,
+html.high-contrast ::selection {
+  background: Highlight !important;
+  color: HighlightText !important;
+}
+
+/* Scrollbars */
+.high-contrast ::-webkit-scrollbar,
+html.high-contrast ::-webkit-scrollbar {
+  background: ButtonFace !important;
+}
+
+.high-contrast ::-webkit-scrollbar-track,
+html.high-contrast ::-webkit-scrollbar-track {
+  background: ButtonFace !important;
+  border: 1px solid ButtonText !important;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb,
+html.high-contrast ::-webkit-scrollbar-thumb {
+  background: ButtonText !important;
+  border: 1px solid ButtonFace !important;
+}
+
+.high-contrast ::-webkit-scrollbar-thumb:hover,
+html.high-contrast ::-webkit-scrollbar-thumb:hover {
+  background: Highlight !important;
+}
+
+/* Modal and overlay backgrounds */
+.high-contrast .modal-backdrop,
+.high-contrast .overlay,
+html.high-contrast .modal-backdrop,
+html.high-contrast .overlay {
+  background: Canvas !important;
+  border: 3px solid ButtonText !important;
+}
+
+.high-contrast .modal-content,
+html.high-contrast .modal-content {
+  background: ButtonFace !important;
+  color: ButtonText !important;
+  border: 3px solid ButtonText !important;
+}
+
+/* Tables */
+.high-contrast table,
+html.high-contrast table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 2px solid ButtonText !important;
+}
+
+.high-contrast th,
+.high-contrast td,
+html.high-contrast th,
+html.high-contrast td {
+  border: 1px solid ButtonText !important;
+  padding: 0.5rem !important;
+  background: ButtonFace !important;
+  color: ButtonText !important;
+}
+
+.high-contrast th,
+html.high-contrast th {
+  background: ButtonText !important;
+  color: ButtonFace !important;
+  font-weight: bold !important;
+}
+
+/* Cards and panels */
+.high-contrast .card,
+.high-contrast .panel,
+html.high-contrast .card,
+html.high-contrast .panel {
+  background: ButtonFace !important;
+  color: ButtonText !important;
+  border: 2px solid ButtonText !important;
+  box-shadow: none !important;
+}
+
+/* Notifications */
+.high-contrast .notification,
+html.high-contrast .notification {
+  background: ButtonFace !important;
+  color: ButtonText !important;
+  border: 3px solid ButtonText !important;
+}
+
+.high-contrast .notification--success,
+.high-contrast .notification--error,
+.high-contrast .notification--warning,
+.high-contrast .notification--info,
+html.high-contrast .notification--success,
+html.high-contrast .notification--error,
+html.high-contrast .notification--warning,
+html.high-contrast .notification--info {
+  border-left: 6px solid ButtonText !important;
+}
+
+/* Progress bars */
+.high-contrast .progress-bar__track,
+html.high-contrast .progress-bar__track {
+  background: ButtonFace !important;
+  border: 2px solid ButtonText !important;
+}
+
+.high-contrast .progress-bar__fill,
+html.high-contrast .progress-bar__fill {
+  background: ButtonText !important;
+}
+
+/* Loading indicators */
+.high-contrast .loading-spinner__circle,
+.high-contrast .inline-loading-spinner__dot,
+html.high-contrast .loading-spinner__circle,
+html.high-contrast .inline-loading-spinner__dot {
+  background: ButtonText !important;
+}
+
+.high-contrast .loading-skeleton__line,
+html.high-contrast .loading-skeleton__line {
+  background: ButtonFace !important;
+  border: 1px solid ButtonText !important;
+}
+
+/* Search components */
+.high-contrast .search-input,
+html.high-contrast .search-input {
+  background: Field !important;
+  color: FieldText !important;
+  border: 2px solid ButtonText !important;
+}
+
+.high-contrast .search-suggestions,
+html.high-contrast .search-suggestions {
+  background: ButtonFace !important;
+  border: 2px solid ButtonText !important;
+}
+
+.high-contrast .suggestion-item,
+html.high-contrast .suggestion-item {
+  background: ButtonFace !important;
+  color: ButtonText !important;
+  border-bottom: 1px solid ButtonText !important;
+}
+
+.high-contrast .suggestion-item:hover,
+.high-contrast .suggestion-item--selected,
+html.high-contrast .suggestion-item:hover,
+html.high-contrast .suggestion-item--selected {
+  background: Highlight !important;
+  color: HighlightText !important;
+}
+
+/* Toggle switches */
+.high-contrast .toggle-slider,
+html.high-contrast .toggle-slider {
+  background: ButtonFace !important;
+  border: 2px solid ButtonText !important;
+}
+
+.high-contrast input:checked + .toggle-slider,
+html.high-contrast input:checked + .toggle-slider {
+  background: ButtonText !important;
+}
+
+.high-contrast .toggle-slider::before,
+html.high-contrast .toggle-slider::before {
+  background: ButtonText !important;
+  border: 1px solid ButtonFace !important;
+}
+
+.high-contrast input:checked + .toggle-slider::before,
+html.high-contrast input:checked + .toggle-slider::before {
+  background: ButtonFace !important;
+  border: 1px solid ButtonText !important;
+}
+
+/* Checkboxes and radio buttons */
+.high-contrast input[type="checkbox"],
+.high-contrast input[type="radio"],
+html.high-contrast input[type="checkbox"],
+html.high-contrast input[type="radio"] {
+  appearance: none !important;
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+  border: 2px solid ButtonText !important;
+  background: Field !important;
+  position: relative !important;
+}
+
+.high-contrast input[type="radio"],
+html.high-contrast input[type="radio"] {
+  border-radius: 50% !important;
+}
+
+.high-contrast input[type="checkbox"]:checked,
+.high-contrast input[type="radio"]:checked,
+html.high-contrast input[type="checkbox"]:checked,
+html.high-contrast input[type="radio"]:checked {
+  background: ButtonText !important;
+}
+
+.high-contrast input[type="checkbox"]:checked::after,
+html.high-contrast input[type="checkbox"]:checked::after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: ButtonFace !important;
+  font-weight: bold !important;
+}
+
+.high-contrast input[type="radio"]:checked::after,
+html.high-contrast input[type="radio"]:checked::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 2px !important;
+  left: 2px !important;
+  right: 2px !important;
+  bottom: 2px !important;
+  border-radius: 50% !important;
+  background: ButtonFace !important;
+}
+
+/* Disabled state for form controls */
+.high-contrast input:disabled,
+.high-contrast textarea:disabled,
+.high-contrast select:disabled,
+.high-contrast button:disabled,
+html.high-contrast input:disabled,
+html.high-contrast textarea:disabled,
+html.high-contrast select:disabled,
+html.high-contrast button:disabled {
+  background: ButtonFace !important;
+  color: GrayText !important;
+  border-color: GrayText !important;
+  opacity: 1 !important; /* Ensure disabled elements are still visible */
+}
+
+/* Error states */
+.high-contrast .error,
+.high-contrast .is-error,
+.high-contrast [aria-invalid="true"],
+html.high-contrast .error,
+html.high-contrast .is-error,
+html.high-contrast [aria-invalid="true"] {
+  border-color: ButtonText !important;
+  border-width: 3px !important;
+  border-style: solid !important;
+}
+
+/* Success states */
+.high-contrast .success,
+.high-contrast .is-success,
+html.high-contrast .success,
+html.high-contrast .is-success {
+  border-color: ButtonText !important;
+  border-width: 2px !important;
+  border-style: double !important;
+}
+
+/* Warning states */
+.high-contrast .warning,
+.high-contrast .is-warning,
+html.high-contrast .warning,
+html.high-contrast .is-warning {
+  border-color: ButtonText !important;
+  border-width: 2px !important;
+  border-style: dashed !important;
+}
+
+/* Ensure all icons and decorative elements are visible */
+.high-contrast svg,
+.high-contrast i,
+.high-contrast .icon,
+html.high-contrast svg,
+html.high-contrast i,
+html.high-contrast .icon {
+  fill: currentColor !important;
+  color: ButtonText !important;
+}
+
+/* Remove any opacity or transparency */
+.high-contrast *,
+html.high-contrast * {
+  opacity: 1 !important;
+  background-color: var(--bg, ButtonFace) !important;
+  color: var(--text, ButtonText) !important;
+}
+
+/* Ensure proper contrast for active/selected states */
+.high-contrast .active,
+.high-contrast .selected,
+.high-contrast [aria-selected="true"],
+.high-contrast [aria-current="true"],
+html.high-contrast .active,
+html.high-contrast .selected,
+html.high-contrast [aria-selected="true"],
+html.high-contrast [aria-current="true"] {
+  background: Highlight !important;
+  color: HighlightText !important;
+  border: 2px solid Highlight !important;
+}
+
+/* High contrast toggle button styles */
+.high-contrast-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  background: ButtonFace;
+  color: ButtonText;
+  border: 2px solid ButtonText;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.high-contrast-toggle:hover {
+  background: ButtonHighlight;
+}
+
+.high-contrast-toggle:focus {
+  outline: 3px solid Highlight;
+  outline-offset: 2px;
+}
+
+.high-contrast .high-contrast-toggle,
+html.high-contrast .high-contrast-toggle {
+  background: ButtonText !important;
+  color: ButtonFace !important;
+}
+
+/* Media query for system preference */
+@media (prefers-contrast: high) {
+  html {
+    /* Automatically apply high contrast when system preference is set */
+    --color-primary: ButtonText;
+    --color-background-primary: ButtonFace;
+    --color-text-primary: ButtonText;
+    --color-border: ButtonText;
+  }
+  
+  /* Apply all high contrast rules */
+  html,
+  html * {
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+
+/* Print styles for high contrast */
+@media print {
+  .high-contrast,
+  html.high-contrast {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .high-contrast *,
+  html.high-contrast * {
+    background: white !important;
+    color: black !important;
+    border-color: black !important;
+  }
+}
+
+/* Ensure the high contrast toggle is accessible */
+.high-contrast-toggle[aria-pressed="true"]::after {
+  content: ' (On)';
+}
+
+.high-contrast-toggle[aria-pressed="false"]::after {
+  content: ' (Off)';
+}
+
+/* Screen reader announcements for high contrast mode */
+.high-contrast-announcement {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Focus trap for high contrast mode */
+.high-contrast .focus-trap,
+html.high-contrast .focus-trap {
+  outline: 3px solid Highlight !important;
+  outline-offset: 2px !important;
+}

@@ -1,0 +1,51 @@
+{
+  "name": "database-integration-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive database integration tests for mainframe knowledge base",
+  "main": "database-test-runner.js",
+  "scripts": {
+    "test": "node database-test-runner.js",
+    "test:integration": "jest database-integration.test.js --verbose",
+    "test:performance": "jest database-performance.test.js --verbose",
+    "test:transparency": "jest database-transparency.test.js --verbose",
+    "test:all": "jest --verbose",
+    "test:watch": "jest --watch --verbose",
+    "test:coverage": "jest --coverage --verbose",
+    "clean": "rm -f *.db database-*.md database-test-results.json"
+  },
+  "keywords": [
+    "database",
+    "integration",
+    "testing",
+    "mainframe",
+    "sqlite",
+    "fts5",
+    "transparency"
+  ],
+  "author": "Database Testing Team",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^8.7.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!node_modules/**",
+      "!coverage/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "verbose": true,
+    "testTimeout": 30000
+  }
+}

@@ -1,0 +1,587 @@
+/**
+ * Component Enhancements
+ * Advanced visual enhancements, micro-animations, and interaction feedback
+ * for the mainframe AI assistant components
+ *
+ * This file provides:
+ * - Enhanced micro-animations and transitions
+ * - Advanced focus states and interaction feedback
+ * - Loading states and skeleton animations
+ * - Responsive behavior enhancements
+ * - Visual polish and modern aesthetics
+ */
+
+/* ==========================================
+   MICRO-ANIMATIONS & TRANSITIONS
+   Subtle animations that enhance user experience
+   ========================================== */
+
+/* Enhanced button interactions */
+.btn {
+  position: relative;
+  transform: translateY(0);
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-hover);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  transition-duration: var(--duration-fast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 25px -5px rgb(59 130 246 / 0.4);
+}
+
+.btn-success:hover:not(:disabled) {
+  box-shadow: 0 8px 25px -5px rgb(34 197 94 / 0.4);
+}
+
+.btn-error:hover:not(:disabled) {
+  box-shadow: 0 8px 25px -5px rgb(239 68 68 / 0.4);
+}
+
+/* Card hover enhancements */
+.card {
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.1), 0 4px 20px -2px rgb(0 0 0 / 0.05);
+}
+
+.card.card-interactive:hover {
+  border-color: var(--color-border-accent);
+}
+
+/* Input focus enhancements */
+.input:focus {
+  transform: scale(1.02);
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+/* Badge animations */
+.badge {
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+.badge:hover {
+  transform: scale(1.05);
+}
+
+/* Modal entrance animations */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal {
+  animation: modalSlideIn var(--duration-slow) var(--easing-smooth);
+}
+
+/* Page transition animations */
+.animate-page-enter {
+  animation: pageEnter var(--duration-slow) var(--easing-smooth);
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animations for lists */
+.animate-stagger-in > * {
+  animation: staggerIn var(--duration-normal) var(--easing-smooth) backwards;
+}
+
+.animate-stagger-in > *:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger-in > *:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger-in > *:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger-in > *:nth-child(4) { animation-delay: 150ms; }
+.animate-stagger-in > *:nth-child(5) { animation-delay: 200ms; }
+
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================
+   ENHANCED FOCUS STATES
+   Improved accessibility and visual feedback
+   ========================================== */
+
+/* Global focus improvements */
+*:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+  transition: outline var(--duration-fast) var(--easing-smooth);
+}
+
+/* Button focus states */
+.btn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.1);
+}
+
+.btn-primary:focus-visible {
+  box-shadow: 0 0 0 4px rgb(59 130 246 / 0.2);
+}
+
+.btn-success:focus-visible {
+  box-shadow: 0 0 0 4px rgb(34 197 94 / 0.2);
+}
+
+.btn-error:focus-visible {
+  box-shadow: 0 0 0 4px rgb(239 68 68 / 0.2);
+}
+
+/* Input focus rings */
+.input:focus {
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1), 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 0.1), 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.input-success:focus {
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 0.1), 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+/* Card focus states for interactive elements */
+.card-interactive:focus-within {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 2px rgb(59 130 246 / 0.1);
+}
+
+/* ==========================================
+   LOADING STATES & SKELETON SCREENS
+   Enhanced loading experiences
+   ========================================== */
+
+/* Skeleton loading animations */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-surface-muted) 25%, var(--color-surface-subtle) 50%, var(--color-surface-muted) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--border-radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 0.875rem;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-text.large {
+  height: 1.25rem;
+}
+
+.skeleton-text.small {
+  height: 0.75rem;
+}
+
+.skeleton-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--border-radius-full);
+}
+
+.skeleton-button {
+  height: 2.5rem;
+  width: 6rem;
+  border-radius: var(--border-radius-button);
+}
+
+/* Pulse animation for loading indicators */
+.loading-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Shimmer effect for loading content */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ==========================================
+   RESPONSIVE ENHANCEMENTS
+   Improved mobile and tablet experiences
+   ========================================== */
+
+/* Enhanced responsive buttons */
+@media (max-width: 640px) {
+  .btn {
+    min-height: 44px; /* Touch target size */
+    padding-left: max(var(--space-4), 16px);
+    padding-right: max(var(--space-4), 16px);
+  }
+
+  .btn-sm {
+    min-height: 40px;
+  }
+
+  .btn-xs {
+    min-height: 36px;
+  }
+}
+
+/* Responsive cards */
+@media (max-width: 768px) {
+  .card {
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--space-4);
+  }
+
+  .card-body {
+    padding: var(--space-12);
+  }
+
+  .card-header {
+    padding: var(--space-10) var(--space-12);
+  }
+}
+
+/* Enhanced modal responsiveness */
+@media (max-width: 640px) {
+  .modal {
+    margin: var(--space-4);
+    max-width: calc(100vw - var(--space-8));
+    max-height: calc(100vh - var(--space-8));
+  }
+
+  .modal-sm {
+    margin: var(--space-2);
+    max-width: calc(100vw - var(--space-4));
+  }
+}
+
+/* Touch-friendly interactive elements */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover {
+    transform: none;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ==========================================
+   ENHANCED VISUAL POLISH
+   Modern design touches and refinements
+   ========================================== */
+
+/* Gradient backgrounds for primary elements */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
+  border: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-800));
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--color-success), var(--color-success-hover));
+}
+
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-success-hover), var(--color-success-active));
+}
+
+/* Enhanced shadows for depth */
+.card-elevated {
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.05),
+    0 4px 15px rgb(0 0 0 / 0.05),
+    0 10px 35px rgb(0 0 0 / 0.05);
+}
+
+.card-elevated:hover {
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 0.08),
+    0 8px 25px rgb(0 0 0 / 0.08),
+    0 20px 50px rgb(0 0 0 / 0.08);
+}
+
+/* Glass morphism effects */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .glass {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(55, 65, 81, 0.3);
+}
+
+/* Enhanced borders and dividers */
+.border-gradient {
+  border: 1px solid;
+  border-image: linear-gradient(135deg, var(--color-primary-200), var(--color-primary-400)) 1;
+}
+
+/* Improved scrollbars */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: var(--border-radius-full);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+  background-clip: content-box;
+}
+
+/* ==========================================
+   COMPONENT-SPECIFIC ENHANCEMENTS
+   Targeted improvements for specific components
+   ========================================== */
+
+/* Search Results Enhancements */
+.search-result-item {
+  transition: all var(--duration-normal) var(--easing-smooth);
+  border-left: 4px solid transparent;
+}
+
+.search-result-item:hover {
+  border-left-color: var(--color-primary-400);
+  background: linear-gradient(90deg, var(--color-primary-50), transparent);
+}
+
+.search-result-item.selected {
+  border-left-color: var(--color-primary-600);
+  background: var(--color-primary-50);
+}
+
+/* Dashboard Enhancements */
+.metrics-card {
+  background: linear-gradient(135deg, var(--color-surface-elevated), var(--color-surface-subtle));
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+.metrics-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px -8px rgb(0 0 0 / 0.15);
+}
+
+.status-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0.1;
+  border-radius: inherit;
+  animation: status-pulse 2s infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.2;
+  }
+}
+
+/* Knowledge Base Manager Enhancements */
+.kb-entry-card {
+  border-left: 4px solid var(--color-border-subtle);
+  transition: all var(--duration-normal) var(--easing-smooth);
+}
+
+.kb-entry-card:hover {
+  border-left-color: var(--color-primary-500);
+  background: var(--color-surface-accent);
+}
+
+.kb-entry-card.high-priority {
+  border-left-color: var(--color-warning);
+}
+
+.kb-entry-card.critical {
+  border-left-color: var(--color-error);
+}
+
+/* Progress indicators */
+.progress-bar {
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transform: translateX(-100%);
+  animation: progress-shine 2s infinite;
+}
+
+@keyframes progress-shine {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ==========================================
+   ACCESSIBILITY ENHANCEMENTS
+   Improved accessibility with maintained aesthetics
+   ========================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: 2px;
+  }
+
+  .card {
+    border-width: 2px;
+  }
+
+  .skeleton {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--color-surface-muted) 0px,
+      var(--color-surface-muted) 20px,
+      var(--color-surface-subtle) 20px,
+      var(--color-surface-subtle) 40px
+    );
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--color-surface-muted);
+  }
+
+  .shimmer::after {
+    animation: none;
+  }
+}
+
+/* Focus visible enhancements for keyboard navigation */
+.focus-ring-enhanced:focus-visible {
+  outline: 3px solid var(--color-border-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgb(59 130 246 / 0.1);
+}
+
+/* Print optimizations */
+@media print {
+  .btn,
+  .card,
+  .modal {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .skeleton,
+  .shimmer {
+    animation: none !important;
+    background: var(--color-surface-muted) !important;
+  }
+}

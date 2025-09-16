@@ -1,0 +1,547 @@
+/**
+ * Routing Styles for KB-Optimized Routes
+ * Provides consistent styling across all route components
+ * Optimized for performance and user experience
+ */
+
+/* ========================
+   Base Route Styling
+   ======================== */
+
+.route-container {
+  min-height: calc(100vh - var(--nav-height, 120px));
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.app-with-router {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--app-bg, #ffffff);
+}
+
+/* ========================
+   Dashboard Route
+   ======================== */
+
+.dashboard-route {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-header {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.dashboard-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 0.5rem 0;
+}
+
+.dashboard-header p {
+  font-size: 1.125rem;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.quick-search {
+  display: flex;
+  justify-content: center;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.recent-entries {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--card-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.recent-entries h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 1rem 0;
+}
+
+.quick-actions {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--card-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: var(--action-bg, #f9fafb);
+  border: 2px solid var(--action-border, #e5e7eb);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.action-card:hover {
+  background: var(--action-hover, #f3f4f6);
+  border-color: var(--action-border-hover, #d1d5db);
+  transform: translateY(-2px);
+}
+
+.action-card:focus {
+  outline: 2px solid var(--focus-ring, #3b82f6);
+  outline-offset: 2px;
+}
+
+.action-card .icon {
+  font-size: 2rem;
+}
+
+.action-card span:last-child {
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+}
+
+/* ========================
+   Search Route
+   ======================== */
+
+.search-route {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.search-results-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================
+   Entry Routes
+   ======================== */
+
+.entry-route,
+.edit-entry-route,
+.add-entry-route {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.entry-header,
+.edit-entry-header,
+.add-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--button-border, #d1d5db);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.875rem;
+}
+
+.back-button:hover {
+  background: var(--button-hover, #f3f4f6);
+  color: var(--text-primary, #1f2937);
+}
+
+.back-button:focus {
+  outline: 2px solid var(--focus-ring, #3b82f6);
+  outline-offset: 2px;
+}
+
+.entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-badge,
+.source-badge {
+  padding: 0.25rem 0.5rem;
+  background: var(--badge-bg, #dbeafe);
+  color: var(--badge-text, #1e40af);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.source-badge {
+  background: var(--badge-secondary-bg, #f3f4f6);
+  color: var(--badge-secondary-text, #4b5563);
+}
+
+.entry-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.entry-not-found h1 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  margin: 0;
+}
+
+.entry-not-found p {
+  font-size: 1rem;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+  max-width: 400px;
+}
+
+.entry-not-found button {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.entry-not-found button:hover {
+  background: var(--primary-hover, #2563eb);
+}
+
+/* ========================
+   Metrics Route
+   ======================== */
+
+.metrics-route {
+  height: calc(100vh - var(--nav-height, 120px));
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================
+   History Route
+   ======================== */
+
+.history-route {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ========================
+   Settings Route
+   ======================== */
+
+.settings-route {
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ========================
+   Loading States
+   ======================== */
+
+.route-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.route-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--error-bg, #fef2f2);
+  border: 1px solid var(--error-border, #fecaca);
+  border-radius: 0.75rem;
+  margin: 2rem 0;
+}
+
+.route-error h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--error-text, #dc2626);
+  margin: 0;
+}
+
+.route-error p {
+  color: var(--error-secondary, #7f1d1d);
+  margin: 0;
+  max-width: 400px;
+}
+
+/* ========================
+   Performance Monitor
+   ======================== */
+
+.performance-monitor {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  max-width: 300px;
+}
+
+.performance-monitor details {
+  cursor: pointer;
+}
+
+.performance-monitor summary {
+  padding: 0.25rem;
+  user-select: none;
+}
+
+.performance-monitor pre {
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  overflow: auto;
+  max-height: 200px;
+}
+
+/* ========================
+   Responsive Design
+   ======================== */
+
+@media (max-width: 768px) {
+  .route-container {
+    padding: 0.75rem;
+  }
+
+  .dashboard-header h1 {
+    font-size: 2rem;
+  }
+
+  .dashboard-header p {
+    font-size: 1rem;
+  }
+
+  .action-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .action-card {
+    padding: 1rem;
+  }
+
+  .entry-route,
+  .edit-entry-route,
+  .add-entry-route,
+  .history-route,
+  .settings-route {
+    max-width: none;
+    margin: 0;
+  }
+
+  .entry-header,
+  .edit-entry-header,
+  .add-entry-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .entry-meta {
+    align-self: stretch;
+    justify-content: flex-start;
+  }
+
+  .performance-monitor {
+    bottom: 0.5rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .route-container {
+    padding: 0.5rem;
+  }
+
+  .dashboard-header {
+    padding: 1rem 0;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .dashboard-content {
+    gap: 1.5rem;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .back-button {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .entry-not-found {
+    padding: 2rem 1rem;
+  }
+
+  .entry-not-found h1 {
+    font-size: 1.5rem;
+  }
+}
+
+/* ========================
+   Dark Mode Support
+   ======================== */
+
+@media (prefers-color-scheme: dark) {
+  .app-with-router {
+    --app-bg: #111827;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --card-bg: #1f2937;
+    --card-border: #374151;
+    --action-bg: #374151;
+    --action-border: #4b5563;
+    --action-hover: #4b5563;
+    --action-border-hover: #6b7280;
+    --button-border: #4b5563;
+    --button-hover: #374151;
+    --border: #374151;
+    --badge-bg: #1e3a8a;
+    --badge-text: #bfdbfe;
+    --badge-secondary-bg: #4b5563;
+    --badge-secondary-text: #d1d5db;
+    --error-bg: #7f1d1d;
+    --error-border: #dc2626;
+    --error-text: #fecaca;
+    --error-secondary: #fecaca;
+  }
+}
+
+/* ========================
+   High Contrast Support
+   ======================== */
+
+@media (prefers-contrast: high) {
+  .back-button:focus,
+  .action-card:focus,
+  .entry-not-found button:focus {
+    outline: 3px solid;
+    outline-offset: 2px;
+  }
+
+  .category-badge,
+  .source-badge {
+    border: 2px solid currentColor;
+  }
+}
+
+/* ========================
+   Print Styles
+   ======================== */
+
+@media print {
+  .route-container {
+    padding: 0;
+    max-width: none;
+  }
+
+  .back-button,
+  .performance-monitor {
+    display: none;
+  }
+
+  .dashboard-route {
+    page-break-inside: avoid;
+  }
+
+  .entry-route {
+    break-inside: avoid;
+  }
+}
+
+/* ========================
+   Reduced Motion Support
+   ======================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .action-card:hover {
+    transform: none;
+  }
+}
+
+/* ========================
+   Focus Visible Support
+   ======================== */
+
+@supports selector(:focus-visible) {
+  .back-button:focus:not(:focus-visible),
+  .action-card:focus:not(:focus-visible),
+  .entry-not-found button:focus:not(:focus-visible) {
+    outline: none;
+  }
+}

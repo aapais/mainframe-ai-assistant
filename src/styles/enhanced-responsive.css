@@ -1,0 +1,671 @@
+/**
+ * Enhanced Responsive Design System
+ *
+ * A comprehensive responsive design framework that addresses:
+ * - Modern breakpoint strategy with container queries
+ * - Fluid typography and spacing
+ * - Touch-optimized interactions
+ * - Cross-device consistency
+ * - Accessibility at all screen sizes
+ *
+ * @version 2.0.0
+ * @author Code Quality Analyzer
+ */
+
+/* ===========================
+   MODERN BREAKPOINT SYSTEM
+   =========================== */
+
+:root {
+  /* Fluid Breakpoints with Container Queries Support */
+  --breakpoint-xs: 320px;    /* Small mobile */
+  --breakpoint-sm: 640px;    /* Large mobile */
+  --breakpoint-md: 768px;    /* Tablet */
+  --breakpoint-lg: 1024px;   /* Small desktop */
+  --breakpoint-xl: 1280px;   /* Desktop */
+  --breakpoint-2xl: 1536px;  /* Large desktop */
+  --breakpoint-3xl: 1920px;  /* Ultra-wide */
+
+  /* Container Query Sizes */
+  --container-xs: 20rem;     /* 320px */
+  --container-sm: 40rem;     /* 640px */
+  --container-md: 48rem;     /* 768px */
+  --container-lg: 64rem;     /* 1024px */
+  --container-xl: 80rem;     /* 1280px */
+  --container-2xl: 96rem;    /* 1536px */
+
+  /* Fluid Typography Scale */
+  --fluid-text-xs: clamp(0.7rem, 0.66rem + 0.2vw, 0.75rem);
+  --fluid-text-sm: clamp(0.8rem, 0.74rem + 0.3vw, 0.875rem);
+  --fluid-text-base: clamp(0.9rem, 0.83rem + 0.35vw, 1rem);
+  --fluid-text-lg: clamp(1rem, 0.91rem + 0.45vw, 1.125rem);
+  --fluid-text-xl: clamp(1.1rem, 0.98rem + 0.6vw, 1.25rem);
+  --fluid-text-2xl: clamp(1.25rem, 1.08rem + 0.85vw, 1.5rem);
+  --fluid-text-3xl: clamp(1.5rem, 1.26rem + 1.2vw, 1.875rem);
+  --fluid-text-4xl: clamp(1.875rem, 1.5rem + 1.875vw, 2.25rem);
+  --fluid-text-5xl: clamp(2.25rem, 1.8rem + 2.25vw, 3rem);
+
+  /* Fluid Spacing Scale */
+  --fluid-space-xs: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  --fluid-space-sm: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+  --fluid-space-md: clamp(0.75rem, 0.6rem + 0.75vw, 1.125rem);
+  --fluid-space-lg: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  --fluid-space-xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+  --fluid-space-2xl: clamp(2rem, 1.6rem + 2vw, 3rem);
+  --fluid-space-3xl: clamp(2.5rem, 2rem + 2.5vw, 3.75rem);
+
+  /* Touch Target Sizes */
+  --touch-target-min: max(44px, 2.75rem);
+  --touch-target-comfortable: max(48px, 3rem);
+  --touch-target-large: max(56px, 3.5rem);
+
+  /* Interactive Spacing */
+  --interactive-padding-sm: max(0.5rem, 8px);
+  --interactive-padding-md: max(0.75rem, 12px);
+  --interactive-padding-lg: max(1rem, 16px);
+
+  /* Grid Gap System */
+  --grid-gap-xs: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+  --grid-gap-sm: clamp(0.75rem, 0.6rem + 0.75vw, 1rem);
+  --grid-gap-md: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  --grid-gap-lg: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+  --grid-gap-xl: clamp(2rem, 1.6rem + 2vw, 2.5rem);
+}
+
+/* ===========================
+   CONTAINER QUERY SYSTEM
+   =========================== */
+
+@supports (container-type: inline-size) {
+  .container {
+    container-type: inline-size;
+    container-name: main;
+  }
+
+  .card-container {
+    container-type: inline-size;
+    container-name: card;
+  }
+
+  .sidebar-container {
+    container-type: inline-size;
+    container-name: sidebar;
+  }
+}
+
+/* Container Query Rules */
+@container main (min-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+@container main (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@container card (max-width: 300px) {
+  .card-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-actions {
+    justify-content: center;
+  }
+}
+
+/* ===========================
+   ENHANCED GRID SYSTEM
+   =========================== */
+
+.responsive-grid {
+  display: grid;
+  gap: var(--grid-gap-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+}
+
+.responsive-grid--dense {
+  grid-auto-flow: dense;
+}
+
+.responsive-grid--masonry {
+  grid-template-rows: masonry;
+}
+
+/* Dynamic Grid Columns */
+.responsive-grid--auto-xs { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.responsive-grid--auto-sm { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.responsive-grid--auto-md { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.responsive-grid--auto-lg { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+.responsive-grid--auto-xl { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+
+/* Subgrid Support */
+@supports (display: subgrid) {
+  .responsive-subgrid {
+    display: subgrid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+}
+
+/* ===========================
+   FLUID COMPONENT SYSTEM
+   =========================== */
+
+.fluid-component {
+  padding: var(--fluid-space-md);
+  margin: var(--fluid-space-sm) 0;
+  border-radius: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
+}
+
+.fluid-button {
+  padding: var(--interactive-padding-md) var(--fluid-space-lg);
+  min-height: var(--touch-target-min);
+  font-size: var(--fluid-text-base);
+  border-radius: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fluid-input {
+  padding: var(--interactive-padding-md);
+  min-height: var(--touch-target-min);
+  font-size: var(--fluid-text-base);
+  border-radius: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  width: 100%;
+}
+
+/* Card Components */
+.responsive-card {
+  padding: var(--fluid-space-lg);
+  border-radius: clamp(0.5rem, 0.4rem + 0.5vw, 1rem);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.responsive-card:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Navigation Components */
+.responsive-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fluid-space-sm);
+  padding: var(--fluid-space-md);
+}
+
+.responsive-nav-item {
+  padding: var(--interactive-padding-sm) var(--interactive-padding-md);
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  font-size: var(--fluid-text-sm);
+}
+
+/* ===========================
+   TOUCH OPTIMIZATION
+   =========================== */
+
+/* Touch Target Compliance */
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-target--comfortable {
+  min-width: var(--touch-target-comfortable);
+  min-height: var(--touch-target-comfortable);
+}
+
+.touch-target--large {
+  min-width: var(--touch-target-large);
+  min-height: var(--touch-target-large);
+}
+
+/* Touch-Specific Interactions */
+@media (hover: none) and (pointer: coarse) {
+  .responsive-button {
+    min-height: var(--touch-target-comfortable);
+    padding: var(--interactive-padding-md) var(--fluid-space-lg);
+    font-size: var(--fluid-text-base);
+  }
+
+  .responsive-link {
+    min-height: var(--touch-target-min);
+    display: inline-flex;
+    align-items: center;
+    padding: var(--interactive-padding-sm);
+  }
+
+  .responsive-input {
+    min-height: var(--touch-target-comfortable);
+    font-size: max(16px, var(--fluid-text-base)); /* Prevent zoom on iOS */
+  }
+
+  .responsive-select {
+    min-height: var(--touch-target-comfortable);
+    padding: var(--interactive-padding-md);
+  }
+
+  /* Enhanced scroll behavior */
+  .responsive-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+
+  /* Touch gestures */
+  .touch-swipeable {
+    touch-action: pan-x;
+  }
+
+  .touch-pannable {
+    touch-action: pan-y;
+  }
+
+  .touch-zoomable {
+    touch-action: pinch-zoom;
+  }
+}
+
+/* ===========================
+   RESPONSIVE LAYOUT PATTERNS
+   =========================== */
+
+/* Stack Layout */
+.responsive-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fluid-space-md);
+}
+
+.responsive-stack--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+/* Sidebar Layout */
+.responsive-sidebar-layout {
+  display: grid;
+  gap: var(--grid-gap-md);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .responsive-sidebar-layout {
+    grid-template-columns: minmax(200px, 1fr) 3fr;
+  }
+
+  .responsive-sidebar-layout--reverse {
+    grid-template-columns: 3fr minmax(200px, 1fr);
+  }
+}
+
+/* Center Layout */
+.responsive-center {
+  max-width: var(--container-lg);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--fluid-space-md);
+  padding-right: var(--fluid-space-md);
+}
+
+/* Cover Layout */
+.responsive-cover {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: var(--fluid-space-lg);
+}
+
+.responsive-cover > * {
+  margin-top: var(--fluid-space-md);
+  margin-bottom: var(--fluid-space-md);
+}
+
+.responsive-cover > :first-child {
+  margin-top: 0;
+}
+
+.responsive-cover > :last-child {
+  margin-bottom: 0;
+}
+
+.responsive-cover__center {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+/* ===========================
+   MOBILE-FIRST BREAKPOINTS
+   =========================== */
+
+/* Small Mobile (320px+) */
+@media (min-width: 320px) {
+  .responsive-show-xs { display: block; }
+  .responsive-hide-xs { display: none; }
+}
+
+/* Large Mobile (640px+) */
+@media (min-width: 640px) {
+  .responsive-show-sm { display: block; }
+  .responsive-hide-sm { display: none; }
+
+  :root {
+    --grid-gap-md: 1.5rem;
+  }
+
+  .responsive-stack--horizontal\@sm {
+    flex-direction: row;
+  }
+}
+
+/* Tablet (768px+) */
+@media (min-width: 768px) {
+  .responsive-show-md { display: block; }
+  .responsive-hide-md { display: none; }
+
+  :root {
+    --grid-gap-md: 2rem;
+  }
+
+  .responsive-columns-2\@md {
+    columns: 2;
+    column-gap: var(--grid-gap-md);
+  }
+}
+
+/* Small Desktop (1024px+) */
+@media (min-width: 1024px) {
+  .responsive-show-lg { display: block; }
+  .responsive-hide-lg { display: none; }
+
+  .responsive-columns-3\@lg {
+    columns: 3;
+    column-gap: var(--grid-gap-md);
+  }
+}
+
+/* Desktop (1280px+) */
+@media (min-width: 1280px) {
+  .responsive-show-xl { display: block; }
+  .responsive-hide-xl { display: none; }
+
+  .responsive-columns-4\@xl {
+    columns: 4;
+    column-gap: var(--grid-gap-md);
+  }
+}
+
+/* Large Desktop (1536px+) */
+@media (min-width: 1536px) {
+  .responsive-show-2xl { display: block; }
+  .responsive-hide-2xl { display: none; }
+
+  :root {
+    --grid-gap-md: 2.5rem;
+  }
+}
+
+/* Ultra-wide (1920px+) */
+@media (min-width: 1920px) {
+  .responsive-show-3xl { display: block; }
+  .responsive-hide-3xl { display: none; }
+
+  .responsive-max-width-container {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ===========================
+   DESKTOP ENHANCEMENTS
+   =========================== */
+
+@media (hover: hover) and (pointer: fine) {
+  .responsive-hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+
+  .responsive-hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  .responsive-hover-brightness:hover {
+    filter: brightness(1.1);
+  }
+
+  /* Keyboard navigation enhancements */
+  .responsive-focus-visible:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+}
+
+/* ===========================
+   ACCESSIBILITY FEATURES
+   =========================== */
+
+/* Screen Reader Utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:active,
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: inherit;
+}
+
+/* Focus Management */
+.focus-trap {
+  isolation: isolate;
+}
+
+/* High Contrast Support */
+@media (prefers-contrast: high) {
+  .responsive-button,
+  .responsive-input,
+  .responsive-card {
+    border: 2px solid currentColor;
+  }
+
+  .responsive-button:focus,
+  .responsive-input:focus {
+    outline: 3px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .responsive-hover-lift:hover,
+  .responsive-hover-scale:hover {
+    transform: none;
+  }
+}
+
+/* ===========================
+   PRINT OPTIMIZATIONS
+   =========================== */
+
+@media print {
+  .responsive-grid {
+    display: block;
+  }
+
+  .responsive-grid > * {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  .responsive-hide-print {
+    display: none !important;
+  }
+
+  .responsive-card {
+    border: 1px solid #000;
+    box-shadow: none;
+    page-break-inside: avoid;
+  }
+}
+
+/* ===========================
+   UTILITY CLASSES
+   =========================== */
+
+/* Aspect Ratios */
+.aspect-square { aspect-ratio: 1 / 1; }
+.aspect-video { aspect-ratio: 16 / 9; }
+.aspect-photo { aspect-ratio: 4 / 3; }
+.aspect-golden { aspect-ratio: 1.618 / 1; }
+
+/* Object Fit */
+.object-cover { object-fit: cover; }
+.object-contain { object-fit: contain; }
+.object-fill { object-fit: fill; }
+
+/* Truncation */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Text Wrap */
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
+
+/* ===========================
+   COMPONENT INTEGRATION
+   =========================== */
+
+/* Form Components */
+.responsive-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fluid-space-lg);
+  max-width: var(--container-md);
+}
+
+.responsive-form-row {
+  display: grid;
+  gap: var(--fluid-space-md);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .responsive-form-row--2-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .responsive-form-row--3-cols {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* Navigation Components */
+.responsive-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fluid-space-sm);
+  padding: var(--fluid-space-sm) 0;
+}
+
+.responsive-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--fluid-space-xs);
+  padding: var(--fluid-space-lg) 0;
+}
+
+/* Modal Components */
+.responsive-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fluid-space-md);
+  z-index: 1000;
+}
+
+.responsive-modal-content {
+  background: white;
+  border-radius: clamp(0.5rem, 0.4rem + 0.5vw, 1rem);
+  padding: var(--fluid-space-xl);
+  max-width: min(90vw, var(--container-md));
+  max-height: min(90vh, 80rem);
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+@media (max-width: 640px) {
+  .responsive-modal-content {
+    margin: var(--fluid-space-md);
+    max-width: calc(100vw - 2 * var(--fluid-space-md));
+    max-height: calc(100vh - 2 * var(--fluid-space-md));
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "testMatch": [
+    "<rootDir>/unit/**/*.test.ts"
+  ],
+  "setupFilesAfterEnv": [
+    "<rootDir>/test-utils/setup.ts"
+  ],
+  "maxWorkers": 1,
+  "testTimeout": 60000,
+  "verbose": false,
+  "collectCoverage": false,
+  "coverageDirectory": "/mnt/c/mainframe-ai-assistant/coverage/database",
+  "coverageReporters": [
+    "text",
+    "lcov",
+    "html",
+    "cobertura"
+  ],
+  "forceExit": true,
+  "detectOpenHandles": true
+}

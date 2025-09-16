@@ -1,0 +1,474 @@
+/**
+ * Visual Hierarchy System - Mainframe KB Assistant
+ *
+ * Z-index layers, focus management, visual depth, and interaction states
+ * for consistent visual hierarchy and accessibility.
+ */
+
+:root {
+  /* Z-index scale for layering */
+  --z-index-behind: -1;
+  --z-index-base: 0;
+  --z-index-raised: 10;
+  --z-index-elevated: 20;
+  --z-index-floating: 30;
+  --z-index-overlay: 40;
+  --z-index-modal: 50;
+  --z-index-popover: 60;
+  --z-index-tooltip: 70;
+  --z-index-toast: 80;
+  --z-index-loading: 90;
+  --z-index-maximum: 100;
+
+  /* Shadow system for depth perception */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+  /* Focus ring system */
+  --focus-ring-color: #3b82f6;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-opacity: 0.5;
+
+  /* Surface colors for layering */
+  --surface-base: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-elevated: #f9fafb;
+  --surface-floating: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+  --surface-modal: #ffffff;
+
+  /* Border colors for separation */
+  --border-subtle: #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-strong: #d1d5db;
+  --border-accent: #3b82f6;
+}
+
+/* Dark mode surface and shadow adjustments */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-base: #111827;
+    --surface-raised: #1f2937;
+    --surface-elevated: #374151;
+    --surface-floating: #1f2937;
+    --surface-modal: #1f2937;
+    --surface-overlay: rgba(0, 0, 0, 0.75);
+
+    --border-subtle: #374151;
+    --border-default: #4b5563;
+    --border-strong: #6b7280;
+
+    /* Enhanced shadows for dark mode */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+    --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* ===============================================
+   Z-INDEX UTILITIES
+   =============================================== */
+
+.z-behind { z-index: var(--z-index-behind); }
+.z-base { z-index: var(--z-index-base); }
+.z-raised { z-index: var(--z-index-raised); }
+.z-elevated { z-index: var(--z-index-elevated); }
+.z-floating { z-index: var(--z-index-floating); }
+.z-overlay { z-index: var(--z-index-overlay); }
+.z-modal { z-index: var(--z-index-modal); }
+.z-popover { z-index: var(--z-index-popover); }
+.z-tooltip { z-index: var(--z-index-tooltip); }
+.z-toast { z-index: var(--z-index-toast); }
+.z-loading { z-index: var(--z-index-loading); }
+.z-maximum { z-index: var(--z-index-maximum); }
+
+/* ===============================================
+   SHADOW UTILITIES
+   =============================================== */
+
+.shadow-none { box-shadow: none; }
+.shadow-xs { box-shadow: var(--shadow-xs); }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow { box-shadow: var(--shadow-base); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+.shadow-2xl { box-shadow: var(--shadow-2xl); }
+.shadow-inner { box-shadow: var(--shadow-inner); }
+
+/* ===============================================
+   SURFACE UTILITIES
+   =============================================== */
+
+.surface-base {
+  background-color: var(--surface-base);
+  z-index: var(--z-index-base);
+}
+
+.surface-raised {
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-xs);
+  z-index: var(--z-index-raised);
+}
+
+.surface-elevated {
+  background-color: var(--surface-elevated);
+  box-shadow: var(--shadow-sm);
+  z-index: var(--z-index-elevated);
+}
+
+.surface-floating {
+  background-color: var(--surface-floating);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-index-floating);
+}
+
+.surface-overlay {
+  background-color: var(--surface-overlay);
+  z-index: var(--z-index-overlay);
+}
+
+.surface-modal {
+  background-color: var(--surface-modal);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-index-modal);
+}
+
+/* ===============================================
+   BORDER UTILITIES
+   =============================================== */
+
+.border-subtle { border-color: var(--border-subtle); }
+.border-default { border-color: var(--border-default); }
+.border-strong { border-color: var(--border-strong); }
+.border-accent { border-color: var(--border-accent); }
+
+/* ===============================================
+   FOCUS MANAGEMENT
+   =============================================== */
+
+/* Default focus ring */
+.focus-ring {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Accessible focus styles */
+*:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Remove default focus outline for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Enhanced focus for interactive elements */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="link"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset))
+              rgba(59, 130, 246, var(--focus-ring-opacity));
+}
+
+/* Focus within containers */
+.focus-within:focus-within {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Custom focus ring colors */
+.focus-ring-accent:focus-visible {
+  outline-color: var(--focus-ring-color);
+}
+
+.focus-ring-success:focus-visible {
+  outline-color: #10b981;
+}
+
+.focus-ring-warning:focus-visible {
+  outline-color: #f59e0b;
+}
+
+.focus-ring-error:focus-visible {
+  outline-color: #ef4444;
+}
+
+/* ===============================================
+   INTERACTION STATES
+   =============================================== */
+
+/* Hover elevation */
+.hover-elevate:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.hover-elevate-sm:hover {
+  transform: translateY(-0.5px);
+  box-shadow: var(--shadow-sm);
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.hover-elevate-lg:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+/* Press down effect */
+.hover-press:active {
+  transform: translateY(1px);
+  transition: transform 100ms ease-in;
+}
+
+/* Scale interactions */
+.hover-scale:hover {
+  transform: scale(1.02);
+  transition: transform 150ms ease-out;
+}
+
+.hover-scale-sm:hover {
+  transform: scale(1.01);
+  transition: transform 150ms ease-out;
+}
+
+.hover-scale-lg:hover {
+  transform: scale(1.05);
+  transition: transform 150ms ease-out;
+}
+
+/* ===============================================
+   LAYER COMPOSITIONS
+   =============================================== */
+
+/* Application shell layers */
+.app-background {
+  background-color: var(--surface-base);
+  z-index: var(--z-index-behind);
+}
+
+.app-header {
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  z-index: var(--z-index-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.app-sidebar {
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  z-index: var(--z-index-raised);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.app-main {
+  background-color: var(--surface-base);
+  z-index: var(--z-index-base);
+}
+
+.app-footer {
+  background-color: var(--surface-raised);
+  border-top: 1px solid var(--border-subtle);
+  z-index: var(--z-index-base);
+}
+
+/* Content area layers */
+.content-card {
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+}
+
+.content-panel {
+  background-color: var(--surface-elevated);
+  box-shadow: var(--shadow-base);
+  border: 1px solid var(--border-default);
+  border-radius: 0.75rem;
+}
+
+.content-hero {
+  background-color: var(--surface-floating);
+  box-shadow: var(--shadow-md);
+  border-radius: 1rem;
+}
+
+/* Interactive element layers */
+.dropdown-menu {
+  background-color: var(--surface-floating);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+  z-index: var(--z-index-popover);
+}
+
+.tooltip {
+  background-color: var(--surface-modal);
+  box-shadow: var(--shadow-lg);
+  border-radius: 0.375rem;
+  z-index: var(--z-index-tooltip);
+}
+
+.modal-backdrop {
+  background-color: var(--surface-overlay);
+  z-index: var(--z-index-overlay);
+}
+
+.modal-content {
+  background-color: var(--surface-modal);
+  box-shadow: var(--shadow-xl);
+  border-radius: 0.75rem;
+  z-index: var(--z-index-modal);
+}
+
+/* ===============================================
+   VISUAL DEPTH HELPERS
+   =============================================== */
+
+/* Depth levels for consistent layering */
+.depth-0 {
+  box-shadow: none;
+  border: 1px solid var(--border-subtle);
+}
+
+.depth-1 {
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--border-subtle);
+}
+
+.depth-2 {
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-default);
+}
+
+.depth-3 {
+  box-shadow: var(--shadow-base);
+  border: none;
+}
+
+.depth-4 {
+  box-shadow: var(--shadow-md);
+  border: none;
+}
+
+.depth-5 {
+  box-shadow: var(--shadow-lg);
+  border: none;
+}
+
+.depth-6 {
+  box-shadow: var(--shadow-xl);
+  border: none;
+}
+
+/* ===============================================
+   ACCESSIBILITY ENHANCEMENTS
+   =============================================== */
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  :root {
+    --focus-ring-width: 3px;
+    --border-subtle: #000000;
+    --border-default: #000000;
+    --border-strong: #000000;
+  }
+
+  .surface-raised,
+  .surface-elevated,
+  .surface-floating {
+    border: 2px solid var(--border-default);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .hover-elevate,
+  .hover-elevate-sm,
+  .hover-elevate-lg,
+  .hover-press,
+  .hover-scale,
+  .hover-scale-sm,
+  .hover-scale-lg {
+    transition: none;
+    transform: none;
+  }
+
+  .hover-elevate:hover,
+  .hover-elevate-sm:hover,
+  .hover-elevate-lg:hover {
+    transform: none;
+  }
+
+  .hover-press:active {
+    transform: none;
+  }
+
+  .hover-scale:hover,
+  .hover-scale-sm:hover,
+  .hover-scale-lg:hover {
+    transform: none;
+  }
+}
+
+/* ===============================================
+   STACKING CONTEXT UTILITIES
+   =============================================== */
+
+/* Create new stacking contexts */
+.isolate {
+  isolation: isolate;
+}
+
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-auto {
+  will-change: auto;
+}
+
+/* Transform utilities that create stacking contexts */
+.transform {
+  transform: translateZ(0);
+}
+
+/* ===============================================
+   SKIP LINKS FOR ACCESSIBILITY
+   =============================================== */
+
+.skip-link {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  z-index: var(--z-index-maximum);
+  padding: var(--spacing-2) var(--spacing-4);
+  background-color: var(--surface-modal);
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: 0.25rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.skip-link:focus {
+  top: var(--spacing-4);
+  left: var(--spacing-4);
+}

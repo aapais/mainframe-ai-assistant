@@ -1,0 +1,57 @@
+{
+  "name": "performance-regression-testing",
+  "version": "1.0.0",
+  "description": "Automated performance regression testing system with CI/CD integration",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:performance": "node index.js run",
+    "test:performance:staging": "node index.js run staging",
+    "test:performance:production": "node index.js run production",
+    "test:performance:baseline": "node baseline-runner.js",
+    "performance:report": "node report-generator.js",
+    "performance:consolidate": "node consolidator.js",
+    "performance:dashboard": "node dashboard-generator.js",
+    "performance:analyze": "node analyzer.js",
+    "generate:cicd": "node index.js generate-cicd",
+    "test:alerts": "node index.js test-alerts",
+    "status": "node index.js status",
+    "example": "node examples/example-usage.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "performance",
+    "regression",
+    "testing",
+    "automation",
+    "ci-cd",
+    "monitoring",
+    "alerts",
+    "statistics",
+    "baseline",
+    "trending"
+  ],
+  "author": "Performance Testing Team",
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "chartjs-node-canvas": "^4.1.6",
+    "nodemailer": "^6.9.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/company/performance-regression-testing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/company/performance-regression-testing/issues"
+  },
+  "homepage": "https://github.com/company/performance-regression-testing#readme"
+}

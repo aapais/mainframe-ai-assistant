@@ -1,0 +1,340 @@
+/* Ranking Display Components Styles */
+
+/* Base styles for ranking indicators */
+.ranking-indicator {
+  @apply inline-flex items-center;
+}
+
+.ranking-indicator.badge {
+  @apply px-2 py-1 rounded-full text-xs font-semibold;
+}
+
+.ranking-indicator:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Match highlighting styles */
+.match-highlight {
+  @apply px-1 py-0.5 rounded;
+  position: relative;
+}
+
+.match-highlight:hover {
+  @apply shadow-sm;
+}
+
+.match-highlight:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Exact match highlighting */
+.match-highlight.exact {
+  @apply bg-yellow-200 border-yellow-300;
+  background: linear-gradient(to bottom, #fef3c7, #fde68a);
+}
+
+/* Partial match highlighting */
+.match-highlight.partial {
+  @apply bg-blue-100 border-blue-200;
+  background: linear-gradient(to bottom, #dbeafe, #bfdbfe);
+}
+
+/* Fuzzy match highlighting */
+.match-highlight.fuzzy {
+  @apply bg-orange-100 border-orange-200;
+  background: linear-gradient(to bottom, #fed7aa, #fdba74);
+}
+
+/* Semantic match highlighting */
+.match-highlight.semantic {
+  @apply bg-purple-100 border-purple-200;
+  background: linear-gradient(to bottom, #ede9fe, #ddd6fe);
+}
+
+/* Comparison view styles */
+.comparison-view {
+  @apply w-full;
+}
+
+.comparison-item {
+  @apply transition-all duration-200;
+}
+
+.comparison-item:hover {
+  @apply transform scale-105;
+}
+
+.comparison-item.selected {
+  @apply ring-2 ring-blue-500 shadow-lg;
+}
+
+/* Ranking explanation tooltip styles */
+.ranking-explanation-tooltip {
+  @apply bg-white border shadow-lg rounded-lg;
+  max-width: 400px;
+  z-index: 50;
+}
+
+.ranking-explanation-tooltip .arrow {
+  @apply absolute w-3 h-3 bg-white border transform rotate-45;
+}
+
+/* Confidence indicators */
+.confidence-high {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+
+.confidence-medium {
+  @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+}
+
+.confidence-low {
+  @apply bg-red-100 text-red-800 border-red-200;
+}
+
+/* Score bars and progress indicators */
+.score-bar {
+  @apply relative overflow-hidden bg-gray-200 rounded-full;
+}
+
+.score-bar-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+}
+
+.score-bar-fill.blue {
+  @apply bg-blue-500;
+}
+
+.score-bar-fill.green {
+  @apply bg-green-500;
+}
+
+.score-bar-fill.gradient {
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+}
+
+/* Trend indicators */
+.trend-up {
+  @apply text-green-500;
+}
+
+.trend-down {
+  @apply text-red-500;
+}
+
+.trend-stable {
+  @apply text-gray-500;
+}
+
+/* Star rating styles */
+.star-rating {
+  @apply flex items-center;
+}
+
+.star-rating .star {
+  @apply transition-all duration-200;
+}
+
+.star-rating .star.filled {
+  @apply text-yellow-400;
+}
+
+.star-rating .star.empty {
+  @apply text-gray-300;
+}
+
+/* Gauge styles */
+.gauge-container {
+  @apply relative;
+}
+
+.gauge-needle {
+  @apply absolute;
+  transform-origin: bottom center;
+  transition: transform 1.2s ease-out;
+}
+
+/* Ranking position badges */
+.rank-badge {
+  @apply inline-flex items-center justify-center rounded-full font-bold text-white;
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.rank-badge.top-3 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.rank-badge.top-10 {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.rank-badge.other {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .ranking-indicator,
+  .match-highlight,
+  .comparison-item,
+  .score-bar-fill,
+  .star,
+  .gauge-needle {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .match-highlight {
+    @apply border-2;
+  }
+
+  .ranking-indicator {
+    @apply border-2;
+  }
+
+  .rank-badge {
+    @apply border-2 border-black;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .ranking-explanation-tooltip {
+    @apply bg-gray-800 border-gray-700 text-white;
+  }
+
+  .comparison-item {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .match-highlight.exact {
+    @apply bg-yellow-800 text-yellow-100;
+  }
+
+  .match-highlight.partial {
+    @apply bg-blue-800 text-blue-100;
+  }
+
+  .match-highlight.fuzzy {
+    @apply bg-orange-800 text-orange-100;
+  }
+
+  .match-highlight.semantic {
+    @apply bg-purple-800 text-purple-100;
+  }
+}
+
+/* Focus management for keyboard navigation */
+.ranking-component:focus-within {
+  @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Tooltip positioning utilities */
+.tooltip-top {
+  @apply mb-2;
+}
+
+.tooltip-bottom {
+  @apply mt-2;
+}
+
+.tooltip-left {
+  @apply mr-2;
+}
+
+.tooltip-right {
+  @apply ml-2;
+}
+
+/* Animation keyframes */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Apply animations */
+.animate-slide-in-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.animate-slide-in-down {
+  animation: slideInDown 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive design utilities */
+@media (max-width: 640px) {
+  .comparison-view {
+    @apply space-y-4;
+  }
+
+  .ranking-explanation-tooltip {
+    max-width: 90vw;
+  }
+
+  .rank-badge {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .ranking-indicator,
+  .comparison-item {
+    @apply shadow-none border border-gray-300;
+  }
+
+  .match-highlight {
+    @apply bg-gray-200 text-black;
+  }
+}

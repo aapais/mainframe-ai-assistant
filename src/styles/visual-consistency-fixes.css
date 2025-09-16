@@ -1,0 +1,438 @@
+/**
+ * Visual Consistency Fixes
+ *
+ * This file contains fixes for visual inconsistencies identified in the audit.
+ * These styles should be integrated into the main design system gradually.
+ *
+ * @version 1.0.0
+ * @author Visual Consistency Specialist
+ */
+
+/* ===============================================
+   TYPOGRAPHY CONSISTENCY FIXES
+   =============================================== */
+
+/* Standardize typography overrides in components */
+.search-interface h1,
+.search-interface h2,
+.search-interface h3,
+.search-interface h4,
+.search-interface h5,
+.search-interface h6 {
+  /* Remove component-specific font size overrides */
+  font-size: unset;
+  line-height: unset;
+  font-weight: unset;
+
+  /* Let design system tokens take precedence */
+}
+
+.search-interface h1 { font-size: var(--font-size-3xl); }
+.search-interface h2 { font-size: var(--font-size-2xl); }
+.search-interface h3 { font-size: var(--font-size-xl); }
+.search-interface h4 { font-size: var(--font-size-lg); }
+.search-interface h5 { font-size: var(--font-size-base); }
+.search-interface h6 { font-size: var(--font-size-sm); }
+
+/* Fix line height inconsistencies */
+.form-field__label,
+.form-field__hint,
+.form-field__error {
+  line-height: var(--line-height-normal);
+}
+
+/* Standardize button text sizing */
+.btn,
+.button,
+[role="button"] {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-medium);
+}
+
+.btn--large { font-size: var(--font-size-base); }
+.btn--small { font-size: var(--font-size-xs); }
+
+/* ===============================================
+   SPACING CONSISTENCY FIXES
+   =============================================== */
+
+/* Replace hardcoded spacing in search interface */
+.search-interface {
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+}
+
+.search-interface__header {
+  gap: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+}
+
+.search-interface__main-search {
+  gap: var(--spacing-3);
+}
+
+.search-interface__controls {
+  gap: var(--spacing-4);
+}
+
+.search-interface__content {
+  gap: var(--spacing-6);
+}
+
+.search-interface__sidebar {
+  gap: var(--spacing-4);
+}
+
+/* Fix form field spacing */
+.form-field {
+  margin-bottom: var(--spacing-6);
+}
+
+.form-field__label-container {
+  margin-bottom: var(--spacing-2);
+}
+
+.form-field__hint,
+.form-field__error {
+  margin-top: var(--spacing-1);
+}
+
+/* Standardize button spacing */
+.btn {
+  padding: var(--spacing-2) var(--spacing-4);
+}
+
+.btn--large {
+  padding: var(--spacing-3) var(--spacing-6);
+}
+
+.btn--small {
+  padding: var(--spacing-1) var(--spacing-3);
+}
+
+.btn--icon {
+  padding: var(--spacing-2);
+  min-width: calc(var(--spacing-2) * 2 + 1rem); /* 2 * padding + icon size */
+}
+
+/* ===============================================
+   COLOR CONSISTENCY FIXES
+   =============================================== */
+
+/* Replace hardcoded colors with design tokens */
+.search-interface {
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+}
+
+.search-interface__header {
+  border-bottom-color: var(--color-border-subtle);
+}
+
+.search-interface__advanced,
+.search-interface__analytics {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border-subtle);
+}
+
+/* Fix button color consistency */
+.btn--primary {
+  background: var(--color-interactive-primary);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-interactive-primary);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-interactive-primary-hover);
+  border-color: var(--color-interactive-primary-hover);
+}
+
+.btn--primary:focus {
+  box-shadow: 0 0 0 3px var(--color-interactive-primary-focus);
+}
+
+.btn--secondary {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border-strong);
+}
+
+.btn--secondary.active {
+  background: var(--color-interactive-primary-subtle);
+  color: var(--color-interactive-primary);
+  border-color: var(--color-interactive-primary-subtle-border);
+}
+
+/* Fix form field colors */
+.form-field__input {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-border-default);
+  color: var(--color-text-primary);
+}
+
+.form-field__input:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-interactive-primary-focus);
+}
+
+.form-field__input:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-border-strong);
+}
+
+.form-field__input--error {
+  border-color: var(--color-border-error);
+  background-color: var(--color-surface-error-subtle);
+}
+
+.form-field__input--error:focus {
+  border-color: var(--color-border-error);
+  box-shadow: 0 0 0 3px var(--color-interactive-error-focus);
+}
+
+/* ===============================================
+   ANIMATION CONSISTENCY FIXES
+   =============================================== */
+
+/* Standardize animation durations and easings */
+.btn {
+  transition:
+    background-color var(--duration-fast) var(--easing-smooth),
+    border-color var(--duration-fast) var(--easing-smooth),
+    color var(--duration-fast) var(--easing-smooth),
+    box-shadow var(--duration-fast) var(--easing-smooth),
+    transform var(--duration-fast) var(--easing-smooth);
+}
+
+.form-field__input,
+.form-field__checkbox,
+.form-field__tooltip-trigger {
+  transition:
+    border-color var(--duration-fast) var(--easing-smooth),
+    background-color var(--duration-fast) var(--easing-smooth),
+    box-shadow var(--duration-fast) var(--easing-smooth);
+}
+
+/* Optimize animations for better performance */
+.btn:active {
+  transform: scale(0.98);
+}
+
+.form-field__tooltip-trigger:hover,
+.form-field__tooltip-trigger:focus {
+  transform: scale(1.05);
+}
+
+/* Ensure reduced motion is respected */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .form-field__input,
+  .form-field__checkbox,
+  .form-field__tooltip-trigger,
+  .search-interface *,
+  .responsive-search-layout * {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* ===============================================
+   RESPONSIVE CONSISTENCY FIXES
+   =============================================== */
+
+/* Simplify complex responsive behavior */
+.search-interface__content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+  .search-interface__content {
+    grid-template-columns: 1fr 300px;
+    gap: var(--spacing-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .search-interface__content {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+/* Fix responsive spacing */
+.search-interface {
+  padding: var(--spacing-3);
+}
+
+@media (min-width: 640px) {
+  .search-interface {
+    padding: var(--spacing-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .search-interface {
+    padding: var(--spacing-6);
+  }
+}
+
+/* Standardize form field responsive behavior */
+.form-field {
+  margin-bottom: var(--spacing-4);
+}
+
+@media (min-width: 640px) {
+  .form-field {
+    margin-bottom: var(--spacing-6);
+  }
+}
+
+/* ===============================================
+   ACCESSIBILITY ENHANCEMENTS
+   =============================================== */
+
+/* Ensure focus indicators are consistent */
+.search-interface *:focus-visible,
+.responsive-search-layout *:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  .btn,
+  .form-field__input,
+  .form-field__checkbox {
+    border-width: 2px;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .search-interface,
+  .responsive-search-layout {
+    --color-border-default: #000000;
+    --color-border-subtle: #333333;
+    --color-border-strong: #000000;
+  }
+}
+
+/* Dark mode color adjustments */
+@media (prefers-color-scheme: dark) {
+  .search-interface {
+    --color-surface-base: rgb(17 24 39);
+    --color-surface-elevated: rgb(31 41 55);
+    --color-surface-subtle: rgb(55 65 81);
+    --color-text-primary: rgb(243 244 246);
+    --color-text-secondary: rgb(156 163 175);
+    --color-border-default: rgb(75 85 99);
+    --color-border-subtle: rgb(55 65 81);
+    --color-border-strong: rgb(107 114 128);
+  }
+}
+
+/* ===============================================
+   PERFORMANCE OPTIMIZATIONS
+   =============================================== */
+
+/* GPU acceleration for smooth animations */
+.btn:hover,
+.form-field__input:focus,
+.search-interface__sidebar,
+.responsive-search-layout .animate-slide-in-left,
+.responsive-search-layout .animate-slide-in-right {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Remove will-change after animations complete */
+.btn:not(:hover),
+.form-field__input:not(:focus) {
+  will-change: auto;
+}
+
+/* Optimize layout containment */
+.search-interface__results,
+.search-interface__sidebar,
+.form-field {
+  contain: layout style;
+}
+
+.search-interface__content {
+  contain: layout;
+}
+
+/* ===============================================
+   COMPONENT-SPECIFIC FIXES
+   =============================================== */
+
+/* Badge consistency */
+.badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-full);
+  background: var(--color-interactive-primary);
+  color: var(--color-text-on-primary);
+}
+
+/* Loading states consistency */
+.search-interface--loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.search-interface--loading .search-interface__results::before {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--color-border-subtle);
+  border-top-color: var(--color-interactive-primary);
+  border-radius: var(--border-radius-full);
+  animation: spin var(--duration-slow) linear infinite;
+}
+
+/* Error and success states */
+.search-interface--error {
+  border-color: var(--color-border-error);
+}
+
+.search-interface--error .search-interface__header {
+  border-bottom-color: var(--color-border-error);
+}
+
+.search-interface--success .search-interface__header {
+  border-bottom-color: var(--color-border-success);
+}
+
+/* ===============================================
+   PRINT OPTIMIZATIONS
+   =============================================== */
+
+@media print {
+  .search-interface {
+    --color-surface-base: white;
+    --color-surface-elevated: white;
+    --color-surface-subtle: #f8f8f8;
+    --color-text-primary: black;
+    --color-text-secondary: #333333;
+    --color-border-default: #cccccc;
+    --color-border-subtle: #eeeeee;
+  }
+
+  .search-interface__sidebar,
+  .search-interface__controls,
+  .btn {
+    display: none !important;
+  }
+
+  .search-interface__content {
+    grid-template-columns: 1fr !important;
+  }
+}

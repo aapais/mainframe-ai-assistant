@@ -1,0 +1,517 @@
+/**
+ * Typography System - Mainframe KB Assistant
+ *
+ * Responsive typography scale using clamp() functions for fluid scaling
+ * with consistent line heights, optimal reading experience, and hierarchy.
+ */
+
+:root {
+  /* Base font settings */
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --font-family-system: var(--font-family-sans);
+
+  /* Base font size and scaling */
+  --font-size-base: 16px;
+  --font-scale-ratio: 1.250; /* Major Third */
+
+  /* Responsive typography scale using clamp() */
+  --font-size-xs: clamp(0.75rem, 0.69rem + 0.31vw, 0.875rem);      /* 12px → 14px */
+  --font-size-sm: clamp(0.875rem, 0.81rem + 0.31vw, 1rem);         /* 14px → 16px */
+  --font-size-base: clamp(1rem, 0.94rem + 0.31vw, 1.125rem);       /* 16px → 18px */
+  --font-size-lg: clamp(1.125rem, 1.06rem + 0.31vw, 1.25rem);      /* 18px → 20px */
+  --font-size-xl: clamp(1.25rem, 1.19rem + 0.31vw, 1.375rem);      /* 20px → 22px */
+  --font-size-2xl: clamp(1.5rem, 1.38rem + 0.63vw, 1.75rem);       /* 24px → 28px */
+  --font-size-3xl: clamp(1.875rem, 1.69rem + 0.94vw, 2.25rem);     /* 30px → 36px */
+  --font-size-4xl: clamp(2.25rem, 2.06rem + 0.94vw, 2.75rem);      /* 36px → 44px */
+  --font-size-5xl: clamp(3rem, 2.69rem + 1.56vw, 3.75rem);         /* 48px → 60px */
+
+  /* Line heights for optimal readability */
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  /* Font weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Letter spacing for different text sizes */
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+
+  /* Text colors for typography hierarchy */
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-muted: #d1d5db;
+  --text-inverse: #ffffff;
+  --text-accent: #3b82f6;
+  --text-success: #10b981;
+  --text-warning: #f59e0b;
+  --text-error: #ef4444;
+}
+
+/* Dark mode text colors */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    --text-muted: #6b7280;
+    --text-inverse: #1a1a1a;
+  }
+}
+
+/* ===============================================
+   BASE TYPOGRAPHY STYLES
+   =============================================== */
+
+/* Apply consistent base styles */
+html {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+body {
+  font-family: var(--font-family-system);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  letter-spacing: var(--letter-spacing-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ===============================================
+   HEADING STYLES
+   =============================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--text-primary);
+  margin-top: 0;
+}
+
+h1, .text-5xl {
+  font-size: var(--font-size-5xl);
+  line-height: var(--line-height-none);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tighter);
+  margin-bottom: var(--spacing-6);
+}
+
+h2, .text-4xl {
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-5);
+}
+
+h3, .text-3xl {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-4);
+}
+
+h4, .text-2xl {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-snug);
+  margin-bottom: var(--spacing-3);
+}
+
+h5, .text-xl {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-snug);
+  margin-bottom: var(--spacing-2);
+}
+
+h6, .text-lg {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-snug);
+  margin-bottom: var(--spacing-2);
+}
+
+/* ===============================================
+   TEXT SIZE UTILITIES
+   =============================================== */
+
+.text-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.text-base {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-snug);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-snug);
+}
+
+.text-2xl {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-snug);
+}
+
+.text-3xl {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-tight);
+}
+
+.text-4xl {
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+}
+
+.text-5xl {
+  font-size: var(--font-size-5xl);
+  line-height: var(--line-height-none);
+}
+
+/* ===============================================
+   FONT WEIGHT UTILITIES
+   =============================================== */
+
+.font-light { font-weight: var(--font-weight-light); }
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* ===============================================
+   FONT FAMILY UTILITIES
+   =============================================== */
+
+.font-sans { font-family: var(--font-family-sans); }
+.font-mono { font-family: var(--font-family-mono); }
+.font-system { font-family: var(--font-family-system); }
+
+/* ===============================================
+   LINE HEIGHT UTILITIES
+   =============================================== */
+
+.leading-none { line-height: var(--line-height-none); }
+.leading-tight { line-height: var(--line-height-tight); }
+.leading-snug { line-height: var(--line-height-snug); }
+.leading-normal { line-height: var(--line-height-normal); }
+.leading-relaxed { line-height: var(--line-height-relaxed); }
+.leading-loose { line-height: var(--line-height-loose); }
+
+/* ===============================================
+   LETTER SPACING UTILITIES
+   =============================================== */
+
+.tracking-tighter { letter-spacing: var(--letter-spacing-tighter); }
+.tracking-tight { letter-spacing: var(--letter-spacing-tight); }
+.tracking-normal { letter-spacing: var(--letter-spacing-normal); }
+.tracking-wide { letter-spacing: var(--letter-spacing-wide); }
+.tracking-wider { letter-spacing: var(--letter-spacing-wider); }
+.tracking-widest { letter-spacing: var(--letter-spacing-widest); }
+
+/* ===============================================
+   TEXT COLOR UTILITIES
+   =============================================== */
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-muted { color: var(--text-muted); }
+.text-inverse { color: var(--text-inverse); }
+.text-accent { color: var(--text-accent); }
+.text-success { color: var(--text-success); }
+.text-warning { color: var(--text-warning); }
+.text-error { color: var(--text-error); }
+
+/* ===============================================
+   TEXT ALIGNMENT UTILITIES
+   =============================================== */
+
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+/* ===============================================
+   TEXT TRANSFORM UTILITIES
+   =============================================== */
+
+.uppercase { text-transform: uppercase; }
+.lowercase { text-transform: lowercase; }
+.capitalize { text-transform: capitalize; }
+.normal-case { text-transform: none; }
+
+/* ===============================================
+   TEXT DECORATION UTILITIES
+   =============================================== */
+
+.underline { text-decoration: underline; }
+.line-through { text-decoration: line-through; }
+.no-underline { text-decoration: none; }
+
+/* ===============================================
+   SEMANTIC TEXT STYLES
+   =============================================== */
+
+/* Body text variations */
+.body-large {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  color: var(--text-primary);
+}
+
+.body-default {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+}
+
+.body-small {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  color: var(--text-secondary);
+}
+
+.body-caption {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Display text for hero sections */
+.display-large {
+  font-size: var(--font-size-5xl);
+  line-height: var(--line-height-none);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tighter);
+}
+
+.display-medium {
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.display-small {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Label text for forms and UI */
+.label-large {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--text-primary);
+}
+
+.label-default {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--text-secondary);
+}
+
+.label-small {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-none);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+
+/* Code and technical text */
+.code {
+  font-family: var(--font-family-mono);
+  font-size: 0.875em; /* Relative to parent */
+  background-color: rgba(55, 65, 81, 0.1);
+  padding: 0.125em 0.25em;
+  border-radius: 0.25em;
+  color: var(--text-accent);
+}
+
+.code-block {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  background-color: rgba(55, 65, 81, 0.05);
+  padding: var(--spacing-4);
+  border-radius: 0.5em;
+  overflow-x: auto;
+  color: var(--text-primary);
+}
+
+/* ===============================================
+   RESPONSIVE TYPOGRAPHY
+   =============================================== */
+
+@media (min-width: 640px) {
+  .sm\:text-xs { font-size: var(--font-size-xs); }
+  .sm\:text-sm { font-size: var(--font-size-sm); }
+  .sm\:text-base { font-size: var(--font-size-base); }
+  .sm\:text-lg { font-size: var(--font-size-lg); }
+  .sm\:text-xl { font-size: var(--font-size-xl); }
+  .sm\:text-2xl { font-size: var(--font-size-2xl); }
+  .sm\:text-3xl { font-size: var(--font-size-3xl); }
+}
+
+@media (min-width: 768px) {
+  .md\:text-xs { font-size: var(--font-size-xs); }
+  .md\:text-sm { font-size: var(--font-size-sm); }
+  .md\:text-base { font-size: var(--font-size-base); }
+  .md\:text-lg { font-size: var(--font-size-lg); }
+  .md\:text-xl { font-size: var(--font-size-xl); }
+  .md\:text-2xl { font-size: var(--font-size-2xl); }
+  .md\:text-3xl { font-size: var(--font-size-3xl); }
+  .md\:text-4xl { font-size: var(--font-size-4xl); }
+}
+
+@media (min-width: 1024px) {
+  .lg\:text-xs { font-size: var(--font-size-xs); }
+  .lg\:text-sm { font-size: var(--font-size-sm); }
+  .lg\:text-base { font-size: var(--font-size-base); }
+  .lg\:text-lg { font-size: var(--font-size-lg); }
+  .lg\:text-xl { font-size: var(--font-size-xl); }
+  .lg\:text-2xl { font-size: var(--font-size-2xl); }
+  .lg\:text-3xl { font-size: var(--font-size-3xl); }
+  .lg\:text-4xl { font-size: var(--font-size-4xl); }
+  .lg\:text-5xl { font-size: var(--font-size-5xl); }
+}
+
+/* ===============================================
+   ACCESSIBILITY ENHANCEMENTS
+   =============================================== */
+
+/* Respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text-primary: #ffffff;
+      --text-secondary: #cccccc;
+      --text-muted: #999999;
+    }
+  }
+}
+
+/* Larger text preference */
+@media (prefers-reduced-data: reduce) {
+  /* Use system fonts for better performance */
+  :root {
+    --font-family-sans: system-ui, sans-serif;
+    --font-family-mono: monospace;
+  }
+}
+
+/* ===============================================
+   PRINT STYLES
+   =============================================== */
+
+@media print {
+  :root {
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-tertiary: #666666;
+    --text-muted: #999999;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  h1 { font-size: 18pt; }
+  h2 { font-size: 16pt; }
+  h3 { font-size: 14pt; }
+  h4, h5, h6 { font-size: 12pt; }
+
+  .text-accent,
+  .text-success,
+  .text-warning,
+  .text-error {
+    color: var(--text-primary) !important;
+  }
+}
+
+/* ===============================================
+   UTILITY COMBINATIONS
+   =============================================== */
+
+/* Common text combinations for consistent usage */
+.heading-primary {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.heading-secondary {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-snug);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-3);
+}
+
+.heading-tertiary {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-snug);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-2);
+}
+
+.paragraph {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}

@@ -1,0 +1,275 @@
+/**
+ * Accenture-branded Button Component Styles
+ * Implements official Accenture brand guidelines
+ */
+
+/* Base button styles */
+.btn {
+  @apply relative inline-flex items-center justify-center;
+  @apply font-medium text-center no-underline;
+  @apply border border-transparent rounded-md;
+  @apply transition-all duration-200 ease-in-out;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply font-accenture;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+/* Size variants */
+.btn--small {
+  @apply px-3 py-1.5 text-sm;
+  min-height: 2rem;
+}
+
+.btn--medium {
+  @apply px-4 py-2 text-base;
+  min-height: 2.5rem;
+}
+
+.btn--large {
+  @apply px-6 py-3 text-lg;
+  min-height: 3rem;
+}
+
+/* Primary variant - Accenture Purple */
+.btn--primary {
+  @apply bg-accenture-purple text-white;
+  @apply hover:bg-primary-600 active:bg-primary-700;
+  @apply focus:ring-accenture-purple;
+  @apply shadow-md hover:shadow-lg active:shadow-sm;
+}
+
+.btn--primary:disabled {
+  @apply bg-gray-400 text-gray-300;
+}
+
+/* Secondary variant - White with purple border */
+.btn--secondary {
+  @apply bg-white text-accenture-purple border-accenture-purple;
+  @apply hover:bg-gray-50 active:bg-gray-100;
+  @apply focus:ring-accenture-purple;
+  @apply shadow-sm hover:shadow-md;
+}
+
+.btn--secondary:disabled {
+  @apply bg-gray-100 text-gray-400 border-gray-300;
+}
+
+/* Success variant */
+.btn--success {
+  @apply bg-green-600 text-white;
+  @apply hover:bg-green-700 active:bg-green-800;
+  @apply focus:ring-green-500;
+  @apply shadow-md hover:shadow-lg;
+}
+
+/* Danger variant */
+.btn--danger {
+  @apply bg-red-600 text-white;
+  @apply hover:bg-red-700 active:bg-red-800;
+  @apply focus:ring-red-500;
+  @apply shadow-md hover:shadow-lg;
+}
+
+/* Ghost variant */
+.btn--ghost {
+  @apply bg-transparent text-gray-700;
+  @apply hover:bg-gray-100 active:bg-gray-200;
+  @apply focus:ring-gray-500;
+  @apply border-transparent;
+}
+
+/* Link variant */
+.btn--link {
+  @apply bg-transparent text-accenture-purple;
+  @apply hover:text-primary-700 hover:underline;
+  @apply focus:ring-accenture-purple;
+  @apply border-transparent shadow-none;
+  @apply p-0 h-auto min-h-0;
+}
+
+/* Full width */
+.btn--full-width {
+  @apply w-full;
+}
+
+/* Loading state */
+.btn--loading {
+  @apply cursor-wait;
+}
+
+.btn__loading {
+  @apply flex items-center justify-center;
+  @apply absolute inset-0;
+}
+
+/* Icon styles */
+.btn__icon {
+  @apply flex items-center justify-center;
+  @apply flex-shrink-0;
+}
+
+.btn--small .btn__icon {
+  @apply w-4 h-4;
+}
+
+.btn--medium .btn__icon {
+  @apply w-5 h-5;
+}
+
+.btn--large .btn__icon {
+  @apply w-6 h-6;
+}
+
+/* Text with icon spacing */
+.btn__icon + .btn__text {
+  @apply ml-2;
+}
+
+.btn__text + .btn__icon {
+  @apply ml-2;
+}
+
+/* Badge styles */
+.btn--with-badge {
+  @apply relative;
+}
+
+.btn__badge {
+  @apply absolute -top-1 -right-1;
+  @apply bg-red-500 text-white text-xs;
+  @apply rounded-full min-w-5 h-5;
+  @apply flex items-center justify-center;
+  @apply px-1.5 py-0.5;
+  @apply font-bold;
+  @apply border-2 border-white;
+}
+
+/* Keyboard shortcut hint */
+.btn__shortcut {
+  @apply ml-2 text-xs opacity-60;
+  @apply bg-black bg-opacity-20 px-1.5 py-0.5 rounded;
+}
+
+.btn--keyboard-mode .btn__shortcut {
+  @apply opacity-100;
+}
+
+/* Destructive action styling */
+.btn--destructive {
+  @apply relative;
+}
+
+.btn--destructive::before {
+  content: '';
+  @apply absolute inset-0 rounded-md;
+  @apply border-2 border-red-400 border-dashed;
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+.btn--destructive:focus::before {
+  @apply opacity-100;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn {
+    @apply border-2 border-solid;
+  }
+
+  .btn--primary {
+    @apply border-black;
+  }
+
+  .btn--secondary {
+    @apply border-current;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    @apply transition-none;
+  }
+}
+
+/* Icon button specific styles */
+.icon-button {
+  @apply p-2;
+  @apply rounded-full;
+  aspect-ratio: 1;
+}
+
+.icon-button .btn__text {
+  @apply sr-only;
+}
+
+/* Button group styles */
+.btn-group {
+  @apply flex;
+}
+
+.btn-group--horizontal {
+  @apply flex-row;
+}
+
+.btn-group--vertical {
+  @apply flex-col;
+}
+
+.btn-group--compact {
+  @apply gap-1;
+}
+
+.btn-group--normal {
+  @apply gap-2;
+}
+
+.btn-group--relaxed {
+  @apply gap-4;
+}
+
+/* Grouped button borders */
+.btn-group--horizontal > .btn:not(:first-child) {
+  @apply rounded-l-none border-l-0;
+}
+
+.btn-group--horizontal > .btn:not(:last-child) {
+  @apply rounded-r-none;
+}
+
+.btn-group--vertical > .btn:not(:first-child) {
+  @apply rounded-t-none border-t-0;
+}
+
+.btn-group--vertical > .btn:not(:last-child) {
+  @apply rounded-b-none;
+}
+
+/* Keyboard navigation mode */
+.btn--keyboard-mode {
+  @apply ring-2 ring-offset-2 ring-accenture-purple;
+}
+
+.btn-group--keyboard-mode > .btn:focus {
+  @apply z-10;
+}
+
+/* Hover effects for Accenture branding */
+.btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(161, 0, 255, 0.2);
+}
+
+.btn--secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(161, 0, 255, 0.1);
+}
+
+/* Enterprise-grade button styling */
+.btn {
+  font-family: 'GT America', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

@@ -1,0 +1,14 @@
+{
+  "name": "validation-test-suite",
+  "version": "1.0.0",
+  "description": "Comprehensive validation test suite for Vite + React + Electron setup",
+  "scripts": {
+    "validate": "node run-validation-suite.js",
+    "validate:node": "node comprehensive-test-plan.js",
+    "validate:browser": "npx playwright test browser-validation.spec.ts",
+    "validate:manual": "echo 'See manual-testing-commands.md for manual testing instructions'",
+    "test:quick": "node comprehensive-test-plan.js",
+    "test:full": "node run-validation-suite.js",
+    "install:playwright": "npx playwright install"
+  }
+}

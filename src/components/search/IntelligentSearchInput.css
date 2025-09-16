@@ -1,0 +1,467 @@
+/**
+ * IntelligentSearchInput Styles
+ *
+ * Comprehensive styling for the search input component with:
+ * - Responsive design
+ * - Dark/light theme support
+ * - Smooth animations (60fps)
+ * - Accessibility considerations
+ * - Performance optimizations
+ *
+ * @author Frontend Team
+ * @version 1.0.0
+ */
+
+/* ========================
+   Base Component Styles
+   ======================== */
+
+.intelligent-search-input {
+  @apply relative w-full;
+}
+
+/* Input container with glass morphism effect */
+.search-input-container {
+  @apply relative;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Main input field */
+.search-input {
+  @apply w-full rounded-lg border transition-all duration-200 ease-in-out;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  @apply placeholder-gray-400 dark:placeholder-gray-500;
+  @apply bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600;
+}
+
+/* Size variants */
+.search-input--sm {
+  @apply h-9 text-sm px-3;
+}
+
+.search-input--md {
+  @apply h-11 text-base px-4;
+}
+
+.search-input--lg {
+  @apply h-13 text-lg px-5;
+}
+
+/* Style variants */
+.search-input--default {
+  @apply bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600;
+}
+
+.search-input--minimal {
+  @apply bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700;
+}
+
+.search-input--prominent {
+  @apply bg-gradient-to-r from-primary-50 to-blue-50 dark:from-gray-800 dark:to-gray-900;
+  @apply border-primary-300 dark:border-primary-600;
+}
+
+/* State styles */
+.search-input:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.search-input--error {
+  @apply border-danger-500 focus:ring-danger-500;
+}
+
+.search-input--focused:not(.search-input--error) {
+  @apply ring-2 ring-primary-500 border-transparent;
+}
+
+/* Icon styles */
+.search-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200;
+}
+
+.search-icon--focused {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.search-icon--default {
+  @apply text-gray-400 dark:text-gray-500;
+}
+
+/* ========================
+   Dropdown Styles
+   ======================== */
+
+.search-dropdown {
+  @apply absolute top-full left-0 right-0 mt-1;
+  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700;
+  @apply rounded-lg shadow-lg z-50 max-h-80 overflow-hidden;
+  animation: slideDown 0.2s ease-out;
+  transform-origin: top;
+}
+
+/* Dropdown animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.search-dropdown--closing {
+  animation: slideUp 0.15s ease-in forwards;
+}
+
+/* Dropdown sections */
+.dropdown-section-header {
+  @apply px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400;
+  @apply uppercase tracking-wide border-b border-gray-100 dark:border-gray-800;
+  @apply bg-gray-50 dark:bg-gray-850 sticky top-0 z-10;
+}
+
+/* Suggestion items */
+.suggestion-item {
+  @apply w-full px-4 py-3 text-left transition-all duration-150 ease-out;
+  @apply hover:bg-gray-50 dark:hover:bg-gray-800;
+  @apply focus:bg-primary-50 dark:focus:bg-primary-900/20 focus:outline-none;
+  @apply cursor-pointer;
+}
+
+.suggestion-item--selected {
+  @apply bg-primary-50 dark:bg-primary-900/20;
+  @apply border-l-2 border-primary-500;
+}
+
+.suggestion-item--disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.suggestion-content {
+  @apply flex items-center justify-between;
+}
+
+.suggestion-text {
+  @apply flex-1 min-w-0;
+}
+
+.suggestion-title {
+  @apply font-medium text-gray-900 dark:text-gray-100 truncate;
+}
+
+.suggestion-description {
+  @apply text-sm text-gray-500 dark:text-gray-400 truncate;
+}
+
+.suggestion-meta {
+  @apply flex-shrink-0 ml-2 text-gray-400 dark:text-gray-500;
+}
+
+/* ========================
+   Loading States
+   ======================== */
+
+.search-loading {
+  @apply flex items-center justify-center p-4 text-center text-gray-500;
+}
+
+.search-loading-spinner {
+  @apply animate-spin mx-auto mb-2;
+  animation-duration: 1s;
+}
+
+.search-loading-text {
+  @apply text-sm;
+}
+
+/* ========================
+   Performance Indicators
+   ======================== */
+
+.performance-indicator {
+  @apply flex items-center gap-1 text-xs text-gray-500;
+}
+
+.performance-metric {
+  @apply flex items-center gap-1;
+}
+
+.performance-cache-hit {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.performance-ai-used {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+/* ========================
+   Filter Indicators
+   ======================== */
+
+.filter-indicator {
+  @apply flex items-center gap-1 text-xs;
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.filter-count {
+  @apply bg-primary-100 dark:bg-primary-900 rounded-full;
+  @apply px-2 py-1 text-xs font-medium;
+}
+
+/* ========================
+   Error States
+   ======================== */
+
+.search-error {
+  @apply absolute top-full left-0 mt-1 text-sm;
+  @apply text-danger-600 dark:text-danger-400;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.search-error-message {
+  @apply p-4 text-center text-danger-600 dark:text-danger-400;
+  @apply bg-danger-50 dark:bg-danger-900/20 rounded-lg;
+}
+
+/* ========================
+   Keyboard Shortcut Hints
+   ======================== */
+
+.shortcut-hint {
+  @apply hidden sm:flex items-center gap-1 text-xs;
+  @apply text-gray-400 dark:text-gray-500;
+}
+
+.shortcut-key {
+  @apply px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono;
+}
+
+.shortcuts-modal {
+  @apply absolute top-full left-0 right-0 mt-1;
+  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700;
+  @apply rounded-lg shadow-lg z-30 p-4;
+  animation: slideDown 0.2s ease-out;
+}
+
+.shortcuts-list {
+  @apply space-y-2;
+}
+
+.shortcuts-item {
+  @apply flex items-center justify-between;
+}
+
+.shortcuts-description {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+/* ========================
+   History Sidebar
+   ======================== */
+
+.history-sidebar {
+  @apply absolute top-full left-0 right-0 mt-1;
+  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700;
+  @apply rounded-lg shadow-lg z-40;
+  animation: slideDown 0.2s ease-out;
+}
+
+.history-header {
+  @apply p-3 border-b border-gray-200 dark:border-gray-700;
+  @apply flex items-center justify-between;
+}
+
+.history-title {
+  @apply text-sm font-medium text-gray-900 dark:text-gray-100;
+}
+
+.history-item {
+  @apply w-full px-4 py-2 text-left transition-colors duration-150;
+  @apply hover:bg-gray-50 dark:hover:bg-gray-800;
+}
+
+.history-content {
+  @apply flex items-center justify-between;
+}
+
+.history-query {
+  @apply text-gray-900 dark:text-gray-100 truncate;
+}
+
+.history-meta {
+  @apply text-xs text-gray-500 flex items-center ml-2 gap-1;
+}
+
+/* ========================
+   Accessibility Enhancements
+   ======================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .search-input {
+    @apply border-2 border-gray-600 dark:border-gray-400;
+  }
+
+  .search-input--focused {
+    @apply border-2 border-primary-600 dark:border-primary-400;
+  }
+
+  .suggestion-item--selected {
+    @apply border-l-4 border-primary-600 dark:border-primary-400;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .search-input,
+  .search-dropdown,
+  .suggestion-item,
+  .search-loading-spinner {
+    @apply transition-none;
+  }
+
+  .search-dropdown {
+    animation: none;
+  }
+
+  .search-loading-spinner {
+    animation: none;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.search-input:focus-visible,
+.suggestion-item:focus-visible,
+.history-item:focus-visible {
+  @apply ring-2 ring-primary-500 ring-offset-2;
+  @apply ring-offset-white dark:ring-offset-gray-900;
+}
+
+/* ========================
+   Responsive Design
+   ======================== */
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .search-dropdown {
+    @apply left-0 right-0 mx-2;
+  }
+
+  .history-sidebar {
+    @apply left-0 right-0 mx-2;
+  }
+
+  .shortcuts-modal {
+    @apply left-0 right-0 mx-2;
+  }
+
+  .shortcut-hint {
+    @apply hidden;
+  }
+
+  .suggestion-description {
+    @apply hidden;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .search-dropdown {
+    @apply max-w-2xl;
+  }
+
+  .history-sidebar {
+    @apply max-w-2xl;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+  .search-dropdown {
+    @apply max-w-3xl;
+  }
+
+  .history-sidebar {
+    @apply max-w-lg right-auto;
+  }
+
+  .shortcuts-modal {
+    @apply max-w-lg right-auto;
+  }
+}
+
+/* ========================
+   Dark Theme Specific
+   ======================== */
+
+.dark .search-input {
+  background-color: rgba(17, 24, 39, 0.95);
+  border-color: rgba(75, 85, 99, 0.6);
+}
+
+.dark .search-dropdown {
+  background-color: rgba(17, 24, 39, 0.98);
+  border-color: rgba(75, 85, 99, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+.dark .dropdown-section-header {
+  background-color: rgba(31, 41, 55, 0.8);
+}
+
+.dark .suggestion-item:hover {
+  background-color: rgba(55, 65, 81, 0.8);
+}
+
+.dark .suggestion-item--selected {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* ========================
+   Animation Performance
+   ======================== */
+
+/* GPU acceleration for smooth animations */
+.search-dropdown,
+.suggestion-item,
+.history-sidebar,
+.shortcuts-modal {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Optimize repaints */
+.search-input,
+.search-icon {
+  contain: layout style paint;
+}
+
+/* ========================
+   Print Styles
+   ======================== */
+
+@media print {
+  .search-dropdown,
+  .history-sidebar,
+  .shortcuts-modal {
+    @apply hidden;
+  }
+
+  .search-input {
+    @apply border border-gray-400 bg-white;
+  }
+}

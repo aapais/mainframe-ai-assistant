@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "test:storage": "ts-node tests/storage/scripts/run-tests.ts",
+    "test:storage:unit": "npm run test:storage unit",
+    "test:storage:integration": "npm run test:storage integration",
+    "test:storage:performance": "npm run test:storage performance",
+    "test:storage:e2e": "npm run test:storage e2e",
+    "test:storage:all": "npm run test:storage all",
+    "test:storage:watch": "npm run test:storage unit --watch",
+    "test:storage:coverage": "npm run test:storage all --coverage",
+    "test:storage:ci": "npm run test:storage all --ci",
+    "test:storage:benchmark": "npm run test:storage --benchmark",
+    "test:storage:validate": "npm run test:storage --validate"
+  }
+}

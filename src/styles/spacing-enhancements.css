@@ -1,0 +1,468 @@
+/**
+ * Spacing Enhancements - Design System Integration
+ *
+ * Enhanced spacing utilities that provide consistent component spacing,
+ * responsive layouts, and accessibility-compliant whitespace management.
+ */
+
+/* ==========================================
+   COMPONENT SPACING PATTERNS
+   Consistent spacing for common component layouts
+   ========================================== */
+
+/* Card and panel spacing */
+.card-spacing {
+  padding: var(--card-padding);
+}
+
+.card-spacing-sm {
+  padding: var(--card-padding-sm);
+}
+
+.card-spacing-lg {
+  padding: var(--card-padding-lg);
+}
+
+.panel-spacing {
+  padding: var(--space-layout-sm);
+}
+
+.panel-spacing-compact {
+  padding: var(--space-component-md);
+}
+
+/* Form spacing patterns */
+.form-section {
+  margin-bottom: var(--form-group-spacing);
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+}
+
+.form-group {
+  margin-bottom: var(--form-group-spacing);
+}
+
+.form-field {
+  margin-bottom: var(--space-component-md);
+}
+
+.form-field:last-child {
+  margin-bottom: 0;
+}
+
+.form-inline .form-field {
+  margin-bottom: 0;
+  margin-right: var(--space-component-md);
+}
+
+.form-inline .form-field:last-child {
+  margin-right: 0;
+}
+
+/* Button group spacing */
+.button-group {
+  display: flex;
+  gap: var(--space-component-sm);
+  flex-wrap: wrap;
+}
+
+.button-group-tight {
+  gap: var(--space-component-xs);
+}
+
+.button-group-loose {
+  gap: var(--space-component-md);
+}
+
+.button-group-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* List spacing patterns */
+.list-spaced > li {
+  margin-bottom: var(--space-component-sm);
+}
+
+.list-spaced > li:last-child {
+  margin-bottom: 0;
+}
+
+.list-relaxed > li {
+  margin-bottom: var(--space-component-md);
+}
+
+.list-tight > li {
+  margin-bottom: var(--space-component-xs);
+}
+
+/* ==========================================
+   LAYOUT COMPOSITION UTILITIES
+   Advanced spacing patterns for complex layouts
+   ========================================== */
+
+/* Auto-flow layouts with consistent spacing */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-layout-sm);
+}
+
+.auto-grid-sm {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-component-lg);
+}
+
+.auto-grid-lg {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-layout-md);
+}
+
+/* Sidebar layouts */
+.sidebar-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  gap: var(--space-layout-sm);
+  min-height: 100vh;
+}
+
+.sidebar-layout-collapsed {
+  grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+}
+
+/* Split layouts */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-layout-md);
+}
+
+.split-layout-thirds {
+  grid-template-columns: 1fr 2fr;
+}
+
+.split-layout-quarter {
+  grid-template-columns: 1fr 3fr;
+}
+
+/* ==========================================
+   SECTION AND CONTENT SPACING
+   Consistent vertical rhythm and content flow
+   ========================================== */
+
+/* Main content sections */
+.main-content {
+  padding: var(--space-layout-sm);
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.main-content-wide {
+  padding: var(--space-layout-sm);
+  max-width: 90rem;
+  margin: 0 auto;
+}
+
+.main-content-narrow {
+  padding: var(--space-layout-sm);
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+/* Content sections with visual separation */
+.content-section {
+  margin-bottom: var(--space-layout-lg);
+}
+
+.content-section-compact {
+  margin-bottom: var(--space-layout-sm);
+}
+
+.content-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Divider spacing */
+.section-divider {
+  margin: var(--space-layout-md) 0;
+  border: none;
+  height: 1px;
+  background-color: var(--color-border-subtle);
+}
+
+.section-divider-prominent {
+  margin: var(--space-layout-lg) 0;
+  border: none;
+  height: 2px;
+  background-color: var(--color-border-default);
+}
+
+/* ==========================================
+   COMPONENT-SPECIFIC SPACING
+   Spacing optimizations for specific UI components
+   ========================================== */
+
+/* Navigation spacing */
+.nav-item {
+  padding: var(--space-component-sm) var(--space-component-md);
+  margin-bottom: var(--space-2);
+}
+
+.nav-item:last-child {
+  margin-bottom: 0;
+}
+
+.nav-section {
+  margin-bottom: var(--space-component-lg);
+}
+
+.nav-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Search result spacing */
+.search-result-item {
+  padding: var(--space-component-lg);
+  margin-bottom: var(--space-component-sm);
+}
+
+.search-result-item:last-child {
+  margin-bottom: 0;
+}
+
+.search-result-meta {
+  margin-top: var(--space-component-sm);
+  padding-top: var(--space-component-sm);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* Modal and dialog spacing */
+.modal-content {
+  padding: var(--modal-padding);
+}
+
+.modal-header {
+  margin-bottom: var(--space-component-lg);
+  padding-bottom: var(--space-component-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.modal-footer {
+  margin-top: var(--space-component-lg);
+  padding-top: var(--space-component-md);
+  border-top: 1px solid var(--color-border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-component-sm);
+}
+
+/* Table spacing */
+.table-container {
+  margin: var(--space-layout-sm) 0;
+}
+
+.table-header {
+  padding: var(--table-header-padding);
+  background-color: var(--color-surface-subtle);
+  border-bottom: 2px solid var(--color-border-default);
+}
+
+.table-cell {
+  padding: var(--table-padding);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+/* ==========================================
+   RESPONSIVE SPACING UTILITIES
+   Adaptive spacing based on viewport size
+   ========================================== */
+
+@media (max-width: 640px) {
+  /* Reduce spacing on mobile */
+  .main-content,
+  .main-content-wide,
+  .main-content-narrow {
+    padding: var(--space-component-md);
+  }
+
+  .card-spacing {
+    padding: var(--card-padding-sm);
+  }
+
+  .panel-spacing {
+    padding: var(--space-component-md);
+  }
+
+  .modal-content {
+    padding: var(--space-layout-xs);
+  }
+
+  .content-section {
+    margin-bottom: var(--space-layout-sm);
+  }
+
+  .auto-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-component-md);
+  }
+
+  .split-layout,
+  .split-layout-thirds,
+  .split-layout-quarter {
+    grid-template-columns: 1fr;
+    gap: var(--space-component-lg);
+  }
+
+  .sidebar-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Increase spacing on larger screens */
+  .content-section {
+    margin-bottom: var(--space-layout-xl);
+  }
+
+  .main-content {
+    padding: var(--space-layout-md);
+  }
+
+  .panel-spacing {
+    padding: var(--space-layout-sm);
+  }
+}
+
+/* ==========================================
+   DENSITY VARIANTS
+   Spacing adjustments for different interface densities
+   ========================================== */
+
+/* Compact density for information-dense interfaces */
+[data-density="compact"] {
+  --local-spacing-scale: 0.75;
+}
+
+[data-density="compact"] .card-spacing {
+  padding: calc(var(--card-padding) * var(--local-spacing-scale));
+}
+
+[data-density="compact"] .form-group,
+[data-density="compact"] .form-field {
+  margin-bottom: calc(var(--space-component-md) * var(--local-spacing-scale));
+}
+
+[data-density="compact"] .content-section {
+  margin-bottom: calc(var(--space-layout-sm) * var(--local-spacing-scale));
+}
+
+/* Spacious density for better accessibility */
+[data-density="spacious"] {
+  --local-spacing-scale: 1.25;
+}
+
+[data-density="spacious"] .card-spacing {
+  padding: calc(var(--card-padding) * var(--local-spacing-scale));
+}
+
+[data-density="spacious"] .form-group,
+[data-density="spacious"] .form-field {
+  margin-bottom: calc(var(--space-component-lg) * var(--local-spacing-scale));
+}
+
+[data-density="spacious"] .content-section {
+  margin-bottom: calc(var(--space-layout-lg) * var(--local-spacing-scale));
+}
+
+/* ==========================================
+   ACCESSIBILITY SPACING
+   Spacing adjustments for better accessibility
+   ========================================== */
+
+/* Minimum touch target spacing */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--space-component-sm);
+}
+
+/* Focus spacing improvements */
+.focus-spacing:focus-visible {
+  outline-offset: var(--space-2);
+}
+
+/* Screen reader spacing improvements */
+.sr-content {
+  padding: var(--space-component-sm);
+  margin: var(--space-component-xs);
+}
+
+/* High contrast mode spacing adjustments */
+@media (prefers-contrast: high) {
+  .section-divider,
+  .section-divider-prominent {
+    height: 2px;
+    background-color: var(--color-text-primary);
+  }
+
+  .modal-header,
+  .modal-footer {
+    border-width: 2px;
+  }
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   Quick spacing adjustments for edge cases
+   ========================================== */
+
+/* Negative margins for layout adjustments */
+.-m-component-xs { margin: calc(-1 * var(--space-component-xs)); }
+.-m-component-sm { margin: calc(-1 * var(--space-component-sm)); }
+.-m-component-md { margin: calc(-1 * var(--space-component-md)); }
+
+.-mx-component-xs {
+  margin-left: calc(-1 * var(--space-component-xs));
+  margin-right: calc(-1 * var(--space-component-xs));
+}
+
+.-my-component-xs {
+  margin-top: calc(-1 * var(--space-component-xs));
+  margin-bottom: calc(-1 * var(--space-component-xs));
+}
+
+/* Zero spacing overrides */
+.no-spacing { margin: 0 !important; padding: 0 !important; }
+.no-margin { margin: 0 !important; }
+.no-padding { padding: 0 !important; }
+
+/* Preserve spacing in specific contexts */
+.preserve-spacing * {
+  margin-bottom: initial;
+}
+
+.preserve-spacing > * + * {
+  margin-top: var(--space-component-sm);
+}
+
+/* Safe area spacing for mobile devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: calc(var(--space-component-md) + env(safe-area-inset-bottom));
+  }
+
+  .safe-area-top {
+    padding-top: calc(var(--space-component-md) + env(safe-area-inset-top));
+  }
+
+  .safe-area-left {
+    padding-left: calc(var(--space-component-md) + env(safe-area-inset-left));
+  }
+
+  .safe-area-right {
+    padding-right: calc(var(--space-component-md) + env(safe-area-inset-right));
+  }
+}

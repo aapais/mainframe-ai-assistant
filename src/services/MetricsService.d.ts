@@ -1,0 +1,45 @@
+import { EventEmitter } from 'events';
+import { IMetricsService, SearchQuery, SearchResult, UsageAction, ServiceError, KBMetrics, MetricTrends, MetricAlert, MetricsConfig } from '../types/services';
+export declare class MetricsService extends EventEmitter implements IMetricsService {
+    private config;
+    private dbPath;
+    private db;
+    private aggregationInterval?;
+    private alertCheckInterval?;
+    private alerts;
+    private statements;
+    constructor(config: MetricsConfig, dbPath?: string);
+    recordSearch(query: SearchQuery, results: SearchResult[]): Promise<void>;
+    recordUsage(entryId: string, action: UsageAction, userId?: string, metadata?: any): Promise<void>;
+    recordError(error: ServiceError): Promise<void>;
+    recordPerformance(operation: string, duration: number, metadata?: any): Promise<void>;
+    getMetrics(period?: string): Promise<KBMetrics>;
+    getTrends(period?: string): Promise<MetricTrends>;
+    getAlerts(): Promise<MetricAlert[]>;
+    acknowledgeAlert(alertId: string): Promise<void>;
+    exportMetrics(format?: 'json' | 'csv' | 'prometheus'): Promise<string>;
+    private initializeDatabase;
+    private prepareStatements;
+    private loadExistingAlerts;
+    private setupPeriodicTasks;
+    private performAggregation;
+    private checkSystemAlerts;
+    private createAlert;
+    private determineSearchType;
+    private calculateAverageResponseTime;
+    private checkSearchAlerts;
+    private checkPerformanceAlerts;
+    private getPeriodTimeRange;
+    private getIntervalSize;
+    private getOverviewMetrics;
+    private getCategoryMetrics;
+    private getSearchMetrics;
+    private getUsageMetrics;
+    private getPerformanceMetrics;
+    private getTrendData;
+    private exportToCSV;
+    private exportToPrometheus;
+    close(): Promise<void>;
+}
+export default MetricsService;
+//# sourceMappingURL=MetricsService.d.ts.map

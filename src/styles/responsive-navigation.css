@@ -1,0 +1,728 @@
+/**
+ * Responsive Navigation Patterns
+ *
+ * Advanced navigation components optimized for all device types:
+ * - Mobile-first hamburger navigation
+ * - Tablet adaptive menus
+ * - Desktop keyboard-friendly navigation
+ * - Touch-optimized interactions
+ * - Accessibility features
+ *
+ * @version 2.0.0
+ * @author Code Quality Analyzer
+ */
+
+/* ===========================
+   NAVIGATION VARIABLES
+   =========================== */
+
+:root {
+  /* Navigation sizing */
+  --nav-height: clamp(3rem, 4vw, 4rem);
+  --nav-item-height: var(--touch-target-min, 44px);
+  --nav-item-padding: clamp(0.5rem, 1vw, 1rem);
+  --nav-gap: clamp(0.25rem, 0.5vw, 0.75rem);
+
+  /* Mobile menu */
+  --mobile-menu-width: min(85vw, 320px);
+  --mobile-menu-z-index: 1000;
+  --mobile-overlay-z-index: 999;
+
+  /* Transitions */
+  --nav-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Colors */
+  --nav-bg: var(--color-surface-primary, #ffffff);
+  --nav-border: var(--color-border-primary, #e5e7eb);
+  --nav-text: var(--color-text-primary, #1f2937);
+  --nav-text-hover: var(--color-action-primary, #3b82f6);
+  --nav-active-bg: var(--color-action-secondary, #f3f4f6);
+  --nav-overlay: rgba(0, 0, 0, 0.5);
+}
+
+/* ===========================
+   BASE NAVIGATION
+   =========================== */
+
+.responsive-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--nav-height);
+  padding: 0 var(--nav-item-padding);
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
+  position: relative;
+  z-index: 100;
+}
+
+.responsive-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 600;
+  color: var(--nav-text);
+  text-decoration: none;
+  padding: 0.5rem 0;
+}
+
+.responsive-nav__brand:focus {
+  outline: 2px solid var(--nav-text-hover);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* ===========================
+   DESKTOP NAVIGATION
+   =========================== */
+
+.responsive-nav__desktop {
+  display: none;
+  align-items: center;
+  gap: var(--nav-gap);
+}
+
+.responsive-nav__list {
+  display: flex;
+  align-items: center;
+  gap: var(--nav-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.responsive-nav__item {
+  position: relative;
+}
+
+.responsive-nav__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--nav-item-height);
+  padding: 0.5rem var(--nav-item-padding);
+  color: var(--nav-text);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: var(--nav-transition-fast);
+  white-space: nowrap;
+  position: relative;
+}
+
+.responsive-nav__link:hover,
+.responsive-nav__link:focus {
+  color: var(--nav-text-hover);
+  background: var(--nav-active-bg);
+  outline: none;
+}
+
+.responsive-nav__link:focus {
+  box-shadow: 0 0 0 2px var(--nav-text-hover);
+}
+
+.responsive-nav__link--active {
+  color: var(--nav-text-hover);
+  background: var(--nav-active-bg);
+}
+
+.responsive-nav__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 2px;
+  background: var(--nav-text-hover);
+  border-radius: 1px;
+}
+
+/* ===========================
+   DROPDOWN NAVIGATION
+   =========================== */
+
+.responsive-nav__dropdown {
+  position: relative;
+}
+
+.responsive-nav__dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.responsive-nav__dropdown-toggle::after {
+  content: '';
+  border: 4px solid transparent;
+  border-top-color: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.responsive-nav__dropdown-toggle[aria-expanded="true"]::after {
+  transform: rotate(180deg);
+}
+
+.responsive-nav__dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0;
+  background: var(--nav-bg);
+  border: 1px solid var(--nav-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: var(--nav-transition);
+  z-index: 1001;
+}
+
+.responsive-nav__dropdown[aria-expanded="true"] .responsive-nav__dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.responsive-nav__dropdown-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: var(--nav-text);
+  text-decoration: none;
+  transition: var(--nav-transition-fast);
+}
+
+.responsive-nav__dropdown-item:hover,
+.responsive-nav__dropdown-item:focus {
+  background: var(--nav-active-bg);
+  color: var(--nav-text-hover);
+  outline: none;
+}
+
+/* ===========================
+   MOBILE NAVIGATION
+   =========================== */
+
+.responsive-nav__mobile {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.responsive-nav__hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: var(--nav-item-height);
+  height: var(--nav-item-height);
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: var(--nav-transition);
+  position: relative;
+}
+
+.responsive-nav__hamburger:focus {
+  outline: 2px solid var(--nav-text-hover);
+  outline-offset: 2px;
+}
+
+.responsive-nav__hamburger-line {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--nav-text);
+  margin: 2px 0;
+  transition: var(--nav-transition);
+  transform-origin: center;
+}
+
+.responsive-nav__hamburger[aria-expanded="true"] .responsive-nav__hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.responsive-nav__hamburger[aria-expanded="true"] .responsive-nav__hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.responsive-nav__hamburger[aria-expanded="true"] .responsive-nav__hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Mobile Menu Overlay */
+.responsive-nav__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--nav-overlay);
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--nav-transition);
+  z-index: var(--mobile-overlay-z-index);
+}
+
+.responsive-nav__overlay--active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile Menu */
+.responsive-nav__mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--mobile-menu-width);
+  height: 100vh;
+  background: var(--nav-bg);
+  border-right: 1px solid var(--nav-border);
+  transform: translateX(-100%);
+  transition: var(--nav-transition);
+  z-index: var(--mobile-menu-z-index);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-nav__mobile-menu--active {
+  transform: translateX(0);
+}
+
+.responsive-nav__mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--nav-height);
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--nav-border);
+}
+
+.responsive-nav__mobile-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--nav-item-height);
+  height: var(--nav-item-height);
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: var(--nav-text);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: var(--nav-transition-fast);
+}
+
+.responsive-nav__mobile-close:hover,
+.responsive-nav__mobile-close:focus {
+  background: var(--nav-active-bg);
+  outline: none;
+}
+
+.responsive-nav__mobile-close:focus {
+  box-shadow: 0 0 0 2px var(--nav-text-hover);
+}
+
+.responsive-nav__mobile-list {
+  padding: 1rem 0;
+  margin: 0;
+  list-style: none;
+}
+
+.responsive-nav__mobile-item {
+  margin: 0;
+}
+
+.responsive-nav__mobile-link {
+  display: flex;
+  align-items: center;
+  min-height: var(--nav-item-height);
+  padding: 0.75rem 1rem;
+  color: var(--nav-text);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--nav-transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.responsive-nav__mobile-link:hover,
+.responsive-nav__mobile-link:focus {
+  background: var(--nav-active-bg);
+  color: var(--nav-text-hover);
+  border-left-color: var(--nav-text-hover);
+  outline: none;
+}
+
+.responsive-nav__mobile-link--active {
+  background: var(--nav-active-bg);
+  color: var(--nav-text-hover);
+  border-left-color: var(--nav-text-hover);
+}
+
+/* ===========================
+   BREADCRUMB NAVIGATION
+   =========================== */
+
+.responsive-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-breadcrumb__list {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.responsive-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.responsive-breadcrumb__link {
+  color: var(--nav-text-hover);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: var(--nav-transition-fast);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.responsive-breadcrumb__link:hover,
+.responsive-breadcrumb__link:focus {
+  background: var(--nav-active-bg);
+  outline: none;
+}
+
+.responsive-breadcrumb__separator {
+  color: var(--nav-text);
+  opacity: 0.6;
+  user-select: none;
+}
+
+.responsive-breadcrumb__current {
+  color: var(--nav-text);
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ===========================
+   TAB NAVIGATION
+   =========================== */
+
+.responsive-tabs {
+  border-bottom: 1px solid var(--nav-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-tabs__list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 0.25rem;
+  min-width: max-content;
+}
+
+.responsive-tabs__item {
+  margin: 0;
+}
+
+.responsive-tabs__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--nav-item-height);
+  padding: 0.5rem 1rem;
+  color: var(--nav-text);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: var(--nav-transition-fast);
+  white-space: nowrap;
+  position: relative;
+}
+
+.responsive-tabs__link:hover,
+.responsive-tabs__link:focus {
+  color: var(--nav-text-hover);
+  background: var(--nav-active-bg);
+  outline: none;
+}
+
+.responsive-tabs__link:focus {
+  box-shadow: inset 0 0 0 2px var(--nav-text-hover);
+}
+
+.responsive-tabs__link--active {
+  color: var(--nav-text-hover);
+  border-bottom-color: var(--nav-text-hover);
+}
+
+/* ===========================
+   PAGINATION
+   =========================== */
+
+.responsive-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.responsive-pagination__list {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.responsive-pagination__item {
+  margin: 0;
+}
+
+.responsive-pagination__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--nav-item-height);
+  min-height: var(--nav-item-height);
+  padding: 0.5rem 0.75rem;
+  color: var(--nav-text);
+  text-decoration: none;
+  border: 1px solid var(--nav-border);
+  border-radius: 0.375rem;
+  transition: var(--nav-transition-fast);
+  font-weight: 500;
+}
+
+.responsive-pagination__link:hover,
+.responsive-pagination__link:focus {
+  background: var(--nav-active-bg);
+  border-color: var(--nav-text-hover);
+  color: var(--nav-text-hover);
+  outline: none;
+}
+
+.responsive-pagination__link--active {
+  background: var(--nav-text-hover);
+  border-color: var(--nav-text-hover);
+  color: white;
+}
+
+.responsive-pagination__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ===========================
+   RESPONSIVE BREAKPOINTS
+   =========================== */
+
+/* Mobile First - Default styles above are mobile */
+
+/* Tablet and up (768px+) */
+@media (min-width: 768px) {
+  .responsive-nav__desktop {
+    display: flex;
+  }
+
+  .responsive-nav__mobile {
+    display: none;
+  }
+
+  .responsive-nav__mobile-menu {
+    display: none;
+  }
+
+  .responsive-nav__overlay {
+    display: none;
+  }
+}
+
+/* Large screens (1024px+) */
+@media (min-width: 1024px) {
+  :root {
+    --nav-gap: 1rem;
+    --nav-item-padding: 1.25rem;
+  }
+
+  .responsive-nav__dropdown-menu {
+    min-width: 240px;
+  }
+}
+
+/* ===========================
+   ACCESSIBILITY FEATURES
+   =========================== */
+
+/* Focus management */
+.responsive-nav:focus-within .responsive-nav__dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Skip link */
+.responsive-nav__skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 0.25rem;
+  z-index: 1000;
+  transition: top 0.15s ease;
+}
+
+.responsive-nav__skip-link:focus {
+  top: 6px;
+}
+
+/* Screen reader announcements */
+.responsive-nav__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===========================
+   TOUCH OPTIMIZATIONS
+   =========================== */
+
+@media (hover: none) and (pointer: coarse) {
+  .responsive-nav__link,
+  .responsive-nav__mobile-link,
+  .responsive-tabs__link,
+  .responsive-pagination__link {
+    min-height: var(--touch-target-comfortable, 48px);
+  }
+
+  .responsive-nav__hamburger,
+  .responsive-nav__mobile-close {
+    min-width: var(--touch-target-comfortable, 48px);
+    min-height: var(--touch-target-comfortable, 48px);
+  }
+
+  .responsive-breadcrumb__link {
+    min-height: var(--touch-target-min, 44px);
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Enhanced touch scrolling */
+  .responsive-breadcrumb,
+  .responsive-tabs,
+  .responsive-nav__mobile-menu {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  /* Touch gestures */
+  .responsive-nav__mobile-menu {
+    touch-action: pan-y;
+  }
+
+  .responsive-breadcrumb,
+  .responsive-tabs {
+    touch-action: pan-x;
+  }
+}
+
+/* ===========================
+   REDUCED MOTION
+   =========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .responsive-nav__hamburger-line,
+  .responsive-nav__dropdown-menu,
+  .responsive-nav__mobile-menu,
+  .responsive-nav__overlay {
+    transition: none;
+  }
+
+  .responsive-nav__dropdown-toggle::after {
+    transition: none;
+  }
+}
+
+/* ===========================
+   HIGH CONTRAST
+   =========================== */
+
+@media (prefers-contrast: high) {
+  .responsive-nav {
+    border-bottom-width: 2px;
+  }
+
+  .responsive-nav__link,
+  .responsive-nav__mobile-link,
+  .responsive-tabs__link,
+  .responsive-pagination__link {
+    border: 1px solid currentColor;
+  }
+
+  .responsive-nav__link:focus,
+  .responsive-nav__mobile-link:focus,
+  .responsive-tabs__link:focus,
+  .responsive-pagination__link:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+/* ===========================
+   PRINT STYLES
+   =========================== */
+
+@media print {
+  .responsive-nav__mobile,
+  .responsive-nav__hamburger,
+  .responsive-nav__mobile-menu,
+  .responsive-nav__overlay {
+    display: none;
+  }
+
+  .responsive-nav {
+    border-bottom: 1px solid black;
+  }
+
+  .responsive-nav__desktop {
+    display: flex;
+  }
+
+  .responsive-nav__link {
+    color: black;
+  }
+}

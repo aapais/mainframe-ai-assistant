@@ -1,0 +1,443 @@
+/* Delete Confirmation Dialog Styles */
+
+.delete-dialog__backdrop {
+  @apply fixed inset-0 bg-black bg-opacity-50 z-50;
+  backdrop-filter: blur(2px);
+}
+
+.delete-dialog {
+  @apply fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl;
+  max-width: 500px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.delete-dialog--danger {
+  border-left: 4px solid #DC2626;
+}
+
+.delete-dialog--warning {
+  border-left: 4px solid #F59E0B;
+}
+
+.delete-dialog--caution {
+  border-left: 4px solid #3B82F6;
+}
+
+/* Header */
+.delete-dialog__header {
+  @apply flex items-center justify-between p-6 pb-4;
+}
+
+.delete-dialog__title-row {
+  @apply flex items-center gap-3;
+}
+
+.delete-dialog__title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.delete-dialog__icon {
+  @apply flex-shrink-0;
+}
+
+.delete-dialog__icon--danger {
+  @apply text-red-500;
+}
+
+.delete-dialog__icon--warning {
+  @apply text-yellow-500;
+}
+
+.delete-dialog__icon--caution {
+  @apply text-blue-500;
+}
+
+.delete-dialog__close {
+  @apply p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Content */
+.delete-dialog__content {
+  @apply px-6 space-y-4;
+}
+
+.delete-dialog__error {
+  @apply flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700;
+}
+
+.delete-dialog__description {
+  @apply text-gray-700 leading-relaxed;
+}
+
+.delete-dialog__item-name {
+  @apply mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200;
+}
+
+.delete-dialog__item-name strong {
+  @apply text-gray-900 font-medium;
+}
+
+.delete-dialog__warning {
+  @apply flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800;
+}
+
+/* Metadata */
+.delete-dialog__metadata {
+  @apply space-y-2;
+}
+
+.delete-dialog__metadata-title {
+  @apply text-sm font-semibold text-gray-900 mb-2;
+}
+
+.delete-dialog__metadata-list {
+  @apply space-y-1;
+}
+
+.delete-dialog__metadata-item {
+  @apply flex items-center justify-between py-1;
+}
+
+.delete-dialog__metadata-label {
+  @apply text-sm text-gray-600 font-medium;
+}
+
+.delete-dialog__metadata-value {
+  @apply text-sm text-gray-900;
+}
+
+/* Related Items */
+.delete-dialog__related {
+  @apply space-y-2;
+}
+
+.delete-dialog__related-title {
+  @apply text-sm font-semibold text-gray-900 mb-2;
+}
+
+.delete-dialog__related-list {
+  @apply space-y-1;
+}
+
+.delete-dialog__related-item {
+  @apply flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200;
+}
+
+.delete-dialog__related-name {
+  @apply text-sm font-medium text-gray-900;
+}
+
+.delete-dialog__related-type {
+  @apply text-sm text-gray-600;
+}
+
+.delete-dialog__related-count {
+  @apply text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full;
+}
+
+/* Confirmation Input */
+.delete-dialog__confirmation-input {
+  @apply space-y-2;
+}
+
+.delete-dialog__input-label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+.delete-dialog__input-label strong {
+  @apply text-red-600;
+}
+
+.delete-dialog__input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200;
+}
+
+.delete-dialog__input-help {
+  @apply text-xs text-gray-500;
+}
+
+/* Countdown */
+.delete-dialog__countdown {
+  @apply flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700;
+}
+
+/* Permanent Warning */
+.delete-dialog__permanent-warning {
+  @apply p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm;
+}
+
+/* Actions */
+.delete-dialog__actions {
+  @apply flex items-center justify-between p-6 pt-4 border-t border-gray-200;
+}
+
+.delete-dialog__actions-left {
+  @apply flex items-center gap-2;
+}
+
+.delete-dialog__actions-right {
+  @apply flex items-center gap-2;
+}
+
+/* Step Indicator */
+.delete-dialog__steps {
+  @apply flex items-center justify-center gap-4 px-6 py-3 bg-gray-50 border-t border-gray-200;
+}
+
+.delete-dialog__step {
+  @apply px-3 py-1 text-sm rounded-full border border-gray-300 text-gray-600 bg-white transition-all duration-200;
+}
+
+.delete-dialog__step--current {
+  @apply border-blue-500 text-blue-700 bg-blue-50;
+}
+
+.delete-dialog__step--completed {
+  @apply border-green-500 text-green-700 bg-green-50;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .delete-dialog {
+    @apply fixed inset-4;
+    transform: none;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+    max-height: none;
+  }
+  
+  .delete-dialog__header {
+    @apply flex-col items-start gap-3;
+  }
+  
+  .delete-dialog__close {
+    @apply self-end;
+  }
+  
+  .delete-dialog__actions {
+    @apply flex-col gap-3;
+  }
+  
+  .delete-dialog__actions-left,
+  .delete-dialog__actions-right {
+    @apply w-full justify-center;
+  }
+  
+  .delete-dialog__metadata-item {
+    @apply flex-col items-start gap-1;
+  }
+  
+  .delete-dialog__related-item {
+    @apply flex-col items-start gap-1;
+  }
+  
+  .delete-dialog__steps {
+    @apply flex-col gap-2;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .delete-dialog {
+    @apply bg-gray-900 text-white;
+  }
+  
+  .delete-dialog__title {
+    @apply text-white;
+  }
+  
+  .delete-dialog__description {
+    @apply text-gray-300;
+  }
+  
+  .delete-dialog__close {
+    @apply text-gray-400 hover:text-gray-200 hover:bg-gray-800;
+  }
+  
+  .delete-dialog__item-name {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .delete-dialog__item-name strong {
+    @apply text-white;
+  }
+  
+  .delete-dialog__warning {
+    @apply bg-yellow-900 border-yellow-700 text-yellow-100;
+  }
+  
+  .delete-dialog__error {
+    @apply bg-red-900 border-red-700 text-red-100;
+  }
+  
+  .delete-dialog__countdown {
+    @apply bg-blue-900 border-blue-700 text-blue-100;
+  }
+  
+  .delete-dialog__permanent-warning {
+    @apply bg-red-900 border-red-700 text-red-100;
+  }
+  
+  .delete-dialog__metadata-item {
+    @apply border-gray-700;
+  }
+  
+  .delete-dialog__metadata-label {
+    @apply text-gray-400;
+  }
+  
+  .delete-dialog__metadata-value {
+    @apply text-gray-200;
+  }
+  
+  .delete-dialog__related-item {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .delete-dialog__related-name {
+    @apply text-white;
+  }
+  
+  .delete-dialog__related-type {
+    @apply text-gray-400;
+  }
+  
+  .delete-dialog__related-count {
+    @apply text-gray-300 bg-gray-700;
+  }
+  
+  .delete-dialog__input {
+    @apply bg-gray-800 border-gray-600 text-white;
+  }
+  
+  .delete-dialog__input:focus {
+    @apply border-blue-400 ring-blue-400;
+  }
+  
+  .delete-dialog__input-label {
+    @apply text-gray-300;
+  }
+  
+  .delete-dialog__input-help {
+    @apply text-gray-500;
+  }
+  
+  .delete-dialog__actions {
+    @apply border-gray-700;
+  }
+  
+  .delete-dialog__steps {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .delete-dialog__step {
+    @apply border-gray-600 text-gray-400 bg-gray-800;
+  }
+  
+  .delete-dialog__step--current {
+    @apply border-blue-400 text-blue-300 bg-blue-900;
+  }
+  
+  .delete-dialog__step--completed {
+    @apply border-green-400 text-green-300 bg-green-900;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .delete-dialog {
+    border: 2px solid black;
+  }
+  
+  .delete-dialog--danger {
+    border-left: 6px solid #DC2626;
+  }
+  
+  .delete-dialog--warning {
+    border-left: 6px solid #F59E0B;
+  }
+  
+  .delete-dialog--caution {
+    border-left: 6px solid #3B82F6;
+  }
+  
+  .delete-dialog__item-name,
+  .delete-dialog__warning,
+  .delete-dialog__error,
+  .delete-dialog__countdown,
+  .delete-dialog__permanent-warning {
+    border: 2px solid currentColor;
+  }
+  
+  .delete-dialog__input {
+    border: 2px solid black;
+  }
+  
+  .delete-dialog__input:focus {
+    border: 2px solid blue;
+    outline: 2px solid blue;
+  }
+}
+
+/* Animation Classes */
+.delete-dialog__fade-in {
+  animation: dialogFadeIn 0.3s ease-out;
+}
+
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .delete-dialog__fade-in {
+    animation: none;
+  }
+  
+  .delete-dialog__close,
+  .delete-dialog__step {
+    transition: none;
+  }
+}
+
+/* Focus Styles */
+.delete-dialog__close:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+.delete-dialog__input:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* Print Styles */
+@media print {
+  .delete-dialog__backdrop {
+    @apply hidden;
+  }
+  
+  .delete-dialog {
+    @apply static transform-none shadow-none border border-black;
+    max-width: none;
+    max-height: none;
+  }
+  
+  .delete-dialog__close {
+    @apply hidden;
+  }
+  
+  .delete-dialog__actions {
+    @apply hidden;
+  }
+}

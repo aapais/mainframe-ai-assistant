@@ -1,0 +1,605 @@
+/**
+ * Enhanced Smart Entry Form Styles
+ *
+ * Advanced styling for the enhanced entry form with:
+ * - Rich text editor integration
+ * - Auto-save visual feedback
+ * - Draft management interface
+ * - Keyboard shortcuts UI
+ * - Conflict resolution styling
+ * - Optimistic UI updates
+ * - Enhanced accessibility
+ */
+
+/* ========================
+ * Base Form Styles
+ * ======================== */
+
+.enhanced-smart-entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  background: var(--background-color, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+
+  /* CSS Variables */
+  --primary-color: #2563eb;
+  --secondary-color: #64748b;
+  --success-color: #16a34a;
+  --warning-color: #d97706;
+  --error-color: #dc2626;
+  --border-color: #e2e8f0;
+  --surface-color: #f8fafc;
+  --text-color: #1e293b;
+  --muted-color: #94a3b8;
+  --focus-ring: rgba(37, 99, 235, 0.2);
+  --transition: all 0.2s ease-in-out;
+}
+
+/* Optimistic update styling */
+.enhanced-smart-entry-form.optimistic-update {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  transition: all 0.15s ease-out;
+}
+
+.enhanced-smart-entry-form.optimistic-update::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+  border-radius: 12px 12px 0 0;
+  animation: optimisticPulse 0.3s ease-out;
+}
+
+@keyframes optimisticPulse {
+  0% { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+
+/* Dark theme support */
+.enhanced-smart-entry-form[data-theme="dark"] {
+  --background-color: #0f172a;
+  --surface-color: #1e293b;
+  --text-color: #f1f5f9;
+  --border-color: #334155;
+  --muted-color: #64748b;
+}
+
+/* ========================
+ * Auto-Save Status
+ * ======================== */
+
+.auto-save-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--surface-color);
+  border-radius: 6px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.status-indicator.saving {
+  color: var(--warning-color);
+}
+
+.status-indicator.saved {
+  color: var(--success-color);
+}
+
+.status-indicator.error {
+  color: var(--error-color);
+}
+
+.status-indicator.idle {
+  color: var(--muted-color);
+}
+
+.last-saved {
+  font-size: 12px;
+  color: var(--muted-color);
+}
+
+/* ========================
+ * Form Content
+ * ======================== */
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  line-height: 1.4;
+}
+
+.required {
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+/* Form inputs */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-color);
+  color: var(--text-color);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+  border-color: var(--error-color);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--muted-color);
+  opacity: 0.8;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: 'Monaco', 'Consolas', 'SF Mono', monospace;
+}
+
+/* Tags input styling */
+.tags-input-wrapper {
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-color);
+  transition: var(--transition);
+}
+
+.tags-input-wrapper:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  min-height: 44px;
+  align-items: center;
+}
+
+.tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.8;
+  transition: var(--transition);
+}
+
+.tag-remove:hover {
+  opacity: 1;
+}
+
+.tag-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 14px;
+  outline: none;
+}
+
+.tag-input::placeholder {
+  color: var(--muted-color);
+  opacity: 0.8;
+}
+
+/* Field validation */
+.field-error {
+  color: var(--error-color);
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-error::before {
+  content: "⚠️";
+  font-size: 10px;
+}
+
+/* ========================
+ * Form Actions
+ * ======================== */
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.form-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 100px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.form-button:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.form-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-button.primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.form-button.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.form-button.secondary {
+  background: var(--background-color);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.form-button.secondary:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.form-button.tertiary {
+  background: transparent;
+  color: var(--muted-color);
+  border-color: transparent;
+  padding: 8px 16px;
+  min-width: auto;
+}
+
+.form-button.tertiary:hover:not(:disabled) {
+  color: var(--text-color);
+  background: var(--surface-color);
+}
+
+/* Spinner Animation */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========================
+ * Keyboard Shortcuts Modal
+ * ======================== */
+
+.shortcuts-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.shortcuts-modal .modal-content {
+  background: var(--background-color);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.2s ease-out;
+}
+
+.shortcuts-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.shortcuts-modal h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-color);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--muted-color);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.close-button:hover {
+  background: var(--surface-color);
+  color: var(--text-color);
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.shortcut-item:last-child {
+  border-bottom: none;
+}
+
+.shortcut-item kbd {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color);
+  min-width: 80px;
+  text-align: center;
+}
+
+.shortcut-item span {
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+/* ========================
+ * Animation Keyframes
+ * ======================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================
+ * Responsive Design
+ * ======================== */
+
+/* Tablet styles */
+@media screen and (max-width: 768px) {
+  .enhanced-smart-entry-form {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-button {
+    width: 100%;
+  }
+
+  .auto-save-status {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Mobile styles */
+@media screen and (max-width: 480px) {
+  .enhanced-smart-entry-form {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .tags-container {
+    padding: 6px 8px;
+  }
+
+  .form-button {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+
+  .shortcuts-modal .modal-content {
+    padding: 16px;
+    margin: 16px;
+    width: calc(100% - 32px);
+  }
+}
+
+/* ========================
+ * Accessibility Enhancements
+ * ======================== */
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .enhanced-smart-entry-form {
+    --border-color: #000000;
+    --text-color: #000000;
+  }
+
+  .enhanced-smart-entry-form[data-theme="dark"] {
+    --border-color: #ffffff;
+    --text-color: #ffffff;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .enhanced-smart-entry-form *,
+  .enhanced-smart-entry-form *::before,
+  .enhanced-smart-entry-form *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus visible for better keyboard navigation */
+.enhanced-smart-entry-form *:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ========================
+ * Print Styles
+ * ======================== */
+
+@media print {
+  .enhanced-smart-entry-form {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .auto-save-status,
+  .form-actions,
+  .shortcuts-modal {
+    display: none;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    border: 1px solid #000;
+    background: white;
+    color: black;
+  }
+}

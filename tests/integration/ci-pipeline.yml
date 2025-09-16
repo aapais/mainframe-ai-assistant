@@ -1,0 +1,816 @@
+# CI/CD Pipeline Configuration for MVP1 Knowledge Base Assistant
+# Supports GitHub Actions, GitLab CI, Azure DevOps, and Jenkins
+#
+# Features:
+# - Multi-stage testing pipeline
+# - Parallel test execution
+# - Test result aggregation
+# - Coverage reporting
+# - MVP1 requirement validation
+# - Performance monitoring
+# - Artifact management
+# - Deployment automation
+
+# GitHub Actions Configuration
+name: MVP1 Knowledge Base Assistant CI/CD
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly builds at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - unit
+          - integration
+          - e2e
+          - performance
+          - mvp1-validation
+      skip_tests:
+        description: 'Skip long-running tests'
+        required: false
+        default: false
+        type: boolean
+      deploy_environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  COVERAGE_THRESHOLD: 80
+  PERFORMANCE_THRESHOLD_MS: 1000
+  
+  # Test configuration
+  TEST_TIMEOUT: 300000
+  MAX_WORKERS: 4
+  TEST_RETRIES: 2
+  
+  # Artifact retention
+  ARTIFACT_RETENTION_DAYS: 30
+  LOG_RETENTION_DAYS: 7
+  
+  # Environment variables for testing
+  NODE_ENV: test
+  LOG_LEVEL: warn
+  DISABLE_ANIMATIONS: true
+  MOCK_EXTERNAL_APIS: true
+  HEADLESS: true
+
+jobs:
+  # ============================================================================
+  # VALIDATION STAGE
+  # ============================================================================
+  validate:
+    name: 🔍 Validate & Setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      test-matrix: ${{ steps.test-config.outputs.matrix }}
+      skip-performance: ${{ steps.test-config.outputs.skip-performance }}
+      deploy-target: ${{ steps.deploy-config.outputs.target }}
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 🔧 Install Dependencies
+        run: |
+          npm ci --prefer-offline --no-audit
+          npm run postinstall || true
+      
+      - name: 🧪 Configure Test Matrix
+        id: test-config
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ inputs.test_suite }}" == "all" ]]; then
+            echo "matrix={\"suite\":[\"unit\",\"integration\",\"e2e\",\"performance\",\"mvp1-validation\"],\"os\":[\"ubuntu-latest\",\"windows-latest\",\"macos-latest\"]}" >> $GITHUB_OUTPUT
+            echo "skip-performance=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ inputs.skip_tests }}" == "true" ]]; then
+            echo "matrix={\"suite\":[\"unit\",\"integration\"],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "skip-performance=true" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={\"suite\":[\"unit\",\"integration\",\"e2e\"],\"os\":[\"ubuntu-latest\",\"windows-latest\"]}" >> $GITHUB_OUTPUT
+            echo "skip-performance=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 🚀 Configure Deployment
+        id: deploy-config
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+            echo "target=staging" >> $GITHUB_OUTPUT
+          elif [[ "${{ inputs.deploy_environment }}" != "none" ]]; then
+            echo "target=${{ inputs.deploy_environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "target=none" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 📋 Validate Project Structure
+        run: |
+          echo "🔍 Validating project structure..."
+          
+          required_files=(
+            "package.json"
+            "tsconfig.json"
+            "jest.config.js"
+            "src/main/index.ts"
+            "src/renderer/App.tsx"
+            "tests/integration/test-runner.ts"
+          )
+          
+          missing_files=()
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              missing_files+=("$file")
+            fi
+          done
+          
+          if [[ ${#missing_files[@]} -gt 0 ]]; then
+            echo "❌ Missing required files:"
+            printf '%s\n' "${missing_files[@]}"
+            exit 1
+          fi
+          
+          echo "✅ Project structure validation passed"
+      
+      - name: 🔒 Security Audit
+        run: |
+          echo "🔍 Running security audit..."
+          npm audit --audit-level=moderate --production
+          echo "✅ Security audit completed"
+
+  # ============================================================================
+  # TESTING STAGE
+  # ============================================================================
+  test:
+    name: 🧪 Test (${{ matrix.suite }} - ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.validate.outputs.test-matrix) }}
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 🔧 Install Dependencies
+        run: npm ci --prefer-offline --no-audit
+      
+      - name: 🗄️ Setup Test Database
+        run: |
+          mkdir -p temp
+          echo "🗄️ Test database directory created"
+      
+      - name: 🧪 Run Tests
+        id: run-tests
+        run: |
+          echo "🧪 Running ${{ matrix.suite }} tests..."
+          
+          # Set test-specific environment variables
+          export TEST_SUITE="${{ matrix.suite }}"
+          export TEST_OS="${{ matrix.os }}"
+          export GITHUB_ACTIONS=true
+          
+          # Run the master test runner
+          case "${{ matrix.suite }}" in
+            "unit")
+              node tests/integration/test-runner.ts --suites=unit --parallel --coverage --report=junit
+              ;;
+            "integration")
+              node tests/integration/test-runner.ts --suites=integration --parallel --coverage --report=junit
+              ;;
+            "e2e")
+              node tests/integration/test-runner.ts --suites=e2e --sequential --report=junit
+              ;;
+            "performance")
+              if [[ "${{ needs.validate.outputs.skip-performance }}" != "true" ]]; then
+                node tests/integration/test-runner.ts --suites=performance --sequential --timeout=180000 --report=junit
+              else
+                echo "⏭️ Skipping performance tests"
+                exit 0
+              fi
+              ;;
+            "mvp1-validation")
+              node tests/integration/test-runner.ts --validate-mvp1 --suites=unit,integration,e2e --report=comprehensive
+              ;;
+            *)
+              echo "❌ Unknown test suite: ${{ matrix.suite }}"
+              exit 1
+              ;;
+          esac
+        env:
+          NODE_ENV: test
+          TEST_TIMEOUT: ${{ env.TEST_TIMEOUT }}
+          MAX_WORKERS: ${{ env.MAX_WORKERS }}
+      
+      - name: 📊 Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.suite }}-${{ matrix.os }}
+          path: |
+            reports/
+            coverage/
+            temp/junit-*.xml
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+      
+      - name: 📈 Upload Coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.suite != 'e2e' && matrix.suite != 'performance'
+        with:
+          file: coverage/lcov.info
+          flags: ${{ matrix.suite }},${{ matrix.os }}
+          name: coverage-${{ matrix.suite }}-${{ matrix.os }}
+          fail_ci_if_error: false
+      
+      - name: 📋 Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results (${{ matrix.suite }} - ${{ matrix.os }})
+          path: temp/junit-*.xml
+          reporter: jest-junit
+          fail-on-error: false
+
+  # ============================================================================
+  # PERFORMANCE MONITORING
+  # ============================================================================
+  performance-monitoring:
+    name: ⚡ Performance Analysis
+    runs-on: ubuntu-latest
+    needs: [validate, test]
+    if: needs.validate.outputs.skip-performance != 'true'
+    timeout-minutes: 30
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 🔧 Install Dependencies
+        run: npm ci --prefer-offline --no-audit
+      
+      - name: 📥 Download Performance Results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-performance-*
+          merge-multiple: true
+          path: performance-results/
+      
+      - name: 📊 Analyze Performance Trends
+        run: |
+          echo "📊 Analyzing performance trends..."
+          
+          # Run performance analysis
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          async function analyzePerformance() {
+            const resultsDir = 'performance-results/reports';
+            
+            if (!fs.existsSync(resultsDir)) {
+              console.log('⏭️ No performance results found');
+              return;
+            }
+            
+            const files = fs.readdirSync(resultsDir)
+              .filter(f => f.includes('performance') && f.endsWith('.json'));
+            
+            if (files.length === 0) {
+              console.log('⏭️ No performance reports found');
+              return;
+            }
+            
+            let totalRegressions = 0;
+            let criticalRegressions = 0;
+            
+            for (const file of files) {
+              const report = JSON.parse(fs.readFileSync(path.join(resultsDir, file)));
+              
+              if (report.performance?.regressions) {
+                totalRegressions += report.performance.regressions.length;
+                criticalRegressions += report.performance.regressions.filter(r => r.severity === 'critical').length;
+              }
+            }
+            
+            console.log(`📈 Performance Analysis:`);
+            console.log(`   Total Regressions: ${totalRegressions}`);
+            console.log(`   Critical Regressions: ${criticalRegressions}`);
+            
+            // Set GitHub output
+            const output = `performance-regressions=${totalRegressions}\ncritical-regressions=${criticalRegressions}`;
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, output);
+            
+            // Fail if critical regressions
+            if (criticalRegressions > 0) {
+              console.error(`❌ ${criticalRegressions} critical performance regressions detected`);
+              process.exit(1);
+            }
+          }
+          
+          analyzePerformance().catch(console.error);
+          EOF
+      
+      - name: 💬 Comment Performance Results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## ⚡ Performance Analysis Results\n\n';
+            
+            try {
+              // Read performance summary
+              const summaryFiles = fs.readdirSync('performance-results/reports/')
+                .filter(f => f.includes('summary') && f.endsWith('.txt'));
+              
+              if (summaryFiles.length > 0) {
+                const summary = fs.readFileSync(`performance-results/reports/${summaryFiles[0]}`, 'utf8');
+                comment += '```\n' + summary + '\n```\n';
+              } else {
+                comment += '✅ No performance issues detected\n';
+              }
+            } catch (error) {
+              comment += '⚠️ Could not read performance results\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # ============================================================================
+  # QUALITY GATES
+  # ============================================================================
+  quality-gates:
+    name: 🚪 Quality Gates
+    runs-on: ubuntu-latest
+    needs: [validate, test]
+    timeout-minutes: 15
+    outputs:
+      quality-passed: ${{ steps.quality-check.outputs.passed }}
+      mvp1-ready: ${{ steps.mvp1-check.outputs.ready }}
+    
+    steps:
+      - name: 📥 Download All Test Results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          merge-multiple: true
+          path: all-results/
+      
+      - name: 🔍 Quality Gate Analysis
+        id: quality-check
+        run: |
+          echo "🔍 Analyzing quality metrics..."
+          
+          # Count test results
+          total_tests=0
+          passed_tests=0
+          failed_tests=0
+          
+          # Parse JUnit XML files
+          for xml_file in all-results/temp/junit-*.xml; do
+            if [[ -f "$xml_file" ]]; then
+              # Extract test counts (simplified parsing)
+              tests=$(grep -o 'tests="[0-9]*"' "$xml_file" | grep -o '[0-9]*' | head -1)
+              failures=$(grep -o 'failures="[0-9]*"' "$xml_file" | grep -o '[0-9]*' | head -1)
+              
+              total_tests=$((total_tests + ${tests:-0}))
+              failed_tests=$((failed_tests + ${failures:-0}))
+            fi
+          done
+          
+          passed_tests=$((total_tests - failed_tests))
+          success_rate=0
+          
+          if [[ $total_tests -gt 0 ]]; then
+            success_rate=$((passed_tests * 100 / total_tests))
+          fi
+          
+          echo "📊 Quality Metrics:"
+          echo "   Total Tests: $total_tests"
+          echo "   Passed: $passed_tests"
+          echo "   Failed: $failed_tests"
+          echo "   Success Rate: ${success_rate}%"
+          
+          # Quality gate thresholds
+          min_success_rate=95
+          max_failed_tests=5
+          
+          quality_passed=true
+          
+          if [[ $success_rate -lt $min_success_rate ]]; then
+            echo "❌ Quality gate failed: Success rate ${success_rate}% below threshold ${min_success_rate}%"
+            quality_passed=false
+          fi
+          
+          if [[ $failed_tests -gt $max_failed_tests ]]; then
+            echo "❌ Quality gate failed: ${failed_tests} failed tests exceed threshold ${max_failed_tests}"
+            quality_passed=false
+          fi
+          
+          if [[ $quality_passed == true ]]; then
+            echo "✅ Quality gates passed"
+          fi
+          
+          echo "passed=$quality_passed" >> $GITHUB_OUTPUT
+          echo "success-rate=$success_rate" >> $GITHUB_OUTPUT
+          echo "total-tests=$total_tests" >> $GITHUB_OUTPUT
+          echo "failed-tests=$failed_tests" >> $GITHUB_OUTPUT
+      
+      - name: 🎯 MVP1 Readiness Check
+        id: mvp1-check
+        run: |
+          echo "🎯 Checking MVP1 readiness..."
+          
+          mvp1_ready=false
+          
+          # Look for MVP1 validation reports
+          mvp1_reports=$(find all-results -name "*mvp1-validation*.json" | head -1)
+          
+          if [[ -n "$mvp1_reports" && -f "$mvp1_reports" ]]; then
+            # Parse MVP1 validation results (simplified)
+            mvp1_passed=$(grep -o '"passed":\s*true' "$mvp1_reports" || echo "false")
+            
+            if [[ "$mvp1_passed" == *"true"* ]]; then
+              mvp1_ready=true
+              echo "✅ MVP1 requirements satisfied"
+            else
+              echo "❌ MVP1 requirements not met"
+            fi
+          else
+            echo "⚠️ No MVP1 validation report found"
+          fi
+          
+          echo "ready=$mvp1_ready" >> $GITHUB_OUTPUT
+      
+      - name: 📝 Generate Quality Report
+        run: |
+          cat > quality-report.md << 'EOF'
+          # Quality Gates Report
+          
+          ## Summary
+          - **Success Rate:** ${{ steps.quality-check.outputs.success-rate }}%
+          - **Total Tests:** ${{ steps.quality-check.outputs.total-tests }}
+          - **Failed Tests:** ${{ steps.quality-check.outputs.failed-tests }}
+          - **Quality Gates:** ${{ steps.quality-check.outputs.passed == 'true' && '✅ PASSED' || '❌ FAILED' }}
+          - **MVP1 Ready:** ${{ steps.mvp1-check.outputs.ready == 'true' && '✅ YES' || '❌ NO' }}
+          
+          ## Thresholds
+          - Minimum Success Rate: 95%
+          - Maximum Failed Tests: 5
+          - MVP1 Requirements: All critical requirements must be satisfied
+          
+          Generated at: $(date -u)
+          EOF
+          
+          echo "📄 Quality report generated"
+      
+      - name: 📤 Upload Quality Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: quality-report.md
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ============================================================================
+  # BUILD & PACKAGE
+  # ============================================================================
+  build:
+    name: 🏗️ Build & Package
+    runs-on: ${{ matrix.os }}
+    needs: [quality-gates]
+    if: needs.quality-gates.outputs.quality-passed == 'true'
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 🔧 Install Dependencies
+        run: npm ci --prefer-offline --no-audit
+      
+      - name: 🏗️ Build Application
+        run: |
+          echo "🏗️ Building application for ${{ matrix.os }}..."
+          npm run build
+          npm run build:electron
+        env:
+          NODE_ENV: production
+      
+      - name: 📦 Package Application
+        run: |
+          echo "📦 Packaging application..."
+          npm run package:${{ contains(matrix.os, 'ubuntu') && 'linux' || contains(matrix.os, 'windows') && 'windows' || 'mac' }}
+      
+      - name: 📤 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: |
+            dist/
+            !dist/**/*.map
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  # ============================================================================
+  # DEPLOYMENT
+  # ============================================================================
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: [quality-gates, build]
+    if: needs.quality-gates.outputs.mvp1-ready == 'true' && needs.validate.outputs.deploy-target != 'none'
+    environment: ${{ needs.validate.outputs.deploy-target }}
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          merge-multiple: true
+          path: builds/
+      
+      - name: 🚀 Deploy to ${{ needs.validate.outputs.deploy-target }}
+        run: |
+          echo "🚀 Deploying to ${{ needs.validate.outputs.deploy-target }}..."
+          
+          # This is where you would integrate with your deployment system
+          # Examples:
+          # - Upload to S3 for distribution
+          # - Deploy to internal servers
+          # - Create GitHub release
+          # - Notify deployment system
+          
+          echo "✅ Deployment to ${{ needs.validate.outputs.deploy-target }} completed"
+      
+      - name: 💬 Notify Deployment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? '✅ Success' : '❌ Failed';
+            const environment = '${{ needs.validate.outputs.deploy-target }}';
+            
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `🚀 **Deployment to ${environment}:** ${status}`
+            });
+
+  # ============================================================================
+  # NOTIFICATION & CLEANUP
+  # ============================================================================
+  notify:
+    name: 📢 Notify Results
+    runs-on: ubuntu-latest
+    needs: [quality-gates, build, deploy]
+    if: always()
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📊 Collect Results
+        id: results
+        run: |
+          quality_status="${{ needs.quality-gates.outputs.quality-passed == 'true' && '✅ Passed' || '❌ Failed' }}"
+          mvp1_status="${{ needs.quality-gates.outputs.mvp1-ready == 'true' && '✅ Ready' || '❌ Not Ready' }}"
+          build_status="${{ needs.build.result == 'success' && '✅ Success' || '❌ Failed' }}"
+          deploy_status="${{ needs.deploy.result == 'success' && '✅ Success' || needs.deploy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+          
+          echo "quality-status=$quality_status" >> $GITHUB_OUTPUT
+          echo "mvp1-status=$mvp1_status" >> $GITHUB_OUTPUT
+          echo "build-status=$build_status" >> $GITHUB_OUTPUT
+          echo "deploy-status=$deploy_status" >> $GITHUB_OUTPUT
+      
+      - name: 💬 Summary Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 🧪 CI/CD Pipeline Results
+            
+            | Stage | Status |
+            |-------|--------|
+            | Quality Gates | ${{ steps.results.outputs.quality-status }} |
+            | MVP1 Readiness | ${{ steps.results.outputs.mvp1-status }} |
+            | Build | ${{ steps.results.outputs.build-status }} |
+            | Deploy | ${{ steps.results.outputs.deploy-status }} |
+            
+            **Commit:** ${context.sha.substring(0, 8)}
+            **Branch:** ${context.ref}
+            **Triggered by:** ${context.actor}
+            
+            [View detailed results](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+# ============================================================================
+# ALTERNATIVE CI CONFIGURATIONS
+# ============================================================================
+
+---
+# GitLab CI Configuration (.gitlab-ci.yml)
+# 
+# stages:
+#   - validate
+#   - test
+#   - quality
+#   - build
+#   - deploy
+# 
+# variables:
+#   NODE_VERSION: "18"
+#   COVERAGE_THRESHOLD: 80
+# 
+# validate:
+#   stage: validate
+#   image: node:$NODE_VERSION
+#   script:
+#     - npm ci
+#     - npm run validate
+#   artifacts:
+#     reports:
+#       junit: temp/validation-*.xml
+# 
+# test:unit:
+#   stage: test
+#   image: node:$NODE_VERSION
+#   script:
+#     - node tests/integration/test-runner.ts --suites=unit --coverage --report=junit
+#   artifacts:
+#     reports:
+#       junit: temp/junit-*.xml
+#       coverage_report:
+#         coverage_format: cobertura
+#         path: coverage/cobertura-coverage.xml
+
+---
+# Azure DevOps Configuration (azure-pipelines.yml)
+#
+# trigger:
+#   branches:
+#     include:
+#       - main
+#       - develop
+#       - feature/*
+# 
+# pool:
+#   vmImage: 'ubuntu-latest'
+# 
+# variables:
+#   nodeVersion: '18'
+#   coverageThreshold: 80
+# 
+# stages:
+# - stage: Test
+#   displayName: 'Test Stage'
+#   jobs:
+#   - job: RunTests
+#     displayName: 'Run All Tests'
+#     steps:
+#     - task: NodeTool@0
+#       inputs:
+#         versionSpec: $(nodeVersion)
+#       displayName: 'Install Node.js'
+#     
+#     - script: npm ci
+#       displayName: 'Install dependencies'
+#     
+#     - script: node tests/integration/test-runner.ts --suites=all --coverage --report=junit
+#       displayName: 'Run tests'
+#     
+#     - task: PublishTestResults@2
+#       inputs:
+#         testResultsFormat: 'JUnit'
+#         testResultsFiles: 'temp/junit-*.xml'
+#       displayName: 'Publish test results'
+
+---
+# Jenkins Configuration (Jenkinsfile)
+#
+# pipeline {
+#     agent any
+#     
+#     environment {
+#         NODE_VERSION = '18'
+#         COVERAGE_THRESHOLD = '80'
+#     }
+#     
+#     stages {
+#         stage('Setup') {
+#             steps {
+#                 nodejs(nodeJSInstallationName: 'Node 18') {
+#                     sh 'npm ci'
+#                 }
+#             }
+#         }
+#         
+#         stage('Test') {
+#             parallel {
+#                 stage('Unit Tests') {
+#                     steps {
+#                         nodejs(nodeJSInstallationName: 'Node 18') {
+#                             sh 'node tests/integration/test-runner.ts --suites=unit --coverage --report=junit'
+#                         }
+#                     }
+#                     post {
+#                         always {
+#                             publishTestResults testResultsPattern: 'temp/junit-*.xml'
+#                         }
+#                     }
+#                 }
+#                 
+#                 stage('Integration Tests') {
+#                     steps {
+#                         nodejs(nodeJSInstallationName: 'Node 18') {
+#                             sh 'node tests/integration/test-runner.ts --suites=integration --report=junit'
+#                         }
+#                     }
+#                 }
+#             }
+#         }
+#         
+#         stage('Quality Gates') {
+#             steps {
+#                 nodejs(nodeJSInstallationName: 'Node 18') {
+#                     sh 'node tests/integration/test-runner.ts --validate-mvp1 --report=comprehensive'
+#                 }
+#             }
+#         }
+#     }
+#     
+#     post {
+#         always {
+#             archiveArtifacts artifacts: 'reports/**/*', allowEmptyArchive: true
+#             publishHTML([
+#                 allowMissing: false,
+#                 alwaysLinkToLastBuild: false,
+#                 keepAll: true,
+#                 reportDir: 'coverage',
+#                 reportFiles: 'index.html',
+#                 reportName: 'Coverage Report'
+#             ])
+#         }
+#     }
+# }

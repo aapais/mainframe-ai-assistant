@@ -1,0 +1,79 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    // Test-specific compiler options
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Module resolution for testing
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    // Type checking enhancements
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Advanced type features
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Output configuration
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "isolatedModules": true,
+
+    // Type definitions
+    "types": [
+      "node",
+      "jest",
+      "react",
+      "@testing-library/jest-dom"
+    ],
+
+    // Path mapping for test utilities
+    "baseUrl": "../../../",
+    "paths": {
+      "@/tests/typescript/*": ["tests/typescript/*"],
+      "@/tests/*": ["tests/*"],
+      "@/src/*": ["src/*"],
+      "@/types/*": ["src/types/*"]
+    }
+  },
+  "include": [
+    "../**/*.ts",
+    "../**/*.tsx",
+    "../**/*.test.ts",
+    "../**/*.test.tsx",
+    "../**/*.spec.ts",
+    "../**/*.spec.tsx",
+    "../../../src/**/*.ts",
+    "../../../src/**/*.tsx",
+    "../../../types/**/*.ts"
+  ],
+  "exclude": [
+    "../../../node_modules",
+    "../../../dist",
+    "../../../build",
+    "../../../coverage",
+    "../../../.next"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
+}

@@ -1,0 +1,628 @@
+/**
+ * MAINFRAME KB ASSISTANT - RESPONSIVE GRID SYSTEM
+ *
+ * Desktop-first responsive grid implementation with CSS Grid and custom properties
+ * Optimized for performance with CSS containment and efficient breakpoints
+ *
+ * Breakpoints:
+ * - 2xl: 1536px+ (Large desktop)
+ * - xl:  1280px+ (Desktop - PRIMARY)
+ * - lg:  1024px+ (Small desktop - SECONDARY)
+ * - md:  768px+  (Tablet - MINIMUM)
+ * - sm:  640px+  (Large mobile)
+ * - xs:  <640px  (Small mobile)
+ */
+
+/* ==========================================================================
+   CSS CUSTOM PROPERTIES
+   ========================================================================== */
+
+:root {
+  /* Grid Configuration */
+  --grid-columns: 12;
+  --grid-gap: 1.5rem;
+  --grid-gap-sm: 1rem;
+  --grid-gap-xs: 0.75rem;
+
+  /* Container Widths */
+  --container-2xl: 1536px;
+  --container-xl: 1280px;
+  --container-lg: 1024px;
+  --container-md: 768px;
+  --container-sm: 640px;
+  --container-padding: 1.5rem;
+  --container-padding-sm: 1rem;
+
+  /* Layout Areas */
+  --header-height: 64px;
+  --sidebar-width: 320px;
+  --sidebar-width-collapsed: 60px;
+  --footer-height: 48px;
+
+  /* Spacing Scale */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Performance Optimizations */
+  --gpu-acceleration: translateZ(0);
+  --smooth-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ========================================================================== */
+
+/* CSS Containment for better performance */
+.grid-container {
+  contain: layout style;
+}
+
+.grid-item {
+  contain: layout;
+}
+
+/* GPU acceleration for smooth transitions */
+.gpu-optimized {
+  will-change: transform;
+  transform: var(--gpu-acceleration);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ==========================================================================
+   CONTAINER SYSTEM
+   ========================================================================== */
+
+.container {
+  width: 100%;
+  max-width: var(--container-xl);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-padding);
+  padding-right: var(--container-padding);
+}
+
+.container-2xl { max-width: var(--container-2xl); }
+.container-xl { max-width: var(--container-xl); }
+.container-lg { max-width: var(--container-lg); }
+.container-md { max-width: var(--container-md); }
+.container-sm { max-width: var(--container-sm); }
+.container-full { max-width: none; }
+
+/* ==========================================================================
+   CORE GRID SYSTEM
+   ========================================================================== */
+
+.grid {
+  display: grid;
+  gap: var(--grid-gap);
+  contain: layout;
+}
+
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.grid-cols-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.grid-cols-9 { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+.grid-cols-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.grid-cols-11 { grid-template-columns: repeat(11, minmax(0, 1fr)); }
+.grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+/* Grid Rows */
+.grid-rows-1 { grid-template-rows: repeat(1, minmax(0, 1fr)); }
+.grid-rows-2 { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.grid-rows-3 { grid-template-rows: repeat(3, minmax(0, 1fr)); }
+.grid-rows-4 { grid-template-rows: repeat(4, minmax(0, 1fr)); }
+.grid-rows-5 { grid-template-rows: repeat(5, minmax(0, 1fr)); }
+.grid-rows-6 { grid-template-rows: repeat(6, minmax(0, 1fr)); }
+
+/* Column Spans */
+.col-span-1 { grid-column: span 1 / span 1; }
+.col-span-2 { grid-column: span 2 / span 2; }
+.col-span-3 { grid-column: span 3 / span 3; }
+.col-span-4 { grid-column: span 4 / span 4; }
+.col-span-5 { grid-column: span 5 / span 5; }
+.col-span-6 { grid-column: span 6 / span 6; }
+.col-span-7 { grid-column: span 7 / span 7; }
+.col-span-8 { grid-column: span 8 / span 8; }
+.col-span-9 { grid-column: span 9 / span 9; }
+.col-span-10 { grid-column: span 10 / span 10; }
+.col-span-11 { grid-column: span 11 / span 11; }
+.col-span-12 { grid-column: span 12 / span 12; }
+.col-span-full { grid-column: 1 / -1; }
+
+/* Row Spans */
+.row-span-1 { grid-row: span 1 / span 1; }
+.row-span-2 { grid-row: span 2 / span 2; }
+.row-span-3 { grid-row: span 3 / span 3; }
+.row-span-4 { grid-row: span 4 / span 4; }
+.row-span-5 { grid-row: span 5 / span 5; }
+.row-span-6 { grid-row: span 6 / span 6; }
+.row-span-full { grid-row: 1 / -1; }
+
+/* ==========================================================================
+   MAINFRAME KB LAYOUT AREAS
+   ========================================================================== */
+
+/* Main Application Layout */
+.app-layout {
+  display: grid;
+  min-height: 100vh;
+  grid-template-areas:
+    "header header"
+    "sidebar main"
+    "footer footer";
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: var(--header-height) 1fr var(--footer-height);
+  gap: 0;
+}
+
+.app-header {
+  grid-area: header;
+  contain: layout style;
+}
+
+.app-sidebar {
+  grid-area: sidebar;
+  contain: layout style;
+  transition: var(--smooth-transition);
+}
+
+.app-main {
+  grid-area: main;
+  contain: layout;
+  overflow: hidden;
+}
+
+.app-footer {
+  grid-area: footer;
+  contain: layout style;
+}
+
+/* Collapsed Sidebar Layout */
+.app-layout.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-width-collapsed) 1fr;
+}
+
+/* Knowledge Base Main Content Layout */
+.kb-main-layout {
+  display: grid;
+  height: 100%;
+  grid-template-areas:
+    "search search"
+    "results detail";
+  grid-template-columns: 400px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: var(--grid-gap);
+  padding: var(--space-6);
+}
+
+.kb-search-area {
+  grid-area: search;
+  contain: layout style;
+}
+
+.kb-results-area {
+  grid-area: results;
+  contain: layout;
+  overflow-y: auto;
+  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 120px);
+}
+
+.kb-detail-area {
+  grid-area: detail;
+  contain: layout;
+  overflow-y: auto;
+  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 120px);
+}
+
+/* Dashboard Layout */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--grid-gap);
+  padding: var(--space-6);
+}
+
+.dashboard-card {
+  contain: layout style;
+  transition: var(--smooth-transition);
+}
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+/* ==========================================================================
+   GAP UTILITIES
+   ========================================================================== */
+
+.gap-0 { gap: var(--space-0); }
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); }
+.gap-6 { gap: var(--space-6); }
+.gap-8 { gap: var(--space-8); }
+.gap-10 { gap: var(--space-10); }
+.gap-12 { gap: var(--space-12); }
+.gap-16 { gap: var(--space-16); }
+
+.gap-x-0 { column-gap: var(--space-0); }
+.gap-x-1 { column-gap: var(--space-1); }
+.gap-x-2 { column-gap: var(--space-2); }
+.gap-x-3 { column-gap: var(--space-3); }
+.gap-x-4 { column-gap: var(--space-4); }
+.gap-x-6 { column-gap: var(--space-6); }
+.gap-x-8 { column-gap: var(--space-8); }
+
+.gap-y-0 { row-gap: var(--space-0); }
+.gap-y-1 { row-gap: var(--space-1); }
+.gap-y-2 { row-gap: var(--space-2); }
+.gap-y-3 { row-gap: var(--space-3); }
+.gap-y-4 { row-gap: var(--space-4); }
+.gap-y-6 { row-gap: var(--space-6); }
+.gap-y-8 { row-gap: var(--space-8); }
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+
+/* Small devices (landscape phones, 640px and up) */
+@media (max-width: 639.98px) {
+  :root {
+    --grid-gap: var(--grid-gap-xs);
+    --container-padding: var(--container-padding-sm);
+    --sidebar-width: 100%;
+  }
+
+  .container {
+    padding-left: var(--container-padding-sm);
+    padding-right: var(--container-padding-sm);
+  }
+
+  /* Mobile-first grid adjustments */
+  .grid {
+    gap: var(--grid-gap-xs);
+  }
+
+  /* Mobile layout - stack everything */
+  .app-layout {
+    grid-template-areas:
+      "header"
+      "main"
+      "footer";
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--header-height) 1fr var(--footer-height);
+  }
+
+  .kb-main-layout {
+    grid-template-areas:
+      "search"
+      "results"
+      "detail";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    padding: var(--space-4);
+  }
+
+  /* Mobile utilities */
+  .sm\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sm\:col-span-1 { grid-column: span 1 / span 1; }
+  .sm\:col-span-2 { grid-column: span 2 / span 2; }
+  .sm\:col-span-full { grid-column: 1 / -1; }
+}
+
+/* Medium devices (tablets, 640px and up) */
+@media (min-width: 640px) {
+  .sm\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sm\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .sm\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+  .sm\:col-span-1 { grid-column: span 1 / span 1; }
+  .sm\:col-span-2 { grid-column: span 2 / span 2; }
+  .sm\:col-span-3 { grid-column: span 3 / span 3; }
+  .sm\:col-span-4 { grid-column: span 4 / span 4; }
+  .sm\:col-span-6 { grid-column: span 6 / span 6; }
+  .sm\:col-span-full { grid-column: 1 / -1; }
+}
+
+/* Large tablets and small desktops (768px and up) - MINIMUM */
+@media (min-width: 768px) {
+  :root {
+    --grid-gap: var(--grid-gap-sm);
+  }
+
+  /* Tablet layout - sidebar on top */
+  .app-layout {
+    grid-template-areas:
+      "header header"
+      "sidebar main"
+      "footer footer";
+    grid-template-columns: 280px 1fr;
+  }
+
+  .kb-main-layout {
+    grid-template-areas:
+      "search search"
+      "results detail";
+    grid-template-columns: 350px 1fr;
+    padding: var(--space-5);
+  }
+
+  .md\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .md\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .md\:grid-cols-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .md\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+  .md\:col-span-1 { grid-column: span 1 / span 1; }
+  .md\:col-span-2 { grid-column: span 2 / span 2; }
+  .md\:col-span-3 { grid-column: span 3 / span 3; }
+  .md\:col-span-4 { grid-column: span 4 / span 4; }
+  .md\:col-span-6 { grid-column: span 6 / span 6; }
+  .md\:col-span-8 { grid-column: span 8 / span 8; }
+  .md\:col-span-full { grid-column: 1 / -1; }
+}
+
+/* Desktop devices (1024px and up) - SECONDARY */
+@media (min-width: 1024px) {
+  .kb-main-layout {
+    grid-template-columns: 380px 1fr;
+    padding: var(--space-6);
+  }
+
+  .lg\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lg\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .lg\:grid-cols-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .lg\:grid-cols-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .lg\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+  .lg\:col-span-1 { grid-column: span 1 / span 1; }
+  .lg\:col-span-2 { grid-column: span 2 / span 2; }
+  .lg\:col-span-3 { grid-column: span 3 / span 3; }
+  .lg\:col-span-4 { grid-column: span 4 / span 4; }
+  .lg\:col-span-5 { grid-column: span 5 / span 5; }
+  .lg\:col-span-6 { grid-column: span 6 / span 6; }
+  .lg\:col-span-8 { grid-column: span 8 / span 8; }
+  .lg\:col-span-10 { grid-column: span 10 / span 10; }
+  .lg\:col-span-full { grid-column: 1 / -1; }
+}
+
+/* Large desktop devices (1280px and up) - PRIMARY */
+@media (min-width: 1280px) {
+  .kb-main-layout {
+    grid-template-columns: 400px 1fr;
+  }
+
+  .xl\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .xl\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .xl\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .xl\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .xl\:grid-cols-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .xl\:grid-cols-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .xl\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+  .xl\:col-span-1 { grid-column: span 1 / span 1; }
+  .xl\:col-span-2 { grid-column: span 2 / span 2; }
+  .xl\:col-span-3 { grid-column: span 3 / span 3; }
+  .xl\:col-span-4 { grid-column: span 4 / span 4; }
+  .xl\:col-span-5 { grid-column: span 5 / span 5; }
+  .xl\:col-span-6 { grid-column: span 6 / span 6; }
+  .xl\:col-span-8 { grid-column: span 8 / span 8; }
+  .xl\:col-span-10 { grid-column: span 10 / span 10; }
+  .xl\:col-span-full { grid-column: 1 / -1; }
+}
+
+/* Extra large desktop devices (1536px and up) */
+@media (min-width: 1536px) {
+  .kb-main-layout {
+    grid-template-columns: 420px 1fr;
+    padding: var(--space-8);
+  }
+
+  .2xl\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .2xl\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .2xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .2xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .2xl\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .2xl\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .2xl\:grid-cols-8 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .2xl\:grid-cols-10 { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .2xl\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+  .2xl\:col-span-1 { grid-column: span 1 / span 1; }
+  .2xl\:col-span-2 { grid-column: span 2 / span 2; }
+  .2xl\:col-span-3 { grid-column: span 3 / span 3; }
+  .2xl\:col-span-4 { grid-column: span 4 / span 4; }
+  .2xl\:col-span-5 { grid-column: span 5 / span 5; }
+  .2xl\:col-span-6 { grid-column: span 6 / span 6; }
+  .2xl\:col-span-8 { grid-column: span 8 / span 8; }
+  .2xl\:col-span-10 { grid-column: span 10 / span 10; }
+  .2xl\:col-span-full { grid-column: 1 / -1; }
+}
+
+/* ==========================================================================
+   SPECIAL LAYOUT PATTERNS
+   ========================================================================== */
+
+/* Auto-fit grids for responsive cards */
+.grid-auto-fit-xs { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grid-auto-fit-sm { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.grid-auto-fit-md { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-auto-fit-lg { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+.grid-auto-fit-xl { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+
+/* Auto-fill grids for consistent sizing */
+.grid-auto-fill-xs { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.grid-auto-fill-sm { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.grid-auto-fill-md { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.grid-auto-fill-lg { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
+.grid-auto-fill-xl { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+
+/* Masonry-like layouts */
+.grid-masonry {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: max-content;
+  gap: var(--grid-gap);
+}
+
+/* Dense grid packing */
+.grid-dense {
+  grid-auto-flow: row dense;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+/* Display utilities */
+.grid { display: grid; }
+.inline-grid { display: inline-grid; }
+
+/* Alignment utilities */
+.justify-start { justify-content: start; }
+.justify-end { justify-content: end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.justify-evenly { justify-content: space-evenly; }
+
+.justify-items-start { justify-items: start; }
+.justify-items-end { justify-items: end; }
+.justify-items-center { justify-items: center; }
+.justify-items-stretch { justify-items: stretch; }
+
+.align-start { align-content: start; }
+.align-end { align-content: end; }
+.align-center { align-content: center; }
+.align-between { align-content: space-between; }
+.align-around { align-content: space-around; }
+.align-evenly { align-content: space-evenly; }
+
+.align-items-start { align-items: start; }
+.align-items-end { align-items: end; }
+.align-items-center { align-items: center; }
+.align-items-stretch { align-items: stretch; }
+
+.place-content-start { place-content: start; }
+.place-content-end { place-content: end; }
+.place-content-center { place-content: center; }
+.place-content-between { place-content: space-between; }
+.place-content-around { place-content: space-around; }
+.place-content-evenly { place-content: space-evenly; }
+.place-content-stretch { place-content: stretch; }
+
+.place-items-start { place-items: start; }
+.place-items-end { place-items: end; }
+.place-items-center { place-items: center; }
+.place-items-stretch { place-items: stretch; }
+
+/* Auto flow utilities */
+.grid-flow-row { grid-auto-flow: row; }
+.grid-flow-col { grid-auto-flow: column; }
+.grid-flow-dense { grid-auto-flow: dense; }
+.grid-flow-row-dense { grid-auto-flow: row dense; }
+.grid-flow-col-dense { grid-auto-flow: column dense; }
+
+/* ==========================================================================
+   ACCESSIBILITY AND PRINT STYLES
+   ========================================================================== */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .grid,
+  .grid-item,
+  .app-sidebar {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .grid {
+    gap: calc(var(--grid-gap) * 1.2);
+  }
+}
+
+/* Print styles */
+@media print {
+  .app-layout {
+    grid-template-areas:
+      "header"
+      "main";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .app-sidebar,
+  .app-footer {
+    display: none;
+  }
+
+  .kb-main-layout {
+    grid-template-areas:
+      "search"
+      "results"
+      "detail";
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   PERFORMANCE MONITORING
+   ========================================================================== */
+
+/* CSS-only performance hints */
+.perf-critical {
+  contain: strict;
+  content-visibility: auto;
+}
+
+.perf-optimize {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* Grid debugging (remove in production) */
+.debug-grid {
+  background-image:
+    linear-gradient(rgba(255, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: var(--space-4) var(--space-4);
+}

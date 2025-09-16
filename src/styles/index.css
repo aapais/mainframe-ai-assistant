@@ -1,0 +1,293 @@
+/**
+ * Main Styles Entry Point - Mainframe AI Assistant
+ *
+ * Comprehensive style import structure that ensures proper cascade order
+ * and optimal performance for the design system implementation.
+ */
+
+/* ==========================================
+   DESIGN SYSTEM FOUNDATIONS
+   Core tokens and foundational styles
+   ========================================== */
+
+/* Design system tokens - loaded first */
+@import './design-system/tokens.css';
+
+/* Typography system with responsive scaling */
+@import './typography.css';
+
+/* Spacing system with 8px grid */
+@import './spacing-system.css';
+
+/* Visual hierarchy and layout foundations */
+@import './visual-hierarchy.css';
+
+/* Density variants for different UI densities */
+@import './density-variants.css';
+
+/* ==========================================
+   CORE DESIGN SYSTEM FILES
+   Foundation styles and component base
+   ========================================== */
+
+/* Design system foundations (reset, base styles, accessibility) */
+@import './design-system/foundations.css';
+
+/* Core component patterns and compositions */
+@import './design-system/components.css';
+
+/* ==========================================
+   ENHANCED DESIGN SYSTEM INTEGRATION
+   Advanced typography and spacing utilities
+   ========================================== */
+
+/* Enhanced typography utilities and patterns */
+@import './typography-enhancements.css';
+
+/* Advanced spacing patterns and layouts */
+@import './spacing-enhancements.css';
+
+/* Design system integration utilities */
+@import './design-system-integration.css';
+
+/* ==========================================
+   RESPONSIVE DESIGN SYSTEM
+   Responsive grid and layout systems
+   ========================================== */
+
+/* Responsive grid system */
+@import './responsive-grid.css';
+
+/* Component-specific enhancements */
+@import './component-enhancements.css';
+
+/* ==========================================
+   ACCESSIBILITY AND COMPLIANCE
+   WCAG compliance and accessibility features
+   ========================================== */
+
+/* Accessibility enhancements and compliance */
+@import '../renderer/styles/accessibility.css';
+
+/* High contrast mode support */
+@import '../renderer/styles/high-contrast.css';
+
+/* Keyboard navigation improvements */
+@import '../renderer/styles/keyboard-navigation.css';
+
+/* ==========================================
+   THEME SYSTEM
+   Theme support and customization
+   ========================================== */
+
+/* Theme system with dark mode support */
+@import '../renderer/styles/themes.css';
+
+/* ==========================================
+   COMPONENT-SPECIFIC STYLES
+   Individual component styling
+   ========================================== */
+
+/* Search interface components */
+@import './search-ui.css';
+
+/* Navigation components */
+@import '../renderer/styles/navigation.css';
+
+/* Routing and page transitions */
+@import '../renderer/styles/routing.css';
+
+/* ==========================================
+   UTILITY AND HELPER CLASSES
+   Final utility classes and overrides
+   ========================================== */
+
+/* Global utility styles */
+@import '../renderer/styles/global.css';
+
+/* Design system helper classes */
+@import '../renderer/styles/design-system.css';
+
+/* Component-specific utilities */
+@import '../renderer/styles/components.css';
+
+/* ==========================================
+   PERFORMANCE OPTIMIZATIONS
+   Critical path and optimization styles
+   ========================================== */
+
+/* Critical above-the-fold styles */
+.critical-styles {
+  /* Inline critical styles for initial render */
+  font-family: var(--font-family-system);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-base);
+}
+
+/* Preload key typography styles */
+.preload-typography {
+  font-display: swap;
+}
+
+/* ==========================================
+   PRINT OPTIMIZATIONS
+   Print-specific style optimizations
+   ========================================== */
+
+@media print {
+  /* Hide non-essential elements for print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Optimize spacing for print */
+  .print-optimized {
+    margin: 0.5in !important;
+    padding: 0 !important;
+  }
+
+  /* Print-friendly typography */
+  .print-text {
+    color: #000000 !important;
+    background: transparent !important;
+  }
+}
+
+/* ==========================================
+   DEVELOPMENT UTILITIES
+   Development-only styles and debugging
+   ========================================== */
+
+@media screen {
+  /* Development mode visual debugging */
+  .dev-mode [data-component] {
+    outline: 1px dashed rgba(255, 0, 0, 0.3);
+  }
+
+  .dev-mode [data-spacing] {
+    background-color: rgba(0, 255, 0, 0.1);
+  }
+
+  .dev-mode [data-typography] {
+    background-color: rgba(0, 0, 255, 0.1);
+  }
+}
+
+/* ==========================================
+   LOADING AND PROGRESSIVE ENHANCEMENT
+   Loading states and progressive enhancement
+   ========================================== */
+
+/* Loading skeleton styles */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 25%,
+    var(--color-surface-subtle) 50%,
+    var(--color-surface-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Progressive enhancement fallbacks */
+.js-disabled .js-only {
+  display: none;
+}
+
+.no-js .no-js-fallback {
+  display: block;
+}
+
+/* ==========================================
+   CUSTOM PROPERTIES CASCADE
+   Ensure proper custom property inheritance
+   ========================================== */
+
+/* Force custom property inheritance for components */
+* {
+  /* Ensure design tokens cascade properly */
+  --component-context: inherit;
+}
+
+/* Root-level token inheritance */
+html {
+  /* Ensure all tokens are available at root level */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ==========================================
+   PERFORMANCE HINTS
+   Browser performance optimizations
+   ========================================== */
+
+/* Optimize animations and transitions */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.will-change-scroll {
+  will-change: scroll-position;
+}
+
+/* GPU acceleration hints */
+.gpu-accelerated {
+  transform: translateZ(0);
+}
+
+/* Contain layout calculations */
+.layout-contained {
+  contain: layout style paint;
+}
+
+/* ==========================================
+   BROWSER COMPATIBILITY
+   Cross-browser compatibility fixes
+   ========================================== */
+
+/* Safari-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .safari-fix {
+    /* Safari-specific adjustments */
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Firefox-specific fixes */
+@-moz-document url-prefix() {
+  .firefox-fix {
+    /* Firefox-specific adjustments */
+    scrollbar-width: thin;
+  }
+}
+
+/* Edge/IE compatibility */
+@supports not (gap: 1rem) {
+  .legacy-grid {
+    /* Fallback for older browsers without grid gap support */
+    margin: calc(-1 * var(--space-component-sm));
+  }
+
+  .legacy-grid > * {
+    margin: var(--space-component-sm);
+  }
+}

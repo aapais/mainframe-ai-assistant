@@ -1,0 +1,549 @@
+/**
+ * Enhanced Design System Tokens
+ * Central repository for all design tokens with sophisticated color system integration
+ *
+ * Token Categories:
+ * - Enhanced Colors (semantic and primitive with accessibility compliance)
+ * - Typography (scale, weights, families)
+ * - Spacing (8px grid system)
+ * - Shadows and elevation with color-aware system
+ * - Border radius and borders
+ * - Enhanced transitions and animations
+ * - Z-index layers
+ * - Component-specific tokens
+ * - Advanced theming support
+ *
+ * Imports the enhanced color system for sophisticated theming
+ */
+@import './enhanced-colors.css';
+
+:root {
+  /* ==========================================
+     PRIMITIVE COLOR TOKENS
+     Base color palette without semantic meaning
+     ========================================== */
+
+  /* Blue Palette - Primary Brand */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-300: #93c5fd;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-800: #1e40af;
+  --blue-900: #1e3a8a;
+  --blue-950: #172554;
+
+  /* Gray Palette - Neutral Colors */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --gray-950: #030712;
+
+  /* Green Palette - Success States */
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  --green-900: #14532d;
+  --green-950: #052e16;
+
+  /* Red Palette - Error/Danger States */
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  --red-900: #7f1d1d;
+  --red-950: #450a0a;
+
+  /* Yellow/Amber Palette - Warning States */
+  --amber-50: #fffbeb;
+  --amber-100: #fef3c7;
+  --amber-200: #fde68a;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-700: #b45309;
+  --amber-800: #92400e;
+  --amber-900: #78350f;
+  --amber-950: #451a03;
+
+  /* Purple Palette - Accent Colors */
+  --purple-50: #faf5ff;
+  --purple-100: #f3e8ff;
+  --purple-200: #e9d5ff;
+  --purple-300: #d8b4fe;
+  --purple-400: #c084fc;
+  --purple-500: #a855f7;
+  --purple-600: #9333ea;
+  --purple-700: #7c3aed;
+  --purple-800: #6b21a8;
+  --purple-900: #581c87;
+  --purple-950: #3b0764;
+
+  /* Mainframe Heritage Colors */
+  --mainframe-green: #00ff00;
+  --mainframe-amber: #ffb000;
+  --mainframe-blue: #0077ff;
+  --mainframe-dark: #0a0a0a;
+  --mainframe-light: #f8fafc;
+
+  /* ==========================================
+     ENHANCED SEMANTIC COLOR TOKENS
+     Colors with specific semantic meaning using enhanced palette
+     ========================================== */
+
+  /* Enhanced Primary Brand Colors */
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+  --color-primary: var(--primary-500);
+
+  /* Enhanced Secondary Colors */
+  --color-secondary-50: var(--secondary-50);
+  --color-secondary-100: var(--secondary-100);
+  --color-secondary-200: var(--secondary-200);
+  --color-secondary-300: var(--secondary-300);
+  --color-secondary-400: var(--secondary-400);
+  --color-secondary-500: var(--secondary-500);
+  --color-secondary-600: var(--secondary-600);
+  --color-secondary-700: var(--secondary-700);
+  --color-secondary-800: var(--secondary-800);
+  --color-secondary-900: var(--secondary-900);
+  --color-secondary-950: var(--secondary-950);
+  --color-secondary: var(--secondary-500);
+
+  /* Enhanced Surface Colors */
+  --color-surface-base: var(--surface-primary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-subtle: var(--surface-secondary);
+  --color-surface-muted: var(--surface-tertiary);
+  --color-surface-disabled: var(--surface-secondary);
+  --color-surface-accent: var(--surface-accent);
+  --color-surface-success: var(--surface-success);
+  --color-surface-warning: var(--surface-warning);
+  --color-surface-error: var(--surface-error);
+  --color-surface-info: var(--surface-info);
+
+  /* Enhanced Text Colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-primary: var(--text-on-brand);
+  --color-text-on-surface: var(--text-primary);
+  --color-text-accent: var(--text-brand);
+  --color-text-success: var(--text-success);
+  --color-text-warning: var(--text-warning);
+  --color-text-error: var(--text-error);
+  --color-text-info: var(--text-info);
+  --color-text-inverse: var(--text-inverse);
+
+  /* Enhanced Border Colors */
+  --color-border-default: var(--border-primary);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-accent: var(--border-brand);
+  --color-border-success: var(--border-success);
+  --color-border-warning: var(--border-warning);
+  --color-border-error: var(--border-error);
+  --color-border-info: var(--border-info);
+  --color-border-disabled: var(--border-subtle);
+  --color-border-focus: var(--border-focus);
+
+  /* Enhanced Interactive Colors */
+  --color-interactive-primary: var(--surface-interactive-primary);
+  --color-interactive-primary-hover: var(--surface-interactive-primary-hover);
+  --color-interactive-primary-active: var(--surface-interactive-primary-active);
+  --color-interactive-secondary: var(--surface-interactive-secondary);
+  --color-interactive-secondary-hover: var(--surface-interactive-secondary-hover);
+  --color-interactive-secondary-active: var(--surface-interactive-secondary-active);
+
+  /* Enhanced Status Colors */
+  --color-success: var(--success-600);
+  --color-success-hover: var(--success-700);
+  --color-success-active: var(--success-800);
+  --color-warning: var(--warning-500);
+  --color-warning-hover: var(--warning-600);
+  --color-warning-active: var(--warning-700);
+  --color-error: var(--error-600);
+  --color-error-hover: var(--error-700);
+  --color-error-active: var(--error-800);
+  --color-info: var(--info-600);
+  --color-info-hover: var(--info-700);
+  --color-info-active: var(--info-800);
+
+  /* ==========================================
+     TYPOGRAPHY TOKENS
+     Font families, sizes, weights, and line heights
+     ========================================== */
+
+  /* Font Families */
+  --font-family-system: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-family-display: var(--font-family-system);
+  --font-family-body: var(--font-family-system);
+
+  /* Font Sizes - Scaled Typography */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+  --font-size-5xl: 3rem;      /* 48px */
+  --font-size-6xl: 3.75rem;   /* 60px */
+
+  /* Font Weights */
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+
+  /* Line Heights */
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  /* Letter Spacing */
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+
+  /* ==========================================
+     SPACING TOKENS
+     8px grid-based spacing system
+     ========================================== */
+
+  --space-0: 0rem;
+  --space-1: 0.125rem;  /* 2px */
+  --space-2: 0.25rem;   /* 4px */
+  --space-4: 0.5rem;    /* 8px - Base unit */
+  --space-6: 0.75rem;   /* 12px */
+  --space-8: 1rem;      /* 16px */
+  --space-10: 1.25rem;  /* 20px */
+  --space-12: 1.5rem;   /* 24px */
+  --space-16: 2rem;     /* 32px */
+  --space-20: 2.5rem;   /* 40px */
+  --space-24: 3rem;     /* 48px */
+  --space-32: 4rem;     /* 64px */
+  --space-40: 5rem;     /* 80px */
+  --space-48: 6rem;     /* 96px */
+  --space-56: 7rem;     /* 112px */
+  --space-64: 8rem;     /* 128px */
+  --space-80: 10rem;    /* 160px */
+  --space-96: 12rem;    /* 192px */
+  --space-128: 16rem;   /* 256px */
+
+  /* Component-Specific Spacing */
+  --space-component-xs: var(--space-2);
+  --space-component-sm: var(--space-4);
+  --space-component-md: var(--space-8);
+  --space-component-lg: var(--space-12);
+  --space-component-xl: var(--space-16);
+
+  /* Layout Spacing */
+  --space-layout-xs: var(--space-8);
+  --space-layout-sm: var(--space-16);
+  --space-layout-md: var(--space-24);
+  --space-layout-lg: var(--space-32);
+  --space-layout-xl: var(--space-48);
+
+  /* ==========================================
+     BORDER TOKENS
+     Border widths, styles, and radii
+     ========================================== */
+
+  /* Border Widths */
+  --border-width-0: 0;
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+  --border-width-8: 8px;
+
+  /* Border Styles */
+  --border-style-solid: solid;
+  --border-style-dashed: dashed;
+  --border-style-dotted: dotted;
+  --border-style-none: none;
+
+  /* Border Radius */
+  --border-radius-none: 0;
+  --border-radius-xs: 0.125rem;   /* 2px */
+  --border-radius-sm: 0.25rem;    /* 4px */
+  --border-radius-md: 0.375rem;   /* 6px */
+  --border-radius-lg: 0.5rem;     /* 8px */
+  --border-radius-xl: 0.75rem;    /* 12px */
+  --border-radius-2xl: 1rem;      /* 16px */
+  --border-radius-3xl: 1.5rem;    /* 24px */
+  --border-radius-full: 9999px;
+
+  /* Component-Specific Border Radius */
+  --border-radius-button: var(--border-radius-md);
+  --border-radius-input: var(--border-radius-md);
+  --border-radius-card: var(--border-radius-lg);
+  --border-radius-modal: var(--border-radius-xl);
+
+  /* ==========================================
+     ENHANCED SHADOW TOKENS
+     Elevation and depth system with color-aware shadows
+     ========================================== */
+
+  --shadow-xs: 0 1px 2px 0 var(--shadow-color-secondary);
+  --shadow-sm: 0 1px 3px 0 var(--shadow-color-primary), 0 1px 2px -1px var(--shadow-color-secondary);
+  --shadow-md: 0 4px 6px -1px var(--shadow-color-primary), 0 2px 4px -2px var(--shadow-color-secondary);
+  --shadow-lg: 0 10px 15px -3px var(--shadow-color-primary), 0 4px 6px -4px var(--shadow-color-secondary);
+  --shadow-xl: 0 20px 25px -5px var(--shadow-color-primary), 0 8px 10px -6px var(--shadow-color-secondary);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px 0 var(--shadow-color-secondary);
+
+  /* Enhanced Focus Shadows */
+  --shadow-focus: 0 0 0 2px var(--border-focus), 0 0 0 4px var(--border-focus-shadow);
+  --shadow-focus-error: 0 0 0 2px var(--border-error), 0 0 0 4px rgba(239, 68, 68, 0.25);
+  --shadow-focus-success: 0 0 0 2px var(--border-success), 0 0 0 4px rgba(16, 185, 129, 0.25);
+  --shadow-focus-warning: 0 0 0 2px var(--border-warning), 0 0 0 4px rgba(249, 115, 22, 0.25);
+
+  /* Colored Shadows */
+  --shadow-brand: 0 4px 6px -1px var(--shadow-color-brand), 0 2px 4px -2px var(--shadow-color-brand);
+  --shadow-success: 0 4px 6px -1px var(--shadow-color-success), 0 2px 4px -2px var(--shadow-color-success);
+  --shadow-warning: 0 4px 6px -1px var(--shadow-color-warning), 0 2px 4px -2px var(--shadow-color-warning);
+  --shadow-error: 0 4px 6px -1px var(--shadow-color-error), 0 2px 4px -2px var(--shadow-color-error);
+
+  /* Mainframe Glow Effects */
+  --shadow-mainframe-glow: 0 0 10px var(--mainframe-green-bright), 0 0 20px rgba(0, 255, 65, 0.3);
+  --shadow-mainframe-amber-glow: 0 0 10px var(--mainframe-amber-bright), 0 0 20px rgba(255, 204, 0, 0.3);
+  --shadow-mainframe-blue-glow: 0 0 10px var(--mainframe-blue-bright), 0 0 20px rgba(0, 204, 255, 0.3);
+
+  /* Component-Specific Shadows */
+  --shadow-button: var(--shadow-sm);
+  --shadow-button-hover: var(--shadow-md);
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-md);
+  --shadow-modal: var(--shadow-2xl);
+  --shadow-dropdown: var(--shadow-lg);
+  --shadow-tooltip: var(--shadow-md);
+
+  /* ==========================================
+     ANIMATION TOKENS
+     Timing, easing, and duration
+     ========================================== */
+
+  /* Durations */
+  --duration-instant: 0ms;
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  /* Easing Functions */
+  --easing-linear: linear;
+  --easing-ease: ease;
+  --easing-ease-in: ease-in;
+  --easing-ease-out: ease-out;
+  --easing-ease-in-out: ease-in-out;
+  --easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Enhanced Component-Specific Transitions */
+  --transition-button: var(--transition-all-colors),
+                       transform var(--duration-normal) var(--easing-smooth);
+
+  --transition-input: var(--transition-border-normal),
+                      var(--transition-background-normal),
+                      box-shadow var(--duration-normal) var(--easing-smooth);
+
+  --transition-modal: opacity var(--duration-normal) var(--easing-smooth),
+                      transform var(--duration-normal) var(--easing-smooth),
+                      backdrop-filter var(--duration-normal) var(--easing-smooth);
+
+  --transition-card: var(--transition-all-colors),
+                     transform var(--duration-normal) var(--easing-smooth),
+                     box-shadow var(--duration-normal) var(--easing-smooth);
+
+  --transition-base: var(--transition-all-colors);
+
+  /* ==========================================
+     Z-INDEX TOKENS
+     Stacking context layers
+     ========================================== */
+
+  --z-index-auto: auto;
+  --z-index-base: 0;
+  --z-index-docked: 10;
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1100;
+  --z-index-banner: 1200;
+  --z-index-overlay: 1300;
+  --z-index-modal: 1400;
+  --z-index-popover: 1500;
+  --z-index-tooltip: 1600;
+  --z-index-toast: 1700;
+  --z-index-max: 2147483647;
+
+  /* ==========================================
+     COMPONENT-SPECIFIC TOKENS
+     Tokens for specific UI components
+     ========================================== */
+
+  /* Button Tokens */
+  --button-padding-xs: var(--space-2) var(--space-4);
+  --button-padding-sm: var(--space-4) var(--space-6);
+  --button-padding-md: var(--space-6) var(--space-8);
+  --button-padding-lg: var(--space-8) var(--space-12);
+  --button-padding-xl: var(--space-10) var(--space-16);
+
+  --button-font-size-xs: var(--font-size-xs);
+  --button-font-size-sm: var(--font-size-sm);
+  --button-font-size-md: var(--font-size-sm);
+  --button-font-size-lg: var(--font-size-base);
+  --button-font-size-xl: var(--font-size-lg);
+
+  /* Input Tokens */
+  --input-padding: var(--space-6) var(--space-8);
+  --input-font-size: var(--font-size-base);
+  --input-line-height: var(--line-height-normal);
+  --input-border-width: var(--border-width-1);
+  --input-border-radius: var(--border-radius-input);
+
+  /* Card Tokens */
+  --card-padding: var(--space-16);
+  --card-padding-sm: var(--space-12);
+  --card-padding-lg: var(--space-24);
+  --card-border-radius: var(--border-radius-card);
+  --card-border-width: var(--border-width-1);
+
+  /* Modal Tokens */
+  --modal-padding: var(--space-24);
+  --modal-border-radius: var(--border-radius-modal);
+  --modal-max-width-sm: 24rem;
+  --modal-max-width-md: 32rem;
+  --modal-max-width-lg: 42rem;
+  --modal-max-width-xl: 48rem;
+
+  /* Navigation Tokens */
+  --nav-height: 4rem;
+  --nav-padding: var(--space-8) var(--space-16);
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 4rem;
+
+  /* Table Tokens */
+  --table-padding: var(--space-8) var(--space-12);
+  --table-header-padding: var(--space-6) var(--space-12);
+  --table-border-width: var(--border-width-1);
+
+  /* Form Tokens */
+  --form-group-spacing: var(--space-16);
+  --form-label-spacing: var(--space-4);
+  --form-error-spacing: var(--space-2);
+}
+
+/* ==========================================
+   DARK MODE TOKENS
+   Override tokens for dark theme
+   ========================================== */
+
+[data-theme="dark"] {
+  /* Note: Enhanced dark mode colors are defined in enhanced-colors.css */
+  /* This ensures the tokens system uses the sophisticated dark theme */
+
+  /* Legacy compatibility - these will be overridden by enhanced system */
+  --color-surface-base: var(--surface-primary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-subtle: var(--surface-secondary);
+  --color-surface-muted: var(--surface-tertiary);
+  --color-surface-disabled: var(--surface-secondary);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-surface: var(--text-primary);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-border-default: var(--border-primary);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-disabled: var(--border-subtle);
+
+  --color-interactive-secondary: var(--surface-interactive-secondary);
+  --color-interactive-secondary-hover: var(--surface-interactive-secondary-hover);
+  --color-interactive-secondary-active: var(--surface-interactive-secondary-active);
+}
+
+/* ==========================================
+   HIGH CONTRAST MODE TOKENS
+   Override tokens for high contrast accessibility
+   ========================================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --border-width-1: 2px;
+    --border-width-2: 3px;
+    --shadow-focus: 0 0 0 3px var(--color-primary-600);
+    --color-border-default: var(--gray-900);
+    --color-text-secondary: var(--gray-900);
+  }
+}
+
+/* ==========================================
+   REDUCED MOTION TOKENS
+   Override animation tokens for accessibility
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+    --transition-button: none;
+    --transition-input: none;
+    --transition-modal: none;
+  }
+}

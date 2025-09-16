@@ -1,0 +1,823 @@
+/**
+ * Mainframe KB Assistant - Accessibility Styles
+ *
+ * WCAG 2.1 AA compliant accessibility features including:
+ * - Skip links and keyboard navigation
+ * - Screen reader support
+ * - High contrast mode support
+ * - Focus management
+ * - Reduced motion support
+ *
+ * Version: 1.0.0
+ * WCAG 2.1 AA Compliant
+ */
+
+/* ===========================
+   SKIP LINKS
+   =========================== */
+
+.skip-links {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--z-index-skiplink);
+}
+
+.skip-link {
+  position: absolute;
+  top: calc(-1 * var(--button-height-base));
+  left: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-action-primary);
+  color: var(--color-white);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  transition: top var(--transition-base);
+  border: 2px solid var(--color-action-primary);
+  white-space: nowrap;
+}
+
+.skip-link:focus {
+  top: var(--space-2);
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--color-white);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.skip-link:hover {
+  background-color: var(--color-action-primary-hover);
+  border-color: var(--color-action-primary-hover);
+  color: var(--color-white);
+  text-decoration: none;
+}
+
+/* ===========================
+   SCREEN READER UTILITIES
+   =========================== */
+
+/* Visually hidden but available to screen readers */
+.sr-only,
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Show when focused (useful for skip links) */
+.sr-only:focus,
+.visually-hidden:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+}
+
+/* Screen reader only content that should never be visible */
+.sr-only-permanent {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ===========================
+   FOCUS MANAGEMENT
+   =========================== */
+
+/* Base focus styles */
+*:focus {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Enhanced focus for interactive elements */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus,
+[tabindex]:focus,
+[role="button"]:focus,
+[role="link"]:focus,
+[role="menuitem"]:focus,
+[role="tab"]:focus {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Focus visible (modern approach) */
+.focus-visible-only:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Custom focus styles for specific components */
+.btn:focus-visible {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--shadow-focus);
+}
+
+.card--interactive:focus-within {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Focus trap container */
+.focus-trap {
+  position: relative;
+}
+
+.focus-trap::before,
+.focus-trap::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.focus-trap::before {
+  top: 0;
+  left: 0;
+}
+
+.focus-trap::after {
+  bottom: 0;
+  right: 0;
+}
+
+/* ===========================
+   KEYBOARD NAVIGATION
+   =========================== */
+
+/* Keyboard navigation indicators */
+.keyboard-navigation {
+  /* Enhanced focus indicators when in keyboard navigation mode */
+}
+
+.keyboard-navigation *:focus {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--shadow-focus);
+}
+
+.keyboard-navigation .current-focus {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  background-color: var(--form-focus-ring);
+}
+
+/* Skip content when using keyboard navigation */
+.keyboard-skip {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.keyboard-skip:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* ===========================
+   HIGH CONTRAST SUPPORT
+   =========================== */
+
+@media (prefers-contrast: high) {
+  /* System high contrast mode overrides */
+  .skip-link {
+    background-color: ButtonText;
+    color: ButtonFace;
+    border: 2px solid ButtonText;
+  }
+
+  .skip-link:focus {
+    outline: 3px solid Highlight;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  *:focus {
+    outline: 3px solid Highlight;
+    outline-offset: 1px;
+  }
+
+  button:focus,
+  a:focus,
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  /* Enhanced border visibility */
+  .card,
+  .modal,
+  .dropdown__menu {
+    border-width: 2px;
+    border-color: ButtonText;
+  }
+
+  /* Button contrast improvements */
+  .btn {
+    border-width: 2px;
+  }
+
+  .btn--primary {
+    background-color: ButtonText;
+    color: ButtonFace;
+    border-color: ButtonText;
+  }
+
+  .btn--secondary {
+    background-color: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+}
+
+/* ===========================
+   REDUCED MOTION SUPPORT
+   =========================== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable or reduce animations */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Remove complex animations */
+  .spinner {
+    animation: none;
+  }
+
+  .skeleton {
+    animation: none;
+    background: var(--color-gray-200);
+  }
+
+  .toast {
+    animation: none;
+  }
+
+  /* Maintain essential transitions for accessibility */
+  .skip-link:focus,
+  *:focus {
+    transition: none;
+  }
+}
+
+/* ===========================
+   ARIA LIVE REGIONS
+   =========================== */
+
+/* Live region containers */
+[aria-live] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.live-region {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Status announcements */
+.status-announcement,
+.loading-announcement,
+.error-announcement,
+.success-announcement {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ===========================
+   ERROR AND SUCCESS STATES
+   =========================== */
+
+/* Error states with enhanced accessibility */
+.error-state,
+[aria-invalid="true"] {
+  border-left: 4px solid var(--color-error-500);
+}
+
+.error-message[role="alert"] {
+  background-color: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+  color: var(--status-error-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.error-message[role="alert"]::before {
+  content: "⚠";
+  flex-shrink: 0;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-error-600);
+}
+
+/* Success states */
+.success-state {
+  border-left: 4px solid var(--color-success-500);
+}
+
+.success-message[role="alert"] {
+  background-color: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+  color: var(--status-success-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.success-message[role="alert"]::before {
+  content: "✓";
+  flex-shrink: 0;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success-600);
+}
+
+/* Warning states */
+.warning-message[role="alert"] {
+  background-color: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-border);
+  color: var(--status-warning-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.warning-message[role="alert"]::before {
+  content: "⚠";
+  flex-shrink: 0;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-warning-600);
+}
+
+/* Info states */
+.info-message[role="alert"] {
+  background-color: var(--status-info-bg);
+  border: 1px solid var(--status-info-border);
+  color: var(--status-info-text);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.info-message[role="alert"]::before {
+  content: "ℹ";
+  flex-shrink: 0;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-600);
+}
+
+/* ===========================
+   FORM ACCESSIBILITY
+   =========================== */
+
+/* Form field error states */
+.form-field--error input,
+.form-field--error textarea,
+.form-field--error select {
+  border-color: var(--color-border-error);
+  box-shadow: 0 0 0 3px var(--form-error-ring);
+}
+
+.form-field--error .form-label {
+  color: var(--color-error-600);
+}
+
+.form-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error-600);
+  margin-top: var(--space-1);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.form-error::before {
+  content: "⚠";
+  flex-shrink: 0;
+  font-weight: var(--font-weight-bold);
+}
+
+/* Required field indicators */
+.form-label--required::after {
+  content: " *";
+  color: var(--color-error-600);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Form help text */
+.form-help {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* Valid form fields */
+.form-field--valid input,
+.form-field--valid textarea,
+.form-field--valid select {
+  border-color: var(--color-success-500);
+  box-shadow: 0 0 0 3px var(--form-valid-ring);
+}
+
+/* ===========================
+   MODAL AND DIALOG ACCESSIBILITY
+   =========================== */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-background-overlay);
+  z-index: var(--z-index-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal[role="dialog"] {
+  background: var(--color-surface-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2xl);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  position: relative;
+  border: 2px solid var(--color-border-primary);
+}
+
+.modal[role="dialog"]:focus {
+  outline: none;
+}
+
+.modal__header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--color-border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal__title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  padding: var(--space-2);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+.modal__close:hover {
+  background-color: var(--color-action-secondary);
+  color: var(--color-text-primary);
+}
+
+.modal__close:focus {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ===========================
+   TABLE ACCESSIBILITY
+   =========================== */
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding: var(--space-3) var(--space-4);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-primary);
+  vertical-align: top;
+}
+
+.table th {
+  background-color: var(--color-surface-secondary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-sticky);
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-surface-secondary);
+}
+
+.table tbody tr:focus-within {
+  outline: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+/* Sortable table headers */
+.table th[role="columnheader"] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table th[role="columnheader"]:hover {
+  background-color: var(--color-action-secondary);
+}
+
+.table th[aria-sort] {
+  position: relative;
+}
+
+.table th[aria-sort="ascending"]::after {
+  content: " ↑";
+  position: absolute;
+  right: var(--space-2);
+}
+
+.table th[aria-sort="descending"]::after {
+  content: " ↓";
+  position: absolute;
+  right: var(--space-2);
+}
+
+/* ===========================
+   TOOLTIP ACCESSIBILITY
+   =========================== */
+
+.tooltip-trigger {
+  position: relative;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: var(--z-index-tooltip);
+  background-color: var(--color-background-inverse);
+  color: var(--color-text-inverse);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  max-width: var(--size-64);
+  word-wrap: break-word;
+  box-shadow: var(--shadow-lg);
+}
+
+.tooltip[role="tooltip"] {
+  /* Ensure tooltip is properly announced by screen readers */
+}
+
+/* ===========================
+   NAVIGATION ACCESSIBILITY
+   =========================== */
+
+/* Skip navigation for repetitive content */
+.skip-nav {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-nav:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Landmark roles styling */
+[role="main"] {
+  outline: none;
+}
+
+[role="navigation"] {
+  outline: none;
+}
+
+[role="banner"] {
+  outline: none;
+}
+
+[role="contentinfo"] {
+  outline: none;
+}
+
+/* ===========================
+   COLOR BLIND SUPPORT
+   =========================== */
+
+/* Don't rely solely on color for information */
+.status-indicator {
+  position: relative;
+}
+
+.status-indicator--success::before {
+  content: "✓ ";
+  color: var(--color-success-600);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-indicator--error::before {
+  content: "✗ ";
+  color: var(--color-error-600);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-indicator--warning::before {
+  content: "⚠ ";
+  color: var(--color-warning-600);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-indicator--info::before {
+  content: "ℹ ";
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ===========================
+   PRINT ACCESSIBILITY
+   =========================== */
+
+@media print {
+  /* Hide accessibility-specific elements that don't make sense in print */
+  .skip-links,
+  .visually-hidden,
+  [aria-live],
+  .focus-ring,
+  .tooltip {
+    display: none !important;
+  }
+
+  /* Show hidden content that's useful for print */
+  .print-only {
+    display: block !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure good contrast in print */
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Add URLs for links */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* ===========================
+   RESPONSIVE ACCESSIBILITY
+   =========================== */
+
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  a,
+  input,
+  textarea,
+  select,
+  [role="button"],
+  [role="link"] {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  .modal[role="dialog"] {
+    margin: var(--space-4);
+    max-width: calc(100vw - var(--space-8));
+    max-height: calc(100vh - var(--space-8));
+  }
+
+  .skip-link:focus {
+    font-size: var(--font-size-sm);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  /* Adjust focus ring for mobile */
+  *:focus {
+    outline-width: 3px;
+    outline-offset: 1px;
+  }
+}
+
+/* ===========================
+   UTILITY CLASSES
+   =========================== */
+
+/* Accessibility utility classes */
+.focus-visible-only:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.no-focus:focus {
+  outline: none;
+}
+
+.enhanced-focus:focus {
+  outline: 3px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px var(--form-focus-ring);
+}
+
+/* Text alternatives for images */
+.img-alt-text {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Loading states for screen readers */
+.loading-text {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

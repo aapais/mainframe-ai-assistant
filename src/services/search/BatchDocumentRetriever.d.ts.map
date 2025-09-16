@@ -1,0 +1,1 @@
+{"version":3,"file":"BatchDocumentRetriever.d.ts","sourceRoot":"","sources":["BatchDocumentRetriever.ts"],"names":[],"mappings":"AAAA,qBAAa,sBAAsB;;IAG3B,aAAa,CAAC,GAAG,EAAE,MAAM,EAAE,GAAG,OAAO,CAAC,GAAG,EAAE,CAAC;IAK5C,gBAAgB,CAAC,EAAE,EAAE,MAAM,GAAG,OAAO,CAAC,GAAG,CAAC;IAI1C,eAAe,CAAC,KAAK,EAAE,MAAM,GAAG,OAAO,CAAC,GAAG,EAAE,CAAC;CAGrD"}

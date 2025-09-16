@@ -1,0 +1,220 @@
+/* Breadcrumb Navigation Styles */
+
+.breadcrumb-navigation {
+  @apply flex items-center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* List Styles */
+.breadcrumb-list {
+  @apply flex items-center list-none m-0 p-0;
+  gap: 0.25rem;
+}
+
+.breadcrumb-list-item {
+  @apply flex items-center;
+}
+
+/* Item Styles */
+.breadcrumb-item {
+  @apply flex items-center gap-1 text-gray-600 transition-colors duration-200;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.breadcrumb-item.interactive {
+  @apply hover:text-blue-600 hover:bg-blue-50 cursor-pointer;
+}
+
+.breadcrumb-item.interactive:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-1;
+}
+
+.breadcrumb-item.interactive:active {
+  @apply bg-blue-100;
+}
+
+.breadcrumb-item.active {
+  @apply text-blue-600 bg-blue-50;
+}
+
+.breadcrumb-item.current {
+  @apply text-gray-900 font-medium;
+}
+
+.breadcrumb-item.static {
+  @apply cursor-default;
+}
+
+/* Icon Styles */
+.breadcrumb-icon {
+  @apply flex-shrink-0;
+}
+
+/* Label Styles */
+.breadcrumb-label {
+  @apply truncate;
+  max-width: 12rem;
+}
+
+/* Badge Styles */
+.breadcrumb-badge {
+  @apply inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full;
+  min-width: 1rem;
+  height: 1rem;
+}
+
+/* Separator Styles */
+.breadcrumb-separator {
+  @apply flex-shrink-0 mx-1 text-gray-400;
+}
+
+/* Ellipsis Styles */
+.breadcrumb-ellipsis {
+  @apply flex items-center justify-center w-8 h-8 text-gray-400 hover:text-gray-600 cursor-pointer rounded;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-ellipsis:hover {
+  @apply bg-gray-50;
+}
+
+/* Loading State */
+.breadcrumb-navigation.loading .breadcrumb-skeleton {
+  @apply flex items-center gap-2;
+}
+
+.skeleton-item {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-separator {
+  @apply flex-shrink-0;
+}
+
+/* Empty State */
+.breadcrumb-navigation.empty .breadcrumb-empty {
+  @apply flex items-center gap-2 text-gray-500;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .breadcrumb-navigation {
+    @apply text-sm;
+  }
+
+  .breadcrumb-label {
+    max-width: 8rem;
+  }
+
+  .breadcrumb-item {
+    padding: 0.125rem 0.25rem;
+  }
+
+  .breadcrumb-badge {
+    @apply hidden;
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumb-label {
+    max-width: 6rem;
+  }
+}
+
+/* Collapsed State */
+.breadcrumb-navigation.collapsed {
+  @apply relative;
+}
+
+/* Expansion Overlay */
+.breadcrumb-expansion {
+  @apply absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg p-2 z-10;
+  margin-top: 0.25rem;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .breadcrumb-item {
+    @apply border border-transparent;
+  }
+
+  .breadcrumb-item.interactive:focus {
+    @apply border-blue-600 ring-0;
+  }
+
+  .breadcrumb-item.active {
+    @apply border-blue-600 bg-blue-100;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .breadcrumb-item,
+  .breadcrumb-ellipsis,
+  .skeleton-item {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .breadcrumb-item {
+    @apply text-gray-300;
+  }
+
+  .breadcrumb-item.interactive:hover {
+    @apply text-blue-400 bg-blue-900/20;
+  }
+
+  .breadcrumb-item.interactive:focus {
+    @apply ring-blue-400;
+  }
+
+  .breadcrumb-item.active {
+    @apply text-blue-400 bg-blue-900/30;
+  }
+
+  .breadcrumb-item.current {
+    @apply text-white;
+  }
+
+  .breadcrumb-separator {
+    @apply text-gray-500;
+  }
+
+  .breadcrumb-badge {
+    @apply bg-gray-700 text-gray-200;
+  }
+
+  .breadcrumb-ellipsis {
+    @apply text-gray-500 hover:text-gray-300 hover:bg-gray-800;
+  }
+
+  .breadcrumb-expansion {
+    @apply bg-gray-800 border-gray-700;
+  }
+}
+
+/* Focus Visible Support */
+.breadcrumb-item:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* Print Styles */
+@media print {
+  .breadcrumb-navigation {
+    @apply text-black;
+  }
+
+  .breadcrumb-item.interactive:hover,
+  .breadcrumb-item.interactive:focus {
+    @apply text-black bg-transparent;
+  }
+
+  .breadcrumb-ellipsis {
+    display: none;
+  }
+}

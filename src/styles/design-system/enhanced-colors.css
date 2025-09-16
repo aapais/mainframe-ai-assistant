@@ -1,0 +1,629 @@
+/**
+ * Enhanced Color Palette and Theming System
+ *
+ * This system provides:
+ * - Sophisticated, brand-aligned color palettes
+ * - WCAG AA/AAA compliant contrast ratios
+ * - Advanced semantic color usage
+ * - Smooth theme transitions
+ * - High contrast mode support
+ * - Gradient and overlay systems
+ * - Color animation capabilities
+ */
+
+/* ==========================================
+   ENHANCED COLOR PALETTES
+   Sophisticated brand-aligned colors
+   ========================================== */
+
+:root {
+  /* === PRIMARY BRAND PALETTE === */
+  /* Modern blue with sophisticated variants */
+  --primary-50: #eff8ff;
+  --primary-100: #dbeefe;
+  --primary-200: #bfe3fd;
+  --primary-300: #93d2fb;
+  --primary-400: #60b8f7;
+  --primary-500: #3b9df0;   /* Main brand color */
+  --primary-600: #2b7de4;
+  --primary-700: #2565d1;
+  --primary-800: #2551aa;
+  --primary-900: #244586;
+  --primary-950: #1a2b52;
+
+  /* === SECONDARY BRAND PALETTE === */
+  /* Sophisticated purple for accents */
+  --secondary-50: #faf7ff;
+  --secondary-100: #f4edff;
+  --secondary-200: #ebdcff;
+  --secondary-300: #dcc0ff;
+  --secondary-400: #c796ff;
+  --secondary-500: #b569ff;
+  --secondary-600: #a440ff;
+  --secondary-700: #9333ea;
+  --secondary-800: #7928c4;
+  --secondary-900: #651ea1;
+  --secondary-950: #44106e;
+
+  /* === NEUTRAL PALETTE === */
+  /* Warm grays for better visual hierarchy */
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-900: #171717;
+  --neutral-950: #0a0a0a;
+
+  /* === SUCCESS PALETTE === */
+  /* Enhanced green with better accessibility */
+  --success-50: #ecfdf5;
+  --success-100: #d1fae5;
+  --success-200: #a7f3d0;
+  --success-300: #6ee7b7;
+  --success-400: #34d399;
+  --success-500: #10b981;
+  --success-600: #059669;
+  --success-700: #047857;
+  --success-800: #065f46;
+  --success-900: #064e3b;
+  --success-950: #022c22;
+
+  /* === WARNING PALETTE === */
+  /* Refined amber with better contrast */
+  --warning-50: #fffbeb;
+  --warning-100: #fef3c7;
+  --warning-200: #fed18a;
+  --warning-300: #fdba4d;
+  --warning-400: #fb923c;
+  --warning-500: #f97316;
+  --warning-600: #ea580c;
+  --warning-700: #c2410c;
+  --warning-800: #9a3412;
+  --warning-900: #7c2d12;
+  --warning-950: #431407;
+
+  /* === ERROR PALETTE === */
+  /* Sophisticated red with excellent accessibility */
+  --error-50: #fef2f2;
+  --error-100: #fee2e2;
+  --error-200: #fecaca;
+  --error-300: #fca5a5;
+  --error-400: #f87171;
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+  --error-700: #b91c1c;
+  --error-800: #991b1b;
+  --error-900: #7f1d1d;
+  --error-950: #450a0a;
+
+  /* === INFO PALETTE === */
+  /* Cool cyan for informational states */
+  --info-50: #ecfeff;
+  --info-100: #cffafe;
+  --info-200: #a5f3fc;
+  --info-300: #67e8f9;
+  --info-400: #22d3ee;
+  --info-500: #06b6d4;
+  --info-600: #0891b2;
+  --info-700: #0e7490;
+  --info-800: #155e75;
+  --info-900: #164e63;
+  --info-950: #083344;
+
+  /* === MAINFRAME HERITAGE COLORS === */
+  /* Enhanced with better accessibility */
+  --mainframe-green-bright: #00ff41;
+  --mainframe-green-medium: #00e836;
+  --mainframe-green-dark: #00b82b;
+  --mainframe-green-darker: #008f20;
+
+  --mainframe-amber-bright: #ffcc00;
+  --mainframe-amber-medium: #e6b800;
+  --mainframe-amber-dark: #cc9900;
+  --mainframe-amber-darker: #b38800;
+
+  --mainframe-blue-bright: #00ccff;
+  --mainframe-blue-medium: #00b3e6;
+  --mainframe-blue-dark: #0099cc;
+  --mainframe-blue-darker: #007bb3;
+
+  /* Terminal Colors */
+  --terminal-black: #000000;
+  --terminal-dark-gray: #0a0a0a;
+  --terminal-medium-gray: #1a1a1a;
+  --terminal-light-gray: #2a2a2a;
+  --terminal-cursor: #ffffff;
+  --terminal-cursor-alt: #ffff00;
+}
+
+/* ==========================================
+   ENHANCED SEMANTIC COLOR SYSTEM
+   Context-aware color assignments
+   ========================================== */
+
+:root {
+  /* === SURFACE SEMANTICS === */
+  --surface-primary: var(--neutral-50);
+  --surface-secondary: var(--neutral-100);
+  --surface-tertiary: var(--neutral-200);
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(255, 255, 255, 0.95);
+  --surface-sunken: var(--neutral-75);
+  --surface-accent: var(--primary-50);
+  --surface-accent-hover: var(--primary-100);
+  --surface-accent-active: var(--primary-200);
+
+  /* Brand Surface */
+  --surface-brand: var(--primary-500);
+  --surface-brand-hover: var(--primary-600);
+  --surface-brand-active: var(--primary-700);
+  --surface-brand-subtle: var(--primary-50);
+
+  /* Status Surfaces */
+  --surface-success: var(--success-50);
+  --surface-success-hover: var(--success-100);
+  --surface-warning: var(--warning-50);
+  --surface-warning-hover: var(--warning-100);
+  --surface-error: var(--error-50);
+  --surface-error-hover: var(--error-100);
+  --surface-info: var(--info-50);
+  --surface-info-hover: var(--info-100);
+
+  /* Interactive Surfaces */
+  --surface-interactive-primary: var(--primary-500);
+  --surface-interactive-primary-hover: var(--primary-600);
+  --surface-interactive-primary-active: var(--primary-700);
+  --surface-interactive-secondary: var(--neutral-100);
+  --surface-interactive-secondary-hover: var(--neutral-200);
+  --surface-interactive-secondary-active: var(--neutral-300);
+
+  /* === TEXT SEMANTICS === */
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-700);
+  --text-tertiary: var(--neutral-500);
+  --text-quaternary: var(--neutral-400);
+  --text-placeholder: var(--neutral-400);
+  --text-disabled: var(--neutral-400);
+  --text-inverse: var(--neutral-50);
+  --text-brand: var(--primary-600);
+  --text-accent: var(--secondary-600);
+
+  /* Text on Color */
+  --text-on-brand: var(--primary-50);
+  --text-on-success: var(--success-900);
+  --text-on-warning: var(--warning-900);
+  --text-on-error: var(--error-50);
+  --text-on-info: var(--info-900);
+
+  /* Status Text */
+  --text-success: var(--success-700);
+  --text-warning: var(--warning-700);
+  --text-error: var(--error-700);
+  --text-info: var(--info-700);
+
+  /* === BORDER SEMANTICS === */
+  --border-primary: var(--neutral-200);
+  --border-secondary: var(--neutral-300);
+  --border-tertiary: var(--neutral-400);
+  --border-subtle: var(--neutral-100);
+  --border-strong: var(--neutral-500);
+  --border-inverse: var(--neutral-700);
+
+  /* Interactive Borders */
+  --border-interactive: var(--neutral-300);
+  --border-focus: var(--primary-500);
+  --border-focus-shadow: rgba(59, 157, 240, 0.25);
+
+  /* Status Borders */
+  --border-success: var(--success-300);
+  --border-warning: var(--warning-300);
+  --border-error: var(--error-300);
+  --border-info: var(--info-300);
+
+  /* Brand Borders */
+  --border-brand: var(--primary-300);
+  --border-brand-hover: var(--primary-400);
+  --border-brand-active: var(--primary-500);
+
+  /* === SHADOW SEMANTICS === */
+  --shadow-color-primary: rgba(0, 0, 0, 0.1);
+  --shadow-color-secondary: rgba(0, 0, 0, 0.05);
+  --shadow-color-brand: rgba(59, 157, 240, 0.15);
+  --shadow-color-success: rgba(16, 185, 129, 0.15);
+  --shadow-color-warning: rgba(249, 115, 22, 0.15);
+  --shadow-color-error: rgba(239, 68, 68, 0.15);
+}
+
+/* ==========================================
+   GRADIENT SYSTEM
+   Sophisticated gradient combinations
+   ========================================== */
+
+:root {
+  /* === BRAND GRADIENTS === */
+  --gradient-brand-primary: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+  --gradient-brand-secondary: linear-gradient(135deg, var(--secondary-500) 0%, var(--secondary-600) 100%);
+  --gradient-brand-hero: linear-gradient(135deg, var(--primary-400) 0%, var(--secondary-500) 100%);
+  --gradient-brand-subtle: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
+
+  /* === STATUS GRADIENTS === */
+  --gradient-success: linear-gradient(135deg, var(--success-400) 0%, var(--success-600) 100%);
+  --gradient-warning: linear-gradient(135deg, var(--warning-400) 0%, var(--warning-600) 100%);
+  --gradient-error: linear-gradient(135deg, var(--error-400) 0%, var(--error-600) 100%);
+  --gradient-info: linear-gradient(135deg, var(--info-400) 0%, var(--info-600) 100%);
+
+  /* === NEUTRAL GRADIENTS === */
+  --gradient-neutral: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+  --gradient-neutral-dark: linear-gradient(135deg, var(--neutral-700) 0%, var(--neutral-800) 100%);
+
+  /* === MAINFRAME GRADIENTS === */
+  --gradient-mainframe-matrix: linear-gradient(135deg, var(--terminal-black) 0%, var(--mainframe-green-darker) 100%);
+  --gradient-mainframe-glow: radial-gradient(circle, var(--mainframe-green-bright) 0%, transparent 70%);
+  --gradient-mainframe-scan: linear-gradient(90deg, transparent 0%, var(--mainframe-green-bright) 50%, transparent 100%);
+
+  /* === OVERLAY GRADIENTS === */
+  --gradient-overlay-light: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  --gradient-overlay-dark: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+  --gradient-overlay-brand: linear-gradient(to bottom, rgba(59, 157, 240, 0.9), rgba(59, 157, 240, 0.7));
+}
+
+/* ==========================================
+   DARK THEME ENHANCEMENTS
+   Sophisticated dark mode colors
+   ========================================== */
+
+[data-theme="dark"] {
+  /* === ENHANCED DARK SURFACES === */
+  --surface-primary: var(--neutral-900);
+  --surface-secondary: var(--neutral-800);
+  --surface-tertiary: var(--neutral-700);
+  --surface-elevated: var(--neutral-850);
+  --surface-overlay: rgba(10, 10, 10, 0.95);
+  --surface-sunken: var(--neutral-950);
+  --surface-accent: var(--primary-950);
+  --surface-accent-hover: var(--primary-900);
+  --surface-accent-active: var(--primary-800);
+
+  /* Enhanced Brand Surfaces */
+  --surface-brand: var(--primary-600);
+  --surface-brand-hover: var(--primary-500);
+  --surface-brand-active: var(--primary-400);
+  --surface-brand-subtle: var(--primary-950);
+
+  /* Enhanced Status Surfaces */
+  --surface-success: rgba(16, 185, 129, 0.1);
+  --surface-success-hover: rgba(16, 185, 129, 0.15);
+  --surface-warning: rgba(249, 115, 22, 0.1);
+  --surface-warning-hover: rgba(249, 115, 22, 0.15);
+  --surface-error: rgba(239, 68, 68, 0.1);
+  --surface-error-hover: rgba(239, 68, 68, 0.15);
+  --surface-info: rgba(6, 182, 212, 0.1);
+  --surface-info-hover: rgba(6, 182, 212, 0.15);
+
+  /* === ENHANCED DARK TEXT === */
+  --text-primary: var(--neutral-50);
+  --text-secondary: var(--neutral-200);
+  --text-tertiary: var(--neutral-400);
+  --text-quaternary: var(--neutral-500);
+  --text-placeholder: var(--neutral-500);
+  --text-disabled: var(--neutral-600);
+  --text-inverse: var(--neutral-900);
+  --text-brand: var(--primary-400);
+  --text-accent: var(--secondary-400);
+
+  /* Enhanced Text on Color */
+  --text-on-brand: var(--primary-950);
+  --text-on-success: var(--success-50);
+  --text-on-warning: var(--warning-50);
+  --text-on-error: var(--error-50);
+  --text-on-info: var(--info-50);
+
+  /* Enhanced Status Text */
+  --text-success: var(--success-400);
+  --text-warning: var(--warning-400);
+  --text-error: var(--error-400);
+  --text-info: var(--info-400);
+
+  /* === ENHANCED DARK BORDERS === */
+  --border-primary: var(--neutral-700);
+  --border-secondary: var(--neutral-600);
+  --border-tertiary: var(--neutral-500);
+  --border-subtle: var(--neutral-800);
+  --border-strong: var(--neutral-400);
+  --border-inverse: var(--neutral-200);
+
+  /* Enhanced Interactive Borders */
+  --border-interactive: var(--neutral-600);
+  --border-focus: var(--primary-400);
+  --border-focus-shadow: rgba(96, 184, 247, 0.35);
+
+  /* Enhanced Status Borders */
+  --border-success: var(--success-600);
+  --border-warning: var(--warning-600);
+  --border-error: var(--error-600);
+  --border-info: var(--info-600);
+
+  /* Enhanced Brand Borders */
+  --border-brand: var(--primary-600);
+  --border-brand-hover: var(--primary-500);
+  --border-brand-active: var(--primary-400);
+
+  /* === ENHANCED DARK SHADOWS === */
+  --shadow-color-primary: rgba(0, 0, 0, 0.3);
+  --shadow-color-secondary: rgba(0, 0, 0, 0.2);
+  --shadow-color-brand: rgba(59, 157, 240, 0.25);
+  --shadow-color-success: rgba(16, 185, 129, 0.25);
+  --shadow-color-warning: rgba(249, 115, 22, 0.25);
+  --shadow-color-error: rgba(239, 68, 68, 0.25);
+
+  /* === ENHANCED DARK GRADIENTS === */
+  --gradient-brand-primary: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%);
+  --gradient-brand-secondary: linear-gradient(135deg, var(--secondary-600) 0%, var(--secondary-500) 100%);
+  --gradient-brand-hero: linear-gradient(135deg, var(--primary-500) 0%, var(--secondary-600) 100%);
+  --gradient-brand-subtle: linear-gradient(135deg, var(--primary-950) 0%, var(--secondary-950) 100%);
+
+  --gradient-overlay-light: linear-gradient(to bottom, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.7));
+  --gradient-overlay-dark: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+  --gradient-overlay-brand: linear-gradient(to bottom, rgba(59, 157, 240, 0.3), rgba(59, 157, 240, 0.1));
+}
+
+/* ==========================================
+   HIGH CONTRAST MODE
+   WCAG AAA compliance support
+   ========================================== */
+
+[data-theme="light-hc"],
+[data-theme="dark-hc"],
+@media (prefers-contrast: high) {
+  :root {
+    /* Enhanced contrast ratios */
+    --text-primary: #000000;
+    --text-secondary: #000000;
+    --text-on-brand: #ffffff;
+    --border-primary: #000000;
+    --border-focus: #0066cc;
+    --border-focus-shadow: rgba(0, 102, 204, 0.5);
+
+    /* High contrast interactive elements */
+    --surface-interactive-primary: #0066cc;
+    --surface-interactive-primary-hover: #0052a3;
+    --surface-interactive-primary-active: #003d7a;
+
+    /* Status colors with maximum contrast */
+    --text-success: #006600;
+    --text-warning: #cc6600;
+    --text-error: #cc0000;
+    --text-info: #0066cc;
+
+    /* Enhanced borders */
+    --border-success: #006600;
+    --border-warning: #cc6600;
+    --border-error: #cc0000;
+    --border-info: #0066cc;
+  }
+
+  [data-theme="dark-hc"] {
+    --text-primary: #ffffff;
+    --text-secondary: #ffffff;
+    --text-on-brand: #000000;
+    --border-primary: #ffffff;
+    --surface-primary: #000000;
+    --surface-secondary: #000000;
+
+    /* High contrast status colors for dark mode */
+    --text-success: #00ff00;
+    --text-warning: #ffff00;
+    --text-error: #ff6666;
+    --text-info: #66ccff;
+
+    --border-success: #00ff00;
+    --border-warning: #ffff00;
+    --border-error: #ff6666;
+    --border-info: #66ccff;
+  }
+
+  /* Enhanced focus rings for high contrast */
+  *:focus-visible {
+    outline: 3px solid var(--border-focus);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 1px var(--surface-primary),
+                0 0 0 4px var(--border-focus-shadow);
+  }
+}
+
+/* ==========================================
+   COLOR ANIMATIONS & TRANSITIONS
+   Smooth color transitions and effects
+   ========================================== */
+
+:root {
+  /* Transition definitions */
+  --transition-color-fast: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-color-normal: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-color-slow: color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --transition-background-fast: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-background-normal: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-background-slow: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --transition-border-fast: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-border-normal: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-border-slow: border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --transition-all-colors:
+    color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --transition-theme:
+    color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth theme transitions (respects motion preferences) */
+@media (prefers-reduced-motion: no-preference) {
+  :root,
+  *,
+  *::before,
+  *::after {
+    transition: var(--transition-theme);
+  }
+
+  /* Specific component transitions */
+  .btn,
+  .card,
+  .input,
+  .badge {
+    transition: var(--transition-all-colors);
+  }
+}
+
+/* ==========================================
+   DYNAMIC COLOR UTILITIES
+   Runtime color manipulation utilities
+   ========================================== */
+
+.color-blend-multiply { mix-blend-mode: multiply; }
+.color-blend-screen { mix-blend-mode: screen; }
+.color-blend-overlay { mix-blend-mode: overlay; }
+.color-blend-darken { mix-blend-mode: darken; }
+.color-blend-lighten { mix-blend-mode: lighten; }
+.color-blend-color-dodge { mix-blend-mode: color-dodge; }
+.color-blend-color-burn { mix-blend-mode: color-burn; }
+
+/* Color animation effects */
+@keyframes color-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes mainframe-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px var(--mainframe-green-bright);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 10px var(--mainframe-green-bright);
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.6);
+  }
+}
+
+/* Utility classes for animations */
+.animate-color-pulse { animation: color-pulse 2s infinite; }
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+.animate-mainframe-glow { animation: mainframe-glow 2s ease-in-out infinite; }
+
+/* ==========================================
+   ACCESSIBILITY ENHANCEMENTS
+   Additional accessibility support
+   ========================================== */
+
+/* Improved focus indicators */
+.focus-ring-brand:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--border-focus-shadow);
+}
+
+.focus-ring-error:focus-visible {
+  outline: 2px solid var(--border-error);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+}
+
+.focus-ring-success:focus-visible {
+  outline: 2px solid var(--border-success);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+}
+
+/* Screen reader announcements for theme changes */
+.sr-theme-announcement {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Print optimizations */
+@media print {
+  :root {
+    --text-primary: #000000 !important;
+    --text-secondary: #333333 !important;
+    --text-tertiary: #666666 !important;
+    --border-primary: #000000 !important;
+    --surface-primary: #ffffff !important;
+    --surface-secondary: #ffffff !important;
+  }
+
+  [data-theme="dark"] {
+    --text-primary: #000000 !important;
+    --text-secondary: #333333 !important;
+    --surface-primary: #ffffff !important;
+    --surface-secondary: #ffffff !important;
+  }
+
+  .animate-color-pulse,
+  .animate-gradient-shift,
+  .animate-mainframe-glow {
+    animation: none !important;
+  }
+}
+
+/* ==========================================
+   MAINTENANCE AND DEBUGGING
+   Development and debugging utilities
+   ========================================== */
+
+/* Debug mode - shows color values */
+[data-debug="colors"] *::before {
+  content: attr(data-color-debug);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-size: 10px;
+  background: var(--surface-brand);
+  color: var(--text-on-brand);
+  padding: 2px 4px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Color contrast warning indicator */
+.color-contrast-warning {
+  position: relative;
+}
+
+.color-contrast-warning::after {
+  content: "⚠";
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--warning-500);
+  font-size: 12px;
+  line-height: 1;
+}

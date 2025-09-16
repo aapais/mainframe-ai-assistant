@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accenture Mainframe AI Assistant - Interface Real</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'GT America', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f9fafb;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-bottom: 2px solid #A100FF;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 8px rgba(161, 0, 255, 0.1);
+        }
+
+        .branding-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .accenture-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-symbol {
+            width: 40px;
+            height: 40px;
+            background: #A100FF;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .tagline {
+            color: #6b7280;
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0.5rem 0;
+        }
+
+        .edition-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            background: #f5e6ff;
+            color: #A100FF;
+            border-radius: 20px;
+            border: 1px solid #A100FF;
+            margin-left: 1rem;
+        }
+
+        .stats {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        /* Main Layout */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Search Bar */
+        .search-container {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #A100FF;
+        }
+
+        /* Entry List */
+        .entry-list {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+        }
+
+        .entry-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .entry-item:hover {
+            background: #f9fafb;
+        }
+
+        .entry-item.selected {
+            background: #f5e6ff;
+            border-left: 3px solid #A100FF;
+        }
+
+        .entry-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .entry-problem {
+            font-size: 0.875rem;
+            color: #6b7280;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .entry-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        .category-tag {
+            padding: 0.125rem 0.375rem;
+            background: #f3f4f6;
+            border-radius: 4px;
+            color: #374151;
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            position: sticky;
+            top: 2rem;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .detail-category {
+            padding: 0.25rem 0.5rem;
+            background: #A100FF;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .detail-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .problem-box {
+            padding: 0.75rem;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .solution-box {
+            padding: 0.75rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .tag {
+            padding: 0.125rem 0.375rem;
+            font-size: 0.75rem;
+            background: #f3f4f6;
+            color: #374151;
+            border-radius: 12px;
+            border: 1px solid #d1d5db;
+        }
+
+        .stats-box {
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            font-size: 0.75rem;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        /* AI Transparency Features */
+        .ai-authorization {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            z-index: 2000;
+            display: none;
+        }
+
+        .ai-authorization.show {
+            display: block;
+        }
+
+        .ai-cost-display {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .cost-amount {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        /* Transparency Dashboard Button */
+        .transparency-btn {
+            position: fixed;
+            bottom: 6rem;
+            right: 2rem;
+            padding: 0.75rem;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            width: 56px;
+            height: 56px;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+            z-index: 999;
+        }
+
+        /* Add Entry Button */
+        .add-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem;
+            background: #A100FF;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            width: 64px;
+            height: 64px;
+            box-shadow: 0 8px 25px rgba(161, 0, 255, 0.3);
+            z-index: 1000;
+        }
+
+        /* Footer */
+        footer {
+            background: #1f2937;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            margin-bottom: 1rem;
+        }
+
+        .footer-text {
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #A100FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="branding-row">
+            <div class="accenture-logo">
+                <div class="logo-symbol"></div>
+                <span class="logo-text">accenture</span>
+            </div>
+            <div class="tagline">Let there be change</div>
+        </div>
+
+        <h1 class="app-title">
+            Mainframe AI Assistant
+            <span class="edition-badge">Enterprise Edition</span>
+        </h1>
+
+        <div class="stats">50 knowledge base entries • v8 Transparency Features Active</div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Left Panel -->
+        <div>
+            <!-- Search Bar -->
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="🔍 Search mainframe errors, ABEND codes, JCL issues..." value="S0C4 ABEND">
+            </div>
+
+            <!-- Entry List -->
+            <div class="entry-list">
+                <div class="entry-item selected">
+                    <div class="entry-title">S0C4 ABEND in COBOL Program During Array Processing</div>
+                    <div class="entry-problem">Program terminates with S0C4 protection exception when processing large arrays in batch job...</div>
+                    <div class="entry-meta">
+                        <span class="category-tag">Functional</span>
+                        <span>Used 45 times</span>
+                        <span>84% success rate</span>
+                    </div>
+                </div>
+
+                <div class="entry-item">
+                    <div class="entry-title">JCL Job Failed with IEF450I Step Not Executed</div>
+                    <div class="entry-problem">Job step not executing due to condition code check failure in previous step...</div>
+                    <div class="entry-meta">
+                        <span class="category-tag">JCL</span>
+                        <span>Used 32 times</span>
+                        <span>91% success rate</span>
+                    </div>
+                </div>
+
+                <div class="entry-item">
+                    <div class="entry-title">DB2 SQLCODE -818 Plan/Package Timestamp Mismatch</div>
+                    <div class="entry-problem">Program fails with SQLCODE -818 indicating timestamp mismatch between DBRM and plan...</div>
+                    <div class="entry-meta">
+                        <span class="category-tag">DB2</span>
+                        <span>Used 28 times</span>
+                        <span>88% success rate</span>
+                    </div>
+                </div>
+
+                <div class="entry-item">
+                    <div class="entry-title">VSAM File Status 93 - Record Not Available</div>
+                    <div class="entry-problem">VSAM read operation returns file status 93 when attempting to access specific record...</div>
+                    <div class="entry-meta">
+                        <span class="category-tag">VSAM</span>
+                        <span>Used 19 times</span>
+                        <span>79% success rate</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Detail View -->
+        <div class="detail-panel">
+            <div class="detail-header">
+                <span class="detail-category">Functional</span>
+                <button class="close-btn">✕</button>
+            </div>
+
+            <h3 class="detail-title">S0C4 ABEND in COBOL Program During Array Processing</h3>
+
+            <div class="detail-section">
+                <h4>Problem:</h4>
+                <div class="problem-box">
+                    Program terminates with S0C4 protection exception when processing large arrays in batch job. The error occurs during array manipulation in the PROCESS-RECORDS section when handling more than 1000 records.
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Solution:</h4>
+                <div class="solution-box">1. Check OCCURS clause in WORKING-STORAGE SECTION
+   - Verify array size definition matches actual data volume
+   - Ensure subscript values stay within array bounds
+
+2. Add boundary checking in COBOL code:
+   IF WS-INDEX > WS-MAX-ENTRIES
+      DISPLAY 'Array boundary exceeded'
+      GO TO ERROR-ROUTINE
+   END-IF
+
+3. Increase region size in JCL:
+   //STEP01 EXEC PGM=PROGRAM,REGION=8M
+
+4. Compile with SSRANGE option for runtime checking:
+   CBL SSRANGE
+
+5. Review program logic for proper index initialization and increment</div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Tags:</h4>
+                <div class="tags">
+                    <span class="tag">cobol</span>
+                    <span class="tag">array</span>
+                    <span class="tag">abend</span>
+                    <span class="tag">runtime-error</span>
+                    <span class="tag">s0c4</span>
+                </div>
+            </div>
+
+            <div class="stats-box">
+                <h4 style="margin: 0 0 0.5rem 0;">Usage Statistics:</h4>
+                <div>Used 45 times</div>
+                <div>Success: 38 | Failures: 7</div>
+                <div>Success Rate: 84.4%</div>
+                <div>Last used: 2 hours ago</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- AI Authorization Dialog (Hidden by default) -->
+    <div class="ai-authorization" id="aiAuth">
+        <h3 style="margin-bottom: 1rem;">🤖 AI Assistance Request</h3>
+        <p style="margin-bottom: 1rem;">Would you like to use AI to enhance this search?</p>
+
+        <div class="ai-cost-display">
+            <div>Estimated Cost:</div>
+            <div class="cost-amount">$0.0045</div>
+            <div style="font-size: 0.75rem; color: #92400e;">
+                ~250 input tokens + ~150 output tokens
+            </div>
+        </div>
+
+        <div style="background: #eff6ff; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+            <strong>AI will:</strong>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Analyze the error pattern</li>
+                <li>Provide context-specific solutions</li>
+                <li>Suggest prevention strategies</li>
+            </ul>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer;">
+                Use Local Search Only
+            </button>
+            <button style="padding: 0.5rem 1rem; background: #A100FF; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Authorize AI ($0.0045)
+            </button>
+        </div>
+    </div>
+
+    <!-- Transparency Dashboard Button -->
+    <button class="transparency-btn" title="View Transparency Dashboard">
+        📊
+    </button>
+
+    <!-- Add Entry Button -->
+    <button class="add-btn" title="Add new knowledge entry">
+        +
+    </button>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <div style="display: inline-block; width: 30px; height: 30px; background: #A100FF; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); margin-bottom: 0.5rem;"></div>
+            </div>
+            <div class="footer-text">
+                © 2024 Accenture. All rights reserved.<br>
+                Mainframe AI Assistant v1.0.0 - MVP1 with v8 Transparency Features<br>
+                Powered by Gemini AI • Enterprise Knowledge Management System
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simulate AI Authorization popup
+        setTimeout(() => {
+            // Uncomment to show AI authorization dialog
+            // document.getElementById('aiAuth').classList.add('show');
+        }, 2000);
+    </script>
+</body>
+</html>

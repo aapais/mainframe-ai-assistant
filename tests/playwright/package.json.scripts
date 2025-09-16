@@ -1,0 +1,24 @@
+{
+  "scripts": {
+    "test:playwright": "playwright test --config=playwright.config.electron.ts",
+    "test:playwright:electron": "playwright test --config=playwright.config.electron.ts --project=electron-app",
+    "test:playwright:visual": "playwright test --config=playwright.config.electron.ts --project=visual-chrome-desktop",
+    "test:playwright:performance": "playwright test --config=playwright.config.electron.ts --project=performance",
+    "test:playwright:accessibility": "playwright test --config=playwright.config.electron.ts --project=accessibility",
+    "test:playwright:cross-browser": "playwright test --config=playwright.config.electron.ts --project=firefox-desktop --project=webkit-desktop",
+    "test:playwright:mobile": "playwright test --config=playwright.config.electron.ts --project=mobile-chrome --project=mobile-safari",
+    "test:playwright:all": "playwright test --config=playwright.config.electron.ts",
+    "test:playwright:headed": "playwright test --config=playwright.config.electron.ts --headed",
+    "test:playwright:debug": "playwright test --config=playwright.config.electron.ts --debug",
+    "test:playwright:ui": "playwright test --config=playwright.config.electron.ts --ui",
+    "test:playwright:report": "playwright show-report test-reports/playwright-html",
+    "test:playwright:install": "playwright install",
+    "test:playwright:setup": "npm run build:main && playwright test --config=playwright.config.electron.ts --project=setup",
+    "test:playwright:performance:benchmark": "playwright test --config=playwright.config.electron.ts tests/playwright/specs/performance/ --reporter=json",
+    "test:playwright:electron:ci": "playwright test --config=playwright.config.electron.ts --project=electron-app --reporter=json --reporter=github",
+    "test:playwright:record": "playwright test --config=playwright.config.electron.ts --headed --video=on",
+    "test:playwright:update-snapshots": "playwright test --config=playwright.config.electron.ts --update-snapshots",
+    "test:playwright:clean": "rm -rf test-results test-reports tests/playwright/temp tests/playwright/screenshots",
+    "test:playwright:validate": "npm run build:main && npm run test:playwright:setup && npm run test:playwright:electron"
+  }
+}

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accenture Mainframe Knowledge Base</title>
+
+    <!-- React and Babel CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Accenture Brand Styling -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #A100FF 0%, #8000CC 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(161, 0, 255, 0.3);
+            text-align: center;
+        }
+
+        .accenture-logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #A100FF;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-input:focus {
+            border-color: #ffffff;
+            box-shadow: 0 0 20px rgba(161, 0, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .knowledge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .knowledge-card {
+            background: linear-gradient(135deg, rgba(161, 0, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 1px solid rgba(161, 0, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .knowledge-card:hover {
+            transform: translateY(-5px);
+            border-color: #A100FF;
+            box-shadow: 0 10px 25px rgba(161, 0, 255, 0.2);
+            background: linear-gradient(135deg, rgba(161, 0, 255, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .error-code {
+            background: #A100FF;
+            color: #ffffff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .card-system {
+            background: rgba(255, 255, 255, 0.1);
+            color: #A100FF;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .card-description {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .card-solution {
+            background: rgba(161, 0, 255, 0.1);
+            border-left: 3px solid #A100FF;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1rem;
+            color: #A100FF;
+        }
+
+        @media (max-width: 768px) {
+            .knowledge-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .accenture-logo {
+                font-size: 2rem;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Comprehensive Mainframe Knowledge Base Data
+        const knowledgeBaseData = [
+            {
+                id: 1,
+                errorCode: "VSAM-01",
+                system: "VSAM",
+                title: "VSAM File Not Found",
+                description: "VSAM dataset could not be located or accessed during file operations.",
+                solution: "Verify dataset name, check catalog entries, ensure proper file allocation, and validate JCL DD statements.",
+                category: "VSAM",
+                keywords: ["vsam", "file", "not found", "dataset", "catalog"]
+            },
+            {
+                id: 2,
+                errorCode: "JCL-101",
+                system: "JCL",
+                title: "JCL Syntax Error",
+                description: "Invalid JCL syntax causing job submission failure with parsing errors.",
+                solution: "Review JCL statements for proper syntax, check column positions, validate keywords, and ensure proper continuation.",
+                category: "JCL",
+                keywords: ["jcl", "syntax", "error", "parsing", "submission"]
+            },
+            {
+                id: 3,
+                errorCode: "COBOL-S0C7",
+                system: "COBOL",
+                title: "Data Exception Abend",
+                description: "S0C7 abend caused by invalid numeric data or arithmetic operation on non-numeric fields.",
+                solution: "Check numeric field definitions, validate data content, use NUMVAL function, and implement proper data validation.",
+                category: "COBOL",
+                keywords: ["cobol", "s0c7", "data", "exception", "numeric", "abend"]
+            },
+            {
+                id: 4,
+                errorCode: "DB2-803",
+                system: "DB2",
+                title: "Duplicate Key Error",
+                description: "SQL operation failed due to duplicate primary key or unique constraint violation.",
+                solution: "Check for existing records, modify INSERT to UPDATE, use MERGE statement, or handle duplicate detection logic.",
+                category: "DB2",
+                keywords: ["db2", "duplicate", "key", "primary", "unique", "constraint"]
+            },
+            {
+                id: 5,
+                errorCode: "CICS-ABND",
+                system: "CICS",
+                title: "CICS Transaction Abend",
+                description: "CICS transaction terminated abnormally due to resource conflicts or programming errors.",
+                solution: "Check CICS logs, review transaction code, verify resource availability, and implement proper error handling.",
+                category: "CICS",
+                keywords: ["cics", "transaction", "abend", "resource", "conflict"]
+            },
+            {
+                id: 6,
+                errorCode: "VSAM-02",
+                system: "VSAM",
+                title: "VSAM Record Length Error",
+                description: "Record length mismatch between program definition and VSAM file characteristics.",
+                solution: "Verify VSAM file LRECL, check COBOL record definition, ensure length consistency, and review IDCAMS parameters.",
+                category: "VSAM",
+                keywords: ["vsam", "record", "length", "lrecl", "mismatch"]
+            },
+            {
+                id: 7,
+                errorCode: "JCL-102",
+                system: "JCL",
+                title: "DD Statement Error",
+                description: "Invalid or missing DD statement causing dataset allocation failure.",
+                solution: "Check DD statement syntax, verify dataset names, ensure proper DSN specification, and validate DISP parameters.",
+                category: "JCL",
+                keywords: ["jcl", "dd", "statement", "dataset", "allocation"]
+            },
+            {
+                id: 8,
+                errorCode: "COBOL-S0C4",
+                system: "COBOL",
+                title: "Storage Protection Violation",
+                description: "S0C4 abend due to addressing storage outside allocated program areas.",
+                solution: "Check array bounds, verify working storage definitions, review pointer usage, and validate subscript calculations.",
+                category: "COBOL",
+                keywords: ["cobol", "s0c4", "storage", "protection", "violation", "array"]
+            },
+            {
+                id: 9,
+                errorCode: "DB2-904",
+                system: "DB2",
+                title: "Resource Unavailable",
+                description: "DB2 resource temporarily unavailable due to lock conflicts or system constraints.",
+                solution: "Implement retry logic, check for deadlocks, optimize SQL statements, and review transaction isolation levels.",
+                category: "DB2",
+                keywords: ["db2", "resource", "unavailable", "lock", "deadlock"]
+            },
+            {
+                id: 10,
+                errorCode: "IMS-DFS555I",
+                system: "IMS",
+                title: "IMS Database Lock Timeout",
+                description: "IMS database operation timed out due to lock conflicts or resource contention.",
+                solution: "Review lock duration, implement deadlock detection, optimize database calls, and adjust timeout parameters.",
+                category: "IMS",
+                keywords: ["ims", "database", "lock", "timeout", "contention"]
+            },
+            {
+                id: 11,
+                errorCode: "VSAM-03",
+                system: "VSAM",
+                title: "VSAM Space Allocation Error",
+                description: "Insufficient space allocated for VSAM dataset causing write operations to fail.",
+                solution: "Increase VSAM space allocation, implement secondary allocation, monitor space usage, and consider dataset reorganization.",
+                category: "VSAM",
+                keywords: ["vsam", "space", "allocation", "insufficient", "write"]
+            },
+            {
+                id: 12,
+                errorCode: "JCL-103",
+                system: "JCL",
+                title: "Step Execution Error",
+                description: "Job step failed to execute due to program not found or load library issues.",
+                solution: "Verify program location, check STEPLIB concatenation, ensure load library availability, and validate program linkage.",
+                category: "JCL",
+                keywords: ["jcl", "step", "execution", "program", "steplib", "load"]
+            },
+            {
+                id: 13,
+                errorCode: "COBOL-S322",
+                system: "COBOL",
+                title: "Time Limit Exceeded",
+                description: "COBOL program exceeded allocated CPU time limit causing job termination.",
+                solution: "Optimize program logic, review loop conditions, implement efficient algorithms, and request increased time limits if necessary.",
+                category: "COBOL",
+                keywords: ["cobol", "s322", "time", "limit", "cpu", "performance"]
+            },
+            {
+                id: 14,
+                errorCode: "DB2-911",
+                system: "DB2",
+                title: "Deadlock Detected",
+                description: "DB2 detected deadlock condition between concurrent transactions.",
+                solution: "Implement deadlock retry logic, access tables in consistent order, minimize transaction duration, and use appropriate isolation levels.",
+                category: "DB2",
+                keywords: ["db2", "deadlock", "concurrent", "transaction", "isolation"]
+            },
+            {
+                id: 15,
+                errorCode: "CICS-AICA",
+                system: "CICS",
+                title: "CICS Loop Detection",
+                description: "CICS detected excessive CPU usage indicating potential infinite loop condition.",
+                solution: "Review program logic for loops, implement proper exit conditions, check for recursive calls, and optimize processing logic.",
+                category: "CICS",
+                keywords: ["cics", "aica", "loop", "cpu", "infinite", "detection"]
+            },
+            {
+                id: 16,
+                errorCode: "VSAM-04",
+                system: "VSAM",
+                title: "VSAM Index Corruption",
+                description: "VSAM index structure corrupted preventing normal file access operations.",
+                solution: "Run VERIFY utility, rebuild index using BLDINDEX, restore from backup if necessary, and implement regular maintenance procedures.",
+                category: "VSAM",
+                keywords: ["vsam", "index", "corruption", "verify", "rebuild"]
+            },
+            {
+                id: 17,
+                errorCode: "JCL-104",
+                system: "JCL",
+                title: "Condition Code Error",
+                description: "Job step returned unexpected condition code causing subsequent step failures.",
+                solution: "Review program return codes, implement proper condition code handling, check IF/THEN/ELSE logic, and validate step dependencies.",
+                category: "JCL",
+                keywords: ["jcl", "condition", "code", "return", "step", "dependency"]
+            },
+            {
+                id: 18,
+                errorCode: "COBOL-S806",
+                system: "COBOL",
+                title: "Program Not Found",
+                description: "COBOL program or subprogram could not be located in load libraries.",
+                solution: "Check STEPLIB concatenation, verify program compilation, ensure load module exists, and validate library search order.",
+                category: "COBOL",
+                keywords: ["cobol", "s806", "program", "not found", "load", "library"]
+            },
+            {
+                id: 19,
+                errorCode: "DB2-818",
+                system: "DB2",
+                title: "Plan/Package Mismatch",
+                description: "DB2 plan or package timestamp mismatch with load module causing execution failure.",
+                solution: "Rebind DB2 plan/package, ensure consistent timestamps, verify program compilation, and coordinate deployment procedures.",
+                category: "DB2",
+                keywords: ["db2", "plan", "package", "timestamp", "mismatch", "bind"]
+            },
+            {
+                id: 20,
+                errorCode: "IMS-DFS554I",
+                system: "IMS",
+                title: "IMS Database Full",
+                description: "IMS database reached capacity limits preventing further data insertion operations.",
+                solution: "Increase database space allocation, implement data archival procedures, optimize record layout, and monitor database growth.",
+                category: "IMS",
+                keywords: ["ims", "database", "full", "capacity", "space", "allocation"]
+            },
+            {
+                id: 21,
+                errorCode: "VSAM-05",
+                system: "VSAM",
+                title: "VSAM Key Sequence Error",
+                description: "Records not written in proper key sequence for KSDS VSAM file operations.",
+                solution: "Sort input data by key, verify key field definitions, check sequence requirements, and implement proper validation logic.",
+                category: "VSAM",
+                keywords: ["vsam", "key", "sequence", "ksds", "sort", "order"]
+            },
+            {
+                id: 22,
+                errorCode: "JCL-105",
+                system: "JCL",
+                title: "Resource Allocation Failure",
+                description: "JCL failed to allocate required system resources such as datasets or devices.",
+                solution: "Check resource availability, verify allocation parameters, ensure sufficient space, and coordinate resource scheduling.",
+                category: "JCL",
+                keywords: ["jcl", "resource", "allocation", "failure", "device", "space"]
+            },
+            {
+                id: 23,
+                errorCode: "COBOL-S213",
+                system: "COBOL",
+                title: "File Open Error",
+                description: "COBOL program unable to open file due to allocation or permission issues.",
+                solution: "Verify file availability, check DD statements, ensure proper file permissions, and validate dataset characteristics.",
+                category: "COBOL",
+                keywords: ["cobol", "s213", "file", "open", "allocation", "permission"]
+            },
+            {
+                id: 24,
+                errorCode: "DB2-922",
+                system: "DB2",
+                title: "Authorization Failure",
+                description: "DB2 user lacks required privileges to perform requested database operations.",
+                solution: "Grant appropriate privileges, check user authorization, review security settings, and implement proper access control.",
+                category: "DB2",
+                keywords: ["db2", "authorization", "failure", "privileges", "security", "access"]
+            },
+            {
+                id: 25,
+                errorCode: "CICS-ASRA",
+                system: "CICS",
+                title: "CICS Storage Violation",
+                description: "CICS transaction violated storage protection causing abnormal termination.",
+                solution: "Check program storage usage, verify working storage definitions, review pointer operations, and implement proper storage management.",
+                category: "CICS",
+                keywords: ["cics", "asra", "storage", "violation", "protection", "termination"]
+            }
+        ];
+
+        function MainframeKnowledgeBase() {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [isLoading, setIsLoading] = useState(true);
+
+            useEffect(() => {
+                // Simulate loading
+                const timer = setTimeout(() => {
+                    setIsLoading(false);
+                }, 1000);
+                return () => clearTimeout(timer);
+            }, []);
+
+            const filteredData = useMemo(() => {
+                if (!searchTerm) return knowledgeBaseData;
+
+                const searchLower = searchTerm.toLowerCase();
+                return knowledgeBaseData.filter(item =>
+                    item.errorCode.toLowerCase().includes(searchLower) ||
+                    item.system.toLowerCase().includes(searchLower) ||
+                    item.title.toLowerCase().includes(searchLower) ||
+                    item.description.toLowerCase().includes(searchLower) ||
+                    item.solution.toLowerCase().includes(searchLower) ||
+                    item.keywords.some(keyword => keyword.includes(searchLower))
+                );
+            }, [searchTerm]);
+
+            const systemCounts = useMemo(() => {
+                const counts = {};
+                knowledgeBaseData.forEach(item => {
+                    counts[item.system] = (counts[item.system] || 0) + 1;
+                });
+                return counts;
+            }, []);
+
+            if (isLoading) {
+                return (
+                    <div className="app-container">
+                        <div className="loading">
+                            <div>🔄 Loading Accenture Mainframe Knowledge Base...</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    <header className="header">
+                        <div className="accenture-logo">ACCENTURE</div>
+                        <div className="subtitle">Mainframe Knowledge Base & Error Resolution System</div>
+
+                        <div className="search-container">
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search error codes, systems, or solutions... (e.g., VSAM, S0C7, DB2, JCL)"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </header>
+
+                    <div className="stats">
+                        <div>
+                            📊 <strong>{filteredData.length}</strong> of <strong>{knowledgeBaseData.length}</strong> entries found
+                        </div>
+                        <div>
+                            🖥️ Systems: {Object.entries(systemCounts).map(([system, count]) =>
+                                `${system}(${count})`
+                            ).join(' • ')}
+                        </div>
+                    </div>
+
+                    {filteredData.length === 0 ? (
+                        <div className="no-results">
+                            <div>🔍 No results found for "{searchTerm}"</div>
+                            <div style={{marginTop: '10px', fontSize: '0.9rem'}}>
+                                Try searching for: VSAM, JCL, COBOL, DB2, CICS, IMS, S0C7, S0C4, or error codes
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="knowledge-grid">
+                            {filteredData.map(item => (
+                                <div key={item.id} className="knowledge-card">
+                                    <div className="card-header">
+                                        <div>
+                                            <div className="error-code">{item.errorCode}</div>
+                                            <div className="card-system">{item.system}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="card-title">{item.title}</div>
+
+                                    <div className="card-description">
+                                        {item.description}
+                                    </div>
+
+                                    <div className="card-solution">
+                                        <strong>💡 Solution:</strong> {item.solution}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <footer style={{textAlign: 'center', marginTop: '40px', padding: '20px', opacity: 0.6}}>
+                        <div>© 2024 Accenture - Mainframe Knowledge Base System</div>
+                        <div style={{marginTop: '5px', fontSize: '0.9rem'}}>
+                            Comprehensive error resolution for VSAM, JCL, COBOL, DB2, CICS & IMS systems
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Render the application
+        ReactDOM.render(<MainframeKnowledgeBase />, document.getElementById('root'));
+    </script>
+</body>
+</html>

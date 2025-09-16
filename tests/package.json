@@ -1,0 +1,38 @@
+{
+  "name": "visual-quality-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive visual quality validation and accessibility testing suite",
+  "scripts": {
+    "test": "node visual/visual-test-runner.js",
+    "test:visual": "node visual/visual-test-runner.js --suite visual",
+    "test:accessibility": "node visual/visual-test-runner.js --suite accessibility",
+    "test:performance": "node visual/visual-test-runner.js --suite performance",
+    "test:integration": "node visual/visual-test-runner.js --suite integration",
+    "test:e2e": "node visual/visual-test-runner.js --suite e2e",
+    "test:ci": "npm run test",
+    "report:open": "open test-results/visual-quality-report.html",
+    "clean": "rm -rf test-results screenshots",
+    "install-browsers": "npx playwright install",
+    "install-deps": "npx playwright install-deps"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.40.0",
+    "axe-playwright": "^1.2.3",
+    "axe-core": "^4.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "keywords": [
+    "testing",
+    "visual-regression",
+    "accessibility",
+    "wcag",
+    "design-system",
+    "playwright",
+    "axe"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

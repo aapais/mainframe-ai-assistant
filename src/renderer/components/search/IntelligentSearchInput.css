@@ -1,0 +1,338 @@
+/**
+ * IntelligentSearchInput.css - Styles for the intelligent search input
+ *
+ * Features:
+ * - Responsive design with mobile-first approach
+ * - Smooth animations and transitions
+ * - High contrast accessibility support
+ * - Dark mode compatibility
+ * - Performance optimized CSS
+ */
+
+.intelligent-search-input {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Search Input Container */
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.search-input-container:focus-within {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Enhanced Autocomplete Styling */
+.enhanced-autocomplete {
+  flex: 1;
+}
+
+.enhanced-autocomplete .search-autocomplete__input {
+  width: 100%;
+  padding: 16px 20px;
+  padding-right: 120px; /* Space for action buttons */
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-primary, #1a1a1a);
+  border-radius: 12px;
+}
+
+.enhanced-autocomplete .search-autocomplete__input::placeholder {
+  color: var(--text-secondary, #6b7280);
+  font-weight: 400;
+}
+
+/* Action Buttons */
+.search-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.action-button:hover {
+  background: var(--bg-hover, #e5e7eb);
+  color: var(--text-primary, #1a1a1a);
+  transform: scale(1.05);
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}
+
+.action-button.active {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-button:focus-visible {
+  outline: 2px solid var(--focus-color, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Keyboard Shortcuts Hint */
+.keyboard-shortcuts-hint {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text-tertiary, #9ca3af);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.intelligent-search-input:focus-within .keyboard-shortcuts-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Panel Base Styles */
+.search-history-panel,
+.search-metrics-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  right: 0;
+  background: var(--bg-primary, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-color, #e5e7eb);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .intelligent-search-input {
+    max-width: 100%;
+    margin: 0 16px;
+  }
+
+  .search-input-container {
+    border-radius: 8px;
+  }
+
+  .enhanced-autocomplete .search-autocomplete__input {
+    padding: 14px 16px;
+    padding-right: 100px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .search-actions {
+    padding-right: 12px;
+  }
+
+  .action-button {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .search-history-panel,
+  .search-metrics-panel {
+    left: -16px;
+    right: -16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@media (max-width: 480px) {
+  .enhanced-autocomplete .search-autocomplete__input {
+    padding: 12px 14px;
+    padding-right: 80px;
+  }
+
+  .search-actions {
+    gap: 4px;
+    padding-right: 8px;
+  }
+
+  .action-button {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .intelligent-search-input {
+    --bg-primary: #1f2937;
+    --bg-secondary: #374151;
+    --bg-hover: #4b5563;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    --border-color: #374151;
+    --focus-color: #60a5fa;
+    --primary-color: #3b82f6;
+  }
+
+  .search-input-container {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .search-input-container:focus-within {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .search-history-panel,
+  .search-metrics-panel {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .search-input-container {
+    border: 2px solid var(--text-primary, #000000);
+    box-shadow: none;
+  }
+
+  .action-button {
+    border: 1px solid var(--text-secondary, #666666);
+  }
+
+  .action-button.active {
+    border: 2px solid var(--text-primary, #000000);
+  }
+
+  .search-history-panel,
+  .search-metrics-panel {
+    border: 2px solid var(--text-primary, #000000);
+    box-shadow: none;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .search-input-container,
+  .action-button,
+  .keyboard-shortcuts-hint {
+    transition: none;
+  }
+
+  .search-input-container:focus-within {
+    transform: none;
+  }
+
+  .action-button:hover {
+    transform: none;
+  }
+
+  .action-button:active {
+    transform: none;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Focus Management */
+.intelligent-search-input:focus-within {
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Loading States */
+.intelligent-search-input.loading .enhanced-autocomplete .search-autocomplete__input {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.1),
+    transparent
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+/* Error States */
+.intelligent-search-input.error .search-input-container {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Success States */
+.intelligent-search-input.success .search-input-container {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Performance Optimizations */
+.intelligent-search-input * {
+  box-sizing: border-box;
+}
+
+.intelligent-search-input::before,
+.intelligent-search-input::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Print Styles */
+@media print {
+  .intelligent-search-input {
+    display: none;
+  }
+}

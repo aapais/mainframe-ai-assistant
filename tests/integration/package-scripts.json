@@ -1,0 +1,91 @@
+{
+  "description": "Add these scripts to your package.json for master test runner integration",
+  "scripts": {
+    "test": "node tests/integration/test-runner.ts --suites=unit",
+    "test:all": "node tests/integration/test-runner.ts",
+    "test:unit": "node tests/integration/test-runner.ts --suites=unit --parallel",
+    "test:integration": "node tests/integration/test-runner.ts --suites=integration --parallel",
+    "test:e2e": "node tests/integration/test-runner.ts --suites=e2e --sequential",
+    "test:performance": "node tests/integration/test-runner.ts --suites=performance --sequential --timeout=180000",
+    "test:reliability": "node tests/integration/test-runner.ts --suites=reliability --sequential --timeout=300000",
+    "test:error-handling": "node tests/integration/test-runner.ts --suites=error-handling --parallel",
+    "test:accessibility": "node tests/integration/test-runner.ts --suites=accessibility --parallel",
+    "test:mvp1": "node tests/integration/test-runner.ts --validate-mvp1 --report=comprehensive",
+    "test:mvp1-quick": "node tests/integration/test-runner.ts --suites=unit,integration --validate-mvp1 --report=summary",
+    "test:ci": "node tests/integration/test-runner.ts --suites=unit,integration,e2e --coverage --validate-mvp1 --report=junit --fail-fast",
+    "test:quick": "node tests/integration/test-runner.ts --suites=unit,components-integration --timeout=15000 --report=summary",
+    "test:coverage": "node tests/integration/test-runner.ts --suites=unit,integration --coverage --report=detailed",
+    "test:watch": "nodemon --watch src --watch tests --ext ts,tsx,js,jsx --exec \"npm run test:quick\"",
+    "test:debug": "node tests/integration/test-runner.ts --suites=unit --verbose --sequential",
+    "test:critical": "node tests/integration/test-runner.ts --suites=unit,integration,error-handling --parallel --report=comprehensive",
+    "test:smoke": "node tests/integration/test-runner.ts --suites=unit --timeout=10000 --report=summary",
+    "test:nightly": "node tests/integration/test-runner.ts --coverage --validate-mvp1 --report=comprehensive --clean-reports",
+    "validate:mvp1": "node tests/integration/test-runner.ts --validate-mvp1 --suites=unit,integration,e2e --report=json",
+    "reports:clean": "rimraf reports/* temp/* coverage/*",
+    "reports:serve": "serve reports -p 3001",
+    "benchmark": "node tests/integration/test-runner.ts --suites=performance,load-testing --sequential --report=detailed"
+  },
+  "devDependencies_additions": {
+    "nodemon": "^3.0.2",
+    "serve": "^14.2.1",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "jest": {
+    "projects": [
+      {
+        "displayName": "unit",
+        "testMatch": [
+          "<rootDir>/src/**/__tests__/**/*.(ts|tsx)",
+          "<rootDir>/src/**/*.(test|spec).(ts|tsx)"
+        ]
+      },
+      {
+        "displayName": "integration",
+        "testMatch": [
+          "<rootDir>/tests/integration/**/*.(test|spec).(ts|tsx|js|jsx)"
+        ]
+      },
+      {
+        "displayName": "e2e",
+        "testMatch": [
+          "<rootDir>/tests/e2e/**/*.(test|spec).(ts|tsx|js|jsx)"
+        ]
+      }
+    ]
+  },
+  "nyc": {
+    "all": true,
+    "include": [
+      "src/renderer/**/*.ts",
+      "src/renderer/**/*.tsx",
+      "src/main/**/*.ts",
+      "src/shared/**/*.ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/__tests__/**",
+      "**/__mocks__/**",
+      "**/node_modules/**",
+      "**/coverage/**",
+      "**/dist/**"
+    ],
+    "reporter": [
+      "text",
+      "text-summary",
+      "html",
+      "json",
+      "lcov"
+    ],
+    "reportDir": "coverage",
+    "watermarks": {
+      "statements": [80, 95],
+      "functions": [80, 95],
+      "branches": [75, 90],
+      "lines": [80, 95]
+    }
+  }
+}
