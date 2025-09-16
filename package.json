@@ -134,7 +134,10 @@
       "icon": "build/icon.icns",
       "target": {
         "target": "dmg",
-        "arch": ["x64", "arm64"]
+        "arch": [
+          "x64",
+          "arm64"
+        ]
       },
       "bundleVersion": "1.0.0",
       "minimumSystemVersion": "10.14.0"
@@ -143,11 +146,16 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico",
@@ -159,15 +167,21 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "rpm",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "category": "Office",
@@ -193,7 +207,9 @@
       "include": "build/installer.nsh",
       "warningsAsErrors": false,
       "displayLanguageSelector": false,
-      "installerLanguages": ["en_US"],
+      "installerLanguages": [
+        "en_US"
+      ],
       "language": "1033"
     },
     "portable": {
@@ -215,11 +231,7 @@
     "testing",
     "ci-cd"
   ],
-  "author": {
-    "name": "Accenture",
-    "email": "support@accenture.com",
-    "url": "https://www.accenture.com"
-  },
+  "author": "Accenture <support@accenture.com> (https://www.accenture.com)",
   "license": "Proprietary",
   "dependencies": {
     "react": "^18.2.0",
@@ -277,10 +289,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/accenture/mainframe-ai-assistant.git"
+    "url": "git+https://github.com/accenture/mainframe-ai-assistant.git"
   },
   "bugs": {
     "url": "https://www.accenture.com/mainframe-ai-assistant/support"
   },
-  "homepage": "https://www.accenture.com/mainframe-ai-assistant"
+  "homepage": "https://www.accenture.com/mainframe-ai-assistant",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "type": "commonjs"
 }
