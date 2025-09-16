@@ -1,0 +1,150 @@
+name: Accessibility Testing
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  accessibility-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run accessibility tests
+        run: npm run test:accessibility:ci
+
+      - name: Run WCAG compliance validation
+        run: npm run validate:wcag
+
+      - name: Run accessibility audit
+        run: npm run audit:accessibility
+
+      - name: Upload accessibility reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-reports
+          path: |
+            accessibility-reports/
+            coverage/
+          retention-days: 30
+
+      - name: Comment PR with accessibility results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Read accessibility audit results if they exist
+            const reportPath = './accessibility-reports/';
+            if (fs.existsSync(reportPath)) {
+              const files = fs.readdirSync(reportPath);
+              const jsonReports = files.filter(f => f.endsWith('.json'));
+
+              if (jsonReports.length > 0) {
+                const reportFile = path.join(reportPath, jsonReports[0]);
+                const report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+
+                const comment = `## 🔍 Accessibility Test Results
+
+**Status:** ${report.summary.passed ? '✅ PASSED' : '❌ FAILED'}
+**Total Tests:** ${report.summary.totalTests}
+**Violations:** ${report.summary.violationCount}
+
+${report.summary.violationCount > 0 ? '### Violations Found\n' + report.violations.map(v => `- **${v.id}**: ${v.description}`).join('\n') : '### ✅ All accessibility tests passed!'}
+
+[View detailed report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+                `;
+
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
+            }
+
+      - name: Fail if accessibility issues found
+        run: |
+          if [ -f "./accessibility-reports/accessibility-audit-$(date +%Y-%m-%d).json" ]; then
+            VIOLATIONS=$(cat "./accessibility-reports/accessibility-audit-$(date +%Y-%m-%d).json" | jq '.summary.violationCount // 0')
+            if [ "$VIOLATIONS" -gt 0 ]; then
+              echo "❌ Accessibility violations found: $VIOLATIONS"
+              exit 1
+            fi
+          fi
+
+  lighthouse-audit:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm run start:prod &
+          sleep 10
+        timeout-minutes: 2
+
+      - name: Run Lighthouse audit
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            http://localhost:3000
+          configPath: './lighthouse.config.js'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Comment PR with Lighthouse results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = require('./lhci_reports/manifest.json');
+            const summary = results[0].summary;
+
+            const comment = `## 🚢 Lighthouse Accessibility Audit
+
+**Accessibility Score:** ${Math.round(summary.accessibility * 100)}/100
+
+${summary.accessibility >= 0.9 ? '✅' : summary.accessibility >= 0.7 ? '⚠️' : '❌'}
+**Status:** ${summary.accessibility >= 0.9 ? 'Good' : summary.accessibility >= 0.7 ? 'Needs Improvement' : 'Poor'}
+
+[View detailed Lighthouse report](${results[0].reportUrl})
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -1,0 +1,334 @@
+name: Playwright Electron Tests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  ELECTRON_CACHE: ~/.cache/electron
+  PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+
+jobs:
+  test:
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20]
+        exclude:
+          # Reduce CI load - only test Node 18 on Windows and macOS
+          - os: windows-latest
+            node-version: 20
+          - os: macos-latest
+            node-version: 20
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Cache Electron binaries
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.ELECTRON_CACHE }}
+        key: ${{ runner.os }}-electron-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-electron-
+
+    - name: Cache Playwright browsers
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Build Electron app
+      run: npm run build:main
+
+    - name: Run Playwright Electron tests
+      run: npm run test:playwright:electron
+      env:
+        CI: true
+        PLAYWRIGHT_HEADLESS: true
+        NODE_ENV: test
+
+    - name: Run Playwright performance tests
+      run: npm run test:playwright:performance
+      env:
+        CI: true
+        PLAYWRIGHT_HEADLESS: true
+        NODE_ENV: test
+
+    - name: Upload Playwright report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report-${{ matrix.os }}-node${{ matrix.node-version }}
+        path: |
+          test-reports/
+          test-results/
+        retention-days: 7
+
+    - name: Upload screenshots on failure
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: screenshots-${{ matrix.os }}-node${{ matrix.node-version }}
+        path: tests/playwright/screenshots/
+        retention-days: 3
+
+    - name: Comment PR with test results
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request' && always()
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          try {
+            const summaryPath = 'test-reports/test-summary.json';
+            if (fs.existsSync(summaryPath)) {
+              const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+
+              const comment = `## 🔬 Playwright Electron Test Results
+
+              **OS:** ${{ matrix.os }} | **Node:** ${{ matrix.node-version }}
+
+              - **Total Tests:** ${summary.summary.total}
+              - **Passed:** ${summary.summary.passed} ✅
+              - **Failed:** ${summary.summary.failed} ❌
+              - **Pass Rate:** ${summary.summary.passRate}%
+              - **Duration:** ${(summary.duration / 1000).toFixed(2)}s
+
+              **Artifacts:**
+              - HTML Report: ${summary.artifacts.htmlReport ? '✅' : '❌'}
+              - Screenshots: ${summary.artifacts.screenshots}
+              - Videos: ${summary.artifacts.videos}
+
+              <details>
+              <summary>Environment Details</summary>
+
+              - Platform: ${summary.environment.platform}
+              - Node: ${summary.environment.node}
+              - Electron: ${summary.environment.electronVersion}
+
+              </details>`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+          } catch (error) {
+            console.log('Could not post test results:', error.message);
+          }
+
+  accessibility:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Build Electron app
+      run: npm run build:main
+
+    - name: Run accessibility tests
+      run: npm run test:playwright:accessibility
+      env:
+        CI: true
+        PLAYWRIGHT_HEADLESS: true
+        NODE_ENV: test
+
+    - name: Upload accessibility report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: accessibility-report
+        path: test-reports/accessibility/
+        retention-days: 7
+
+  visual-regression:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Build Electron app
+      run: npm run build:main
+
+    - name: Run visual regression tests
+      run: npm run test:playwright:visual
+      env:
+        CI: true
+        PLAYWRIGHT_HEADLESS: true
+        NODE_ENV: test
+
+    - name: Upload visual diff report
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: visual-diff-report
+        path: |
+          test-results/
+          tests/playwright/screenshots/
+        retention-days: 7
+
+  security-scan:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
+
+    - name: Check for known vulnerabilities
+      run: npx audit-ci --moderate
+
+  performance-benchmark:
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Build Electron app
+      run: npm run build:main
+
+    - name: Run performance benchmarks
+      run: npm run test:playwright:performance:benchmark
+      env:
+        CI: true
+        PLAYWRIGHT_HEADLESS: true
+        NODE_ENV: test
+        ENABLE_PERFORMANCE_MONITORING: true
+
+    - name: Upload performance report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-benchmark-report
+        path: test-reports/performance-report.json
+        retention-days: 30
+
+    - name: Comment performance results
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          const fs = require('fs');
+
+          try {
+            const perfReportPath = 'test-reports/performance-report.json';
+            if (fs.existsSync(perfReportPath)) {
+              const perfReport = JSON.parse(fs.readFileSync(perfReportPath, 'utf8'));
+
+              const comment = `## ⚡ Performance Benchmark Results
+
+              **Startup Time:** ${perfReport.electronMetrics.averageStartupTime.toFixed(0)}ms
+              **Peak Memory:** ${(perfReport.electronMetrics.peakMemoryUsage / 1024 / 1024).toFixed(2)}MB
+              **Average Test Duration:** ${perfReport.performance.averageTestDuration.toFixed(0)}ms
+
+              ${perfReport.recommendations.length > 0 ?
+                '**Recommendations:**\n' + perfReport.recommendations.map(r => `- ${r}`).join('\n') :
+                '✅ All performance metrics within acceptable ranges'}`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+          } catch (error) {
+            console.log('Could not post performance results:', error.message);
+          }
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [test, accessibility, visual-regression]
+    if: always()
+
+    steps:
+    - name: Cleanup workspace
+      run: |
+        echo "Cleaning up workspace..."
+        # Add any cleanup commands if needed
+        echo "Cleanup completed"

@@ -1,0 +1,311 @@
+name: Visual Regression Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly visual regression tests
+    - cron: '0 2 * * *'
+
+env:
+  # Force color output for better CI logs
+  FORCE_COLOR: 1
+  # Disable Playwright telemetry
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
+
+jobs:
+  visual-regression:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [
+          'visual-chrome-desktop',
+          'firefox-desktop',
+          'webkit-desktop'
+        ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Playwright browsers
+        run: |
+          npx playwright install --with-deps chromium firefox webkit
+
+      - name: Setup display server (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Run visual regression tests
+        run: |
+          xvfb-run -a npm run test:visual:${{ matrix.project }}
+        env:
+          CI: true
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/ms-playwright
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-test-results-${{ matrix.project }}
+          path: |
+            test-results/
+            test-reports/
+          retention-days: 30
+
+      - name: Upload screenshots for failed tests
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-diff-screenshots-${{ matrix.project }}
+          path: |
+            test-results/**/test-failed-*.png
+            test-results/**/test-diff-*.png
+          retention-days: 30
+
+  responsive-tests:
+    name: Responsive Design Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [
+          'mobile-chrome',
+          'mobile-safari',
+          'tablet-chrome'
+        ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run responsive tests
+        run: |
+          xvfb-run -a npx playwright test --project=${{ matrix.viewport }}
+        env:
+          CI: true
+
+      - name: Upload responsive test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: responsive-test-results-${{ matrix.viewport }}
+          path: |
+            test-results/
+            test-reports/
+          retention-days: 30
+
+  theme-tests:
+    name: Theme Variation Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run theme tests
+        run: |
+          xvfb-run -a npx playwright test --project=dark-mode
+          xvfb-run -a npx playwright test --project=high-contrast
+        env:
+          CI: true
+
+      - name: Upload theme test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: theme-test-results
+          path: |
+            test-results/
+            test-reports/
+          retention-days: 30
+
+  visual-coverage-report:
+    name: Generate Visual Coverage Report
+    runs-on: ubuntu-latest
+    needs: [visual-regression, responsive-tests, theme-tests]
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: combined-test-results/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate visual coverage report
+        run: |
+          node scripts/generate-visual-coverage-report.js
+        env:
+          RESULTS_PATH: combined-test-results/
+
+      - name: Upload visual coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-coverage-report
+          path: |
+            visual-coverage-report.html
+            visual-coverage-summary.json
+          retention-days: 90
+
+      - name: Comment PR with visual test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const summary = JSON.parse(fs.readFileSync('visual-coverage-summary.json', 'utf8'));
+
+              const comment = `## 🎭 Visual Regression Test Results
+
+              | Test Suite | Status | Coverage |
+              |------------|--------|----------|
+              | Desktop Visual | ${summary.desktop.passed ? '✅' : '❌'} ${summary.desktop.passed}/${summary.desktop.total} | ${summary.desktop.coverage}% |
+              | Responsive | ${summary.responsive.passed ? '✅' : '❌'} ${summary.responsive.passed}/${summary.responsive.total} | ${summary.responsive.coverage}% |
+              | Themes | ${summary.themes.passed ? '✅' : '❌'} ${summary.themes.passed}/${summary.themes.total} | ${summary.themes.coverage}% |
+              | Cross-browser | ${summary.crossBrowser.passed ? '✅' : '❌'} ${summary.crossBrowser.passed}/${summary.crossBrowser.total} | ${summary.crossBrowser.coverage}% |
+
+              **Overall Visual Coverage:** ${summary.overall.coverage}%
+
+              ${summary.overall.passed ? '✅ All visual tests passed!' : '❌ Some visual tests failed. Check the uploaded artifacts for details.'}
+
+              [View detailed report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } catch (error) {
+              console.log('Could not generate visual test summary:', error);
+            }
+
+  update-baselines:
+    name: Update Visual Baselines (Manual)
+    runs-on: ubuntu-latest
+    # Only run on manual trigger or when specifically requested
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_baselines == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Update visual baselines
+        run: |
+          xvfb-run -a npx playwright test --update-snapshots
+        env:
+          CI: true
+
+      - name: Commit updated baselines
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add tests/visual-regression/**/*-expected.png
+          git add tests/visual-regression/**/*-expected-*.png
+          if git diff --staged --quiet; then
+            echo "No baseline updates needed"
+          else
+            git commit -m "Update visual regression baselines [skip ci]"
+            git push
+          fi
+
+# Manual workflow dispatch for updating baselines
+workflow_dispatch:
+  inputs:
+    update_baselines:
+      description: 'Update visual regression baselines'
+      required: true
+      default: 'false'
+      type: choice
+      options:
+        - 'true'
+        - 'false'
+    test_suite:
+      description: 'Test suite to run'
+      required: false
+      default: 'all'
+      type: choice
+      options:
+        - 'all'
+        - 'visual-regression'
+        - 'responsive'
+        - 'themes'
+        - 'cross-browser'

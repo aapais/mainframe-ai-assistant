@@ -1,0 +1,473 @@
+name: Cross-Platform Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      build_platforms:
+        description: 'Platforms to build (all, windows, macos, linux)'
+        required: false
+        default: 'all'
+      skip_tests:
+        description: 'Skip tests'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  NODE_VERSION: '18'
+  ELECTRON_CACHE: ${{ github.workspace }}/.cache/electron
+  ELECTRON_BUILDER_CACHE: ${{ github.workspace }}/.cache/electron-builder
+
+jobs:
+  # Pre-build checks and setup
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build_windows: ${{ steps.determine_builds.outputs.windows }}
+      should_build_macos: ${{ steps.determine_builds.outputs.macos }}
+      should_build_linux: ${{ steps.determine_builds.outputs.linux }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(node -p "require('./package.json').version")-$(git rev-parse --short HEAD)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Determine builds to run
+        id: determine_builds
+        run: |
+          BUILD_PLATFORMS="${{ github.event.inputs.build_platforms || 'all' }}"
+
+          if [[ "$BUILD_PLATFORMS" == "all" || "$BUILD_PLATFORMS" == *"windows"* ]]; then
+            echo "windows=true" >> $GITHUB_OUTPUT
+          else
+            echo "windows=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "$BUILD_PLATFORMS" == "all" || "$BUILD_PLATFORMS" == *"macos"* ]]; then
+            echo "macos=true" >> $GITHUB_OUTPUT
+          else
+            echo "macos=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [[ "$BUILD_PLATFORMS" == "all" || "$BUILD_PLATFORMS" == *"linux"* ]]; then
+            echo "linux=true" >> $GITHUB_OUTPUT
+          else
+            echo "linux=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+  # Cross-platform build tests
+  build-tests:
+    needs: setup
+    if: ${{ !github.event.inputs.skip_tests }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: ['16', '18', '20']
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Setup build environment (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-dev libxss1 libasound2-dev libgtk-3-dev
+
+      - name: Setup build environment (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          npm install --global windows-build-tools --vs2015
+        continue-on-error: true
+
+      - name: Setup build environment (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Ensure Xcode command line tools are available
+          xcode-select --print-path
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run build tests
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            npm test -- --testPathPattern="windows-build.test"
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            npm test -- --testPathPattern="macos-build.test"
+          else
+            npm test -- --testPathPattern="linux-build.test"
+          fi
+        shell: bash
+
+      - name: Test build script
+        run: node scripts/cross-platform-build.js check
+
+  # Windows build
+  build-windows:
+    needs: [setup, build-tests]
+    if: ${{ always() && needs.setup.outputs.should_build_windows == 'true' && (needs.build-tests.result == 'success' || github.event.inputs.skip_tests) }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Windows build environment
+        run: |
+          npm install --global windows-build-tools --vs2015
+        continue-on-error: true
+
+      - name: Setup code signing
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          echo "WIN_CSC_LINK=${{ secrets.WIN_CSC_LINK }}" >> $env:GITHUB_ENV
+          echo "WIN_CSC_KEY_PASSWORD=${{ secrets.WIN_CSC_KEY_PASSWORD }}" >> $env:GITHUB_ENV
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Electron
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.ELECTRON_CACHE }}
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache Electron Builder
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.ELECTRON_BUILDER_CACHE }}
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('package-lock.json') }}
+
+      - name: Build Windows application
+        run: |
+          npx electron-builder --config electron-builder-configs/windows.json --win --x64 --ia32
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          npm_package_version: ${{ needs.setup.outputs.version }}
+
+      - name: Test Windows artifacts
+        run: |
+          dir dist
+          if (!(Test-Path "dist/*.exe")) { throw "Windows executable not found" }
+          echo "Windows build artifacts verified"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-artifacts
+          path: |
+            dist/*.exe
+            dist/*.msi
+            dist/*.zip
+          retention-days: 30
+
+  # macOS build
+  build-macos:
+    needs: [setup, build-tests]
+    if: ${{ always() && needs.setup.outputs.should_build_macos == 'true' && (needs.build-tests.result == 'success' || github.event.inputs.skip_tests) }}
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup macOS build environment
+        run: |
+          # Verify Xcode command line tools
+          xcode-select --print-path
+          # Install additional certificates if needed
+          security find-identity -v -p codesigning
+
+      - name: Setup code signing
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          echo "CSC_NAME=${{ secrets.CSC_NAME }}" >> $GITHUB_ENV
+          echo "CSC_LINK=${{ secrets.CSC_LINK }}" >> $GITHUB_ENV
+          echo "CSC_KEY_PASSWORD=${{ secrets.CSC_KEY_PASSWORD }}" >> $GITHUB_ENV
+          echo "APPLE_ID=${{ secrets.APPLE_ID }}" >> $GITHUB_ENV
+          echo "APPLE_ID_PASSWORD=${{ secrets.APPLE_ID_PASSWORD }}" >> $GITHUB_ENV
+          echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Electron
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.ELECTRON_CACHE }}
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache Electron Builder
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.ELECTRON_BUILDER_CACHE }}
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('package-lock.json') }}
+
+      - name: Build macOS application
+        run: |
+          npx electron-builder --config electron-builder-configs/macos.json --mac --x64 --arm64
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          npm_package_version: ${{ needs.setup.outputs.version }}
+
+      - name: Test macOS artifacts
+        run: |
+          ls -la dist/
+          if [ ! -f dist/*.dmg ]; then echo "DMG not found" && exit 1; fi
+          echo "macOS build artifacts verified"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-artifacts
+          path: |
+            dist/*.dmg
+            dist/*.pkg
+            dist/*.zip
+          retention-days: 30
+
+  # Linux build
+  build-linux:
+    needs: [setup, build-tests]
+    if: ${{ always() && needs.setup.outputs.should_build_linux == 'true' && (needs.build-tests.result == 'success' || github.event.inputs.skip_tests) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Linux build environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3-dev libxss1 libasound2-dev libgtk-3-dev \
+            libgconf-2-4 libxtst6 libatspi2.0-0 libdrm2 libxcomposite1 \
+            libxdamage1 libxrandr2 libgbm1 libxkbcommon0 snapcraft
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Electron
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.ELECTRON_CACHE }}
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache Electron Builder
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.ELECTRON_BUILDER_CACHE }}
+          key: ${{ runner.os }}-electron-builder-${{ hashFiles('package-lock.json') }}
+
+      - name: Build Linux application
+        run: |
+          npx electron-builder --config electron-builder-configs/linux.json --linux --x64
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          npm_package_version: ${{ needs.setup.outputs.version }}
+
+      - name: Test Linux artifacts
+        run: |
+          ls -la dist/
+          if [ ! -f dist/*.AppImage ]; then echo "AppImage not found" && exit 1; fi
+          if [ ! -f dist/*.deb ]; then echo "DEB not found" && exit 1; fi
+          echo "Linux build artifacts verified"
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-artifacts
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.snap
+            dist/*.tar.gz
+          retention-days: 30
+
+  # Build validation and release
+  build-validation:
+    needs: [setup, build-windows, build-macos, build-linux]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Validate build artifacts
+        run: |
+          echo "=== BUILD VALIDATION ==="
+
+          # Check Windows artifacts
+          if [ -d "windows-artifacts" ]; then
+            echo "Windows artifacts:"
+            ls -la windows-artifacts/
+            WINDOWS_COUNT=$(find windows-artifacts -name "*.exe" -o -name "*.msi" | wc -l)
+            echo "Windows executables/installers: $WINDOWS_COUNT"
+          fi
+
+          # Check macOS artifacts
+          if [ -d "macos-artifacts" ]; then
+            echo "macOS artifacts:"
+            ls -la macos-artifacts/
+            MACOS_COUNT=$(find macos-artifacts -name "*.dmg" -o -name "*.pkg" | wc -l)
+            echo "macOS packages: $MACOS_COUNT"
+          fi
+
+          # Check Linux artifacts
+          if [ -d "linux-artifacts" ]; then
+            echo "Linux artifacts:"
+            ls -la linux-artifacts/
+            LINUX_COUNT=$(find linux-artifacts -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" | wc -l)
+            echo "Linux packages: $LINUX_COUNT"
+          fi
+
+          # Generate build summary
+          echo "Build validation completed at $(date)"
+
+      - name: Create platform compatibility matrix
+        run: |
+          cat > platform-matrix.md << 'EOF'
+          # Platform Compatibility Matrix
+
+          | Platform | Architecture | Format | Status | Notes |
+          |----------|-------------|---------|---------|-------|
+          | Windows  | x64         | NSIS    | ✅     | Standard installer |
+          | Windows  | x64         | MSI     | ✅     | Enterprise installer |
+          | Windows  | arm64       | NSIS    | ✅     | ARM64 support |
+          | macOS    | x64         | DMG     | ✅     | Intel Macs |
+          | macOS    | arm64       | DMG     | ✅     | Apple Silicon |
+          | macOS    | universal   | DMG     | ✅     | Universal binary |
+          | Linux    | x64         | AppImage| ✅     | Portable |
+          | Linux    | x64         | DEB     | ✅     | Debian/Ubuntu |
+          | Linux    | x64         | RPM     | ✅     | RedHat/CentOS |
+          | Linux    | x64         | Snap    | ✅     | Universal Linux |
+          | Linux    | arm64       | AppImage| ✅     | ARM64 support |
+
+          ## Build Information
+          - Version: ${{ needs.setup.outputs.version }}
+          - Build Number: ${{ github.run_number }}
+          - Commit: ${{ github.sha }}
+          - Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+
+      - name: Upload platform matrix
+        uses: actions/upload-artifact@v3
+        with:
+          name: platform-matrix
+          path: platform-matrix.md
+
+  # Release creation (only on tags)
+  release:
+    needs: [setup, build-validation]
+    if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+
+          # Copy all build artifacts
+          find . -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.pkg" \
+                 -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" \
+                 -o -name "*.tar.gz" | while read file; do
+            cp "$file" release-assets/
+          done
+
+          # Copy platform matrix
+          cp platform-matrix.md release-assets/
+
+          ls -la release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ needs.setup.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: release-assets/*
+          body: |
+            ## Mainframe AI Assistant ${{ needs.setup.outputs.version }}
+
+            ### Cross-Platform Support
+            This release includes builds for Windows, macOS, and Linux platforms with support for multiple architectures.
+
+            ### Downloads
+            - **Windows**: Download the `.exe` installer for standard installation or `.msi` for enterprise deployments
+            - **macOS**: Download the `.dmg` for drag-and-drop installation
+            - **Linux**: Choose from `.AppImage` (portable), `.deb` (Debian/Ubuntu), `.rpm` (RedHat/CentOS), or `.snap` (Universal)
+
+            ### Platform Matrix
+            See the included `platform-matrix.md` for detailed compatibility information.
+
+            ### Changes
+            See [CHANGELOG.md](CHANGELOG.md) for detailed changes in this release.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

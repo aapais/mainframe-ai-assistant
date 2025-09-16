@@ -1,0 +1,75 @@
+{
+  // TypeScript configuration for Production
+  // Optimized for bundle size, performance, and reliability
+  "extends": "./tsconfig.json",
+  
+  "compilerOptions": {
+    // Production optimizations
+    "incremental": false,                         // Clean builds only
+    "tsBuildInfoFile": undefined,                 // No build cache
+    
+    // Maximum strictness
+    "noUnusedLocals": true,                       // Error on unused locals
+    "noUnusedParameters": true,                   // Error on unused parameters
+    "noImplicitReturns": true,                    // Error on missing returns
+    "noUncheckedIndexedAccess": true,             // Strictest index access
+    "noPropertyAccessFromIndexSignature": true,   // Require bracket notation
+    
+    // Production debugging (minimal)
+    "sourceMap": false,                           // No source maps in production
+    "inlineSourceMap": false,                     // No inline source maps
+    "inlineSources": false,                       // No source inlining
+    "declarationMap": false,                      // No declaration maps
+    
+    // Optimize output
+    "removeComments": true,                       // Remove all comments
+    "preserveConstEnums": false,                  // Remove const enums
+    "stripInternal": true,                        // Strip @internal comments
+    
+    // Emit settings for production
+    "noEmit": false,                              // Emit production files
+    "noEmitOnError": true,                        // Don't emit if errors
+    "declaration": true,                          // Generate type definitions
+    "declarationDir": "./dist/types",             // Separate types directory
+    
+    // Bundle optimizations
+    "importHelpers": true,                        // Use tslib for helpers
+    "downlevelIteration": false,                  // No iterator downleveling
+    "esModuleInterop": true,                      // Optimize interop
+    
+    // Target optimization
+    "target": "ES2022",                           // Modern target for Electron
+    "module": "ESNext",                           // Modern modules
+    
+    // Tree shaking optimizations
+    "sideEffects": false,                         // Enable tree shaking
+    "isolatedModules": true,                      // Ensure tree-shakeable
+    
+    // Type checking optimizations
+    "skipLibCheck": true,                         // Skip library checking
+    "skipDefaultLibCheck": false,                 // Check default libs
+    
+    // Compilation optimizations
+    "assumeChangesOnlyAffectDirectDependencies": false,  // Full type checking
+    "disableReferencedProjectLoad": false,        // Load all references
+    "disableSolutionSearching": false,            // Enable solution searching
+    "disableSourceOfProjectReferenceRedirect": false     // Enable redirects
+  },
+  
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "tests",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.dev.ts",                                // Exclude dev-only files
+    "**/*.mock.ts",                               // Exclude mock files
+    "**/stories",                                 // Exclude Storybook stories
+    "**/__tests__",                               // Exclude test directories
+    "**/__mocks__"                                // Exclude mock directories
+  ]
+}

@@ -1,0 +1,397 @@
+name: Performance Testing & Quality Gates
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Run nightly performance tests at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      baseline_update:
+        description: 'Update performance baseline'
+        required: false
+        default: 'false'
+        type: boolean
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - smoke
+          - regression
+          - load
+
+env:
+  NODE_VERSION: '18'
+  PERFORMANCE_BASELINE_BRANCH: 'main'
+  PERFORMANCE_ARTIFACTS_RETENTION: 30
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+jobs:
+  performance-setup:
+    name: Setup Performance Environment
+    runs-on: ubuntu-latest
+    outputs:
+      should-run-tests: ${{ steps.check-changes.outputs.should-run }}
+      baseline-ref: ${{ steps.baseline.outputs.ref }}
+      test-suite: ${{ steps.config.outputs.test-suite }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for performance-relevant changes
+        id: check-changes
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if changes affect performance-critical files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} || echo "")
+          PERF_PATTERNS="src/|performance/|package.json|package-lock.json|jest.config|webpack.config|vite.config"
+
+          if echo "$CHANGED_FILES" | grep -E "$PERF_PATTERNS"; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine baseline reference
+        id: baseline
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "ref=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{ env.PERFORMANCE_BASELINE_BRANCH }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure test suite
+        id: config
+        run: |
+          if [[ "${{ github.event.inputs.test_suite }}" != "" ]]; then
+            echo "test-suite=${{ github.event.inputs.test_suite }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "test-suite=smoke" >> $GITHUB_OUTPUT
+          else
+            echo "test-suite=full" >> $GITHUB_OUTPUT
+          fi
+
+  performance-baseline:
+    name: Generate Performance Baseline
+    runs-on: ubuntu-latest
+    needs: performance-setup
+    if: needs.performance-setup.outputs.should-run-tests == 'true'
+    outputs:
+      baseline-artifact: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - name: Checkout baseline code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.performance-setup.outputs.baseline-ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project for baseline
+        run: npm run build
+
+      - name: Run baseline performance tests
+        run: |
+          npm run test:performance:baseline
+          mkdir -p performance-results/baseline
+
+      - name: Upload baseline artifacts
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline-${{ github.run_id }}
+          path: performance-results/baseline/
+          retention-days: ${{ env.PERFORMANCE_ARTIFACTS_RETENTION }}
+
+  performance-current:
+    name: Run Current Performance Tests
+    runs-on: ubuntu-latest
+    needs: [performance-setup, performance-baseline]
+    if: needs.performance-setup.outputs.should-run-tests == 'true'
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e, load]
+        exclude:
+          - test-type: load
+            # Only run load tests on full suite or schedule
+            ${{ needs.performance-setup.outputs.test-suite != 'full' && github.event_name != 'schedule' }}
+    steps:
+      - name: Checkout current code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Download baseline artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-baseline-${{ github.run_id }}
+          path: performance-results/baseline/
+
+      - name: Run performance tests (${{ matrix.test-type }})
+        run: |
+          case "${{ matrix.test-type }}" in
+            "unit")
+              npm run test:performance:unit
+              ;;
+            "integration")
+              npm run test:performance:integration
+              ;;
+            "e2e")
+              npm run test:performance:e2e
+              ;;
+            "load")
+              npm run test:performance:load
+              ;;
+          esac
+        env:
+          PERFORMANCE_BASELINE_PATH: performance-results/baseline/
+          PERFORMANCE_TEST_SUITE: ${{ needs.performance-setup.outputs.test-suite }}
+
+      - name: Generate performance comparison report
+        run: |
+          node scripts/performance/compare-results.js \
+            --baseline performance-results/baseline/ \
+            --current performance-results/current/ \
+            --type ${{ matrix.test-type }} \
+            --output performance-results/comparison-${{ matrix.test-type }}.json
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-${{ matrix.test-type }}-${{ github.run_id }}
+          path: |
+            performance-results/current/
+            performance-results/comparison-${{ matrix.test-type }}.json
+          retention-days: ${{ env.PERFORMANCE_ARTIFACTS_RETENTION }}
+
+  performance-analysis:
+    name: Analyze Performance Results
+    runs-on: ubuntu-latest
+    needs: [performance-setup, performance-current]
+    if: needs.performance-setup.outputs.should-run-tests == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all performance results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: performance-results-*-${{ github.run_id }}
+          path: performance-results/
+          merge-multiple: true
+
+      - name: Aggregate performance results
+        run: |
+          node scripts/performance/aggregate-results.js \
+            --input performance-results/ \
+            --output performance-results/aggregate.json \
+            --format detailed
+
+      - name: Run performance quality gates
+        id: quality-gates
+        run: |
+          node scripts/performance/quality-gates.js \
+            --config config/performance/quality-gates.json \
+            --results performance-results/aggregate.json \
+            --output performance-results/quality-gate-results.json
+
+      - name: Generate performance report
+        run: |
+          node scripts/performance/generate-report.js \
+            --results performance-results/aggregate.json \
+            --quality-gates performance-results/quality-gate-results.json \
+            --output performance-results/report.html \
+            --format html
+
+      - name: Comment on PR with performance results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const qualityGateResults = JSON.parse(fs.readFileSync('performance-results/quality-gate-results.json', 'utf8'));
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('Performance Test Results')
+            );
+
+            const body = `## Performance Test Results 🚀
+
+            **Quality Gates Status:** ${qualityGateResults.passed ? '✅ PASSED' : '❌ FAILED'}
+
+            ### Summary
+            - **Total Tests:** ${qualityGateResults.summary.total}
+            - **Passed:** ${qualityGateResults.summary.passed}
+            - **Failed:** ${qualityGateResults.summary.failed}
+            - **Regressions:** ${qualityGateResults.summary.regressions}
+
+            ### Key Metrics
+            ${qualityGateResults.metrics.map(metric =>
+              `- **${metric.name}:** ${metric.current} (${metric.change > 0 ? '+' : ''}${metric.change}% vs baseline) ${metric.status === 'pass' ? '✅' : '❌'}`
+            ).join('\n')}
+
+            ### Performance Impact
+            ${qualityGateResults.impact.overall === 'none' ? '✅ No significant performance impact detected' :
+              qualityGateResults.impact.overall === 'improvement' ? '🚀 Performance improvements detected!' :
+              '⚠️ Performance regressions detected - review required'}
+
+            [View Detailed Report](${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+
+            ---
+            *Updated at ${new Date().toISOString()}*`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: Fail job if quality gates fail
+        if: steps.quality-gates.outputs.passed != 'true'
+        run: |
+          echo "❌ Performance quality gates failed!"
+          cat performance-results/quality-gate-results.json
+          exit 1
+
+      - name: Upload final performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-${{ github.run_id }}
+          path: |
+            performance-results/report.html
+            performance-results/aggregate.json
+            performance-results/quality-gate-results.json
+          retention-days: ${{ env.PERFORMANCE_ARTIFACTS_RETENTION }}
+
+  performance-notification:
+    name: Send Performance Notifications
+    runs-on: ubuntu-latest
+    needs: [performance-analysis]
+    if: always() && needs.performance-setup.outputs.should-run-tests == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download performance results
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-report-${{ github.run_id }}
+          path: performance-results/
+
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          node scripts/performance/send-notifications.js \
+            --platform slack \
+            --webhook-url "${{ env.SLACK_WEBHOOK_URL }}" \
+            --results performance-results/quality-gate-results.json \
+            --context github
+
+      - name: Send Teams notification
+        if: env.TEAMS_WEBHOOK_URL != ''
+        run: |
+          node scripts/performance/send-notifications.js \
+            --platform teams \
+            --webhook-url "${{ env.TEAMS_WEBHOOK_URL }}" \
+            --results performance-results/quality-gate-results.json \
+            --context github
+
+  update-baseline:
+    name: Update Performance Baseline
+    runs-on: ubuntu-latest
+    needs: [performance-analysis]
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.baseline_update == 'true')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download performance results
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-report-${{ github.run_id }}
+          path: performance-results/
+
+      - name: Update baseline data
+        run: |
+          # Create baseline directory if it doesn't exist
+          mkdir -p performance-baselines/
+
+          # Copy current results as new baseline
+          cp performance-results/aggregate.json performance-baselines/baseline-$(date +%Y%m%d-%H%M%S).json
+          cp performance-results/aggregate.json performance-baselines/latest.json
+
+          # Keep only last 10 baselines
+          ls -t performance-baselines/baseline-*.json | tail -n +11 | xargs -r rm
+
+      - name: Commit baseline updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add performance-baselines/
+
+          if git diff --staged --quiet; then
+            echo "No baseline changes to commit"
+          else
+            git commit -m "chore: update performance baseline [skip ci]"
+            git push
+          fi

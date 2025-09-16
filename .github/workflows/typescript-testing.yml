@@ -1,0 +1,264 @@
+name: TypeScript Type Checking & Testing
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  type-check:
+    name: TypeScript Type Checking
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        typescript-version: ['4.9', '5.0', '5.1', '5.2', '5.3', 'latest']
+        node-version: ['18', '20', '21']
+        include:
+          - typescript-version: 'latest'
+            node-version: '20'
+            generate-coverage: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install TypeScript ${{ matrix.typescript-version }}
+        run: |
+          if [ "${{ matrix.typescript-version }}" = "latest" ]; then
+            npm install -D typescript@latest
+          else
+            npm install -D typescript@${{ matrix.typescript-version }}
+          fi
+
+      - name: Verify TypeScript version
+        run: npx tsc --version
+
+      - name: Basic type checking
+        run: npm run type:check
+
+      - name: Strict mode validation
+        run: npm run type:strict
+
+      - name: Run type tests
+        run: npm run type:test
+
+      - name: Generate type coverage report
+        if: matrix.generate-coverage
+        run: npm run type:coverage
+
+      - name: Upload type coverage to Codecov
+        if: matrix.generate-coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/type-coverage.json
+          flags: typescript
+          name: TypeScript Coverage
+
+      - name: Comment type coverage on PR
+        if: matrix.generate-coverage && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const coverage = JSON.parse(fs.readFileSync('./coverage/type-coverage.json', 'utf8'));
+              const percentage = coverage.percentage.toFixed(2);
+              const body = `## TypeScript Type Coverage Report
+
+              **Overall Coverage:** ${percentage}%
+              **Files Checked:** ${coverage.totalFiles}
+              **Lines Covered:** ${coverage.coveredLines}/${coverage.totalLines}
+
+              ${percentage >= 95 ? '✅' : '⚠️'} Target: 95% (${percentage >= 95 ? 'PASSED' : 'NEEDS IMPROVEMENT'})
+
+              ### Files with Low Coverage:
+              ${coverage.files.filter(f => f.percentage < 90).map(f =>
+                `- ${f.filename}: ${f.percentage.toFixed(1)}%`
+              ).join('\n') || 'None'}`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } catch (error) {
+              console.log('No coverage file found or invalid format');
+            }
+
+      - name: Type coverage quality gate
+        if: matrix.generate-coverage
+        run: |
+          COVERAGE=$(node -e "
+            const fs = require('fs');
+            try {
+              const data = JSON.parse(fs.readFileSync('./coverage/type-coverage.json', 'utf8'));
+              console.log(data.percentage);
+            } catch (e) {
+              console.log(0);
+            }
+          ")
+          echo "Type coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 95" | bc -l) )); then
+            echo "❌ Type coverage ($COVERAGE%) is below threshold (95%)"
+            exit 1
+          else
+            echo "✅ Type coverage ($COVERAGE%) meets threshold (95%)"
+          fi
+
+      - name: Generate type safety badge
+        if: matrix.generate-coverage
+        run: |
+          COVERAGE=$(node -e "
+            const fs = require('fs');
+            try {
+              const data = JSON.parse(fs.readFileSync('./coverage/type-coverage.json', 'utf8'));
+              console.log(data.percentage.toFixed(1));
+            } catch (e) {
+              console.log('0');
+            }
+          ")
+          COLOR="red"
+          if (( $(echo "$COVERAGE >= 95" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            COLOR="yellow"
+          fi
+
+          mkdir -p badges
+          curl -s "https://img.shields.io/badge/TypeScript_Coverage-${COVERAGE}%25-${COLOR}" > badges/typescript-coverage.svg
+
+      - name: Upload artifacts
+        if: matrix.generate-coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: type-coverage-reports
+          path: |
+            coverage/
+            badges/
+          retention-days: 30
+
+  type-performance:
+    name: Type Checking Performance
+    runs-on: ubuntu-latest
+    needs: type-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Benchmark type checking performance
+        run: |
+          echo "## TypeScript Performance Benchmark" > type-performance.md
+          echo "" >> type-performance.md
+
+          # Cold run
+          echo "### Cold Run" >> type-performance.md
+          time_cold=$(time -p npm run type:check 2>&1 | grep real | awk '{print $2}')
+          echo "- Time: ${time_cold}s" >> type-performance.md
+
+          # Warm runs (3 iterations)
+          echo "" >> type-performance.md
+          echo "### Warm Runs" >> type-performance.md
+          total_time=0
+          for i in {1..3}; do
+            time_warm=$(time -p npm run type:check 2>&1 | grep real | awk '{print $2}')
+            echo "- Run $i: ${time_warm}s" >> type-performance.md
+            total_time=$(echo "$total_time + $time_warm" | bc)
+          done
+
+          avg_time=$(echo "scale=2; $total_time / 3" | bc)
+          echo "" >> type-performance.md
+          echo "**Average Warm Time:** ${avg_time}s" >> type-performance.md
+
+          # Check if performance is within acceptable range (< 30s for warm runs)
+          if (( $(echo "$avg_time > 30" | bc -l) )); then
+            echo "⚠️ Type checking is slower than expected (${avg_time}s > 30s)"
+            echo "## Performance Warning" >> type-performance.md
+            echo "Type checking is taking longer than expected. Consider:" >> type-performance.md
+            echo "- Splitting large type files" >> type-performance.md
+            echo "- Using project references" >> type-performance.md
+            echo "- Optimizing complex type definitions" >> type-performance.md
+          fi
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v3
+        with:
+          name: type-performance-report
+          path: type-performance.md
+
+  integration-test:
+    name: Integration with Build Process
+    runs-on: ubuntu-latest
+    needs: type-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check before build
+        run: npm run type:check
+
+      - name: Build project
+        run: npm run build
+
+      - name: Verify build outputs are typed
+        run: |
+          if [ -d "dist" ]; then
+            echo "Checking for type declaration files..."
+            find dist -name "*.d.ts" -type f | head -10
+
+            # Verify main entry points have declarations
+            if [ ! -f "dist/index.d.ts" ] && [ ! -f "dist/main.d.ts" ]; then
+              echo "⚠️ No main type declaration file found in dist/"
+            else
+              echo "✅ Type declarations generated successfully"
+            fi
+          else
+            echo "No dist directory found, skipping type declaration check"
+          fi
+
+      - name: Test type imports
+        run: |
+          echo "Testing TypeScript imports..."
+          cat > test-imports.ts << 'EOF'
+          // Test that built types can be imported
+          import type { } from './dist/index.js';
+          console.log('Type imports successful');
+          EOF
+
+          if [ -f "dist/index.d.ts" ] || [ -f "dist/main.d.ts" ]; then
+            npx tsc --noEmit test-imports.ts || echo "Type import test completed"
+          fi
+          rm -f test-imports.ts

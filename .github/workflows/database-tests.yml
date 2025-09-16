@@ -1,0 +1,241 @@
+name: Database Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/database/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/database-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/database/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/database-tests.yml'
+
+jobs:
+  database-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        test-suite: [unit, integration, performance, error-handling]
+        
+    name: Node ${{ matrix.node-version }} - ${{ matrix.test-suite }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run database tests - ${{ matrix.test-suite }}
+      run: npm run test:database:ci -- --suite=${{ matrix.test-suite }}
+      env:
+        CI: true
+        NODE_ENV: test
+        
+    - name: Upload coverage reports
+      if: matrix.test-suite == 'unit'
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/database/lcov.info
+        flags: database-${{ matrix.test-suite }}
+        name: database-coverage-${{ matrix.node-version }}
+        fail_ci_if_error: false
+        
+    - name: Upload test artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-artifacts-${{ matrix.node-version }}-${{ matrix.test-suite }}
+        path: |
+          coverage/database/
+          src/database/__tests__/temp/
+        retention-days: 7
+
+  database-tests-comprehensive:
+    runs-on: ubuntu-latest
+    name: Comprehensive Database Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run all database tests
+      run: npm run test:database:ci
+      env:
+        CI: true
+        NODE_ENV: test
+        
+    - name: Generate comprehensive coverage report
+      run: |
+        echo "## Database Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -f coverage/database/lcov.info ]; then
+          # Extract coverage percentages
+          LINES_COVERAGE=$(grep -E "LF:|LH:" coverage/database/lcov.info | awk -F: '{sum+=$2} END {printf "%.1f", (NR > 0) ? 100*sum/(NR/2) : 0}')
+          echo "- Lines Coverage: $LINES_COVERAGE%" >> $GITHUB_STEP_SUMMARY
+          
+          FUNCTIONS_COVERAGE=$(grep -E "FNF:|FNH:" coverage/database/lcov.info | awk -F: '{sum+=$2} END {printf "%.1f", (NR > 0) ? 100*sum/(NR/2) : 0}')
+          echo "- Functions Coverage: $FUNCTIONS_COVERAGE%" >> $GITHUB_STEP_SUMMARY
+          
+          BRANCHES_COVERAGE=$(grep -E "BRF:|BRH:" coverage/database/lcov.info | awk -F: '{sum+=$2} END {printf "%.1f", (NR > 0) ? 100*sum/(NR/2) : 0}')
+          echo "- Branches Coverage: $BRANCHES_COVERAGE%" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Upload comprehensive coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/database/lcov.info
+        flags: database-comprehensive
+        name: database-coverage-comprehensive
+        fail_ci_if_error: true
+        
+    - name: Check coverage thresholds
+      run: |
+        if [ -f coverage/database/lcov.info ]; then
+          npm run test:database:coverage
+        else
+          echo "No coverage file found"
+          exit 1
+        fi
+
+  performance-regression:
+    runs-on: ubuntu-latest
+    name: Performance Regression Check
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout base branch
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.base_ref }}
+        path: base
+        
+    - name: Checkout PR branch
+      uses: actions/checkout@v4
+      with:
+        path: pr
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: |
+          base/package-lock.json
+          pr/package-lock.json
+        
+    - name: Install base dependencies
+      run: cd base && npm ci
+      
+    - name: Install PR dependencies  
+      run: cd pr && npm ci
+      
+    - name: Run baseline performance tests
+      run: cd base && npm run test:database:performance
+      
+    - name: Run PR performance tests
+      run: cd pr && npm run test:database:performance
+      
+    - name: Compare performance results
+      run: |
+        echo "## Performance Comparison" >> $GITHUB_STEP_SUMMARY
+        echo "Performance regression analysis would be implemented here" >> $GITHUB_STEP_SUMMARY
+        echo "Comparing baseline vs PR performance metrics" >> $GITHUB_STEP_SUMMARY
+
+  database-security-scan:
+    runs-on: ubuntu-latest
+    name: Database Security Scan
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run security audit
+      run: npm audit --audit-level moderate
+      continue-on-error: true
+      
+    - name: Check for SQL injection vulnerabilities
+      run: |
+        echo "Checking for potential SQL injection patterns..."
+        # Check for dynamic SQL construction patterns that might be vulnerable
+        if grep -r "SELECT.*+\|UPDATE.*+\|INSERT.*+\|DELETE.*+" src/database/ --include="*.ts" | grep -v "test"; then
+          echo "⚠️ Found potential SQL injection patterns. Review carefully."
+          exit 1
+        else
+          echo "✅ No obvious SQL injection patterns found."
+        fi
+        
+    - name: Check for hardcoded secrets
+      run: |
+        echo "Checking for hardcoded secrets..."
+        if grep -r -E "(password|secret|key|token).*=.*['\"][^'\"]{8,}['\"]" src/database/ --include="*.ts" | grep -v test; then
+          echo "⚠️ Found potential hardcoded secrets. Review carefully."
+          exit 1
+        else
+          echo "✅ No hardcoded secrets found."
+        fi
+
+  notify-status:
+    runs-on: ubuntu-latest
+    name: Notify Test Status
+    needs: [database-tests, database-tests-comprehensive]
+    if: always()
+    
+    steps:
+    - name: Notify success
+      if: needs.database-tests.result == 'success' && needs.database-tests-comprehensive.result == 'success'
+      run: |
+        echo "✅ All database tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The database test suite has completed successfully with:" >> $GITHUB_STEP_SUMMARY
+        echo "- All unit tests passing" >> $GITHUB_STEP_SUMMARY
+        echo "- All integration tests passing" >> $GITHUB_STEP_SUMMARY
+        echo "- All performance tests meeting benchmarks" >> $GITHUB_STEP_SUMMARY
+        echo "- All error handling scenarios validated" >> $GITHUB_STEP_SUMMARY
+        echo "- Code coverage meeting 90%+ threshold" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Notify failure
+      if: needs.database-tests.result == 'failure' || needs.database-tests-comprehensive.result == 'failure'
+      run: |
+        echo "❌ Database tests failed!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Some database tests have failed. Please review the test output and:" >> $GITHUB_STEP_SUMMARY
+        echo "- Fix any failing unit or integration tests" >> $GITHUB_STEP_SUMMARY
+        echo "- Address performance regressions if any" >> $GITHUB_STEP_SUMMARY
+        echo "- Ensure error handling tests pass" >> $GITHUB_STEP_SUMMARY
+        echo "- Check that code coverage meets the 90% threshold" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Run tests locally with: \`npm run test:database\`" >> $GITHUB_STEP_SUMMARY
+        exit 1

@@ -1,0 +1,66 @@
+{
+  // TypeScript configuration for Electron Main Process
+  // Simplified version to fix path resolution issues
+  "compilerOptions": {
+    // Target and Module Settings
+    "target": "ES2022",
+    "module": "CommonJS",
+    "lib": ["ES2022"],
+    "moduleResolution": "node",
+
+    // Path Configuration (relative to this config file)
+    "outDir": "../../dist/main",
+    "rootDir": "../../src/main",
+    "baseUrl": "../../",
+
+    // Type Checking
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+
+    // JavaScript Support
+    "allowJs": true,
+    "checkJs": false,
+
+    // Source Maps and Declarations
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Emit Control
+    "noEmit": false,
+    "removeComments": true,
+
+    // Module Resolution
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+
+    // Skip Checks to Avoid Library Issues
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+
+    // Additional Options
+    "isolatedModules": true,
+    "preserveConstEnums": true
+  },
+
+  "include": [
+    "../../src/main/**/*.ts",
+    "../../src/main/**/*.tsx",
+    "../../src/main/**/*.js"
+  ],
+
+  "exclude": [
+    "../../node_modules",
+    "../../dist",
+    "../../build",
+    "../../src/renderer",
+    "../../src/components",
+    "../../src/hooks",
+    "../../tests",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

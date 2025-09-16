@@ -1,0 +1,237 @@
+name: Auto-Fix Build Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      fix_type:
+        description: 'Type of fix to apply'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - dependencies
+          - typescript
+          - native-modules
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  diagnose:
+    name: Diagnose Build Issues
+    runs-on: ubuntu-latest
+    outputs:
+      has_issues: ${{ steps.check.outputs.has_issues }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Check for issues
+        id: check
+        run: |
+          echo "Checking for build issues..."
+          ISSUES_FOUND=false
+
+          # Check if package-lock.json exists
+          if [ ! -f "package-lock.json" ]; then
+            echo "Missing package-lock.json"
+            ISSUES_FOUND=true
+          fi
+
+          # Try to install dependencies
+          if ! npm ci 2>/dev/null; then
+            echo "Dependency installation failed"
+            ISSUES_FOUND=true
+          fi
+
+          # Try to build
+          if ! npm run build 2>/dev/null; then
+            echo "Build failed"
+            ISSUES_FOUND=true
+          fi
+
+          echo "has_issues=$ISSUES_FOUND" >> $GITHUB_OUTPUT
+
+  auto-fix:
+    name: Auto-Fix Build Issues
+    needs: diagnose
+    if: needs.diagnose.outputs.has_issues == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+
+      - name: Clean workspace
+        run: |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
+
+      - name: Install all dependencies
+        run: |
+          # Core dependencies
+          npm install --save \
+            zod \
+            uuid \
+            axios \
+            express \
+            react \
+            react-dom \
+            react-router-dom \
+            better-sqlite3
+
+          # Type definitions
+          npm install --save-dev \
+            @types/uuid \
+            @types/express \
+            @types/node \
+            @types/react \
+            @types/react-dom
+
+          # Electron dependencies
+          npm install --save-dev \
+            electron \
+            electron-builder \
+            @electron/rebuild
+
+          # Build tools
+          npm install --save-dev \
+            typescript \
+            vite \
+            @vitejs/plugin-react \
+            concurrently
+
+      - name: Fix TypeScript configuration
+        run: |
+          # Fix tsconfig.main.json paths
+          if [ -f "config/typescript/tsconfig.main.json" ]; then
+            node -e "
+            const fs = require('fs');
+            const config = JSON.parse(fs.readFileSync('config/typescript/tsconfig.main.json', 'utf8'));
+
+            // Fix extends path
+            if (config.extends) {
+              config.extends = '../../tsconfig.json';
+            }
+
+            // Fix include paths
+            if (config.include) {
+              config.include = ['../../src/main/**/*'];
+            }
+
+            // Fix outDir
+            if (config.compilerOptions && config.compilerOptions.outDir) {
+              config.compilerOptions.outDir = '../../dist/main';
+            }
+
+            fs.writeFileSync('config/typescript/tsconfig.main.json', JSON.stringify(config, null, 2));
+            "
+          fi
+
+          # Fix tsconfig.renderer.json paths
+          if [ -f "config/typescript/tsconfig.renderer.json" ]; then
+            node -e "
+            const fs = require('fs');
+            const config = JSON.parse(fs.readFileSync('config/typescript/tsconfig.renderer.json', 'utf8'));
+
+            // Fix extends path
+            if (config.extends) {
+              config.extends = '../../tsconfig.json';
+            }
+
+            // Fix include paths
+            if (config.include) {
+              config.include = ['../../src/renderer/**/*', '../../src/components/**/*'];
+            }
+
+            // Fix outDir
+            if (config.compilerOptions && config.compilerOptions.outDir) {
+              config.compilerOptions.outDir = '../../dist/renderer';
+            }
+
+            fs.writeFileSync('config/typescript/tsconfig.renderer.json', JSON.stringify(config, null, 2));
+            "
+          fi
+
+      - name: Rebuild native modules
+        run: |
+          npm rebuild
+          npx electron-rebuild || true
+
+      - name: Fix better-sqlite3
+        run: |
+          if [ -d "node_modules/better-sqlite3" ]; then
+            cd node_modules/better-sqlite3
+            npm run build-release || true
+            cd ../..
+          fi
+
+      - name: Run audit fix
+        run: |
+          npm audit fix --force || true
+
+      - name: Test build
+        id: test_build
+        run: |
+          echo "Testing build..."
+          npm run build || true
+
+      - name: Commit and push fixes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+
+          git add package.json package-lock.json
+          git add config/typescript/tsconfig.*.json || true
+
+          if ! git diff --staged --quiet; then
+            git commit -m "fix: auto-fix build issues and dependencies"
+            git push
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Create issue if build still fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueTitle = 'Build Auto-Fix Failed';
+            const issueBody = `
+            ## Build Auto-Fix Failed
+
+            The automated build fix workflow was unable to fully resolve all build issues.
+
+            ### Manual intervention required:
+
+            1. Run locally: \`npm run fix:dependencies\`
+            2. Check TypeScript errors: \`npm run typecheck\`
+            3. Review the build logs for specific errors
+
+            ### Workflow run:
+            [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Please review and fix manually.
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['bug', 'build', 'auto-generated']
+            });

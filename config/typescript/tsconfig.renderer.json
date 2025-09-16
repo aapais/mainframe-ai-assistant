@@ -1,0 +1,63 @@
+{
+  
+  
+  "extends": "../../tsconfig.json",
+  
+  "compilerOptions": {
+    
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],    
+    "module": "ESNext",                           
+    "target": "ES2022",                           
+    
+    
+    "jsx": "react-jsx",                           
+    "jsxImportSource": "react",                   
+    
+    
+    "types": [
+      "react",
+      "react-dom",
+      "node",                                      
+      "electron"
+    ],
+    
+    
+    "outDir": "../../dist/renderer",
+    "rootDir": "../../src/renderer",
+    
+    
+    "noEmit": true,                               
+    "emitDeclarationOnly": false,                 
+    
+    
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"                                 
+    ],
+    
+    
+    "downlevelIteration": true,                   
+    "allowUmdGlobalAccess": false,                
+    
+    
+    "skipDefaultLibCheck": true,                  
+    "preserveSymlinks": false                     
+  },
+  
+  "include": [
+    "../../src/renderer*",
+    "../../src/shared*",
+    "../../src/types*",
+    "../../src/hooks*",
+    "../../src/components*"
+  ],
+  
+  "exclude": [
+    "../../src/main*",
+    "../../src/database*",                          
+    "../..*.spec.tsx",
+    "../..*.test.tsx"
+  ]
+}

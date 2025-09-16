@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "skipLibCheck": false,
+    "types": ["vitest/globals", "node", "@testing-library/jest-dom"]
+  },
+  "include": [
+    "tests/typescript/**/*.ts",
+    "tests/typescript/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "tests/**/*.test.tsx",
+    "tests/**/*.spec.ts",
+    "**/*.stories.ts",
+    "**/*.stories.tsx"
+  ]
+}

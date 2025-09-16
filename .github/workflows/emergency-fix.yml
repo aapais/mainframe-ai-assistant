@@ -1,0 +1,221 @@
+name: Emergency Build Fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+      - 'package.json'
+      - 'tsconfig.json'
+      - '.github/workflows/emergency-fix.yml'
+
+jobs:
+  emergency-fix:
+    name: Emergency Build Repair
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN || github.token }}
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 make g++ build-essential
+
+      - name: Complete dependency cleanup
+        run: |
+          echo "🧹 Cleaning workspace..."
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
+          rm -rf ~/.npm ~/.electron ~/.cache/electron
+
+      - name: Install all required packages
+        run: |
+          echo "📦 Installing all dependencies..."
+
+          # Core runtime dependencies
+          npm install --save \
+            zod@latest \
+            uuid@latest \
+            axios@latest \
+            express@latest \
+            react@latest \
+            react-dom@latest \
+            react-router-dom@latest \
+            better-sqlite3@latest \
+            sqlite3@latest || true
+
+          # Type definitions
+          npm install --save-dev \
+            @types/uuid@latest \
+            @types/express@latest \
+            @types/node@latest \
+            @types/react@latest \
+            @types/react-dom@latest || true
+
+          # Electron ecosystem
+          npm install --save-dev \
+            electron@latest \
+            electron-builder@latest \
+            @electron/rebuild@latest || true
+
+          # Build tools
+          npm install --save-dev \
+            typescript@~5.2.2 \
+            vite@latest \
+            @vitejs/plugin-react@latest \
+            concurrently@latest || true
+
+      - name: Fix TypeScript configurations
+        run: |
+          echo "🔧 Fixing TypeScript configs..."
+          node scripts/fix-typescript-config.js || echo "Config fix script not found, using inline fix"
+
+          # Inline fix if script doesn't exist
+          cat > fix-ts-inline.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          // Fix tsconfig.main.json
+          const mainPath = 'config/typescript/tsconfig.main.json';
+          if (fs.existsSync(mainPath)) {
+            const config = JSON.parse(fs.readFileSync(mainPath, 'utf8'));
+            config.extends = '../../tsconfig.json';
+            config.include = ['../../src/main/**/*'];
+            if (config.compilerOptions) {
+              config.compilerOptions.outDir = '../../dist/main';
+              config.compilerOptions.rootDir = '../../src/main';
+            }
+            fs.writeFileSync(mainPath, JSON.stringify(config, null, 2));
+          }
+
+          // Fix tsconfig.renderer.json
+          const rendererPath = 'config/typescript/tsconfig.renderer.json';
+          if (fs.existsSync(rendererPath)) {
+            const config = JSON.parse(fs.readFileSync(rendererPath, 'utf8'));
+            config.extends = '../../tsconfig.json';
+            config.include = ['../../src/renderer/**/*', '../../src/components/**/*'];
+            if (config.compilerOptions) {
+              config.compilerOptions.outDir = '../../dist/renderer';
+            }
+            fs.writeFileSync(rendererPath, JSON.stringify(config, null, 2));
+          }
+          EOF
+
+          node fix-ts-inline.js
+
+      - name: Rebuild native modules
+        run: |
+          echo "🔨 Rebuilding native modules..."
+          npm rebuild
+          npx electron-rebuild || echo "Electron rebuild had issues"
+
+          # Special handling for better-sqlite3
+          if [ -d "node_modules/better-sqlite3" ]; then
+            cd node_modules/better-sqlite3
+            npm run build-release || echo "better-sqlite3 rebuild had issues"
+            cd ../..
+          fi
+
+      - name: Attempt build
+        id: build_attempt
+        run: |
+          echo "🚀 Attempting build..."
+          npm run build || echo "BUILD_FAILED=true" >> $GITHUB_ENV
+
+      - name: Generate detailed report
+        if: always()
+        run: |
+          echo "📊 Generating build report..."
+
+          cat > build-status-report.md << 'EOF'
+          # Build Status Report
+
+          ## Environment
+          - Node Version: ${{ matrix.node-version }}
+          - OS: Ubuntu Latest
+          - Workflow: Emergency Build Fix
+
+          ## Dependency Installation
+          EOF
+
+          npm ls --depth=0 >> build-status-report.md 2>&1 || echo "- Failed to list dependencies" >> build-status-report.md
+
+          echo "" >> build-status-report.md
+          echo "## Build Results" >> build-status-report.md
+
+          if [ "$BUILD_FAILED" = "true" ]; then
+            echo "❌ Build failed - manual intervention may be required" >> build-status-report.md
+          else
+            echo "✅ Build completed successfully" >> build-status-report.md
+          fi
+
+          echo "" >> build-status-report.md
+          echo "## TypeScript Status" >> build-status-report.md
+          npm run typecheck 2>&1 | head -20 >> build-status-report.md || echo "TypeScript check unavailable" >> build-status-report.md
+
+      - name: Upload build report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-report-${{ matrix.node-version }}
+          path: build-status-report.md
+
+      - name: Create fix commit
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+          git add -A
+          git diff --staged --quiet || git commit -m "fix: emergency build repair - auto-fixed dependencies and configs"
+
+          git push || echo "No changes to push"
+
+      - name: Create issue if build failed
+        if: env.BUILD_FAILED == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueBody = `
+            ## Emergency Build Fix Report
+
+            The emergency build fix workflow encountered issues that require manual intervention.
+
+            ### Node Version: ${{ matrix.node-version }}
+
+            ### Required Actions:
+            1. Clone the repository locally
+            2. Run: \`npm run fix:all\`
+            3. Check TypeScript errors: \`npm run typecheck\`
+            4. Fix any remaining compilation errors
+            5. Push the fixes
+
+            ### Workflow Run:
+            [View details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Emergency Build Fix Required',
+              body: issueBody,
+              labels: ['bug', 'urgent', 'build-failure']
+            });
