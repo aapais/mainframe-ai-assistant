@@ -1,57 +1,41 @@
 {
-  // Minimal TypeScript configuration for Electron Main Process
-  // Designed to work around corrupted type definition files
   "compilerOptions": {
-    // Basic Configuration
     "target": "ES2022",
     "module": "CommonJS",
+    "lib": ["ES2022"],
     "moduleResolution": "node",
-
-    // Paths (relative to this config file)
     "outDir": "../../dist/main",
     "rootDir": "../../src/main",
     "baseUrl": "../../",
-
-    // Essential Options Only
-    "allowJs": true,
-    "checkJs": false,
-    "sourceMap": true,
-    "noEmit": false,
-
-    // Aggressive Library Skipping
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "noLib": false,
-
-    // Minimal Type Checking to Avoid Corrupted Libraries
     "strict": false,
     "noImplicitAny": false,
-
-    // Module Interop
+    "allowJs": true,
+    "checkJs": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "declaration": false,
+    "removeComments": true,
+    "isolatedModules": false,
     "forceConsistentCasingInFileNames": true,
-
-    // Isolated Modules (Required for some bundlers)
-    "isolatedModules": true,
-
-    // Don't specify lib or types arrays to avoid corrupted definitions
-    "resolveJsonModule": true
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
-
   "include": [
-    "../../src/main/**/*.ts"
+    "../../src/main/**/*"
   ],
-
   "exclude": [
+    "../../src/backend/**/*",
+    "../../src/renderer/**/*",
+    "../../src/components/**/*",
+    "../../tests/**/*",
     "../../node_modules",
-    "../../dist",
-    "../../src/renderer",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
-
-  "typeAcquisition": {
-    "enable": false
-  }
+    "**/*.test.*",
+    "**/*.spec.*"
+  ]
 }
