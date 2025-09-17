@@ -43,7 +43,7 @@ export class SearchIntegrationService extends EventEmitter {
   private integrationAdapter: SearchResultsIntegrationAdapter;
   private config: IntegrationConfig;
   private syncStatus: SyncStatus;
-  private syncInterval?: NodeJS.Timeout;
+  private syncInterval?: ReturnType<typeof setTimeout>;
   private changeQueue: Array<{ action: 'create' | 'update' | 'delete'; entryId: string; timestamp: Date }> = [];
 
   constructor(

@@ -39,7 +39,7 @@ export interface MemoryAnalysis {
 export class MemoryLeakDetector extends EventEmitter {
   private snapshots: MemorySnapshot[] = [];
   private detectedLeaks: MemoryLeak[] = [];
-  private monitoringInterval: NodeJS.Timeout | null = null;
+  private monitoringInterval: ReturnType<typeof setTimeout> | null = null;
   private isMonitoring = false;
 
   private targetGrowthRate = 10; // 10MB per hour

@@ -1,0 +1,15 @@
+# Add these scripts to your package.json "scripts" section:
+
+{
+  "scripts": {
+    "setup:database": "ts-node scripts/database-setup.ts",
+    "benchmark": "ts-node scripts/performance-benchmark.ts",
+    "verify:schema": "ts-node -e \"import('./scripts/database-setup').then(m => new m.DatabaseSetup({performanceTest: false}).run())\"",
+    "test:performance": "ts-node scripts/performance-benchmark.ts --disk",
+    "db:health": "ts-node -e \"import('./src/database/KnowledgeDB').then(m => m.createKnowledgeDB().then(db => db.healthCheck().then(h => console.log(JSON.stringify(h, null, 2)))))\"",
+    "db:stats": "ts-node -e \"import('./src/database/KnowledgeDB').then(m => m.createKnowledgeDB().then(db => db.getStats().then(s => console.log(JSON.stringify(s, null, 2)))))\"",
+    "db:optimize": "ts-node -e \"import('./src/database/KnowledgeDB').then(m => m.createKnowledgeDB().then(db => db.optimize().then(() => console.log('✅ Database optimized'))))\"",
+    "db:backup": "ts-node -e \"import('./src/database/KnowledgeDB').then(m => m.createKnowledgeDB().then(db => db.createBackup().then(() => console.log('✅ Backup created'))))\"",
+    "migrate": "ts-node -e \"import('./src/database/KnowledgeDB').then(m => m.createKnowledgeDB().then(db => console.log('✅ Migrations completed')))\""
+  }
+}

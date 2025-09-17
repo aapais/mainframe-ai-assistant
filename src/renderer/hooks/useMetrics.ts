@@ -95,7 +95,7 @@ export function useMetrics(options: UseMetricsOptions = {}): UseMetricsReturn {
   });
 
   // Refs
-  const autoRefreshIntervalRef = useRef<NodeJS.Timeout>();
+  const autoRefreshIntervalRef = useRef<ReturnType<typeof setTimeout>>();
   const lastOperationRef = useRef<() => Promise<void>>();
   const mountedRef = useRef(true);
   const metricsHistoryRef = useRef<MetricsSnapshot[]>([]);

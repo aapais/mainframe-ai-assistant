@@ -73,7 +73,7 @@ export class OptimizationEngine extends EventEmitter {
   private bottleneckDetector: BottleneckDetector;
   private recommendations: Map<string, OptimizationRecommendation> = new Map();
   private metrics: OptimizationMetrics[] = [];
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
   private analysisHistory: Map<string, any[]> = new Map();
 
   constructor(config: Partial<OptimizationConfig> = {}) {

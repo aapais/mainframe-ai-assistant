@@ -60,7 +60,7 @@ interface MetricsAggregator {
 export class MetricsHandler {
   private healthSnapshots: SystemHealthSnapshot[] = [];
   private metricsAggregator: MetricsAggregator;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
   private isMonitoring = false;
   private performanceBaseline?: SystemHealthSnapshot;
 

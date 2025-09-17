@@ -1,13 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BackupManager = void 0;
-const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const crypto_1 = __importDefault(require("crypto"));
+const tslib_1 = require("tslib");
+const better_sqlite3_1 = tslib_1.__importDefault(require("better-sqlite3"));
+const fs_1 = tslib_1.__importDefault(require("fs"));
+const path_1 = tslib_1.__importDefault(require("path"));
+const crypto_1 = tslib_1.__importDefault(require("crypto"));
 const util_1 = require("util");
 const stream_1 = require("stream");
 const zlib_1 = require("zlib");

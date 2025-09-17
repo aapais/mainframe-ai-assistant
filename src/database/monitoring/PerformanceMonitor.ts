@@ -85,8 +85,8 @@ export class PerformanceMonitor extends EventEmitter {
   private alertsBuffer: PerformanceAlert[] = [];
   private activeConnections = new Map<string, number>();
   private runningQueries = new Map<string, { query: string; startTime: number }>();
-  private aggregationTimer?: NodeJS.Timeout;
-  private cleanupTimer?: NodeJS.Timeout;
+  private aggregationTimer?: ReturnType<typeof setTimeout>;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
   private isMonitoring = false;
 
   // Performance baseline for anomaly detection

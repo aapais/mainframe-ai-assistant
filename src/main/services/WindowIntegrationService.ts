@@ -50,7 +50,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
   private ipcService?: EnhancedIPCService;
   
   private config: WindowIntegrationConfig;
-  private healthCheckTimer?: NodeJS.Timeout;
+  private healthCheckTimer?: ReturnType<typeof setTimeout>;
   private recoveryAttempts = new Map<string, number>();
   
   private stats = {

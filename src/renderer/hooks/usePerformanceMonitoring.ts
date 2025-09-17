@@ -63,8 +63,8 @@ export const usePerformanceMonitoring = (options: PerformanceMonitoringOptions =
   const [isMonitoring, setIsMonitoring] = useState(false);
 
   // Refs
-  const reportingTimer = useRef<NodeJS.Timeout>();
-  const memoryTimer = useRef<NodeJS.Timeout>();
+  const reportingTimer = useRef<ReturnType<typeof setTimeout>>();
+  const memoryTimer = useRef<ReturnType<typeof setTimeout>>();
   const alertIdCounter = useRef(0);
 
   // Start monitoring

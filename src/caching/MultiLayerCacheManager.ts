@@ -16,6 +16,7 @@
 import { EventEmitter } from 'events';
 import Database from 'better-sqlite3';
 import { QueryCache } from '../database/QueryCache';
+import { setInterval, clearInterval, setTimeout } from 'timers';
 
 export interface CacheLayer {
   name: string;
@@ -58,7 +59,7 @@ export interface CacheEntry<T = any> {
   priority: 'low' | 'normal' | 'high' | 'critical';
   tags: string[];
   mvpLevel: 1 | 2 | 3 | 4 | 5;
-  userContext?: string;
+  userContext?: string | undefined;
 }
 
 export class MultiLayerCacheManager extends EventEmitter {
@@ -88,12 +89,12 @@ export class MultiLayerCacheManager extends EventEmitter {
   constructor(
     database: Database.Database,
     mvpLevel: 1 | 2 | 3 | 4 | 5 = 1,
-    options?: Partial<typeof this.config>
+    options?: Partial<typeof this.config> | undefined
   ) {
     super();
     
     this.mvpLevel = mvpLevel;
-    this.config = { ...this.config, ...options };
+    this.config = { ...this.config, ...(options || {}) };
     
     // Initialize persistent cache (L4)
     this.persistentCache = new QueryCache(database, {
@@ -123,17 +124,17 @@ export class MultiLayerCacheManager extends EventEmitter {
     key: string,
     computeFn: () => Promise<T> | T,
     options?: {
-      ttl?: number;
-      priority?: 'low' | 'normal' | 'high' | 'critical';
-      tags?: string[];
-      userContext?: string;
-      bypassCache?: boolean;
-    }
+      ttl?: number | undefined;
+      priority?: 'low' | 'normal' | 'high' | 'critical' | undefined;
+      tags?: string[] | undefined;
+      userContext?: string | undefined;
+      bypassCache?: boolean | undefined;
+    } | undefined
   ): Promise<T> {
     const startTime = performance.now();
-    const cacheKey = this.generateCacheKey(key, options?.tags, options?.userContext);
+    const cacheKey = this.generateCacheKey(key, options?.tags || undefined, options?.userContext || undefined);
 
-    if (options?.bypassCache) {
+    if (options !== undefined && options.bypassCache === true) {
       return this.computeAndDistribute(cacheKey, computeFn, options);
     }
 
@@ -497,11 +498,11 @@ export class MultiLayerCacheManager extends EventEmitter {
     key: string,
     computeFn: () => Promise<T> | T,
     options?: {
-      ttl?: number;
-      priority?: 'low' | 'normal' | 'high' | 'critical';
-      tags?: string[];
-      userContext?: string;
-    }
+      ttl?: number | undefined;
+      priority?: 'low' | 'normal' | 'high' | 'critical' | undefined;
+      tags?: string[] | undefined;
+      userContext?: string | undefined;
+    } | undefined
   ): Promise<T> {
     const computeStart = performance.now();
     const value = await computeFn();
@@ -512,15 +513,15 @@ export class MultiLayerCacheManager extends EventEmitter {
       key,
       value,
       timestamp: Date.now(),
-      ttl: options?.ttl || this.config.warmCacheTTL,
+      ttl: (options !== undefined && options.ttl !== undefined) ? options.ttl : this.config.warmCacheTTL,
       accessCount: 1,
       lastAccessed: Date.now(),
       computationTime,
       size: this.estimateSize(value),
-      priority: options?.priority || (computationTime > 100 ? 'high' : 'normal'),
-      tags: options?.tags || [],
+      priority: (options !== undefined && options.priority !== undefined) ? options.priority : (computationTime > 100 ? 'high' : 'normal'),
+      tags: (options !== undefined && options.tags !== undefined) ? options.tags : [],
       mvpLevel: this.mvpLevel,
-      userContext: options?.userContext
+      userContext: (options !== undefined && options.userContext !== undefined) ? options.userContext : undefined
     };
 
     // Store in appropriate layers based on priority and size
@@ -568,22 +569,27 @@ export class MultiLayerCacheManager extends EventEmitter {
     this.hotCache.set(key, cacheEntry);
   }
 
-  private setInWarmCache<T>(key: string, value: T, options?: any): void {
+  private setInWarmCache<T>(key: string, value: T, options?: {
+    ttl?: number | undefined;
+    priority?: 'low' | 'normal' | 'high' | 'critical' | undefined;
+    tags?: string[] | undefined;
+    userContext?: string | undefined;
+  } | undefined): void {
     this.enforceWarmCacheLimit();
     
     const entry: CacheEntry<T> = {
       key,
       value,
       timestamp: Date.now(),
-      ttl: options?.ttl || this.config.warmCacheTTL,
+      ttl: (options !== undefined && options.ttl !== undefined) ? options.ttl : this.config.warmCacheTTL,
       accessCount: 1,
       lastAccessed: Date.now(),
       computationTime: 0,
       size: this.estimateSize(value),
-      priority: options?.priority || 'normal',
-      tags: options?.tags || [],
+      priority: (options !== undefined && options.priority !== undefined) ? options.priority : 'normal',
+      tags: (options !== undefined && options.tags !== undefined) ? options.tags : [],
       mvpLevel: this.mvpLevel,
-      userContext: options?.userContext
+      userContext: (options !== undefined && options.userContext !== undefined) ? options.userContext : undefined
     };
     
     this.warmCache.set(key, entry);
@@ -669,14 +675,14 @@ export class MultiLayerCacheManager extends EventEmitter {
     return invalidated;
   }
 
-  private generateCacheKey(key: string, tags?: string[], userContext?: string): string {
+  private generateCacheKey(key: string, tags?: string[] | undefined, userContext?: string | undefined): string {
     let cacheKey = `mlc:mvp${this.mvpLevel}:${key}`;
     
-    if (userContext) {
+    if (userContext !== undefined) {
       cacheKey += `:user:${userContext}`;
     }
-    
-    if (tags && tags.length > 0) {
+
+    if (tags !== undefined && tags.length > 0) {
       cacheKey += `:tags:${tags.sort().join(',')}`;
     }
     

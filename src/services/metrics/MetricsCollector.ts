@@ -67,8 +67,8 @@ export class MetricsCollector {
   private metrics: Map<string, PerformanceMetric[]> = new Map();
   private subscribers: Set<(metrics: any) => void> = new Set();
   private windowSize: number = 300000; // 5 minutes
-  private cleanupInterval: NodeJS.Timeout;
-  private aggregationInterval: NodeJS.Timeout;
+  private cleanupInterval: ReturnType<typeof setTimeout>;
+  private aggregationInterval: ReturnType<typeof setTimeout>;
 
   constructor() {
     // Clean up old metrics every minute

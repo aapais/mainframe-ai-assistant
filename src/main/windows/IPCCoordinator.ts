@@ -40,7 +40,7 @@ export class IPCCoordinator extends EventEmitter {
   private pendingResponses: Map<string, {
     resolve: (value: any) => void;
     reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
+    timeout: ReturnType<typeof setTimeout>;
   }> = new Map();
   
   private registeredHandlers: Map<string, IPCChannelHandler> = new Map();

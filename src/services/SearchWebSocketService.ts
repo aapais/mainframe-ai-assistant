@@ -102,8 +102,8 @@ export class SearchWebSocketService extends EventEmitter {
   private metrics: WebSocketMetrics;
 
   private reconnectAttempt = 0;
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
   private messageQueue: WebSocketMessage[] = [];
   private pendingMessages = new Map<string, {
     message: WebSocketMessage;

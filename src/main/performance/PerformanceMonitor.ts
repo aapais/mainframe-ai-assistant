@@ -95,7 +95,7 @@ export class PerformanceMonitor extends EventEmitter {
   private startupEndTime = 0;
   private phaseTimings = new Map<string, number>();
   private isMonitoring = false;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
   private metricsHistory: PerformanceMetrics[] = [];
   private alerts: PerformanceAlert[] = [];
   private gcObserver?: any;

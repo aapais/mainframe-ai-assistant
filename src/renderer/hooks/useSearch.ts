@@ -104,7 +104,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
   });
 
   // Refs
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastSearchRef = useRef<() => Promise<void>>();
   const mountedRef = useRef(true);
   const searchHistoryRef = useRef<SearchHistoryItem[]>([]);

@@ -70,8 +70,8 @@ export class PerformanceManager extends EventEmitter {
     benchmarkIntervalHours: 24
   };
 
-  private monitoringInterval?: NodeJS.Timeout;
-  private benchmarkInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
+  private benchmarkInterval?: ReturnType<typeof setTimeout>;
   private queryTimes: number[] = [];
   private lastBenchmark: Date = new Date();
 

@@ -486,7 +486,7 @@ export class StartupManager extends EventEmitter {
   /**
    * Create startup timeout to prevent hanging
    */
-  private createStartupTimeout(): NodeJS.Timeout {
+  private createStartupTimeout(): ReturnType<typeof setTimeout> {
     return setTimeout(() => {
       if (!this.isStartupComplete) {
         const error = new Error(`Startup timeout after ${this.options.maxStartupTime}ms`);

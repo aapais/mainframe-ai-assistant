@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { KBEntry, SearchResult, DatabaseStats } from '../database/KnowledgeDB';
+// Import types with proper paths
+import type { KBEntry, SearchResult, DatabaseStats } from '../types/index';
 
 // Enhanced response type with metadata
 export interface IPCResponse<T = any> {
@@ -47,6 +48,19 @@ interface SimpleElectronAPI {
 
 // Define the API that will be exposed to the renderer process
 export interface ElectronAPI extends SimpleElectronAPI {
+  // API Settings interface
+  apiSettings: {
+    getProviders: () => Promise<any[]>;
+    getProvider: (providerId: string) => Promise<any>;
+    getKeys: () => Promise<any[]>;
+    storeKey: (providerId: string, keyName: string, apiKey: string, isSessionOnly?: boolean, monthlyLimit?: number) => Promise<any>;
+    deleteKey: (keyId: string) => Promise<any>;
+    updateKeyStatus: (keyId: string, isActive: boolean) => Promise<any>;
+    testConnection: (providerId: string, apiKey: string) => Promise<any>;
+    testStoredKey: (keyId: string) => Promise<any>;
+    getUsageStats: (providerId?: string) => Promise<any[]>;
+    recordUsage: (providerId: string, requestCount?: number, cost?: number, responseTime?: number, isError?: boolean) => Promise<any>;
+  };
   // Database operations with enhanced responses
   db: {
     search: (query: string, options?: any) => Promise<IPCResponse<SearchResult[]>>;
@@ -153,7 +167,12 @@ const safeInvoke = async <T>(channel: string, ...args: any[]): Promise<IPCRespon
 // Simple invoke function for direct IPC calls
 const simpleInvoke = async (channel: string, ...args: any[]): Promise<any> => {
   const allowedChannels = [
-    'search-kb', 'add-kb-entry', 'update-kb-entry', 'delete-kb-entry'
+    'search-kb', 'add-kb-entry', 'update-kb-entry', 'delete-kb-entry',
+    'ipc-request', 'ipc-batch-request', 'ipc-stream-request',
+    'api-settings:get-providers', 'api-settings:get-provider', 'api-settings:get-keys',
+    'api-settings:store-key', 'api-settings:delete-key', 'api-settings:update-key-status',
+    'api-settings:test-connection', 'api-settings:test-stored-key',
+    'api-settings:get-usage-stats', 'api-settings:record-usage'
   ];
 
   if (!allowedChannels.includes(channel)) {
@@ -272,3 +291,19 @@ declare global {
     electronAPI: ElectronAPI;
   }
 }
+
+// Enhanced API for API Settings
+electronAPI.apiSettings = {
+  getProviders: () => simpleInvoke('api-settings:get-providers'),
+  getProvider: (providerId: string) => simpleInvoke('api-settings:get-provider', providerId),
+  getKeys: () => simpleInvoke('api-settings:get-keys'),
+  storeKey: (providerId: string, keyName: string, apiKey: string, isSessionOnly?: boolean, monthlyLimit?: number) =>
+    simpleInvoke('api-settings:store-key', providerId, keyName, apiKey, isSessionOnly, monthlyLimit),
+  deleteKey: (keyId: string) => simpleInvoke('api-settings:delete-key', keyId),
+  updateKeyStatus: (keyId: string, isActive: boolean) => simpleInvoke('api-settings:update-key-status', keyId, isActive),
+  testConnection: (providerId: string, apiKey: string) => simpleInvoke('api-settings:test-connection', providerId, apiKey),
+  testStoredKey: (keyId: string) => simpleInvoke('api-settings:test-stored-key', keyId),
+  getUsageStats: (providerId?: string) => simpleInvoke('api-settings:get-usage-stats', providerId),
+  recordUsage: (providerId: string, requestCount?: number, cost?: number, responseTime?: number, isError?: boolean) =>
+    simpleInvoke('api-settings:record-usage', providerId, requestCount, cost, responseTime, isError)
+};

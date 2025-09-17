@@ -162,7 +162,7 @@ const performanceUtils = {
    * Debounced performance logging
    */
   debouncedLog: (() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     return (message: string, delay = 1000) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => {

@@ -43,7 +43,7 @@ export interface InvalidationMetrics {
 export class CacheInvalidationService extends EventEmitter {
   private cacheOrchestrator: CacheOrchestrator;
   private rules: Map<string, InvalidationRule> = new Map();
-  private scheduledTasks: Map<string, NodeJS.Timeout> = new Map();
+  private scheduledTasks: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private metrics: InvalidationMetrics;
   private dependencyGraph: Map<string, Set<string>> = new Map();
 

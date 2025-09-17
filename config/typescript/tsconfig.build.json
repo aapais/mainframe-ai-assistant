@@ -1,6 +1,6 @@
 {
   // Production build configuration with strict error handling
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.json",
 
   "compilerOptions": {
     // Skip lib check to avoid node_modules type errors
@@ -15,12 +15,15 @@
     "outDir": "./dist/build",
     "noEmit": false,
 
+    // Enable Node.js types for build environment
+    "types": ["node", "better-sqlite3"],
+
     // Suppress certain error types that don't affect runtime
     "ignoreDeprecations": "5.0"
   },
 
   "include": [
-    "src/**/*"
+    "../../src/**/*"
   ],
 
   "exclude": [

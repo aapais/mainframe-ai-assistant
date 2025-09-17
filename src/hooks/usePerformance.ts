@@ -153,7 +153,7 @@ export const usePerformance = (
 
   // Refs for active measurements
   const activeMeasures = useRef<Map<string, { name: string; startTime: number; metadata?: Record<string, any> }>>(new Map());
-  const flushTimer = useRef<NodeJS.Timeout>();
+  const flushTimer = useRef<ReturnType<typeof setTimeout>>();
   const measureIdCounter = useRef(0);
 
   // Performance Observer (if available)

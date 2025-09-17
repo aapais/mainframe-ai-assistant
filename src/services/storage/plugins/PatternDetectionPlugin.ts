@@ -77,7 +77,7 @@ export interface PatternDetectionConfig extends PluginConfig {
 export class PatternDetectionPlugin extends BaseStoragePlugin {
   private incidents: Map<string, Incident> = new Map();
   private patterns: Map<string, Pattern> = new Map();
-  private analysisTimer?: NodeJS.Timeout;
+  private analysisTimer?: ReturnType<typeof setTimeout>;
   private lastAnalysis?: Date;
 
   constructor(adapter: IStorageAdapter, config: PatternDetectionConfig = {} as PatternDetectionConfig) {

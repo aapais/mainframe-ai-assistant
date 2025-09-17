@@ -340,18 +340,18 @@ const APISettings: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6" style={{ backgroundColor: accentureColors.lightGray }}>
+    <div className="max-w-6xl mx-auto p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 overflow-x-hidden" style={{ backgroundColor: accentureColors.lightGray }}>
       {/* Accenture Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2" style={{ color: accentureColors.purple }}>
+      <div className="text-center mb-4 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2" style={{ color: accentureColors.purple }}>
           API Configuration Center
         </h1>
-        <p className="text-lg" style={{ color: accentureColors.gray }}>
+        <p className="text-sm sm:text-base lg:text-lg px-2" style={{ color: accentureColors.gray }}>
           Secure management of AI service API keys for enterprise applications
         </p>
-        <div className="flex items-center justify-center mt-4">
+        <div className="flex items-center justify-center mt-2 sm:mt-4">
           <div
-            className="px-4 py-2 rounded-full text-white font-semibold"
+            className="px-3 sm:px-4 py-1 sm:py-2 rounded-full text-white text-xs sm:text-sm font-semibold"
             style={{ backgroundColor: accentureColors.purple }}
           >
             Accenture Mainframe AI Assistant
@@ -376,7 +376,7 @@ const APISettings: React.FC = () => {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-white rounded-lg p-1">
+      <div className="flex space-x-1 bg-white rounded-lg p-1 overflow-x-auto">
         {[
           { id: 'configure', label: 'Configure APIs', icon: Settings },
           { id: 'usage', label: 'Usage & Stats', icon: Activity },
@@ -405,7 +405,7 @@ const APISettings: React.FC = () => {
 
       {/* Configure APIs Tab */}
       {activeTab === 'configure' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Add New API Key */}
           <Card className="border-0 shadow-lg">
             <CardHeader style={{ backgroundColor: accentureColors.purple, color: 'white' }}>
@@ -414,8 +414,8 @@ const APISettings: React.FC = () => {
                 Add New API Key
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <form onSubmit={handleFormSubmit} className="space-y-4">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <form onSubmit={handleFormSubmit} className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">API Provider</label>
                   <select

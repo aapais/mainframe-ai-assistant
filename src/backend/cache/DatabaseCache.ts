@@ -31,7 +31,7 @@ export interface DatabaseCacheEntry {
 export class DatabaseCache extends EventEmitter {
   private db: Database.Database;
   private config: L2Config;
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setTimeout>;
 
   // Prepared statements for performance
   private getStmt: Database.Statement;

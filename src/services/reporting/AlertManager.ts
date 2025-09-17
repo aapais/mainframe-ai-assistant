@@ -153,7 +153,7 @@ export class AlertManager extends EventEmitter {
   private readonly activeAlerts: Map<string, AlertEvent>;
   private readonly alertHistory: Map<string, AlertEvent[]>;
   private readonly notificationThrottleState: Map<string, NotificationThrottleState>;
-  private readonly evaluationTimer?: NodeJS.Timeout;
+  private readonly evaluationTimer?: ReturnType<typeof setTimeout>;
   private readonly evaluationIntervalMs: number;
   private readonly maxHistoryPerRule: number;
   private isRunning: boolean = false;

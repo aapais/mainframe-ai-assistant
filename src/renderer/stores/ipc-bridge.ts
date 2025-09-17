@@ -58,8 +58,8 @@ export interface SyncOperation {
 export class IPCBridge {
   private config: IPCBridgeConfig;
   private metrics: IPCBridgeMetrics;
-  private syncTimer: NodeJS.Timeout | null = null;
-  private offlineTimer: NodeJS.Timeout | null = null;
+  private syncTimer: ReturnType<typeof setTimeout> | null = null;
+  private offlineTimer: ReturnType<typeof setTimeout> | null = null;
   private isOnline: boolean = true;
   private syncInProgress: boolean = false;
 

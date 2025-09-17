@@ -89,8 +89,8 @@ export function useForm<T extends Record<string, any>>({
   const [hasDraft, setHasDraft] = useState(false);
   
   // Refs for debouncing and cleanup
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
-  const validationTimeoutRef = useRef<NodeJS.Timeout>();
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const validationTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const isUnmountedRef = useRef(false);
   
   // Draft key for localStorage

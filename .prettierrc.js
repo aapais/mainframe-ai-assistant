@@ -1,1 +1,32 @@
-module.exports = {\n  semi: true,\n  trailingComma: 'es5',\n  singleQuote: true,\n  printWidth: 100,\n  tabWidth: 2,\n  useTabs: false,\n  bracketSpacing: true,\n  bracketSameLine: false,\n  arrowParens: 'avoid',\n  endOfLine: 'lf',\n  quoteProps: 'as-needed',\n  jsxSingleQuote: true,\n  proseWrap: 'preserve',\n  htmlWhitespaceSensitivity: 'css',\n  embeddedLanguageFormatting: 'auto',\n  overrides: [\n    {\n      files: '*.md',\n      options: {\n        printWidth: 80,\n        proseWrap: 'always'\n      }\n    },\n    {\n      files: '*.json',\n      options: {\n        printWidth: 120\n      }\n    }\n  ]\n};\n
+module.exports = {
+  semi: true,
+  trailingComma: 'es5',
+  singleQuote: true,
+  printWidth: 100,
+  tabWidth: 2,
+  useTabs: false,
+  bracketSpacing: true,
+  bracketSameLine: false,
+  arrowParens: 'avoid',
+  endOfLine: 'lf',
+  quoteProps: 'as-needed',
+  jsxSingleQuote: true,
+  proseWrap: 'preserve',
+  htmlWhitespaceSensitivity: 'css',
+  embeddedLanguageFormatting: 'auto',
+  overrides: [
+    {
+      files: '*.md',
+      options: {
+        printWidth: 80,
+        proseWrap: 'always'
+      }
+    },
+    {
+      files: '*.json',
+      options: {
+        printWidth: 120
+      }
+    }
+  ]
+};

@@ -4,8 +4,6 @@
  */
 
 import Database from 'better-sqlite3';
-import { SearchQueryBuilder } from '../../database/SearchSchema';
-import { AppError } from '../../core/errors/AppError';
 
 export interface AutocompleteSuggestion {
   text: string;
@@ -51,7 +49,6 @@ export interface AutocompleteConfig {
  */
 export class AutocompleteService {
   private db: Database.Database;
-  private queryBuilder: SearchQueryBuilder;
   private config: AutocompleteConfig;
 
   // In-memory cache for ultra-fast suggestions
@@ -61,17 +58,17 @@ export class AutocompleteService {
   }>();
 
   // Prepared statements for performance
-  private getQuerySuggestions: Database.Statement;
-  private getCategorySuggestions: Database.Statement;
-  private getTitleSuggestions: Database.Statement;
-  private getTagSuggestions: Database.Statement;
-  private getUserHistoryStmt: Database.Statement;
-  private updateSuggestionFrequency: Database.Statement;
-  private insertSuggestion: Database.Statement;
+  private getQuerySuggestionsStmt!: Database.Statement;
+  private getCategorySuggestionsStmt!: Database.Statement;
+  private getTitleSuggestionsStmt!: Database.Statement;
+  private getTagSuggestionsStmt!: Database.Statement;
+  private getUserHistoryStmt!: Database.Statement;
+  private getHistorySuggestionsStmt!: Database.Statement;
+  private updateSuggestionFrequencyStmt!: Database.Statement;
+  private insertSuggestionStmt!: Database.Statement;
 
   constructor(db: Database.Database, config?: Partial<AutocompleteConfig>) {
     this.db = db;
-    this.queryBuilder = new SearchQueryBuilder(db);
 
     this.config = {
       maxSuggestions: 10,
@@ -97,7 +94,7 @@ export class AutocompleteService {
   /**
    * Get intelligent query suggestions
    */
-  async getQuerySuggestions(
+  async getAutocompleteSuggestions(
     query: string,
     limit: number = 10,
     context?: SuggestionContext
@@ -117,7 +114,7 @@ export class AutocompleteService {
       }
 
       // Get suggestions from database
-      const suggestions = await this.generateQuerySuggestions(query, limit, context);
+      const suggestions = await this.generateAutocompleteSuggestions(query, limit, context);
 
       // Cache results
       if (this.config.cacheSettings.enabled) {
@@ -294,20 +291,22 @@ export class AutocompleteService {
   ): Promise<void> {
     try {
       // Update suggestion frequency
-      const updateResult = this.db.prepare(`
-        UPDATE search_suggestions
-        SET frequency = frequency + 1,
-            last_used = ?,
-            updated_at = ?
-        WHERE text = ?
-      `).run(Date.now(), Date.now(), selectedSuggestion);
+      const updateResult = this.updateSuggestionFrequencyStmt.run(
+        Date.now(),
+        Date.now(),
+        selectedSuggestion,
+        'query'
+      );
 
       // If suggestion doesn't exist, create it
       if (updateResult.changes === 0) {
-        this.db.prepare(`
-          INSERT OR IGNORE INTO search_suggestions (text, type, frequency, last_used, source)
-          VALUES (?, 'query', 1, ?, 'user')
-        `).run(selectedSuggestion, Date.now());
+        this.insertSuggestionStmt.run(
+          selectedSuggestion,
+          'query',
+          Date.now(),
+          'user',
+          0
+        );
       }
 
       // Learn user patterns if userId provided
@@ -431,7 +430,7 @@ export class AutocompleteService {
 
   // Private Methods
 
-  private async generateQuerySuggestions(
+  private async generateAutocompleteSuggestions(
     query: string,
     limit: number,
     context?: SuggestionContext
@@ -471,16 +470,9 @@ export class AutocompleteService {
   }
 
   private async getSystemSuggestions(query: string, limit: number): Promise<AutocompleteSuggestion[]> {
-    const results = this.db.prepare(`
-      SELECT text, frequency, relevance_score, category
-      FROM search_suggestions
-      WHERE text LIKE ? || '%'
-      AND source = 'system'
-      ORDER BY frequency DESC, relevance_score DESC
-      LIMIT ?
-    `).all(query, limit) as any[];
+    const results = this.getQuerySuggestionsStmt.all(query, limit) as any[];
 
-    return results.map(row => ({
+    return results.filter(row => row.source === 'system').map(row => ({
       text: row.text,
       type: 'query' as const,
       frequency: row.frequency,
@@ -491,19 +483,7 @@ export class AutocompleteService {
   }
 
   private async getHistorySuggestions(query: string, limit: number): Promise<AutocompleteSuggestion[]> {
-    const results = this.db.prepare(`
-      SELECT
-        query as text,
-        COUNT(*) as frequency,
-        MAX(timestamp) as last_used,
-        AVG(successful) as success_rate
-      FROM search_history
-      WHERE query LIKE ? || '%'
-      AND timestamp > ?
-      GROUP BY query
-      ORDER BY frequency DESC, last_used DESC
-      LIMIT ?
-    `).all(
+    const results = this.getHistorySuggestionsStmt.all(
       query,
       Date.now() - (7 * 24 * 60 * 60 * 1000), // Last week
       limit
@@ -728,7 +708,7 @@ export class AutocompleteService {
 
   private prepareStatements(): void {
     // Initialize prepared statements for better performance
-    this.getQuerySuggestions = this.db.prepare(`
+    this.getQuerySuggestionsStmt = this.db.prepare(`
       SELECT text, frequency, relevance_score, category, source
       FROM search_suggestions
       WHERE text LIKE ? || '%' AND type = 'query'
@@ -736,13 +716,60 @@ export class AutocompleteService {
       LIMIT ?
     `);
 
-    this.updateSuggestionFrequency = this.db.prepare(`
+    this.getCategorySuggestionsStmt = this.db.prepare(`
+      SELECT text, frequency, relevance_score, category
+      FROM search_suggestions
+      WHERE text LIKE ? || '%' AND type = 'category'
+      ORDER BY frequency DESC, relevance_score DESC
+      LIMIT ?
+    `);
+
+    this.getTitleSuggestionsStmt = this.db.prepare(`
+      SELECT text, frequency, relevance_score, category
+      FROM search_suggestions
+      WHERE text LIKE ? || '%' AND type = 'title'
+      ORDER BY frequency DESC, relevance_score DESC
+      LIMIT ?
+    `);
+
+    this.getTagSuggestionsStmt = this.db.prepare(`
+      SELECT text, frequency, relevance_score
+      FROM search_suggestions
+      WHERE text LIKE ? || '%' AND type = 'tag'
+      ORDER BY frequency DESC, relevance_score DESC
+      LIMIT ?
+    `);
+
+    this.getUserHistoryStmt = this.db.prepare(`
+      SELECT query, COUNT(*) as frequency, MAX(timestamp) as last_used
+      FROM search_history
+      WHERE user_id = ? AND query LIKE ? || '%'
+      GROUP BY query
+      ORDER BY frequency DESC, last_used DESC
+      LIMIT ?
+    `);
+
+    this.getHistorySuggestionsStmt = this.db.prepare(`
+      SELECT
+        query as text,
+        COUNT(*) as frequency,
+        MAX(timestamp) as last_used,
+        AVG(successful) as success_rate
+      FROM search_history
+      WHERE query LIKE ? || '%'
+      AND timestamp > ?
+      GROUP BY query
+      ORDER BY frequency DESC, last_used DESC
+      LIMIT ?
+    `);
+
+    this.updateSuggestionFrequencyStmt = this.db.prepare(`
       UPDATE search_suggestions
       SET frequency = frequency + 1, last_used = ?, updated_at = ?
       WHERE text = ? AND type = ?
     `);
 
-    this.insertSuggestion = this.db.prepare(`
+    this.insertSuggestionStmt = this.db.prepare(`
       INSERT OR IGNORE INTO search_suggestions
       (text, type, frequency, last_used, source, relevance_score)
       VALUES (?, ?, 1, ?, ?, ?)

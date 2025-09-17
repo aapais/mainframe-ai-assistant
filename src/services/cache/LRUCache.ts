@@ -70,7 +70,7 @@ export class LRUCache<T = any> {
 
   private config: LRUCacheConfig;
   private stats: LRUCacheStats;
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
   private currentMemoryUsage = 0;
   private adaptiveP = 0; // ARC algorithm parameter
 

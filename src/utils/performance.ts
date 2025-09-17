@@ -19,7 +19,7 @@ import { useCallback, useRef, useEffect, useMemo } from 'react';
 // ========================
 
 // Import from centralized types
-import type { PerformanceMetrics } from '@/types/shared/performance';
+import type { PerformanceMetrics } from '../types/shared/performance';
 
 /**
  * Performance timing utility

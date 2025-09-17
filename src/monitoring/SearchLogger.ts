@@ -108,7 +108,7 @@ export class SearchLogger {
   private logLevels: Map<string, number>;
   private activeTraces: Map<string, PerformanceTrace> = new Map();
   private logBuffer: SearchLogEntry[] = [];
-  private flushInterval: NodeJS.Timeout;
+  private flushInterval: ReturnType<typeof setTimeout>;
   
   constructor(database: Database.Database, config: Partial<LoggerConfig> = {}) {
     this.db = database;

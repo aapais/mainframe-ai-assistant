@@ -102,7 +102,7 @@ export function useKBEntries(options: UseKBEntriesOptions = {}) {
   
   const [localLoading, setLocalLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   
   // Memoized filtered entries
   const filteredEntries = useMemo(() => {
@@ -317,7 +317,7 @@ export function useKBEntry(entryId: string, options: UseKBEntryOptions = {}) {
   const { recordUsageActivity } = useMetrics();
   
   const [isViewed, setIsViewed] = useState(false);
-  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   
   // Get the entry from state
   const entry = useMemo(() => getEntry(entryId), [getEntry, entryId]);
@@ -446,7 +446,7 @@ export function useKBMutation(options: UseKBMutationOptions = {}) {
     creates: KBEntryInput[];
     updates: Array<{ id: string; updates: KBEntryUpdate }>;
     deletes: string[];
-    timeout?: NodeJS.Timeout;
+    timeout?: ReturnType<typeof setTimeout>;
   }>({
     creates: [],
     updates: [],

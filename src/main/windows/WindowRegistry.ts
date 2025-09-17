@@ -29,7 +29,7 @@ export class WindowRegistry extends EventEmitter {
   private windows: Map<string, WindowRegistryEntry> = new Map();
   private typeIndex: Map<WindowType, Set<string>> = new Map();
   private parentChildMap: Map<string, Set<string>> = new Map();
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private healthCheckInterval: ReturnType<typeof setTimeout> | null = null;
 
   private readonly config = {
     healthCheckInterval: 10000, // 10 seconds

@@ -32,6 +32,10 @@ export {
 
 export type { InputProps, TextareaProps } from './Input';
 
+// Label Component
+export { Label } from './Label';
+export type { LabelProps } from './Label';
+
 // Button Components
 export {
   Button,

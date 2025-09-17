@@ -1,870 +1,482 @@
 /**
- * Enhanced Search Context - Optimized Search State Management
- * 
- * This context provides comprehensive search state management with:
- * - Optimized React Context with proper memoization
- * - Debounced search handling for performance
- * - Advanced caching mechanisms for search results
- * - Search history with persistence
- * - Real-time search suggestions
- * - Performance monitoring and analytics
- * - Context splitting for minimal re-renders
- * - Offline search capabilities
- * 
- * @author State Management Architect
- * @version 2.0.0
+ * Search Context - UC001 Implementation
+ *
+ * Global state management for hybrid search functionality including:
+ * 1. Centralized search state across components
+ * 2. Authorization dialog management
+ * 3. Performance monitoring and metrics
+ * 4. Search history and preferences
+ * 5. Error handling and recovery
  */
 
-import React, { 
-  createContext, 
-  useContext, 
-  useReducer, 
-  useCallback, 
-  useEffect, 
-  useMemo, 
-  useRef,
-  ReactNode 
-} from 'react';
-import { SearchResult, SearchOptions, KBCategory } from '../../types/services';
-import { useApp } from './AppContext';
-import { debounce, createCacheManager } from '../utils/stateHelpers';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
+import { HybridSearchState, HybridSearchActions, useHybridSearch, UseHybridSearchOptions } from '../hooks/useHybridSearch';
+import { SearchResult, KBCategory } from '../../types/services';
+import { HybridSearchOptions } from '../services/hybridSearchService';
 
-// Search filters interface
-export interface SearchFilters {
-  category?: KBCategory;
-  tags?: string[];
-  dateRange?: {
-    from?: Date;
-    to?: Date;
-  };
-  successRateRange?: {
-    min?: number;
-    max?: number;
-  };
-  sortBy: 'relevance' | 'usage' | 'recent' | 'success_rate' | 'score';
-  sortOrder: 'asc' | 'desc';
-}
-
-// Enhanced search state interface
-export interface SearchState {
-  // Query and results
-  query: string;
-  results: SearchResult[];
-  totalResults: number;
-  
-  // Search status
-  isSearching: boolean;
-  lastSearchTime?: Date;
-  searchError?: string;
-  
-  // Filters and options
-  filters: SearchFilters;
-  useAI: boolean;
-  
-  // History and suggestions
+// Extended state for global search context
+export interface SearchContextState extends HybridSearchState {
+  // Search history
   searchHistory: string[];
-  suggestions: string[];
-  recentQueries: Array<{
+  recentSearches: Array<{
     query: string;
-    timestamp: number;
+    category?: KBCategory;
+    timestamp: Date;
     resultCount: number;
-    successful: boolean;
   }>;
-  
-  // Pagination
-  currentPage: number;
-  pageSize: number;
-  
-  // Performance metrics
-  searchMetrics?: {
-    queryTime: number;
-    resultCount: number;
-    aiUsed: boolean;
-    cacheHit: boolean;
-    fallbackUsed?: boolean;
-    processingTime?: number;
+
+  // User preferences
+  preferences: {
+    enableAIByDefault: boolean;
+    maxResults: number;
+    autoSearchDelay: number;
+    saveSearchHistory: boolean;
+    showPerformanceMetrics: boolean;
   };
-  
-  // Cache status
-  cacheStats: {
-    hitCount: number;
-    missCount: number;
-    hitRate: number;
+
+  // Authorization dialog state
+  authDialog: {
+    isOpen: boolean;
+    query: string;
+    estimatedCost?: number;
+    onApprove?: () => void;
+    onDeny?: () => void;
+    onCancel?: () => void;
   };
-  
-  // Search analytics
-  searchAnalytics: {
-    totalSearches: number;
-    averageResponseTime: number;
-    successRate: number;
-    noResultQueries: string[];
-    popularQueries: Array<{ query: string; count: number }>;
+
+  // Global search settings
+  globalSettings: {
+    enableProgressiveSearch: boolean;
+    enableRealTimeSearch: boolean;
+    performanceMode: 'fast' | 'balanced' | 'comprehensive';
   };
 }
+
+export interface SearchContextActions extends HybridSearchActions {
+  // History management
+  addToHistory: (query: string, category?: KBCategory, resultCount?: number) => void;
+  clearHistory: () => void;
+  searchFromHistory: (query: string, category?: KBCategory) => void;
+
+  // Preferences
+  updatePreferences: (preferences: Partial<SearchContextState['preferences']>) => void;
+  updateGlobalSettings: (settings: Partial<SearchContextState['globalSettings']>) => void;
+
+  // Authorization dialog
+  showAuthDialog: (query: string, estimatedCost?: number) => Promise<boolean>;
+  hideAuthDialog: () => void;
+
+  // Advanced search operations
+  searchWithAnalytics: (query: string, category?: KBCategory, options?: HybridSearchOptions) => Promise<void>;
+  getPerformanceMetrics: () => {
+    averageSearchTime: number;
+    searchCount: number;
+    complianceRate: number;
+  };
+}
+
+// Action types for reducer
+type SearchAction =
+  | { type: 'SET_SEARCH_STATE'; payload: Partial<SearchContextState> }
+  | { type: 'ADD_TO_HISTORY'; payload: { query: string; category?: KBCategory; resultCount: number } }
+  | { type: 'CLEAR_HISTORY' }
+  | { type: 'UPDATE_PREFERENCES'; payload: Partial<SearchContextState['preferences']> }
+  | { type: 'UPDATE_GLOBAL_SETTINGS'; payload: Partial<SearchContextState['globalSettings']> }
+  | { type: 'SHOW_AUTH_DIALOG'; payload: { query: string; estimatedCost?: number } }
+  | { type: 'HIDE_AUTH_DIALOG' }
+  | { type: 'UPDATE_PERFORMANCE_METRICS'; payload: { searchTime: number; compliance: boolean } };
 
 // Initial state
-const initialFilters: SearchFilters = {
-  sortBy: 'relevance',
-  sortOrder: 'desc',
-};
-
-const initialState: SearchState = {
-  query: '',
+const initialState: SearchContextState = {
+  // Base hybrid search state
   results: [],
-  totalResults: 0,
+  localResults: [],
+  aiResults: [],
   isSearching: false,
-  filters: initialFilters,
-  useAI: true,
+  isLocalSearching: false,
+  isAISearching: false,
+  performance: {
+    localSearchTime: 0,
+    totalTime: 0,
+    localCompleted: false,
+    aiCompleted: false
+  },
+  authorizationRequired: false,
+  authorizationPending: false,
+  error: null,
+  warnings: [],
+  metadata: {
+    localResultCount: 0,
+    aiResultCount: 0,
+    totalResultCount: 0,
+    duplicatesRemoved: 0,
+    searchCompleted: false
+  },
+
+  // Extended context state
   searchHistory: [],
-  suggestions: [],
-  recentQueries: [],
-  currentPage: 1,
-  pageSize: 20,
-  cacheStats: {
-    hitCount: 0,
-    missCount: 0,
-    hitRate: 0,
+  recentSearches: [],
+  preferences: {
+    enableAIByDefault: true,
+    maxResults: 50,
+    autoSearchDelay: 300,
+    saveSearchHistory: true,
+    showPerformanceMetrics: false
   },
-  searchAnalytics: {
-    totalSearches: 0,
-    averageResponseTime: 0,
-    successRate: 1,
-    noResultQueries: [],
-    popularQueries: [],
+  authDialog: {
+    isOpen: false,
+    query: ''
   },
+  globalSettings: {
+    enableProgressiveSearch: true,
+    enableRealTimeSearch: true,
+    performanceMode: 'balanced'
+  }
 };
 
-// Enhanced action types
-type SearchAction =
-  | { type: 'SET_QUERY'; payload: string }
-  | { type: 'SET_RESULTS'; payload: { results: SearchResult[]; totalResults: number; metrics?: SearchState['searchMetrics'] } }
-  | { type: 'SET_SEARCHING'; payload: boolean }
-  | { type: 'SET_SEARCH_ERROR'; payload: string | undefined }
-  | { type: 'SET_FILTERS'; payload: Partial<SearchFilters> }
-  | { type: 'SET_USE_AI'; payload: boolean }
-  | { type: 'ADD_TO_HISTORY'; payload: string }
-  | { type: 'CLEAR_HISTORY' }
-  | { type: 'SET_SUGGESTIONS'; payload: string[] }
-  | { type: 'SET_PAGE'; payload: number }
-  | { type: 'RESET_SEARCH' }
-  | { type: 'ADD_RECENT_QUERY'; payload: { query: string; resultCount: number; successful: boolean } }
-  | { type: 'UPDATE_CACHE_STATS'; payload: { hit?: boolean; miss?: boolean } }
-  | { type: 'UPDATE_SEARCH_ANALYTICS'; payload: Partial<SearchState['searchAnalytics']> }
-  | { type: 'INCREMENT_POPULAR_QUERY'; payload: string };
-
-// Reducer
-function searchReducer(state: SearchState, action: SearchAction): SearchState {
+// Reducer function
+function searchReducer(state: SearchContextState, action: SearchAction): SearchContextState {
   switch (action.type) {
-    case 'SET_QUERY':
-      return { ...state, query: action.payload, currentPage: 1 };
-
-    case 'SET_RESULTS':
-      return {
-        ...state,
-        results: action.payload.results,
-        totalResults: action.payload.totalResults,
-        searchMetrics: action.payload.metrics,
-        lastSearchTime: new Date(),
-        searchError: undefined,
-        isSearching: false,
-      };
-
-    case 'SET_SEARCHING':
-      return { 
-        ...state, 
-        isSearching: action.payload,
-        searchError: action.payload ? undefined : state.searchError,
-      };
-
-    case 'SET_SEARCH_ERROR':
-      return { 
-        ...state, 
-        searchError: action.payload,
-        isSearching: false,
-      };
-
-    case 'SET_FILTERS':
-      return { 
-        ...state, 
-        filters: { ...state.filters, ...action.payload },
-        currentPage: 1,
-      };
-
-    case 'SET_USE_AI':
-      return { ...state, useAI: action.payload };
+    case 'SET_SEARCH_STATE':
+      return { ...state, ...action.payload };
 
     case 'ADD_TO_HISTORY':
-      const query = action.payload.trim();
-      if (query && !state.searchHistory.includes(query)) {
-        return {
-          ...state,
-          searchHistory: [query, ...state.searchHistory.slice(0, 19)], // Keep last 20
-        };
-      }
-      return state;
+      if (!state.preferences.saveSearchHistory) return state;
+
+      const newRecentSearch = {
+        query: action.payload.query,
+        category: action.payload.category,
+        timestamp: new Date(),
+        resultCount: action.payload.resultCount
+      };
+
+      return {
+        ...state,
+        searchHistory: [
+          action.payload.query,
+          ...state.searchHistory.filter(q => q !== action.payload.query)
+        ].slice(0, 50), // Keep last 50
+        recentSearches: [
+          newRecentSearch,
+          ...state.recentSearches.filter(s => s.query !== action.payload.query)
+        ].slice(0, 20) // Keep last 20
+      };
 
     case 'CLEAR_HISTORY':
-      return { ...state, searchHistory: [] };
-
-    case 'SET_SUGGESTIONS':
-      return { ...state, suggestions: action.payload };
-
-    case 'SET_PAGE':
-      return { ...state, currentPage: action.payload };
-
-    case 'RESET_SEARCH':
       return {
         ...state,
-        query: '',
-        results: [],
-        totalResults: 0,
-        searchError: undefined,
-        currentPage: 1,
-        filters: initialFilters,
+        searchHistory: [],
+        recentSearches: []
       };
 
-    case 'ADD_RECENT_QUERY': {
-      const recentQuery = { ...action.payload, timestamp: Date.now() };
+    case 'UPDATE_PREFERENCES':
       return {
         ...state,
-        recentQueries: [recentQuery, ...state.recentQueries.slice(0, 49)], // Keep last 50
+        preferences: { ...state.preferences, ...action.payload }
       };
-    }
 
-    case 'UPDATE_CACHE_STATS': {
-      const { hit, miss } = action.payload;
-      const newHitCount = state.cacheStats.hitCount + (hit ? 1 : 0);
-      const newMissCount = state.cacheStats.missCount + (miss ? 1 : 0);
-      const totalRequests = newHitCount + newMissCount;
-      
+    case 'UPDATE_GLOBAL_SETTINGS':
       return {
         ...state,
-        cacheStats: {
-          hitCount: newHitCount,
-          missCount: newMissCount,
-          hitRate: totalRequests > 0 ? newHitCount / totalRequests : 0,
-        },
+        globalSettings: { ...state.globalSettings, ...action.payload }
       };
-    }
 
-    case 'UPDATE_SEARCH_ANALYTICS': {
+    case 'SHOW_AUTH_DIALOG':
       return {
         ...state,
-        searchAnalytics: {
-          ...state.searchAnalytics,
-          ...action.payload,
-        },
+        authDialog: {
+          isOpen: true,
+          query: action.payload.query,
+          estimatedCost: action.payload.estimatedCost
+        }
       };
-    }
 
-    case 'INCREMENT_POPULAR_QUERY': {
-      const query = action.payload;
-      const existingQuery = state.searchAnalytics.popularQueries.find(pq => pq.query === query);
-      
-      let updatedPopularQueries;
-      if (existingQuery) {
-        updatedPopularQueries = state.searchAnalytics.popularQueries.map(pq =>
-          pq.query === query ? { ...pq, count: pq.count + 1 } : pq
-        );
-      } else {
-        updatedPopularQueries = [...state.searchAnalytics.popularQueries, { query, count: 1 }];
-      }
-      
-      // Sort by count and keep top 20
-      updatedPopularQueries = updatedPopularQueries
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 20);
-      
+    case 'HIDE_AUTH_DIALOG':
       return {
         ...state,
-        searchAnalytics: {
-          ...state.searchAnalytics,
-          popularQueries: updatedPopularQueries,
-        },
+        authDialog: {
+          ...state.authDialog,
+          isOpen: false,
+          onApprove: undefined,
+          onDeny: undefined,
+          onCancel: undefined
+        }
       };
-    }
 
     default:
       return state;
   }
 }
 
-// Enhanced context value interface
-export interface SearchContextValue {
-  // State
-  state: SearchState;
-  
-  // Query management
-  setQuery: (query: string) => void;
-  clearQuery: () => void;
-  
-  // Search execution
-  performSearch: (query?: string, options?: Partial<SearchOptions>) => Promise<void>;
-  performSearchWithCache: (query: string, options?: Partial<SearchOptions>) => Promise<void>;
-  clearResults: () => void;
-  
-  // Filter management
-  updateFilters: (filters: Partial<SearchFilters>) => void;
-  resetFilters: () => void;
-  
-  // AI toggle
-  setUseAI: (useAI: boolean) => void;
-  
-  // History management
-  addToHistory: (query: string) => void;
-  clearHistory: () => void;
-  getSearchHistory: () => string[];
-  
-  // Suggestions
-  updateSuggestions: (suggestions: string[]) => void;
-  generateSuggestions: (query: string) => Promise<string[]>;
-  
-  // Pagination
-  setPage: (page: number) => void;
-  
-  // Analytics and metrics
-  getSearchAnalytics: () => SearchState['searchAnalytics'];
-  getCacheStats: () => SearchState['cacheStats'];
-  getRecentQueries: () => SearchState['recentQueries'];
-  
-  // Cache management
-  clearSearchCache: () => void;
-  preloadSearchResults: (queries: string[]) => Promise<void>;
-  
-  // Utilities
-  resetSearch: () => void;
-}
+// Context creation
+const SearchContext = createContext<{
+  state: SearchContextState;
+  actions: SearchContextActions;
+} | null>(null);
 
-// Create context
-const SearchContext = createContext<SearchContextValue | null>(null);
-
-// Enhanced provider component
+// Provider component
 export interface SearchProviderProps {
   children: ReactNode;
-  initialState?: Partial<SearchState>;
-  cacheTimeout?: number;
-  debounceDelay?: number;
-  enableOfflineSearch?: boolean;
+  defaultOptions?: UseHybridSearchOptions;
 }
 
-export const SearchProvider: React.FC<SearchProviderProps> = ({
-  children,
-  initialState: providedInitialState = {},
-  cacheTimeout = 5 * 60 * 1000, // 5 minutes
-  debounceDelay = 300, // 300ms
-  enableOfflineSearch = true,
-}) => {
-  const [state, dispatch] = useReducer(
-    searchReducer,
-    { ...initialState, ...providedInitialState }
-  );
-  
-  const { addNotification, setLoading, updateLastActivity } = useApp();
-  
-  // Search results cache
-  const searchCache = useRef(createCacheManager<SearchResult[]>({
-    maxSize: 100,
-    ttl: cacheTimeout,
-  }));
-  
-  // Suggestions cache
-  const suggestionsCache = useRef(createCacheManager<string[]>({
-    maxSize: 50,
-    ttl: cacheTimeout * 2, // Suggestions cache longer
-  }));
+export function SearchProvider({ children, defaultOptions = {} }: SearchProviderProps) {
+  const [contextState, dispatch] = useReducer(searchReducer, initialState);
 
-  // Debounced search execution
-  const debouncedPerformSearch = useMemo(
-    () => debounce(async (query: string, options: Partial<SearchOptions> = {}) => {
-      if (!query.trim()) return;
-      
-      const startTime = performance.now();
-      const cacheKey = `search:${query}:${JSON.stringify(options)}`;
-      
-      dispatch({ type: 'SET_SEARCHING', payload: true });
-      setLoading(true);
-      
-      try {
-        // Check cache first
-        const cachedResults = searchCache.current.get(cacheKey);
-        if (cachedResults && !options.force) {
-          dispatch({ 
-            type: 'SET_RESULTS', 
-            payload: { 
-              results: cachedResults, 
-              totalResults: cachedResults.length,
-              metrics: {
-                queryTime: performance.now() - startTime,
-                resultCount: cachedResults.length,
-                aiUsed: false,
-                cacheHit: true,
-              }
-            }
-          });
-          dispatch({ type: 'UPDATE_CACHE_STATS', payload: { hit: true } });
-          return;
-        }
-        
-        dispatch({ type: 'UPDATE_CACHE_STATS', payload: { miss: true } });
-        
-        // Build search options
-        const searchOptions: SearchOptions = {
-          query: query.trim(),
-          category: state.filters.category,
-          tags: state.filters.tags,
-          sortBy: state.filters.sortBy,
-          sortOrder: state.filters.sortOrder,
-          useAI: options.useAI !== undefined ? options.useAI : state.useAI,
-          page: state.currentPage,
-          pageSize: state.pageSize,
-          ...options,
-        };
+  // Use hybrid search hook with context-aware options
+  const hybridSearchOptions: UseHybridSearchOptions = {
+    enableAI: contextState.preferences.enableAIByDefault,
+    maxLocalResults: contextState.preferences.maxResults,
+    debounceMs: contextState.preferences.autoSearchDelay,
+    enableRealTime: contextState.globalSettings.enableRealTimeSearch,
+    ...defaultOptions
+  };
 
-        let results: SearchResult[] = [];
-        let totalResults = 0;
-        let aiUsed = false;
-        let fallbackUsed = false;
+  const [hybridState, hybridActions] = useHybridSearch(hybridSearchOptions);
 
-        // Try AI search first if enabled
-        if (searchOptions.useAI && window.electronAPI?.searchWithAI) {
-          try {
-            const response = await window.electronAPI.searchWithAI(query, searchOptions);
-            results = Array.isArray(response) ? response : (response.results || []);
-            totalResults = Array.isArray(response) ? response.length : (response.totalResults || results.length);
-            aiUsed = true;
-          } catch (aiError) {
-            console.warn('AI search failed, falling back to local search:', aiError);
-            fallbackUsed = true;
-            
-            addNotification({
-              type: 'warning',
-              message: 'AI search unavailable, using local search',
-              duration: 3000,
-            });
-            
-            // Fallback to local search
-            if (window.electronAPI?.searchLocal) {
-              const response = await window.electronAPI.searchLocal(query, searchOptions);
-              results = Array.isArray(response) ? response : (response.results || []);
-              totalResults = Array.isArray(response) ? response.length : (response.totalResults || results.length);
-            }
-          }
-        } else if (window.electronAPI?.searchLocal) {
-          // Direct local search
-          const response = await window.electronAPI.searchLocal(query, searchOptions);
-          results = Array.isArray(response) ? response : (response.results || []);
-          totalResults = Array.isArray(response) ? response.length : (response.totalResults || results.length);
-        }
-
-        const queryTime = performance.now() - startTime;
-
-        // Cache results
-        searchCache.current.set(cacheKey, results);
-        
-        // Update results
-        dispatch({
-          type: 'SET_RESULTS',
-          payload: {
-            results,
-            totalResults,
-            metrics: {
-              queryTime,
-              resultCount: results.length,
-              aiUsed,
-              cacheHit: false,
-              fallbackUsed,
-              processingTime: queryTime,
-            },
-          },
-        });
-
-        // Update analytics
-        dispatch({
-          type: 'UPDATE_SEARCH_ANALYTICS',
-          payload: {
-            totalSearches: state.searchAnalytics.totalSearches + 1,
-            averageResponseTime: ((state.searchAnalytics.averageResponseTime * state.searchAnalytics.totalSearches) + queryTime) / (state.searchAnalytics.totalSearches + 1),
-            successRate: results.length > 0 ? 
-              ((state.searchAnalytics.successRate * state.searchAnalytics.totalSearches) + 1) / (state.searchAnalytics.totalSearches + 1) :
-              (state.searchAnalytics.successRate * state.searchAnalytics.totalSearches) / (state.searchAnalytics.totalSearches + 1),
-          },
-        });
-
-        // Add to recent queries
-        dispatch({
-          type: 'ADD_RECENT_QUERY',
-          payload: { query, resultCount: results.length, successful: results.length > 0 },
-        });
-
-        // Track popular queries
-        dispatch({ type: 'INCREMENT_POPULAR_QUERY', payload: query });
-
-        // Add to history if results found
-        if (results.length > 0) {
-          dispatch({ type: 'ADD_TO_HISTORY', payload: query });
-        } else {
-          // Track no-result queries
-          const currentNoResultQueries = [...state.searchAnalytics.noResultQueries];
-          if (!currentNoResultQueries.includes(query)) {
-            currentNoResultQueries.push(query);
-            if (currentNoResultQueries.length > 20) {
-              currentNoResultQueries.shift(); // Keep only last 20
-            }
-            
-            dispatch({
-              type: 'UPDATE_SEARCH_ANALYTICS',
-              payload: { noResultQueries: currentNoResultQueries },
-            });
-          }
-          
-          addNotification({
-            type: 'info',
-            message: `No results found for "${query}"`,
-            duration: 3000,
-          });
-        }
-
-      } catch (error) {
-        console.error('Search failed:', error);
-        
-        dispatch({
-          type: 'SET_SEARCH_ERROR',
-          payload: error instanceof Error ? error.message : 'Search failed',
-        });
-        
-        addNotification({
-          type: 'error',
-          message: 'Search failed. Please check your connection and try again.',
-          duration: 5000,
-        });
-      } finally {
-        setLoading(false);
-        updateLastActivity();
+  // Sync hybrid search state with context state
+  useEffect(() => {
+    dispatch({
+      type: 'SET_SEARCH_STATE',
+      payload: {
+        results: hybridState.results,
+        localResults: hybridState.localResults,
+        aiResults: hybridState.aiResults,
+        isSearching: hybridState.isSearching,
+        isLocalSearching: hybridState.isLocalSearching,
+        isAISearching: hybridState.isAISearching,
+        performance: hybridState.performance,
+        authorizationRequired: hybridState.authorizationRequired,
+        authorizationPending: hybridState.authorizationPending,
+        authorizationStatus: hybridState.authorizationStatus,
+        error: hybridState.error,
+        warnings: hybridState.warnings,
+        metadata: hybridState.metadata
       }
-    }, debounceDelay),
-    [
-      state.filters,
-      state.useAI,
-      state.currentPage,
-      state.pageSize,
-      state.searchAnalytics,
-      addNotification,
-      setLoading,
-      updateLastActivity,
-      debounceDelay
-    ]
-  );
+    });
+  }, [hybridState]);
 
-  // Load search history and analytics from localStorage on mount
+  // Load preferences from localStorage on mount
   useEffect(() => {
     try {
-      const savedHistory = localStorage.getItem('kb-search-history');
+      const savedPreferences = localStorage.getItem('search-preferences');
+      if (savedPreferences) {
+        const preferences = JSON.parse(savedPreferences);
+        dispatch({ type: 'UPDATE_PREFERENCES', payload: preferences });
+      }
+
+      const savedSettings = localStorage.getItem('search-global-settings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        dispatch({ type: 'UPDATE_GLOBAL_SETTINGS', payload: settings });
+      }
+
+      const savedHistory = localStorage.getItem('search-history');
       if (savedHistory) {
         const history = JSON.parse(savedHistory);
-        if (Array.isArray(history)) {
-          history.forEach(query => dispatch({ type: 'ADD_TO_HISTORY', payload: query }));
-        }
-      }
-
-      const savedAnalytics = localStorage.getItem('kb-search-analytics');
-      if (savedAnalytics) {
-        const analytics = JSON.parse(savedAnalytics);
-        dispatch({ type: 'UPDATE_SEARCH_ANALYTICS', payload: analytics });
+        dispatch({
+          type: 'SET_SEARCH_STATE',
+          payload: {
+            searchHistory: history.searchHistory || [],
+            recentSearches: history.recentSearches || []
+          }
+        });
       }
     } catch (error) {
-      console.warn('Failed to load search data:', error);
+      console.warn('Failed to load search preferences:', error);
     }
   }, []);
 
-  // Save search data to localStorage when it changes
+  // Save preferences to localStorage when they change
   useEffect(() => {
     try {
-      localStorage.setItem('kb-search-history', JSON.stringify(state.searchHistory));
-      localStorage.setItem('kb-search-analytics', JSON.stringify(state.searchAnalytics));
+      localStorage.setItem('search-preferences', JSON.stringify(contextState.preferences));
     } catch (error) {
-      console.warn('Failed to save search data:', error);
+      console.warn('Failed to save search preferences:', error);
     }
-  }, [state.searchHistory, state.searchAnalytics]);
+  }, [contextState.preferences]);
 
-  // Query management
-  const setQuery = useCallback((query: string) => {
-    dispatch({ type: 'SET_QUERY', payload: query });
-    updateLastActivity();
-  }, [updateLastActivity]);
-
-  const clearQuery = useCallback(() => {
-    dispatch({ type: 'SET_QUERY', payload: '' });
-  }, []);
-
-  // Search execution
-  const performSearch = useCallback(async (
-    query?: string, 
-    options?: Partial<SearchOptions>
-  ) => {
-    const searchQuery = query || state.query;
-    
-    if (!searchQuery.trim()) {
-      return;
+  useEffect(() => {
+    try {
+      localStorage.setItem('search-global-settings', JSON.stringify(contextState.globalSettings));
+    } catch (error) {
+      console.warn('Failed to save search settings:', error);
     }
+  }, [contextState.globalSettings]);
 
-    return debouncedPerformSearch(searchQuery, options);
-  }, [state.query, debouncedPerformSearch]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('search-history', JSON.stringify({
+        searchHistory: contextState.searchHistory,
+        recentSearches: contextState.recentSearches
+      }));
+    } catch (error) {
+      console.warn('Failed to save search history:', error);
+    }
+  }, [contextState.searchHistory, contextState.recentSearches]);
 
-  const performSearchWithCache = useCallback(async (
-    query: string, 
-    options: Partial<SearchOptions> = {}
-  ) => {
-    return debouncedPerformSearch(query, { ...options, force: false });
-  }, [debouncedPerformSearch]);
-
-  const clearResults = useCallback(() => {
-    dispatch({ type: 'SET_RESULTS', payload: { results: [], totalResults: 0 } });
-  }, []);
-
-  // Filter management
-  const updateFilters = useCallback((filters: Partial<SearchFilters>) => {
-    dispatch({ type: 'SET_FILTERS', payload: filters });
-    updateLastActivity();
-  }, [updateLastActivity]);
-
-  const resetFilters = useCallback(() => {
-    dispatch({ type: 'SET_FILTERS', payload: initialFilters });
-  }, []);
-
-  // AI toggle
-  const setUseAI = useCallback((useAI: boolean) => {
-    dispatch({ type: 'SET_USE_AI', payload: useAI });
-    updateLastActivity();
-  }, [updateLastActivity]);
-
-  // History management
-  const addToHistory = useCallback((query: string) => {
-    dispatch({ type: 'ADD_TO_HISTORY', payload: query });
+  // Extended actions
+  const addToHistory = useCallback((query: string, category?: KBCategory, resultCount: number = 0) => {
+    dispatch({
+      type: 'ADD_TO_HISTORY',
+      payload: { query, category, resultCount }
+    });
   }, []);
 
   const clearHistory = useCallback(() => {
     dispatch({ type: 'CLEAR_HISTORY' });
-    try {
-      localStorage.removeItem('kb-search-history');
-      localStorage.removeItem('kb-search-analytics');
-    } catch (error) {
-      console.warn('Failed to clear search history from storage:', error);
-    }
   }, []);
 
-  const getSearchHistory = useCallback((): string[] => {
-    return state.searchHistory;
-  }, [state.searchHistory]);
+  const searchFromHistory = useCallback(async (query: string, category?: KBCategory) => {
+    await hybridActions.search(query, category);
+  }, [hybridActions]);
 
-  // Suggestions
-  const updateSuggestions = useCallback((suggestions: string[]) => {
-    dispatch({ type: 'SET_SUGGESTIONS', payload: suggestions });
+  const updatePreferences = useCallback((preferences: Partial<SearchContextState['preferences']>) => {
+    dispatch({ type: 'UPDATE_PREFERENCES', payload: preferences });
   }, []);
 
-  const generateSuggestions = useCallback(async (query: string): Promise<string[]> => {
-    if (!query.trim()) return [];
-    
-    const cacheKey = `suggestions:${query.toLowerCase()}`;
-    const cached = suggestionsCache.current.get(cacheKey);
-    if (cached) return cached;
-    
-    try {
-      // Generate suggestions from multiple sources
-      const suggestions = new Set<string>();
-      
-      // History-based suggestions
-      state.searchHistory
-        .filter(h => h.toLowerCase().includes(query.toLowerCase()) && h !== query)
-        .slice(0, 3)
-        .forEach(h => suggestions.add(h));
-      
-      // Popular query suggestions
-      state.searchAnalytics.popularQueries
-        .filter(pq => pq.query.toLowerCase().includes(query.toLowerCase()) && pq.query !== query)
-        .slice(0, 3)
-        .forEach(pq => suggestions.add(pq.query));
-      
-      // Category-based suggestions if query matches category
-      const categoryMatches = state.searchAnalytics.popularQueries
-        .filter(pq => {
-          const categories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'IMS', 'CICS', 'System'];
-          return categories.some(cat => 
-            query.toLowerCase().includes(cat.toLowerCase()) ||
-            pq.query.toLowerCase().includes(cat.toLowerCase())
-          );
-        })
-        .slice(0, 2);
-      
-      categoryMatches.forEach(pq => suggestions.add(pq.query));
-      
-      const suggestionArray = Array.from(suggestions).slice(0, 8);
-      
-      // Cache the suggestions
-      suggestionsCache.current.set(cacheKey, suggestionArray);
-      
-      return suggestionArray;
-      
-    } catch (error) {
-      console.warn('Failed to generate suggestions:', error);
-      return [];
-    }
-  }, [state.searchHistory, state.searchAnalytics.popularQueries]);
-
-  // Pagination
-  const setPage = useCallback((page: number) => {
-    dispatch({ type: 'SET_PAGE', payload: page });
+  const updateGlobalSettings = useCallback((settings: Partial<SearchContextState['globalSettings']>) => {
+    dispatch({ type: 'UPDATE_GLOBAL_SETTINGS', payload: settings });
   }, []);
 
-  // Analytics and metrics
-  const getSearchAnalytics = useCallback((): SearchState['searchAnalytics'] => {
-    return state.searchAnalytics;
-  }, [state.searchAnalytics]);
+  const showAuthDialog = useCallback((query: string, estimatedCost?: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+      dispatch({
+        type: 'SHOW_AUTH_DIALOG',
+        payload: { query, estimatedCost }
+      });
 
-  const getCacheStats = useCallback((): SearchState['cacheStats'] => {
-    return state.cacheStats;
-  }, [state.cacheStats]);
-
-  const getRecentQueries = useCallback((): SearchState['recentQueries'] => {
-    return state.recentQueries;
-  }, [state.recentQueries]);
-
-  // Cache management
-  const clearSearchCache = useCallback(() => {
-    searchCache.current.clear();
-    suggestionsCache.current.clear();
-  }, []);
-
-  const preloadSearchResults = useCallback(async (queries: string[]): Promise<void> => {
-    const preloadPromises = queries.map(async (query) => {
-      try {
-        const cacheKey = `search:${query}:${JSON.stringify(state.filters)}`;
-        if (!searchCache.current.has(cacheKey)) {
-          // Perform search without updating UI
-          await debouncedPerformSearch(query, { silent: true });
+      // Set up dialog callbacks
+      dispatch({
+        type: 'SET_SEARCH_STATE',
+        payload: {
+          authDialog: {
+            isOpen: true,
+            query,
+            estimatedCost,
+            onApprove: () => {
+              hideAuthDialog();
+              resolve(true);
+            },
+            onDeny: () => {
+              hideAuthDialog();
+              resolve(false);
+            },
+            onCancel: () => {
+              hideAuthDialog();
+              resolve(false);
+            }
+          }
         }
-      } catch (error) {
-        console.warn(`Failed to preload results for query: ${query}`, error);
-      }
+      });
     });
-    
-    await Promise.allSettled(preloadPromises);
-  }, [state.filters, debouncedPerformSearch]);
-
-  // Reset search
-  const resetSearch = useCallback(() => {
-    dispatch({ type: 'RESET_SEARCH' });
   }, []);
 
-  // Cache cleanup on unmount
-  useEffect(() => {
-    return () => {
-      searchCache.current.clear();
-      suggestionsCache.current.clear();
+  const hideAuthDialog = useCallback(() => {
+    dispatch({ type: 'HIDE_AUTH_DIALOG' });
+  }, []);
+
+  const searchWithAnalytics = useCallback(async (
+    query: string,
+    category?: KBCategory,
+    options?: HybridSearchOptions
+  ) => {
+    const startTime = Date.now();
+
+    try {
+      await hybridActions.search(query, category, options);
+
+      // Add to history after successful search
+      addToHistory(query, category, contextState.metadata.totalResultCount);
+
+    } catch (error) {
+      console.error('Search with analytics failed:', error);
+    }
+  }, [hybridActions, addToHistory, contextState.metadata.totalResultCount]);
+
+  const getPerformanceMetrics = useCallback(() => {
+    const searchCount = contextState.recentSearches.length;
+    const averageSearchTime = searchCount > 0 ?
+      contextState.recentSearches.reduce((sum, search) => sum + contextState.performance.totalTime, 0) / searchCount :
+      0;
+
+    const complianceRate = searchCount > 0 ?
+      contextState.recentSearches.filter(search => contextState.performance.localSearchTime <= 500).length / searchCount :
+      1;
+
+    return {
+      averageSearchTime,
+      searchCount,
+      complianceRate
     };
-  }, []);
+  }, [contextState]);
 
-  // Context value (Memoized for performance)
-  const contextValue = useMemo<SearchContextValue>(() => ({
-    state,
-    setQuery,
-    clearQuery,
-    performSearch,
-    performSearchWithCache,
-    clearResults,
-    updateFilters,
-    resetFilters,
-    setUseAI,
+  const actions: SearchContextActions = {
+    ...hybridActions,
     addToHistory,
     clearHistory,
-    getSearchHistory,
-    updateSuggestions,
-    generateSuggestions,
-    setPage,
-    getSearchAnalytics,
-    getCacheStats,
-    getRecentQueries,
-    clearSearchCache,
-    preloadSearchResults,
-    resetSearch,
-  }), [
-    state,
-    setQuery,
-    clearQuery,
-    performSearch,
-    performSearchWithCache,
-    clearResults,
-    updateFilters,
-    resetFilters,
-    setUseAI,
-    addToHistory,
-    clearHistory,
-    getSearchHistory,
-    updateSuggestions,
-    generateSuggestions,
-    setPage,
-    getSearchAnalytics,
-    getCacheStats,
-    getRecentQueries,
-    clearSearchCache,
-    preloadSearchResults,
-    resetSearch,
-  ]);
+    searchFromHistory,
+    updatePreferences,
+    updateGlobalSettings,
+    showAuthDialog,
+    hideAuthDialog,
+    searchWithAnalytics,
+    getPerformanceMetrics
+  };
 
   return (
-    <SearchContext.Provider value={contextValue}>
+    <SearchContext.Provider value={{ state: contextState, actions }}>
       {children}
     </SearchContext.Provider>
   );
-};
+}
 
-// Hook to use the context
-export const useSearch = (): SearchContextValue => {
+// Hook to use search context
+export function useSearchContext() {
   const context = useContext(SearchContext);
   if (!context) {
-    throw new Error('useSearch must be used within a SearchProvider');
+    throw new Error('useSearchContext must be used within a SearchProvider');
   }
   return context;
-};
+}
 
-// Convenience hooks for specific parts of the search state
-export const useSearchQuery = () => {
-  const { state, setQuery, clearQuery } = useSearch();
+// Convenience hooks for specific functionality
+export function useSearchState() {
+  const { state } = useSearchContext();
+  return state;
+}
+
+export function useSearchActions() {
+  const { actions } = useSearchContext();
+  return actions;
+}
+
+export function useSearchHistory() {
+  const { state, actions } = useSearchContext();
   return {
-    query: state.query,
-    setQuery,
-    clearQuery,
+    history: state.searchHistory,
+    recentSearches: state.recentSearches,
+    addToHistory: actions.addToHistory,
+    clearHistory: actions.clearHistory,
+    searchFromHistory: actions.searchFromHistory
   };
-};
+}
 
-export const useSearchResults = () => {
-  const { state, performSearch, clearResults } = useSearch();
+export function useSearchPreferences() {
+  const { state, actions } = useSearchContext();
   return {
-    results: state.results,
-    totalResults: state.totalResults,
-    isSearching: state.isSearching,
-    searchError: state.searchError,
-    searchMetrics: state.searchMetrics,
-    performSearch,
-    clearResults,
+    preferences: state.preferences,
+    globalSettings: state.globalSettings,
+    updatePreferences: actions.updatePreferences,
+    updateGlobalSettings: actions.updateGlobalSettings
   };
-};
+}
 
-export const useSearchFilters = () => {
-  const { state, updateFilters, resetFilters } = useSearch();
+export function useAuthorizationDialog() {
+  const { state, actions } = useSearchContext();
   return {
-    filters: state.filters,
-    updateFilters,
-    resetFilters,
+    authDialog: state.authDialog,
+    showAuthDialog: actions.showAuthDialog,
+    hideAuthDialog: actions.hideAuthDialog
   };
-};
-
-export const useSearchHistory = () => {
-  const { state, addToHistory, clearHistory } = useSearch();
-  return {
-    searchHistory: state.searchHistory,
-    addToHistory,
-    clearHistory,
-  };
-};
-
-export default SearchContext;
+}

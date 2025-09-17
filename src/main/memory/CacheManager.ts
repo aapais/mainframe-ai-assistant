@@ -93,7 +93,7 @@ export class CacheManager extends EventEmitter {
     lastCleanup: new Date()
   };
   
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setTimeout>;
   private accessOrder: string[] = []; // For LRU eviction
   private isInitialized = false;
   private isShuttingDown = false;

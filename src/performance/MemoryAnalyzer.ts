@@ -121,7 +121,7 @@ export class MemoryAnalyzer extends EventEmitter {
   private componentRegistry = new Map<string, ComponentMemoryUsage>();
   private eventListenerRegistry = new Map<string, Set<EventListener>>();
   private gcObserver?: PerformanceObserver;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
 
   constructor(private config = {
     snapshotInterval: 30000, // 30 seconds

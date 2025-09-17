@@ -1,10 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConnectionPool = void 0;
-const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
+const tslib_1 = require("tslib");
+const better_sqlite3_1 = tslib_1.__importDefault(require("better-sqlite3"));
 const events_1 = require("events");
 class ConnectionPool extends events_1.EventEmitter {
     dbPath;

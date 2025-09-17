@@ -42,8 +42,8 @@ export function useDebounce<T>(
 
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   const [isDebouncing, setIsDebouncing] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const maxTimeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const maxTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastCallTime = useRef<number>(0);
   const lastArgs = useRef<T>(value);
 
@@ -124,8 +124,8 @@ export function useDebouncedCallback<TArgs extends any[]>(
   } = options;
 
   const [isDebouncing, setIsDebouncing] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const maxTimeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const maxTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const callbackRef = useRef(callback);
   const lastArgs = useRef<TArgs>();
 

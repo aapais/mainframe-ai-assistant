@@ -322,6 +322,8 @@ class DifferentialStateManager extends events_1.EventEmitter {
     cleanupOldVersions() {
         const now = Date.now();
         const maxAge = 24 * 60 * 60 * 1000;
+        let totalDeletedVersions = 0;
+
         for (const tracker of this.stateTrackers.values()) {
             const versionsToDelete = [];
             for (const [version, versionData] of tracker.previousVersions.entries()) {
@@ -332,9 +334,11 @@ class DifferentialStateManager extends events_1.EventEmitter {
             versionsToDelete.forEach(version => {
                 tracker.previousVersions.delete(version);
             });
+            totalDeletedVersions += versionsToDelete.length;
         }
-        if (versionsToDelete.length > 0) {
-            this.emit('versionsCleanedUp', { deletedVersions: versionsToDelete.length });
+
+        if (totalDeletedVersions > 0) {
+            this.emit('versionsCleanedUp', { deletedVersions: totalDeletedVersions });
         }
     }
 }

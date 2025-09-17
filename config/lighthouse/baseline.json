@@ -1,0 +1,20 @@
+{
+  "performance": 0.95,
+  "accessibility": 0.98,
+  "bestPractices": 0.92,
+  "seo": 0.88,
+  "fcp": 1200,
+  "lcp": 1800,
+  "tti": 2500,
+  "cls": 0.05,
+  "fid": 50,
+  "bundleSize": 200000,
+  "timestamp": 1726405200000,
+  "url": "http://localhost:3000",
+  "environment": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/91.0.4472.77 Safari/537.36",
+    "benchmarkIndex": 1000
+  },
+  "runCount": 1,
+  "note": "Initial baseline - target performance metrics for Electron app"
+}

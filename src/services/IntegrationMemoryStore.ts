@@ -133,7 +133,7 @@ export class IntegrationMemoryStore extends EventEmitter {
   private messageQueue = new Map<string, CrossComponentMessage[]>();
 
   private config: MemoryStoreConfig;
-  private cleanupTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: Partial<MemoryStoreConfig> = {}) {
     super();

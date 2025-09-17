@@ -47,7 +47,7 @@ export class CacheService implements ICacheService {
     startTime: Date.now()
   };
 
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setTimeout>;
 
   constructor(private config: CacheConfig) {
     this.setupCleanupInterval();

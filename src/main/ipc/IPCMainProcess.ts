@@ -21,7 +21,7 @@ import {
   IPCEvents,
   IPCEventEmitter
 } from '../../types/ipc';
-import { AppError } from '../../core/errors/AppError';
+import { AppError } from '../../backend/core/errors/AppError';
 import { EventEmitter } from 'events';
 import path from 'path';
 

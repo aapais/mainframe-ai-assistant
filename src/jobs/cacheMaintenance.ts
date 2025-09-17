@@ -72,7 +72,7 @@ export class CacheMaintenanceJobs {
   private cacheMiddleware: CacheMiddleware;
   private config: MaintenanceJobConfig;
 
-  private jobIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private jobIntervals: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private jobHistory: JobResult[] = [];
   private activeAlerts: Map<string, MaintenanceAlert> = new Map();
   private isShuttingDown = false;

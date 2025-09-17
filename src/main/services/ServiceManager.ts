@@ -338,7 +338,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
   private readonly metrics: ServiceMetrics;
   private readonly context: ServiceContext;
   
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: ReturnType<typeof setTimeout>;
   private isShuttingDown = false;
   private initializationPromise?: Promise<InitializationResult>;
 

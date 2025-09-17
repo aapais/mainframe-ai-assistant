@@ -41,7 +41,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
   }>();
 
   private config: RateLimitConfig;
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setTimeout>;
 
   constructor(config: RateLimitConfig) {
     this.config = config;

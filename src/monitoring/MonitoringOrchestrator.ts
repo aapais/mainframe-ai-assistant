@@ -48,7 +48,7 @@ export class MonitoringOrchestrator extends EventEmitter {
   private profiler: PerformanceProfiler;
   private config: MonitoringConfig;
   private isStarted = false;
-  private dashboardInterval?: NodeJS.Timeout;
+  private dashboardInterval?: ReturnType<typeof setTimeout>;
 
   constructor(config: MonitoringConfig) {
     super();

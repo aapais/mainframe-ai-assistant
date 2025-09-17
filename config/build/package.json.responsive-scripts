@@ -1,0 +1,26 @@
+{
+  "scripts": {
+    "test:responsive": "jest --config=jest.config.responsive.js",
+    "test:responsive:watch": "jest --config=jest.config.responsive.js --watch",
+    "test:responsive:coverage": "COVERAGE=true jest --config=jest.config.responsive.js --coverage",
+    "test:responsive:ci": "jest --config=jest.config.responsive.js --ci --coverage --watchAll=false --verbose",
+    "test:responsive:mobile": "jest --config=jest.config.responsive.js --testNamePattern=\"mobile|Mobile\"",
+    "test:responsive:tablet": "jest --config=jest.config.responsive.js --testNamePattern=\"tablet|Tablet\"",
+    "test:responsive:desktop": "jest --config=jest.config.responsive.js --testNamePattern=\"desktop|Desktop\"",
+    "test:responsive:performance": "jest --config=jest.config.responsive.js --testNamePattern=\"Performance|performance\"",
+    "test:responsive:touch": "jest --config=jest.config.responsive.js --testNamePattern=\"touch|Touch|gesture|Gesture\"",
+    "test:responsive:viewport": "jest --config=jest.config.responsive.js --testNamePattern=\"viewport|Viewport|breakpoint|Breakpoint\"",
+    "test:responsive:search": "jest --config=jest.config.responsive.js tests/responsive/SearchInterfaceResponsivePerformance.test.tsx",
+    "test:responsive:layout": "jest --config=jest.config.responsive.js --testNamePattern=\"layout|Layout|responsive\"",
+    "test:responsive:visual": "VISUAL_REGRESSION=true jest --config=jest.config.responsive.js --testNamePattern=\"visual|Visual|snapshot\"",
+    "test:responsive:debug": "jest --config=jest.config.responsive.js --verbose --no-cache --runInBand",
+    "test:responsive:update-snapshots": "jest --config=jest.config.responsive.js --updateSnapshot",
+    "test:responsive:memory": "jest --config=jest.config.responsive.js --testNamePattern=\"memory|Memory|leak\"",
+    "test:responsive:accessibility": "jest --config=jest.config.responsive.js --testNamePattern=\"accessibility|Accessibility|a11y\"",
+    "test:responsive:edge-cases": "jest --config=jest.config.responsive.js --testNamePattern=\"edge|Edge|narrow|wide|tiny\"",
+    "test:responsive:orientation": "jest --config=jest.config.responsive.js --testNamePattern=\"orientation|Orientation|landscape|portrait\"",
+    "test:responsive:full": "npm run test:responsive:coverage && npm run test:responsive:visual",
+    "test:responsive:quick": "jest --config=jest.config.responsive.js --testPathPattern=\"ResponsiveUITestSuite\" --maxWorkers=4",
+    "test:responsive:report": "npm run test:responsive:coverage && echo '📊 Responsive test report available at test-reports/responsive/responsive-test-report.html'"
+  }
+}

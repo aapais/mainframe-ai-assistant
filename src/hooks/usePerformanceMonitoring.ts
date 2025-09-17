@@ -157,7 +157,7 @@ export function useInteractionTracking(componentName: string) {
 export function useMemoryTracking(componentName: string, interval = 5000) {
   const [memoryMetrics, setMemoryMetrics] = useState<MemoryMetric[]>([]);
   const previousMemoryRef = useRef<number>(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!('memory' in performance)) {
@@ -243,7 +243,7 @@ export function useMemoryTracking(componentName: string, interval = 5000) {
 export function useBatchPerformanceAnalysis(componentName: string, batchDuration = 30000) {
   const [batches, setBatches] = useState<PerformanceBatch[]>([]);
   const currentBatchRef = useRef<Partial<PerformanceBatch> | null>(null);
-  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const batchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { interactions } = useInteractionTracking(componentName);
   const { memoryMetrics } = useMemoryTracking(componentName);

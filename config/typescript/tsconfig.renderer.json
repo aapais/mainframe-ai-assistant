@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    // Override base config for React renderer process
     "lib": [
       "ES2022",
       "DOM",
@@ -11,20 +12,30 @@
     "target": "ES2022",
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": [
-      "react",
-      "react-dom",
-      "node",
-      "electron"
-    ],
+    "types": [],
     "outDir": "../../dist/renderer",
     "rootDir": "../../src",
+    "baseUrl": "../../",
+    "typeRoots": [
+      "../../node_modules/@types",
+      "../../src/types"
+    ],
     "noEmit": true,
     "emitDeclarationOnly": false,
     "downlevelIteration": true,
     "allowUmdGlobalAccess": false,
     "skipDefaultLibCheck": true,
-    "preserveSymlinks": false
+    "preserveSymlinks": false,
+    // Ensure proper path mapping inheritance from base config
+    "paths": {
+      "@/*": ["../../src/*"],
+      "@renderer/*": ["../../src/renderer/*"],
+      "@components/*": ["../../src/renderer/components/*"],
+      "@hooks/*": ["../../src/renderer/hooks/*"],
+      "@shared/*": ["../../src/shared/*"],
+      "@types/*": ["../../src/types/*"],
+      "@utils/*": ["../../src/shared/utils/*"]
+    }
   },
   "include": [
     "../../src/renderer/**/*",

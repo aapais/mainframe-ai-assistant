@@ -63,7 +63,7 @@ export class PerformanceMonitor extends EventEmitter {
   private alerts: Map<string, PerformanceAlert> = new Map();
   private targets: Map<string, PerformanceTarget> = new Map();
   private monitoring = false;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
   private metricsHistory: PerformanceMetrics[] = [];
   private maxHistorySize = 1440; // 24 hours at 1-minute intervals
 

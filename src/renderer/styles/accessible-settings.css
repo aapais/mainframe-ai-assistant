@@ -1,0 +1,581 @@
+/**
+ * Accessible Settings Navigation Styles
+ * WCAG 2.1 AAA compliant styles with inclusive design patterns
+ */
+
+/* Skip Links - Always visible when focused */
+.skip-links {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: white;
+  color: black;
+  padding: 8px;
+  text-decoration: none;
+  border: 2px solid #000;
+  border-radius: 4px;
+  z-index: 1000;
+  transition: top 0.3s;
+}
+
+.skip-links:focus,
+.skip-links button:focus {
+  top: 6px;
+}
+
+.skip-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  margin-right: 8px;
+  font-weight: 500;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.skip-link:hover,
+.skip-link:focus {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .category-card {
+    border: 2px solid #000 !important;
+  }
+
+  .category-card button {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #000;
+  }
+
+  .category-card button:hover,
+  .category-card button:focus {
+    background: #000 !important;
+    color: #fff !important;
+  }
+
+  .search-container input {
+    border: 2px solid #000 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .accessible-settings-navigation *,
+  .accessible-settings-navigation *:before,
+  .accessible-settings-navigation *:after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .category-card {
+    transition: none !important;
+  }
+
+  .chevron-icon {
+    transition: none !important;
+  }
+}
+
+/* Focus Management */
+.accessible-settings-navigation :focus {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Enhanced focus indicators for better visibility */
+.focus-enhanced :focus {
+  outline: 4px solid #1d4ed8;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px white, 0 0 0 6px #3b82f6;
+}
+
+/* Motor Impairment Support - Larger touch targets */
+.motor-support button,
+.motor-support [role="button"],
+.motor-support [role="menuitem"] {
+  min-height: 48px !important;
+  min-width: 48px !important;
+  padding: 12px 16px !important;
+}
+
+.motor-support .category-card button {
+  padding: 16px !important;
+}
+
+/* Cognitive Load Reduction Styles */
+.cognitive-load-reduced {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cognitive-load-reduced .category-card {
+  margin-bottom: 24px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.cognitive-load-reduced .navigation-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+/* ADHD-Friendly Styles */
+.adhd-friendly {
+  --animation-duration: 0ms;
+  --transition-duration: 100ms;
+}
+
+.adhd-friendly .category-card {
+  border-left: 4px solid var(--category-color, #6b7280);
+  background: #fafafa;
+  animation: none;
+}
+
+.adhd-friendly .category-card:hover {
+  background: #f3f4f6;
+  transform: none;
+}
+
+.adhd-friendly .distraction-reduced {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+/* Remove busy backgrounds and patterns */
+.adhd-friendly .navigation-content {
+  background: #ffffff;
+  border: none;
+  box-shadow: none;
+}
+
+/* Dyslexia-Friendly Typography */
+.dyslexia-friendly {
+  font-family: 'OpenDyslexic', 'Arial', sans-serif;
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.dyslexia-friendly h1,
+.dyslexia-friendly h2,
+.dyslexia-friendly h3,
+.dyslexia-friendly h4 {
+  font-weight: 600;
+  margin-bottom: 0.75em;
+}
+
+.dyslexia-friendly p,
+.dyslexia-friendly div {
+  line-height: 1.7;
+  max-width: 65ch;
+}
+
+.dyslexia-friendly .category-card {
+  text-align: left;
+  padding: 20px;
+}
+
+.dyslexia-friendly .hover-highlight:hover {
+  background: linear-gradient(120deg, #a7f3d0 0%, #a7f3d0 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 0.2em;
+  background-position: 0 88%;
+}
+
+/* Large Text Support */
+.large-text {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.large-text h1 { font-size: 2.25rem; }
+.large-text h2 { font-size: 1.875rem; }
+.large-text h3 { font-size: 1.5rem; }
+.large-text h4 { font-size: 1.25rem; }
+
+.large-text .category-card {
+  padding: 20px;
+}
+
+.large-text button {
+  padding: 12px 20px;
+  font-size: 1.125rem;
+}
+
+/* Screen Reader Optimizations */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0.5rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: #fff;
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+/* Live Region Styling */
+[aria-live] {
+  font-weight: normal;
+  font-size: 1rem;
+}
+
+/* Progressive Disclosure Animation */
+.progressive-disclosure-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.progressive-disclosure-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressive-disclosure-enter,
+  .progressive-disclosure-enter-active {
+    transform: none;
+    transition: opacity 200ms ease;
+  }
+}
+
+/* Keyboard Navigation Indicators */
+.keyboard-navigating [tabindex="0"]:focus,
+.keyboard-navigating button:focus,
+.keyboard-navigating [role="menuitem"]:focus {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  background: #eff6ff;
+  position: relative;
+  z-index: 1;
+}
+
+/* Category Color Coding (Accessible) */
+.category-general { border-left-color: #8b5cf6; }
+.category-api { border-left-color: #3b82f6; }
+.category-cost { border-left-color: #10b981; }
+.category-dashboard { border-left-color: #ef4444; }
+.category-advanced { border-left-color: #92400e; }
+
+/* Cognitive Load Indicator */
+.cognitive-load-indicator {
+  border-left: 4px solid #3b82f6;
+  background: #f0f9ff;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 0 8px 8px 0;
+}
+
+.complexity-low { color: #059669; }
+.complexity-medium { color: #d97706; }
+.complexity-high { color: #dc2626; }
+
+/* Guided Flow Progress */
+.guided-flow-progress {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.guided-flow-prompt {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* Progress Bar */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar-fill {
+    transition: none;
+  }
+}
+
+/* Search Results Styling */
+.search-results {
+  margin-top: 16px;
+}
+
+.search-result-item {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.search-result-item:hover,
+.search-result-item:focus-within {
+  border-color: #3b82f6;
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-result-item:hover,
+  .search-result-item:focus-within {
+    transform: none;
+  }
+}
+
+/* Mobile Responsiveness with Accessibility */
+@media (max-width: 768px) {
+  .accessible-settings-navigation {
+    padding: 8px;
+  }
+
+  .category-card {
+    margin-bottom: 12px;
+  }
+
+  .category-card button {
+    padding: 16px 12px;
+  }
+
+  /* Larger touch targets on mobile */
+  button,
+  [role="button"],
+  [role="menuitem"] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+  }
+
+  .search-container input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 16px;
+  }
+}
+
+/* Print Styles for Accessibility */
+@media print {
+  .skip-links,
+  .cognitive-load-indicator,
+  .guided-flow-progress,
+  .guided-flow-prompt {
+    display: none;
+  }
+
+  .category-card {
+    break-inside: avoid;
+    border: 1px solid #000;
+    margin-bottom: 16px;
+  }
+
+  .category-card button {
+    background: none;
+    border: none;
+    text-align: left;
+  }
+
+  [aria-expanded="false"] + * {
+    display: block !important;
+  }
+}
+
+/* Focus trapping for modal contexts */
+.focus-trap {
+  position: relative;
+}
+
+.focus-trap::before,
+.focus-trap::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Accessibility Quick Actions Styling */
+.accessibility-quick-actions {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 24px;
+}
+
+.accessibility-quick-actions h3 {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.accessibility-quick-actions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 4px;
+  color: #2563eb;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.accessibility-quick-actions button:hover {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.accessibility-quick-actions button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+  background: #eff6ff;
+}
+
+.accessibility-quick-actions button[aria-pressed="true"]::before {
+  content: '✓ ';
+  color: #059669;
+  font-weight: bold;
+}
+
+.accessibility-quick-actions button[aria-pressed="false"]::before {
+  content: '○ ';
+  color: #6b7280;
+}
+
+/* Error and Success States */
+.error-state {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.success-state {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+/* Loading States */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-skeleton {
+    animation: none;
+    background: #f0f0f0;
+  }
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Utility Classes for Accessibility */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.focus-visible {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+.no-focus-outline:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Dark mode support while maintaining accessibility */
+@media (prefers-color-scheme: dark) {
+  .accessible-settings-navigation {
+    color: #f9fafb;
+  }
+
+  .category-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .category-card button {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+
+  .category-card button:hover {
+    background: #374151;
+  }
+
+  .search-container input {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .cognitive-load-indicator {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+    color: #e0e7ff;
+  }
+}

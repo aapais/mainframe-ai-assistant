@@ -33,7 +33,7 @@ export interface BatchMetrics {
  */
 export class RequestBatcher extends EventEmitter {
   private batches = new Map<string, BatchRequest[]>();
-  private timers = new Map<string, NodeJS.Timeout>();
+  private timers = new Map<string, ReturnType<typeof setTimeout>>();
   private config: BatchConfig;
   private metrics: BatchMetrics;
   private activeBatches = new Set<string>();

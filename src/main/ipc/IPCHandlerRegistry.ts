@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import type { IpcMainInvokeEvent } from 'electron';
 import { 
   IPCChannel, 
   IPCHandlerFunction, 
@@ -18,7 +19,7 @@ import {
   ChannelMetrics
 } from '../../types/ipc';
 import { IPCSecurityManager } from './security/IPCSecurityManager';
-import { AppError } from '../../core/errors/AppError';
+import { AppError } from '../../backend/core/errors/AppError';
 
 interface HandlerRegistration<T extends IPCChannel> {
   handler: IPCHandlerFunction<T>;

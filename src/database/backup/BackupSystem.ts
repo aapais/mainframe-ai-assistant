@@ -117,7 +117,7 @@ export interface VerificationResult {
 export class BackupSystem extends EventEmitter {
   private config: Required<BackupConfig>;
   private db: Database.Database | null = null;
-  private schedulerTimer: NodeJS.Timeout | null = null;
+  private schedulerTimer: ReturnType<typeof setTimeout> | null = null;
   private isInitialized = false;
   private metadataDb: Database.Database;
 

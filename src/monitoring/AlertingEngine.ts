@@ -106,7 +106,7 @@ export class AlertingEngine extends EventEmitter {
   private lastNotifications: Map<string, number> = new Map();
   
   private evaluationInterval = 15000; // 15 seconds
-  private evaluationTimer?: NodeJS.Timeout;
+  private evaluationTimer?: ReturnType<typeof setTimeout>;
   
   constructor(
     database: Database.Database,

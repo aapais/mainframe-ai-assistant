@@ -39,7 +39,7 @@ export class CacheWarmingService {
   private cacheOrchestrator: CacheOrchestrator;
   private queryCache: QueryCache;
   private strategies: Map<string, WarmingStrategy> = new Map();
-  private scheduledTasks: Map<string, NodeJS.Timeout> = new Map();
+  private scheduledTasks: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private metrics: WarmingMetrics;
   private isWarming = false;
 

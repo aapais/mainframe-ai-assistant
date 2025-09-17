@@ -70,10 +70,10 @@ export class ConnectionPool extends EventEmitter {
   private waitingQueue: Array<{
     resolve: (connection: Connection) => void;
     reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
+    timeout: ReturnType<typeof setTimeout>;
   }> = [];
   
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setTimeout>;
   private metrics: PoolMetrics = {
     totalConnections: 0,
     activeConnections: 0,

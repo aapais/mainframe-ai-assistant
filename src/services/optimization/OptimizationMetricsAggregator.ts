@@ -62,7 +62,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
   private rawMetrics: OptimizationMetrics[] = [];
   private aggregatedMetrics: Map<string, AggregatedMetrics> = new Map();
   private snapshots: Map<string, MetricsSnapshot> = new Map();
-  private aggregationInterval?: NodeJS.Timeout;
+  private aggregationInterval?: ReturnType<typeof setTimeout>;
   private anomalyDetector: any;
 
   constructor(optimizationEngine: OptimizationEngine, config: Partial<MetricsConfiguration> = {}) {

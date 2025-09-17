@@ -1,0 +1,70 @@
+appId: com.accenture.mainframe-ai-assistant
+productName: Accenture Mainframe AI Assistant
+copyright: © 2024 Accenture. All rights reserved.
+
+directories:
+  output: dist-installer
+  buildResources: build
+
+files:
+  - src/main/main.js
+  - src/main/preload.js
+  - index.html
+  - app.js
+  - assets/**/*
+  - package.json
+  - "!src/**/*.ts"
+  - "!tests/**/*"
+  - "!**/*.test.*"
+  - "!**/*.spec.*"
+  - "!.git/**/*"
+  - "!docs/**/*"
+  - "!scripts/**/*"
+  - "!*.md"
+  - "!build/**/*"
+  - "!node_modules/**/*.d.ts"
+  - "!node_modules/**/*.map"
+  - "!node_modules/**/README*"
+  - "!node_modules/**/CHANGELOG*"
+  - "!node_modules/**/LICENSE*"
+  - "!node_modules/**/*.txt"
+
+extraMetadata:
+  main: src/main/main.js
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+  publisherName: Accenture
+  requestedExecutionLevel: asInvoker
+  artifactName: Accenture-Mainframe-AI-Setup.exe
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: false
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Accenture Mainframe AI Assistant
+  menuCategory: Accenture
+  artifactName: Accenture-Mainframe-AI-Setup.exe
+  deleteAppDataOnUninstall: true
+  perMachine: false
+  license: build/license.txt
+  include: build/installer.nsh
+  warningsAsErrors: false
+  displayLanguageSelector: false
+  installerLanguages: [en_US]
+  language: "1033"
+  guid: "{A100FF00-MAINFRAME-AI-ASSISTANT-ACCENTURE}"
+
+publish: null
+compression: maximum
+
+# Build for Windows x64 only for initial release
+buildVersion: 1.0.0

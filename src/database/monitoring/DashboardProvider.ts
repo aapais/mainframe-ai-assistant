@@ -123,7 +123,7 @@ export class DashboardProvider extends EventEmitter {
   private healthCheck: HealthCheck;
   private queryAnalyzer: QueryAnalyzer;
   
-  private refreshTimer?: NodeJS.Timeout;
+  private refreshTimer?: ReturnType<typeof setTimeout>;
   private isRunning = false;
   private lastMetrics?: DashboardMetrics;
   private metricsHistory: DashboardMetrics[] = [];

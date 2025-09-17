@@ -250,10 +250,10 @@ export class BackupScheduler extends EventEmitter {
   private config: PerformanceConfig;
   private schedules: Map<string, ScheduleConfig> = new Map();
   private executions: Map<string, ScheduleExecution> = new Map();
-  private activeTimers: Map<string, NodeJS.Timeout> = new Map();
+  private activeTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private executionHistory: Map<string, ScheduleExecution[]> = new Map();
   private isRunning = false;
-  private masterTimer: NodeJS.Timeout | null = null;
+  private masterTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(backupService: any, config: PerformanceConfig) {
     super();

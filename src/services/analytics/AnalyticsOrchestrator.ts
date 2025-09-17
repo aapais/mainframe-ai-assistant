@@ -118,7 +118,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
   private config: AnalyticsConfig;
   private isInitialized: boolean = false;
   private batchQueue: Array<{ type: string; data: any; timestamp: number }> = [];
-  private batchProcessingInterval: NodeJS.Timeout | null = null;
+  private batchProcessingInterval: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: Partial<AnalyticsConfig> = {}) {
     super();

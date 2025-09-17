@@ -74,8 +74,8 @@ export class MemoryManager extends EventEmitter implements Service {
   private connectionPool!: ConnectionPool;
   private cacheManager!: CacheManager;
   
-  private monitoringInterval?: NodeJS.Timeout;
-  private leakDetectionInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
+  private leakDetectionInterval?: ReturnType<typeof setTimeout>;
   private memoryHistory: MemoryMetrics[] = [];
   private lastCleanup = Date.now();
   private isMonitoring = false;

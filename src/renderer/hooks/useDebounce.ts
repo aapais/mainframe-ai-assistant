@@ -92,8 +92,8 @@ export function useDebounce<T>(
   const [isPending, setIsPending] = useState(false);
 
   // Refs for managing timers and state
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousValueRef = useRef<T>(value);
   const mountedRef = useRef(true);
   const immediateExecutedRef = useRef(false);
@@ -232,7 +232,7 @@ export function useAdvancedDebounce<T>(
   const debouncedValue = useDebounce(value, delay, options);
   const [isPending, setIsPending] = useState(false);
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const valueRef = useRef<T>(value);
   const [internalValue, setInternalValue] = useState<T>(value);
 
@@ -370,8 +370,8 @@ export function createDebouncedCallback<TArgs extends any[], TReturn>(
 } {
   const { leading = false, trailing = true, maxDelay } = options;
 
-  let timeoutId: NodeJS.Timeout | null = null;
-  let maxTimeoutId: NodeJS.Timeout | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let maxTimeoutId: ReturnType<typeof setTimeout> | null = null;
   let lastArgs: TArgs | null = null;
 
   const cancel = () => {

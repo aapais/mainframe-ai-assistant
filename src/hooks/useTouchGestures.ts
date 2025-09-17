@@ -85,7 +85,7 @@ interface GestureState {
   currentScale: number;
   gestureType: string | null;
   swipeDirection: string | null;
-  longPressTimer: NodeJS.Timeout | null;
+  longPressTimer: ReturnType<typeof setTimeout> | null;
   lastTapTime: number;
   tapCount: number;
 }

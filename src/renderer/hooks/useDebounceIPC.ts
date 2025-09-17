@@ -133,8 +133,8 @@ function createDebouncedFunction<T extends (...args: any[]) => Promise<any>>(
   func: T,
   config: DebounceConfig
 ): DebouncedFunction<T> {
-  let timeoutId: NodeJS.Timeout | null = null;
-  let maxTimeoutId: NodeJS.Timeout | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let maxTimeoutId: ReturnType<typeof setTimeout> | null = null;
   let lastCallTime = 0;
   let lastInvokeTime = 0;
   let leadingInvoked = false;

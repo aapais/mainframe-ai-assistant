@@ -20,7 +20,7 @@ export class MemoryCache<T = any> {
   private cache = new Map<string, CacheItem<T>>();
   private accessOrder: string[] = [];
   private config: MemoryCacheConfig;
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
   private currentMemoryUsage = 0;
   private metrics = {
     hits: 0,

@@ -182,7 +182,7 @@ export interface IMetricsService extends IBaseService {
   recordSlowQuery(query: string, duration: number, metadata?: any): void;
 
   // Analytics
-  getMetrics(timeRange?: TimeRange): Promise<MetricsReport>;
+  getMetrics(timeRange?: TimeRange): Promise<ServiceMetrics>;
   getOperationStats(operation: string): Promise<OperationStats>;
   getSystemHealth(): Promise<SystemHealthReport>;
 
@@ -471,27 +471,27 @@ export abstract class BaseError extends Error {
 }
 
 export class ServiceError extends BaseError {
-  readonly code = 'SERVICE_ERROR';
+  readonly code: string = 'SERVICE_ERROR';
   readonly statusCode = 500;
 }
 
 export class ValidationError extends BaseError {
-  readonly code = 'VALIDATION_ERROR';
+  readonly code: string = 'VALIDATION_ERROR';
   readonly statusCode = 400;
 }
 
 export class NotFoundError extends BaseError {
-  readonly code = 'NOT_FOUND';
+  readonly code: string = 'NOT_FOUND';
   readonly statusCode = 404;
 }
 
 export class ConflictError extends BaseError {
-  readonly code = 'CONFLICT';
+  readonly code: string = 'CONFLICT';
   readonly statusCode = 409;
 }
 
 // Helper function to create operation results
-export class OperationResult {
+export class OperationResultHelper {
   static success<T>(data: T, metadata?: any): OperationResult<T> {
     return { success: true, data, metadata };
   }
@@ -654,4 +654,61 @@ export interface LogQueryOptions {
   timeRange?: TimeRange;
   limit?: number;
   offset?: number;
+}
+
+// ========================================
+// INCIDENT MANAGEMENT INTERFACES
+// ========================================
+
+// Incident Types and Enums
+export type IncidentPriority = 'P1' | 'P2' | 'P3' | 'P4';
+export type IncidentStatus = 'Open' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed';
+export type IncidentCategory = 'System Outage' | 'Performance' | 'Database' | 'Application' | 'Security' | 'Network' | 'Hardware' | 'Capacity' | 'Data' | 'Configuration' | 'Other';
+export type IncidentImpact = 'Critical' | 'High' | 'Medium' | 'Low';
+
+// Core Incident Data Structures
+export interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  impact: string;
+  category: IncidentCategory;
+  priority: IncidentPriority;
+  status: IncidentStatus;
+  assignee?: string;
+  tags: string[];
+  created_at: Date;
+  updated_at: Date;
+  resolved_at?: Date;
+  closed_at?: Date;
+  reported_by: string;
+  reported_at: Date;
+  resolution_notes?: string;
+  estimated_resolution?: Date;
+  actual_resolution_time?: number; // in minutes
+  escalation_level?: number;
+  affected_systems?: string[];
+  affected_users_count?: number;
+  business_impact_rating?: number; // 1-10 scale
+  confidence_score?: number;
+  related_incidents?: string[];
+  duplicate_of?: string;
+  archived: boolean;
+}
+
+export interface CreateIncident {
+  title: string;
+  description: string;
+  impact: string;
+  category: IncidentCategory;
+  priority: IncidentPriority;
+  status?: IncidentStatus;
+  assignee?: string;
+  tags?: string[];
+  reported_by: string;
+  reported_at?: string;
+  estimated_resolution?: Date;
+  affected_systems?: string[];
+  affected_users_count?: number;
+  business_impact_rating?: number;
 }

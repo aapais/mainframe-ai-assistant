@@ -195,7 +195,7 @@ export class APIKeyManager {
 
   private encrypt(text: string): string {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher('aes-256-gcm', this.encryptionKey);
+    const cipher = crypto.createCipherGCM('aes-256-gcm', this.encryptionKey, iv);
     cipher.setAAD(Buffer.from('api-key-data'));
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -215,7 +215,7 @@ export class APIKeyManager {
     const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
 
-    const decipher = crypto.createDecipher('aes-256-gcm', this.encryptionKey);
+    const decipher = crypto.createDecipherGCM('aes-256-gcm', this.encryptionKey, iv);
     decipher.setAAD(Buffer.from('api-key-data'));
     decipher.setAuthTag(authTag);
 

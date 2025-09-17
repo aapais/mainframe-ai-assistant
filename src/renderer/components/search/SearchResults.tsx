@@ -2,6 +2,10 @@ import React, { useState, useCallback, useMemo, memo } from 'react';
 import { SearchResult, SearchOptions, KBEntry } from '../../../types/services';
 import { formatDate, formatRelativeTime, highlightText } from '../../utils/formatters';
 import { VirtualList, FixedSizeList } from '../ui/VirtualList';
+import SearchResultCard from './SearchResultCard';
+import BulkOperations from './BulkOperations';
+import ContextualAddButton from './ContextualAddButton';
+import { useContextualCRUD } from '../../hooks/useContextualCRUD';
 import './SearchResults.css';
 
 interface SearchResultsProps {
@@ -19,6 +23,18 @@ interface SearchResultsProps {
   enableVirtualScrolling?: boolean;
   virtualScrollHeight?: string;
   itemHeight?: number;
+  enableBulkOperations?: boolean;
+  enableInlineEditing?: boolean;
+  enableContextualAdd?: boolean;
+  contextualData?: {
+    category?: string;
+    tags?: string[];
+    severity?: string;
+    suggestedTitle?: string;
+    suggestedProblem?: string;
+  };
+  onResultsUpdate?: (results: SearchResult[]) => void;
+  onAddEntry?: (contextualData?: any) => void;
   pagination?: {
     page: number;
     pageSize: number;
@@ -331,8 +347,32 @@ export const SearchResults = memo<SearchResultsProps>(({
   enableVirtualScrolling = true,
   virtualScrollHeight = '600px',
   itemHeight = 200,
+  enableBulkOperations = true,
+  enableInlineEditing = true,
+  enableContextualAdd = true,
+  contextualData,
+  onResultsUpdate,
+  onAddEntry,
   pagination
 }) => {
+  // Initialize contextual CRUD operations
+  const crud = useContextualCRUD({
+    searchResults: results,
+    contextualData: {
+      query,
+      ...contextualData
+    },
+    callbacks: {
+      onResultsUpdated: onResultsUpdate,
+      onEntryAdded: (entry) => console.log('Entry added:', entry),
+      onEntryUpdated: (entry) => console.log('Entry updated:', entry),
+      onEntryDeleted: (entryId) => console.log('Entry deleted:', entryId),
+      onEntriesArchived: (entryIds, archived) => console.log('Entries archived:', entryIds, archived)
+    },
+    enableBulkOperations,
+    enableInlineEditing
+  });
+
   // Sort options
   const sortOptions = [
     { value: 'relevance', label: 'Relevance', icon: '🎯' },
@@ -347,6 +387,15 @@ export const SearchResults = memo<SearchResultsProps>(({
     const newSortOrder = sortBy === newSortBy && sortOrder === 'desc' ? 'asc' : 'desc';
     onSortChange(newSortBy as SearchOptions['sortBy'], newSortOrder);
   }, [sortBy, sortOrder, onSortChange]);
+
+  // Handle contextual add
+  const handleContextualAdd = useCallback((contextData?: any) => {
+    if (onAddEntry) {
+      onAddEntry(contextData);
+    } else {
+      crud.createEntryWithContext(contextData);
+    }
+  }, [onAddEntry, crud]);
 
   // Loading state
   if (isLoading) {
@@ -411,12 +460,43 @@ export const SearchResults = memo<SearchResultsProps>(({
 
   return (
     <div className="search-results" role="region" aria-label="Search results">
+      {/* Bulk Operations Toolbar */}
+      {enableBulkOperations && crud.someSelected && (
+        <BulkOperations
+          selectedEntries={crud.selectedEntries}
+          totalCount={results.length}
+          onClearSelection={crud.clearSelection}
+          onSelectAll={crud.selectAll}
+          onBulkDelete={crud.bulkDelete}
+          onBulkArchive={crud.bulkArchive}
+          onBulkTag={crud.bulkUpdateTags}
+          onBulkDuplicate={crud.bulkDuplicate}
+          onBulkExport={crud.bulkExport}
+          onBulkUpdateSeverity={crud.bulkUpdateSeverity}
+          onBulkUpdateCategory={crud.bulkUpdateCategory}
+          onRefreshResults={crud.refreshResults}
+        />
+      )}
+
       <div className="search-results__header">
         <div className="search-results__info">
-          <h2 className="search-results__title">
-            Found {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
-          </h2>
-          
+          <div className="flex items-center justify-between">
+            <h2 className="search-results__title">
+              Found {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
+            </h2>
+
+            {/* Contextual Add Button */}
+            {enableContextualAdd && query.trim() && (
+              <ContextualAddButton
+                query={query}
+                searchResults={results}
+                onAddEntry={handleContextualAdd}
+                position="inline"
+                showSuggestions={true}
+              />
+            )}
+          </div>
+
           {results.some(r => r.metadata?.source === 'ai') && (
             <div className="search-results__ai-notice">
               <span className="icon">🤖</span>
@@ -456,11 +536,11 @@ export const SearchResults = memo<SearchResultsProps>(({
             items={results}
             itemHeight={(index, result) => {
               // Calculate dynamic height based on content
-              const baseHeight = 120; // Base height for collapsed item
-              const expandedHeight = result.entry.problem.length > 200 ? 300 : 200;
-              const tagsHeight = result.entry.tags.length > 5 ? 40 : 20;
-              const explanationHeight = showExplanations && result.explanation ? 60 : 0;
-              const metadataHeight = showMetadata && result.metadata ? 80 : 0;
+              const baseHeight = 180; // Base height for new SearchResultCard
+              const expandedHeight = result.entry.problem.length > 200 ? 400 : 300;
+              const tagsHeight = result.entry.tags.length > 5 ? 60 : 40;
+              const explanationHeight = showExplanations && result.explanation ? 80 : 0;
+              const metadataHeight = showMetadata && result.metadata ? 100 : 0;
 
               return baseHeight + tagsHeight + explanationHeight + metadataHeight;
             }}
@@ -468,33 +548,49 @@ export const SearchResults = memo<SearchResultsProps>(({
             className="virtualized-search-results"
           >
             {({ item: result, index, style }) => (
-              <div style={style}>
-                <SearchResultItem
+              <div style={style} className="mb-4">
+                <SearchResultCard
                   key={result.entry.id}
                   result={result}
                   query={query}
-                  onSelect={onEntrySelect}
-                  onRate={onEntryRate}
+                  isSelected={crud.selectedIds.has(result.entry.id)}
+                  showCheckbox={enableBulkOperations}
                   highlightQuery={highlightQuery}
-                  showExplanation={showExplanations}
-                  showMetadata={showMetadata}
+                  showQuickActions={true}
+                  showInlineEdit={enableInlineEditing}
+                  onSelect={onEntrySelect}
+                  onToggleSelection={crud.toggleSelection}
+                  onEdit={crud.createEntryWithContext}
+                  onDelete={crud.deleteEntry}
+                  onDuplicate={crud.duplicateEntry}
+                  onViewHistory={crud.viewEntryHistory}
+                  onRate={crud.handleEntryRate}
+                  onQuickUpdate={crud.updateEntryInline}
                   index={index}
                 />
               </div>
             )}
           </VirtualList>
         ) : (
-          <div className="standard-search-results">
+          <div className="standard-search-results space-y-4">
             {results.map((result, index) => (
-              <SearchResultItem
+              <SearchResultCard
                 key={result.entry.id}
                 result={result}
                 query={query}
-                onSelect={onEntrySelect}
-                onRate={onEntryRate}
+                isSelected={crud.selectedIds.has(result.entry.id)}
+                showCheckbox={enableBulkOperations}
                 highlightQuery={highlightQuery}
-                showExplanation={showExplanations}
-                showMetadata={showMetadata}
+                showQuickActions={true}
+                showInlineEdit={enableInlineEditing}
+                onSelect={onEntrySelect}
+                onToggleSelection={crud.toggleSelection}
+                onEdit={crud.createEntryWithContext}
+                onDelete={crud.deleteEntry}
+                onDuplicate={crud.duplicateEntry}
+                onViewHistory={crud.viewEntryHistory}
+                onRate={crud.handleEntryRate}
+                onQuickUpdate={crud.updateEntryInline}
                 index={index}
               />
             ))}
@@ -512,11 +608,11 @@ export const SearchResults = memo<SearchResultsProps>(({
             >
               ← Previous
             </button>
-            
+
             <span className="pagination__info">
               Page {pagination.page} of {Math.ceil(pagination.total / pagination.pageSize)}
             </span>
-            
+
             <button
               className="btn btn--pagination"
               disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
@@ -525,6 +621,49 @@ export const SearchResults = memo<SearchResultsProps>(({
               Next →
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Contextual Add Button - Fixed Position */}
+      {enableContextualAdd && query.trim() && (
+        <ContextualAddButton
+          query={query}
+          searchResults={results}
+          onAddEntry={handleContextualAdd}
+          position="fixed"
+          showSuggestions={true}
+        />
+      )}
+
+      {/* Notifications */}
+      {crud.notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+          {crud.notifications.map(notification => (
+            <div
+              key={notification.id}
+              className={`
+                p-4 rounded-lg border shadow-lg transition-all duration-300
+                ${notification.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+                  notification.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+                  notification.type === 'warning' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                  'bg-blue-50 border-blue-200 text-blue-800'
+                }
+              `}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium">{notification.title}</h4>
+                  <p className="text-sm mt-1">{notification.message}</p>
+                </div>
+                <button
+                  onClick={() => crud.removeNotification(notification.id)}
+                  className="ml-3 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

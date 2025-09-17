@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css'; // Import Tailwind CSS
 import App from './App';
 import './mockElectronAPI'; // Import mock API for web development
+import { SettingsProvider } from './contexts/SettingsContext';
 
 /**
  * React 18 Application Entry Point
@@ -34,7 +36,9 @@ const root = ReactDOM.createRoot(rootElement);
 // Render application
 root.render(
   <React.StrictMode>
-    <App />
+    <SettingsProvider autoSave={true} autoSaveDelay={1000}>
+      <App />
+    </SettingsProvider>
   </React.StrictMode>
 );
 

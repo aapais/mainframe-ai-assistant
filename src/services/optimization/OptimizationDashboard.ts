@@ -68,7 +68,7 @@ export class OptimizationDashboard extends EventEmitter {
   private alerts: Map<string, DashboardAlert> = new Map();
   private insights: Map<string, OptimizationInsight> = new Map();
   private reports: Map<string, PerformanceReport> = new Map();
-  private updateIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private updateIntervals: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private metricsHistory: OptimizationMetrics[] = [];
 
   constructor(optimizationEngine: OptimizationEngine) {

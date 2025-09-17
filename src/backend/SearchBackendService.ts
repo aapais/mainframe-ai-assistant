@@ -8,10 +8,11 @@ import { SearchApiService } from './api/search/SearchApiService';
 import { SearchHistoryService } from './api/search/SearchHistoryService';
 import { AutocompleteService } from './api/search/AutocompleteService';
 import { SearchMetricsCollector } from './api/search/SearchMetricsCollector';
-import { MultiLayerCache, CacheConfig } from './cache/MultiLayerCache';
+import { MultiLayerCache } from './cache/MultiLayerCacheSystem';
+import { CacheConfig } from './cache/MultiLayerCache';
 import { SearchIPCHandlers } from './ipc/SearchIPCHandlers';
 import { AppError } from './core/errors/AppError';
-import Database from 'better-sqlite3';
+import * as Database from 'better-sqlite3';
 
 export interface SearchBackendConfig {
   database: {
@@ -70,8 +71,8 @@ export class SearchBackendService {
   private status: BackendStatus['status'] = 'initializing';
 
   // Core services
-  private database?: Database.Database;
-  private cache?: MultiLayerCache;
+  private database?: any;
+  private cache?: any; // Using any type to avoid MultiLayerCache conflicts
   private searchEngine?: AdvancedSearchEngine;
   private searchApiService?: SearchApiService;
   private historyService?: SearchHistoryService;
@@ -80,7 +81,7 @@ export class SearchBackendService {
   private ipcHandlers?: SearchIPCHandlers;
 
   // Health monitoring
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: ReturnType<typeof setTimeout>;
   private startTime = Date.now();
   private totalRequests = 0;
   private totalResponseTime = 0;
@@ -115,11 +116,14 @@ export class SearchBackendService {
       this.status = 'error';
       console.error('❌ Failed to initialize Search Backend Service:', error);
       await this.cleanup();
+
+      // Proper error handling for unknown type
+      const errorMessage = error instanceof Error ? error.message : String(error);
       throw new AppError(
         'Backend initialization failed',
         'BACKEND_INIT_ERROR',
         500,
-        { originalError: error.message }
+        { originalError: errorMessage }
       );
     }
   }
@@ -182,17 +186,17 @@ export class SearchBackendService {
     try {
       if (this.database) {
         this.database.prepare('SELECT 1').get();
-        details.database = {
+        details['database'] = {
           status: 'healthy',
           responseTime: Date.now() - dbStart
         };
       } else {
-        details.database = { status: 'unavailable', message: 'Database not initialized' };
+        details['database'] = { status: 'unavailable', message: 'Database not initialized' };
       }
     } catch (error: any) {
-      details.database = {
+      details['database'] = {
         status: 'unhealthy',
-        message: error.message,
+        message: (error as Error).message,
         responseTime: Date.now() - dbStart
       };
     }
@@ -202,17 +206,17 @@ export class SearchBackendService {
     try {
       if (this.cache) {
         const stats = this.cache.getStats();
-        details.cache = {
+        details['cache'] = {
           status: stats.overall.errorRate < 0.1 ? 'healthy' : 'degraded',
           responseTime: Date.now() - cacheStart
         };
       } else {
-        details.cache = { status: 'unavailable', message: 'Cache not initialized' };
+        details['cache'] = { status: 'unavailable', message: 'Cache not initialized' };
       }
     } catch (error: any) {
-      details.cache = {
+      details['cache'] = {
         status: 'unhealthy',
-        message: error.message,
+        message: (error as Error).message,
         responseTime: Date.now() - cacheStart
       };
     }
@@ -226,19 +230,21 @@ export class SearchBackendService {
           query: 'test',
           limit: 1,
           offset: 0,
+          includeArchived: false,
+          fuzzyThreshold: 0.8,
           useAI: false
         });
-        details.search = {
+        details['search'] = {
           status: 'healthy',
           responseTime: Date.now() - searchStart
         };
       } else {
-        details.search = { status: 'unavailable', message: 'Search engine not initialized' };
+        details['search'] = { status: 'unavailable', message: 'Search engine not initialized' };
       }
     } catch (error: any) {
-      details.search = {
+      details['search'] = {
         status: 'unhealthy',
-        message: error.message,
+        message: (error as Error).message,
         responseTime: Date.now() - searchStart
       };
     }
@@ -316,9 +322,9 @@ export class SearchBackendService {
     console.log('Initializing database...');
 
     try {
-      this.database = new Database(this.config.database.path, {
+      this.database = new (Database as any)(this.config.database.path, {
         ...this.config.database.options,
-        verbose: process.env.NODE_ENV === 'development' ? console.log : undefined
+        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined
       });
 
       // Test connection
@@ -335,17 +341,21 @@ export class SearchBackendService {
     console.log('Initializing multi-layer cache...');
 
     try {
-      this.cache = new MultiLayerCache(this.config.cache);
+      // Import the correct MultiLayerCache class from the cache directory
+      const { MultiLayerCache: MLCache } = require('./cache/MultiLayerCache');
+      this.cache = new MLCache(this.config.cache);
 
       // Test cache functionality
-      await this.cache.set('test', 'value', 60);
-      const testValue = await this.cache.get('test');
+      if (this.cache) {
+        await this.cache.set('test', 'value', 60);
+        const testValue = await this.cache.get('test');
 
-      if (testValue !== 'value') {
-        throw new Error('Cache test failed');
+        if (testValue !== 'value') {
+          throw new Error('Cache test failed');
+        }
+
+        await this.cache.delete('test');
       }
-
-      await this.cache.delete('test');
       console.log('✅ Multi-layer cache initialized');
 
     } catch (error) {
@@ -436,7 +446,7 @@ export class SearchBackendService {
         this.historyService,
         this.autocompleteService,
         this.metricsCollector!,
-        this.cache
+        this.cache!  // Non-null assertion since we check above
       );
 
       console.log('✅ IPC handlers initialized');
@@ -485,7 +495,10 @@ export class SearchBackendService {
     }
 
     if (this.cache) {
-      cleanupPromises.push(this.cache.close());
+      // Check if close method exists before calling
+      if ('close' in this.cache && typeof this.cache.close === 'function') {
+        cleanupPromises.push(this.cache.close());
+      }
     }
 
     if (this.database) {
@@ -535,7 +548,16 @@ export class SearchBackendService {
   /**
    * Get service instances for external use
    */
-  getServices() {
+  getServices(): {
+    database?: any;
+    cache?: any;
+    searchEngine?: any;
+    searchApiService?: SearchApiService;
+    historyService?: SearchHistoryService;
+    autocompleteService?: AutocompleteService;
+    metricsCollector?: SearchMetricsCollector;
+    ipcHandlers?: any;
+  } {
     return {
       database: this.database,
       cache: this.cache,
@@ -569,7 +591,7 @@ export function createSearchBackend(config?: Partial<SearchBackendConfig>): Sear
     database: {
       path: './data/search.db',
       options: {
-        verbose: process.env.NODE_ENV === 'development' ? console.log : undefined
+        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined
       }
     },
     cache: {
@@ -609,7 +631,7 @@ export function createSearchBackend(config?: Partial<SearchBackendConfig>): Sear
       maxResults: 100,
       defaultTimeout: 5000,
       enableAI: true,
-      geminiApiKey: process.env.GEMINI_API_KEY
+      geminiApiKey: process.env['GEMINI_API_KEY']
     },
     performance: {
       enableMetrics: true,

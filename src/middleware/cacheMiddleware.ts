@@ -157,7 +157,7 @@ export class CacheMiddleware {
               } catch (error) {
                 console.error('Cache invalidation error:', error);
               }
-            }.bind(this));
+            });
           }
 
           return originalSend.call(this, data);
@@ -463,7 +463,7 @@ export class CacheMiddleware {
           } catch (error) {
             console.error('Failed to cache response:', error);
           }
-        }.bind(this));
+        });
       }
 
       return originalJson.call(this, data);
@@ -491,7 +491,7 @@ export class CacheMiddleware {
           } catch (error) {
             console.error('Failed to cache response:', error);
           }
-        }.bind(this));
+        });
       }
 
       return originalSend.call(this, data);

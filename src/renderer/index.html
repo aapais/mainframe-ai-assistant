@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accenture Mainframe AI Assistant</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
     <!-- Accenture Brand Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,5 +16,16 @@
 <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
+    <script>
+        // CSP-friendly error handling
+        window.addEventListener('error', function(event) {
+            console.error('Error loading application:', event.error);
+        });
+
+        // Module loading error handler
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Module loading failed:', event.reason);
+        });
+    </script>
 </body>
 </html>

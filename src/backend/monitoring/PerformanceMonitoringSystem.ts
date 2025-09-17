@@ -6,6 +6,9 @@
 import { EventEmitter } from 'events';
 import { IBaseService, ServiceContext, ServiceHealth } from '../core/interfaces/ServiceInterfaces';
 
+// Node.js timer types
+type NodeTimer = ReturnType<typeof setInterval>;
+
 // ==============================
 // Core Monitoring Interfaces
 // ==============================
@@ -69,8 +72,8 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
   private readonly collectors: Map<string, MetricCollector> = new Map();
   private readonly alertRules: Map<string, AlertRule> = new Map();
   private context!: ServiceContext;
-  private metricsCollectionInterval?: NodeJS.Timeout;
-  private healthCheckInterval?: NodeJS.Timeout;
+  private metricsCollectionInterval?: NodeTimer;
+  private healthCheckInterval?: NodeTimer;
 
   constructor(config: MonitoringConfig) {
     super();

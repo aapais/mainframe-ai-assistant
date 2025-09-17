@@ -5,10 +5,10 @@
 
 import { Request, Response } from 'express';
 import { SearchApiService } from './SearchApiService';
-import { MultiLayerCache } from '../cache/MultiLayerCache';
+import { MultiLayerCacheSystem as MultiLayerCache } from '../../cache/MultiLayerCacheSystem';
 import { SearchMetricsCollector } from './SearchMetricsCollector';
-import { RateLimiter } from '../middleware/RateLimiter';
-import { RequestValidator } from '../middleware/RequestValidator';
+import { RateLimiter } from '../../middleware/RateLimiter';
+import { RequestValidator } from '../../middleware/RequestValidator';
 import { AppError } from '../../core/errors/AppError';
 
 export interface SearchRequest extends Request {
@@ -117,12 +117,11 @@ export class SearchApiController {
       let suggestions = await this.cache.get(cacheKey);
 
       if (!suggestions) {
-        // Generate suggestions
-        suggestions = await this.searchService.getAutocompleteSuggestions({
-          query,
-          limit: maxResults,
-          category,
-          userId: req.headers['x-user-id'] as string
+        // Generate suggestions (assuming SearchApiService has this method)
+        suggestions = await this.searchService.getAutocompleteSuggestions(query, maxResults, {
+          userId: req.headers['x-user-id'] as string,
+          currentQuery: query,
+          preferredCategories: category ? [category] : undefined
         });
 
         // Cache for 5 minutes with L0 priority (memory cache)

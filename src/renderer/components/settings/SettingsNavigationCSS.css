@@ -1,0 +1,541 @@
+/**
+ * Settings Navigation CSS
+ * Styles for the settings navigation system with Accenture branding
+ */
+
+/* Main navigation container */
+.settings-navigation {
+  @apply h-full flex flex-col bg-white border-r border-gray-200;
+  min-width: 280px;
+  max-width: 320px;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mobile responsive navigation */
+.settings-navigation.mobile {
+  @apply fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out;
+  width: min(320px, 100vw);
+  overflow-x: hidden;
+}
+
+.settings-navigation.mobile.closed {
+  @apply -translate-x-full;
+}
+
+/* Navigation header */
+.navigation-header {
+  @apply flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r;
+  background: linear-gradient(135deg, #A100FF 0%, #7F39FB 100%);
+}
+
+.navigation-header h1 {
+  @apply text-lg font-semibold text-white;
+}
+
+.navigation-header .close-button {
+  @apply p-2 rounded-md text-white hover:bg-white/20 transition-colors;
+}
+
+/* Mobile header */
+.mobile-header {
+  @apply sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm;
+}
+
+.mobile-header h1 {
+  @apply text-lg font-semibold;
+  color: #A100FF;
+}
+
+/* Breadcrumb navigation */
+.breadcrumb-navigation {
+  @apply sticky top-0 z-10 bg-gray-50 border-b border-gray-200 shadow-sm;
+}
+
+.breadcrumb-navigation button {
+  @apply flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-200 transition-colors text-sm;
+}
+
+.breadcrumb-navigation button:disabled {
+  @apply cursor-default;
+  color: #A100FF;
+  font-weight: 500;
+}
+
+.breadcrumb-navigation button:not(:disabled) {
+  @apply text-gray-600 hover:text-gray-800;
+}
+
+/* Search section */
+.search-section {
+  @apply sticky top-0 z-10 bg-white border-b border-gray-100;
+}
+
+.search-section .search-input {
+  @apply w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-purple-500 focus:border-transparent;
+  @apply placeholder-gray-400 text-sm;
+}
+
+.search-section .search-icon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+}
+
+.search-section .clear-button {
+  @apply absolute right-3 top-1/2 transform -translate-y-1/2;
+  @apply text-gray-400 hover:text-gray-600 transition-colors;
+}
+
+/* Navigation menu */
+.navigation-menu {
+  @apply flex-1 overflow-y-auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #A100FF transparent;
+}
+
+.navigation-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navigation-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navigation-menu::-webkit-scrollbar-thumb {
+  background-color: #A100FF;
+  border-radius: 3px;
+}
+
+.navigation-menu::-webkit-scrollbar-thumb:hover {
+  background-color: #7F39FB;
+}
+
+/* Category navigation */
+.category-navigation {
+  @apply p-4 space-y-4;
+}
+
+.category-group {
+  @apply space-y-2;
+}
+
+.category-header {
+  @apply w-full flex items-center justify-between p-3 rounded-lg;
+  @apply hover:bg-gray-50 transition-colors cursor-pointer;
+}
+
+.category-header.expanded {
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+}
+
+.category-icon {
+  @apply flex-shrink-0 mr-3;
+}
+
+.category-info h3 {
+  @apply text-sm font-medium text-gray-900;
+}
+
+.category-info p {
+  @apply text-xs text-gray-600 mt-0.5;
+}
+
+.category-chevron {
+  @apply w-4 h-4 text-gray-400 transition-transform duration-200;
+}
+
+.category-chevron.expanded {
+  @apply transform rotate-180;
+}
+
+/* Section navigation */
+.section-list {
+  @apply ml-6 space-y-1;
+}
+
+.section-item {
+  @apply space-y-1;
+}
+
+.section-button {
+  @apply w-full text-left p-2 rounded-md transition-all duration-200;
+  @apply text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500;
+}
+
+.section-button.active {
+  background-color: #F3E8FF;
+  color: #7C3AED;
+  border: 1px solid #C4B5FD;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.section-button.disabled {
+  @apply text-gray-400 cursor-not-allowed;
+}
+
+.section-button:hover:not(.disabled):not(.active) {
+  @apply bg-gray-100;
+}
+
+.section-header {
+  @apply flex items-center justify-between;
+}
+
+.section-title {
+  @apply flex items-center space-x-2;
+}
+
+.section-icon {
+  @apply flex-shrink-0 w-4 h-4;
+}
+
+.section-name {
+  @apply text-sm font-medium;
+}
+
+.section-badge {
+  @apply text-xs px-2 py-0.5 rounded-full;
+}
+
+.section-description {
+  @apply text-xs text-gray-600 mt-1 ml-6;
+}
+
+/* Subsection navigation */
+.subsection-list {
+  @apply ml-4 mt-2 space-y-1;
+}
+
+.subsection-button {
+  @apply w-full text-left p-2 rounded-md text-sm transition-colors;
+  @apply text-gray-600 hover:bg-gray-100 hover:text-gray-800;
+  @apply focus:outline-none focus:ring-2 focus:ring-purple-500;
+}
+
+.subsection-button.active {
+  background-color: #EDE9FE;
+  color: #8B5CF6;
+}
+
+.subsection-button.disabled {
+  @apply text-gray-400 cursor-not-allowed;
+}
+
+.subsection-header {
+  @apply flex items-center justify-between;
+}
+
+.subsection-description {
+  @apply text-xs text-gray-500 mt-1;
+}
+
+/* Search results */
+.search-results {
+  @apply p-4;
+}
+
+.search-results-header {
+  @apply text-sm text-gray-600 mb-3;
+}
+
+.search-results-list {
+  @apply space-y-2;
+}
+
+.search-result-item {
+  @apply w-full text-left p-3 rounded-lg border transition-all duration-200;
+  @apply border-gray-200 hover:border-gray-300 hover:bg-gray-50;
+  @apply focus:outline-none focus:ring-2 focus:ring-purple-500;
+}
+
+.search-result-item.active {
+  @apply border-purple-200 bg-purple-50 shadow-sm;
+}
+
+.search-result-content {
+  @apply flex items-start space-x-3;
+}
+
+.search-result-icon {
+  @apply flex-shrink-0 mt-0.5;
+}
+
+.search-result-info {
+  @apply flex-1 min-w-0;
+}
+
+.search-result-header {
+  @apply flex items-center space-x-2;
+}
+
+.search-result-title {
+  @apply text-sm font-medium text-gray-900 truncate;
+}
+
+.search-result-description {
+  @apply text-xs text-gray-600 mt-1 line-clamp-2;
+}
+
+.search-result-breadcrumb {
+  @apply flex items-center space-x-2 mt-2;
+}
+
+.search-result-breadcrumb span {
+  @apply text-xs text-gray-500;
+}
+
+.search-result-separator {
+  @apply w-3 h-3 text-gray-400;
+}
+
+/* Mobile overlay */
+.mobile-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 z-40;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .settings-navigation {
+    min-width: 100vw;
+    max-width: 100vw;
+    width: 100vw;
+  }
+
+  .category-navigation {
+    @apply p-3;
+  }
+
+  .category-header {
+    @apply p-3;
+  }
+
+  .section-list {
+    @apply ml-4;
+  }
+
+  .search-section {
+    @apply p-3;
+  }
+
+  .search-section .search-input {
+    @apply text-base;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-result-content {
+    @apply space-x-2;
+  }
+
+  .search-result-info {
+    @apply space-y-1;
+  }
+
+  .category-info p {
+    @apply hidden;
+  }
+
+  .section-description {
+    @apply hidden;
+  }
+
+  .subsection-description {
+    @apply hidden;
+  }
+
+  .category-navigation {
+    @apply p-2;
+  }
+
+  .category-header {
+    @apply p-2 text-sm;
+  }
+
+  .section-button {
+    @apply text-sm;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .settings-navigation {
+    @apply bg-gray-900 border-gray-700;
+  }
+
+  .mobile-header {
+    @apply bg-gray-900 border-gray-700;
+  }
+
+  .mobile-header h1 {
+    @apply text-purple-400;
+  }
+
+  .breadcrumb-navigation {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .search-section {
+    @apply bg-gray-900 border-gray-700;
+  }
+
+  .search-section .search-input {
+    @apply bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-400;
+  }
+
+  .category-header {
+    @apply hover:bg-gray-800;
+  }
+
+  .category-header.expanded {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  .category-info h3 {
+    @apply text-gray-100;
+  }
+
+  .category-info p {
+    @apply text-gray-400;
+  }
+
+  .section-button {
+    @apply text-gray-300 hover:bg-gray-800;
+  }
+
+  .section-button.active {
+    @apply bg-purple-900 text-purple-300 border-purple-700;
+  }
+
+  .section-description {
+    @apply text-gray-400;
+  }
+
+  .subsection-button {
+    @apply text-gray-400 hover:bg-gray-800 hover:text-gray-300;
+  }
+
+  .subsection-button.active {
+    @apply bg-purple-900 text-purple-300;
+  }
+
+  .search-result-item {
+    @apply border-gray-700 hover:border-gray-600 hover:bg-gray-800;
+  }
+
+  .search-result-item.active {
+    @apply border-purple-700 bg-purple-900;
+  }
+
+  .search-result-title {
+    @apply text-gray-100;
+  }
+
+  .search-result-description {
+    @apply text-gray-400;
+  }
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.slide-out-left {
+  animation: slideOutLeft 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* Focus and accessibility styles */
+.settings-navigation button:focus {
+  @apply outline-none ring-2 ring-purple-500 ring-offset-2;
+}
+
+.settings-navigation [role="menuitem"]:focus {
+  @apply outline-none ring-2 ring-purple-500 ring-offset-2;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .section-button.active {
+    @apply border-2 border-purple-600;
+  }
+
+  .search-result-item.active {
+    @apply border-2 border-purple-600;
+  }
+
+  .subsection-button.active {
+    @apply border border-purple-600;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .settings-navigation * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Additional responsive utilities */
+.settings-responsive-container {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.settings-responsive-content {
+  overflow-x: hidden;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Ensure no elements cause horizontal overflow */
+@media (max-width: 1024px) {
+  .settings-navigation,
+  .settings-navigation * {
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Print styles */
+@media print {
+  .settings-navigation {
+    @apply hidden;
+  }
+}

@@ -102,8 +102,8 @@ export class OptimizedIPCHandler {
 
   // Performance tracking
   private activeRequests = new Map<string, number>();
-  private healthCheckInterval?: NodeJS.Timeout;
-  private performanceReportInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: ReturnType<typeof setTimeout>;
+  private performanceReportInterval?: ReturnType<typeof setTimeout>;
 
   constructor(
     databaseManager: DatabaseManager,

@@ -1,0 +1,141 @@
+{
+  "version": "1.0.0",
+  "description": "Performance quality gates configuration",
+  "gates": {
+    "response_time": {
+      "enabled": true,
+      "thresholds": {
+        "p50": {
+          "max_ms": 500,
+          "regression_threshold": 20
+        },
+        "p95": {
+          "max_ms": 2000,
+          "regression_threshold": 15
+        },
+        "p99": {
+          "max_ms": 5000,
+          "regression_threshold": 10
+        }
+      },
+      "weight": 0.3,
+      "critical": true
+    },
+    "throughput": {
+      "enabled": true,
+      "thresholds": {
+        "requests_per_second": {
+          "min": 100,
+          "regression_threshold": 10
+        },
+        "concurrent_users": {
+          "min": 50,
+          "regression_threshold": 15
+        }
+      },
+      "weight": 0.25,
+      "critical": true
+    },
+    "resource_usage": {
+      "enabled": true,
+      "thresholds": {
+        "cpu_usage": {
+          "max_percent": 80,
+          "regression_threshold": 20
+        },
+        "memory_usage": {
+          "max_mb": 512,
+          "regression_threshold": 15
+        },
+        "memory_leaks": {
+          "max_growth_mb": 50,
+          "regression_threshold": 0
+        }
+      },
+      "weight": 0.2,
+      "critical": false
+    },
+    "error_rates": {
+      "enabled": true,
+      "thresholds": {
+        "error_rate": {
+          "max_percent": 1,
+          "regression_threshold": 0
+        },
+        "timeout_rate": {
+          "max_percent": 0.5,
+          "regression_threshold": 0
+        }
+      },
+      "weight": 0.15,
+      "critical": true
+    },
+    "bundle_size": {
+      "enabled": true,
+      "thresholds": {
+        "main_bundle": {
+          "max_kb": 1024,
+          "regression_threshold": 5
+        },
+        "vendor_bundle": {
+          "max_kb": 2048,
+          "regression_threshold": 10
+        },
+        "total_size": {
+          "max_kb": 4096,
+          "regression_threshold": 8
+        }
+      },
+      "weight": 0.1,
+      "critical": false
+    }
+  },
+  "environments": {
+    "development": {
+      "multipliers": {
+        "response_time": 1.5,
+        "throughput": 0.8,
+        "resource_usage": 1.2
+      }
+    },
+    "staging": {
+      "multipliers": {
+        "response_time": 1.2,
+        "throughput": 0.9,
+        "resource_usage": 1.1
+      }
+    },
+    "production": {
+      "multipliers": {
+        "response_time": 1.0,
+        "throughput": 1.0,
+        "resource_usage": 1.0
+      }
+    }
+  },
+  "notifications": {
+    "regression_threshold": 5,
+    "critical_failure_threshold": 2,
+    "channels": {
+      "slack": {
+        "enabled": true,
+        "channel": "#performance-alerts",
+        "mention_on_critical": true
+      },
+      "teams": {
+        "enabled": true,
+        "channel": "Performance Monitoring"
+      },
+      "email": {
+        "enabled": false,
+        "recipients": ["devops@company.com"]
+      }
+    }
+  },
+  "reporting": {
+    "format": "html",
+    "include_charts": true,
+    "include_recommendations": true,
+    "retention_days": 30
+  }
+}

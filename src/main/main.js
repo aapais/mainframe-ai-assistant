@@ -1,8 +1,32 @@
 const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
-// Import API Settings Handler
-const APISettingsHandler = require('./ipc/handlers/APISettingsHandler.js');
+// Error logging
+const logFile = path.join(__dirname, '../../electron-error.log');
+const logError = (msg) => {
+  const timestamp = new Date().toISOString();
+  const logMsg = `[${timestamp}] ${msg}\n`;
+  console.error(logMsg);
+  try {
+    fs.appendFileSync(logFile, logMsg);
+  } catch (e) {
+    console.error('Failed to write to log file:', e);
+  }
+};
+
+// Log startup
+logError('Starting Electron application...');
+
+// Import API Settings Handler with error handling
+let APISettingsHandler;
+try {
+  const handlerModule = require('./ipc/handlers/APISettingsHandler.js');
+  APISettingsHandler = handlerModule.default || handlerModule.APISettingsHandler || handlerModule;
+  logError('APISettingsHandler loaded successfully');
+} catch (error) {
+  logError(`Failed to load APISettingsHandler: ${error.message}\n${error.stack}`);
+}
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -11,9 +35,12 @@ let apiSettingsHandler;
 // Security: Disable node integration in renderer
 const isDev = process.env.NODE_ENV === 'development';
 
-function createWindow() {
-  // Create the browser window with Accenture branding
-  mainWindow = new BrowserWindow({
+async function createWindow() {
+  logError('Creating main window...');
+
+  try {
+    // Create the browser window with Accenture branding
+    mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
@@ -41,9 +68,199 @@ function createWindow() {
     closable: true
   });
 
-  // Load the app - Production path
-  const indexPath = path.join(__dirname, '../../index.html');
-  mainWindow.loadFile(indexPath);
+  // Load the app - Enhanced loading logic with multiple fallbacks
+  const loadApp = async () => {
+    const possiblePaths = [
+      // First priority: Built React app
+      path.join(__dirname, '../../dist/renderer/index.html'),
+      // Second priority: Development build
+      path.join(__dirname, '../../dist/index.html'),
+      // Third priority: Root index.html
+      path.join(__dirname, '../../index.html'),
+      // Fourth priority: Fallback HTML in main directory
+      path.join(__dirname, 'fallback.html')
+    ];
+
+    let indexPath = null;
+    let appType = 'unknown';
+
+    for (const testPath of possiblePaths) {
+      if (fs.existsSync(testPath)) {
+        indexPath = testPath;
+        if (testPath.includes('dist/renderer')) {
+          appType = 'React Production Build';
+        } else if (testPath.includes('dist/index.html')) {
+          appType = 'Development Build';
+        } else if (testPath.includes('index.html')) {
+          appType = 'Basic HTML';
+        } else {
+          appType = 'Fallback HTML';
+        }
+        break;
+      }
+    }
+
+    if (!indexPath) {
+      logError('CRITICAL: No index.html found anywhere! Creating emergency fallback...');
+      await createEmergencyFallback();
+      indexPath = path.join(__dirname, 'emergency.html');
+      appType = 'Emergency Fallback';
+    }
+
+    logError(`Loading ${appType} from: ${indexPath}`);
+
+    try {
+      await mainWindow.loadFile(indexPath);
+      logError(`Successfully loaded ${appType}`);
+
+      // Send app type info to renderer if it's ready
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('app-loaded', { type: appType, path: indexPath });
+        }
+      }, 1000);
+    } catch (error) {
+      logError(`Failed to load ${appType}: ${error.message}`);
+      if (appType !== 'Emergency Fallback') {
+        logError('Attempting emergency fallback...');
+        await createEmergencyFallback();
+        await mainWindow.loadFile(path.join(__dirname, 'emergency.html'));
+      } else {
+        throw new Error('All loading attempts failed');
+      }
+    }
+  };
+
+  // Create emergency fallback HTML
+  const createEmergencyFallback = async () => {
+    const emergencyHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accenture Mainframe AI Assistant - Loading Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #A100FF, #6D1B7B);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: #A100FF;
+            font-weight: bold;
+        }
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .button {
+            background: #A100FF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background: #8A00D4;
+        }
+        ul {
+            text-align: left;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">A</div>
+        <h1>Accenture Mainframe AI Assistant</h1>
+
+        <div class="error-message">
+            <h3>⚠️ Application Loading Error</h3>
+            <p>The React application failed to load. The system is running in emergency fallback mode.</p>
+        </div>
+
+        <div class="instructions">
+            <h3>🔧 Troubleshooting Steps:</h3>
+            <ul>
+                <li><strong>Build the app:</strong> Run <code>npm run build</code> in the project directory</li>
+                <li><strong>Check React app:</strong> Ensure <code>dist/renderer/index.html</code> exists</li>
+                <li><strong>Install dependencies:</strong> Run <code>npm install</code> if needed</li>
+                <li><strong>Restart application:</strong> Close and reopen the app after building</li>
+            </ul>
+        </div>
+
+        <button class="button" onclick="location.reload()">🔄 Retry Loading</button>
+        <button class="button" onclick="require('electron').ipcRenderer.invoke('app-quit')">❌ Exit App</button>
+
+        <div style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
+            <p>Version: 1.0.0 | © 2024 Accenture. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        // Show build instructions in console
+        console.log('=== ACCENTURE MAINFRAME AI ASSISTANT ===');
+        console.log('Build Instructions:');
+        console.log('1. npm install');
+        console.log('2. npm run build');
+        console.log('3. Restart application');
+        console.log('=====================================');
+    </script>
+</body>
+</html>`;
+
+    try {
+      const emergencyPath = path.join(__dirname, 'emergency.html');
+      fs.writeFileSync(emergencyPath, emergencyHtml);
+      logError('Emergency fallback HTML created');
+    } catch (error) {
+      logError(`Failed to create emergency fallback: ${error.message}`);
+    }
+  };
+
+  await loadApp();
 
   // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
@@ -80,15 +297,34 @@ function createWindow() {
     event.preventDefault();
     shell.openExternal(navigationUrl);
   });
+
+  logError('Main window created successfully');
+  } catch (error) {
+    logError(`Failed to create window: ${error.message}\n${error.stack}`);
+    throw error;
+  }
 }
 
 // App event handlers
 app.whenReady().then(() => {
-  createWindow();
-  createApplicationMenu();
+  logError('App ready, creating window...');
 
-  // Initialize API Settings Handler
-  apiSettingsHandler = new APISettingsHandler();
+  try {
+    createWindow();
+    createApplicationMenu();
+
+    // Initialize API Settings Handler
+    if (APISettingsHandler) {
+      try {
+        apiSettingsHandler = new APISettingsHandler();
+        logError('API Settings Handler initialized');
+      } catch (error) {
+        logError(`Failed to initialize API Settings Handler: ${error.message}`);
+      }
+    }
+  } catch (error) {
+    logError(`Failed in app.whenReady: ${error.message}\n${error.stack}`);
+  }
 
   // macOS specific: Re-create window when dock icon is clicked
   app.on('activate', () => {
@@ -101,8 +337,12 @@ app.whenReady().then(() => {
 // Quit when all windows are closed
 app.on('window-all-closed', () => {
   // Cleanup API Settings Handler
-  if (apiSettingsHandler) {
-    apiSettingsHandler.unregisterHandlers();
+  if (apiSettingsHandler && typeof apiSettingsHandler.unregisterHandlers === 'function') {
+    try {
+      apiSettingsHandler.unregisterHandlers();
+    } catch (error) {
+      logError(`Failed to cleanup API Settings Handler: ${error.message}`);
+    }
   }
 
   // On macOS, keep app running even when all windows are closed
@@ -375,7 +615,25 @@ ipcMain.handle('check-for-updates', () => {
 
 // Graceful shutdown
 app.on('before-quit', (event) => {
+  logError('App is quitting...');
   // Perform cleanup here if needed
+});
+
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  logError(`Uncaught Exception: ${error.message}\n${error.stack}`);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logError(`Unhandled Rejection at: ${promise}\nReason: ${reason}`);
+});
+
+app.on('render-process-gone', (event, webContents, details) => {
+  logError(`Render process gone: ${JSON.stringify(details)}`);
+});
+
+app.on('child-process-gone', (event, details) => {
+  logError(`Child process gone: ${JSON.stringify(details)}`);
 });
 
 // Export for testing

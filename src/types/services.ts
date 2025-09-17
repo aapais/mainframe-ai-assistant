@@ -5,7 +5,7 @@
 
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
-import { KBEntry, KBEntryInput, KBEntryUpdate, KBCategory } from './index';
+import type { KBEntry, KBEntryInput, KBEntryUpdate, KBCategory } from './index';
 
 // ========================
 // Service Configuration

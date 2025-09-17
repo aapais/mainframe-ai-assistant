@@ -141,7 +141,7 @@ export class PerformanceProfiler {
   
   private activeSessions: Map<string, ProfileSession> = new Map();
   private performanceObserver?: PerformanceObserver;
-  private memoryMonitor?: NodeJS.Timeout;
+  private memoryMonitor?: ReturnType<typeof setTimeout>;
   private cpuBaseline: { user: number; system: number } = { user: 0, system: 0 };
   
   constructor(

@@ -85,7 +85,7 @@ export function useDifferentialState<T = any>(
 
   // Refs for stable references
   const subscriptionRef = useRef<string | null>(null);
-  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const syncIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const metricsRef = useRef<DifferentialStateMetrics>(metrics);
 
   // Update metrics ref when metrics change

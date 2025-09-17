@@ -83,7 +83,7 @@ export class SearchHistoryService {
 
   // Performance optimization: batch processing
   private pendingEntries: RecordSearchParams[] = [];
-  private batchTimeout?: NodeJS.Timeout;
+  private batchTimeout?: ReturnType<typeof setTimeout>;
   private readonly BATCH_SIZE = 100;
   private readonly BATCH_TIMEOUT_MS = 5000;
 

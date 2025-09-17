@@ -1,0 +1,313 @@
+version: '3.8'
+
+services:
+  # Redis Primary - Main cache storage
+  redis-primary:
+    image: redis:7.2-alpine
+    container_name: mainframe-redis-primary
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+      --timeout 300
+      --tcp-keepalive 60
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+      - ./deployment/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    sysctls:
+      - net.core.somaxconn=65535
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.5'
+        reservations:
+          memory: 256m
+          cpus: '0.25'
+
+  # Redis Sentinel - High availability monitoring
+  redis-sentinel:
+    image: redis:7.2-alpine
+    container_name: mainframe-redis-sentinel
+    restart: unless-stopped
+    depends_on:
+      redis-primary:
+        condition: service_healthy
+    environment:
+      - REDIS_MASTER_NAME=${REDIS_MASTER_NAME:-mymaster}
+      - REDIS_MASTER_HOST=redis-primary
+      - REDIS_MASTER_PORT=6379
+      - REDIS_SENTINEL_PORT=${REDIS_SENTINEL_PORT:-26379}
+      - REDIS_SENTINEL_QUORUM=${REDIS_SENTINEL_QUORUM:-1}
+      - REDIS_SENTINEL_DOWN_AFTER=${REDIS_SENTINEL_DOWN_AFTER:-5000}
+      - REDIS_SENTINEL_PARALLEL_SYNCS=${REDIS_SENTINEL_PARALLEL_SYNCS:-1}
+      - REDIS_SENTINEL_FAILOVER_TIMEOUT=${REDIS_SENTINEL_FAILOVER_TIMEOUT:-10000}
+    command: >
+      sh -c "
+        echo 'port ${REDIS_SENTINEL_PORT:-26379}' > /tmp/sentinel.conf &&
+        echo 'sentinel monitor ${REDIS_MASTER_NAME:-mymaster} redis-primary 6379 ${REDIS_SENTINEL_QUORUM:-1}' >> /tmp/sentinel.conf &&
+        echo 'sentinel down-after-milliseconds ${REDIS_MASTER_NAME:-mymaster} ${REDIS_SENTINEL_DOWN_AFTER:-5000}' >> /tmp/sentinel.conf &&
+        echo 'sentinel parallel-syncs ${REDIS_MASTER_NAME:-mymaster} ${REDIS_SENTINEL_PARALLEL_SYNCS:-1}' >> /tmp/sentinel.conf &&
+        echo 'sentinel failover-timeout ${REDIS_MASTER_NAME:-mymaster} ${REDIS_SENTINEL_FAILOVER_TIMEOUT:-10000}' >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      "
+    ports:
+      - "${REDIS_SENTINEL_PORT:-26379}:${REDIS_SENTINEL_PORT:-26379}"
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "${REDIS_SENTINEL_PORT:-26379}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: '0.2'
+
+  # Redis Exporter - Metrics for monitoring
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: mainframe-redis-exporter
+    restart: unless-stopped
+    depends_on:
+      redis-primary:
+        condition: service_healthy
+    environment:
+      - REDIS_ADDR=redis://redis-primary:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_EXPORTER_PORT:-9121}:9121"
+    networks:
+      - cache_network
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+          cpus: '0.1'
+
+  # Prometheus - Metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mainframe-prometheus
+    restart: unless-stopped
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./deployment/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - cache_network
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.5'
+
+  # Grafana - Metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mainframe-grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployment/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deployment/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - cache_network
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.3'
+
+  # Cache Manager Service - Application interface
+  cache-manager:
+    build:
+      context: .
+      dockerfile: ./deployment/Dockerfile.cache
+    container_name: mainframe-cache-manager
+    restart: unless-stopped
+    depends_on:
+      redis-primary:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - REDIS_HOST=redis-primary
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=${REDIS_DB:-0}
+      - REDIS_KEY_PREFIX=${REDIS_KEY_PREFIX:-search:cache:}
+      - REDIS_MAX_RETRIES=${REDIS_MAX_RETRIES:-3}
+      - MEMORY_CACHE_SIZE=${MEMORY_CACHE_SIZE:-100}
+      - MEMORY_CACHE_TTL=${MEMORY_CACHE_TTL:-300000}
+      - CACHE_METRICS_ENABLED=${CACHE_METRICS_ENABLED:-true}
+      - ENABLE_MEMORY_FALLBACK=${ENABLE_MEMORY_FALLBACK:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "${CACHE_MANAGER_PORT:-8080}:8080"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.0'
+        reservations:
+          memory: 256m
+          cpus: '0.5'
+
+networks:
+  cache_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/redis
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/prometheus
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/grafana
+
+# Development override
+# Use: docker-compose -f docker-compose.cache.yml -f docker-compose.cache.dev.yml up
+---
+# docker-compose.cache.dev.yml
+version: '3.8'
+
+services:
+  redis-primary:
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=
+    command: >
+      redis-server
+      --appendonly no
+      --save ""
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+
+  cache-manager:
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - CACHE_METRICS_ENABLED=true
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+# Production optimizations
+# Use: docker-compose -f docker-compose.cache.yml -f docker-compose.cache.prod.yml up
+---
+# docker-compose.cache.prod.yml
+version: '3.8'
+
+services:
+  redis-primary:
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: '1.0'
+        reservations:
+          memory: 512m
+          cpus: '0.5'
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  cache-manager:
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1g
+          cpus: '2.0'
+        reservations:
+          memory: 512m
+          cpus: '1.0'
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=warn
+
+  # Load balancer for cache manager replicas
+  nginx:
+    image: nginx:alpine
+    container_name: mainframe-cache-lb
+    restart: unless-stopped
+    ports:
+      - "${CACHE_LB_PORT:-80}:80"
+    volumes:
+      - ./deployment/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - cache-manager
+    networks:
+      - cache_network

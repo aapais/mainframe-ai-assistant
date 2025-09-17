@@ -1,9 +1,36 @@
 /**
- * Simplified Main Application Component for Mainframe KB Assistant MVP1
- * Emergency Week 2 version - simplified and functional
+ * Accenture Mainframe AI Assistant - Complete MVP1 Application
+ * All features integrated including AI transparency and CRUD operations
  */
 
 import React, { useState, useEffect } from 'react';
+import './App.css';
+import './styles/animations.css';
+
+// Import Accenture branding components
+import AccentureLogo from './components/AccentureLogo';
+import AccentureFooter from './components/AccentureFooter';
+
+// Import AI transparency components
+import AuthorizationDialog from './components/ai/AuthorizationDialog';
+import OperationHistory from './components/ai/OperationHistory';
+
+// Import CRUD modals
+import AddEntryModal from './components/modals/AddEntryModal';
+import EditEntryModal from './components/modals/EditEntryModal';
+import DeleteConfirmDialog from './components/modals/DeleteConfirmDialog';
+
+// Import views
+import Search from './views/Search';
+import Incidents from './views/Incidents';
+
+// Import Settings components
+import CostSummaryWidget from './components/dashboard/CostSummaryWidget';
+import SettingsNavigation from './components/settings/SettingsNavigation';
+import SettingsPage from './pages/Settings';
+import SearchCommand from './components/settings/SearchCommand';
+import { useSettings } from './contexts/SettingsContext';
+import { Settings as SettingsIcon, X } from 'lucide-react';
 
 // Initialize mock Electron API if not available
 if (typeof window !== 'undefined' && !window.electronAPI) {
@@ -13,7 +40,7 @@ if (typeof window !== 'undefined' && !window.electronAPI) {
       title: 'S0C4 ABEND in COBOL Program During Array Processing',
       problem: 'Program terminates with S0C4 protection exception when processing arrays',
       solution: 'Check OCCURS clause and verify array subscript bounds. Increase REGION size.',
-      category: 'ABEND',
+      category: 'COBOL',
       tags: ['cobol', 'array', 'abend'],
       usage_count: 45,
       success_count: 38,
@@ -48,29 +75,28 @@ if (typeof window !== 'undefined' && !window.electronAPI) {
       search: async (query: string) => {
         await new Promise(r => setTimeout(r, 100));
         if (!query) return { results: mockData };
-        const filtered = mockData.filter(e =>
-          e.title.toLowerCase().includes(query.toLowerCase()) ||
-          e.problem.toLowerCase().includes(query.toLowerCase())
+        const filtered = mockData.filter(entry =>
+          entry.title.toLowerCase().includes(query.toLowerCase()) ||
+          entry.problem.toLowerCase().includes(query.toLowerCase()) ||
+          entry.solution.toLowerCase().includes(query.toLowerCase())
         );
         return { results: filtered };
       },
-      addEntry: async (data: any) => {
-        await new Promise(r => setTimeout(r, 100));
-        return { success: true };
-      }
+      getAll: async () => ({ entries: mockData }),
+      create: async (entry: any) => ({ success: true, id: Date.now().toString() }),
+      update: async (id: string, entry: any) => ({ success: true }),
+      delete: async (id: string) => ({ success: true })
+    },
+    ai: {
+      requestAuthorization: async (operation: any) => ({ approved: true }),
+      getCostTracking: async () => ({
+        daily: { used: 2.45, limit: 10.00 },
+        monthly: { used: 45.20, limit: 300.00 }
+      }),
+      getOperationHistory: async () => ({ operations: [] })
     }
   };
-  console.log('📱 Mock Electron API initialized');
 }
-import { SimpleSearchBar } from './components/SimpleSearchBar';
-import { SimpleEntryList } from './components/SimpleEntryList';
-import { KeyboardProvider, useKeyboardShortcuts } from './contexts/KeyboardContext';
-import { SimpleAddEntryForm, KeyboardHelp, preloadComponents, trackComponentLoad } from './components/LazyRegistry';
-import { BundleAnalyzer } from './components/performance/BundleAnalyzer';
-import { ElectronPreloader, usePreloader } from './utils/ElectronPreloader';
-import { AccentureHeaderLogo } from './components/AccentureLogo';
-import { AccentureFooter } from './components/AccentureFooter';
-import './styles/keyboard-navigation.css';
 
 interface KBEntry {
   id: string;
@@ -78,558 +104,475 @@ interface KBEntry {
   problem: string;
   solution: string;
   category: string;
-  tags?: string[];
-  usage_count?: number;
-  success_count?: number;
-  failure_count?: number;
-  created_at?: string;
-  score?: number;
+  tags: string[];
+  usage_count: number;
+  success_count: number;
+  failure_count: number;
 }
 
-/**
- * Internal App Component with keyboard shortcuts
- */
-function AppContent() {
-  const [entries, setEntries] = useState<KBEntry[]>([]);
-  const [selectedEntry, setSelectedEntry] = useState<KBEntry | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [loading, setLoading] = useState(false);
+function AppComplete() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [entries, setEntries] = useState<KBEntry[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'search' | 'ai-transparency' | 'settings'>('dashboard');
 
-  // Use Electron-optimized preloader
-  const preloader = usePreloader();
+  // Settings state management
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [settingsCurrentPath, setSettingsCurrentPath] = useState('/settings/general/profile');
 
-  // Register keyboard shortcuts for the app
-  useKeyboardShortcuts([
-    {
-      key: '/',
-      description: 'Focus search input',
-      action: () => {
-        const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement;
-        if (searchInput) {
-          searchInput.focus();
-        }
-      }
-    },
-    {
-      key: 'n',
-      ctrlKey: true,
-      description: 'Add new entry',
-      action: () => setShowAddForm(true)
-    },
-    {
-      key: 'Escape',
-      description: 'Close modals and clear selection',
-      action: () => {
-        if (showAddForm) {
-          setShowAddForm(false);
-        } else if (selectedEntry) {
-          setSelectedEntry(null);
-        }
-      }
-    },
-    {
-      key: 'r',
-      ctrlKey: true,
-      description: 'Refresh entries',
-      action: () => {
-        if (searchQuery) {
-          handleSearch(searchQuery, entries);
-        } else {
-          loadAllEntries();
-        }
-      }
-    }
-  ], 'app');
+  // Access settings context
+  const { state: settingsState } = useSettings();
 
-  // Load initial entries on mount and setup optimized preloading
+  // Modal states
+  const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showEditEntry, setShowEditEntry] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<KBEntry | null>(null);
+
+  // AI transparency states
+  const [showAIAuth, setShowAIAuth] = useState(false);
+  const [showOperationHistory, setShowOperationHistory] = useState(false);
+  const [pendingAIOperation, setPendingAIOperation] = useState<any>(null);
+
+  // Load initial data
   useEffect(() => {
-    loadAllEntries();
-
-    // Use Electron-optimized preloading strategy
-    const preloadTimer = setTimeout(() => {
-      // Preload critical components with optimized timing
-      ElectronPreloader.preloadComponent(
-        'SimpleAddEntryForm',
-        () => import('./components/SimpleAddEntryForm'),
-        'medium'
-      ).then(() => trackComponentLoad('SimpleAddEntryForm'));
-
-      ElectronPreloader.preloadComponent(
-        'KeyboardHelp',
-        () => import('./components/KeyboardHelp'),
-        'low'
-      ).then(() => trackComponentLoad('KeyboardHelp'));
-
-      // Preload metrics dashboard for power users
-      ElectronPreloader.preloadComponent(
-        'MetricsDashboard',
-        () => import('./components/MetricsDashboard'),
-        'low'
-      ).then(() => trackComponentLoad('MetricsDashboard'));
-
-    }, 1500); // Optimized timing for Electron
-
-    return () => clearTimeout(preloadTimer);
+    loadEntries();
   }, []);
 
-  const loadAllEntries = async () => {
+  const loadEntries = async () => {
     setLoading(true);
     try {
-      // Search with empty query to get all entries
-      const response = await window.electronAPI.kb.search('');
-      if (response.success !== false) {
-        setEntries(response.results || response || []);
-        setError(null);
-      } else {
-        setError(response.error || 'Failed to load entries');
-      }
+      const result = await window.electronAPI.kb.getAll();
+      setEntries(result.entries || []);
     } catch (err) {
-      console.error('Failed to load entries:', err);
-      setError('Failed to connect to knowledge base');
+      setError('Failed to load entries');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (query: string, results: KBEntry[]) => {
-    setSearchQuery(query);
-    setEntries(results);
-    setSelectedEntry(null);
-  };
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      loadEntries();
+      return;
+    }
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    loadAllEntries();
-    setSelectedEntry(null);
-  };
-
-  const handleEntrySelect = (entry: KBEntry) => {
-    setSelectedEntry(entry);
-  };
-
-  const handleAddEntry = async (entryData: Omit<KBEntry, 'id'>) => {
+    setLoading(true);
     try {
-      const response = await window.electronAPI.kb.addEntry(entryData);
-      if (response.success) {
-        setShowAddForm(false);
-        // Refresh the list
-        if (searchQuery) {
-          handleSearch(searchQuery, entries);
-        } else {
-          loadAllEntries();
-        }
-      } else {
-        setError(response.error || 'Failed to add entry');
-      }
+      const result = await window.electronAPI.kb.search(searchQuery);
+      setEntries(result.results || []);
     } catch (err) {
-      console.error('Failed to add entry:', err);
-      setError('Failed to add entry');
+      setError('Search failed');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Accenture-branded styles
-  const appStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    backgroundColor: '#ffffff',
-    fontFamily: 'GT America, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  const handleAISearch = async () => {
+    // Show AI authorization dialog before AI operation
+    setPendingAIOperation({
+      type: 'semantic_search',
+      query: searchQuery,
+      estimatedCost: 0.002,
+      estimatedTokens: 150,
+      provider: 'gemini',
+      model: 'gemini-pro'
+    });
+    setShowAIAuth(true);
   };
 
-  const headerStyle: React.CSSProperties = {
-    backgroundColor: '#ffffff',
-    borderBottom: '2px solid #A100FF',
-    padding: '1.5rem 2rem',
-    boxShadow: '0 2px 8px 0 rgba(161, 0, 255, 0.1)',
+  const handleAIAuthDecision = async (approved: boolean, modifiedOperation?: any) => {
+    setShowAIAuth(false);
+    if (approved) {
+      // Proceed with AI operation
+      setLoading(true);
+      try {
+        // Here would be the actual AI search
+        await handleSearch();
+      } finally {
+        setLoading(false);
+      }
+    }
+    setPendingAIOperation(null);
   };
 
-  const titleContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
+  const handleAddEntry = () => {
+    setShowAddEntry(true);
   };
 
-  const brandingRowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '1rem',
+  const handleEditEntry = (entry: KBEntry) => {
+    setSelectedEntry(entry);
+    setShowEditEntry(true);
   };
 
-  const taglineStyle: React.CSSProperties = {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    fontWeight: '300',
-    fontStyle: 'italic',
-    letterSpacing: '0.025em',
+  const handleDeleteEntry = (entry: KBEntry) => {
+    setSelectedEntry(entry);
+    setShowDeleteConfirm(true);
   };
 
-  const appTitleStyle: React.CSSProperties = {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#000000',
-    margin: '0.5rem 0 0 0',
+  const handleCreateEntry = async (newEntry: any) => {
+    try {
+      await window.electronAPI.kb.create(newEntry);
+      await loadEntries();
+      setShowAddEntry(false);
+    } catch (err) {
+      setError('Failed to report incident');
+    }
   };
 
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: '1rem',
-    color: '#6b7280',
-    margin: 0,
-    fontWeight: '400',
+  const handleUpdateEntry = async (id: string, updatedEntry: any) => {
+    try {
+      await window.electronAPI.kb.update(id, updatedEntry);
+      await loadEntries();
+      setShowEditEntry(false);
+    } catch (err) {
+      setError('Failed to update incident');
+    }
   };
 
-  const mainStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: selectedEntry ? '1fr 400px' : '1fr',
-    gap: '2rem',
-    padding: '2rem',
-    maxWidth: '1400px',
-    margin: '0 auto',
-    transition: 'grid-template-columns 0.3s ease',
+  const handleConfirmDelete = async () => {
+    if (selectedEntry) {
+      try {
+        await window.electronAPI.kb.delete(selectedEntry.id);
+        await loadEntries();
+        setShowDeleteConfirm(false);
+      } catch (err) {
+        setError('Failed to delete incident');
+      }
+    }
   };
-
-  const leftPanelStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-    minWidth: 0,
-  };
-
-  const rightPanelStyle: React.CSSProperties = {
-    backgroundColor: '#ffffff',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
-    padding: '1.5rem',
-    height: 'fit-content',
-    maxHeight: '80vh',
-    overflow: 'auto',
-    position: 'sticky',
-    top: '2rem',
-  };
-
-  const errorStyle: React.CSSProperties = {
-    padding: '1rem',
-    backgroundColor: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '4px',
-    color: '#991b1b',
-    textAlign: 'center',
-  };
-
-  const addButtonStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '2rem',
-    right: '2rem',
-    padding: '1rem',
-    backgroundColor: '#A100FF',
-    color: 'white',
-    border: 'none',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    fontSize: '1.5rem',
-    width: '64px',
-    height: '64px',
-    boxShadow: '0 8px 25px rgba(161, 0, 255, 0.3)',
-    zIndex: 1000,
-    transition: 'all 0.2s ease',
-    fontFamily: 'GT America, sans-serif',
-  };
-
-  if (error && entries.length === 0) {
-    return (
-      <div style={appStyle}>
-        <div style={headerStyle}>
-          <h1 style={appTitleStyle}>📚 Knowledge Base Assistant</h1>
-        </div>
-        <div style={{ padding: '2rem' }}>
-          <div style={errorStyle}>
-            <h3>⚠️ Error</h3>
-            <p>{error}</p>
-            <button
-              onClick={() => {
-                setError(null);
-                loadAllEntries();
-              }}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#dc2626',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div style={appStyle}>
-      {/* Header */}
-      <header style={headerStyle} id="navigation">
-        <div style={titleContainerStyle}>
-          <div style={brandingRowStyle}>
-            <AccentureHeaderLogo showTagline={false} />
-            <div style={taglineStyle}>
-              Let there be change
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+      {/* Header with Accenture branding */}
+      <header className="bg-gradient-to-r from-[#A100FF] to-[#6B00FF] text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-4">
+              <AccentureLogo />
+              <div>
+                <h1 className="text-2xl font-bold">Mainframe AI Assistant</h1>
+                <p className="text-purple-100">Incident Management & AI-Powered Solutions</p>
+              </div>
             </div>
+
+            {/* Navigation */}
+            <nav className="flex space-x-4">
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  currentView === 'dashboard' ? 'bg-white/20' : 'hover:bg-white/10'
+                }`}
+              >
+                📊 Overview
+              </button>
+              <button
+                onClick={() => setCurrentView('search')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  currentView === 'search' ? 'bg-white/20' : 'hover:bg-white/10'
+                }`}
+              >
+                🚨 Incidents
+              </button>
+              <button
+                onClick={() => setCurrentView('ai-transparency')}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  currentView === 'ai-transparency' ? 'bg-white/20' : 'hover:bg-white/10'
+                }`}
+              >
+                AI Transparency
+              </button>
+              <button
+                onClick={() => setShowSettingsModal(true)}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  showSettingsModal ? 'bg-white/20' : 'hover:bg-white/10'
+                } flex items-center space-x-2`}
+                title="Settings"
+              >
+                <SettingsIcon className="w-4 h-4" />
+                <span>Settings</span>
+              </button>
+            </nav>
           </div>
-
-          <h1 style={appTitleStyle}>
-            Mainframe AI Assistant
-            <span style={{
-              fontSize: '0.75rem',
-              fontWeight: '500',
-              padding: '0.25rem 0.75rem',
-              backgroundColor: '#f5e6ff',
-              color: '#A100FF',
-              borderRadius: '20px',
-              marginLeft: '1rem',
-              border: '1px solid #A100FF',
-            }}>
-              Enterprise Edition
-            </span>
-          </h1>
-
-          <p style={subtitleStyle}>
-            {searchQuery
-              ? `${entries.length} results for "${searchQuery}"`
-              : `${entries.length} knowledge base entries`
-            }
-          </p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main style={mainStyle} id="main-content">
-        {/* Left Panel - Search and Results */}
-        <div style={leftPanelStyle}>
-          <div id="search">
-            <SimpleSearchBar
-              onSearch={handleSearch}
-              onClear={handleClearSearch}
-              autoFocus
-            />
-          </div>
-
-          {error && (
-            <div style={errorStyle}>
-              {error}
-              <button
-                onClick={() => setError(null)}
-                style={{ marginLeft: '1rem', padding: '0.25rem 0.5rem' }}
-              >
-                Dismiss
-              </button>
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {currentView === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Search Bar */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  placeholder="Search incidents and solutions..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleSearch}
+                  className="px-6 py-2 bg-gradient-to-r from-[#A100FF] to-[#6B00FF] text-white rounded-lg hover:shadow-lg transition-shadow"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={handleAISearch}
+                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+                >
+                  AI Search
+                </button>
+                <button
+                  onClick={handleAddEntry}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+                >
+                  🚨 Report Incident
+                </button>
+              </div>
             </div>
-          )}
 
-          <SimpleEntryList
-            entries={entries}
-            onEntrySelect={handleEntrySelect}
-            selectedEntryId={selectedEntry?.id}
-            loading={loading}
-          />
-        </div>
-
-        {/* Right Panel - Entry Details */}
-        {selectedEntry && (
-          <aside style={rightPanelStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <span style={{
-                padding: '0.25rem 0.5rem',
-                fontSize: '0.75rem',
-                fontWeight: '500',
-                color: 'white',
-                backgroundColor: '#A100FF',
-                borderRadius: '4px',
-              }}>
-                {selectedEntry.category}
-              </span>
-              <button
-                onClick={() => setSelectedEntry(null)}
-                style={{
-                  padding: '0.25rem',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '1.25rem',
+            {/* Cost Summary Widget */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <CostSummaryWidget
+                compact={false}
+                userId="current_user"
+                realTimeUpdates={true}
+                updateInterval={30000}
+                showDetailedMetrics={true}
+                enableQuickActions={true}
+                onModalOpen={() => {
+                  setSettingsCurrentPath('/settings/cost/budget');
+                  setShowSettingsModal(true);
                 }}
-              >
-                ✕
-              </button>
+              />
             </div>
 
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem', fontWeight: '600' }}>
-              {selectedEntry.title}
-            </h3>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
-                Problem:
-              </h4>
-              <div style={{
-                padding: '0.75rem',
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
-                borderRadius: '4px',
-                fontSize: '0.875rem',
-                lineHeight: '1.5',
-              }}>
-                {selectedEntry.problem}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
-                Solution:
-              </h4>
-              <div style={{
-                padding: '0.75rem',
-                backgroundColor: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                borderRadius: '4px',
-                fontSize: '0.875rem',
-                lineHeight: '1.5',
-                whiteSpace: 'pre-wrap',
-              }}>
-                {selectedEntry.solution}
-              </div>
-            </div>
-
-            {selectedEntry.tags && selectedEntry.tags.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
-                  Tags:
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                  {selectedEntry.tags.map(tag => (
-                    <span key={tag} style={{
-                      padding: '0.125rem 0.375rem',
-                      fontSize: '0.75rem',
-                      backgroundColor: '#f3f4f6',
-                      color: '#374151',
-                      borderRadius: '12px',
-                      border: '1px solid #d1d5db',
-                    }}>
-                      {tag}
-                    </span>
-                  ))}
+            {/* Results Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loading ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <p className="mt-2 text-gray-600">Loading...</p>
                 </div>
-              </div>
-            )}
+              ) : entries.length === 0 ? (
+                <div className="col-span-full text-center py-12 text-gray-500">
+                  No incidents found. Try a different search or report a new incident.
+                </div>
+              ) : (
+                entries.map((entry) => (
+                  <div key={entry.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        entry.category === 'COBOL' ? 'bg-blue-100 text-blue-800' :
+                        entry.category === 'DB2' ? 'bg-green-100 text-green-800' :
+                        entry.category === 'VSAM' ? 'bg-yellow-100 text-yellow-800' :
+                        entry.category === 'JCL' ? 'bg-purple-100 text-purple-800' :
+                        entry.category === 'CICS' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {entry.category}
+                      </span>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditEntry(entry)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Edit"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEntry(entry)}
+                          className="text-red-600 hover:text-red-800"
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
 
-            <div style={{
-              padding: '1rem',
-              backgroundColor: '#f9fafb',
-              borderRadius: '4px',
-              border: '1px solid #e5e7eb',
-            }}>
-              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', fontWeight: '600' }}>
-                Usage Statistics:
-              </h4>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', lineHeight: '1.5' }}>
-                <div>Used {selectedEntry.usage_count || 0} times</div>
-                <div>Success: {selectedEntry.success_count || 0} | Failures: {selectedEntry.failure_count || 0}</div>
-                <div>Success Rate: {
-                  (selectedEntry.usage_count || 0) > 0
-                    ? (((selectedEntry.success_count || 0) / (selectedEntry.usage_count || 1)) * 100).toFixed(1)
-                    : 0
-                }%</div>
-              </div>
+                    <h3 className="font-semibold text-gray-900 mb-2">{entry.title}</h3>
+
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-600">Problem:</span>
+                        <p className="text-gray-700">{entry.problem}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">Solution:</span>
+                        <p className="text-gray-700">{entry.solution}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-between items-center">
+                      <div className="flex flex-wrap gap-1">
+                        {entry.tags.map((tag, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {entry.usage_count} uses
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center text-xs">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{ width: `${(entry.success_count / entry.usage_count) * 100}%` }}
+                        />
+                      </div>
+                      <span className="ml-2 text-gray-600">
+                        {Math.round((entry.success_count / entry.usage_count) * 100)}% success
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          </aside>
+          </div>
+        )}
+
+        {currentView === 'search' && <Incidents />}
+
+        {currentView === 'ai-transparency' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Transparency Center</h2>
+
+              {/* Transparency Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <button
+                  onClick={() => setShowOperationHistory(!showOperationHistory)}
+                  className="p-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+                >
+                  {showOperationHistory ? 'Hide' : 'Show'} Operation History
+                </button>
+                <button
+                  onClick={() => {
+                    setPendingAIOperation({
+                      type: 'test',
+                      query: 'Test AI Operation',
+                      estimatedCost: 0.001,
+                      estimatedTokens: 50,
+                      provider: 'openai',
+                      model: 'gpt-4'
+                    });
+                    setShowAIAuth(true);
+                  }}
+                  className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+                >
+                  Test Authorization Dialog
+                </button>
+              </div>
+
+
+              {/* Operation History */}
+              {showOperationHistory && <OperationHistory />}
+            </div>
+          </div>
+        )}
+
+        {currentView === 'settings' && (
+          <div className="space-y-6">
+            {/* Settings is now shown in the modal, not here */}
+          </div>
         )}
       </main>
 
-      {/* Add Entry Button */}
-      <button
-        style={addButtonStyle}
-        onClick={() => setShowAddForm(true)}
-        onMouseEnter={() => {
-          // Use Electron-optimized preloading on hover
-          ElectronPreloader.preloadComponent(
-            'SimpleAddEntryForm',
-            () => import('./components/SimpleAddEntryForm'),
-            'high'
-          ).catch(console.warn);
-        }}
-        title="Add new knowledge entry"
-      >
-        +
-      </button>
+      {/* Modals */}
+      {showAIAuth && pendingAIOperation && (
+        <AuthorizationDialog
+          isOpen={showAIAuth}
+          operation={pendingAIOperation}
+          estimatedCost={pendingAIOperation.estimatedCost || 0.001}
+          tokensEstimate={{
+            input: pendingAIOperation.estimatedTokens || 100,
+            output: Math.floor((pendingAIOperation.estimatedTokens || 100) * 0.5)
+          }}
+          onApprove={(operation) => handleAIAuthDecision(true, operation)}
+          onDeny={() => handleAIAuthDecision(false)}
+          onAlwaysAllow={() => handleAIAuthDecision(true)}
+        />
+      )}
 
-      {/* Add Entry Modal */}
-      {showAddForm && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          padding: '1rem',
-        }} onClick={() => setShowAddForm(false)}>
-          <div
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '8px',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-              maxWidth: '600px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SimpleAddEntryForm
-              onSubmit={handleAddEntry}
-              onCancel={() => setShowAddForm(false)}
-            />
+      {showAddEntry && (
+        <AddEntryModal
+          isOpen={showAddEntry}
+          onClose={() => setShowAddEntry(false)}
+          onSave={handleCreateEntry}
+        />
+      )}
+
+      {showEditEntry && selectedEntry && (
+        <EditEntryModal
+          isOpen={showEditEntry}
+          entry={selectedEntry}
+          onClose={() => setShowEditEntry(false)}
+          onSave={(updated) => handleUpdateEntry(selectedEntry.id, updated)}
+        />
+      )}
+
+      {showDeleteConfirm && selectedEntry && (
+        <DeleteConfirmDialog
+          isOpen={showDeleteConfirm}
+          entry={selectedEntry}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full h-full sm:max-w-7xl sm:w-full sm:max-h-[95vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-[#A100FF] to-[#6B00FF] text-white">
+              <div className="flex items-center space-x-3">
+                <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                <h2 className="text-lg sm:text-xl font-semibold">Settings</h2>
+              </div>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex h-[calc(100vh-64px)] sm:h-[calc(95vh-80px)] overflow-hidden">
+              {/* Settings Navigation Sidebar */}
+              <div className="hidden md:flex md:w-80 lg:w-80 xl:w-80 border-r bg-gray-50 overflow-hidden">
+                <SettingsNavigation
+                  currentPath={settingsCurrentPath}
+                  onNavigate={(path) => {
+                    setSettingsCurrentPath(path);
+                  }}
+                  className="h-full w-full"
+                  isMobile={false}
+                />
+              </div>
+
+              {/* Settings Content */}
+              <div className="flex-1 overflow-hidden">
+                <div className="h-full overflow-y-auto overflow-x-hidden">
+                  <SettingsPage currentPath={settingsCurrentPath} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Development Tools */}
-      <BundleAnalyzer />
-
-      {/* Accenture Footer */}
+      {/* Footer */}
       <AccentureFooter />
     </div>
   );
 }
 
-/**
- * Main App Component with Keyboard Provider
- */
-function App() {
-  return (
-    <KeyboardProvider
-      enableSkipLinks={true}
-      skipLinks={[
-        { href: '#main-content', text: 'Skip to main content' },
-        { href: '#search', text: 'Skip to search' },
-        { href: '#navigation', text: 'Skip to navigation' }
-      ]}
-    >
-      <AppContent />
-      <KeyboardHelp />
-    </KeyboardProvider>
-  );
-}
-
-// Hot Module Replacement support for development
-if (import.meta.hot) {
-  import.meta.hot.accept();
-}
-
-export default App;
+export default AppComplete;

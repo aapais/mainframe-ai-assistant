@@ -121,7 +121,7 @@ export class CachedSearchService {
   private isInitialized = false;
   private queryQueue: Map<string, Promise<SearchResponse>> = new Map();
   private warmingInProgress = false;
-  private metricsInterval?: NodeJS.Timeout;
+  private metricsInterval?: ReturnType<typeof setTimeout>;
   
   // Performance tracking
   private queryHistory: Array<{

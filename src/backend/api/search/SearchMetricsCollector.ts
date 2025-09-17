@@ -125,8 +125,8 @@ export class SearchMetricsCollector extends EventEmitter {
   private readonly FLUSH_INTERVAL_MS = 30000; // 30 seconds
   private readonly RETENTION_DAYS = 30;
 
-  private flushInterval?: NodeJS.Timeout;
-  private aggregationInterval?: NodeJS.Timeout;
+  private flushInterval?: ReturnType<typeof setTimeout>;
+  private aggregationInterval?: ReturnType<typeof setTimeout>;
 
   constructor(dbPath: string = './search_metrics.db') {
     super();

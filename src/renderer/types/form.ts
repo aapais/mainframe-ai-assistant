@@ -55,6 +55,29 @@ export interface KBEntryFormProps {
   showAdvancedOptions?: boolean;
 }
 
+// Incident Management form specific types
+export interface IncidentFormData {
+  title: string;
+  description: string;
+  impact: string;
+  category: 'System Outage' | 'Performance' | 'Database' | 'Application' | 'Security' | 'Network' | 'Hardware' | 'Capacity' | 'Data' | 'Configuration' | 'Other';
+  priority: 'P1' | 'P2' | 'P3' | 'P4';
+  status: 'Open' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed';
+  assignee?: string;
+  tags: string[];
+}
+
+export interface IncidentFormProps {
+  initialData?: Partial<IncidentFormData>;
+  onSubmit: (data: IncidentFormData) => Promise<void>;
+  onCancel: () => void;
+  onError?: (error: Error) => void;
+  mode?: 'create' | 'edit';
+  autoSave?: boolean;
+  enableDrafts?: boolean;
+  showAdvancedOptions?: boolean;
+}
+
 export interface EditEntryFormProps {
   entry: KBEntry;
   onSubmit: (data: Partial<KBEntry>) => Promise<void>;

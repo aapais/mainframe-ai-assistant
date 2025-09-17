@@ -34,7 +34,7 @@ export class CacheMetrics extends EventEmitter {
   private metricsBuffer: Map<string, TimeWindow[]> = new Map();
   private windowSizeMs: number = 300000; // 5 minutes
   private maxWindows: number = 12; // 1 hour of data
-  private updateInterval?: NodeJS.Timeout;
+  private updateInterval?: ReturnType<typeof setTimeout>;
 
   // Current statistics
   private currentStats: Map<string, LayerStats> = new Map();

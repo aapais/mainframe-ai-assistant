@@ -1,0 +1,22 @@
+{
+  "scripts": {
+    "test:responsive": "playwright test --config=playwright.config.responsive.ts",
+    "test:responsive:headed": "playwright test --config=playwright.config.responsive.ts --headed",
+    "test:responsive:debug": "playwright test --config=playwright.config.responsive.ts --debug",
+    "test:responsive:mobile": "playwright test --config=playwright.config.responsive.ts --grep=\"Mobile\"",
+    "test:responsive:tablet": "playwright test --config=playwright.config.responsive.ts --grep=\"Tablet\"",
+    "test:responsive:desktop": "playwright test --config=playwright.config.responsive.ts --grep=\"Desktop\"",
+    "test:responsive:visual": "playwright test responsive-visual.spec.ts --config=playwright.config.responsive.ts",
+    "test:responsive:performance": "playwright test responsive-metrics.spec.ts --config=playwright.config.responsive.ts",
+    "test:responsive:accessibility": "playwright test responsive-accessibility.spec.ts --config=playwright.config.responsive.ts",
+    "test:responsive:update-snapshots": "playwright test --config=playwright.config.responsive.ts --update-snapshots",
+    "test:responsive:report": "playwright show-report test-results/responsive-html-report",
+    "test:responsive:ci": "CI=true playwright test --config=playwright.config.responsive.ts",
+    "test:responsive:parallel": "playwright test --config=playwright.config.responsive.ts --workers=4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "axe-core": "^4.8.0",
+    "axe-playwright": "^1.2.3"
+  }
+}

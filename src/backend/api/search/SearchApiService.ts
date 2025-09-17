@@ -3,7 +3,7 @@
  * Orchestrates search operations with performance optimization and intelligent caching
  */
 
-import { KBEntry, SearchResult } from '../../../types';
+import { KBEntry, SearchResult } from '../../../types/index';
 import { AdvancedSearchEngine } from '../../../services/search/AdvancedSearchEngine';
 import { AutocompleteService } from './AutocompleteService';
 import { SearchHistoryService } from './SearchHistoryService';

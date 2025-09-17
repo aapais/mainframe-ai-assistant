@@ -51,7 +51,7 @@ export class WindowStateManager {
   private workspaceDir: string;
   private currentSession: PersistedSession | null = null;
   private autoSaveEnabled = true;
-  private autoSaveInterval: NodeJS.Timeout | null = null;
+  private autoSaveInterval: ReturnType<typeof setTimeout> | null = null;
 
   private config = {
     autoSaveInterval: 30000, // 30 seconds

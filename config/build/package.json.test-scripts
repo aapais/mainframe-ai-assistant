@@ -1,0 +1,29 @@
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --selectProjects unit",
+    "test:integration": "jest --selectProjects integration",
+    "test:forms": "jest --testPathPattern='forms.*test'",
+    "test:validation": "jest --testPathPattern='validation.*test'",
+    "test:hooks": "jest --testPathPattern='hooks.*test'",
+    "test:ci": "jest --coverage --watchAll=false --passWithNoTests",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:verbose": "jest --verbose",
+    "test:silent": "jest --silent",
+    "test:updateSnapshots": "jest --updateSnapshot"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.0",
+    "@testing-library/react": "^14.1.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-watch-typeahead": "^2.2.0",
+    "ts-jest": "^29.1.0",
+    "identity-obj-proxy": "^3.0.0",
+    "babel-jest": "^29.7.0"
+  }
+}

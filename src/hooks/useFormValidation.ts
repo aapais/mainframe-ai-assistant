@@ -101,7 +101,7 @@ export const useFormValidation = (
   const [isDirty, setIsDirty] = useState(false);
 
   // Refs for debouncing
-  const validationTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const validationTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const previousFormData = useRef<Record<string, any>>(formData);
 
   // Single field validation

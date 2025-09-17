@@ -12,7 +12,7 @@ import type {
   PerformanceAlert,
   PerformanceConfig,
   PerformanceStats
-} from '@/types/shared/performance';
+} from '../types/shared/performance';
 
 /**
  * High-Performance Monitoring Middleware
@@ -37,7 +37,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
   // Performance tracking
   private lastCpuUsage = process.cpuUsage();
   private requestCounter = 0;
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: ReturnType<typeof setTimeout>;
 
   constructor(config: Partial<PerformanceConfig> = {}) {
     super();

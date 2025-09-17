@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import type { KBEntry, KBEntryInput, KBEntryUpdate, SearchResult, SearchQuery, KBCategory } from './index';
 
 // ===========================
 // Core IPC Types
@@ -805,13 +806,13 @@ export interface IPCHandlerConfig {
 // Re-export from existing types
 // ===========================
 
-export type { 
-  KBEntry, 
-  KBEntryInput, 
-  KBEntryUpdate, 
-  SearchResult, 
+export type {
+  KBEntry,
+  KBEntryInput,
+  KBEntryUpdate,
+  SearchResult,
   SearchQuery,
-  KBCategory 
+  KBCategory
 } from './index';
 
 // ===========================

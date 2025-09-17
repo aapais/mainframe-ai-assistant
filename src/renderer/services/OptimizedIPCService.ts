@@ -105,13 +105,13 @@ export class OptimizedIPCService extends EventEmitter {
   private config: OptimizationConfig;
   private performanceMetrics = new Map<string, PerformanceMetrics>();
   private initialized = false;
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: ReturnType<typeof setTimeout>;
 
   // Performance tracking
   private callTimes = new Map<string, number[]>();
   private startTimes = new Map<string, number>();
   private batchQueue = new Map<string, any[]>();
-  private batchTimers = new Map<string, NodeJS.Timeout>();
+  private batchTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(config: Partial<OptimizationConfig> = {}) {
     super();

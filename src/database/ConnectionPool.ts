@@ -45,7 +45,7 @@ interface WaitingRequest {
   resolve: (connection: PoolConnection) => void;
   reject: (error: Error) => void;
   requestTime: number;
-  timeout: NodeJS.Timeout;
+  timeout: ReturnType<typeof setTimeout>;
 }
 
 export class ConnectionPool extends EventEmitter {
@@ -59,7 +59,7 @@ export class ConnectionPool extends EventEmitter {
     totalAcquireTime: 0,
     peakConnections: 0
   };
-  private maintenanceTimer?: NodeJS.Timeout;
+  private maintenanceTimer?: ReturnType<typeof setTimeout>;
 
   constructor(dbPath: string, config?: Partial<PoolConfig>) {
     super();

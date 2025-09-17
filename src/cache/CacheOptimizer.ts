@@ -369,7 +369,7 @@ class BatchManager extends EventEmitter {
     resolve: (result: any) => void;
     reject: (error: Error) => void;
   }> = [];
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: ReturnType<typeof setTimeout>;
   private logger: Logger;
 
   constructor(

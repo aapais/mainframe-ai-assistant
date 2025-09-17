@@ -1,14 +1,12 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KnowledgeBaseService = void 0;
-const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
+const tslib_1 = require("tslib");
+const better_sqlite3_1 = tslib_1.__importDefault(require("better-sqlite3"));
 const events_1 = require("events");
 const uuid_1 = require("uuid");
-const promises_1 = __importDefault(require("fs/promises"));
-const path_1 = __importDefault(require("path"));
+const promises_1 = tslib_1.__importDefault(require("fs/promises"));
+const path_1 = tslib_1.__importDefault(require("path"));
 const services_1 = require("../types/services");
 class KnowledgeBaseService extends events_1.EventEmitter {
     config;

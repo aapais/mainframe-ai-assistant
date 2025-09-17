@@ -60,7 +60,7 @@ export interface IntegrityIssue {
 export class HealthCheck extends EventEmitter {
   private db: Database.Database;
   private config: HealthCheckConfig;
-  private checkTimer?: NodeJS.Timeout;
+  private checkTimer?: ReturnType<typeof setTimeout>;
   private isChecking = false;
   private lastHealthStatus?: HealthStatus;
   private checkHistory: HealthCheckResult[] = [];

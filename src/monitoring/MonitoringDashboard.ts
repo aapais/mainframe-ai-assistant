@@ -61,7 +61,7 @@ export class MonitoringDashboard extends EventEmitter {
   
   private config: DashboardConfig;
   private currentData: DashboardData | null = null;
-  private refreshTimer?: NodeJS.Timeout;
+  private refreshTimer?: ReturnType<typeof setTimeout>;
   
   constructor(
     searchMonitor: SearchPerformanceMonitor,

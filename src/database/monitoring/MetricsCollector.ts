@@ -61,8 +61,8 @@ export class MetricsCollector extends EventEmitter {
   private config: CollectorConfig;
   private metrics: Map<string, MetricDefinition> = new Map();
   private dataBuffer: Map<string, TimeSeriesDataPoint[]> = new Map();
-  private aggregationTimer?: NodeJS.Timeout;
-  private collectionTimer?: NodeJS.Timeout;
+  private aggregationTimer?: ReturnType<typeof setTimeout>;
+  private collectionTimer?: ReturnType<typeof setTimeout>;
   private isCollecting = false;
 
   // Built-in metric definitions

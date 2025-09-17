@@ -241,10 +241,10 @@ export const useCacheInvalidation = (
   const dependenciesRef = useRef<Map<string, Set<string>>>(new Map());
   const invalidationHistoryRef = useRef<InvalidationEvent[]>([]);
   const batchQueueRef = useRef<Array<() => Promise<void>>>([]);
-  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const batchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInvalidatingRef = useRef(false);
   const isBatchModeRef = useRef(false);
-  const debounceTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const debounceTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   
   // ========================
   // Strategy Management

@@ -123,7 +123,7 @@ export class DatabaseManager extends EventEmitter {
   private queryCache: QueryCache;
   private isInitialized = false;
   private shutdownInProgress = false;
-  private healthCheckInterval?: NodeJS.Timeout;
+  private healthCheckInterval?: ReturnType<typeof setTimeout>;
 
   constructor(config: DatabaseConfig) {
     super();
@@ -194,9 +194,12 @@ export class DatabaseManager extends EventEmitter {
       }
 
       if (this.config.queryCache.enabled) {
-        this.queryCache = new QueryCache({
+        this.queryCache = new QueryCache(this.db, {
           maxSize: this.config.queryCache.maxSize,
-          ttl: this.config.queryCache.ttlMs
+          defaultTTL: this.config.queryCache.ttlMs,
+          maxMemoryMB: 50,
+          persistToDisk: true,
+          compressionEnabled: true
         });
       }
 
@@ -243,13 +246,20 @@ export class DatabaseManager extends EventEmitter {
 
     // Check cache first
     if (useCache && this.queryCache) {
-      const cached = this.queryCache.get<T>(cacheKey);
-      if (cached) {
-        return {
-          data: cached,
-          executionTime: Date.now() - startTime,
-          fromCache: true
-        };
+      try {
+        const cached = await this.queryCache.get<T>(cacheKey, async () => {
+          // This will be called only if cache miss occurs
+          throw new Error('Cache miss - should execute query');
+        });
+        if (cached) {
+          return {
+            data: cached,
+            executionTime: Date.now() - startTime,
+            fromCache: true
+          };
+        }
+      } catch (error) {
+        // Cache miss or error - proceed to execute query
       }
     }
 
@@ -265,7 +275,7 @@ export class DatabaseManager extends EventEmitter {
           
           // Cache result for SELECT queries
           if (useCache && this.queryCache && sql.trim().toUpperCase().startsWith('SELECT')) {
-            this.queryCache.set(cacheKey, result);
+            await this.queryCache.set(cacheKey, result);
           }
 
           // Record performance metrics

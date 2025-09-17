@@ -251,7 +251,7 @@ export const useCacheManager = (options: UseCacheManagerOptions = {}): UseCacheM
     evictionCount: 0,
     errorCount: 0
   });
-  const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accessTimesRef = useRef<number[]>([]);
   
   // Storage support detection

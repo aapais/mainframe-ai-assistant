@@ -6,7 +6,7 @@
   "compilerOptions": {
     // Language and Environment
     "target": "ES2022",                          // Modern JS features for Electron 28+
-    "lib": ["ES2022"],                           // Base ECMAScript library
+    "lib": ["ES2022", "DOM"],                    // ECMAScript + DOM for Node.js globals
     "module": "ESNext",                          // ESM modules for future compatibility
     "moduleResolution": "bundler",               // Optimized for bundlers (Vite/Webpack)
     "resolveJsonModule": true,                   // Import JSON files as modules
@@ -23,7 +23,7 @@
     "noImplicitThis": true,                      // Error on implicit this type
     "alwaysStrict": true,                        // Emit 'use strict' for each file
     "useUnknownInCatchVariables": true,          // Default catch clause variables to unknown
-    "exactOptionalPropertyTypes": true,          // Exact optional property types
+    "exactOptionalPropertyTypes": false,         // Disabled to avoid interface conflicts
     
     // Additional Checks for Code Quality
     "noUnusedLocals": true,                      // Error on unused local variables
@@ -43,7 +43,7 @@
     "removeComments": false,                     // Keep comments in development
     "newLine": "lf",                             // Unix line endings
     "importHelpers": true,                       // Import emit helpers from tslib
-    "importsNotUsedAsValues": "remove",          // Remove unused imports
+    "verbatimModuleSyntax": false,               // Modern import handling
     "preserveConstEnums": false,                 // Don't preserve const enums
     "stripInternal": true,                       // Strip @internal comments
     
@@ -92,7 +92,8 @@
       "node",
       "react",
       "react-dom",
-      "jest"
+      "jest",
+      "better-sqlite3"
     ]
   },
   

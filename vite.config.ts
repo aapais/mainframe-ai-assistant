@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import * as path from 'path';
 
 export default defineConfig(({ command, mode }) => {
   // Load environment variables
@@ -9,14 +9,12 @@ export default defineConfig(({ command, mode }) => {
   return {
     // Base configuration
     root: '.',
-    base: '/',
+    base: command === 'serve' ? '/' : './',
     publicDir: 'public',
 
     // Plugin configuration
     plugins: [
       react({
-        // Enable Fast Refresh for React components
-        fastRefresh: true,
         // Include JSX runtime for React 18
         jsxRuntime: 'automatic',
         // Babel configuration for JSX
@@ -207,9 +205,6 @@ export default defineConfig(({ command, mode }) => {
       'process.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version || '1.0.0'),
     },
 
-    // Electron-specific configuration
-    base: command === 'serve' ? '/' : './',
-
     // Clear screen in development
     clearScreen: false,
 
@@ -226,7 +221,7 @@ export default defineConfig(({ command, mode }) => {
     // Worker configuration
     worker: {
       format: 'es',
-      plugins: [react()],
+      plugins: () => [react()],
     },
 
     // JSON configuration

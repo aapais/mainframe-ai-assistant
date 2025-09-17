@@ -74,7 +74,7 @@ export class SearchCacheManager {
   };
 
   private config: CacheConfig;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: Partial<CacheConfig> = {}) {
     this.config = {

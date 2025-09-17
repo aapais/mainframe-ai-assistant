@@ -59,7 +59,7 @@ export interface PerformanceThresholds {
 export class ElectronPerformanceMetrics extends EventEmitter {
   private metrics: PerformanceMetrics[] = [];
   private isMonitoring = false;
-  private monitoringInterval: NodeJS.Timeout | null = null;
+  private monitoringInterval: ReturnType<typeof setTimeout> | null = null;
   private memoryBaseline: NodeJS.MemoryUsage | null = null;
   private lastMemoryCheck = Date.now();
 

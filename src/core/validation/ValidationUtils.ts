@@ -656,7 +656,7 @@ export function debounceValidation<T>(
   validator: (value: T) => Promise<ValidationResult>,
   delay: number = 300
 ): (value: T) => Promise<ValidationResult> {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
   let latestValue: T;
   
   return (value: T): Promise<ValidationResult> => {

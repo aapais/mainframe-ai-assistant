@@ -248,7 +248,7 @@ export function createDebouncedValidator(
   schema: ValidationSchema,
   delay = 300
 ) {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
   
   return (
     values: Record<string, any>,

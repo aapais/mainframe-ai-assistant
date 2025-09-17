@@ -1122,7 +1122,7 @@ class CacheInvalidationManager {
 class CacheWarmingManager {
   private readonly strategies: Map<string, CacheWarmingStrategy> = new Map();
   private readonly cache: MultiLayerCache;
-  private intervals: Map<string, NodeJS.Timeout> = new Map();
+  private intervals: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   constructor(cache: MultiLayerCache) {
     this.cache = cache;

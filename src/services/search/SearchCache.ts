@@ -100,7 +100,7 @@ export class SearchCache {
   };
 
   private config: CacheConfiguration;
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
   private accessTimes: number[] = [];
 
   constructor(config?: Partial<CacheConfiguration>) {

@@ -65,8 +65,8 @@ interface UsageRecord {
  */
 export class MetricsService extends EventEmitter implements IMetricsService {
   private db: Database.Database;
-  private aggregationInterval?: NodeJS.Timeout;
-  private alertCheckInterval?: NodeJS.Timeout;
+  private aggregationInterval?: ReturnType<typeof setTimeout>;
+  private alertCheckInterval?: ReturnType<typeof setTimeout>;
   private alerts = new Map<string, MetricAlert>();
 
   // Prepared statements for performance

@@ -45,7 +45,7 @@ export class PerformanceIntegration extends EventEmitter {
   private isMonitoring = false;
   private alerts: PerformanceAlert[] = [];
   private performanceHistory: IntegratedPerformanceData[] = [];
-  private integrationInterval: NodeJS.Timeout | null = null;
+  private integrationInterval: ReturnType<typeof setTimeout> | null = null;
 
   private maxHistorySize = 1000;
   private maxAlertSize = 100;

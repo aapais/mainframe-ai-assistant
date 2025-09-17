@@ -60,7 +60,7 @@ export class MonitoringService implements Service {
     uptime: 0
   };
   private startTime?: Date;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
   private metricsHistory: SystemMetrics[] = [];
   private alerts: Alert[] = [];
   private context?: ServiceContext;

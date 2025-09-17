@@ -30,7 +30,7 @@ export class WebSocketMonitoring {
   private wss: WebSocketServer | null = null;
   private clients: Map<string, WebSocketClient> = new Map();
   private metricsSubscription: (() => void) | null = null;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private heartbeatInterval: ReturnType<typeof setTimeout> | null = null;
   private port: number = 8080;
   private server: any = null;
 

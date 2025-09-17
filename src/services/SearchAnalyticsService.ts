@@ -140,8 +140,8 @@ export class SearchAnalyticsService extends EventEmitter {
   private systemMetrics: SystemHealthMetrics;
   private alertRules: AlertRule[] = [];
 
-  private batchTimer: NodeJS.Timeout | null = null;
-  private metricsTimer: NodeJS.Timeout | null = null;
+  private batchTimer: ReturnType<typeof setTimeout> | null = null;
+  private metricsTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: Partial<AnalyticsConfig> = {}) {
     super();

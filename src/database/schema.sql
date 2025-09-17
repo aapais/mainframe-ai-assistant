@@ -372,5 +372,250 @@ INSERT OR IGNORE INTO system_config (key, value, type, description) VALUES
 ('vacuum_schedule', 'weekly', 'string', 'Database vacuum schedule'),
 ('fts_rank_weights', '{"title": 3.0, "problem": 2.0, "solution": 1.5, "tags": 1.0}', 'json', 'FTS ranking weights');
 
+-- ===== AI TRANSPARENCY TABLES =====
+
+-- AI operations tracking
+CREATE TABLE IF NOT EXISTS ai_operations (
+    id TEXT PRIMARY KEY,
+    operation_type TEXT NOT NULL CHECK(operation_type IN ('search', 'generation', 'analysis', 'chat', 'completion')),
+    provider TEXT NOT NULL CHECK(provider IN ('openai', 'gemini', 'claude', 'local')),
+    model TEXT NOT NULL,
+    query_text TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    estimated_cost REAL NOT NULL DEFAULT 0.0,
+    actual_cost REAL,
+    tokens_input INTEGER DEFAULT 0,
+    tokens_output INTEGER DEFAULT 0,
+    user_decision TEXT NOT NULL CHECK(user_decision IN ('approved', 'denied', 'modified', 'auto_approved')),
+    auto_approved BOOLEAN DEFAULT FALSE,
+    timeout_occurred BOOLEAN DEFAULT FALSE,
+    response_text TEXT,
+    response_quality_rating INTEGER CHECK(response_quality_rating >= 1 AND response_quality_rating <= 5),
+    execution_time_ms INTEGER,
+    error_message TEXT,
+    session_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+    user_id TEXT DEFAULT 'anonymous'
+);
+
+-- User budget settings and tracking
+CREATE TABLE IF NOT EXISTS ai_budgets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    budget_type TEXT NOT NULL CHECK(budget_type IN ('daily', 'monthly', 'yearly')),
+    budget_amount REAL NOT NULL,
+    current_usage REAL DEFAULT 0.0,
+    alert_threshold_50 BOOLEAN DEFAULT TRUE,
+    alert_threshold_80 BOOLEAN DEFAULT TRUE,
+    alert_threshold_95 BOOLEAN DEFAULT TRUE,
+    alerts_sent TEXT, -- JSON array of sent alert types
+    reset_date DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User AI preferences
+CREATE TABLE IF NOT EXISTS ai_preferences (
+    user_id TEXT PRIMARY KEY,
+    always_allow_providers TEXT, -- JSON array of auto-approved providers
+    always_allow_operations TEXT, -- JSON array of auto-approved operation types
+    max_cost_auto_approve REAL DEFAULT 0.01,
+    default_timeout_seconds INTEGER DEFAULT 30,
+    enable_cost_alerts BOOLEAN DEFAULT TRUE,
+    enable_usage_tracking BOOLEAN DEFAULT TRUE,
+    preferred_provider TEXT DEFAULT 'openai',
+    preferred_model TEXT DEFAULT 'gpt-3.5-turbo',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cost tracking by provider and model
+CREATE TABLE IF NOT EXISTS ai_cost_rates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    cost_per_1k_input_tokens REAL NOT NULL,
+    cost_per_1k_output_tokens REAL NOT NULL,
+    cost_per_request REAL DEFAULT 0.0,
+    effective_date DATE NOT NULL,
+    deprecated BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider, model, effective_date)
+);
+
+-- Budget alerts log
+CREATE TABLE IF NOT EXISTS ai_budget_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    budget_id INTEGER NOT NULL,
+    alert_type TEXT NOT NULL CHECK(alert_type IN ('50_percent', '80_percent', '95_percent', 'exceeded')),
+    current_usage REAL NOT NULL,
+    budget_amount REAL NOT NULL,
+    percentage_used REAL NOT NULL,
+    acknowledged BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (budget_id) REFERENCES ai_budgets(id) ON DELETE CASCADE
+);
+
+-- ===== AI TRANSPARENCY INDEXES =====
+
+-- AI operations indexes
+CREATE INDEX IF NOT EXISTS idx_ai_operations_user ON ai_operations(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_operations_provider ON ai_operations(provider, operation_type);
+CREATE INDEX IF NOT EXISTS idx_ai_operations_cost ON ai_operations(actual_cost DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_operations_session ON ai_operations(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_operations_decision ON ai_operations(user_decision, created_at DESC);
+
+-- Budget indexes
+CREATE INDEX IF NOT EXISTS idx_ai_budgets_user ON ai_budgets(user_id, budget_type);
+CREATE INDEX IF NOT EXISTS idx_ai_budgets_usage ON ai_budgets(current_usage, budget_amount);
+
+-- Cost rates indexes
+CREATE INDEX IF NOT EXISTS idx_ai_cost_rates_provider ON ai_cost_rates(provider, model, effective_date DESC);
+
+-- Alert indexes
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_user ON ai_budget_alerts(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_acknowledged ON ai_budget_alerts(acknowledged, created_at);
+
+-- ===== AI TRANSPARENCY VIEWS =====
+
+-- View for user AI usage summary
+CREATE VIEW IF NOT EXISTS v_ai_usage_summary AS
+SELECT
+    user_id,
+    COUNT(*) as total_operations,
+    SUM(CASE WHEN user_decision = 'approved' THEN 1 ELSE 0 END) as approved_operations,
+    SUM(CASE WHEN user_decision = 'denied' THEN 1 ELSE 0 END) as denied_operations,
+    SUM(COALESCE(actual_cost, estimated_cost)) as total_cost,
+    AVG(COALESCE(actual_cost, estimated_cost)) as avg_cost_per_operation,
+    SUM(tokens_input) as total_input_tokens,
+    SUM(tokens_output) as total_output_tokens,
+    AVG(execution_time_ms) as avg_execution_time,
+    MAX(created_at) as last_operation
+FROM ai_operations
+GROUP BY user_id;
+
+-- View for daily cost tracking
+CREATE VIEW IF NOT EXISTS v_daily_ai_costs AS
+SELECT
+    user_id,
+    DATE(created_at) as operation_date,
+    provider,
+    operation_type,
+    COUNT(*) as operation_count,
+    SUM(COALESCE(actual_cost, estimated_cost)) as daily_cost,
+    SUM(tokens_input) as daily_input_tokens,
+    SUM(tokens_output) as daily_output_tokens
+FROM ai_operations
+WHERE user_decision = 'approved'
+GROUP BY user_id, DATE(created_at), provider, operation_type
+ORDER BY operation_date DESC;
+
+-- View for budget status
+CREATE VIEW IF NOT EXISTS v_budget_status AS
+SELECT
+    b.id as budget_id,
+    b.user_id,
+    b.budget_type,
+    b.budget_amount,
+    b.current_usage,
+    ROUND((b.current_usage / b.budget_amount) * 100, 2) as usage_percentage,
+    b.budget_amount - b.current_usage as remaining_budget,
+    CASE
+        WHEN b.current_usage >= b.budget_amount THEN 'exceeded'
+        WHEN (b.current_usage / b.budget_amount) >= 0.95 THEN 'critical'
+        WHEN (b.current_usage / b.budget_amount) >= 0.80 THEN 'warning'
+        WHEN (b.current_usage / b.budget_amount) >= 0.50 THEN 'caution'
+        ELSE 'normal'
+    END as status,
+    b.reset_date,
+    b.updated_at
+FROM ai_budgets b;
+
+-- ===== AI TRANSPARENCY TRIGGERS =====
+
+-- Update budget usage when AI operation completes
+CREATE TRIGGER IF NOT EXISTS tr_update_budget_usage
+AFTER UPDATE ON ai_operations
+FOR EACH ROW
+WHEN NEW.actual_cost IS NOT NULL AND OLD.actual_cost IS NULL AND NEW.user_decision = 'approved'
+BEGIN
+    UPDATE ai_budgets
+    SET
+        current_usage = current_usage + NEW.actual_cost,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = NEW.user_id
+    AND (
+        (budget_type = 'daily' AND reset_date = DATE(NEW.created_at))
+        OR (budget_type = 'monthly' AND DATE(reset_date, 'start of month') = DATE(NEW.created_at, 'start of month'))
+        OR (budget_type = 'yearly' AND DATE(reset_date, 'start of year') = DATE(NEW.created_at, 'start of year'))
+    );
+END;
+
+-- Create budget alerts when thresholds are reached
+CREATE TRIGGER IF NOT EXISTS tr_create_budget_alerts
+AFTER UPDATE ON ai_budgets
+FOR EACH ROW
+WHEN NEW.current_usage > OLD.current_usage
+BEGIN
+    -- 50% threshold
+    INSERT OR IGNORE INTO ai_budget_alerts (user_id, budget_id, alert_type, current_usage, budget_amount, percentage_used)
+    SELECT NEW.user_id, NEW.id, '50_percent', NEW.current_usage, NEW.budget_amount, (NEW.current_usage / NEW.budget_amount) * 100
+    WHERE (NEW.current_usage / NEW.budget_amount) >= 0.50
+    AND (OLD.current_usage / OLD.budget_amount) < 0.50
+    AND NEW.alert_threshold_50 = TRUE;
+
+    -- 80% threshold
+    INSERT OR IGNORE INTO ai_budget_alerts (user_id, budget_id, alert_type, current_usage, budget_amount, percentage_used)
+    SELECT NEW.user_id, NEW.id, '80_percent', NEW.current_usage, NEW.budget_amount, (NEW.current_usage / NEW.budget_amount) * 100
+    WHERE (NEW.current_usage / NEW.budget_amount) >= 0.80
+    AND (OLD.current_usage / OLD.budget_amount) < 0.80
+    AND NEW.alert_threshold_80 = TRUE;
+
+    -- 95% threshold
+    INSERT OR IGNORE INTO ai_budget_alerts (user_id, budget_id, alert_type, current_usage, budget_amount, percentage_used)
+    SELECT NEW.user_id, NEW.id, '95_percent', NEW.current_usage, NEW.budget_amount, (NEW.current_usage / NEW.budget_amount) * 100
+    WHERE (NEW.current_usage / NEW.budget_amount) >= 0.95
+    AND (OLD.current_usage / OLD.budget_amount) < 0.95
+    AND NEW.alert_threshold_95 = TRUE;
+
+    -- Exceeded threshold
+    INSERT OR IGNORE INTO ai_budget_alerts (user_id, budget_id, alert_type, current_usage, budget_amount, percentage_used)
+    SELECT NEW.user_id, NEW.id, 'exceeded', NEW.current_usage, NEW.budget_amount, (NEW.current_usage / NEW.budget_amount) * 100
+    WHERE NEW.current_usage > NEW.budget_amount
+    AND OLD.current_usage <= OLD.budget_amount;
+END;
+
+-- ===== INITIAL AI TRANSPARENCY DATA =====
+
+-- Insert default cost rates for common AI providers
+INSERT OR IGNORE INTO ai_cost_rates (provider, model, cost_per_1k_input_tokens, cost_per_1k_output_tokens, effective_date) VALUES
+-- OpenAI GPT-4
+('openai', 'gpt-4', 0.03, 0.06, '2024-01-01'),
+('openai', 'gpt-4-turbo', 0.01, 0.03, '2024-01-01'),
+('openai', 'gpt-3.5-turbo', 0.0015, 0.002, '2024-01-01'),
+-- Google Gemini
+('gemini', 'gemini-pro', 0.0005, 0.0015, '2024-01-01'),
+('gemini', 'gemini-ultra', 0.002, 0.006, '2024-01-01'),
+-- Anthropic Claude
+('claude', 'claude-3-sonnet', 0.003, 0.015, '2024-01-01'),
+('claude', 'claude-3-opus', 0.015, 0.075, '2024-01-01'),
+('claude', 'claude-3-haiku', 0.00025, 0.00125, '2024-01-01'),
+-- Local models (free)
+('local', 'llama-2-7b', 0.0, 0.0, '2024-01-01'),
+('local', 'llama-2-13b', 0.0, 0.0, '2024-01-01'),
+('local', 'mistral-7b', 0.0, 0.0, '2024-01-01');
+
+-- Insert system configuration for AI transparency
+INSERT OR IGNORE INTO system_config (key, value, type, description) VALUES
+('ai_transparency_enabled', 'true', 'boolean', 'Enable AI operation transparency and cost tracking'),
+('ai_authorization_timeout_seconds', '30', 'integer', 'Default timeout for AI authorization dialogs'),
+('ai_auto_approve_threshold', '0.01', 'float', 'Maximum cost for auto-approval without user confirmation'),
+('ai_enable_usage_analytics', 'true', 'boolean', 'Enable AI usage analytics and reporting'),
+('ai_budget_alert_email_enabled', 'false', 'boolean', 'Enable email alerts for budget thresholds'),
+('ai_operation_history_retention_days', '365', 'integer', 'Number of days to retain AI operation history'),
+('ai_cost_calculation_precision', '4', 'integer', 'Decimal places for cost calculations');
+
 -- Analyze tables for query optimization
 ANALYZE;

@@ -8,6 +8,7 @@
 import { DiffCalculator, Diff } from './DiffCalculator';
 import { PatchApplicator, PatchOperation } from './PatchApplicator';
 import { EventEmitter } from 'events';
+import { setInterval, clearInterval, setTimeout } from 'timers';
 
 export interface StateVersion<T = any> {
   version: number;
@@ -38,10 +39,10 @@ export interface StateSubscription {
   callback: (change: StateChange) => void;
   lastVersion: number;
   options: {
-    immediate?: boolean;
-    throttleMs?: number;
-    maxDiffSize?: number;
-    fallbackToFull?: boolean;
+    immediate?: boolean | undefined;
+    throttleMs?: number | undefined;
+    maxDiffSize?: number | undefined;
+    fallbackToFull?: boolean | undefined;
   };
 }
 
@@ -63,7 +64,7 @@ export class DifferentialStateManager extends EventEmitter {
   private globalVersion = 0;
   private config: DifferentialConfig;
 
-  constructor(config: Partial<DifferentialConfig> = {}) {
+  constructor(config: Partial<DifferentialConfig> | undefined = {}) {
     super();
     this.config = {
       maxHistoryVersions: 10,
@@ -73,7 +74,7 @@ export class DifferentialStateManager extends EventEmitter {
       enableVersionCleanup: true,
       cleanupIntervalMs: 5 * 60 * 1000, // 5 minutes
       enableMetrics: true,
-      ...config
+      ...(config || {})
     };
 
     if (this.config.enableVersionCleanup) {
@@ -84,7 +85,7 @@ export class DifferentialStateManager extends EventEmitter {
   /**
    * Initialize or update state and return differential change
    */
-  async setState<T>(stateKey: string, data: T, options: SetStateOptions = {}): Promise<StateChange<T> | null> {
+  async setState<T>(stateKey: string, data: T, options: SetStateOptions | undefined = {}): Promise<StateChange<T> | null> {
     const tracker = this.getOrCreateTracker(stateKey, options);
     const newVersion = ++this.globalVersion;
     const timestamp = Date.now();
@@ -237,7 +238,7 @@ export class DifferentialStateManager extends EventEmitter {
   subscribe<T>(
     stateKey: string,
     callback: (change: StateChange<T>) => void,
-    options: Partial<StateSubscription['options']> = {}
+    options: Partial<StateSubscription['options']> | undefined = {}
   ): string {
     const subscriptionId = this.generateSubscriptionId();
     const tracker = this.getOrCreateTracker(stateKey);
@@ -252,7 +253,7 @@ export class DifferentialStateManager extends EventEmitter {
         throttleMs: 0,
         maxDiffSize: 10 * 1024, // 10KB
         fallbackToFull: true,
-        ...options
+        ...(options || {})
       }
     };
 
@@ -260,7 +261,7 @@ export class DifferentialStateManager extends EventEmitter {
     tracker.subscriptions.add(subscription);
 
     // Send immediate update if requested and state exists
-    if (subscription.options.immediate && tracker.currentVersion) {
+    if (subscription.options.immediate === true && tracker.currentVersion) {
       // For immediate updates, we send the full state as a "change"
       const immediateChange: StateChange<T> = {
         id: this.generateChangeId(),
@@ -393,7 +394,7 @@ export class DifferentialStateManager extends EventEmitter {
   }
 
   // Private helper methods
-  private getOrCreateTracker<T>(stateKey: string, options: SetStateOptions = {}): StateTracker<T> {
+  private getOrCreateTracker<T>(stateKey: string, options: SetStateOptions | undefined = {}): StateTracker<T> {
     let tracker = this.stateTrackers.get(stateKey) as StateTracker<T>;
 
     if (!tracker) {
@@ -403,8 +404,8 @@ export class DifferentialStateManager extends EventEmitter {
         previousVersions: new Map(),
         subscriptions: new Set(),
         lastUpdateTime: 0,
-        compressionEnabled: options.enableCompression ?? this.config.enableCompression,
-        maxHistorySize: options.maxHistoryVersions ?? this.config.maxHistoryVersions
+        compressionEnabled: (options !== undefined && options.enableCompression !== undefined) ? options.enableCompression : this.config.enableCompression,
+        maxHistorySize: (options !== undefined && options.maxHistoryVersions !== undefined) ? options.maxHistoryVersions : this.config.maxHistoryVersions
       };
 
       this.stateTrackers.set(stateKey, tracker);
@@ -419,10 +420,10 @@ export class DifferentialStateManager extends EventEmitter {
 
     tracker.subscriptions.forEach(subscription => {
       // Check if subscription should receive this update
-      if (subscription.options.maxDiffSize &&
+      if (subscription.options.maxDiffSize !== undefined &&
           this.estimatePatchSize(stateChange.patches) > subscription.options.maxDiffSize) {
 
-        if (subscription.options.fallbackToFull) {
+        if (subscription.options.fallbackToFull === true) {
           // Send full state instead of diff
           const fullStateChange: StateChange = {
             ...stateChange,
@@ -439,7 +440,7 @@ export class DifferentialStateManager extends EventEmitter {
       }
 
       // Apply throttling if configured
-      if (subscription.options.throttleMs) {
+      if (subscription.options.throttleMs !== undefined && subscription.options.throttleMs > 0) {
         setTimeout(() => subscription.callback(stateChange), subscription.options.throttleMs);
       } else {
         subscription.callback(stateChange);
@@ -494,6 +495,7 @@ export class DifferentialStateManager extends EventEmitter {
   private cleanupOldVersions(): void {
     const now = Date.now();
     const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+    let totalDeletedCount = 0;
 
     for (const tracker of this.stateTrackers.values()) {
       const versionsToDelete: number[] = [];
@@ -507,10 +509,12 @@ export class DifferentialStateManager extends EventEmitter {
       versionsToDelete.forEach(version => {
         tracker.previousVersions.delete(version);
       });
+
+      totalDeletedCount += versionsToDelete.length;
     }
 
-    if (versionsToDelete.length > 0) {
-      this.emit('versionsCleanedUp', { deletedVersions: versionsToDelete.length });
+    if (totalDeletedCount > 0) {
+      this.emit('versionsCleanedUp', { deletedVersions: totalDeletedCount });
     }
   }
 }

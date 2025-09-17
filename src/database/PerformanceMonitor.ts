@@ -85,7 +85,7 @@ export class PerformanceMonitor extends EventEmitter {
   private metrics: PerformanceMetrics[] = [];
   private alerts: PerformanceAlert[] = [];
   private isMonitoring: boolean = false;
-  private monitoringInterval?: NodeJS.Timeout;
+  private monitoringInterval?: ReturnType<typeof setTimeout>;
   private startTime: number = Date.now();
 
   // Performance thresholds

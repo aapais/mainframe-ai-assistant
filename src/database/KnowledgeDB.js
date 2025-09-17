@@ -1,13 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KnowledgeDB = void 0;
 exports.createKnowledgeDB = createKnowledgeDB;
-const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
+const tslib_1 = require("tslib");
+const better_sqlite3_1 = tslib_1.__importDefault(require("better-sqlite3"));
 const uuid_1 = require("uuid");
-const fs_1 = __importDefault(require("fs"));
+const fs_1 = tslib_1.__importDefault(require("fs"));
 const MigrationManager_1 = require("./MigrationManager");
 const QueryOptimizer_1 = require("./QueryOptimizer");
 const PerformanceTuner_1 = require("./PerformanceTuner");

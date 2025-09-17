@@ -151,7 +151,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
   // Batching system
   private batchQueues = new Map<string, BatchOperation[]>();
-  private batchTimers = new Map<string, NodeJS.Timeout>();
+  private batchTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   // Deduplication
   private pendingRequests = new Map<string, Promise<any>>();

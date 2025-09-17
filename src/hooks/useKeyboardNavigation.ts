@@ -74,7 +74,7 @@ const debounce = <T extends (...args: any[]) => any>(
   func: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
@@ -111,7 +111,7 @@ export const useKeyboardNavigation = (
   const [selectedIndex, setSelectedIndexState] = useState(initialSelectedIndex);
   const [typeAheadQuery, setTypeAheadQuery] = useState('');
   const previousSelectedIndexRef = useRef(selectedIndex);
-  const typeAheadTimeoutRef = useRef<NodeJS.Timeout>();
+  const typeAheadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Debounced scroll function
   const debouncedScrollToElement = useCallback(

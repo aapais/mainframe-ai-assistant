@@ -1,0 +1,148 @@
+-- Migration 002: Add Incident Management Fields
+-- Phase 2: UX Enhancement - Add status workflow and incident tracking
+
+BEGIN TRANSACTION;
+
+-- Add incident management columns to kb_entries table
+ALTER TABLE kb_entries ADD COLUMN status TEXT DEFAULT 'open' CHECK (status IN (
+  'open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened'
+));
+
+ALTER TABLE kb_entries ADD COLUMN priority TEXT DEFAULT 'P3' CHECK (priority IN ('P1', 'P2', 'P3', 'P4'));
+ALTER TABLE kb_entries ADD COLUMN assigned_to TEXT;
+ALTER TABLE kb_entries ADD COLUMN escalation_level TEXT DEFAULT 'none' CHECK (escalation_level IN (
+  'none', 'level_1', 'level_2', 'level_3'
+));
+ALTER TABLE kb_entries ADD COLUMN resolution_time INTEGER; -- in minutes
+ALTER TABLE kb_entries ADD COLUMN sla_deadline DATETIME;
+ALTER TABLE kb_entries ADD COLUMN last_status_change DATETIME;
+ALTER TABLE kb_entries ADD COLUMN business_impact TEXT DEFAULT 'medium' CHECK (business_impact IN (
+  'low', 'medium', 'high', 'critical'
+));
+ALTER TABLE kb_entries ADD COLUMN customer_impact BOOLEAN DEFAULT 0;
+ALTER TABLE kb_entries ADD COLUMN reporter TEXT;
+ALTER TABLE kb_entries ADD COLUMN resolver TEXT;
+ALTER TABLE kb_entries ADD COLUMN incident_number TEXT UNIQUE;
+ALTER TABLE kb_entries ADD COLUMN external_ticket_id TEXT;
+
+-- Create incident_status_transitions table for tracking status changes
+CREATE TABLE incident_status_transitions (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  incident_id TEXT NOT NULL,
+  from_status TEXT NOT NULL,
+  to_status TEXT NOT NULL,
+  changed_by TEXT NOT NULL,
+  change_reason TEXT,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  metadata TEXT, -- JSON for additional data
+  FOREIGN KEY (incident_id) REFERENCES kb_entries(id) ON DELETE CASCADE,
+  CHECK (from_status IN ('open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened')),
+  CHECK (to_status IN ('open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened'))
+);
+
+-- Create incident_comments table for tracking comments and updates
+CREATE TABLE incident_comments (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  incident_id TEXT NOT NULL,
+  author TEXT NOT NULL,
+  content TEXT NOT NULL,
+  is_internal BOOLEAN DEFAULT 0,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  attachments TEXT, -- JSON array of attachment paths
+  FOREIGN KEY (incident_id) REFERENCES kb_entries(id) ON DELETE CASCADE
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_kb_entries_status ON kb_entries(status);
+CREATE INDEX idx_kb_entries_priority ON kb_entries(priority);
+CREATE INDEX idx_kb_entries_assigned_to ON kb_entries(assigned_to);
+CREATE INDEX idx_kb_entries_incident_number ON kb_entries(incident_number);
+CREATE INDEX idx_kb_entries_sla_deadline ON kb_entries(sla_deadline);
+CREATE INDEX idx_kb_entries_business_impact ON kb_entries(business_impact);
+CREATE INDEX idx_incident_transitions_incident_id ON incident_status_transitions(incident_id);
+CREATE INDEX idx_incident_transitions_timestamp ON incident_status_transitions(timestamp);
+CREATE INDEX idx_incident_comments_incident_id ON incident_comments(incident_id);
+CREATE INDEX idx_incident_comments_timestamp ON incident_comments(timestamp);
+
+-- Create trigger to automatically set last_status_change
+CREATE TRIGGER update_last_status_change 
+AFTER UPDATE OF status ON kb_entries
+FOR EACH ROW
+WHEN OLD.status != NEW.status
+BEGIN
+  UPDATE kb_entries 
+  SET last_status_change = CURRENT_TIMESTAMP 
+  WHERE id = NEW.id;
+END;
+
+-- Create trigger to log status transitions
+CREATE TRIGGER log_status_transition 
+AFTER UPDATE OF status ON kb_entries
+FOR EACH ROW
+WHEN OLD.status != NEW.status
+BEGIN
+  INSERT INTO incident_status_transitions (
+    incident_id, from_status, to_status, changed_by, change_reason
+  ) VALUES (
+    NEW.id, OLD.status, NEW.status, 
+    COALESCE(NEW.resolver, NEW.assigned_to, 'system'),
+    'Status changed from ' || OLD.status || ' to ' || NEW.status
+  );
+END;
+
+-- Generate incident numbers for existing entries
+UPDATE kb_entries 
+SET incident_number = 'INC-' || strftime('%Y', created_at) || '-' || 
+    printf('%06d', ROW_NUMBER() OVER (ORDER BY created_at))
+WHERE incident_number IS NULL;
+
+-- Set default SLA deadlines based on priority
+UPDATE kb_entries 
+SET sla_deadline = CASE 
+  WHEN priority = 'P1' THEN datetime(created_at, '+1 hour')
+  WHEN priority = 'P2' THEN datetime(created_at, '+4 hours')
+  WHEN priority = 'P3' THEN datetime(created_at, '+8 hours')
+  WHEN priority = 'P4' THEN datetime(created_at, '+24 hours')
+  ELSE datetime(created_at, '+8 hours')
+END
+WHERE sla_deadline IS NULL;
+
+-- Create view for incident metrics
+CREATE VIEW incident_metrics AS
+SELECT 
+  COUNT(*) FILTER (WHERE status = 'open') AS total_open,
+  COUNT(*) FILTER (WHERE status = 'assigned') AS total_assigned,
+  COUNT(*) FILTER (WHERE status = 'in_progress') AS total_in_progress,
+  COUNT(*) FILTER (WHERE status = 'resolved' AND date(updated_at) = date('now')) AS total_resolved_today,
+  AVG(resolution_time) FILTER (WHERE resolution_time IS NOT NULL) AS avg_resolution_time,
+  COUNT(*) FILTER (WHERE sla_deadline < datetime('now') AND status NOT IN ('resolved', 'closed')) AS sla_breaches,
+  COUNT(*) FILTER (WHERE priority = 'P1') AS p1_count,
+  COUNT(*) FILTER (WHERE priority = 'P2') AS p2_count,
+  COUNT(*) FILTER (WHERE priority = 'P3') AS p3_count,
+  COUNT(*) FILTER (WHERE priority = 'P4') AS p4_count
+FROM kb_entries;
+
+-- Create view for incident queue with calculated fields
+CREATE VIEW incident_queue AS
+SELECT 
+  e.*,
+  CASE 
+    WHEN e.sla_deadline < datetime('now') AND e.status NOT IN ('resolved', 'closed') THEN 'breached'
+    WHEN e.sla_deadline < datetime('now', '+20%') AND e.status NOT IN ('resolved', 'closed') THEN 'at_risk'
+    ELSE 'on_time'
+  END AS sla_status,
+  (julianday('now') - julianday(e.created_at)) * 24 * 60 AS age_minutes,
+  CASE 
+    WHEN e.status IN ('resolved', 'closed') AND e.resolution_time IS NULL THEN
+      (julianday(e.updated_at) - julianday(e.created_at)) * 24 * 60
+    ELSE e.resolution_time
+  END AS calculated_resolution_time
+FROM kb_entries e
+ORDER BY 
+  CASE e.priority WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'P3' THEN 3 WHEN 'P4' THEN 4 END,
+  e.created_at DESC;
+
+COMMIT;
+
+-- Update schema version
+INSERT OR REPLACE INTO schema_info (version, applied_at) VALUES (2, CURRENT_TIMESTAMP);

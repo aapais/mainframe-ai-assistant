@@ -41,7 +41,7 @@ export function useAutoSave<T>(
     error: null
   });
 
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastDataRef = useRef<T>(data);
   const isInitialRender = useRef(true);
 
@@ -507,7 +507,7 @@ export function useAccessibleShortcuts(shortcuts: ShortcutConfig[]) {
 // Delayed execution hook (debounce with loading state)
 export function useDelayedExecution(delay: number = 300) {
   const [isExecuting, setIsExecuting] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const execute = useCallback(async (
     action: () => Promise<void> | void,

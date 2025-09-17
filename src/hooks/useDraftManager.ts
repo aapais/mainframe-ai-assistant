@@ -144,7 +144,7 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
   const [versions, setVersions] = useState<DraftVersion[]>([]);
 
   // Refs
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastSavedDataRef = useRef<string>('');
   const conflictVersionRef = useRef<DraftVersion | null>(null);
 

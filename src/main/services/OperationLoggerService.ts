@@ -312,7 +312,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
   };
   private startTime?: Date;
   private metricsCache: Map<string, any> = new Map();
-  private cleanupInterval?: NodeJS.Timeout;
+  private cleanupInterval?: ReturnType<typeof setTimeout>;
   private exportStreams: Map<string, WriteStream> = new Map();
 
   // Configuration

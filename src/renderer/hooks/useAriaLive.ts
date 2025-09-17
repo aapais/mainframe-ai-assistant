@@ -45,7 +45,7 @@ export const useAriaLive = (options: UseAriaLiveOptions = {}) => {
 
   const queueRef = useRef<AnnouncementEntry[]>([]);
   const historyRef = useRef<AnnouncementEntry[]>([]);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingRef = useRef<boolean>(false);
   const regionsRef = useRef<{
     polite: HTMLDivElement | null;

@@ -31,7 +31,7 @@ export class ProgressTracker extends EventEmitter {
   private state: ProgressState;
   private steps: Map<number, StepProgress> = new Map();
   private throughputSamples: Array<{ timestamp: number; records: number }> = [];
-  private updateInterval?: NodeJS.Timeout;
+  private updateInterval?: ReturnType<typeof setTimeout>;
 
   constructor() {
     super();

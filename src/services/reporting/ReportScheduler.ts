@@ -92,7 +92,7 @@ export class ReportScheduler extends EventEmitter {
   private readonly activeExecutions: Map<string, ScheduledReportResult>;
   private readonly executionHistory: Map<string, ScheduledReportResult[]>;
   private readonly maxHistoryPerReport: number;
-  private schedulerTimer?: NodeJS.Timeout;
+  private schedulerTimer?: ReturnType<typeof setTimeout>;
   private readonly checkIntervalMs: number;
   private isRunning: boolean = false;
 

@@ -74,7 +74,7 @@ export class BatchProcessor extends EventEmitter {
   private workers: Worker[] = [];
   private checkpoints = new Map<string, BatchCheckpoint>();
   private isProcessing = false;
-  private memoryMonitor: NodeJS.Timeout | null = null;
+  private memoryMonitor: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: BatchOptions = {}) {
     super();
