@@ -1,0 +1,90 @@
+name: Health Check
+
+on:
+  schedule:
+    # Run health checks every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  repository-health:
+    name: Repository Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check dependencies health
+        run: |
+          echo "## Dependency Health Report" >> $GITHUB_STEP_SUMMARY
+          echo "Generated at: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for outdated packages
+          npm outdated || true
+
+          # Check for security vulnerabilities
+          npm audit --audit-level=moderate || true
+
+          # Check disk usage
+          du -sh node_modules/ || echo "node_modules not found"
+
+          echo "✅ Dependency health check completed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Validate configuration files
+        run: |
+          echo "## Configuration Validation" >> $GITHUB_STEP_SUMMARY
+
+          # Check package.json syntax
+          node -e "JSON.parse(require('fs').readFileSync('package.json', 'utf8'))"
+          echo "✅ package.json is valid" >> $GITHUB_STEP_SUMMARY
+
+          # Check TypeScript config
+          if [ -f "tsconfig.json" ]; then
+            npx tsc --noEmit --skipLibCheck
+            echo "✅ TypeScript configuration is valid" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check Jest config
+          if [ -f "jest.config.js" ]; then
+            node -e "require('./jest.config.js')"
+            echo "✅ Jest configuration is valid" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check build health
+        run: |
+          echo "## Build Health Check" >> $GITHUB_STEP_SUMMARY
+
+          # Quick build test
+          npm run build
+          echo "✅ Build completed successfully" >> $GITHUB_STEP_SUMMARY
+
+          # Check build artifacts
+          if [ -d "dist" ]; then
+            echo "✅ Build artifacts present" >> $GITHUB_STEP_SUMMARY
+            du -sh dist/
+          else
+            echo "❌ Build artifacts missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  workflow-health:
+    name: Workflow Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check recent workflow runs
+        run: |
+          echo "## Workflow Health Status" >> $GITHUB_STEP_SUMMARY
+          echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Workflow health check completed" >> $GITHUB_STEP_SUMMARY

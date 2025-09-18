@@ -80,7 +80,7 @@ jobs:
         NODE_ENV: test
 
     - name: Upload Playwright report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: playwright-report-${{ matrix.os }}-node${{ matrix.node-version }}
@@ -90,7 +90,7 @@ jobs:
         retention-days: 7
 
     - name: Upload screenshots on failure
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: screenshots-${{ matrix.os }}-node${{ matrix.node-version }}
@@ -177,7 +177,7 @@ jobs:
         NODE_ENV: test
 
     - name: Upload accessibility report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: accessibility-report
@@ -216,7 +216,7 @@ jobs:
         NODE_ENV: test
 
     - name: Upload visual diff report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: visual-diff-report
@@ -281,7 +281,7 @@ jobs:
         ENABLE_PERFORMANCE_MONITORING: true
 
     - name: Upload performance report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-benchmark-report

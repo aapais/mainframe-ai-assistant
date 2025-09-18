@@ -55,7 +55,7 @@ jobs:
 
     - name: Download previous bundle analysis
       if: github.event_name == 'pull_request'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bundle-analysis-${{ github.base_ref }}
         path: previous-analysis
@@ -214,7 +214,7 @@ jobs:
           }
 
     - name: Upload bundle analysis artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bundle-analysis-${{ github.sha }}
         path: bundle-analysis/
@@ -222,7 +222,7 @@ jobs:
 
     - name: Upload bundle analysis for base branch
       if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bundle-analysis-${{ github.ref_name }}
         path: bundle-analysis/
@@ -347,7 +347,7 @@ jobs:
       run: npm ci
 
     - name: Download bundle analysis
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: bundle-analysis-${{ github.sha }}
         path: bundle-analysis

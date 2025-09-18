@@ -125,7 +125,7 @@ jobs:
           echo "## Build Status: $(npm run build 2>&1 && echo '✅ Success' || echo '⚠️ Partial success')" >> build-report.md
 
       - name: Upload build report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-report
           path: build-report.md

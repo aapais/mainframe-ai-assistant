@@ -37,7 +37,7 @@ jobs:
       run: npm run test:ci
 
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage/lcov.info
         flags: unittests
@@ -70,7 +70,7 @@ jobs:
         cp -r coverage/lcov-report accessibility-reports/
 
     - name: Upload accessibility reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: accessibility-reports
         path: accessibility-reports/
@@ -101,7 +101,7 @@ jobs:
         npm run test -- --testNamePattern="Performance" --verbose --outputFile=performance-reports/results.json
 
     - name: Upload performance reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: performance-reports
         path: performance-reports/
@@ -127,7 +127,7 @@ jobs:
       run: npm run test -- --testNamePattern="VisualRegression"
 
     - name: Upload visual test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: visual-regression-diffs
@@ -172,7 +172,7 @@ jobs:
         BROWSER: ${{ matrix.browser }}
 
     - name: Upload browser test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: browser-test-results-${{ matrix.browser }}
@@ -199,7 +199,7 @@ jobs:
       run: npm run test:database:ci
 
     - name: Upload database test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: database-test-results
         path: test-results/database/
@@ -229,7 +229,7 @@ jobs:
         npx eslint src --ext .ts,.tsx --format json --output-file security-report.json || true
         
     - name: Upload security results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-results
         path: security-report.json
@@ -242,7 +242,7 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
 
     - name: Generate comprehensive test report
       run: |
@@ -303,7 +303,7 @@ jobs:
           });
 
     - name: Upload comprehensive report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: comprehensive-test-report
         path: test-summary.md
@@ -336,7 +336,7 @@ jobs:
       run: npm run test:performance:extended
 
     - name: Upload nightly test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nightly-test-results
         path: test-results/nightly/

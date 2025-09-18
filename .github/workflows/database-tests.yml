@@ -48,7 +48,7 @@ jobs:
         
     - name: Upload coverage reports
       if: matrix.test-suite == 'unit'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: coverage/database/lcov.info
         flags: database-${{ matrix.test-suite }}
@@ -105,7 +105,7 @@ jobs:
         fi
         
     - name: Upload comprehensive coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: coverage/database/lcov.info
         flags: database-comprehensive

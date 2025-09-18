@@ -196,7 +196,7 @@ jobs:
           echo "Windows build artifacts verified"
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
           path: |
@@ -267,7 +267,7 @@ jobs:
           echo "macOS build artifacts verified"
 
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
           path: |
@@ -329,7 +329,7 @@ jobs:
           echo "Linux build artifacts verified"
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
           path: |
@@ -351,7 +351,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Validate build artifacts
         run: |
@@ -411,7 +411,7 @@ jobs:
           EOF
 
       - name: Upload platform matrix
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: platform-matrix
           path: platform-matrix.md
@@ -427,7 +427,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Prepare release assets
         run: |
