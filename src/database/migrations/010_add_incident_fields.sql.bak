@@ -4,8 +4,8 @@
 BEGIN TRANSACTION;
 
 -- Add incident management columns to kb_entries table
-ALTER TABLE kb_entries ADD COLUMN status TEXT DEFAULT 'open' CHECK (status IN (
-  'open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened'
+ALTER TABLE kb_entries ADD COLUMN status TEXT DEFAULT 'aberto' CHECK (status IN (
+  'aberto', 'em_tratamento', 'em_revisao', 'resolvido', 'fechado', 'reaberto'
 ));
 
 ALTER TABLE kb_entries ADD COLUMN priority TEXT DEFAULT 'P3' CHECK (priority IN ('P1', 'P2', 'P3', 'P4'));
@@ -36,8 +36,8 @@ CREATE TABLE incident_status_transitions (
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   metadata TEXT, -- JSON for additional data
   FOREIGN KEY (incident_id) REFERENCES kb_entries(id) ON DELETE CASCADE,
-  CHECK (from_status IN ('open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened')),
-  CHECK (to_status IN ('open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened'))
+  CHECK (from_status IN ('aberto', 'em_tratamento', 'em_revisao', 'resolvido', 'fechado', 'reaberto')),
+  CHECK (to_status IN ('aberto', 'em_tratamento', 'em_revisao', 'resolvido', 'fechado', 'reaberto'))
 );
 
 -- Create incident_comments table for tracking comments and updates
@@ -110,12 +110,12 @@ WHERE sla_deadline IS NULL;
 -- Create view for incident metrics
 CREATE VIEW incident_metrics AS
 SELECT 
-  COUNT(*) FILTER (WHERE status = 'open') AS total_open,
-  COUNT(*) FILTER (WHERE status = 'assigned') AS total_assigned,
-  COUNT(*) FILTER (WHERE status = 'in_progress') AS total_in_progress,
-  COUNT(*) FILTER (WHERE status = 'resolved' AND date(updated_at) = date('now')) AS total_resolved_today,
+  COUNT(*) FILTER (WHERE status = 'aberto') AS total_open,
+  COUNT(*) FILTER (WHERE status = 'em_tratamento') AS total_assigned,
+  COUNT(*) FILTER (WHERE status = 'em_tratamento') AS total_in_progress,
+  COUNT(*) FILTER (WHERE status = 'resolvido' AND date(updated_at) = date('now')) AS total_resolved_today,
   AVG(resolution_time) FILTER (WHERE resolution_time IS NOT NULL) AS avg_resolution_time,
-  COUNT(*) FILTER (WHERE sla_deadline < datetime('now') AND status NOT IN ('resolved', 'closed')) AS sla_breaches,
+  COUNT(*) FILTER (WHERE sla_deadline < datetime('now') AND status NOT IN ('resolvido', 'fechado')) AS sla_breaches,
   COUNT(*) FILTER (WHERE priority = 'P1') AS p1_count,
   COUNT(*) FILTER (WHERE priority = 'P2') AS p2_count,
   COUNT(*) FILTER (WHERE priority = 'P3') AS p3_count,

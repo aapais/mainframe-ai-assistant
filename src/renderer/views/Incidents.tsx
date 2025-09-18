@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { AlertTriangle, Database, Brain, Clock, FileText, Settings, Users, Tag, Plus } from 'lucide-react';
+import { AlertTriangle, Database, Brain, Clock, FileText, Settings, Users, Tag, Plus, Upload } from 'lucide-react';
 import LocalSearchTab from '../components/search/LocalSearchTab';
 import AISearchTab from '../components/search/AISearchTab';
+import BulkUploadModal from '../components/incident/BulkUploadModal';
 import { searchService } from '../services/searchService';
 
 export interface IncidentResult {
@@ -10,8 +11,8 @@ export interface IncidentResult {
   content: string;
   type: 'incident' | 'solution' | 'analysis' | 'pattern' | 'recommendation' | 'insight';
   priority?: 'P1' | 'P2' | 'P3' | 'P4';
-  status?: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-  impact?: 'Critical' | 'High' | 'Medium' | 'Low';
+  status?: 'aberto' | 'em_tratamento' | 'resolvido' | 'fechado';
+  impact?: 'crítica' | 'alta' | 'média' | 'baixa';
   path?: string;
   lastModified?: Date;
   relevanceScore?: number;
@@ -26,6 +27,7 @@ const Incidents: React.FC = () => {
   const [isLocalSearching, setIsLocalSearching] = useState(false);
   const [isAISearching, setIsAISearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
 
   // Debounced local search for real-time results
   const performLocalSearch = useCallback(async (query: string) => {
@@ -42,8 +44,8 @@ const Incidents: React.FC = () => {
         ...result,
         type: result.type as IncidentResult['type'],
         priority: 'P3' as const,
-        status: 'Open' as const,
-        impact: 'Medium' as const
+        status: 'aberto' as const,
+        impact: 'média' as const
       }));
       setLocalResults(incidentResults);
     } catch (error) {
@@ -69,8 +71,8 @@ const Incidents: React.FC = () => {
         ...result,
         type: result.type as IncidentResult['type'],
         priority: 'P2' as const,
-        status: 'In Progress' as const,
-        impact: 'High' as const
+        status: 'em_tratamento' as const,
+        impact: 'alta' as const
       }));
       setAIResults(incidentResults);
 
@@ -129,12 +131,22 @@ const Incidents: React.FC = () => {
     }
   };
 
+  const getPriorityLabel = (priority?: string) => {
+    switch (priority) {
+      case 'P1': return 'P1 - Crítica';
+      case 'P2': return 'P2 - Alta';
+      case 'P3': return 'P3 - Média';
+      case 'P4': return 'P4 - Baixa';
+      default: return priority;
+    }
+  };
+
   const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'Open': return 'text-red-600 bg-red-100';
-      case 'In Progress': return 'text-blue-600 bg-blue-100';
-      case 'Resolved': return 'text-green-600 bg-green-100';
-      case 'Closed': return 'text-gray-600 bg-gray-100';
+      case 'aberto': return 'text-red-600 bg-red-100';
+      case 'em_tratamento': return 'text-blue-600 bg-blue-100';
+      case 'resolvido': return 'text-green-600 bg-green-100';
+      case 'fechado': return 'text-gray-600 bg-gray-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -147,10 +159,24 @@ const Incidents: React.FC = () => {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-            <AlertTriangle className="w-7 h-7 mr-3 text-red-600 dark:text-red-400" />
-            Incident Management
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+              <AlertTriangle className="w-7 h-7 mr-3 text-red-600 dark:text-red-400" />
+              Gestão de Incidentes
+            </h1>
+
+            {/* Toolbar */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsBulkUploadModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#A100FF] hover:bg-[#8000CC] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#A100FF] transition-all duration-200 shadow-sm"
+                title="Funcionalidade em desenvolvimento - Clique para ver preview"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload em Massa
+              </button>
+            </div>
+          </div>
 
           {/* Search Form */}
           <form onSubmit={handleSearchSubmit} className="mb-6">
@@ -160,7 +186,7 @@ const Incidents: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={activeTab === 'local' ? "Search incidents, solutions, patterns..." : "Ask AI to analyze incidents and find solutions..."}
+                placeholder={activeTab === 'local' ? "Pesquisar incidentes, soluções, padrões..." : "Perguntar à IA para analisar incidentes e encontrar soluções..."}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
               {isSearching && (
@@ -188,7 +214,7 @@ const Incidents: React.FC = () => {
                   }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
-                  {tab === 'local' ? 'Local Search' : 'AI-Enhanced Analysis'}
+                  {tab === 'local' ? 'Busca Local' : 'Análise com IA'}
                   {currentResults.length > 0 && (
                     <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
                       isActive
@@ -213,14 +239,14 @@ const Incidents: React.FC = () => {
             {isSearching ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                <p className="mt-2 text-gray-600">Searching incidents...</p>
+                <p className="mt-2 text-gray-600">Pesquisando incidentes...</p>
               </div>
             ) : currentResults.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 {searchQuery ? (
-                  <>No incidents found for "{searchQuery}". Try different keywords or report a new incident.</>
+                  <>Nenhum incidente encontrado para "{searchQuery}". Tente palavras-chave diferentes ou reporte um novo incidente.</>
                 ) : (
-                  <>Start typing to search incidents, or click Report Incident to add a new one.</>
+                  <>Digite para pesquisar incidentes, ou clique no botão + para adicionar um novo.</>
                 )}
               </div>
             ) : (
@@ -241,17 +267,20 @@ const Incidents: React.FC = () => {
                       <div className="flex space-x-2">
                         {result.priority && (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(result.priority)}`}>
-                            {result.priority}
+                            {getPriorityLabel(result.priority)}
                           </span>
                         )}
                         {result.status && (
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(result.status)}`}>
-                            {result.status}
+                            {result.status === 'aberto' ? 'Aberto' :
+                             result.status === 'em_tratamento' ? 'Em Tratamento' :
+                             result.status === 'resolvido' ? 'Resolvido' :
+                             result.status === 'fechado' ? 'Fechado' : result.status}
                           </span>
                         )}
                         {result.impact && (
                           <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
-                            {result.impact} Impact
+                            Impacto {result.impact === 'crítica' ? 'Crítico' : result.impact === 'alta' ? 'Alto' : result.impact === 'média' ? 'Médio' : 'Baixo'}
                           </span>
                         )}
                       </div>
@@ -263,7 +292,7 @@ const Incidents: React.FC = () => {
 
                     {result.highlights && result.highlights.length > 0 && (
                       <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Key Highlights:</h4>
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Destaques Principais:</h4>
                         <div className="flex flex-wrap gap-1">
                           {result.highlights.slice(0, 3).map((highlight, idx) => (
                             <span
@@ -281,12 +310,12 @@ const Incidents: React.FC = () => {
                       <div className="flex items-center space-x-4">
                         <span className="capitalize">{result.type}</span>
                         {result.lastModified && (
-                          <span>Updated {result.lastModified.toLocaleDateString()}</span>
+                          <span>Atualizado em {result.lastModified.toLocaleDateString('pt-BR')}</span>
                         )}
                       </div>
                       {result.relevanceScore && (
                         <span className="text-green-600">
-                          {Math.round(result.relevanceScore * 100)}% match
+                          {Math.round(result.relevanceScore * 100)}% de correspondência
                         </span>
                       )}
                     </div>
@@ -302,7 +331,7 @@ const Incidents: React.FC = () => {
       <div className="fixed bottom-6 right-6">
         <button
           className="bg-red-600 hover:bg-red-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-          title="Report New Incident"
+          title="Reportar Novo Incidente"
           onClick={() => {
             // This would trigger the report incident modal
             console.log('Report new incident');
@@ -311,6 +340,12 @@ const Incidents: React.FC = () => {
           <Plus className="w-6 h-6" />
         </button>
       </div>
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        open={isBulkUploadModalOpen}
+        onOpenChange={setIsBulkUploadModalOpen}
+      />
     </div>
   );
 };

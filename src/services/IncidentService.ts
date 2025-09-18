@@ -8,7 +8,7 @@ interface Incident {
   description: string;
   category: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed' | 'reopened';
+  status: 'aberto' | 'em_tratamento' | 'resolvido' | 'fechado' | 'reaberto' | 'em_revisao';
   priority: number;
   assigned_team?: string;
   assigned_to?: string;
@@ -212,7 +212,7 @@ export class IncidentService {
 
     // Include resolved
     if (!criteria.include_resolved) {
-      sql += ` AND i.status NOT IN ('resolved', 'closed')`;
+      sql += ` AND i.status NOT IN ('resolvido', 'fechado')`;
     }
 
     // Include archived
@@ -455,7 +455,7 @@ export class IncidentService {
           break;
         case 'close_incident':
           await this.updateIncident(incident.id, {
-            status: 'closed',
+            status: 'fechado',
             resolution_type: parameters.resolution_type,
             resolution: parameters.resolution
           });
@@ -512,8 +512,8 @@ export class IncidentService {
     `, [timeRange.start.toISOString(), timeRange.end.toISOString()]);
 
     const totalIncidents = incidents.length;
-    const openIncidents = incidents.filter(i => ['open', 'in_progress'].includes(i.status)).length;
-    const resolvedIncidents = incidents.filter(i => ['resolved', 'closed'].includes(i.status)).length;
+    const openIncidents = incidents.filter(i => ['aberto', 'em_tratamento'].includes(i.status)).length;
+    const resolvedIncidents = incidents.filter(i => ['resolvido', 'fechado'].includes(i.status)).length;
 
     // Calculate MTTR
     const resolvedWithTime = incidents.filter(i => i.resolution_time_hours != null);
@@ -528,7 +528,7 @@ export class IncidentService {
       : 0;
 
     // Calculate SLA compliance
-    const slaEligible = incidents.filter(i => ['resolved', 'closed'].includes(i.status));
+    const slaEligible = incidents.filter(i => ['resolvido', 'fechado'].includes(i.status));
     const slaCompliant = slaEligible.filter(i => !i.sla_breach);
     const slaCompliance = slaEligible.length > 0 ? (slaCompliant.length / slaEligible.length) * 100 : 0;
 
@@ -563,7 +563,7 @@ export class IncidentService {
       FROM incidents
       WHERE created_at BETWEEN ? AND ?
         AND assigned_team IS NOT NULL
-        AND status IN ('resolved', 'closed')
+        AND status IN ('resolvido', 'fechado')
         AND archived = FALSE
       GROUP BY assigned_team
     `, [timeRange.start.toISOString(), timeRange.end.toISOString()]);
