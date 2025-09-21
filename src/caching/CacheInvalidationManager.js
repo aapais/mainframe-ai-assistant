@@ -70,7 +70,7 @@ class CacheInvalidationManager extends events_1.EventEmitter {
         const eventId = this.generateEventId();
         const startTime = Date.now();
         try {
-            let affectedKeys = [];
+            const affectedKeys = [];
             let cascadeLevel = 0;
             const primaryCount = await this.cacheManager.invalidate(pattern, tags, cascade);
             affectedKeys.push(...this.generateAffectedKeysFromPattern(pattern, tags));
@@ -199,7 +199,7 @@ class CacheInvalidationManager extends events_1.EventEmitter {
         const eventId = this.generateEventId();
         const startTime = Date.now();
         try {
-            let affectedKeys = [];
+            const affectedKeys = [];
             let cascadeLevel = 0;
             const primaryCount = await this.cacheManager.invalidate(rule.pattern, rule.tags, false);
             affectedKeys.push(...this.generateAffectedKeysFromPattern(rule.pattern, rule.tags));

@@ -342,7 +342,7 @@ class DashboardProvider extends events_1.EventEmitter {
                     label: metric,
                     data,
                     borderColor: this.getMetricColor(metric),
-                    backgroundColor: this.getMetricColor(metric) + '20',
+                    backgroundColor: `${this.getMetricColor(metric)  }20`,
                     fill: false
                 }]
         };

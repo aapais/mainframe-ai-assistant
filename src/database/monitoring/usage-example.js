@@ -129,7 +129,7 @@ async function dashboardExample() {
     console.log('Current Metrics:', dashboardData.metrics);
     const prometheusMetrics = monitoring.exportPrometheusMetrics();
     console.log('\n📈 Prometheus Metrics (sample):');
-    console.log(prometheusMetrics.split('\n').slice(0, 10).join('\n') + '\n...');
+    console.log(`${prometheusMetrics.split('\n').slice(0, 10).join('\n')  }\n...`);
     const responseTimeData = monitoring.dashboard.getTimeSeriesData('responseTime', 1);
     console.log(`Response Time Chart Data: ${responseTimeData.datasets[0].data.length} points`);
     const alertSummary = monitoring.dashboard.getAlertSummary();
@@ -320,7 +320,7 @@ async function advancedConfigurationExample() {
 }
 async function runExamples() {
     console.log('🚀 SQLite Performance Monitoring System Examples\n');
-    console.log('='.repeat(60) + '\n');
+    console.log(`${'='.repeat(60)  }\n`);
     try {
         console.log('Example 1: Basic Usage');
         console.log('-'.repeat(30));

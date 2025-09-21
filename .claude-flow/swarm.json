@@ -1,0 +1,84 @@
+{
+  "id": "swarm_1758030951123",
+  "topology": "hierarchical",
+  "maxAgents": 6,
+  "strategy": "balanced",
+  "status": "active",
+  "created": "2025-09-16T13:55:51.123Z",
+  "agents": [],
+  "tasks": {
+    "phase1": [
+      {
+        "id": 1,
+        "type": "backend-dev",
+        "task": "Apply database migration 009_mvp1_v8_transparency.sql",
+        "status": "pending"
+      },
+      {
+        "id": 2,
+        "type": "coder",
+        "task": "Create AIAuthorizationDialog component",
+        "status": "pending"
+      },
+      {
+        "id": 3,
+        "type": "backend-dev",
+        "task": "Implement AIAuthorizationService",
+        "status": "pending"
+      },
+      {
+        "id": 4,
+        "type": "coder",
+        "task": "Create Cost Display components",
+        "status": "pending"
+      }
+    ],
+    "phase2": [
+      {
+        "id": 5,
+        "type": "coder",
+        "task": "Create Transparency Dashboard",
+        "status": "pending"
+      },
+      {
+        "id": 6,
+        "type": "backend-dev",
+        "task": "Implement OperationLoggerService",
+        "status": "pending"
+      },
+      {
+        "id": 7,
+        "type": "backend-dev",
+        "task": "Create IPC handlers for auth and cost",
+        "status": "pending"
+      }
+    ],
+    "phase3": [
+      {
+        "id": 8,
+        "type": "coder",
+        "task": "Create KBEntryDetail component",
+        "status": "pending"
+      },
+      {
+        "id": 9,
+        "type": "coder",
+        "task": "Create DeleteConfirmationDialog component",
+        "status": "pending"
+      },
+      {
+        "id": 10,
+        "type": "coder",
+        "task": "Create EditKBEntryModal component",
+        "status": "pending"
+      },
+      {
+        "id": 11,
+        "type": "coder",
+        "task": "Enhance BulkOperationsPanel",
+        "status": "pending"
+      }
+    ]
+  },
+  "memory": {}
+}

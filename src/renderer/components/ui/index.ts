@@ -16,7 +16,6 @@ export {
   Muted,
   Code,
   Kbd,
-  Label,
   Caption,
   Link,
   Blockquote
@@ -27,10 +26,11 @@ export type { TypographyProps } from './Typography';
 // Input Components
 export {
   Input,
+  SearchInput,
   Textarea
 } from './Input';
 
-export type { InputProps, TextareaProps } from './Input';
+export type { InputProps, SearchInputProps, TextareaProps } from './Input';
 
 // Label Component
 export { Label } from './Label';
@@ -108,33 +108,24 @@ export type {
 } from './Card';
 
 // Data Display Components
-export {
-  Badge,
-  Avatar,
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableCaption,
-  DataTable,
-  List,
-  ListItem,
-  Progress
-} from './DataDisplay';
+export { Badge } from './Badge';
+export type { BadgeProps } from './Badge';
 
-export type {
-  BadgeProps,
-  AvatarProps,
-  TableProps,
-  DataTableProps,
-  DataTableColumn,
-  ListProps,
-  ListItemProps,
-  ProgressProps
-} from './DataDisplay';
+// Loading & Feedback Components
+export {
+  LoadingSpinner,
+  LoadingText,
+  FullPageLoading,
+  Skeleton
+} from './LoadingSpinner';
+export type { LoadingSpinnerProps, LoadingTextProps, FullPageLoadingProps, SkeletonProps } from './LoadingSpinner';
+
+export {
+  ToastProvider,
+  useToast,
+  useToastHelpers
+} from './Toast';
+export type { Toast } from './Toast';
 
 // Modal and Overlay Components
 export {
@@ -164,6 +155,23 @@ export type {
   ConfirmModalProps,
   AlertModalProps
 } from './Modal';
+
+// Alert Components
+export {
+  Alert,
+  AlertTitle,
+  AlertDescription
+} from './Alert';
+
+export type {
+  AlertProps,
+  AlertTitleProps,
+  AlertDescriptionProps
+} from './Alert';
+
+// Separator Component
+export { Separator } from './Separator';
+export type { SeparatorProps } from './Separator';
 
 // Navigation Components
 export {

@@ -195,7 +195,7 @@ class CodeAnalysisPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
             copybooks: []
         };
         let currentDivision = null;
-        let currentSection = null;
+        const currentSection = null;
         let lineNumber = 0;
         for (const line of lines) {
             lineNumber++;
@@ -262,7 +262,7 @@ class CodeAnalysisPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
     }
     createDivision(type, startLine) {
         return {
-            name: type.toUpperCase() + ' DIVISION',
+            name: `${type.toUpperCase()  } DIVISION`,
             type,
             start_line: startLine,
             end_line: startLine,
@@ -571,7 +571,7 @@ class CodeAnalysisPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
         const content = codeFile.content.toLowerCase();
         const problem = kbEntry.problem.toLowerCase();
         const solution = kbEntry.solution.toLowerCase();
-        const errorCodes = this.extractErrorCodes(problem + ' ' + solution);
+        const errorCodes = this.extractErrorCodes(`${problem  } ${  solution}`);
         for (const code of errorCodes) {
             if (content.includes(code.toLowerCase())) {
                 confidence += 30;
@@ -591,7 +591,7 @@ class CodeAnalysisPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
     findRelevantLines(kbEntry, codeFile) {
         const lines = codeFile.content.split('\n');
         const relevantLines = [];
-        const errorCodes = this.extractErrorCodes(kbEntry.problem + ' ' + kbEntry.solution);
+        const errorCodes = this.extractErrorCodes(`${kbEntry.problem  } ${  kbEntry.solution}`);
         lines.forEach((line, index) => {
             for (const code of errorCodes) {
                 if (line.toLowerCase().includes(code.toLowerCase())) {

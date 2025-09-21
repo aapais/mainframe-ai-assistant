@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
 import { TrendingUp, TrendingDown, Minus, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import styles from './SuccessRateIndicator.module.css';
 
 export interface SuccessRateIndicatorProps {
   rate: number; // 0-100

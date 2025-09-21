@@ -24,7 +24,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   const label = STATUS_LABELS[status];
 
   const statusOptions: IncidentStatus[] = [
-    'open', 'assigned', 'in_progress', 'pending_review', 'resolved', 'closed', 'reopened'
+    'aberto', 'em_tratamento', 'em_revisao', 'resolvido', 'fechado', 'reaberto'
   ];
 
   const handleStatusChange = (newStatus: IncidentStatus) => {

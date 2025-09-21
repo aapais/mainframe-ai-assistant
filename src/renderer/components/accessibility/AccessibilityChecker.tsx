@@ -94,33 +94,15 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
   if (!enabled) return null;
 
   const ScoreIndicator: React.FC<{ score: number }> = ({ score }) => {
-    const getScoreColor = (score: number) => {
-      if (score >= 90) return '#4ade80'; // green-400
-      if (score >= 70) return '#fbbf24'; // yellow-400
-      return '#ef4444'; // red-500
+    const getScoreClass = (score: number) => {
+      if (score >= 90) return 'score-excellent';
+      if (score >= 70) return 'score-good';
+      return 'score-poor';
     };
 
     return (
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          backgroundColor: 'rgba(0, 0, 0, 0.1)',
-          fontSize: '14px',
-          fontWeight: '600',
-        }}
-      >
-        <div
-          style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            backgroundColor: getScoreColor(score),
-          }}
-        />
+      <div className="inline-flex items-center gap-2 px-2 py-1 bg-opacity-10 text-sm font-semibold rounded">
+        <div className={`w-3 h-3 rounded-full ${getScoreClass(score)}`} style={{backgroundColor: score >= 90 ? '#4ade80' : score >= 70 ? '#fbbf24' : '#ef4444'}} />
         {score.toFixed(1)}/100
       </div>
     );
@@ -131,114 +113,61 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
     severity: 'error' | 'warning';
   }> = ({ issue, severity }) => (
     <div
-      style={{
-        padding: '8px',
-        marginBottom: '4px',
-        borderLeft: `4px solid ${severity === 'error' ? '#ef4444' : '#fbbf24'}`,
-        backgroundColor: severity === 'error' ? '#fef2f2' : '#fffbeb',
-        borderRadius: '0 4px 4px 0',
-        fontSize: '13px',
-        cursor: 'pointer',
-      }}
+      className={`p-2 mb-1 cursor-pointer text-xs ${
+        severity === 'error' ? 'a11y-error' : 'a11y-warning'
+      } rounded-r`}
       onClick={() => highlightElement(issue.element)}
       title="Click to highlight element"
     >
-      <div style={{ fontWeight: '600', color: severity === 'error' ? '#dc2626' : '#d97706' }}>
+      <div className={`font-semibold ${severity === 'error' ? 'text-red-600' : 'text-yellow-600'}`}>
         {severity === 'error' ? '❌' : '⚠️'} {issue.type}
       </div>
-      <div style={{ marginTop: '4px', color: '#374151' }}>
+      <div className="mt-1 text-gray-700">
         {issue.message}
       </div>
-      <div style={{ marginTop: '4px', fontSize: '11px', color: '#6b7280', fontFamily: 'monospace' }}>
+      <div className="mt-1 text-xs text-gray-500 font-mono">
         {getElementSelector(issue.element)}
       </div>
     </div>
   );
 
   const InlineReport: React.FC = () => (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        width: '300px',
-        maxHeight: '80vh',
-        overflowY: 'auto',
-        backgroundColor: 'white',
-        border: '2px solid #d1d5db',
-        borderRadius: '8px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-        zIndex: 9999,
-        fontSize: '14px',
-      }}
-    >
-      <div
-        style={{
-          padding: '12px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontWeight: '600' }}>A11y Report</span>
+    <div className="floating-top-right container-narrow scrollable-y bg-white border-2 border-gray-300 rounded-lg shadow-lg text-sm">
+      <div className="p-3 border-b border-gray-200 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">A11y Report</span>
           {issues && <ScoreIndicator score={issues.score} />}
         </div>
-        <div>
+        <div className="flex gap-2">
           <button
             onClick={() => setAutoCheck(!autoCheck)}
-            style={{
-              padding: '4px 8px',
-              marginRight: '8px',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: autoCheck ? '#3b82f6' : 'white',
-              color: autoCheck ? 'white' : '#374151',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
+            className={`btn btn-xs ${autoCheck ? 'btn-primary' : 'btn-outline-secondary'}`}
           >
             Auto {autoCheck ? 'On' : 'Off'}
           </button>
           <button
             onClick={runAudit}
-            style={{
-              padding: '4px 8px',
-              marginRight: '8px',
-              border: '1px solid #d1d5db',
-              borderRadius: '4px',
-              backgroundColor: '#10b981',
-              color: 'white',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
+            className="btn btn-xs btn-success"
           >
             Check
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            style={{
-              padding: '4px 8px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              fontSize: '16px',
-              cursor: 'pointer',
-            }}
+            className="modal-btn-close"
           >
             ×
           </button>
         </div>
       </div>
 
-      <div style={{ padding: '12px' }}>
+      <div className="p-3">
         {!issues ? (
           <div>Click "Check" to run accessibility audit</div>
         ) : (
           <>
             {issues.errors.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontWeight: '600', marginBottom: '8px', color: '#dc2626' }}>
+              <div className="mb-4">
+                <div className="font-semibold mb-2 text-red-600">
                   Errors ({issues.errors.length})
                 </div>
                 {issues.errors.map((error, index) => (
@@ -249,7 +178,7 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
 
             {issues.warnings.length > 0 && (
               <div>
-                <div style={{ fontWeight: '600', marginBottom: '8px', color: '#d97706' }}>
+                <div className="font-semibold mb-2 text-yellow-600">
                   Warnings ({issues.warnings.length})
                 </div>
                 {issues.warnings.map((warning, index) => (
@@ -259,7 +188,7 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
             )}
 
             {issues.errors.length === 0 && issues.warnings.length === 0 && (
-              <div style={{ textAlign: 'center', color: '#10b981', fontWeight: '600' }}>
+              <div className="text-center text-success font-semibold">
                 ✅ No accessibility issues found!
               </div>
             )}
@@ -272,27 +201,11 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
   const FloatingButton: React.FC = () => (
     <button
       onClick={() => setIsOpen(!isOpen)}
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
-        width: '60px',
-        height: '60px',
-        borderRadius: '50%',
-        border: 'none',
-        backgroundColor: issues && (issues.errors.length > 0 || issues.warnings.length > 0)
-          ? '#ef4444'
-          : '#10b981',
-        color: 'white',
-        fontSize: '24px',
-        cursor: 'pointer',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        zIndex: 9998,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.2s ease',
-      }}
+      className={`btn-fab center-content text-white text-2xl ${
+        issues && (issues.errors.length > 0 || issues.warnings.length > 0)
+          ? 'bg-error'
+          : 'bg-success'
+      }`}
       title="Accessibility Checker"
       aria-label="Toggle accessibility checker"
     >
@@ -320,40 +233,24 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
         </>
       ) : (
         issues && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: '20px',
-              right: '20px',
-              padding: '12px',
-              backgroundColor: 'white',
-              border: '2px solid #d1d5db',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              zIndex: 9999,
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}
-          >
+          <div className="floating-bottom-right p-3 bg-white border-2 border-gray-300 rounded-lg shadow-lg text-sm flex items-center gap-3">
             <ScoreIndicator score={issues.score} />
             <div>
               {issues.errors.length > 0 && (
-                <span style={{ color: '#dc2626', fontWeight: '600' }}>
+                <span className="text-red-600 font-semibold">
                   {issues.errors.length} errors
                 </span>
               )}
               {issues.errors.length > 0 && issues.warnings.length > 0 && (
-                <span style={{ color: '#6b7280' }}>, </span>
+                <span className="text-gray-500">, </span>
               )}
               {issues.warnings.length > 0 && (
-                <span style={{ color: '#d97706', fontWeight: '600' }}>
+                <span className="text-yellow-600 font-semibold">
                   {issues.warnings.length} warnings
                 </span>
               )}
               {issues.errors.length === 0 && issues.warnings.length === 0 && (
-                <span style={{ color: '#10b981', fontWeight: '600' }}>
+                <span className="text-success font-semibold">
                   All good!
                 </span>
               )}

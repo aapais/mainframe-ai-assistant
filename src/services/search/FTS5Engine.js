@@ -289,7 +289,7 @@ class FTS5Engine {
         console.log('✅ FTS5 index optimization completed');
     }
     prepareFTS5Query(query) {
-        let ftsQuery = query.trim();
+        const ftsQuery = query.trim();
         for (const pattern of this.tokenizerConfig.errorCodePatterns) {
             if (pattern.test(ftsQuery)) {
                 return `"${ftsQuery}"`;

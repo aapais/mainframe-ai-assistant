@@ -317,8 +317,8 @@ class ImportService extends events_1.EventEmitter {
         let imported = checkpoint?.successCount || 0;
         let updated = 0;
         let skipped = 0;
-        let errors = [];
-        let warnings = [];
+        const errors = [];
+        const warnings = [];
         const startIndex = checkpoint?.processedCount || 0;
         for (let i = startIndex; i < data.length; i += batchSize) {
             const batch = data.slice(i, Math.min(i + batchSize, data.length));

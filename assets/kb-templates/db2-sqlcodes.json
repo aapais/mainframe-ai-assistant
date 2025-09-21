@@ -1,0 +1,42 @@
+[
+  {
+    "title": "SQLCODE -904 - Resource Unavailable",
+    "problem": "SQLCODE -904 indicates that a required resource is not available to complete the SQL operation. This can include unavailable tablespaces, databases, buffer pools, or other DB2 system resources needed for query execution.",
+    "solution": "1. Check if the database or tablespace is in STOP or restricted status\n2. Use DISPLAY DATABASE command to check database status\n3. Verify buffer pool availability and allocation\n4. Check for concurrent utility operations that may lock resources\n5. Review DB2 log for resource allocation messages\n6. Ensure adequate storage allocation for DB2 subsystem\n7. Check for deadlock situations involving system resources\n8. Verify DB2 startup parameters and resource definitions\n9. Monitor DB2 performance and resource utilization\n10. Contact DB2 system administrator for resource status\n11. Consider retrying the operation after resource becomes available\n12. Review concurrent job scheduling to avoid resource conflicts",
+    "category": "DB2",
+    "tags": ["db2", "sqlcode", "-904", "resource", "unavailable", "tablespace", "database"],
+    "severity": "high"
+  },
+  {
+    "title": "SQLCODE -911 - Deadlock or Timeout",
+    "problem": "SQLCODE -911 indicates that the current transaction has been rolled back due to a deadlock with another transaction or a timeout waiting for a resource. This occurs when two or more transactions are waiting for each other to release locks.",
+    "solution": "1. Implement automatic retry logic with exponential backoff\n2. Review transaction design to minimize lock duration\n3. Access tables in consistent order across all programs\n4. Use appropriate isolation levels (CS, RR, UR)\n5. Commit transactions more frequently to reduce lock time\n6. Review SQL statement order within transactions\n7. Consider using FOR UPDATE clause to acquire locks early\n8. Monitor DB2 lock escalation and timeout settings\n9. Use EXPLAIN to analyze access paths and locking\n10. Implement application-level conflict resolution\n11. Schedule batch jobs during low-activity periods\n12. Consider partitioning large tables to reduce lock contention",
+    "category": "DB2",
+    "tags": ["db2", "sqlcode", "-911", "deadlock", "timeout", "transaction", "rollback"],
+    "severity": "high"
+  },
+  {
+    "title": "SQLCODE -913 - Deadlock Timeout",
+    "problem": "SQLCODE -913 specifically indicates that a deadlock timeout has occurred. The transaction was chosen as the deadlock victim and rolled back to break the deadlock cycle. This is similar to -911 but specifically for deadlock resolution.",
+    "solution": "1. Redesign application to access resources in consistent order\n2. Minimize transaction scope and duration\n3. Use SELECT FOR UPDATE to explicitly control locking sequence\n4. Implement retry logic with random delay intervals\n5. Break large transactions into smaller units of work\n6. Use appropriate lock granularity (row vs page vs table)\n7. Consider using optimistic locking techniques\n8. Review and optimize SQL statement performance\n9. Schedule conflicting batch processes at different times\n10. Monitor lock wait times and adjust timeout parameters\n11. Use DB2 lock monitoring tools to identify conflict patterns\n12. Consider using WITH UR isolation for read-only operations",
+    "category": "DB2",
+    "tags": ["db2", "sqlcode", "-913", "deadlock", "timeout", "victim", "rollback"],
+    "severity": "medium"
+  },
+  {
+    "title": "SQLCODE -805 - Package or Plan Not Found",
+    "problem": "SQLCODE -805 indicates that the package or plan required to execute the SQL statement cannot be found in the DB2 catalog. This occurs when the program hasn't been properly bound or the package has been dropped.",
+    "solution": "1. Verify the package or plan name in the load module\n2. Check if the package exists in SYSIBM.SYSPACKAGE\n3. Rebind the package or plan using BIND command\n4. Ensure the bind was successful without errors\n5. Check collection name if using packages\n6. Verify the package version matches the program version\n7. Check authorization to execute the package/plan\n8. Ensure the package wasn't inadvertently dropped\n9. Review bind parameters and options used\n10. Check for typos in package/plan names\n11. Verify DB2 connection uses correct location\n12. Consider using BIND COPY to duplicate existing packages",
+    "category": "DB2",
+    "tags": ["db2", "sqlcode", "-805", "package", "plan", "bind", "not-found"],
+    "severity": "high"
+  },
+  {
+    "title": "SQLCODE -180 - Date/Time Value Error",
+    "problem": "SQLCODE -180 indicates an invalid date, time, or timestamp value was encountered during SQL processing. This can occur due to invalid date formats, out-of-range values, or incompatible date arithmetic operations.",
+    "solution": "1. Validate date/time input data format and values\n2. Check for leap year considerations in date calculations\n3. Verify date ranges are within valid DB2 limits (1/1/0001 to 12/31/9999)\n4. Use proper date/time functions like DATE(), TIME(), TIMESTAMP()\n5. Check for null values in date/time columns\n6. Validate century and year values in date fields\n7. Use ISO date format (YYYY-MM-DD) for consistency\n8. Check time zone considerations if using timestamps\n9. Verify date arithmetic operations for validity\n10. Use date/time formatting functions for display\n11. Implement proper error handling for date conversion\n12. Test with boundary date values (end of month, year)",
+    "category": "DB2",
+    "tags": ["db2", "sqlcode", "-180", "date", "time", "timestamp", "invalid", "format"],
+    "severity": "medium"
+  }
+]

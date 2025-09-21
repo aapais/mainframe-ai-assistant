@@ -1,0 +1,291 @@
+/**
+ * Unified Z-Index System - Mainframe AI Assistant
+ *
+ * AUTHORITATIVE z-index hierarchy for all components
+ * Resolves conflicts between multiple competing systems
+ *
+ * LAYERS (incremental 100-based scale):
+ * - Base Layer (0-99): Content, cards, normal flow
+ * - UI Layer (100-199): Sticky elements, navigation
+ * - Interaction Layer (1000-1099): Dropdowns, suggestions
+ * - Overlay Layer (1100-1199): Popovers, tooltips
+ * - Modal Layer (1200-1299): Modal backdrops and content
+ * - System Layer (1300-1399): Toasts, alerts, loading
+ * - Debug Layer (2000+): Development tools, emergency overrides
+ *
+ * Usage: Import this file FIRST, before other stylesheets
+ * All other z-index values should reference these variables
+ */
+
+:root {
+  /* =============================================
+     BASE LAYER (0-99) - Content Flow
+     ============================================= */
+  --z-behind: -1;
+  --z-base: 0;
+  --z-content: 1;
+  --z-card: 10;
+  --z-raised: 20;
+  --z-elevated: 30;
+  --z-floating: 40;
+
+  /* =============================================
+     UI LAYER (100-199) - Interface Elements
+     ============================================= */
+  --z-ui: 100; /* Main UI layer variable expected by tests */
+  --z-sticky: 100;
+  --z-header: 110;
+  --z-navigation: 120;
+  --z-sidebar: 130;
+  --z-fixed-ui: 140;
+
+  /* =============================================
+     INTERACTION LAYER (1000-1099) - Dropdowns
+     ============================================= */
+  --z-interaction: 1000; /* Main interaction layer variable expected by tests */
+  --z-dropdown-base: 1000;
+  --z-dropdown: 1000;
+  --z-dropdown-suggestions: 1010;
+  --z-dropdown-history: 1020;
+  --z-dropdown-filters: 1030;
+  --z-dropdown-quick-actions: 1040;
+  --z-dropdown-menu: 1050;
+  --z-context-menu: 1060;
+
+  /* =============================================
+     OVERLAY LAYER (1100-1199) - Contextual UI
+     ============================================= */
+  --z-popover: 1100;
+  --z-tooltip: 1110;
+  --z-hover-card: 1120;
+  --z-menu: 1130;
+
+  /* =============================================
+     MODAL LAYER (1200-1299) - Blocking UI
+     ============================================= */
+  --z-modal-backdrop: 1200;
+  --z-modal: 1210;
+  --z-dialog: 1220;
+  --z-sheet: 1230;
+  --z-overlay: 1200; /* Legacy alias */
+
+  /* =============================================
+     SYSTEM LAYER (1300-1399) - Global Feedback
+     ============================================= */
+  --z-system: 1300; /* Main system layer variable expected by tests */
+  --z-toast: 1300;
+  --z-notification: 1310;
+  --z-alert: 1320;
+  --z-loading-overlay: 1330;
+  --z-spinner: 1340;
+
+  /* =============================================
+     DEBUG LAYER (2000+) - Development Tools
+     ============================================= */
+  --z-debug: 2000;
+  --z-performance-monitor: 2010;
+  --z-dev-tools: 2020;
+
+  /* =============================================
+     EMERGENCY LAYER - Absolute Maximum
+     ============================================= */
+  --z-maximum: 2147483647;
+  --z-emergency: 2147483646;
+
+  /* =============================================
+     LEGACY ALIASES - For Backward Compatibility
+     Remove these gradually as codebase is updated
+     ============================================= */
+
+  /* From visual-hierarchy.css */
+  --z-index-behind: var(--z-behind);
+  --z-index-base: var(--z-base);
+  --z-index-raised: var(--z-raised);
+  --z-index-elevated: var(--z-elevated);
+  --z-index-floating: var(--z-floating);
+  --z-index-sticky: var(--z-sticky);
+  --z-index-dropdown-base: var(--z-dropdown-base);
+  --z-index-dropdown-suggestions: var(--z-dropdown-suggestions);
+  --z-index-dropdown-history: var(--z-dropdown-history);
+  --z-index-dropdown-filters: var(--z-dropdown-filters);
+  --z-index-dropdown-quick-actions: var(--z-dropdown-quick-actions);
+  --z-index-dropdown-menu: var(--z-dropdown-menu);
+  --z-index-popover: var(--z-popover);
+  --z-index-tooltip: var(--z-tooltip);
+  --z-index-modal-backdrop: var(--z-modal-backdrop);
+  --z-index-modal: var(--z-modal);
+  --z-index-toast: var(--z-toast);
+  --z-index-loading-overlay: var(--z-loading-overlay);
+  --z-index-overlay: var(--z-overlay);
+  --z-index-loading: var(--z-loading-overlay);
+  --z-index-maximum: var(--z-maximum);
+
+  /* From theme.css */
+  --z-modal-backdrop: var(--z-modal-backdrop);
+
+  /* From design-system/tokens.css */
+  --z-index-auto: auto;
+  --z-index-docked: var(--z-sticky);
+  --z-index-dropdown: var(--z-dropdown);
+  --z-index-banner: var(--z-header);
+  --z-index-max: var(--z-maximum);
+
+  /* From optimized-layouts.css */
+  --z-performance-monitor: var(--z-performance-monitor);
+}
+
+/* =============================================
+   UTILITY CLASSES
+   ============================================= */
+
+/* Base Layer */
+.z-behind { z-index: var(--z-behind); }
+.z-base { z-index: var(--z-base); }
+.z-content { z-index: var(--z-content); }
+.z-card { z-index: var(--z-card); }
+.z-raised { z-index: var(--z-raised); }
+.z-elevated { z-index: var(--z-elevated); }
+.z-floating { z-index: var(--z-floating); }
+
+/* UI Layer */
+.z-sticky { z-index: var(--z-sticky); }
+.z-header { z-index: var(--z-header); }
+.z-navigation { z-index: var(--z-navigation); }
+.z-sidebar { z-index: var(--z-sidebar); }
+.z-fixed-ui { z-index: var(--z-fixed-ui); }
+
+/* Interaction Layer */
+.z-dropdown { z-index: var(--z-dropdown); }
+.z-dropdown-suggestions { z-index: var(--z-dropdown-suggestions); }
+.z-dropdown-history { z-index: var(--z-dropdown-history); }
+.z-dropdown-filters { z-index: var(--z-dropdown-filters); }
+.z-dropdown-quick-actions { z-index: var(--z-dropdown-quick-actions); }
+.z-dropdown-menu { z-index: var(--z-dropdown-menu); }
+.z-context-menu { z-index: var(--z-context-menu); }
+
+/* Overlay Layer */
+.z-popover { z-index: var(--z-popover); }
+.z-tooltip { z-index: var(--z-tooltip); }
+.z-hover-card { z-index: var(--z-hover-card); }
+.z-menu { z-index: var(--z-menu); }
+
+/* Modal Layer */
+.z-modal-backdrop { z-index: var(--z-modal-backdrop); }
+.z-modal { z-index: var(--z-modal); }
+.z-dialog { z-index: var(--z-dialog); }
+.z-sheet { z-index: var(--z-sheet); }
+.z-overlay { z-index: var(--z-overlay); }
+
+/* System Layer */
+.z-toast { z-index: var(--z-toast); }
+.z-notification { z-index: var(--z-notification); }
+.z-alert { z-index: var(--z-alert); }
+.z-loading { z-index: var(--z-loading-overlay); }
+.z-spinner { z-index: var(--z-spinner); }
+
+/* Debug Layer */
+.z-debug { z-index: var(--z-debug); }
+.z-performance-monitor { z-index: var(--z-performance-monitor); }
+.z-dev-tools { z-index: var(--z-dev-tools); }
+
+/* Emergency */
+.z-maximum { z-index: var(--z-maximum); }
+.z-emergency { z-index: var(--z-emergency); }
+
+/* =============================================
+   COMPONENT-SPECIFIC RULES
+   ============================================= */
+
+/* Ensure critical UI components use correct layers */
+[role="dialog"] { z-index: var(--z-modal); }
+[role="alertdialog"] { z-index: var(--z-modal); }
+[role="tooltip"] { z-index: var(--z-tooltip); }
+[role="menu"] { z-index: var(--z-menu); }
+[role="listbox"] { z-index: var(--z-dropdown); }
+[role="combobox"] { z-index: var(--z-dropdown); }
+
+/* Toast and notification positioning */
+.toast-container { z-index: var(--z-toast); }
+.notification-container { z-index: var(--z-notification); }
+.alert-container { z-index: var(--z-alert); }
+
+/* Loading and spinner overlays */
+.loading-overlay { z-index: var(--z-loading-overlay); }
+.spinner-overlay { z-index: var(--z-spinner); }
+
+/* Debug and development tools */
+.react-dev-tools { z-index: var(--z-dev-tools); }
+.performance-monitor { z-index: var(--z-performance-monitor); }
+
+/* =============================================
+   MOBILE ADAPTATIONS
+   ============================================= */
+
+@media (max-width: 768px) {
+  :root {
+    /* On mobile, use higher z-index for dropdowns to ensure they appear above mobile UI */
+    --z-dropdown-mobile: var(--z-modal);
+    --z-dropdown-suggestions-mobile: calc(var(--z-modal) + 10);
+    --z-dropdown-history-mobile: calc(var(--z-modal) + 20);
+    --z-dropdown-filters-mobile: calc(var(--z-modal) + 30);
+  }
+
+  /* Mobile-specific dropdown positioning */
+  .mobile-dropdown,
+  .dropdown-mobile {
+    z-index: var(--z-dropdown-mobile) !important;
+  }
+
+  .mobile-suggestions {
+    z-index: var(--z-dropdown-suggestions-mobile) !important;
+  }
+}
+
+/* =============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================= */
+
+/* Ensure focus indicators appear above most content */
+:focus-visible {
+  position: relative;
+  z-index: calc(var(--z-elevated) + 1);
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .z-elevated,
+  .z-floating,
+  .z-dropdown,
+  .z-popover,
+  .z-modal {
+    /* Enhance visual separation in high contrast mode */
+    outline: 2px solid;
+    outline-offset: 2px;
+  }
+}
+
+/* =============================================
+   DEVELOPMENT MODE HELPERS
+   ============================================= */
+
+/* Debug mode - shows z-index values */
+.debug-z-index::before {
+  content: 'z:' attr(data-z-index);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  background: #ff0000;
+  color: #ffffff;
+  padding: 2px 4px;
+  font-size: 10px;
+  font-family: monospace;
+  z-index: var(--z-debug);
+  pointer-events: none;
+}
+
+/* Print styles - reset z-index for printing */
+@media print {
+  * {
+    z-index: auto !important;
+  }
+}

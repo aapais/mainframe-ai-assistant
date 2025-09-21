@@ -301,9 +301,9 @@ class UserBehaviorTracker {
         const engagement = session.interactions.length > 10 ? 'active' : 'passive';
         const expertise = session.queries.some(q => q.complexity.overall > 0.7) ? 'expert' : 'intermediate';
         return {
-            focus: focus,
-            engagement: engagement,
-            expertise: expertise,
+            focus,
+            engagement,
+            expertise,
             taskUrgency: 'medium',
             sessionGoal: this.inferSessionGoal(session)
         };

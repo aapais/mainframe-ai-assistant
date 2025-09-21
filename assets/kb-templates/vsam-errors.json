@@ -1,0 +1,42 @@
+[
+  {
+    "title": "VSAM Status 35 - File Not Found",
+    "problem": "VSAM return code 35 indicates that the requested VSAM dataset could not be found or opened. This typically occurs during OPEN processing when the catalog cannot locate the dataset or when the dataset name is misspelled.",
+    "solution": "1. Verify the dataset name spelling in your program\n2. Check if the dataset exists using LISTCAT command: LISTCAT ENT('dataset.name')\n3. Ensure the dataset is properly cataloged\n4. If uncataloged, catalog it using: DEFINE CLUSTER or use IDCAMS to catalog\n5. Check dataset disposition in JCL (DISP parameter)\n6. Verify access permissions (RACF/ACF2 authorization)\n7. If dataset was deleted, restore from backup or recreate",
+    "category": "VSAM",
+    "tags": ["vsam", "status-35", "file-not-found", "catalog", "open-error"],
+    "severity": "high"
+  },
+  {
+    "title": "VSAM Status 37 - OPEN Mode Conflict",
+    "problem": "VSAM return code 37 occurs when there's a conflict with the OPEN mode requested. This happens when a dataset is already open for output by another job, or when requesting incompatible access modes (e.g., trying to open for output when already open for input).",
+    "solution": "1. Check if another job has the dataset open for exclusive access\n2. Use DISPLAY GRS,RES=(*,dataset.name) to see who has the dataset allocated\n3. Wait for the other job to complete or contact the user\n4. Review your OPEN statement for correct access mode\n5. Ensure proper dataset disposition in JCL (OLD, SHR, MOD)\n6. Check if dataset is being backed up (HSM/DFSMShsm)\n7. Consider using DISP=SHR if concurrent read access is acceptable\n8. Implement retry logic with wait intervals in your program",
+    "category": "VSAM",
+    "tags": ["vsam", "status-37", "open-mode", "conflict", "exclusive-access", "sharing"],
+    "severity": "medium"
+  },
+  {
+    "title": "VSAM Status 39 - File Attribute Mismatch",
+    "problem": "VSAM return code 39 indicates a mismatch between the dataset attributes defined in the program and the actual VSAM dataset attributes. This includes record length, key length, key position, or dataset organization differences.",
+    "solution": "1. Compare program DCB/VSAM attributes with dataset definition\n2. Use LISTCAT ENT('dataset.name') ALL to view dataset attributes\n3. Check record length (LRECL) matches between program and dataset\n4. Verify key length and key position for KSDS datasets\n5. Ensure dataset organization matches (KSDS, ESDS, RRDS)\n6. Review COBOL FD or Assembler DCB definitions\n7. If mismatch is intentional, redefine dataset or modify program\n8. For CI/CA size mismatches, consider reallocating the dataset\n9. Check buffer space allocation in program",
+    "category": "VSAM",
+    "tags": ["vsam", "status-39", "attribute-mismatch", "record-length", "key-length", "dcb"],
+    "severity": "high"
+  },
+  {
+    "title": "VSAM Status 92 - Logic Error",
+    "problem": "VSAM return code 92 indicates a logic error in the sequence of VSAM operations. This occurs when operations are performed in an invalid sequence, such as attempting to read without opening, or performing operations on a closed dataset.",
+    "solution": "1. Review the sequence of VSAM operations in your program\n2. Ensure OPEN is performed before any I/O operations\n3. Check that dataset is not closed before attempting operations\n4. Verify proper error handling after each VSAM operation\n5. Ensure READ/WRITE operations match the OPEN mode\n6. Check for missing CLOSE statements that might leave dataset in invalid state\n7. Review program logic for proper exception handling\n8. Use debugging tools to trace operation sequence\n9. Implement proper status code checking after each operation",
+    "category": "VSAM",
+    "tags": ["vsam", "status-92", "logic-error", "sequence", "open-close", "operation-order"],
+    "severity": "medium"
+  },
+  {
+    "title": "VSAM Status 23 - Record Not Found",
+    "problem": "VSAM return code 23 indicates that a record with the specified key was not found during a READ operation. This is common in KSDS (Key Sequenced Dataset) processing when searching for specific records that don't exist in the dataset.",
+    "solution": "1. Verify the key value being used for the READ operation\n2. Check if the record was previously deleted\n3. Ensure proper key formatting (leading zeros, character case)\n4. Use generic READ or START/READNEXT to verify key ranges\n5. Implement proper NOT FOUND condition handling in program\n6. Check if dataset is empty or if you're at end-of-file\n7. Validate key construction logic in your program\n8. Consider using READNEXT after positioning with START\n9. For alternate index, verify the AIX is properly built and synchronized",
+    "category": "VSAM",
+    "tags": ["vsam", "status-23", "record-not-found", "key", "ksds", "read-operation"],
+    "severity": "low"
+  }
+]

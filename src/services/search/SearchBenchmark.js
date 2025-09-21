@@ -113,7 +113,7 @@ class SearchBenchmark {
                 title: `${system} ${errorCode} Error Resolution`,
                 problem: `System ${system} fails with error ${errorCode}. This is a test problem description for benchmarking purposes. The issue affects ${category} operations and requires specific resolution steps.`,
                 solution: `To resolve ${errorCode} error in ${system}: 1. Check system status 2. Verify configuration 3. Restart service if needed 4. Monitor for recurrence. This solution has been tested and verified.`,
-                category: category,
+                category,
                 tags: [system.toLowerCase(), errorCode.toLowerCase(), category.toLowerCase(), 'error', 'resolution'],
                 created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
                 updated_at: new Date(),
@@ -191,7 +191,7 @@ class SearchBenchmark {
     async runLoadTestPhase(config) {
         console.log('⚡ Running load test phase...');
         const results = [];
-        let errors = 0;
+        const errors = 0;
         const promises = [];
         for (let user = 0; user < config.concurrentUsers; user++) {
             const userPromise = this.simulateUser(config.testDuration, results, errors);
@@ -224,7 +224,7 @@ class SearchBenchmark {
     async runStressTestPhase(config) {
         console.log('💥 Running stress test phase...');
         const results = [];
-        let errors = 0;
+        const errors = 0;
         const promises = [];
         const stressConcurrency = config.concurrentUsers * 2;
         for (let user = 0; user < stressConcurrency; user++) {

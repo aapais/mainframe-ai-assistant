@@ -105,8 +105,8 @@ class MLSearchService {
         const mockResults = [
             {
                 id: '1',
-                title: 'Document about ' + request.query,
-                content: 'This is a document that matches your search query: ' + request.query,
+                title: `Document about ${  request.query}`,
+                content: `This is a document that matches your search query: ${  request.query}`,
                 category: 'documents',
                 tags: semanticAnalysis.entities.map((e) => e.value),
                 popularity: Math.random(),
@@ -115,7 +115,7 @@ class MLSearchService {
             },
             {
                 id: '2',
-                title: 'Related content for ' + semanticAnalysis.expandedQuery,
+                title: `Related content for ${  semanticAnalysis.expandedQuery}`,
                 content: 'Additional content related to your search',
                 category: 'articles',
                 tags: ['search', 'content'],

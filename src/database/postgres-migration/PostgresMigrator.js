@@ -99,17 +99,17 @@ class PostgresMigrator extends events_1.EventEmitter {
         const migrationPlan = this.migrationPlan || await this.analyzeMigration();
         let schema = '';
         schema += '-- PostgreSQL Schema Generated from SQLite\n';
-        schema += '-- Generated on: ' + new Date().toISOString() + '\n\n';
+        schema += `-- Generated on: ${  new Date().toISOString()  }\n\n`;
         schema += 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";\n';
         schema += 'CREATE EXTENSION IF NOT EXISTS "pg_trgm";\n\n';
         for (const tableMapping of migrationPlan.schemaMapping) {
-            schema += this.generateTableSchema(tableMapping) + '\n\n';
+            schema += `${this.generateTableSchema(tableMapping)  }\n\n`;
         }
         for (const indexMapping of migrationPlan.indexMapping) {
-            schema += this.generateIndexSchema(indexMapping) + '\n';
+            schema += `${this.generateIndexSchema(indexMapping)  }\n`;
         }
         for (const triggerMapping of migrationPlan.triggerMapping) {
-            schema += this.generateTriggerSchema(triggerMapping) + '\n\n';
+            schema += `${this.generateTriggerSchema(triggerMapping)  }\n\n`;
         }
         return schema;
     }
@@ -402,10 +402,10 @@ class PostgresMigrator extends events_1.EventEmitter {
         return sqliteName.toLowerCase();
     }
     convertIndexName(sqliteName) {
-        return sqliteName.toLowerCase() + '_pg';
+        return `${sqliteName.toLowerCase()  }_pg`;
     }
     convertTriggerName(sqliteName) {
-        return sqliteName.toLowerCase() + '_pg';
+        return `${sqliteName.toLowerCase()  }_pg`;
     }
     estimateMigrationDuration(dataMappings) {
         const totalRows = dataMappings.reduce((sum, dm) => sum + dm.rowCount, 0);

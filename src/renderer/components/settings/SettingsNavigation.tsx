@@ -172,6 +172,16 @@ const settingsSections: SettingsSection[] = [
 
   // API Configuration
   {
+    id: 'ai-integration',
+    title: 'Inteligência Artificial',
+    description: 'Configure Google Gemini para análise inteligente',
+    icon: <Key className="w-5 h-5" />,
+    path: '/settings/api/ai',
+    category: settingsCategories[1],
+    keywords: ['ai', 'gemini', 'inteligência', 'artificial', 'api', 'key'],
+    badge: 'Recomendado'
+  },
+  {
     id: 'api-keys',
     title: 'API Keys',
     description: 'Manage API keys for various AI providers',

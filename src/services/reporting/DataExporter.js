@@ -84,7 +84,7 @@ class DataExporter extends events_1.EventEmitter {
             }
             job.progress = 10;
             this.emit('jobProgress', job);
-            let transformedData = await this.applyTransformations(job.data, job.config);
+            const transformedData = await this.applyTransformations(job.data, job.config);
             job.progress = 20;
             this.emit('jobProgress', job);
             const filePath = this.generateFilePath(job.config);
@@ -466,7 +466,7 @@ class HTMLFormatHandler {
             css += '}\n';
         }
         if (customCSS) {
-            css += customCSS + '\n';
+            css += `${customCSS  }\n`;
         }
         css += '</style>\n';
         return css;

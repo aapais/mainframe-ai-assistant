@@ -162,7 +162,7 @@ class APISettingsHandler {
         const cipher = crypto.createCipher('aes-256-ctr', this.encryptionKey);
         let encrypted = cipher.update(text, 'utf8', 'hex');
         encrypted += cipher.final('hex');
-        return iv.toString('hex') + ':' + encrypted;
+        return `${iv.toString('hex')  }:${  encrypted}`;
       }
     } catch (error) {
       console.error('Encryption failed:', error);

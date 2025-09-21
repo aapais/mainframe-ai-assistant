@@ -11,7 +11,6 @@
   @apply transition-all duration-200 ease-in-out;
   @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
-  @apply font-accenture;
   font-weight: 500;
   letter-spacing: 0.025em;
 }
@@ -34,9 +33,9 @@
 
 /* Primary variant - Accenture Purple */
 .btn--primary {
-  @apply bg-accenture-purple text-white;
-  @apply hover:bg-primary-600 active:bg-primary-700;
-  @apply focus:ring-accenture-purple;
+  @apply bg-purple-600 text-white;
+  @apply hover:bg-purple-700 active:bg-purple-800;
+  @apply focus:ring-purple-500;
   @apply shadow-md hover:shadow-lg active:shadow-sm;
 }
 
@@ -46,9 +45,9 @@
 
 /* Secondary variant - White with purple border */
 .btn--secondary {
-  @apply bg-white text-accenture-purple border-accenture-purple;
+  @apply bg-white text-purple-600 border-purple-600;
   @apply hover:bg-gray-50 active:bg-gray-100;
-  @apply focus:ring-accenture-purple;
+  @apply focus:ring-purple-500;
   @apply shadow-sm hover:shadow-md;
 }
 
@@ -82,9 +81,9 @@
 
 /* Link variant */
 .btn--link {
-  @apply bg-transparent text-accenture-purple;
-  @apply hover:text-primary-700 hover:underline;
-  @apply focus:ring-accenture-purple;
+  @apply bg-transparent text-purple-600;
+  @apply hover:text-purple-700 hover:underline;
+  @apply focus:ring-purple-500;
   @apply border-transparent shadow-none;
   @apply p-0 h-auto min-h-0;
 }
@@ -249,7 +248,7 @@
 
 /* Keyboard navigation mode */
 .btn--keyboard-mode {
-  @apply ring-2 ring-offset-2 ring-accenture-purple;
+  @apply ring-2 ring-offset-2 ring-purple-500;
 }
 
 .btn-group--keyboard-mode > .btn:focus {

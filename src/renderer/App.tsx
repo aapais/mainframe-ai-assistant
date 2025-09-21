@@ -1,578 +1,350 @@
 /**
- * Accenture Mainframe AI Assistant - Complete MVP1 Application
- * All features integrated including AI transparency and CRUD operations
+ * Accenture Mainframe AI Assistant - Complete Application
+ * Comprehensive React application with full navigation and component integration
  */
 
 import React, { useState, useEffect } from 'react';
-import './App.css';
-import './styles/animations.css';
+import {
+  BarChart3,
+  AlertTriangle,
+  BookOpen,
+  Settings as SettingsIcon,
+  Home,
+  Menu,
+  X,
+  Search,
+  Plus,
+  Bell,
+  User,
+  HelpCircle
+} from 'lucide-react';
 
-// Import Accenture branding components
-import AccentureLogo from './components/AccentureLogo';
-import AccentureFooter from './components/AccentureFooter';
-
-// Import AI transparency components
-import AuthorizationDialog from './components/ai/AuthorizationDialog';
-import OperationHistory from './components/ai/OperationHistory';
-
-// Import CRUD modals
-import AddEntryModal from './components/modals/AddEntryModal';
-import EditEntryModal from './components/modals/EditEntryModal';
-import DeleteConfirmDialog from './components/modals/DeleteConfirmDialog';
-
-// Import views
-import Search from './views/Search';
+// Views and Pages
+import IncidentDashboard from './views/IncidentDashboard';
 import Incidents from './views/Incidents';
+import Settings from './pages/Settings';
 
-// Import Settings components
-import CostSummaryWidget from './components/dashboard/CostSummaryWidget';
-import SettingsNavigation from './components/settings/SettingsNavigation';
-import SettingsPage from './pages/Settings';
-import SearchCommand from './components/settings/SearchCommand';
-import { useSettings } from './contexts/SettingsContext';
-import { Settings as SettingsIcon, X } from 'lucide-react';
+// Components
+import { SettingsNavigation } from './components/settings/SettingsNavigation';
+import ReportIncidentModal from './components/modals/ReportIncidentModal';
+import LoadingSpinner from './components/ui/LoadingSpinner';
+import { Button } from './components/ui/Button';
+import { Badge } from './components/ui/Badge';
+import { Modal } from './components/ui/Modal';
 
-// Initialize mock Electron API if not available
-if (typeof window !== 'undefined' && !window.electronAPI) {
-  const mockData = [
+// Contexts
+import { SettingsProvider } from './contexts/SettingsContext';
+
+// Services
+import IncidentService from './services/IncidentService';
+
+// Types
+import { CreateIncident } from '../backend/core/interfaces/ServiceInterfaces';
+
+// Styles
+import './styles/global.css';
+import './styles/components.css';
+
+// Navigation tabs configuration
+interface NavTab {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  component: React.ReactNode;
+  description: string;
+  badge?: string;
+}
+
+// Accenture brand colors
+const accentureColors = {
+  primary: '#A100FF',
+  secondary: '#7F39FB',
+  accent: '#E8D5FF',
+  gray: '#666666',
+  lightGray: '#F5F5F5',
+  white: '#FFFFFF',
+  dark: '#333333'
+};
+
+function App() {
+  // Main navigation state
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Settings navigation state
+  const [settingsPath, setSettingsPath] = useState('/settings/general/profile');
+
+  // Modal states
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReportingIncident, setIsReportingIncident] = useState(false);
+
+  // Application state
+  const [notifications, setNotifications] = useState(0);
+  const [user, setUser] = useState({ name: 'Usuário', email: 'user@accenture.com' });
+
+  // Initialize application
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Simulate app initialization
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Handle incident reporting
+  const handleReportIncident = async (incidentData: CreateIncident) => {
+    setIsReportingIncident(true);
+    try {
+      // Call incident service
+      await IncidentService.createIncident(incidentData);
+      setIsReportModalOpen(false);
+      // Show success notification
+      console.log('Incident reported successfully:', incidentData);
+    } catch (error) {
+      console.error('Error reporting incident:', error);
+      throw error;
+    } finally {
+      setIsReportingIncident(false);
+    }
+  };
+
+  // Handle settings navigation
+  const handleSettingsNavigate = (path: string) => {
+    setSettingsPath(path);
+  };
+
+  // Navigation tabs - INTEGRATED APPROACH: Knowledge Base is now part of Incidents
+  const navTabs: NavTab[] = [
     {
-      id: '1',
-      title: 'S0C4 ABEND in COBOL Program During Array Processing',
-      problem: 'Program terminates with S0C4 protection exception when processing arrays',
-      solution: 'Check OCCURS clause and verify array subscript bounds. Increase REGION size.',
-      category: 'COBOL',
-      tags: ['cobol', 'array', 'abend'],
-      usage_count: 45,
-      success_count: 38,
-      failure_count: 7
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: <BarChart3 className="w-5 h-5" />,
+      component: <IncidentDashboard />,
+      description: 'Visão geral de métricas e incidentes'
     },
     {
-      id: '2',
-      title: 'DB2 SQLCODE -818 Timestamp Mismatch',
-      problem: 'Timestamp mismatch between DBRM and plan',
-      solution: 'Rebind the package with current DBRM',
-      category: 'DB2',
-      tags: ['db2', 'sql', 'bind'],
-      usage_count: 32,
-      success_count: 28,
-      failure_count: 4
+      id: 'incidents',
+      label: 'Incidentes e Conhecimento',
+      icon: <AlertTriangle className="w-5 h-5" />,
+      component: <Incidents />,
+      description: 'Gestão completa de incidentes e base de conhecimento integrada',
+      badge: notifications > 0 ? notifications.toString() : undefined
     },
     {
-      id: '3',
-      title: 'VSAM File Status 93',
-      problem: 'Record not available for read',
-      solution: 'Check file status and record locks',
-      category: 'VSAM',
-      tags: ['vsam', 'file', 'io'],
-      usage_count: 19,
-      success_count: 15,
-      failure_count: 4
+      id: 'settings',
+      label: 'Configurações',
+      icon: <SettingsIcon className="w-5 h-5" />,
+      component: (
+        <div className="flex h-full">
+          <div className="w-80 border-r border-gray-200 bg-white">
+            <SettingsNavigation
+              currentPath={settingsPath}
+              onNavigate={handleSettingsNavigate}
+              isMobile={false}
+            />
+          </div>
+          <div className="flex-1">
+            <Settings currentPath={settingsPath} />
+          </div>
+        </div>
+      ),
+      description: 'Configurações da aplicação e preferências'
     }
   ];
 
-  (window as any).electronAPI = {
-    kb: {
-      search: async (query: string) => {
-        await new Promise(r => setTimeout(r, 100));
-        if (!query) return { results: mockData };
-        const filtered = mockData.filter(entry =>
-          entry.title.toLowerCase().includes(query.toLowerCase()) ||
-          entry.problem.toLowerCase().includes(query.toLowerCase()) ||
-          entry.solution.toLowerCase().includes(query.toLowerCase())
-        );
-        return { results: filtered };
-      },
-      getAll: async () => ({ entries: mockData }),
-      create: async (entry: any) => ({ success: true, id: Date.now().toString() }),
-      update: async (id: string, entry: any) => ({ success: true }),
-      delete: async (id: string) => ({ success: true })
-    },
-    ai: {
-      requestAuthorization: async (operation: any) => ({ approved: true }),
-      getCostTracking: async () => ({
-        daily: { used: 2.45, limit: 10.00 },
-        monthly: { used: 45.20, limit: 300.00 }
-      }),
-      getOperationHistory: async () => ({ operations: [] })
-    }
-  };
-}
+  const currentTab = navTabs.find(tab => tab.id === activeTab) || navTabs[0];
 
-interface KBEntry {
-  id: string;
-  title: string;
-  problem: string;
-  solution: string;
-  category: string;
-  tags: string[];
-  usage_count: number;
-  success_count: number;
-  failure_count: number;
-}
-
-function AppComplete() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [entries, setEntries] = useState<KBEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'search' | 'ai-transparency' | 'settings'>('dashboard');
-
-  // Settings state management
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [settingsCurrentPath, setSettingsCurrentPath] = useState('/settings/general/profile');
-
-  // Access settings context
-  const { state: settingsState } = useSettings();
-
-  // Modal states
-  const [showAddEntry, setShowAddEntry] = useState(false);
-  const [showEditEntry, setShowEditEntry] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<KBEntry | null>(null);
-
-  // AI transparency states
-  const [showAIAuth, setShowAIAuth] = useState(false);
-  const [showOperationHistory, setShowOperationHistory] = useState(false);
-  const [pendingAIOperation, setPendingAIOperation] = useState<any>(null);
-
-  // Load initial data
-  useEffect(() => {
-    loadEntries();
-  }, []);
-
-  const loadEntries = async () => {
-    setLoading(true);
-    try {
-      const result = await window.electronAPI.kb.getAll();
-      setEntries(result.entries || []);
-    } catch (err) {
-      setError('Failed to load entries');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      loadEntries();
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result = await window.electronAPI.kb.search(searchQuery);
-      setEntries(result.results || []);
-    } catch (err) {
-      setError('Search failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAISearch = async () => {
-    // Show AI authorization dialog before AI operation
-    setPendingAIOperation({
-      type: 'semantic_search',
-      query: searchQuery,
-      estimatedCost: 0.002,
-      estimatedTokens: 150,
-      provider: 'gemini',
-      model: 'gemini-pro'
-    });
-    setShowAIAuth(true);
-  };
-
-  const handleAIAuthDecision = async (approved: boolean, modifiedOperation?: any) => {
-    setShowAIAuth(false);
-    if (approved) {
-      // Proceed with AI operation
-      setLoading(true);
-      try {
-        // Here would be the actual AI search
-        await handleSearch();
-      } finally {
-        setLoading(false);
-      }
-    }
-    setPendingAIOperation(null);
-  };
-
-  const handleAddEntry = () => {
-    setShowAddEntry(true);
-  };
-
-  const handleEditEntry = (entry: KBEntry) => {
-    setSelectedEntry(entry);
-    setShowEditEntry(true);
-  };
-
-  const handleDeleteEntry = (entry: KBEntry) => {
-    setSelectedEntry(entry);
-    setShowDeleteConfirm(true);
-  };
-
-  const handleCreateEntry = async (newEntry: any) => {
-    try {
-      await window.electronAPI.kb.create(newEntry);
-      await loadEntries();
-      setShowAddEntry(false);
-    } catch (err) {
-      setError('Failed to report incident');
-    }
-  };
-
-  const handleUpdateEntry = async (id: string, updatedEntry: any) => {
-    try {
-      await window.electronAPI.kb.update(id, updatedEntry);
-      await loadEntries();
-      setShowEditEntry(false);
-    } catch (err) {
-      setError('Failed to update incident');
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (selectedEntry) {
-      try {
-        await window.electronAPI.kb.delete(selectedEntry.id);
-        await loadEntries();
-        setShowDeleteConfirm(false);
-      } catch (err) {
-        setError('Failed to delete incident');
-      }
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <h2 className="mt-4 text-xl font-semibold text-gray-900">Accenture Mainframe AI Assistant</h2>
+          <p className="mt-2 text-gray-600">Carregando aplicação...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      {/* Header with Accenture branding */}
-      <header className="bg-gradient-to-r from-[#A100FF] to-[#6B00FF] text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-4">
-              <AccentureLogo />
-              <div>
-                <h1 className="text-2xl font-bold">Mainframe AI Assistant</h1>
-                <p className="text-purple-100">Incident Management & AI-Powered Solutions</p>
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <nav className="flex space-x-4">
-              <button
-                onClick={() => setCurrentView('dashboard')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  currentView === 'dashboard' ? 'bg-white/20' : 'hover:bg-white/10'
-                }`}
-              >
-                📊 Overview
-              </button>
-              <button
-                onClick={() => setCurrentView('search')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  currentView === 'search' ? 'bg-white/20' : 'hover:bg-white/10'
-                }`}
-              >
-                🚨 Incidents
-              </button>
-              <button
-                onClick={() => setCurrentView('ai-transparency')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  currentView === 'ai-transparency' ? 'bg-white/20' : 'hover:bg-white/10'
-                }`}
-              >
-                AI Transparency
-              </button>
-              <button
-                onClick={() => setShowSettingsModal(true)}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  showSettingsModal ? 'bg-white/20' : 'hover:bg-white/10'
-                } flex items-center space-x-2`}
-                title="Settings"
-              >
-                <SettingsIcon className="w-4 h-4" />
-                <span>Settings</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {currentView === 'dashboard' && (
-          <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Search incidents and solutions..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <button
-                  onClick={handleSearch}
-                  className="px-6 py-2 bg-gradient-to-r from-[#A100FF] to-[#6B00FF] text-white rounded-lg hover:shadow-lg transition-shadow"
-                >
-                  Search
-                </button>
-                <button
-                  onClick={handleAISearch}
-                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
-                >
-                  AI Search
-                </button>
-                <button
-                  onClick={handleAddEntry}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-shadow"
-                >
-                  🚨 Report Incident
-                </button>
-              </div>
-            </div>
-
-            {/* Cost Summary Widget */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <CostSummaryWidget
-                compact={false}
-                userId="current_user"
-                realTimeUpdates={true}
-                updateInterval={30000}
-                showDetailedMetrics={true}
-                enableQuickActions={true}
-                onModalOpen={() => {
-                  setSettingsCurrentPath('/settings/cost/budget');
-                  setShowSettingsModal(true);
-                }}
-              />
-            </div>
-
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {loading ? (
-                <div className="col-span-full text-center py-12">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                  <p className="mt-2 text-gray-600">Loading...</p>
-                </div>
-              ) : entries.length === 0 ? (
-                <div className="col-span-full text-center py-12 text-gray-500">
-                  No incidents found. Try a different search or report a new incident.
-                </div>
-              ) : (
-                entries.map((entry) => (
-                  <div key={entry.id} className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        entry.category === 'COBOL' ? 'bg-blue-100 text-blue-800' :
-                        entry.category === 'DB2' ? 'bg-green-100 text-green-800' :
-                        entry.category === 'VSAM' ? 'bg-yellow-100 text-yellow-800' :
-                        entry.category === 'JCL' ? 'bg-purple-100 text-purple-800' :
-                        entry.category === 'CICS' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {entry.category}
-                      </span>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEditEntry(entry)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEntry(entry)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-
-                    <h3 className="font-semibold text-gray-900 mb-2">{entry.title}</h3>
-
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-600">Problem:</span>
-                        <p className="text-gray-700">{entry.problem}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-600">Solution:</span>
-                        <p className="text-gray-700">{entry.solution}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex justify-between items-center">
-                      <div className="flex flex-wrap gap-1">
-                        {entry.tags.map((tag, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {entry.usage_count} uses
-                      </div>
-                    </div>
-
-                    <div className="mt-2 flex items-center text-xs">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${(entry.success_count / entry.usage_count) * 100}%` }}
-                        />
-                      </div>
-                      <span className="ml-2 text-gray-600">
-                        {Math.round((entry.success_count / entry.usage_count) * 100)}% success
-                      </span>
-                    </div>
+    <SettingsProvider>
+      <div className="h-screen flex flex-col bg-gray-50">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              {/* Logo and Title */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  {/* Accenture Logo Placeholder */}
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: accentureColors.primary }}>
+                    <span className="text-white font-bold text-sm">A</span>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">Mainframe AI Assistant</h1>
+                    <p className="text-xs text-gray-500">Accenture Technology - Integrated Incident & Knowledge Management</p>
+                  </div>
+                </div>
 
-        {currentView === 'search' && <Incidents />}
-
-        {currentView === 'ai-transparency' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Transparency Center</h2>
-
-              {/* Transparency Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Mobile Menu Button */}
                 <button
-                  onClick={() => setShowOperationHistory(!showOperationHistory)}
-                  className="p-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
                 >
-                  {showOperationHistory ? 'Hide' : 'Show'} Operation History
-                </button>
-                <button
-                  onClick={() => {
-                    setPendingAIOperation({
-                      type: 'test',
-                      query: 'Test AI Operation',
-                      estimatedCost: 0.001,
-                      estimatedTokens: 50,
-                      provider: 'openai',
-                      model: 'gpt-4'
-                    });
-                    setShowAIAuth(true);
-                  }}
-                  className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow"
-                >
-                  Test Authorization Dialog
+                  {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
               </div>
 
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex space-x-1">
+                {navTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                      activeTab === tab.id
+                        ? 'text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                    style={{
+                      backgroundColor: activeTab === tab.id ? accentureColors.primary : 'transparent'
+                    }}
+                    title={tab.description}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                    {tab.badge && (
+                      <Badge className="ml-1 bg-red-500 text-white text-xs">
+                        {tab.badge}
+                      </Badge>
+                    )}
+                  </button>
+                ))}
+              </nav>
 
-              {/* Operation History */}
-              {showOperationHistory && <OperationHistory />}
-            </div>
-          </div>
-        )}
-
-        {currentView === 'settings' && (
-          <div className="space-y-6">
-            {/* Settings is now shown in the modal, not here */}
-          </div>
-        )}
-      </main>
-
-      {/* Modals */}
-      {showAIAuth && pendingAIOperation && (
-        <AuthorizationDialog
-          isOpen={showAIAuth}
-          operation={pendingAIOperation}
-          estimatedCost={pendingAIOperation.estimatedCost || 0.001}
-          tokensEstimate={{
-            input: pendingAIOperation.estimatedTokens || 100,
-            output: Math.floor((pendingAIOperation.estimatedTokens || 100) * 0.5)
-          }}
-          onApprove={(operation) => handleAIAuthDecision(true, operation)}
-          onDeny={() => handleAIAuthDecision(false)}
-          onAlwaysAllow={() => handleAIAuthDecision(true)}
-        />
-      )}
-
-      {showAddEntry && (
-        <AddEntryModal
-          isOpen={showAddEntry}
-          onClose={() => setShowAddEntry(false)}
-          onSave={handleCreateEntry}
-        />
-      )}
-
-      {showEditEntry && selectedEntry && (
-        <EditEntryModal
-          isOpen={showEditEntry}
-          entry={selectedEntry}
-          onClose={() => setShowEditEntry(false)}
-          onSave={(updated) => handleUpdateEntry(selectedEntry.id, updated)}
-        />
-      )}
-
-      {showDeleteConfirm && selectedEntry && (
-        <DeleteConfirmDialog
-          isOpen={showDeleteConfirm}
-          entry={selectedEntry}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={handleConfirmDelete}
-        />
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full h-full sm:max-w-7xl sm:w-full sm:max-h-[95vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b bg-gradient-to-r from-[#A100FF] to-[#6B00FF] text-white">
+              {/* User Menu */}
               <div className="flex items-center space-x-3">
-                <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                <h2 className="text-lg sm:text-xl font-semibold">Settings</h2>
-              </div>
-              <button
-                onClick={() => setShowSettingsModal(false)}
-                className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
+                {/* Quick Search */}
+                <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md">
+                  <Search className="w-5 h-5" />
+                </button>
 
-            {/* Modal Content */}
-            <div className="flex h-[calc(100vh-64px)] sm:h-[calc(95vh-80px)] overflow-hidden">
-              {/* Settings Navigation Sidebar */}
-              <div className="hidden md:flex md:w-80 lg:w-80 xl:w-80 border-r bg-gray-50 overflow-hidden">
-                <SettingsNavigation
-                  currentPath={settingsCurrentPath}
-                  onNavigate={(path) => {
-                    setSettingsCurrentPath(path);
-                  }}
-                  className="h-full w-full"
-                  isMobile={false}
-                />
-              </div>
+                {/* Notifications */}
+                <button className="relative p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md">
+                  <Bell className="w-5 h-5" />
+                  {notifications > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+                      {notifications}
+                    </span>
+                  )}
+                </button>
 
-              {/* Settings Content */}
-              <div className="flex-1 overflow-hidden">
-                <div className="h-full overflow-y-auto overflow-x-hidden">
-                  <SettingsPage currentPath={settingsCurrentPath} />
+                {/* Report Incident Button */}
+                <Button
+                  onClick={() => setIsReportModalOpen(true)}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Reportar</span>
+                </Button>
+
+                {/* User Avatar */}
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div className="hidden sm:block text-sm">
+                    <p className="font-medium text-gray-900">{user.name}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Footer */}
-      <AccentureFooter />
-    </div>
+          {/* Mobile Navigation */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 bg-white">
+              <div className="px-4 py-2 space-y-1">
+                {navTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? 'text-white'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                    style={{
+                      backgroundColor: activeTab === tab.id ? accentureColors.primary : 'transparent'
+                    }}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                    {tab.badge && (
+                      <Badge className="ml-auto bg-red-500 text-white">
+                        {tab.badge}
+                      </Badge>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden">
+          {/* Tab Content */}
+          <div className="h-full">
+            {currentTab.component}
+          </div>
+        </main>
+
+        {/* Report Incident Modal */}
+        <ReportIncidentModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          onSubmit={handleReportIncident}
+          loading={isReportingIncident}
+          onError={(error) => {
+            console.error('Incident reporting error:', error);
+          }}
+        />
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex justify-between items-center text-sm text-gray-500">
+            <div className="flex items-center space-x-4">
+              <span>© 2024 Accenture Technology</span>
+              <span>•</span>
+              <span>Mainframe AI Assistant v2.0 - Integrated Incident & Knowledge Platform</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button className="hover:text-gray-700 flex items-center space-x-1">
+                <HelpCircle className="w-4 h-4" />
+                <span>Ajuda</span>
+              </button>
+              <span>•</span>
+              <span>Status: Online</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </SettingsProvider>
   );
 }
 
-export default AppComplete;
+export default App;

@@ -181,7 +181,7 @@ interface TestWrapperProps {
 
 const TestWrapper: React.FC<TestWrapperProps> = ({ children }) => {
   // Add any providers needed for testing
-  return <div data-testid="test-wrapper">{children}</div>;
+  return React.createElement('div', { 'data-testid': 'test-wrapper' }, children);
 };
 
 // Custom render with test wrapper

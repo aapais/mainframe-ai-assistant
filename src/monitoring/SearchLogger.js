@@ -318,7 +318,7 @@ class SearchLogger {
         const logDir = config.directory || './logs';
         const filename = config.filename || `search-${new Date().toISOString().split('T')[0]}.log`;
         const filepath = (0, path_1.join)(logDir, filename);
-        const logLine = JSON.stringify({
+        const logLine = `${JSON.stringify({
             timestamp: entry.timestamp.toISOString(),
             level: entry.level,
             operation: entry.operation,
@@ -332,7 +332,7 @@ class SearchLogger {
             trace_id: entry.traceId,
             metadata: entry.metadata,
             error: entry.error
-        }) + '\n';
+        })  }\n`;
         await (0, promises_1.appendFile)(filepath, logLine);
     }
     outputToDatabase(entry) {

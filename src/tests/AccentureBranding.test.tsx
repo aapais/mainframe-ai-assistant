@@ -6,8 +6,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AccentureLogo, AccentureHeaderLogo, AccentureFooterLogo, AccentureNavLogo, AccentureSymbolOnly } from '../renderer/components/AccentureLogo';
-import { AccentureFooter, AccentureFooterMinimal } from '../renderer/components/AccentureFooter';
+import { AccentureLogo, AccentureHeaderLogo, AccentureFooterLogo, AccentureNavLogo, AccentureSymbolOnly } from '../renderer/components/brand/AccentureLogo';
+import { AccentureFooter, AccentureFooterMinimal } from '../renderer/components/brand/AccentureFooter';
 
 describe('Accenture Branding Components', () => {
   describe('AccentureLogo', () => {

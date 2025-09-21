@@ -27,38 +27,33 @@ const StatusWorkflow: React.FC<StatusWorkflowProps> = ({
 
   // Status workflow configuration
   const statusWorkflow = {
-    open: {
-      next: ['assigned', 'in_progress', 'resolved', 'closed'],
+    aberto: {
+      next: ['em_tratamento', 'resolvido', 'fechado'],
       color: '#6b7280',
       icon: 'open'
     },
-    assigned: {
-      next: ['in_progress', 'open', 'resolved', 'closed'],
-      color: '#3b82f6',
-      icon: 'user'
-    },
-    in_progress: {
-      next: ['pending_review', 'resolved', 'assigned', 'open'],
+    em_tratamento: {
+      next: ['em_revisao', 'resolvido', 'aberto', 'fechado'],
       color: '#f59e0b',
       icon: 'play'
     },
-    pending_review: {
-      next: ['resolved', 'in_progress', 'assigned'],
+    em_revisao: {
+      next: ['resolvido', 'em_tratamento', 'fechado'],
       color: '#8b5cf6',
       icon: 'clock'
     },
-    resolved: {
-      next: ['closed', 'reopened'],
+    resolvido: {
+      next: ['fechado', 'reaberto'],
       color: '#10b981',
       icon: 'check'
     },
-    closed: {
-      next: ['reopened'],
+    fechado: {
+      next: ['reaberto'],
       color: '#6b7280',
       icon: 'lock'
     },
-    reopened: {
-      next: ['assigned', 'in_progress', 'resolved'],
+    reaberto: {
+      next: ['em_tratamento', 'resolvido'],
       color: '#ef4444',
       icon: 'refresh'
     }

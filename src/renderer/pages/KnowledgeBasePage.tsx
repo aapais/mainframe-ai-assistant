@@ -20,8 +20,8 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useKBData } from '../contexts/KBDataContext';
 import { useSearch } from '../contexts/SearchContext';
 import { useApp } from '../context/AppContext';
-import { KBSearchBar } from '../components/KBSearchBar';
-import { KBEntryList } from '../components/KBEntryList';
+import { KBSearchBar } from '../components/kb/KBSearchBar';
+import { KBEntryList } from '../components/kb/KBEntryList';
 import { LoadingIndicator } from '../components/common/LoadingIndicator';
 import { KBEntry } from '../../types/services';
 

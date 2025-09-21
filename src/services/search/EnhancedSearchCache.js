@@ -375,7 +375,7 @@ class EnhancedSearchCache {
                     computationTime: 0,
                     hitCount: 1
                 };
-                this.l2Cache.set(cacheKey + ':warm', entry, this.config.l2Cache.defaultTTL * 2);
+                this.l2Cache.set(`${cacheKey  }:warm`, entry, this.config.l2Cache.defaultTTL * 2);
             }
             for (const query of recentSearches) {
                 const cacheKey = this.generateQueryCacheKey(query, {});
@@ -387,7 +387,7 @@ class EnhancedSearchCache {
                     computationTime: 0,
                     hitCount: 1
                 };
-                this.l2Cache.set(cacheKey + ':recent', entry, this.config.l2Cache.defaultTTL);
+                this.l2Cache.set(`${cacheKey  }:recent`, entry, this.config.l2Cache.defaultTTL);
             }
             if (this.config.predictiveCache.enabled && userContext) {
                 const predictions = await this.predictiveCache.getPredictions(userContext, userContext);

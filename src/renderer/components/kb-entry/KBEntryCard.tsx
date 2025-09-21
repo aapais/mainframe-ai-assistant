@@ -1,6 +1,5 @@
 import React, { memo, useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight, Clock, CheckCircle, XCircle, TrendingUp, Hash, Copy, Share2, BookOpen } from 'lucide-react';
-import styles from './KBEntryCard.module.css';
 import { formatDistanceToNow } from 'date-fns';
 import { CategoryBadge } from './indicators/CategoryBadge';
 import { SuccessRateIndicator } from './indicators/SuccessRateIndicator';

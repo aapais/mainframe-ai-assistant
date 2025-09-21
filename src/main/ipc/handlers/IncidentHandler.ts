@@ -161,6 +161,17 @@ export class IncidentHandler {
       }
     });
 
+    // Update incident with audit trail
+    ipcMain.handle('incident:update', async (event, params) => {
+      try {
+        const { incidentId, changes, auditInfo } = params;
+        return await this.updateIncident(incidentId, changes, auditInfo);
+      } catch (error) {
+        console.error('Error in incident:update:', error);
+        throw error;
+      }
+    });
+
     // Search incidents
     ipcMain.handle('incident:search', async (event, params) => {
       try {
@@ -239,7 +250,7 @@ export class IncidentHandler {
 
     if (filters?.sla_status) {
       if (filters.sla_status === 'breached') {
-        query += ` AND sla_deadline < datetime('now') AND status NOT IN ('resolved', 'closed')`;
+        query += ` AND sla_deadline < datetime('now') AND status NOT IN ('resolvido', 'fechado')`;
       } else if (filters.sla_status === 'at_risk') {
         query += ` AND sla_deadline BETWEEN datetime('now') AND datetime('now', '+20% of sla_deadline')`;
       } else if (filters.sla_status === 'on_time') {
@@ -310,7 +321,7 @@ export class IncidentHandler {
     const updateQuery = `
       UPDATE kb_entries 
       SET status = ?, updated_at = CURRENT_TIMESTAMP,
-          resolver = CASE WHEN ? = 'resolved' THEN ? ELSE resolver END
+          resolver = CASE WHEN ? = 'resolvido' THEN ? ELSE resolver END
       WHERE id = ?
     `;
     
@@ -351,7 +362,7 @@ export class IncidentHandler {
     const query = `
       UPDATE kb_entries 
       SET assigned_to = ?, 
-          status = CASE WHEN status = 'open' THEN 'assigned' ELSE status END,
+          status = CASE WHEN status = 'aberto' THEN 'em_tratamento' ELSE status END,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -504,7 +515,7 @@ export class IncidentHandler {
 
     return {
       total_open: metrics.total_open || 0,
-      total_assigned: metrics.total_assigned || 0,
+      total_assigned: 0, // Merged into em_tratamento
       total_in_progress: metrics.total_in_progress || 0,
       total_resolved_today: metrics.total_resolved_today || 0,
       avg_resolution_time: metrics.avg_resolution_time || 0,
@@ -516,13 +527,12 @@ export class IncidentHandler {
         P4: metrics.p4_count || 0
       },
       status_distribution: {
-        open: metrics.total_open || 0,
-        assigned: metrics.total_assigned || 0,
-        in_progress: metrics.total_in_progress || 0,
-        pending_review: 0, // TODO: Add to view
-        resolved: metrics.total_resolved_today || 0,
-        closed: 0, // TODO: Add to view
-        reopened: 0 // TODO: Add to view
+        aberto: metrics.total_open || 0,
+        em_tratamento: (metrics.total_assigned || 0) + (metrics.total_in_progress || 0),
+        em_revisao: 0, // TODO: Add to view
+        resolvido: metrics.total_resolved_today || 0,
+        fechado: 0, // TODO: Add to view
+        reaberto: 0 // TODO: Add to view
       },
       recent_incidents: recentIncidents.map(this.transformIncident)
     };
@@ -574,7 +584,7 @@ export class IncidentHandler {
 
     const updateQuery = `
       UPDATE kb_entries 
-      SET status = 'resolved', 
+      SET status = 'resolvido', 
           resolver = ?, 
           resolution_time = ?,
           updated_at = CURRENT_TIMESTAMP
@@ -612,7 +622,7 @@ export class IncidentHandler {
       incidentData.category,
       JSON.stringify(incidentData.tags || []),
       incidentData.priority,
-      incidentData.status || 'open',
+      incidentData.status || 'aberto',
       incidentData.assignedTo,
       incidentData.reporter,
       incidentNumber,
@@ -624,6 +634,165 @@ export class IncidentHandler {
     );
 
     return { id };
+  }
+
+  private async updateIncident(
+    incidentId: string,
+    changes: any,
+    auditInfo: any
+  ): Promise<{ success: boolean; auditId: string }> {
+    // Start transaction for atomic updates
+    const transaction = this.db.transaction(() => {
+      // Build dynamic update query based on changed fields
+      const updateFields: string[] = [];
+      const updateValues: any[] = [];
+
+      // Map changes to database fields
+      const fieldMapping: Record<string, string> = {
+        title: 'title',
+        description: 'problem',
+        impact: 'business_impact',
+        category: 'category',
+        priority: 'priority',
+        status: 'status',
+        affected_system: 'affected_systems',
+        assigned_to: 'assigned_to',
+        reported_by: 'reporter',
+        incident_date: 'created_at',
+        tags: 'tags',
+        resolution_notes: 'solution'
+      };
+
+      // Process each change
+      Object.keys(changes).forEach(field => {
+        const dbField = fieldMapping[field];
+        if (dbField) {
+          updateFields.push(`${dbField} = ?`);
+
+          // Handle special fields
+          if (field === 'tags') {
+            updateValues.push(JSON.stringify(changes[field]));
+          } else if (field === 'affected_system' && Array.isArray(changes[field])) {
+            updateValues.push(JSON.stringify(changes[field]));
+          } else {
+            updateValues.push(changes[field]);
+          }
+        }
+      });
+
+      // Always update the updated_at timestamp
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+
+      if (updateFields.length === 0) {
+        throw new Error('No valid fields to update');
+      }
+
+      // Update the main incident record
+      const updateQuery = `
+        UPDATE kb_entries
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `;
+
+      updateValues.push(incidentId);
+      const result = this.db.prepare(updateQuery).run(...updateValues);
+
+      if (result.changes === 0) {
+        throw new Error(`Incident with id ${incidentId} not found`);
+      }
+
+      // Create audit trail record
+      const auditId = this.generateId();
+      const auditQuery = `
+        INSERT INTO incident_audit_trail (
+          id, incident_id, changed_fields, change_reason, changed_by,
+          previous_values, new_values, timestamp, requires_approval, critical_change
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      this.db.prepare(auditQuery).run(
+        auditId,
+        incidentId,
+        JSON.stringify(auditInfo.changedFields),
+        auditInfo.changeReason,
+        auditInfo.changedBy,
+        JSON.stringify(auditInfo.previousValues),
+        JSON.stringify(auditInfo.newValues),
+        auditInfo.timestamp.toISOString(),
+        auditInfo.requiresApproval ? 1 : 0,
+        auditInfo.criticalChange ? 1 : 0
+      );
+
+      // Add status transition record if status changed
+      if (changes.status && auditInfo.previousValues.status !== changes.status) {
+        const transitionQuery = `
+          INSERT INTO incident_status_transitions (
+            incident_id, from_status, to_status, changed_by, change_reason, timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        this.db.prepare(transitionQuery).run(
+          incidentId,
+          auditInfo.previousValues.status,
+          changes.status,
+          auditInfo.changedBy,
+          auditInfo.changeReason,
+          auditInfo.timestamp.toISOString()
+        );
+      }
+
+      // Add system comment documenting the change
+      const changeDescription = auditInfo.changedFields
+        .map((field: string) => {
+          const oldVal = auditInfo.previousValues[field];
+          const newVal = auditInfo.newValues[field];
+          const fieldName = field === 'title' ? 'Título' :
+                           field === 'description' ? 'Descrição' :
+                           field === 'priority' ? 'Prioridade' :
+                           field === 'status' ? 'Status' :
+                           field === 'category' ? 'Categoria' :
+                           field === 'assigned_to' ? 'Responsável' :
+                           field;
+
+          return `${fieldName}: "${oldVal}" → "${newVal}"`;
+        })
+        .join('; ');
+
+      const commentContent = `Incidente atualizado: ${changeDescription}. Motivo: ${auditInfo.changeReason}`;
+
+      const commentId = this.generateId();
+      const commentQuery = `
+        INSERT INTO incident_comments (
+          id, incident_id, author, content, is_internal, comment_type
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `;
+
+      this.db.prepare(commentQuery).run(
+        commentId,
+        incidentId,
+        auditInfo.changedBy,
+        commentContent,
+        1, // Internal comment
+        'system_update'
+      );
+
+      // Update SLA deadline if priority changed
+      if (changes.priority && auditInfo.previousValues.priority !== changes.priority) {
+        const newSlaDeadline = this.calculateSLADeadline(changes.priority);
+        const slaUpdateQuery = `
+          UPDATE kb_entries
+          SET sla_deadline = ?
+          WHERE id = ?
+        `;
+
+        this.db.prepare(slaUpdateQuery).run(newSlaDeadline.toISOString(), incidentId);
+      }
+
+      return { success: true, auditId };
+    });
+
+    // Execute transaction
+    return transaction();
   }
 
   private async searchIncidents(
@@ -653,9 +822,9 @@ export class IncidentHandler {
 
   private async getSLABreaches(): Promise<IncidentKBEntry[]> {
     const query = `
-      SELECT * FROM incident_queue 
-      WHERE sla_deadline < datetime('now') 
-        AND status NOT IN ('resolved', 'closed')
+      SELECT * FROM incident_queue
+      WHERE sla_deadline < datetime('now')
+        AND status NOT IN ('resolvido', 'fechado')
       ORDER BY sla_deadline ASC
     `;
     

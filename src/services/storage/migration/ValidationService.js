@@ -310,7 +310,7 @@ class ValidationService extends events_1.EventEmitter {
     async validateDataIntegrity() {
         const issues = [];
         let totalRows = 0;
-        let corruptedRows = 0;
+        const corruptedRows = 0;
         let duplicateRows = 0;
         let orphanedRecords = 0;
         let nullConstraintViolations = 0;
@@ -338,9 +338,9 @@ class ValidationService extends events_1.EventEmitter {
     async validateReferentialIntegrity() {
         const issues = [];
         let foreignKeyViolations = 0;
-        let brokenReferences = 0;
-        let circularReferences = 0;
-        let missingParentRecords = 0;
+        const brokenReferences = 0;
+        const circularReferences = 0;
+        const missingParentRecords = 0;
         const foreignKeys = await this.getAllForeignKeys();
         for (const fk of foreignKeys) {
             const violations = await this.checkForeignKeyViolations(fk);
@@ -368,7 +368,7 @@ class ValidationService extends events_1.EventEmitter {
         const issues = [];
         const indexes = await this.getAllIndexes();
         let corruptedIndexes = 0;
-        let unusedIndexes = 0;
+        const unusedIndexes = 0;
         const missingRecommendedIndexes = [];
         const duplicateIndexes = [];
         for (const index of indexes) {
@@ -398,8 +398,8 @@ class ValidationService extends events_1.EventEmitter {
     }
     async validateConstraints() {
         const issues = [];
-        let constraintViolations = 0;
-        let checkConstraintFailures = 0;
+        const constraintViolations = 0;
+        const checkConstraintFailures = 0;
         let uniqueConstraintViolations = 0;
         const tables = this.getAllTables();
         for (const table of tables) {
@@ -498,7 +498,7 @@ class ValidationService extends events_1.EventEmitter {
     generateValidationSummary(results) {
         let criticalIssues = 0;
         let warnings = 0;
-        let recommendationsCount = 0;
+        const recommendationsCount = 0;
         results.forEach(result => {
             if (result.issues) {
                 criticalIssues += result.issues.filter((i) => i.severity === 'critical').length;

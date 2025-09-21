@@ -103,7 +103,7 @@ interface KBEntryDetailProps {
  * - Copy functionality for code snippets
  * - Share capabilities
  */
-export const KBEntryDetail = memo<KBEntryDetailProps>({
+const KBEntryDetailComponent: React.FC<KBEntryDetailProps> = ({
   entry,
   isModal = false,
   onClose,
@@ -687,6 +687,8 @@ export const KBEntryDetail = memo<KBEntryDetailProps>({
   }
   
   return content;
-});
+};
+
+export const KBEntryDetail = memo(KBEntryDetailComponent);
 
 KBEntryDetail.displayName = 'KBEntryDetail';

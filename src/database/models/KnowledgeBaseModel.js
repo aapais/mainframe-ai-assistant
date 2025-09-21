@@ -404,8 +404,8 @@ class KnowledgeBaseModel {
     }
     async executeWithPerformanceTracking(operation, callback) {
         const startTime = Date.now();
-        let cacheHit = false;
-        let queriesExecuted = 0;
+        const cacheHit = false;
+        const queriesExecuted = 0;
         try {
             const result = await callback();
             const executionTime = Date.now() - startTime;

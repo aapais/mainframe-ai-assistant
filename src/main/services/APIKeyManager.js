@@ -152,7 +152,7 @@ class APIKeyManager {
     encrypted += cipher.final('hex');
 
     const authTag = cipher.getAuthTag();
-    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+    return `${iv.toString('hex')  }:${  authTag.toString('hex')  }:${  encrypted}`;
   }
 
   decrypt(encryptedText) {
@@ -421,7 +421,7 @@ class APIKeyManager {
         const cleanValue = value.trim().replace(/^["']|["']$/g, '');
 
         let providerId;
-        let keyName = cleanKey;
+        const keyName = cleanKey;
 
         if (cleanKey.includes('OPENAI')) {
           providerId = 'openai';
@@ -464,7 +464,7 @@ class APIKeyManager {
         createdAt: key.createdAt,
         monthlyLimit: key.monthlyLimit,
       })),
-      stats: stats,
+      stats,
       providers: this.getProviders().map(p => ({ id: p.id, name: p.name }))
     };
 

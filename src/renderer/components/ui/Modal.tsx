@@ -80,7 +80,7 @@ const useBodyScrollLock = (isLocked: boolean) => {
 // Overlay Component
 const overlayVariants = cva(
   [
-    'fixed inset-0 z-50 backdrop-blur-sm',
+    'fixed inset-0 z-[9998] backdrop-blur-sm',
     'data-[state=open]:animate-in data-[state=closed]:animate-out',
     'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0'
   ],
@@ -119,7 +119,7 @@ Overlay.displayName = 'Overlay';
 // Modal Content Component
 const modalContentVariants = cva(
   [
-    'fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200',
+    'fixed left-[50%] top-[50%] z-[9999] grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200',
     'data-[state=open]:animate-in data-[state=closed]:animate-out',
     'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
     'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -138,7 +138,8 @@ const modalContentVariants = cva(
         '4xl': 'max-w-4xl rounded-lg',
         '5xl': 'max-w-5xl rounded-lg',
         full: 'max-w-[95vw] max-h-[95vh] rounded-lg',
-        screen: 'w-screen h-screen max-w-none max-h-none rounded-none'
+        screen: 'w-screen h-screen max-w-none max-h-none rounded-none',
+        mobile: 'w-[95vw] h-[95vh] max-w-none rounded-lg sm:max-w-lg sm:h-auto'
       }
     },
     defaultVariants: {
@@ -255,19 +256,27 @@ const ModalFooter = forwardRef<HTMLDivElement, ModalFooterProps>(
 ModalFooter.displayName = 'ModalFooter';
 
 // Modal Close Button
-export interface ModalCloseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export interface ModalCloseProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  onClose?: () => void;
+}
 
 const ModalClose = forwardRef<HTMLButtonElement, ModalCloseProps>(
-  ({ className, ...props }, ref) => (
+  ({ className, onClose, onClick, ...props }, ref) => (
     <button
       ref={ref}
       className={cn(
-        'absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground',
+        'absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-all duration-200 hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground',
+        'min-w-[44px] min-h-[44px] flex items-center justify-center',
         className
       )}
+      aria-label="Close modal"
+      onClick={(e) => {
+        onClose?.();
+        onClick?.(e);
+      }}
       {...props}
     >
-      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
       </svg>
       <span className="sr-only">Close</span>
@@ -298,24 +307,32 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   useBodyScrollLock(preventBodyScroll && open);
 
-  // Handle escape key
+  // Handle escape key and other keyboard interactions
   useEffect(() => {
-    if (!closeOnEscape) return;
+    if (!open) return;
 
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && closeOnEscape) {
+        event.preventDefault();
         onOpenChange(false);
       }
     };
 
-    if (open) {
-      document.addEventListener('keydown', handleEscape);
+    // Prevent background scrolling
+    const originalOverflow = document.body.style.overflow;
+    if (preventBodyScroll) {
+      document.body.style.overflow = 'hidden';
     }
 
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
+      if (preventBodyScroll) {
+        document.body.style.overflow = originalOverflow;
+      }
     };
-  }, [open, closeOnEscape, onOpenChange]);
+  }, [open, closeOnEscape, onOpenChange, preventBodyScroll]);
 
   if (!open) return null;
 

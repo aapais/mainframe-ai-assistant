@@ -29,36 +29,36 @@ interface IncidentFormProps {
 }
 
 const CATEGORY_OPTIONS = [
-  { value: 'System Outage', label: 'System Outage - Complete system failure' },
-  { value: 'Performance', label: 'Performance Issue - Degraded performance' },
-  { value: 'Database', label: 'Database Issue - DB2, IMS, VSAM problems' },
-  { value: 'Application', label: 'Application Error - COBOL, CICS, batch failures' },
-  { value: 'Security', label: 'Security Incident - RACF, access control' },
-  { value: 'Network', label: 'Network Issue - Connectivity problems' },
-  { value: 'Hardware', label: 'Hardware Failure - Physical system issues' },
-  { value: 'Other', label: 'Other/Miscellaneous' }
+  { value: 'System Outage', label: 'Falha do Sistema - Falha completa do sistema' },
+  { value: 'Performance', label: 'Problema de Performance - Performance degradada' },
+  { value: 'Database', label: 'Problema de Banco de Dados - Problemas DB2, IMS, VSAM' },
+  { value: 'Application', label: 'Erro de Aplicação - Falhas COBOL, CICS, batch' },
+  { value: 'Security', label: 'Incidente de Segurança - RACF, controle de acesso' },
+  { value: 'Network', label: 'Problema de Rede - Problemas de conectividade' },
+  { value: 'Hardware', label: 'Falha de Hardware - Problemas físicos do sistema' },
+  { value: 'Other', label: 'Outros/Diversos' }
 ];
 
 const PRIORITY_OPTIONS = [
-  { value: 'P1', label: 'P1 - Critical (Immediate action required)' },
-  { value: 'P2', label: 'P2 - High (Urgent attention needed)' },
-  { value: 'P3', label: 'P3 - Medium (Normal timeline)' },
-  { value: 'P4', label: 'P4 - Low (When convenient)' }
+  { value: 'P1', label: 'P1 - Crítica (Ação imediata necessária)' },
+  { value: 'P2', label: 'P2 - Alta (Atenção urgente necessária)' },
+  { value: 'P3', label: 'P3 - Média (Cronograma normal)' },
+  { value: 'P4', label: 'P4 - Baixa (Quando conveniente)' }
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'Open', label: 'Open - Newly reported' },
-  { value: 'In Progress', label: 'In Progress - Being worked on' },
-  { value: 'Pending', label: 'Pending - Waiting for input' },
-  { value: 'Resolved', label: 'Resolved - Issue fixed' },
-  { value: 'Closed', label: 'Closed - Complete and verified' }
+  { value: 'aberto', label: 'Aberto - Recém-reportado' },
+  { value: 'em_tratamento', label: 'Em Tratamento - Sendo trabalhado' },
+  { value: 'em_revisao', label: 'Em Revisão - Aguardando entrada' },
+  { value: 'resolvido', label: 'Resolvido - Problema corrigido' },
+  { value: 'fechado', label: 'Fechado - Completo e verificado' }
 ];
 
 const IMPACT_LEVELS = [
-  { value: 'Critical', label: 'Critical - Business critical systems affected' },
-  { value: 'High', label: 'High - Important business functions impacted' },
-  { value: 'Medium', label: 'Medium - Some business functions affected' },
-  { value: 'Low', label: 'Low - Minor impact on operations' }
+  { value: 'Critical', label: 'Crítico - Sistemas críticos do negócio afetados' },
+  { value: 'High', label: 'Alto - Funções importantes do negócio impactadas' },
+  { value: 'Medium', label: 'Médio - Algumas funções do negócio afetadas' },
+  { value: 'Low', label: 'Baixo - Impacto menor nas operações' }
 ];
 
 /**
@@ -97,7 +97,7 @@ export const IncidentForm = memo<IncidentFormProps>(({
       impact: initialData?.impact || '',
       category: initialData?.category || 'Other',
       priority: initialData?.priority || 'P3',
-      status: initialData?.status || 'Open',
+      status: initialData?.status || 'aberto',
       assignee: initialData?.assignee || '',
       tags: initialData?.tags || []
     },
@@ -227,15 +227,15 @@ export const IncidentForm = memo<IncidentFormProps>(({
     >
       <div className="incident-form__header">
         <div className="incident-form__title">
-          <h2>🚨 {mode === 'create' ? 'Report New Incident' : 'Edit Incident'}</h2>
+          <h2>🚨 {mode === 'create' ? 'Reportar Novo Incidente' : 'Editar Incidente'}</h2>
           {form.isDirty && (
-            <span className="incident-form__unsaved-indicator" title="Unsaved changes">
+            <span className="incident-form__unsaved-indicator" title="Alterações não salvas">
               ●
             </span>
           )}
           {form.isAutoSaving && (
             <span className="incident-form__auto-save-indicator">
-              Saving...
+              Salvando...
             </span>
           )}
         </div>
@@ -248,9 +248,9 @@ export const IncidentForm = memo<IncidentFormProps>(({
               size="small"
               onClick={form.saveDraft}
               disabled={!form.isDirty}
-              title="Save draft (Ctrl+D)"
+              title="Salvar rascunho (Ctrl+D)"
             >
-              Save Draft
+              Salvar Rascunho
             </Button>
             {form.hasDraft && (
               <Button
@@ -258,9 +258,9 @@ export const IncidentForm = memo<IncidentFormProps>(({
                 variant="ghost"
                 size="small"
                 onClick={() => form.loadDraft()}
-                title="Load saved draft"
+                title="Carregar rascunho salvo"
               >
-                Load Draft
+                Carregar Rascunho
               </Button>
             )}
           </div>
@@ -271,14 +271,14 @@ export const IncidentForm = memo<IncidentFormProps>(({
         {/* Title Field */}
         <TextField
           {...form.getFieldProps('title')}
-          label="Incident Title"
-          placeholder="Brief, descriptive title (e.g., 'Production DB2 Database Unavailable - SQLCODE -904')"
+          label="Título do Incidente"
+          placeholder="Título breve e descritivo (ex: 'Banco de Dados DB2 de Produção Indisponível - SQLCODE -904')"
           required
           maxLength={200}
           showCharacterCount
           error={form.getFieldError('title')}
-          hint="Include system names, error codes, or key symptoms for quick identification"
-          helpText="The title should be specific enough that responders can quickly understand the nature and scope of the incident."
+          hint="Inclua nomes de sistemas, códigos de erro ou sintomas principais para identificação rápida"
+          helpText="O título deve ser específico o suficiente para que os responsáveis possam entender rapidamente a natureza e escopo do incidente."
           autoFocus={mode === 'create'}
         />
 
@@ -286,21 +286,21 @@ export const IncidentForm = memo<IncidentFormProps>(({
         <div className="incident-form__row">
           <SelectField
             {...form.getFieldProps('priority')}
-            label="Priority"
+            label="Prioridade"
             options={PRIORITY_OPTIONS}
             required
             error={form.getFieldError('priority')}
-            hint="Select based on business impact and urgency"
+            hint="Selecione baseado no impacto no negócio e urgência"
             className="incident-form__priority-field"
           />
 
           <SelectField
             {...form.getFieldProps('category')}
-            label="Category"
+            label="Categoria"
             options={CATEGORY_OPTIONS}
             required
             error={form.getFieldError('category')}
-            hint="Select the primary system or component involved"
+            hint="Selecione o sistema ou componente principal envolvido"
             className="incident-form__category-field"
           />
         </div>
@@ -312,17 +312,17 @@ export const IncidentForm = memo<IncidentFormProps>(({
             label="Status"
             options={STATUS_OPTIONS}
             error={form.getFieldError('status')}
-            hint="Current state of the incident"
+            hint="Estado atual do incidente"
             className="incident-form__status-field"
           />
 
           <TextField
             {...form.getFieldProps('assignee')}
-            label="Assign To"
-            placeholder="Username or team (optional)"
+            label="Atribuir Para"
+            placeholder="Nome de usuário ou equipe (opcional)"
             error={form.getFieldError('assignee')}
-            hint="Leave blank for auto-assignment"
-            helpText="Incident will be automatically assigned based on category and priority if left blank"
+            hint="Deixe em branco para atribuição automática"
+            helpText="O incidente será automaticamente atribuído baseado na categoria e prioridade se deixado em branco"
             className="incident-form__assignee-field"
           />
         </div>
@@ -330,8 +330,8 @@ export const IncidentForm = memo<IncidentFormProps>(({
         {/* Incident Description Field */}
         <TextAreaField
           {...form.getFieldProps('description')}
-          label="Incident Description"
-          placeholder="Describe what happened, when it occurred, what systems are affected, and any error messages observed..."
+          label="Descrição do Incidente"
+          placeholder="Descreva o que aconteceu, quando ocorreu, quais sistemas foram afetados e quaisquer mensagens de erro observadas..."
           required
           rows={4}
           minRows={3}
@@ -340,15 +340,15 @@ export const IncidentForm = memo<IncidentFormProps>(({
           showCharacterCount
           autoResize
           error={form.getFieldError('description')}
-          hint="Be specific about timeline, affected systems, and observed symptoms"
-          helpText="Include: 1) What happened, 2) When it started, 3) Which systems are affected, 4) Error messages or codes, 5) Steps taken so far."
+          hint="Seja específico sobre cronograma, sistemas afetados e sintomas observados"
+          helpText="Inclua: 1) O que aconteceu, 2) Quando começou, 3) Quais sistemas estão afetados, 4) Mensagens de erro ou códigos, 5) Medidas tomadas até agora."
         />
 
         {/* Business Impact Field */}
         <TextAreaField
           {...form.getFieldProps('impact')}
-          label="Business Impact"
-          placeholder="Describe the business impact: number of users affected, revenue impact, affected business processes..."
+          label="Impacto no Negócio"
+          placeholder="Descreva o impacto no negócio: número de usuários afetados, impacto na receita, processos de negócio afetados..."
           required
           rows={3}
           minRows={2}
@@ -357,8 +357,8 @@ export const IncidentForm = memo<IncidentFormProps>(({
           showCharacterCount
           autoResize
           error={form.getFieldError('impact')}
-          hint="Quantify the impact on business operations and users"
-          helpText="Include: Number of affected users, revenue impact, affected business processes, customer impact, and any SLA implications."
+          hint="Quantifique o impacto nas operações do negócio e usuários"
+          helpText="Inclua: Número de usuários afetados, impacto na receita, processos de negócio afetados, impacto no cliente e implicações de SLA."
         />
 
         {/* Tags Field */}
@@ -366,7 +366,7 @@ export const IncidentForm = memo<IncidentFormProps>(({
           <label className="incident-form__tag-label" id="tags-label">
             Tags
             <span className="incident-form__tag-hint">
-              Add relevant keywords for categorization and search (press Enter or click Add)
+              Adicione palavras-chave relevantes para categorização e busca (pressione Enter ou clique em Adicionar)
             </span>
           </label>
 
@@ -376,7 +376,7 @@ export const IncidentForm = memo<IncidentFormProps>(({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyPress={handleTagKeyPress}
-              placeholder="Add a tag (e.g., outage, database, p1-incident)..."
+              placeholder="Adicionar tag (ex: falha, banco-dados, incidente-p1)..."
               maxLength={30}
               className="incident-form__tag-input"
               disabled={form.isSubmitting}
@@ -391,7 +391,7 @@ export const IncidentForm = memo<IncidentFormProps>(({
               variant="secondary"
               disabled={!tagInput.trim() || form.values.tags.length >= 10}
             >
-              Add
+              Adicionar
             </Button>
           </div>
 
@@ -434,7 +434,7 @@ export const IncidentForm = memo<IncidentFormProps>(({
           aria-live="assertive"
           aria-labelledby="error-summary-title"
         >
-          <strong id="error-summary-title">Please correct the following errors:</strong>
+          <strong id="error-summary-title">Por favor, corrija os seguintes erros:</strong>
           <ul>
             {Object.entries(form.errors)
               .filter(([, error]) => error)
@@ -465,9 +465,9 @@ export const IncidentForm = memo<IncidentFormProps>(({
             variant="ghost"
             onClick={handleReset}
             disabled={form.isSubmitting || !form.isDirty}
-            title="Reset form to initial values"
+            title="Resetar formulário para valores iniciais"
           >
-            Reset
+            Resetar
           </Button>
 
           {enableDrafts && form.hasDraft && (
@@ -476,9 +476,9 @@ export const IncidentForm = memo<IncidentFormProps>(({
               variant="ghost"
               onClick={form.clearDraft}
               disabled={form.isSubmitting}
-              title="Clear saved draft"
+              title="Limpar rascunho salvo"
             >
-              Clear Draft
+              Limpar Rascunho
             </Button>
           )}
         </div>
@@ -490,7 +490,7 @@ export const IncidentForm = memo<IncidentFormProps>(({
             onClick={onCancel}
             disabled={form.isSubmitting}
           >
-            Cancel
+            Cancelar
           </Button>
 
           <Button
@@ -499,14 +499,14 @@ export const IncidentForm = memo<IncidentFormProps>(({
             loading={form.isSubmitting}
             disabled={!form.isValid || form.isSubmitting}
             title={form.isValid ?
-              `${mode === 'create' ? 'Report' : 'Save'} incident (Ctrl+S or Ctrl+Enter)` :
-              'Please fix validation errors first'
+              `${mode === 'create' ? 'Reportar' : 'Salvar'} incidente (Ctrl+S ou Ctrl+Enter)` :
+              'Por favor, corrija os erros de validação primeiro'
             }
             className="incident-form__submit-button"
           >
             {form.isSubmitting
-              ? (mode === 'create' ? 'Reporting...' : 'Saving...')
-              : (mode === 'create' ? '🚨 Report Incident' : '💾 Save Changes')
+              ? (mode === 'create' ? 'Reportando...' : 'Salvando...')
+              : (mode === 'create' ? '🚨 Reportar Incidente' : '💾 Salvar Alterações')
             }
           </Button>
         </div>
@@ -515,12 +515,12 @@ export const IncidentForm = memo<IncidentFormProps>(({
       {/* Keyboard Shortcuts Help */}
       <div className="incident-form__shortcuts">
         <details>
-          <summary aria-expanded="false">Keyboard Shortcuts</summary>
-          <ul role="list" aria-label="Available keyboard shortcuts">
-            <li><kbd>Ctrl+S</kbd> or <kbd>Ctrl+Enter</kbd> - Submit form</li>
-            <li><kbd>Ctrl+D</kbd> - Save draft</li>
-            <li><kbd>Escape</kbd> - Cancel</li>
-            <li><kbd>Enter</kbd> in tags field - Add tag</li>
+          <summary aria-expanded="false">Atalhos do Teclado</summary>
+          <ul role="list" aria-label="Atalhos de teclado disponíveis">
+            <li><kbd>Ctrl+S</kbd> ou <kbd>Ctrl+Enter</kbd> - Enviar formulário</li>
+            <li><kbd>Ctrl+D</kbd> - Salvar rascunho</li>
+            <li><kbd>Escape</kbd> - Cancelar</li>
+            <li><kbd>Enter</kbd> no campo de tags - Adicionar tag</li>
           </ul>
         </details>
       </div>

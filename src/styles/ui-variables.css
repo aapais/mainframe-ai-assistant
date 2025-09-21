@@ -1,0 +1,172 @@
+/* UI Component CSS Variables - Semantic Design Tokens */
+:root {
+  /* === SEMANTIC COLOR TOKENS FOR UI COMPONENTS === */
+  /* These variables are used by Tailwind utilities like bg-background, text-foreground, etc. */
+
+  /* Base colors - RGB values without rgb() wrapper for HSL compatibility */
+  --background: 255 255 255; /* White background */
+  --foreground: 15 23 42; /* Dark text color */
+
+  /* Card colors */
+  --card: 255 255 255; /* Card background */
+  --card-foreground: 15 23 42; /* Card text */
+
+  /* Popover colors */
+  --popover: 255 255 255; /* Popover background */
+  --popover-foreground: 15 23 42; /* Popover text */
+
+  /* Primary colors */
+  --primary: 161 0 255; /* Accenture Purple #A100FF */
+  --primary-foreground: 255 255 255; /* White text on primary */
+
+  /* Secondary colors */
+  --secondary: 248 250 252; /* Light gray */
+  --secondary-foreground: 15 23 42; /* Dark text on secondary */
+
+  /* Muted colors */
+  --muted: 248 250 252; /* Light muted background */
+  --muted-foreground: 100 116 139; /* Muted text color */
+
+  /* Accent colors */
+  --accent: 248 250 252; /* Light accent background */
+  --accent-foreground: 15 23 42; /* Dark text on accent */
+
+  /* Destructive colors */
+  --destructive: 239 68 68; /* Red for destructive actions */
+  --destructive-foreground: 255 255 255; /* White text on destructive */
+
+  /* Border and input colors */
+  --border: 226 232 240; /* Light gray border */
+  --input: 226 232 240; /* Input border color */
+  --ring: 161 0 255; /* Focus ring color (primary) */
+
+  /* Border radius */
+  --radius: 0.5rem; /* 8px default radius */
+}
+
+/* === DARK MODE VARIABLES === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 15 20 25; /* Dark background */
+    --foreground: 248 250 252; /* Light text */
+
+    --card: 26 32 44; /* Dark card background */
+    --card-foreground: 248 250 252; /* Light card text */
+
+    --popover: 26 32 44; /* Dark popover */
+    --popover-foreground: 248 250 252; /* Light popover text */
+
+    --secondary: 45 55 72; /* Dark secondary */
+    --secondary-foreground: 248 250 252; /* Light secondary text */
+
+    --muted: 45 55 72; /* Dark muted background */
+    --muted-foreground: 148 163 184; /* Muted text in dark mode */
+
+    --accent: 45 55 72; /* Dark accent background */
+    --accent-foreground: 248 250 252; /* Light accent text */
+
+    --border: 45 55 72; /* Dark border */
+    --input: 45 55 72; /* Dark input border */
+  }
+}
+
+/* === DARK MODE CLASS OVERRIDE === */
+.dark {
+  --background: 15 20 25; /* Dark background */
+  --foreground: 248 250 252; /* Light text */
+
+  --card: 26 32 44; /* Dark card background */
+  --card-foreground: 248 250 252; /* Light card text */
+
+  --popover: 26 32 44; /* Dark popover */
+  --popover-foreground: 248 250 252; /* Light popover text */
+
+  --secondary: 45 55 72; /* Dark secondary */
+  --secondary-foreground: 248 250 252; /* Light secondary text */
+
+  --muted: 45 55 72; /* Dark muted background */
+  --muted-foreground: 148 163 184; /* Muted text in dark mode */
+
+  --accent: 45 55 72; /* Dark accent background */
+  --accent-foreground: 248 250 252; /* Light accent text */
+
+  --border: 45 55 72; /* Dark border */
+  --input: 45 55 72; /* Dark input border */
+}
+
+/* === HIGH CONTRAST ACCESSIBILITY === */
+@media (prefers-contrast: high) {
+  :root {
+    --foreground: 0 0 0; /* Pure black text */
+    --background: 255 255 255; /* Pure white background */
+    --border: 0 0 0; /* Pure black borders */
+    --primary: 107 0 255; /* Darker purple for better contrast */
+  }
+
+  .dark {
+    --foreground: 255 255 255; /* Pure white text */
+    --background: 0 0 0; /* Pure black background */
+    --border: 255 255 255; /* Pure white borders */
+  }
+}
+
+/* === UTILITY CLASSES === */
+.bg-background {
+  background-color: hsl(var(--background));
+}
+
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+
+.border-border {
+  border-color: hsl(var(--border));
+}
+
+.bg-card {
+  background-color: hsl(var(--card));
+}
+
+.text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+.text-secondary-foreground {
+  color: hsl(var(--secondary-foreground));
+}
+
+.bg-accent {
+  background-color: hsl(var(--accent));
+}
+
+.text-accent-foreground {
+  color: hsl(var(--accent-foreground));
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.bg-destructive {
+  background-color: hsl(var(--destructive));
+}
+
+.text-destructive-foreground {
+  color: hsl(var(--destructive-foreground));
+}

@@ -6,19 +6,8 @@
  */
 
 :root {
-  /* Z-index scale for layering */
-  --z-index-behind: -1;
-  --z-index-base: 0;
-  --z-index-raised: 10;
-  --z-index-elevated: 20;
-  --z-index-floating: 30;
-  --z-index-overlay: 40;
-  --z-index-modal: 50;
-  --z-index-popover: 60;
-  --z-index-tooltip: 70;
-  --z-index-toast: 80;
-  --z-index-loading: 90;
-  --z-index-maximum: 100;
+  /* Z-index variables now imported from z-index-system.css */
+  /* This file focuses on visual hierarchy through shadows, depth, and focus */
 
   /* Shadow system for depth perception */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);

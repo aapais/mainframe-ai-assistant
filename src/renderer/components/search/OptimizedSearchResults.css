@@ -1,0 +1,334 @@
+/**
+ * Optimized Search Results Styles
+ * Performance-focused CSS with GPU acceleration
+ */
+
+/* Keyframes for animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Base container */
+.optimized-search-results {
+  width: 100%;
+  height: 100%;
+  contain: layout style paint;
+  will-change: contents;
+}
+
+/* Loading state */
+.optimized-search-results.loading {
+  min-height: 200px;
+}
+
+.loading-spinner {
+  will-change: transform;
+}
+
+/* Search result card */
+.search-result-card {
+  contain: layout style paint;
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.search-result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.search-result-card:active {
+  transform: translateY(0);
+}
+
+/* Performance optimizations for virtual scrolling */
+.optimized-search-result-item {
+  contain: strict;
+  will-change: transform;
+}
+
+/* Sort controls */
+.sort-controls {
+  contain: layout style;
+}
+
+.sort-btn {
+  contain: layout style;
+  will-change: background-color, border-color, color;
+}
+
+.sort-btn:hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+
+.sort-btn.active:hover {
+  background-color: #ede9fe !important;
+}
+
+/* Quick action buttons */
+.quick-action-btn {
+  contain: layout style;
+  will-change: background-color;
+  transition: background-color 150ms ease-in-out;
+}
+
+.quick-action-btn:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Tags */
+.tag {
+  contain: layout style;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Score bar animations */
+.score-bar {
+  contain: layout style;
+}
+
+.score-bar div {
+  will-change: width;
+  transform: translateZ(0);
+}
+
+/* Match badge */
+.match-badge {
+  contain: layout style;
+  white-space: nowrap;
+}
+
+/* Results container scrollbar */
+.results-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.results-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.results-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.results-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-result-card {
+    padding: 12px !important;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  .score-indicator {
+    align-self: flex-end;
+  }
+
+  .sort-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .sort-controls > div:last-child {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sort-btn {
+    font-size: 0.8rem !important;
+    padding: 4px 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-stats {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  .quick-actions {
+    align-self: flex-end;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .search-result-card {
+    border: 2px solid #000 !important;
+  }
+
+  .sort-btn {
+    border: 2px solid #000 !important;
+  }
+
+  .tag {
+    border: 1px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .search-result-card,
+  .sort-btn,
+  .quick-action-btn,
+  .score-bar div {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .search-result-card:hover {
+    transform: none !important;
+  }
+
+  .loading-spinner {
+    animation: pulse 2s infinite;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .search-result-card {
+    background-color: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f9fafb;
+  }
+
+  .result-title {
+    color: #f9fafb !important;
+  }
+
+  .result-preview {
+    color: #d1d5db !important;
+  }
+
+  .result-stats {
+    color: #9ca3af !important;
+  }
+
+  .sort-btn {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #f9fafb !important;
+  }
+
+  .sort-btn.active {
+    background-color: #581c87 !important;
+    border-color: #7c3aed !important;
+    color: #f3e8ff !important;
+  }
+
+  .performance-debug {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px);
+  }
+}
+
+/* Print styles */
+@media print {
+  .sort-controls,
+  .quick-actions,
+  .performance-debug {
+    display: none !important;
+  }
+
+  .search-result-card {
+    break-inside: avoid;
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Focus styles for accessibility */
+.search-result-card:focus {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+.sort-btn:focus,
+.quick-action-btn:focus {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+/* Loading skeleton for better perceived performance */
+.search-result-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* GPU acceleration hints */
+.search-result-card,
+.sort-btn,
+.quick-action-btn {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize font rendering */
+.optimized-search-results {
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Container queries for responsive design */
+@container (max-width: 600px) {
+  .sort-controls {
+    flex-direction: column;
+  }
+}
+
+/* Content visibility for performance */
+.search-result-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 120px;
+}

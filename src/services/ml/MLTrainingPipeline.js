@@ -111,7 +111,7 @@ class MLTrainingPipeline {
             ]),
             labels: interactions.map((interaction) => interaction.clickRank),
             metadata: {
-                interactions: interactions,
+                interactions,
                 userProfiles: data.metadata?.userProfiles || []
             }
         };

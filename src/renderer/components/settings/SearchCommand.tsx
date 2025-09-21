@@ -482,19 +482,20 @@ export const SearchCommand: React.FC<SearchCommandProps> = ({
   }, [saveRecentSearches]);
 
   // Keyboard shortcuts
-  useKeyboardShortcuts({
-    [`${isMac ? 'cmd' : 'ctrl'}+k`]: {
-      key: `${isMac ? 'cmd' : 'ctrl'}+k`,
-      description: 'Open settings search',
-      handler: (e) => {
-        e.preventDefault();
-        onOpenChange(true);
-      }
-    }
-  }, {
-    enabled: true,
-    preventDefault: true
-  });
+  // Disabled global shortcut - SearchCommand should only be opened explicitly
+  // useKeyboardShortcuts({
+  //   [`${isMac ? 'cmd' : 'ctrl'}+k`]: {
+  //     key: `${isMac ? 'cmd' : 'ctrl'}+k`,
+  //     description: 'Open settings search',
+  //     handler: (e) => {
+  //       e.preventDefault();
+  //       onOpenChange(true);
+  //     }
+  //   }
+  // }, {
+  //   enabled: true,
+  //   preventDefault: true
+  // });
 
   // Keyboard navigation
   useKeyboardShortcuts({

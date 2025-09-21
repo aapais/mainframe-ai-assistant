@@ -292,7 +292,7 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     }
   }, [minQueryLength, enableAI, searchOptions.useAI, searchWithAI, searchLocal, safeSetState]);
 
-  // Set query with debounced search
+  // Set query with debounced search and proper clearing
   const setQuery = useCallback((newQuery: string) => {
     setState(prev => ({ ...prev, query: newQuery }));
     setSearchOptions(prev => ({ ...prev, query: newQuery }));
@@ -300,6 +300,21 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     // Clear previous debounce timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // If query is empty or only whitespace, clear results immediately
+    if (!newQuery || !newQuery.trim()) {
+      setState(prev => ({
+        ...prev,
+        query: newQuery,
+        results: [],
+        hasSearched: false,
+        error: null,
+        isLoading: false,
+        isSearching: false,
+        resultCount: 0
+      }));
+      return;
     }
 
     // Debounce search if auto-search is enabled
@@ -310,17 +325,21 @@ export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
     }
   }, [autoSearch, minQueryLength, debounceMs, search]);
 
-  // Clear query
+  // Clear query with enhanced reset functionality
   const clearQuery = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      query: '', 
-      results: [], 
+    setState(prev => ({
+      ...prev,
+      query: '',
+      results: [],
       hasSearched: false,
-      error: null 
+      error: null,
+      isLoading: false,
+      isSearching: false,
+      resultCount: 0,
+      searchTime: 0
     }));
     setSearchOptions(prev => ({ ...prev, query: '' }));
-    
+
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }

@@ -1,0 +1,41 @@
+{
+  "modes": {
+    "dev": {
+      "description": "Full stack development mode",
+      "agents": ["coder", "reviewer", "tester"],
+      "workflow": "parallel"
+    },
+    "cicd": {
+      "description": "CI/CD pipeline and automation setup",
+      "agents": ["cicd-engineer", "tester", "security-manager"],
+      "workflow": "sequential",
+      "tasks": [
+        "Create GitHub Actions workflows",
+        "Setup testing pipelines",
+        "Configure security scanning",
+        "Implement deployment automation"
+      ]
+    },
+    "integration": {
+      "description": "System integration and automation",
+      "agents": ["backend-dev", "api-docs", "tester", "cicd-engineer"],
+      "workflow": "adaptive"
+    },
+    "test": {
+      "description": "Comprehensive testing setup",
+      "agents": ["tester", "performance-benchmarker", "security-manager"],
+      "workflow": "parallel"
+    },
+    "security": {
+      "description": "Security audit and hardening",
+      "agents": ["security-manager", "code-analyzer", "reviewer"],
+      "workflow": "sequential"
+    }
+  },
+  "default": {
+    "mode": "dev",
+    "verbose": true,
+    "memory": true,
+    "hooks": true
+  }
+}

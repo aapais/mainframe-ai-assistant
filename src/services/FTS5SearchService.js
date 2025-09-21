@@ -405,7 +405,7 @@ class FTS5SearchService extends events_1.EventEmitter {
     generateSnippet(row, parsedQuery, maxLength) {
         if (row.snippet) {
             return row.snippet.length > maxLength
-                ? row.snippet.substring(0, maxLength) + '...'
+                ? `${row.snippet.substring(0, maxLength)  }...`
                 : row.snippet;
         }
         const text = `${row.title} ${row.problem} ${row.solution}`;
@@ -417,9 +417,9 @@ class FTS5SearchService extends events_1.EventEmitter {
                 const end = Math.min(text.length, index + firstTerm.length + 50);
                 let snippet = text.substring(start, end);
                 if (start > 0)
-                    snippet = '...' + snippet;
+                    snippet = `...${  snippet}`;
                 if (end < text.length)
-                    snippet = snippet + '...';
+                    snippet = `${snippet  }...`;
                 return snippet;
             }
         }

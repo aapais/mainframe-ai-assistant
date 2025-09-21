@@ -190,7 +190,7 @@ class MigrationTestRunner extends events_1.EventEmitter {
                             const results = await orchestrator.executeMigrationPlan(plan);
                             const allSuccessful = results.every(r => r.success);
                             if (!allSuccessful) {
-                                throw new Error('Some migrations failed: ' + results.filter(r => !r.success).map(r => r.error).join(', '));
+                                throw new Error(`Some migrations failed: ${  results.filter(r => !r.success).map(r => r.error).join(', ')}`);
                             }
                             const tables = db.prepare(`
                 SELECT name FROM sqlite_master 

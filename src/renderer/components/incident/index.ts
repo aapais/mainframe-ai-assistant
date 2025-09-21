@@ -1,27 +1,47 @@
-/**
- * Incident Management Components
- * Export all incident-related components
- */
+// Incident management components exports
 
+export { default as AdvancedFiltersPanel } from './AdvancedFiltersPanel';
 export { default as IncidentQueue } from './IncidentQueue';
-export { default as IncidentDashboard } from '../../views/IncidentDashboard';
-export { default as PriorityBadge } from './PriorityBadge';
+export { default as IncidentManagementDashboard } from './IncidentManagementDashboard';
 export { default as StatusBadge } from './StatusBadge';
-export { default as QuickActions } from './QuickActions';
 export { default as StatusWorkflow } from './StatusWorkflow';
-
-// Re-export types for convenience
+export { default as RelatedIncidentsPanel } from './RelatedIncidentsPanel';
 export type {
-  IncidentKBEntry,
+  AdvancedFiltersPanelProps,
+  IncidentFilters,
+  FilterPreset
+} from './AdvancedFiltersPanel';
+
+export type {
+  Incident,
   IncidentStatus,
   IncidentPriority,
-  IncidentFilter,
+  ImpactLevel,
+  SLAStatus,
+  User,
+  UserRole,
+  IncidentCategory,
+  SLATemplate,
+  QuickFilter,
   IncidentMetrics,
-  BulkOperation,
-  StatusTransition,
-  IncidentComment,
-  IncidentQueueProps,
-  IncidentDashboardProps,
-  PriorityBadgeProps,
-  StatusBadgeProps
-} from '../../../types/incident';
+  ExportOptions,
+  IncidentListResponse,
+  IncidentDetailResponse,
+  TimelineEntry,
+  CreateIncidentData,
+  UpdateIncidentData,
+  IncidentValidationErrors,
+  IncidentListProps,
+  IncidentCardProps,
+  UseIncidentListReturn,
+  UseIncidentDetailReturn,
+  IncidentContextValue,
+  IncidentSortField,
+  SortDirection,
+  SortOptions,
+  PaginationOptions,
+  IncidentListOptions,
+  Attachment,
+  Comment,
+  WorklogEntry
+} from './types';

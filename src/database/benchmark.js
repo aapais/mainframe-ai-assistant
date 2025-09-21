@@ -276,7 +276,7 @@ class DatabaseBenchmark {
         }
     }
     generateReport() {
-        console.log('\n' + '='.repeat(60));
+        console.log(`\n${  '='.repeat(60)}`);
         console.log('📊 BENCHMARK REPORT');
         console.log('='.repeat(60));
         let totalPassed = 0;
@@ -312,7 +312,7 @@ class DatabaseBenchmark {
                 console.log(`  ⚡ Average Performance: ${suite.summary.avgOpsPerSecond.toFixed(0)} ops/sec`);
             }
         }
-        console.log('\n' + '='.repeat(60));
+        console.log(`\n${  '='.repeat(60)}`);
         console.log('🎯 OVERALL SUMMARY');
         console.log('='.repeat(60));
         console.log(`✅ Total Passed: ${totalPassed}`);

@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
 import { Database, FileCode, Server, Cpu, Settings, HelpCircle } from 'lucide-react';
-import styles from './CategoryBadge.module.css';
 
 export type Category = 'JCL' | 'VSAM' | 'DB2' | 'Batch' | 'Functional' | 'Other';
 

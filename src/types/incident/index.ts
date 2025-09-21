@@ -9,14 +9,13 @@ import { KBEntry } from '../index';
 // INCIDENT STATUS TYPES
 // ===========================
 
-export type IncidentStatus = 
-  | 'open'
-  | 'assigned'
-  | 'in_progress'
-  | 'pending_review'
-  | 'resolved'
-  | 'closed'
-  | 'reopened';
+export type IncidentStatus =
+  | 'aberto'          // open
+  | 'em_tratamento'   // in_progress (covers both assigned and in_progress)
+  | 'em_revisao'      // pending_review (bulk/API imports)
+  | 'resolvido'       // resolved
+  | 'fechado'         // closed
+  | 'reaberto';       // reopened
 
 export type IncidentPriority = 'P1' | 'P2' | 'P3' | 'P4';
 
@@ -267,13 +266,12 @@ export const PRIORITY_COLORS: Record<IncidentPriority, string> = {
 };
 
 export const STATUS_COLORS: Record<IncidentStatus, string> = {
-  open: '#6b7280', // gray-500
-  assigned: '#3b82f6', // blue-500
-  in_progress: '#f59e0b', // amber-500
-  pending_review: '#8b5cf6', // violet-500
-  resolved: '#10b981', // emerald-500
-  closed: '#6b7280', // gray-500
-  reopened: '#ef4444', // red-500
+  aberto: '#6b7280',        // gray-500 (open)
+  em_tratamento: '#f59e0b', // amber-500 (in_progress)
+  em_revisao: '#8b5cf6',    // violet-500 (pending_review)
+  resolvido: '#10b981',     // emerald-500 (resolved)
+  fechado: '#6b7280',       // gray-500 (closed)
+  reaberto: '#ef4444',      // red-500 (reopened)
 };
 
 export const PRIORITY_LABELS: Record<IncidentPriority, string> = {
@@ -284,13 +282,12 @@ export const PRIORITY_LABELS: Record<IncidentPriority, string> = {
 };
 
 export const STATUS_LABELS: Record<IncidentStatus, string> = {
-  open: 'Open',
-  assigned: 'Assigned',
-  in_progress: 'In Progress',
-  pending_review: 'Pending Review',
-  resolved: 'Resolved',
-  closed: 'Closed',
-  reopened: 'Reopened',
+  aberto: 'Aberto',               // Open
+  em_tratamento: 'Em Tratamento', // In Progress/Assigned
+  em_revisao: 'Em Revisão',       // Pending Review
+  resolvido: 'Resolvido',         // Resolved
+  fechado: 'Fechado',             // Closed
+  reaberto: 'Reaberto',           // Reopened
 };
 
 export const DEFAULT_SLA_MINUTES: Record<IncidentPriority, number> = {

@@ -178,7 +178,7 @@ class FTS5EnhancedSearch {
         const rankingProfile = options.rankingProfile || 'balanced';
         const limit = options.limit || 20;
         const offset = options.offset || 0;
-        let sql = `
+        const sql = `
       WITH ranked_results AS (
         SELECT
           e.*,
@@ -214,7 +214,7 @@ class FTS5EnhancedSearch {
         WHERE f MATCH ?
           AND e.archived = FALSE
           ${options.category ? 'AND e.category = ?' : ''}
-          ${options.tags?.length ? 'AND EXISTS (SELECT 1 FROM kb_tags WHERE entry_id = e.id AND tag IN (' + options.tags.map(() => '?').join(',') + '))' : ''}
+          ${options.tags?.length ? `AND EXISTS (SELECT 1 FROM kb_tags WHERE entry_id = e.id AND tag IN (${  options.tags.map(() => '?').join(',')  }))` : ''}
         GROUP BY e.id, f.rank, bm25_score
       )
       SELECT *,
@@ -314,9 +314,9 @@ class FTS5EnhancedSearch {
         const snippetEnd = Math.min(content.length, snippetStart + maxLength);
         let snippetText = content.substring(snippetStart, snippetEnd);
         if (snippetStart > 0)
-            snippetText = '...' + snippetText;
+            snippetText = `...${  snippetText}`;
         if (snippetEnd < content.length)
-            snippetText = snippetText + '...';
+            snippetText = `${snippetText  }...`;
         const snippetOffset = snippetStart > 0 ? 3 : 0;
         for (const match of matches) {
             if (match.start >= snippetStart && match.end <= snippetEnd) {

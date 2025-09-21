@@ -5,7 +5,7 @@
 
 import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ErrorBoundary } from '../components/ErrorBoundary';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { DefaultLoadingFallback } from '../components/LazyComponents';
 
 // Lazy load route components for better initial performance

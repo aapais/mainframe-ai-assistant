@@ -1,6 +1,7 @@
 /**
  * Electron Preload Script - ElectronAPI Bridge
  * Exposes secure IPC methods to the renderer process
+ * Enhanced for Next.js integration while maintaining all existing functionality
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
@@ -16,12 +17,73 @@ import type {
 
 // Define the ElectronAPI interface exposed to renderer
 export interface ElectronAPI {
-  // Knowledge Base operations
+  // Knowledge Base operations (existing functionality preserved)
   getKBEntries: (query?: SearchQuery) => Promise<SearchResult[]>;
   addKBEntry: (entry: KBEntryInput) => Promise<string>;
   updateKBEntry: (id: string, updates: KBEntryUpdate) => Promise<void>;
   deleteKBEntry: (id: string) => Promise<void>;
   getEntry: (id: string) => Promise<KBEntry | null>;
+
+  // Incident Management operations (ALL existing IPC handlers preserved)
+  incident: {
+    list: (params: any) => Promise<any>;
+    get: (params: { id: string }) => Promise<any>;
+    create: (incidentData: any) => Promise<any>;
+    updateStatus: (params: any) => Promise<any>;
+    assign: (params: any) => Promise<any>;
+    updatePriority: (params: any) => Promise<any>;
+    bulkOperation: (operation: any) => Promise<any>;
+    addComment: (params: any) => Promise<any>;
+    getComments: (params: { incidentId: string }) => Promise<any>;
+    getStatusHistory: (params: { incidentId: string }) => Promise<any>;
+    getMetrics: (params: { timeframe: string }) => Promise<any>;
+    escalate: (params: any) => Promise<any>;
+    resolve: (params: any) => Promise<any>;
+    update: (params: any) => Promise<any>;
+    search: (params: any) => Promise<any>;
+    getSLABreaches: () => Promise<any>;
+    updateSLA: (params: any) => Promise<any>;
+    getTrends: (params: { timeframe: string }) => Promise<any>;
+    requestAIAnalysis: (entryId: string, userId: string) => Promise<any>;
+    executeAIAnalysis: (operationId: string, userId: string) => Promise<any>;
+    semanticSearch: (query: string, options: any, userId: string) => Promise<any>;
+    suggestSolution: (entryId: string, context: any, userId: string) => Promise<any>;
+    authorizeAI: (operationId: string, decision: string, userId: string) => Promise<any>;
+    acceptSolution: (entryId: string, userId: string, rating?: number) => Promise<any>;
+    rejectSolution: (entryId: string, userId: string, reason?: string) => Promise<any>;
+    bulkImport: (data: any[], userId: string) => Promise<any>;
+    getQueue: (filters?: any) => Promise<any>;
+    getStats: () => Promise<any>;
+    logAction: (entryId: string, actionType: string, userId: string, description?: string, metadata?: any) => Promise<any>;
+  };
+
+  // Unified operations (maintaining UnifiedHandler compatibility)
+  unified: {
+    search: (params: any) => Promise<any>;
+    getEntry: (params: { id: string }) => Promise<any>;
+    createEntry: (entryData: any) => Promise<any>;
+    updateEntry: (params: any) => Promise<any>;
+  };
+
+  // Settings operations (preserving all AI and system settings)
+  settings: {
+    getAI: () => Promise<any>;
+    saveAIKey: (apiKey: string) => Promise<any>;
+    saveAIBudgets: (budgets: any) => Promise<any>;
+  };
+
+  // AI operations (maintaining all existing AI functionality)
+  ai: {
+    checkStatus: () => Promise<any>;
+    testConnection: () => Promise<any>;
+  };
+
+  // System capabilities check
+  system: {
+    getCapabilities: () => Promise<any>;
+    getMigrationStatus: () => Promise<any>;
+    getSchemaInfo: () => Promise<any>;
+  };
   
   // Search operations
   searchLocal: (query: string, options?: SearchQuery) => Promise<SearchResult[]>;
@@ -336,34 +398,111 @@ const eventAPI = {
   }
 };
 
+// Incident Management API (preserving ALL existing IPC handlers)
+const incidentAPI = {
+  list: async (params: any) => await ipcRenderer.invoke('incident:list', params),
+  get: async (params: { id: string }) => await ipcRenderer.invoke('incident:get', params),
+  create: async (incidentData: any) => await ipcRenderer.invoke('incident:create', incidentData),
+  updateStatus: async (params: any) => await ipcRenderer.invoke('incident:updateStatus', params),
+  assign: async (params: any) => await ipcRenderer.invoke('incident:assign', params),
+  updatePriority: async (params: any) => await ipcRenderer.invoke('incident:updatePriority', params),
+  bulkOperation: async (operation: any) => await ipcRenderer.invoke('incident:bulkOperation', operation),
+  addComment: async (params: any) => await ipcRenderer.invoke('incident:addComment', params),
+  getComments: async (params: { incidentId: string }) => await ipcRenderer.invoke('incident:getComments', params),
+  getStatusHistory: async (params: { incidentId: string }) => await ipcRenderer.invoke('incident:getStatusHistory', params),
+  getMetrics: async (params: { timeframe: string }) => await ipcRenderer.invoke('incident:getMetrics', params),
+  escalate: async (params: any) => await ipcRenderer.invoke('incident:escalate', params),
+  resolve: async (params: any) => await ipcRenderer.invoke('incident:resolve', params),
+  update: async (params: any) => await ipcRenderer.invoke('incident:update', params),
+  search: async (params: any) => await ipcRenderer.invoke('incident:search', params),
+  getSLABreaches: async () => await ipcRenderer.invoke('incident:getSLABreaches'),
+  updateSLA: async (params: any) => await ipcRenderer.invoke('incident:updateSLA', params),
+  getTrends: async (params: { timeframe: string }) => await ipcRenderer.invoke('incident:getTrends', params),
+  requestAIAnalysis: async (entryId: string, userId: string) => await ipcRenderer.invoke('incident:requestAIAnalysis', entryId, userId),
+  executeAIAnalysis: async (operationId: string, userId: string) => await ipcRenderer.invoke('incident:executeAIAnalysis', operationId, userId),
+  semanticSearch: async (query: string, options: any, userId: string) => await ipcRenderer.invoke('incident:semanticSearch', query, options, userId),
+  suggestSolution: async (entryId: string, context: any, userId: string) => await ipcRenderer.invoke('incident:suggestSolution', entryId, context, userId),
+  authorizeAI: async (operationId: string, decision: string, userId: string) => await ipcRenderer.invoke('incident:authorizeAI', operationId, decision, userId),
+  acceptSolution: async (entryId: string, userId: string, rating?: number) => await ipcRenderer.invoke('incident:acceptSolution', entryId, userId, rating),
+  rejectSolution: async (entryId: string, userId: string, reason?: string) => await ipcRenderer.invoke('incident:rejectSolution', entryId, userId, reason),
+  bulkImport: async (data: any[], userId: string) => await ipcRenderer.invoke('incident:bulkImport', data, userId),
+  getQueue: async (filters?: any) => await ipcRenderer.invoke('incident:getQueue', filters),
+  getStats: async () => await ipcRenderer.invoke('incident:getStats'),
+  logAction: async (entryId: string, actionType: string, userId: string, description?: string, metadata?: any) =>
+    await ipcRenderer.invoke('incident:logAction', entryId, actionType, userId, description, metadata)
+};
+
+// Unified operations API (preserving UnifiedHandler compatibility)
+const unifiedAPI = {
+  search: async (params: any) => await ipcRenderer.invoke('unified:search', params),
+  getEntry: async (params: { id: string }) => await ipcRenderer.invoke('unified:getEntry', params),
+  createEntry: async (entryData: any) => await ipcRenderer.invoke('unified:createEntry', entryData),
+  updateEntry: async (params: any) => await ipcRenderer.invoke('unified:updateEntry', params)
+};
+
+// Settings API (preserving ALL AI and system settings)
+const settingsAPI = {
+  getAI: async () => await ipcRenderer.invoke('settings:get-ai'),
+  saveAIKey: async (apiKey: string) => await ipcRenderer.invoke('settings:save-ai-key', apiKey),
+  saveAIBudgets: async (budgets: any) => await ipcRenderer.invoke('settings:save-ai-budgets', budgets)
+};
+
+// AI operations API (maintaining all existing AI functionality)
+const aiAPI = {
+  checkStatus: async () => await ipcRenderer.invoke('ai:check-status'),
+  testConnection: async () => await ipcRenderer.invoke('ai:test-connection')
+};
+
+// System capabilities API
+const systemCapabilitiesAPI = {
+  getCapabilities: async () => await ipcRenderer.invoke('system:getCapabilities'),
+  getMigrationStatus: async () => await ipcRenderer.invoke('system:getMigrationStatus'),
+  getSchemaInfo: async () => await ipcRenderer.invoke('system:getSchemaInfo')
+};
+
 // Combine all APIs into the complete ElectronAPI
 const electronAPI: ElectronAPI = {
-  // Knowledge Base operations
+  // Knowledge Base operations (existing functionality)
   ...kbAPI,
-  
+
   // Search operations
   ...searchAPI,
-  
+
   // Rating and feedback
   ...feedbackAPI,
-  
+
   // System operations
   ...systemAPI,
-  
+
   // Application lifecycle
   ...appAPI,
-  
+
   // Window management
   ...windowAPI,
-  
+
   // Theme operations
   ...themeAPI,
-  
+
   // Development tools
   ...devAPI,
-  
+
   // Event listeners
-  ...eventAPI
+  ...eventAPI,
+
+  // Incident Management (ALL existing handlers preserved)
+  incident: incidentAPI,
+
+  // Unified operations (maintaining compatibility)
+  unified: unifiedAPI,
+
+  // Settings operations (preserving all configurations)
+  settings: settingsAPI,
+
+  // AI operations (maintaining all AI functionality)
+  ai: aiAPI,
+
+  // System capabilities
+  system: systemCapabilitiesAPI
 };
 
 // Security: Only expose the API if we're in the correct context

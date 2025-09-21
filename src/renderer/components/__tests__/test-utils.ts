@@ -1,6 +1,6 @@
+import React, { ReactElement, ReactNode } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ReactElement, ReactNode } from 'react';
 
 // Enhanced test utilities for better component testing
 
@@ -13,7 +13,7 @@ export function customRender(
 ) {
   // Add any providers here in the future (Theme, Context, etc.)
   const Wrapper = ({ children }: { children: ReactNode }) => {
-    return <>{children}</>;
+    return React.createElement(React.Fragment, null, children);
   };
 
   return {

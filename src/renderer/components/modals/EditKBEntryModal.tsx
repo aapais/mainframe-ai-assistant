@@ -81,7 +81,7 @@ interface UnsavedChangesState {
  * - Draft management
  * - Error handling with user-friendly messages
  */
-export const EditKBEntryModal = memo<EditKBEntryModalProps>({
+const EditKBEntryModalComponent: React.FC<EditKBEntryModalProps> = ({
   isOpen,
   entry,
   onClose,
@@ -646,6 +646,8 @@ export const EditKBEntryModal = memo<EditKBEntryModalProps>({
       )}
     </>
   );
-});
+};
+
+export const EditKBEntryModal = memo(EditKBEntryModalComponent);
 
 EditKBEntryModal.displayName = 'EditKBEntryModal';

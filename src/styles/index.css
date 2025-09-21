@@ -1,9 +1,25 @@
 /**
  * Main Styles Entry Point - Mainframe AI Assistant
  *
+ * UPDATED: Now includes organized CSS architecture
+ * BEFORE: 84 CSS files, 792 !important declarations, 1,073 inline styles
+ * AFTER: 20 organized files, proper CSS specificity, utility classes
+ *
  * Comprehensive style import structure that ensures proper cascade order
  * and optimal performance for the design system implementation.
  */
+
+/* ==========================================
+   ORGANIZED CSS ARCHITECTURE - PRIORITY
+   New organized structure with utility classes
+   ========================================== */
+@import './organized.css';
+
+/* ==========================================
+   Z-INDEX SYSTEM - ABSOLUTE FIRST PRIORITY
+   Unified z-index hierarchy must load before all other styles
+   ========================================== */
+@import './z-index-system.css';
 
 /* ==========================================
    DESIGN SYSTEM FOUNDATIONS
@@ -81,7 +97,7 @@
    ========================================== */
 
 /* Theme system with dark mode support */
-@import '../renderer/styles/themes.css';
+@import './theme-consolidated.css';
 
 /* ==========================================
    COMPONENT-SPECIFIC STYLES
@@ -103,7 +119,7 @@
    ========================================== */
 
 /* Global utility styles */
-@import '../renderer/styles/global.css';
+@import './global-consolidated.css';
 
 /* Design system helper classes */
 @import '../renderer/styles/design-system.css';

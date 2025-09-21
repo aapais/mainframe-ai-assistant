@@ -336,7 +336,7 @@ class CustomReportBuilder extends events_1.EventEmitter {
         return {
             version: '1.0',
             exportedAt: new Date().toISOString(),
-            builder: builder
+            builder
         };
     }
     importBuilder(data) {

@@ -1,0 +1,42 @@
+[
+  {
+    "title": "S0C7 - Data Exception (Invalid Numeric Data)",
+    "problem": "System completion code S0C7 occurs when a program attempts to perform arithmetic operations on invalid numeric data. This happens when packed decimal fields contain invalid digits (A-F in the rightmost nibble instead of C, D, or F), or when numeric fields contain non-numeric characters.",
+    "solution": "1. Identify the failing instruction using the PSW and registers in the dump\n2. Check all numeric fields involved in arithmetic operations\n3. Examine packed decimal fields for invalid sign nibbles\n4. Verify data initialization - use VALUE clauses or INITIALIZE statements\n5. Check file input data for corruption or invalid formats\n6. Use MOVE ZERO to initialize numeric fields before use\n7. Implement data validation routines before arithmetic operations\n8. Check for overlay of numeric fields by alphanumeric data\n9. Use COMP-3 fields properly with correct PICTURE clauses\n10. Add debugging statements to trace data values before operations\n11. Consider using NUMVAL function for data conversion\n12. Review copybook definitions for proper numeric field definitions",
+    "category": "COBOL",
+    "tags": ["cobol", "s0c7", "data-exception", "numeric", "packed-decimal", "arithmetic"],
+    "severity": "high"
+  },
+  {
+    "title": "S0C4 - Protection Exception (Storage Violation)",
+    "problem": "System completion code S0C4 indicates a storage protection violation where the program attempted to access storage outside its allocated region, or tried to execute non-executable storage. This can be caused by array subscript errors, pointer corruption, or storage overlay.",
+    "solution": "1. Check array subscripts and table indexing for out-of-bounds access\n2. Verify OCCURS clauses match actual data usage\n3. Review pointer operations if using COBOL II or later\n4. Check for storage overlay between different data areas\n5. Examine WORKING-STORAGE section for proper field definitions\n6. Verify LINKAGE SECTION fields are properly addressed\n7. Check for corruption of the Transaction Control Area (TCA)\n8. Review any CALL statements for proper parameter passing\n9. Ensure proper initialization of index and subscript fields\n10. Use bounds checking compiler options during development\n11. Check for recursive program calls causing stack overflow\n12. Review any REDEFINES clauses for proper usage\n13. Examine string manipulation operations for length overruns",
+    "category": "COBOL",
+    "tags": ["cobol", "s0c4", "protection-exception", "storage", "subscript", "array", "bounds"],
+    "severity": "high"
+  },
+  {
+    "title": "S0C1 - Operation Exception (Invalid Instruction)",
+    "problem": "System completion code S0C1 occurs when the processor encounters an invalid operation code or tries to execute data as instructions. This typically happens due to program counter corruption, jumping to wrong addresses, or overlay of program code.",
+    "solution": "1. Check for corruption of the program counter or instruction stream\n2. Review any computed GOTO or ALTER statements\n3. Verify proper section and paragraph names in PERFORM statements\n4. Check for overlay of program code by data operations\n5. Examine any assembly language inserts for proper opcodes\n6. Review CALL statements for proper program name resolution\n7. Check for corruption in the load module\n8. Verify proper compilation and link-edit process\n9. Examine any dynamic program loading operations\n10. Check for storage overlay affecting program areas\n11. Review exception handling routines for proper flow\n12. Verify proper termination of all program paths\n13. Check compiler options and optimization settings",
+    "category": "COBOL",
+    "tags": ["cobol", "s0c1", "operation-exception", "invalid-instruction", "program-counter"],
+    "severity": "high"
+  },
+  {
+    "title": "U4038 - Language Environment Runtime Error",
+    "problem": "User completion code U4038 indicates a Language Environment runtime error, typically related to storage management, program initialization, or runtime library issues. This often occurs during program startup, termination, or when calling runtime services.",
+    "solution": "1. Check Language Environment runtime options (CEEUOPT)\n2. Review REGION parameter allocation for adequate storage\n3. Examine runtime options like HEAP, STACK, and ANYHEAP\n4. Check for proper Language Environment initialization\n5. Review any CEE calls for proper parameter usage\n6. Verify compatible Language Environment version with program\n7. Check for storage fragmentation or insufficient virtual storage\n8. Review any user exit routines for proper implementation\n9. Examine CEEDUMP output for specific error details\n10. Check for conflicts with other runtime environments\n11. Verify proper linkage and load module construction\n12. Review any condition handling routines\n13. Check for proper program termination sequences",
+    "category": "COBOL",
+    "tags": ["cobol", "u4038", "language-environment", "runtime", "storage", "initialization"],
+    "severity": "medium"
+  },
+  {
+    "title": "S013 - OPEN Error (Member Not Found)",
+    "problem": "System completion code S013 indicates an OPEN error where a specified member of a partitioned dataset (PDS) could not be found. This occurs when trying to open a specific member that doesn't exist in the PDS directory.",
+    "solution": "1. Verify the member name specified in the DD statement or program\n2. Use ISPF member list (option 3.1) to check existing members\n3. Check for typos in the member name specification\n4. Verify the member wasn't deleted or renamed\n5. Ensure proper case sensitivity for member names\n6. Check if you're referencing the correct PDS\n7. Use LISTDS command to verify PDS contents\n8. If member should exist, check backup copies\n9. Verify proper authorization to access the PDS member\n10. Check if PDS is compressed and member displaced\n11. Review JCL DD statement syntax for member specification\n12. Consider creating the member if it should exist but doesn't",
+    "category": "COBOL",
+    "tags": ["cobol", "s013", "open-error", "member", "pds", "not-found"],
+    "severity": "medium"
+  }
+]

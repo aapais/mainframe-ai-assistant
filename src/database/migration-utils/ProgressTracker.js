@@ -327,7 +327,7 @@ class ProgressTracker extends events_1.EventEmitter {
                 report += `    Warnings: ${step.warnings.join(', ')}\n`;
             }
         }
-        report += '\n' + '='.repeat(50) + '\n';
+        report += `\n${  '='.repeat(50)  }\n`;
         return report;
     }
 }

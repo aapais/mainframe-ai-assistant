@@ -1,0 +1,578 @@
+/**
+ * Integrated Dropdown Fix - Complete Solution
+ * Consolidates all dropdown and z-index fixes into a single, comprehensive solution
+ *
+ * This file should be loaded AFTER all other component styles to ensure
+ * proper override behavior and conflict resolution.
+ *
+ * @author Complete Layout Solution Specialist
+ * @version 2.0.0
+ */
+
+/* ===============================================
+   IMPORT DEPENDENCIES
+   =============================================== */
+
+/* Ensure our enhanced visual hierarchy is loaded */
+@import url('./dropdown-system.css');
+@import url('./search-bar-enhancements.css');
+@import url('./component-layer-fixes.css');
+
+/* ===============================================
+   MASTER Z-INDEX HIERARCHY ENFORCEMENT
+   =============================================== */
+
+/* Critical: Force correct z-index values for all dropdown types */
+.search-suggestions,
+.kb-search-suggestions,
+.enhanced-search-suggestions,
+[class*="suggestions"],
+[data-dropdown="suggestions"] {
+  z-index: var(--z-index-dropdown-suggestions) !important;
+  position: absolute !important;
+  isolation: isolate !important;
+}
+
+.search-history,
+.kb-search-history,
+[class*="history"],
+[data-dropdown="history"] {
+  z-index: var(--z-index-dropdown-history) !important;
+  position: absolute !important;
+  isolation: isolate !important;
+}
+
+.search-filters,
+.kb-search-filters,
+.search-filters-panel,
+[class*="filters"],
+[data-dropdown="filters"] {
+  z-index: var(--z-index-dropdown-filters) !important;
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+.quick-actions,
+.quick-actions-menu,
+.quick-actions-dropdown,
+[class*="quick-actions"],
+[data-dropdown="quick-actions"] {
+  z-index: var(--z-index-dropdown-quick-actions) !important;
+  position: absolute !important;
+  isolation: isolate !important;
+}
+
+.popular-searches,
+.popular-searches-dropdown,
+[class*="popular"],
+[data-dropdown="popular"] {
+  z-index: var(--z-index-dropdown-suggestions) !important;
+  position: absolute !important;
+  isolation: isolate !important;
+}
+
+/* ===============================================
+   SPECIFIC COMPONENT FIXES
+   =============================================== */
+
+/* KBSearchBar Component Fixes */
+.kb-search-bar {
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: var(--z-index-base) !important;
+}
+
+.kb-search-bar .search-input-container {
+  position: relative !important;
+  z-index: var(--z-index-raised) !important;
+}
+
+/* EnhancedKBSearchBar Component Fixes */
+.enhanced-kb-search-bar {
+  position: relative !important;
+  isolation: isolate !important;
+  z-index: var(--z-index-base) !important;
+}
+
+.enhanced-kb-search-bar .search-input-container {
+  position: relative !important;
+  z-index: var(--z-index-raised) !important;
+}
+
+/* ===============================================
+   DROPDOWN POSITIONING FIXES
+   =============================================== */
+
+/* Standard dropdown positioning */
+.dropdown-content,
+.search-suggestions,
+.search-history,
+.popular-searches-dropdown {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+              0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-8px) scale(0.95) !important;
+  transition: all 200ms ease-out !important;
+}
+
+/* Visible state */
+.dropdown-content.visible,
+.dropdown-content.dropdown-open,
+.search-suggestions.visible,
+.search-history.visible,
+.popular-searches-dropdown.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+/* Upward positioning when space is limited */
+.dropdown-content.dropdown-top,
+.search-suggestions.position-top,
+.search-history.position-top {
+  top: auto !important;
+  bottom: calc(100% + 4px) !important;
+  transform: translateY(8px) scale(0.95) !important;
+}
+
+.dropdown-content.dropdown-top.visible,
+.search-suggestions.position-top.visible,
+.search-history.position-top.visible {
+  transform: translateY(0) scale(1) !important;
+}
+
+/* ===============================================
+   RESPONSIVE BEHAVIOR ENFORCEMENT
+   =============================================== */
+
+/* Mobile: Force bottom sheet behavior */
+@media (max-width: 767px) {
+  .dropdown-content,
+  .search-suggestions,
+  .search-history,
+  .popular-searches-dropdown {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-height: 70vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    z-index: var(--z-index-modal) !important;
+    transform: translateY(100%) !important;
+  }
+
+  .dropdown-content.visible,
+  .search-suggestions.visible,
+  .search-history.visible,
+  .popular-searches-dropdown.visible {
+    transform: translateY(0) !important;
+  }
+
+  /* Mobile backdrop */
+  .dropdown-backdrop,
+  .search-dropdown-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    z-index: calc(var(--z-index-modal) - 1) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 200ms ease-out !important;
+  }
+
+  .dropdown-backdrop.visible,
+  .search-dropdown-backdrop.visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Touch-friendly sizes */
+  .suggestion-item,
+  .history-item,
+  .action-item,
+  .popular-search-item {
+    min-height: 56px !important;
+    padding: 16px !important;
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .dropdown-content,
+  .search-suggestions,
+  .search-history {
+    max-height: 350px !important;
+  }
+
+  .suggestion-item,
+  .history-item,
+  .action-item {
+    min-height: 50px !important;
+    padding: 14px 16px !important;
+  }
+}
+
+/* ===============================================
+   ANIMATION PERFORMANCE FIXES
+   =============================================== */
+
+/* GPU acceleration for smooth animations */
+.dropdown-content,
+.search-suggestions,
+.search-history,
+.popular-searches-dropdown,
+.quick-actions-dropdown {
+  will-change: transform, opacity !important;
+  backface-visibility: hidden !important;
+  perspective: 1000px !important;
+  transform: translateZ(0) !important;
+}
+
+/* Optimize for 60fps animations */
+@keyframes dropdown-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) translateZ(0);
+  }
+}
+
+@keyframes dropdown-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1) translateZ(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95) translateZ(0);
+  }
+}
+
+/* Apply optimized animations */
+.dropdown-content.visible,
+.search-suggestions.visible,
+.search-history.visible {
+  animation: dropdown-slide-in 200ms ease-out !important;
+}
+
+/* ===============================================
+   DARK MODE CONSISTENCY
+   =============================================== */
+
+@media (prefers-color-scheme: dark) {
+  .dropdown-content,
+  .search-suggestions,
+  .search-history,
+  .popular-searches-dropdown,
+  .quick-actions-dropdown {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #f3f4f6 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3),
+                0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .suggestion-item,
+  .history-item,
+  .action-item,
+  .popular-search-item {
+    color: #f3f4f6 !important;
+    border-color: #374151 !important;
+  }
+
+  .suggestion-item:hover,
+  .history-item:hover,
+  .action-item:hover,
+  .popular-search-item:hover {
+    background: #374151 !important;
+  }
+
+  .suggestion-item.selected {
+    background: #4c1d95 !important;
+    border-left-color: #a855f7 !important;
+  }
+}
+
+/* ===============================================
+   ACCESSIBILITY ENFORCEMENT
+   =============================================== */
+
+/* Ensure focus indicators are always visible */
+.suggestion-item:focus-visible,
+.history-item:focus-visible,
+.action-item:focus-visible,
+.popular-search-item:focus-visible {
+  outline: 2px solid #7c3aed !important;
+  outline-offset: -2px !important;
+  z-index: calc(var(--z-index-maximum) - 1) !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .dropdown-content,
+  .search-suggestions,
+  .search-history {
+    border-width: 2px !important;
+    border-color: currentColor !important;
+  }
+
+  .suggestion-item:hover,
+  .history-item:hover,
+  .action-item:hover {
+    background: currentColor !important;
+    color: white !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .dropdown-content,
+  .search-suggestions,
+  .search-history,
+  .popular-searches-dropdown {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .dropdown-content.visible,
+  .search-suggestions.visible,
+  .search-history.visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
+}
+
+/* ===============================================
+   CRITICAL FIXES FOR COMMON ISSUES
+   =============================================== */
+
+/* Fix for dropdowns being cut off by overflow hidden */
+.search-container,
+.kb-search-container,
+.search-wrapper {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Fix for dropdowns appearing behind modals */
+.modal-open .dropdown-content,
+.modal-open .search-suggestions,
+.modal-open .search-history {
+  z-index: calc(var(--z-index-modal) + 1) !important;
+}
+
+/* Fix for dropdowns in scrollable containers */
+.scrollable-container .dropdown-content,
+.overflow-auto .dropdown-content {
+  position: fixed !important;
+  z-index: var(--z-index-popover) !important;
+}
+
+/* Fix for nested dropdown conflicts */
+.dropdown-content .dropdown-content {
+  z-index: calc(var(--z-index-dropdown-base) + 10) !important;
+}
+
+/* ===============================================
+   PERFORMANCE OPTIMIZATIONS
+   =============================================== */
+
+/* Contain layout for better performance */
+.dropdown-container,
+.search-container,
+.kb-search-bar,
+.enhanced-kb-search-bar {
+  contain: layout style !important;
+}
+
+.dropdown-content,
+.search-suggestions,
+.search-history {
+  contain: layout style paint !important;
+}
+
+/* Optimize repaints */
+.suggestion-item,
+.history-item,
+.action-item {
+  contain: layout style !important;
+}
+
+/* ===============================================
+   DEBUGGING AND DEVELOPMENT HELPERS
+   =============================================== */
+
+/* Debug mode - shows z-index values */
+.debug-z-index .dropdown-content::before,
+.debug-z-index .search-suggestions::before,
+.debug-z-index .search-history::before {
+  content: 'z:' attr(data-z-index);
+  position: absolute !important;
+  top: -20px !important;
+  left: 0 !important;
+  background: #ff0000 !important;
+  color: #ffffff !important;
+  padding: 2px 4px !important;
+  font-size: 10px !important;
+  font-family: monospace !important;
+  z-index: var(--z-index-maximum) !important;
+  pointer-events: none !important;
+}
+
+/* Development environment indicators */
+.dev-environment .dropdown-content {
+  border: 2px dashed #ff6b6b !important;
+}
+
+.dev-environment .dropdown-content::after {
+  content: 'DEV: Dropdown Active';
+  position: absolute !important;
+  bottom: -25px !important;
+  left: 0 !important;
+  background: #ff6b6b !important;
+  color: white !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+  border-radius: 3px !important;
+}
+
+/* ===============================================
+   EMERGENCY OVERRIDES
+   =============================================== */
+
+/* Emergency class to force dropdown above everything */
+.dropdown-emergency-top {
+  z-index: 2147483647 !important;
+  position: fixed !important;
+  isolation: isolate !important;
+}
+
+/* Emergency class to reset problematic styles */
+.dropdown-reset-all {
+  all: revert !important;
+  position: absolute !important;
+  z-index: var(--z-index-dropdown-base) !important;
+}
+
+/* Force visible for debugging */
+.dropdown-force-visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  transform: none !important;
+}
+
+/* ===============================================
+   PRINT MEDIA FIXES
+   =============================================== */
+
+@media print {
+  /* Hide all dropdowns in print */
+  .dropdown-content,
+  .search-suggestions,
+  .search-history,
+  .popular-searches-dropdown,
+  .quick-actions-dropdown,
+  .dropdown-backdrop,
+  .search-dropdown-backdrop {
+    display: none !important;
+  }
+
+  /* Reset positioning for print */
+  .kb-search-bar,
+  .enhanced-kb-search-bar,
+  .search-container {
+    position: static !important;
+    z-index: auto !important;
+  }
+}
+
+/* ===============================================
+   FINAL CRITICAL OVERRIDES
+   =============================================== */
+
+/* These are the most important fixes that should override everything */
+.search-suggestions,
+.search-history,
+.popular-searches-dropdown,
+.quick-actions-dropdown {
+  /* Critical positioning */
+  position: absolute !important;
+
+  /* Critical z-index hierarchy */
+  z-index: var(--z-index-dropdown-suggestions) !important;
+
+  /* Critical stacking context */
+  isolation: isolate !important;
+
+  /* Critical transform for animations */
+  transform: translateZ(0) !important;
+
+  /* Critical performance optimizations */
+  will-change: transform, opacity !important;
+  backface-visibility: hidden !important;
+}
+
+/* Mobile critical overrides */
+@media (max-width: 767px) {
+  .search-suggestions,
+  .search-history,
+  .popular-searches-dropdown {
+    position: fixed !important;
+    z-index: var(--z-index-modal) !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+  }
+}
+
+/* Ensure this file loads last and overrides everything */
+.dropdown-system-loaded {
+  --dropdown-system-version: "2.0.0";
+}
+
+/* Mark the system as loaded for debugging */
+html::after {
+  content: "✅ Dropdown System v2.0.0 Loaded";
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background: #10b981;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: var(--z-index-maximum);
+  pointer-events: none;
+  opacity: 0;
+  animation: system-loaded 3s ease-in-out;
+}
+
+@keyframes system-loaded {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}

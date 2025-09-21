@@ -216,8 +216,8 @@ class QueryOptimizationService {
                 index_usage: indexUsage,
                 table_scans: tableScans,
                 optimization_score: optimizationScore,
-                bottlenecks: bottlenecks,
-                recommendations: recommendations
+                bottlenecks,
+                recommendations
             };
             this.performanceStats.set(this.generateQueryHash(sql), analysis);
             return analysis;
@@ -319,7 +319,7 @@ class QueryOptimizationService {
                 optimization_rate: Math.round((optimizations.queries_optimized || 0) / (stats.total_queries || 1) * 100)
             },
             slow_queries: slowQueries.map(q => ({
-                sql: q.query_text.substring(0, 100) + '...',
+                sql: `${q.query_text.substring(0, 100)  }...`,
                 execution_time_ms: q.execution_time_ms,
                 optimization_suggestions: this.generateQuickOptimizationSuggestions(q.query_text)
             })),

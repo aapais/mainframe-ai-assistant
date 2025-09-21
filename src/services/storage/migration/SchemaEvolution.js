@@ -434,7 +434,7 @@ class SchemaEvolution {
         sql += columnDefs.join(',\n');
         if (tableDef.foreignKeys && tableDef.foreignKeys.length > 0) {
             const fkDefs = tableDef.foreignKeys.map(fk => `  FOREIGN KEY (${fk.column}) REFERENCES ${fk.references}`);
-            sql += ',\n' + fkDefs.join(',\n');
+            sql += `,\n${  fkDefs.join(',\n')}`;
         }
         sql += '\n)';
         return sql;

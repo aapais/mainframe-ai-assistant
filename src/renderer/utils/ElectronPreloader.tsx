@@ -99,13 +99,13 @@ export class ElectronPreloader {
       // User is active, preload interactive components
       this.preloadComponent(
         'AddEntryForm',
-        () => import('../components/SimpleAddEntryForm'),
+        () => import('../components/common/SimpleAddEntryForm'),
         'medium'
       );
 
       this.preloadComponent(
         'KeyboardHelp',
-        () => import('../components/KeyboardHelp'),
+        () => import('../components/accessibility/KeyboardHelp'),
         'low'
       );
 
@@ -135,7 +135,7 @@ export class ElectronPreloader {
               if (componentName && importPath) {
                 this.preloadComponent(
                   componentName,
-                  () => import(/* @vite-ignore */ importPath),
+                  () => import(importPath),
                   'low'
                 );
 
@@ -168,13 +168,13 @@ export class ElectronPreloader {
       setTimeout(() => {
         this.preloadComponent(
           'ErrorBoundary',
-          () => import('../components/ErrorBoundary'),
+          () => import('../components/common/ErrorBoundary'),
           'high'
         );
 
         this.preloadComponent(
           'LoadingSpinner',
-          () => import('../components/LoadingSpinner'),
+          () => import('../components/common/LoadingSpinner'),
           'high'
         );
       }, 100);

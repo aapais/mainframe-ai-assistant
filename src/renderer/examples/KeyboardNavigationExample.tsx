@@ -7,9 +7,9 @@ import React, { useState } from 'react';
 import { KeyboardProvider, useKeyboard, useKeyboardShortcuts } from '../contexts/KeyboardContext';
 import { useKeyboardNavigation, useModalNavigation, useFormNavigation } from '../hooks/useKeyboardNavigation';
 import { Button, ButtonGroup } from '../components/common/Button';
-import { GlobalKeyboardHelp, KeyboardHelpButton } from '../components/KeyboardHelp';
-import KeyboardEnabledSearchBar from '../components/KeyboardEnabledSearchBar';
-import KeyboardEnabledEntryList from '../components/KeyboardEnabledEntryList';
+import { GlobalKeyboardHelp, KeyboardHelpButton } from '../components/accessibility/KeyboardHelp';
+import KeyboardEnabledSearchBar from '../components/accessibility/KeyboardEnabledSearchBar';
+import KeyboardEnabledEntryList from '../components/accessibility/KeyboardEnabledEntryList';
 import '../styles/keyboard-navigation.css';
 
 // Sample data

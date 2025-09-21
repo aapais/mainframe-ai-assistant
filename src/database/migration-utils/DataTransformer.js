@@ -258,7 +258,7 @@ class DataTransformer extends events_1.EventEmitter {
                     sourceTable: 'kb_entries',
                     transformFunction: (row) => ({
                         ...row,
-                        extracted_error_codes: this.extractErrorCodes(row.problem + ' ' + row.solution),
+                        extracted_error_codes: this.extractErrorCodes(`${row.problem  } ${  row.solution}`),
                         updated_at: new Date().toISOString()
                     }),
                     validation: (original, transformed) => {

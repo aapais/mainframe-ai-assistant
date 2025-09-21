@@ -94,6 +94,18 @@ export type {
   AnnouncementOptions
 } from './useScreenReaderAnnouncements';
 
+// Accessibility hooks
+export {
+  useAccessibleFocus,
+  useFocusVisible,
+  useArrowKeyNavigation
+} from './useAccessibleFocus';
+export type {
+  FocusTrapOptions,
+  AccessibleFocusReturn,
+  ArrowKeyNavigationOptions
+} from './useAccessibleFocus';
+
 // Context hooks
 export { useIPC, IPCProvider, IPCErrorBoundary } from '../context/IPCContext';
 export type {

@@ -684,48 +684,48 @@ export class StressTest extends BasePerformanceTest {
           Error rate: ${(errorRate * 100).toFixed(2)}%
           Throughput: ${throughput.toFixed(2)} ops/sec`);
       });
-
-      private async performSearchOperation(): Promise<void> {
-        const queries = ['VSAM', 'S0C7', 'JCL', 'DB2', 'error'];
-        const randomQuery = queries[Math.floor(Math.random() * queries.length)];
-
-        await this.searchService.search(randomQuery, this.testData.slice(0, 100), {
-          limit: 10,
-          useAI: false,
-          userId: 'stress-test',
-          sessionId: 'stress-session'
-        });
-      }
-
-      private async performDatabaseOperation(): Promise<void> {
-        const operations = [
-          async () => {
-            const entry = TestDataGenerator.createKBEntry();
-            return this.kbService.addEntry(entry, 'stress-test');
-          },
-          async () => {
-            const randomEntry = this.testData[Math.floor(Math.random() * this.testData.length)];
-            return this.kbService.getEntry(randomEntry.id!);
-          },
-          async () => {
-            const randomEntry = this.testData[Math.floor(Math.random() * this.testData.length)];
-            return this.kbService.recordUsage(randomEntry.id!, Math.random() > 0.5, 'stress-test');
-          }
-        ];
-
-        const randomOp = operations[Math.floor(Math.random() * operations.length)];
-        await randomOp();
-      }
-
-      private async performMemoryOperation(): Promise<void> {
-        // Create temporary memory pressure
-        const tempData = TestDataGenerator.createLargeDataset(100);
-        await this.searchService.buildIndex(tempData);
-
-        // Release reference
-        (tempData as any) = null;
-      }
     });
+  }
+
+  private async performSearchOperation(): Promise<void> {
+    const queries = ['VSAM', 'S0C7', 'JCL', 'DB2', 'error'];
+    const randomQuery = queries[Math.floor(Math.random() * queries.length)];
+
+    await this.searchService.search(randomQuery, this.testData.slice(0, 100), {
+      limit: 10,
+      useAI: false,
+      userId: 'stress-test',
+      sessionId: 'stress-session'
+    });
+  }
+
+  private async performDatabaseOperation(): Promise<void> {
+    const operations = [
+      async () => {
+        const entry = TestDataGenerator.createKBEntry();
+        return this.kbService.addEntry(entry, 'stress-test');
+      },
+      async () => {
+        const randomEntry = this.testData[Math.floor(Math.random() * this.testData.length)];
+        return this.kbService.getEntry(randomEntry.id!);
+      },
+      async () => {
+        const randomEntry = this.testData[Math.floor(Math.random() * this.testData.length)];
+        return this.kbService.recordUsage(randomEntry.id!, Math.random() > 0.5, 'stress-test');
+      }
+    ];
+
+    const randomOp = operations[Math.floor(Math.random() * operations.length)];
+    await randomOp();
+  }
+
+  private async performMemoryOperation(): Promise<void> {
+    // Create temporary memory pressure
+    const tempData = TestDataGenerator.createLargeDataset(100);
+    await this.searchService.buildIndex(tempData);
+
+    // Release reference
+    (tempData as any) = null;
   }
 }
 

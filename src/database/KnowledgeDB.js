@@ -799,7 +799,7 @@ class KnowledgeDB {
             .slice(0, options.limit || 10);
     }
     calculateRelevanceScore(row, query, strategy) {
-        let baseScore = row.relevance_score || 0;
+        const baseScore = row.relevance_score || 0;
         const usageBoost = Math.log(row.usage_count + 1) * 10;
         const successRate = row.success_rate || 0;
         const successBoost = successRate * 20;
@@ -832,8 +832,8 @@ class KnowledgeDB {
                     const snippet = field.content.substring(start, end);
                     highlights.push({
                         field: field.name,
-                        snippet: start > 0 ? '...' + snippet : snippet,
-                        term: term
+                        snippet: start > 0 ? `...${  snippet}` : snippet,
+                        term
                     });
                 }
             });
@@ -917,7 +917,7 @@ class KnowledgeDB {
         if (query.startsWith('tag:')) {
             return `tags:${query.substring(4)}`;
         }
-        let ftsQuery = query.trim().replace(/['"]/g, '');
+        const ftsQuery = query.trim().replace(/['"]/g, '');
         const terms = ftsQuery.split(/\s+/).filter(term => term.length > 1);
         if (terms.length === 0)
             return ftsQuery;
@@ -953,7 +953,7 @@ class KnowledgeDB {
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
     }
 }
 exports.KnowledgeDB = KnowledgeDB;

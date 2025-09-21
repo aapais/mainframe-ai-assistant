@@ -45,13 +45,13 @@ class BackupManager {
             this.logBackupStart(metadata);
             const entryCount = this.getEntryCount();
             metadata.entryCount = entryCount;
-            const tempBackupPath = backupPath + '.tmp';
+            const tempBackupPath = `${backupPath  }.tmp`;
             await this.createSQLiteBackup(tempBackupPath);
             const originalSize = fs_1.default.statSync(tempBackupPath).size;
             metadata.originalSize = originalSize;
             let finalPath = tempBackupPath;
             if (this.compressionEnabled) {
-                const compressedPath = backupPath + '.gz';
+                const compressedPath = `${backupPath  }.gz`;
                 await this.compressFile(tempBackupPath, compressedPath);
                 fs_1.default.unlinkSync(tempBackupPath);
                 finalPath = compressedPath;
@@ -465,7 +465,7 @@ class BackupManager {
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
     }
 }
 exports.BackupManager = BackupManager;

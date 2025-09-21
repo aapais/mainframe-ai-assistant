@@ -1,0 +1,535 @@
+/**
+ * Component Layer Fixes
+ * Specific fixes for z-index conflicts and positioning issues
+ *
+ * UPDATED TO USE UNIFIED Z-INDEX SYSTEM
+ * All z-index values now reference variables from z-index-system.css
+ * This ensures consistent layering across all components
+ *
+ * This file contains targeted fixes for common layout issues:
+ * - Modal overlay conflicts
+ * - Dropdown positioning problems
+ * - Tooltip layer issues
+ * - Navigation menu overlaps
+ * - Loading overlay positioning
+ *
+ * @author Layout Fix Specialist & Z-Index Unifier Agent
+ * @version 3.0.0
+ */
+
+/* ===============================================
+   GLOBAL Z-INDEX RESET AND HIERARCHY
+   =============================================== */
+
+/* Reset any problematic z-index values */
+.modal-overlay,
+.overlay,
+.backdrop {
+  z-index: var(--z-modal-backdrop) !important;
+}
+
+.modal-content,
+.modal,
+.dialog {
+  z-index: var(--z-modal) !important;
+}
+
+.dropdown-menu,
+.dropdown-content,
+.popover-content {
+  z-index: var(--z-dropdown) !important;
+}
+
+.tooltip,
+.tooltip-content {
+  z-index: var(--z-tooltip) !important;
+}
+
+.toast,
+.notification {
+  z-index: var(--z-toast) !important;
+}
+
+.loading-overlay,
+.spinner-overlay {
+  z-index: var(--z-loading-overlay) !important;
+}
+
+/* ===============================================
+   SEARCH BAR SPECIFIC FIXES
+   =============================================== */
+
+/* Ensure search suggestions appear above other content */
+.search-suggestions,
+.kb-search-suggestions,
+.enhanced-search-suggestions {
+  z-index: var(--z-dropdown-suggestions) !important;
+  position: absolute !important;
+  isolation: isolate;
+}
+
+/* Search history dropdown positioning */
+.search-history,
+.kb-search-history {
+  z-index: var(--z-dropdown-history) !important;
+  position: absolute !important;
+  isolation: isolate;
+}
+
+/* Search filters panel positioning */
+.search-filters,
+.kb-search-filters,
+.search-filters-panel {
+  z-index: var(--z-dropdown-filters) !important;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Popular searches dropdown */
+.popular-searches,
+.popular-searches-dropdown {
+  z-index: var(--z-dropdown-suggestions) !important;
+  position: absolute !important;
+  isolation: isolate;
+}
+
+/* Quick actions menu */
+.quick-actions,
+.quick-actions-menu,
+.quick-actions-dropdown {
+  z-index: var(--z-dropdown-quick-actions) !important;
+  position: absolute !important;
+  isolation: isolate;
+}
+
+/* ===============================================
+   MODAL AND OVERLAY FIXES
+   =============================================== */
+
+/* Ensure modals are always on top */
+.modal-backdrop,
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: var(--z-modal-backdrop) !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal-content,
+.modal-dialog {
+  position: fixed !important;
+  z-index: var(--z-modal) !important;
+  isolation: isolate;
+}
+
+/* Fix for nested modals */
+.modal-content .modal-content {
+  z-index: calc(var(--z-modal) + 1) !important;
+}
+
+/* ===============================================
+   NAVIGATION MENU FIXES
+   =============================================== */
+
+/* Main navigation should not interfere with dropdowns */
+.main-nav,
+.navigation,
+.nav-bar {
+  z-index: var(--z-sticky) !important;
+  position: relative;
+}
+
+/* Navigation dropdowns */
+.nav-dropdown,
+.navigation-dropdown {
+  z-index: var(--z-dropdown) !important;
+  position: absolute !important;
+}
+
+/* Mobile navigation overlay */
+.mobile-nav-overlay,
+.nav-overlay {
+  z-index: var(--z-modal-backdrop) !important;
+  position: fixed !important;
+}
+
+.mobile-nav-menu {
+  z-index: var(--z-modal) !important;
+  position: fixed !important;
+}
+
+/* ===============================================
+   TOOLTIP AND POPOVER FIXES
+   =============================================== */
+
+/* Ensure tooltips appear above dropdowns */
+.tooltip,
+.tooltip-content,
+[data-tooltip] {
+  z-index: var(--z-tooltip) !important;
+  position: absolute !important;
+}
+
+/* Popover positioning */
+.popover,
+.popover-content {
+  z-index: var(--z-popover) !important;
+  position: absolute !important;
+  isolation: isolate;
+}
+
+/* ===============================================
+   LOADING STATES FIXES
+   =============================================== */
+
+/* Global loading overlay */
+.loading-overlay,
+.spinner-overlay,
+.loading-backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: var(--z-loading-overlay) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Component-specific loading states */
+.search-loading,
+.form-loading,
+.table-loading {
+  z-index: var(--z-elevated) !important;
+  position: relative;
+}
+
+/* ===============================================
+   TOAST AND NOTIFICATION FIXES
+   =============================================== */
+
+/* Toast container positioning */
+.toast-container,
+.notification-container {
+  position: fixed !important;
+  z-index: var(--z-toast) !important;
+  pointer-events: none;
+}
+
+/* Individual toast positioning */
+.toast,
+.notification {
+  z-index: var(--z-toast) !important;
+  position: relative;
+  pointer-events: auto;
+}
+
+/* ===============================================
+   FORM ELEMENT FIXES
+   =============================================== */
+
+/* Date picker dropdowns */
+.date-picker-dropdown,
+.calendar-dropdown {
+  z-index: var(--z-dropdown) !important;
+  position: absolute !important;
+}
+
+/* Select dropdowns */
+.select-dropdown,
+.multiselect-dropdown {
+  z-index: var(--z-dropdown) !important;
+  position: absolute !important;
+}
+
+/* Autocomplete suggestions */
+.autocomplete-suggestions,
+.typeahead-dropdown {
+  z-index: var(--z-dropdown-suggestions) !important;
+  position: absolute !important;
+}
+
+/* ===============================================
+   TABLE AND LIST FIXES
+   =============================================== */
+
+/* Sticky table headers */
+.table-sticky-header,
+.sticky-header {
+  z-index: var(--z-sticky) !important;
+  position: sticky !important;
+}
+
+/* Table row actions dropdown */
+.table-row-actions,
+.row-actions-dropdown {
+  z-index: var(--z-dropdown) !important;
+  position: absolute !important;
+}
+
+/* List item overlays */
+.list-item-overlay,
+.item-actions {
+  z-index: var(--z-elevated) !important;
+  position: absolute !important;
+}
+
+/* ===============================================
+   CONTEXTUAL MENU FIXES
+   =============================================== */
+
+/* Right-click context menus */
+.context-menu,
+.contextual-menu {
+  z-index: var(--z-popover) !important;
+  position: fixed !important;
+  isolation: isolate;
+}
+
+/* Floating action buttons */
+.fab,
+.floating-action-button {
+  z-index: var(--z-floating) !important;
+  position: fixed !important;
+}
+
+/* ===============================================
+   SIDEBAR AND PANEL FIXES
+   =============================================== */
+
+/* Side panels and drawers */
+.sidebar,
+.side-panel,
+.drawer {
+  z-index: var(--z-modal) !important;
+  position: fixed !important;
+}
+
+.sidebar-overlay,
+.drawer-overlay {
+  z-index: var(--z-modal-backdrop) !important;
+  position: fixed !important;
+}
+
+/* Collapsible panels */
+.collapsible-panel,
+.accordion-content {
+  z-index: var(--z-base) !important;
+  position: relative;
+}
+
+/* ===============================================
+   CARD AND LAYOUT FIXES
+   =============================================== */
+
+/* Floating cards */
+.floating-card,
+.elevated-card {
+  z-index: var(--z-floating) !important;
+  position: relative;
+}
+
+/* Sticky elements */
+.sticky-element,
+.position-sticky {
+  z-index: var(--z-sticky) !important;
+  position: sticky !important;
+}
+
+/* ===============================================
+   RESPONSIVE FIXES
+   =============================================== */
+
+/* Mobile-specific z-index adjustments */
+@media (max-width: 767px) {
+  /* On mobile, dropdowns should use modal-level z-index */
+  .search-suggestions,
+  .search-history,
+  .popular-searches-dropdown,
+  .select-dropdown,
+  .autocomplete-suggestions {
+    z-index: var(--z-modal) !important;
+    position: fixed !important;
+  }
+
+  /* Mobile navigation should be above dropdowns */
+  .mobile-nav-menu {
+    z-index: calc(var(--z-modal) + 1) !important;
+  }
+
+  /* Mobile modals should be above everything */
+  .modal-content {
+    z-index: calc(var(--z-modal) + 2) !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet-specific positioning adjustments */
+  .dropdown-content {
+    position: absolute !important;
+    z-index: var(--z-dropdown) !important;
+  }
+}
+
+/* ===============================================
+   BROWSER-SPECIFIC FIXES
+   =============================================== */
+
+/* Safari-specific fixes */
+@supports (-webkit-appearance: none) {
+  .dropdown-content,
+  .popover-content {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
+/* Firefox-specific fixes */
+@-moz-document url-prefix() {
+  .dropdown-content {
+    transform: translateZ(0);
+  }
+}
+
+/* Edge-specific fixes */
+@supports (-ms-ime-align: auto) {
+  .dropdown-content {
+    transform: translateZ(0);
+  }
+}
+
+/* ===============================================
+   ACCESSIBILITY FIXES
+   =============================================== */
+
+/* Ensure focus indicators are visible above all content */
+*:focus-visible {
+  position: relative;
+  z-index: calc(var(--z-maximum) - 1) !important;
+}
+
+/* Skip links should be above everything */
+.skip-link,
+.skip-to-content {
+  z-index: var(--z-maximum) !important;
+  position: fixed !important;
+}
+
+/* Screen reader announcements */
+.sr-only-focusable:focus {
+  z-index: var(--z-maximum) !important;
+  position: fixed !important;
+}
+
+/* ===============================================
+   DEBUG AND DEVELOPMENT HELPERS
+   =============================================== */
+
+/* Debug overlay for z-index issues */
+.debug-z-index {
+  position: relative;
+}
+
+.debug-z-index::after {
+  content: attr(data-z-index);
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ff0000;
+  color: #ffffff;
+  padding: 2px 4px;
+  font-size: 10px;
+  font-family: monospace;
+  z-index: var(--z-maximum);
+  pointer-events: none;
+}
+
+/* Development mode z-index indicators */
+.dev-mode .dropdown-content::before,
+.dev-mode .modal-content::before,
+.dev-mode .tooltip::before {
+  content: 'z:' attr(data-z-index);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  z-index: var(--z-maximum);
+}
+
+/* ===============================================
+   PERFORMANCE OPTIMIZATIONS
+   =============================================== */
+
+/* GPU acceleration for elements with z-index */
+.dropdown-content,
+.modal-content,
+.tooltip,
+.popover-content {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Contain layout for better performance */
+.dropdown-container,
+.modal-container,
+.popover-container {
+  contain: layout style;
+}
+
+/* ===============================================
+   PRINT MEDIA FIXES
+   =============================================== */
+
+@media print {
+  /* Hide all overlays and dropdowns in print */
+  .dropdown-content,
+  .modal-overlay,
+  .tooltip,
+  .popover-content,
+  .toast,
+  .loading-overlay {
+    display: none !important;
+  }
+
+  /* Reset z-index for print */
+  * {
+    z-index: auto !important;
+  }
+}
+
+/* ===============================================
+   EMERGENCY FIXES
+   =============================================== */
+
+/* Emergency fix for critical z-index issues */
+.z-index-fix-emergency {
+  z-index: var(--z-maximum) !important;
+  position: relative !important;
+}
+
+/* Force above everything else */
+.force-top {
+  z-index: 2147483647 !important;
+  position: fixed !important;
+}
+
+/* Reset problematic z-index */
+.z-index-reset {
+  z-index: auto !important;
+}
+
+/* Isolate stacking context */
+.isolate-stacking {
+  isolation: isolate !important;
+}

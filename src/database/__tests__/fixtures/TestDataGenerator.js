@@ -125,7 +125,7 @@ Resolution:
             component,
             parameter: 'REGION',
             configFile: 'JCL',
-            patchNumber: 'PTF' + this.faker.string.numeric(6),
+            patchNumber: `PTF${  this.faker.string.numeric(6)}`,
             teamName: 'System Programming'
         })}
 2. Verify the solution by testing in development environment

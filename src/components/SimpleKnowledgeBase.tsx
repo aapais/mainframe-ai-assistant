@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { SimpleSearchBar } from './SimpleSearchBar';
-import { SimpleEntryList } from './SimpleEntryList';
+import { SimpleSearchBar } from '../renderer/components/common/SimpleSearchBar';
+import { SimpleEntryList } from '../renderer/components/common/SimpleEntryList';
 import { SearchResult } from '../hooks/useIPC';
 
 interface SimpleKnowledgeBaseProps {

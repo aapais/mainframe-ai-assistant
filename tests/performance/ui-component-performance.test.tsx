@@ -17,7 +17,7 @@ import { performance } from 'perf_hooks';
 import '@testing-library/jest-dom';
 
 // Components to test
-import { SearchInput } from '../../src/renderer/components/common/SearchInput';
+import { SearchInput } from '../../src/renderer/components/ui/Input';
 
 // Test utilities and helpers
 interface PerformanceData {

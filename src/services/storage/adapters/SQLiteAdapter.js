@@ -603,7 +603,7 @@ class SQLiteAdapter {
                 metrics: {
                     queryCount: this.queryCount,
                     errorCount: this.errorCount,
-                    errorRate: errorRate
+                    errorRate
                 },
                 issues
             };
@@ -1000,7 +1000,7 @@ class SQLiteAdapter {
                 const start = Math.max(0, index - 30);
                 const end = Math.min(field.content.length, index + queryLower.length + 30);
                 const snippet = field.content.substring(start, end);
-                highlights.push(start > 0 ? '...' + snippet : snippet);
+                highlights.push(start > 0 ? `...${  snippet}` : snippet);
             }
         });
         return highlights.slice(0, 3);
@@ -1012,7 +1012,7 @@ class SQLiteAdapter {
         if (query.startsWith('tag:')) {
             return `tags:${query.substring(4)}`;
         }
-        let ftsQuery = query.trim().replace(/['"]/g, '');
+        const ftsQuery = query.trim().replace(/['"]/g, '');
         const terms = ftsQuery.split(/\s+/).filter(term => term.length > 1);
         if (terms.length === 0)
             return ftsQuery;
@@ -1076,7 +1076,7 @@ class SQLiteAdapter {
         let whereClause = 'WHERE e.archived = 0';
         const params = [];
         if (options?.filter?.categories) {
-            whereClause += ' AND e.category IN (' + options.filter.categories.map(() => '?').join(',') + ')';
+            whereClause += ` AND e.category IN (${  options.filter.categories.map(() => '?').join(',')  })`;
             params.push(...options.filter.categories);
         }
         if (options?.filter?.dateRange) {

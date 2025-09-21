@@ -256,16 +256,16 @@ async function validatePerformanceOptimizations(db, manager) {
     }
 }
 tslib_1.__exportStar(require("./PerformanceManager"), exports);
-var KnowledgeDB_2 = require("./KnowledgeDB");
-Object.defineProperty(exports, "KnowledgeDB", { enumerable: true, get: function () { return KnowledgeDB_2.KnowledgeDB; } });
-var ConnectionPool_2 = require("./ConnectionPool");
-Object.defineProperty(exports, "ConnectionPool", { enumerable: true, get: function () { return ConnectionPool_2.ConnectionPool; } });
-var QueryCache_2 = require("./QueryCache");
-Object.defineProperty(exports, "QueryCache", { enumerable: true, get: function () { return QueryCache_2.QueryCache; } });
-var AdvancedIndexStrategy_2 = require("./AdvancedIndexStrategy");
-Object.defineProperty(exports, "AdvancedIndexStrategy", { enumerable: true, get: function () { return AdvancedIndexStrategy_2.AdvancedIndexStrategy; } });
-var SearchOptimizationEngine_1 = require("./SearchOptimizationEngine");
-Object.defineProperty(exports, "SearchOptimizationEngine", { enumerable: true, get: function () { return SearchOptimizationEngine_1.SearchOptimizationEngine; } });
-var SearchPerformanceBenchmark_1 = require("./SearchPerformanceBenchmark");
-Object.defineProperty(exports, "SearchPerformanceBenchmark", { enumerable: true, get: function () { return SearchPerformanceBenchmark_1.SearchPerformanceBenchmark; } });
+const KnowledgeDB_2 = require("./KnowledgeDB");
+Object.defineProperty(exports, "KnowledgeDB", { enumerable: true, get () { return KnowledgeDB_2.KnowledgeDB; } });
+const ConnectionPool_2 = require("./ConnectionPool");
+Object.defineProperty(exports, "ConnectionPool", { enumerable: true, get () { return ConnectionPool_2.ConnectionPool; } });
+const QueryCache_2 = require("./QueryCache");
+Object.defineProperty(exports, "QueryCache", { enumerable: true, get () { return QueryCache_2.QueryCache; } });
+const AdvancedIndexStrategy_2 = require("./AdvancedIndexStrategy");
+Object.defineProperty(exports, "AdvancedIndexStrategy", { enumerable: true, get () { return AdvancedIndexStrategy_2.AdvancedIndexStrategy; } });
+const SearchOptimizationEngine_1 = require("./SearchOptimizationEngine");
+Object.defineProperty(exports, "SearchOptimizationEngine", { enumerable: true, get () { return SearchOptimizationEngine_1.SearchOptimizationEngine; } });
+const SearchPerformanceBenchmark_1 = require("./SearchPerformanceBenchmark");
+Object.defineProperty(exports, "SearchPerformanceBenchmark", { enumerable: true, get () { return SearchPerformanceBenchmark_1.SearchPerformanceBenchmark; } });
 //# sourceMappingURL=performanceSetup.js.map

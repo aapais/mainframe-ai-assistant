@@ -170,7 +170,7 @@ class FormatConverter {
                 total_records: data.length,
                 ...options.customHeaders
             },
-            data: data,
+            data,
             schema: options.schema
         };
         return JSON.stringify(jsonData, null, options.streaming ? 0 : 2);
@@ -225,7 +225,7 @@ class FormatConverter {
             const jsonData = JSON.stringify({
                 format: 'parquet_fallback',
                 note: 'Parquet library not available, returning JSON format',
-                data: data
+                data
             });
             return Buffer.from(jsonData, 'utf8');
         }
@@ -256,7 +256,7 @@ class FormatConverter {
                 format: 'orc_fallback',
                 note: 'ORC library not available, returning structured format',
                 schema: options.schema,
-                data: data
+                data
             };
             return Buffer.from(JSON.stringify(orcData), 'utf8');
         }

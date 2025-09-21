@@ -42,13 +42,14 @@ const createMainWindow = (): void => {
     show: false, // Don't show until ready
   });
 
-  // Load the index.html of the app.
+  // Load the Next.js app
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3000');
+    mainWindow.loadURL('http://localhost:3001');
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    // Load the built Next.js application
+    mainWindow.loadFile(path.join(__dirname, '../../app/out/index.html'));
   }
 
   // Show window when ready to prevent visual flash

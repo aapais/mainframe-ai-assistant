@@ -6,8 +6,8 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { useKBRouter, useSearchURL } from './KBRouter';
 import { useSearch } from '../contexts/SearchContext';
 import { useApp } from '../context/AppContext';

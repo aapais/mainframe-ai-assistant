@@ -31,8 +31,8 @@ class OptimizationServiceFactory {
         }
         this.services = {
             engine,
-            dashboard: dashboard,
-            metricsAggregator: metricsAggregator
+            dashboard,
+            metricsAggregator
         };
         if (config.autoStart !== false) {
             await this.initializeServices();

@@ -1,6 +1,5 @@
 import React, { memo, useState } from 'react';
 import { ThumbsUp, ThumbsDown, Copy, Share2, Edit, Bookmark, ExternalLink, MessageSquare } from 'lucide-react';
-import styles from './QuickActions.module.css';
 
 export interface QuickActionsProps {
   entry: any;

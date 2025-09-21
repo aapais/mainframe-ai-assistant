@@ -218,7 +218,7 @@ class DatabaseTestRunner {
     const results = Object.values(this.testResults).filter(r => r !== null);
     const successfulTests = results.filter(r => r.success);
     
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 TEST EXECUTION REPORT');
     console.log('='.repeat(60));
     
@@ -264,7 +264,7 @@ class DatabaseTestRunner {
     console.log('• Monitor performance regression with baseline comparisons');
     console.log('• Review error handling test results for production readiness');
     
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     
     // Exit with appropriate code
     const overallSuccess = results.every(r => r.success);

@@ -1,0 +1,42 @@
+[
+  {
+    "title": "IEF212I - Dataset Not Cataloged",
+    "problem": "Message IEF212I indicates that a dataset referenced in the JCL cannot be found in the catalog. This prevents the job from locating and allocating the required dataset, causing the job step to fail.",
+    "solution": "1. Verify the dataset name spelling in the DD statement\n2. Check if the dataset exists using TSO LISTDS command\n3. Use LISTCAT ENT('dataset.name') to verify catalog entry\n4. If dataset exists but not cataloged, catalog it using IDCAMS:\n   DEFINE ALIAS(NAME(dataset.name) RELATE(master.catalog))\n5. Check for typos in high-level qualifiers\n6. Verify you have proper authorization to access the dataset\n7. If dataset should be created, add DISP=(NEW,CATLG) parameters\n8. Check if dataset is on a different volume and specify VOL=SER\n9. Review catalog search order and ensure proper HLQ authority",
+    "category": "JCL",
+    "tags": ["jcl", "ief212i", "dataset", "catalog", "not-found", "allocation"],
+    "severity": "high"
+  },
+  {
+    "title": "IEF210I - Dataset Already Allocated",
+    "problem": "Message IEF210I indicates that a dataset is already allocated to another job or user with conflicting disposition. This typically occurs when trying to allocate a dataset exclusively (OLD) when it's already in use.",
+    "solution": "1. Check who has the dataset allocated using DISPLAY GRS,RES=(*,dataset.name)\n2. Wait for the other job/user to complete and deallocate\n3. Change DISP from OLD to SHR if concurrent access is acceptable\n4. Use DISP=MOD instead of OLD if appending data\n5. Check for hung or looping jobs holding the dataset\n6. Contact the user/job owner to coordinate access\n7. Consider using different dataset names for parallel processing\n8. Implement conditional JCL with IF-THEN-ELSE for dataset availability\n9. Use TYPRUN=HOLD to hold job until dataset becomes available",
+    "category": "JCL",
+    "tags": ["jcl", "ief210i", "dataset", "allocated", "sharing", "disposition", "exclusive"],
+    "severity": "medium"
+  },
+  {
+    "title": "JCL ERROR - Syntax Error",
+    "problem": "JCL syntax errors occur when the Job Control Language statements don't conform to proper syntax rules. This includes missing commas, invalid keywords, incorrect parameter formats, or improper statement structure.",
+    "solution": "1. Check for missing or extra commas in parameter lists\n2. Verify all keywords are spelled correctly\n3. Ensure proper continuation rules (comma at end, continuation in column 16)\n4. Check for invalid characters or embedded spaces\n5. Verify parameter values are within valid ranges\n6. Ensure DD statements have proper syntax: //ddname DD parameters\n7. Check EXEC statement for valid program/procedure names\n8. Validate all quoted strings have matching quotes\n9. Use JCL checker tools or ISPF JCL syntax checking\n10. Review IBM JCL Reference manual for proper syntax",
+    "category": "JCL",
+    "tags": ["jcl", "syntax-error", "invalid", "format", "continuation", "parameters"],
+    "severity": "high"
+  },
+  {
+    "title": "IEF453I - Job Failed",
+    "problem": "Message IEF453I indicates that a job step terminated abnormally with a completion code greater than the maximum allowed return code. This is a general failure message that requires examining the specific return code and reason.",
+    "solution": "1. Check the completion code (CC) displayed with the message\n2. Review SYSLOG and job output for specific error messages\n3. Examine program-specific return codes and abend codes\n4. Check if COND parameter caused premature termination\n5. Review MAXCC setting on JOB or EXEC statements\n6. Look for system abends (Sxxx) or user abends (Uxxx)\n7. Check storage allocation and REGION parameter adequacy\n8. Verify input data format and content validity\n9. Review program logic for proper error handling\n10. Check for resource constraints (CPU time, storage, I/O limits)",
+    "category": "JCL",
+    "tags": ["jcl", "ief453i", "job-failed", "completion-code", "abend", "return-code"],
+    "severity": "high"
+  },
+  {
+    "title": "IEF142I - Dataset Not Found",
+    "problem": "Message IEF142I indicates that a dataset referenced in a DD statement cannot be found on the specified volume or through catalog search. This differs from IEF212I as it may involve volume-specific allocation issues.",
+    "solution": "1. Verify the dataset name and volume serial number (if specified)\n2. Check if the volume is online and accessible\n3. Use LISTDS to confirm dataset location and attributes\n4. Remove VOL=SER parameter to allow catalog search\n5. Check if dataset was migrated by HSM/DFSMShsm\n6. Verify dataset hasn't been deleted or renamed\n7. Ensure proper authorization to access the volume\n8. Check for hardware issues with the specified volume\n9. Use LISTCAT to verify catalog information is correct\n10. Consider using generic volume allocation or let system choose",
+    "category": "JCL",
+    "tags": ["jcl", "ief142i", "dataset", "not-found", "volume", "allocation", "catalog"],
+    "severity": "medium"
+  }
+]

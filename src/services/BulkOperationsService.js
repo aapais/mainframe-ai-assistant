@@ -498,7 +498,7 @@ class BulkOperationsService extends events_1.EventEmitter {
     }
     async executeDeleteEntries(operation) {
         const { create_backup, force_delete } = operation.operation_data;
-        let backupData = {};
+        const backupData = {};
         if (create_backup) {
             for (const entryId of operation.target_entry_ids) {
                 const entry = await this.getKBEntry(entryId);

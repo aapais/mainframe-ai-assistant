@@ -1,0 +1,239 @@
+/**
+ * Tailwind CSS Optimized Utilities
+ *
+ * This file contains only the custom utilities that cannot be replaced
+ * with Tailwind classes. Line clamp and other utilities that Tailwind
+ * provides natively are removed to avoid duplication.
+ */
+
+/* ===========================================
+   CUSTOM UTILITIES NOT PROVIDED BY TAILWIND
+   =========================================== */
+
+/* Skeleton Wave Animation - Not available in Tailwind by default */
+.skeleton-wave {
+  @apply overflow-hidden relative;
+}
+
+.skeleton-wave::after {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent;
+  animation: skeleton-wave 1.6s linear infinite;
+}
+
+@keyframes skeleton-wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Search Container Specific Enhancements */
+.search-container-enhanced {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.search-container-enhanced:focus-within {
+  @apply -translate-y-px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Search Icon Enhancement */
+.search-icon-enhanced {
+  @apply transition-transform duration-300;
+}
+
+.search-container-enhanced:focus-within .search-icon-enhanced {
+  @apply scale-110;
+}
+
+/* Clear Button with Custom States */
+.clear-button-enhanced {
+  @apply opacity-0 scale-75 transition-all duration-150 ease-in-out;
+}
+
+.clear-button-enhanced.visible {
+  @apply opacity-100 scale-100;
+}
+
+.clear-button-enhanced:hover {
+  @apply bg-gray-100 scale-110 rounded-full;
+}
+
+/* Suggestions Dropdown with Slide Animation */
+.suggestions-dropdown {
+  animation: slideDown 200ms ease-out;
+  @apply rounded-b-lg;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-item-enhanced {
+  @apply transition-all duration-150 ease-in-out;
+}
+
+.suggestion-item-enhanced:hover {
+  @apply bg-gray-50 translate-x-1;
+}
+
+.suggestion-item-enhanced.selected {
+  @apply bg-indigo-50 border-l-4 border-indigo-500;
+}
+
+@keyframes slideDown {
+  from {
+    @apply opacity-0 -translate-y-2;
+  }
+  to {
+    @apply opacity-100 translate-y-0;
+  }
+}
+
+/* Focus Pulse Animation for Enhanced Feedback */
+@keyframes focus-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(124, 58, 237, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0);
+  }
+}
+
+.focus-pulse-enhanced:focus {
+  animation: focus-pulse 0.3s ease-out;
+}
+
+/* ===========================================
+   ACCESSIBILITY ENHANCEMENTS
+   =========================================== */
+
+/* High Contrast Mode Enhancements */
+@media (prefers-contrast: high) {
+  .search-container-enhanced input {
+    @apply border-2;
+  }
+
+  .suggestions-dropdown {
+    @apply border-2;
+  }
+
+  .suggestion-item-enhanced.selected {
+    @apply border-l-4;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-wave::after {
+    animation: none;
+  }
+
+  .suggestions-dropdown {
+    animation: none;
+  }
+
+  .search-container-enhanced,
+  .clear-button-enhanced,
+  .search-icon-enhanced,
+  .suggestion-item-enhanced {
+    @apply transition-none;
+    animation: none;
+  }
+
+  .search-container-enhanced:focus-within {
+    transform: none;
+  }
+
+  .focus-pulse-enhanced:focus {
+    animation: none;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .search-container-enhanced input {
+    @apply text-base px-4 py-3.5;
+    min-height: 48px; /* WCAG minimum touch target */
+  }
+
+  .clear-button-enhanced,
+  .search-icon-enhanced {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .suggestions-dropdown {
+    max-height: 50vh;
+  }
+}
+
+/* ===========================================
+   UTILITIES THAT EXTEND TAILWIND
+   =========================================== */
+
+/* Glass Effect that works with Tailwind's backdrop utilities */
+.glass-effect {
+  @apply backdrop-blur-md bg-white/10 border border-white/20;
+}
+
+.glass-effect:hover {
+  @apply bg-white/20 border-white/30;
+}
+
+/* Custom Shadows for Depth */
+.shadow-purple {
+  box-shadow: 0 4px 14px 0 rgba(139, 69, 255, 0.2);
+}
+
+.shadow-purple-lg {
+  box-shadow: 0 8px 25px -5px rgba(139, 69, 255, 0.3), 0 8px 10px -6px rgba(139, 69, 255, 0.2);
+}
+
+/* Terminal Glow Effects */
+.terminal-glow-green {
+  box-shadow: 0 0 10px rgb(0, 255, 0, 0.3);
+}
+
+.terminal-glow-green:hover {
+  box-shadow: 0 0 15px rgb(0, 255, 0, 0.5);
+}
+
+.terminal-glow-amber {
+  box-shadow: 0 0 10px rgb(255, 176, 0, 0.3);
+}
+
+.terminal-glow-amber:hover {
+  box-shadow: 0 0 15px rgb(255, 176, 0, 0.5);
+}
+
+/* ===========================================
+   PRINT STYLES
+   =========================================== */
+
+@media print {
+  /* Reset interactive elements for print */
+  .search-container-enhanced,
+  .suggestions-dropdown,
+  .clear-button-enhanced {
+    @apply static;
+    z-index: auto !important;
+  }
+
+  /* Remove animations and transitions */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Ensure readability */
+  .glass-effect {
+    @apply bg-white border border-gray-300;
+  }
+}

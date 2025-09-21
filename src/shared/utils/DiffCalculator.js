@@ -270,7 +270,7 @@ class DiffCalculator {
     normalizePath(path) {
         if (!path)
             return '';
-        return '/' + path.replace(/\./g, '/').replace(/\[(\d+)\]/g, '/$1');
+        return `/${  path.replace(/\./g, '/').replace(/\[(\d+)\]/g, '/$1')}`;
     }
     getParentPath(path) {
         const lastSlash = path.lastIndexOf('/');

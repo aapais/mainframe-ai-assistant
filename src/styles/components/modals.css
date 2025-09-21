@@ -1,0 +1,423 @@
+/**
+ * Modal Component Styles
+ * Consolidated modal styles to replace !important declarations
+ *
+ * This replaces 150+ !important declarations in modal-related CSS
+ * Uses proper CSS specificity instead of !important
+ * @version 1.0.0
+ */
+
+/* ===============================================
+   MODAL BASE STYLES
+   =============================================== */
+
+/* Modal overlay - use high specificity instead of !important */
+.modal-overlay,
+.overlay,
+.backdrop,
+[data-modal-overlay] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: var(--z-modal-backdrop, 1000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Modal content container */
+.modal-content,
+.modal,
+.dialog,
+[data-modal-content] {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: var(--z-modal, 1001);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* ===============================================
+   MODAL SIZES
+   =============================================== */
+
+.modal-sm {
+  width: 100%;
+  max-width: 400px;
+}
+
+.modal-md {
+  width: 100%;
+  max-width: 600px;
+}
+
+.modal-lg {
+  width: 100%;
+  max-width: 800px;
+}
+
+.modal-xl {
+  width: 100%;
+  max-width: 1200px;
+}
+
+.modal-full {
+  width: 95vw;
+  height: 95vh;
+  max-width: none;
+  max-height: none;
+}
+
+/* ===============================================
+   MODAL HEADER
+   =============================================== */
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.modal-close:focus {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* ===============================================
+   MODAL BODY
+   =============================================== */
+
+.modal-body {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-body:first-child {
+  padding-top: 1.5rem;
+}
+
+.modal-body:last-child {
+  padding-bottom: 1.5rem;
+}
+
+/* ===============================================
+   MODAL FOOTER
+   =============================================== */
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  border-radius: 0 0 8px 8px;
+}
+
+.modal-footer-full {
+  justify-content: space-between;
+}
+
+.modal-footer-center {
+  justify-content: center;
+}
+
+.modal-footer-start {
+  justify-content: flex-start;
+}
+
+/* ===============================================
+   MODAL VARIANTS
+   =============================================== */
+
+/* Success Modal */
+.modal-success .modal-header {
+  border-bottom-color: #10b981;
+}
+
+.modal-success .modal-title {
+  color: #065f46;
+}
+
+/* Warning Modal */
+.modal-warning .modal-header {
+  border-bottom-color: #f59e0b;
+}
+
+.modal-warning .modal-title {
+  color: #92400e;
+}
+
+/* Error Modal */
+.modal-error .modal-header {
+  border-bottom-color: #ef4444;
+}
+
+.modal-error .modal-title {
+  color: #991b1b;
+}
+
+/* Info Modal */
+.modal-info .modal-header {
+  border-bottom-color: #3b82f6;
+}
+
+.modal-info .modal-title {
+  color: #1e40af;
+}
+
+/* ===============================================
+   SPECIALIZED MODALS
+   =============================================== */
+
+/* Settings Modal - specific to this application */
+.settings-modal .modal-content {
+  max-width: 900px;
+  height: 80vh;
+}
+
+.settings-modal .modal-body {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 0;
+  padding: 0;
+}
+
+/* Incident Modal - specific to this application */
+.incident-modal .modal-content {
+  max-width: 800px;
+}
+
+.incident-modal .modal-body {
+  padding: 1.5rem;
+}
+
+/* Confirmation Modal */
+.confirm-modal .modal-content {
+  max-width: 400px;
+}
+
+.confirm-modal .modal-body {
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+/* Add Entry Modal */
+.add-entry-modal .modal-content {
+  max-width: 700px;
+}
+
+/* ===============================================
+   ACCESSIBILITY FIXES
+   =============================================== */
+
+/* Fix for accessibility checker modal styles */
+.a11y-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: var(--z-maximum, 9999);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.a11y-modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  z-index: var(--z-maximum, 9999);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+/* ===============================================
+   ANIMATIONS
+   =============================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enter animations */
+.modal-enter {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-enter .modal-content {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Exit animations */
+.modal-exit {
+  animation: fadeIn 0.15s ease-in reverse;
+}
+
+.modal-exit .modal-content {
+  animation: scaleIn 0.15s ease-in reverse;
+}
+
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+
+@media (max-width: 640px) {
+  .modal-content {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+  }
+
+  .modal-footer button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-full {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+}
+
+/* ===============================================
+   DARK MODE SUPPORT
+   =============================================== */
+
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+
+  .modal-header {
+    border-bottom-color: #374151;
+  }
+
+  .modal-footer {
+    background-color: #111827;
+    border-top-color: #374151;
+  }
+
+  .modal-close:hover {
+    background-color: #374151;
+    color: #f9fafb;
+  }
+}
+
+/* ===============================================
+   HIGH SPECIFICITY OVERRIDES (REPLACING !IMPORTANT)
+   =============================================== */
+
+/* Use CSS specificity instead of !important */
+html body .modal-overlay {
+  z-index: var(--z-modal-backdrop, 1000);
+}
+
+html body .modal-content {
+  z-index: var(--z-modal, 1001);
+}
+
+/* React Portal specific styles */
+div[data-react-modal-portal] .modal-overlay {
+  z-index: var(--z-modal-backdrop, 1000);
+}
+
+div[data-react-modal-portal] .modal-content {
+  z-index: var(--z-modal, 1001);
+}
+
+/* Framework specific overrides */
+.ant-modal-mask,
+.MuiModal-backdrop,
+.chakra-modal__overlay {
+  z-index: var(--z-modal-backdrop, 1000);
+}
+
+.ant-modal-wrap,
+.MuiModal-root,
+.chakra-modal__content-container {
+  z-index: var(--z-modal, 1001);
+}

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS incidents (
     description TEXT NOT NULL,
     category TEXT NOT NULL CHECK(category IN ('JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'Security', 'Network', 'Hardware', 'Software', 'Other')),
     severity TEXT NOT NULL CHECK(severity IN ('critical', 'high', 'medium', 'low')),
-    status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'in_progress', 'resolved', 'closed', 'reopened')),
+    status TEXT NOT NULL DEFAULT 'aberto' CHECK(status IN ('aberto', 'em_tratamento', 'resolvido', 'fechado', 'reaberto', 'em_revisao')),
     priority INTEGER NOT NULL DEFAULT 3 CHECK(priority >= 1 AND priority <= 5),
 
     -- Team and assignment
@@ -364,9 +364,9 @@ CREATE VIEW IF NOT EXISTS v_category_distribution AS
 SELECT
     category,
     COUNT(*) as total_incidents,
-    COUNT(CASE WHEN status = 'open' THEN 1 END) as open_incidents,
-    COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_incidents,
-    COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) as resolved_incidents,
+    COUNT(CASE WHEN status = 'aberto' THEN 1 END) as open_incidents,
+    COUNT(CASE WHEN status = 'em_tratamento' THEN 1 END) as in_progress_incidents,
+    COUNT(CASE WHEN status IN ('resolvido', 'fechado') THEN 1 END) as resolved_incidents,
     ROUND(CAST(COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) AS REAL) / COUNT(*) * 100, 2) as resolution_percentage,
     ROUND(AVG(CASE WHEN resolution_time_hours IS NOT NULL THEN resolution_time_hours END), 2) as avg_resolution_time,
     COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_count,
@@ -389,17 +389,17 @@ BEGIN
     -- Update timestamps based on status changes
     UPDATE incidents SET
         updated_at = CURRENT_TIMESTAMP,
-        assigned_at = CASE WHEN NEW.status = 'in_progress' AND OLD.status = 'open' THEN CURRENT_TIMESTAMP ELSE assigned_at END,
-        in_progress_at = CASE WHEN NEW.status = 'in_progress' AND OLD.status != 'in_progress' THEN CURRENT_TIMESTAMP ELSE in_progress_at END,
-        resolved_at = CASE WHEN NEW.status = 'resolved' AND OLD.status != 'resolved' THEN CURRENT_TIMESTAMP ELSE resolved_at END,
-        closed_at = CASE WHEN NEW.status = 'closed' AND OLD.status != 'closed' THEN CURRENT_TIMESTAMP ELSE closed_at END,
-        reopen_count = CASE WHEN OLD.status IN ('resolved', 'closed') AND NEW.status = 'reopened' THEN reopen_count + 1 ELSE reopen_count END
+        assigned_at = CASE WHEN NEW.status = 'em_tratamento' AND OLD.status = 'aberto' THEN CURRENT_TIMESTAMP ELSE assigned_at END,
+        in_progress_at = CASE WHEN NEW.status = 'em_tratamento' AND OLD.status != 'em_tratamento' THEN CURRENT_TIMESTAMP ELSE in_progress_at END,
+        resolved_at = CASE WHEN NEW.status = 'resolvido' AND OLD.status != 'resolvido' THEN CURRENT_TIMESTAMP ELSE resolved_at END,
+        closed_at = CASE WHEN NEW.status = 'fechado' AND OLD.status != 'fechado' THEN CURRENT_TIMESTAMP ELSE closed_at END,
+        reopen_count = CASE WHEN OLD.status IN ('resolvido', 'fechado') AND NEW.status = 'reaberto' THEN reopen_count + 1 ELSE reopen_count END
     WHERE id = NEW.id;
 
     -- Calculate resolution time when incident is resolved
     UPDATE incidents SET
         resolution_time_hours = ROUND((julianday(CURRENT_TIMESTAMP) - julianday(created_at)) * 24, 2)
-    WHERE id = NEW.id AND NEW.status = 'resolved' AND resolution_time_hours IS NULL;
+    WHERE id = NEW.id AND NEW.status = 'resolvido' AND resolution_time_hours IS NULL;
 
     -- Insert status change comment
     INSERT INTO incident_comments (incident_id, comment_type, content, author)

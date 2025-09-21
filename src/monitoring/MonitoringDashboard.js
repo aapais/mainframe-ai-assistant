@@ -439,7 +439,7 @@ class MonitoringDashboard extends events_1.EventEmitter {
             data.summary.cacheHitRate.toFixed(3),
             data.summary.activeAlerts.toString()
         ];
-        return headers.join(',') + '\n' + row.join(',');
+        return `${headers.join(',')  }\n${  row.join(',')}`;
     }
 }
 exports.MonitoringDashboard = MonitoringDashboard;
@@ -451,7 +451,7 @@ exports.DashboardUtils = {
             case '0.1f':
                 return value.toFixed(1);
             case '0.1f%':
-                return value.toFixed(1) + '%';
+                return `${value.toFixed(1)  }%`;
             case '0':
                 return Math.round(value).toString();
             default:
@@ -464,7 +464,7 @@ exports.DashboardUtils = {
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))  } ${  sizes[i]}`;
     },
     getStatusColor: (value, thresholds) => {
         if (value < thresholds.critical)

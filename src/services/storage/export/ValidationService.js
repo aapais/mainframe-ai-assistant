@@ -214,7 +214,7 @@ class ValidationService {
         }
         try {
             const requiredFields = ['title', 'problem', 'solution', 'category'];
-            let totalFields = data.length * requiredFields.length;
+            const totalFields = data.length * requiredFields.length;
             let completedFields = 0;
             data.forEach(record => {
                 requiredFields.forEach(field => {
@@ -502,7 +502,7 @@ class ValidationService {
                 valid: false,
                 message: 'Title too long (maximum 200 characters)',
                 suggestion: 'Shorten the title',
-                correctedValue: title.substring(0, 197) + '...'
+                correctedValue: `${title.substring(0, 197)  }...`
             };
         }
         return { valid: true };

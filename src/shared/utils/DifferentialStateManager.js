@@ -130,7 +130,7 @@ class DifferentialStateManager extends events_1.EventEmitter {
         const subscription = {
             id: subscriptionId,
             stateKey,
-            callback: callback,
+            callback,
             lastVersion: tracker.currentVersion?.version || 0,
             options: {
                 immediate: false,
@@ -216,12 +216,12 @@ class DifferentialStateManager extends events_1.EventEmitter {
         }
     }
     getMetrics() {
-        let totalStates = this.stateTrackers.size;
+        const totalStates = this.stateTrackers.size;
         let totalVersions = 0;
-        let totalSubscriptions = this.subscriptions.size;
+        const totalSubscriptions = this.subscriptions.size;
         let totalDataSize = 0;
-        let averageCompressionRatio = 0;
-        let compressionSamples = 0;
+        const averageCompressionRatio = 0;
+        const compressionSamples = 0;
         for (const tracker of this.stateTrackers.values()) {
             totalVersions += tracker.previousVersions.size + (tracker.currentVersion ? 1 : 0);
             if (tracker.currentVersion) {

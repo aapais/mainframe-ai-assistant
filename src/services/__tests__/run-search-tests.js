@@ -165,7 +165,7 @@ async function runAllTests() {
   printSection('Test Results Summary');
   
   let passedCount = 0;
-  let totalCount = Object.keys(results).length;
+  const totalCount = Object.keys(results).length;
   
   for (const [suiteName, passed] of Object.entries(results)) {
     const config = TEST_CONFIG[suiteName];
@@ -180,8 +180,8 @@ async function runAllTests() {
   
   console.log(colorize('\n📈 Overall Results:', 'bright'));
   console.log(`   Passed: ${colorize(passedCount.toString(), 'green')}/${totalCount}`);
-  console.log(`   Duration: ${colorize(Math.round(totalDuration / 1000) + 's', 'cyan')}`);
-  console.log(`   Success Rate: ${colorize(Math.round(passedCount / totalCount * 100) + '%', passedCount === totalCount ? 'green' : 'yellow')}`);
+  console.log(`   Duration: ${colorize(`${Math.round(totalDuration / 1000)  }s`, 'cyan')}`);
+  console.log(`   Success Rate: ${colorize(`${Math.round(passedCount / totalCount * 100)  }%`, passedCount === totalCount ? 'green' : 'yellow')}`);
   
   if (passedCount === totalCount) {
     console.log(colorize('\n🎉 All tests passed! SearchService is performing optimally.', 'green'));

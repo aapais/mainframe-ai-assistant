@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Scroll Test - SPARC Refinement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 SPARC Refinement: Manual Scroll Persistence Test</h1>
+
+    <div class="test-container">
+        <h2>📋 Test Instructions</h2>
+
+        <div class="step">
+            <h3>Step 1: Load Application</h3>
+            <p>Click the button below to open the application in an iframe:</p>
+            <button onclick="loadApp()">📱 Load Application</button>
+            <div id="app-container"></div>
+        </div>
+
+        <div class="step warning">
+            <h3>Step 2: Manual Navigation Test</h3>
+            <ol>
+                <li>Ensure the application loads to the Dashboard view</li>
+                <li>Scroll down in the Dashboard (scroll to at least 300px)</li>
+                <li>Click on "Incidents" tab to navigate</li>
+                <li>Wait for the Incidents page to load</li>
+                <li>Click back on "Dashboard" tab</li>
+                <li>🎯 <strong>VERIFY:</strong> Dashboard should restore to the previous scroll position</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Multiple Position Test</h3>
+            <ol>
+                <li>In Dashboard: Scroll to ~200px</li>
+                <li>Go to Incidents: Scroll to ~400px</li>
+                <li>Return to Dashboard: Should show 200px scroll</li>
+                <li>Return to Incidents: Should show 400px scroll</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Browser Storage Test</h3>
+            <ol>
+                <li>Scroll in Dashboard</li>
+                <li>Open browser DevTools (F12)</li>
+                <li>Go to Application > Session Storage</li>
+                <li>🎯 <strong>VERIFY:</strong> Look for keys like <code>scroll_position_dashboard</code></li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 Test Results</h2>
+        <div id="test-results">
+            <p>Run the manual tests above and record your findings here:</p>
+            <button onclick="recordSuccess()">✅ Scroll Persistence Works</button>
+            <button onclick="recordFailure()">❌ Issues Found</button>
+            <button onclick="recordPartial()">⚠️ Partial Success</button>
+        </div>
+
+        <div id="results-display" style="margin-top: 20px;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>🔧 Implementation Summary</h2>
+        <div class="step success">
+            <h3>✅ Components Implemented</h3>
+            <ul>
+                <li><strong>useScrollPosition Hook:</strong> Core scroll position management with sessionStorage</li>
+                <li><strong>useViewScrollPosition Hook:</strong> View-specific scroll management for dashboard/incidents</li>
+                <li><strong>App.tsx Integration:</strong> Scroll container ref and view-based restoration</li>
+                <li><strong>Debounced Storage:</strong> Performance optimization with 150ms debounce</li>
+                <li><strong>Auto-restoration:</strong> 100ms delay for DOM rendering completion</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Key Features</h3>
+            <ul>
+                <li><strong>Per-View Storage:</strong> Each view (dashboard, incidents, settings) maintains separate scroll position</li>
+                <li><strong>Session Persistence:</strong> Uses sessionStorage for tab-lifetime persistence</li>
+                <li><strong>Window Scrolling:</strong> Handles document.body/window scroll (not container-based)</li>
+                <li><strong>Performance Optimized:</strong> Debounced scroll events and restoration prevention during restore</li>
+                <li><strong>Error Handling:</strong> Graceful fallbacks for storage failures</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function loadApp() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <iframe src="http://localhost:3000" title="Mainframe AI Assistant"></iframe>
+                <p><em>Application loaded. Follow the test steps above.</em></p>
+            `;
+        }
+
+        function recordSuccess() {
+            displayResult('success', '✅ SUCCESS: Scroll persistence is working correctly across dashboard/incidents navigation.');
+        }
+
+        function recordFailure() {
+            displayResult('error', '❌ FAILURE: Scroll position is not being preserved during navigation.');
+        }
+
+        function recordPartial() {
+            displayResult('warning', '⚠️ PARTIAL: Some scroll behavior works but issues remain.');
+        }
+
+        function displayResult(type, message) {
+            const display = document.getElementById('results-display');
+            display.innerHTML = `
+                <div class="step ${type}">
+                    <h4>Test Result</h4>
+                    <p>${message}</p>
+                    <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+            `;
+        }
+
+        // Auto-scroll helper for testing
+        function testScrollPosition() {
+            const iframe = document.querySelector('iframe');
+            if (iframe) {
+                iframe.contentWindow.scrollTo(0, 300);
+                console.log('Test scroll applied: 300px');
+            }
+        }
+    </script>
+</body>
+</html>

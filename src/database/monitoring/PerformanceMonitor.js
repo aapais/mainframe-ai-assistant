@@ -274,7 +274,7 @@ class PerformanceMonitor extends events_1.EventEmitter {
                 ioWaitTime: 0,
                 cacheHit: duration < 10,
                 indexesUsed: this.extractIndexesFromPlan(queryPlan),
-                queryPlan: queryPlan,
+                queryPlan,
                 connectionId,
                 userId: options?.userId,
                 errorCode: error ? error.name : undefined,

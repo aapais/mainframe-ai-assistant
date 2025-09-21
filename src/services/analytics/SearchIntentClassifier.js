@@ -24,7 +24,7 @@ class SearchIntentClassifier {
         const intentScores = this.calculateIntentScores(query, features, context);
         const sortedIntents = Object.entries(intentScores)
             .sort(([, a], [, b]) => b - a)
-            .map(([intent, score]) => ({ intent: intent, score }));
+            .map(([intent, score]) => ({ intent, score }));
         const primary = sortedIntents[0];
         const confidence = primary.score;
         const alternatives = sortedIntents

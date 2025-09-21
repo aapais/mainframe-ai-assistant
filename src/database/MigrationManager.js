@@ -194,7 +194,7 @@ class MigrationManager {
         for (const migration of migrations) {
             diff += `Version ${migration.version}: ${migration.description}\n`;
             diff += `${'='.repeat(50)}\n`;
-            diff += migration.sql + '\n\n';
+            diff += `${migration.sql  }\n\n`;
         }
         return diff;
     }

@@ -1,0 +1,146 @@
+{
+  "version": "1.0-emergency",
+  "description": "Essential Knowledge Base entries for Week 2 demo",
+  "entries": [
+    {
+      "title": "VSAM Status 35 - File Not Found",
+      "problem": "Job abends with VSAM status code 35. Program cannot open VSAM file.",
+      "solution": "1. Check if dataset exists: LISTCAT ENT('dataset.name')\n2. Verify DD statement DSN is correct\n3. Check catalog: LISTCAT CAT('catalog.name')\n4. Verify RACF access: LISTDSD 'dataset.name'\n5. If file was deleted, restore from backup\n6. Check VSAM cluster definition",
+      "category": "VSAM",
+      "tags": ["vsam", "status-35", "file-not-found", "catalog"]
+    },
+    {
+      "title": "S0C7 Data Exception - Numeric Error",
+      "problem": "Program abends with S0C7 during arithmetic operation or MOVE to numeric field.",
+      "solution": "1. Check for non-numeric data in COMP-3 fields\n2. Initialize all numeric fields: MOVE ZEROS TO field\n3. Use IF NUMERIC test before arithmetic\n4. Check for spaces in numeric fields\n5. Verify field definitions in copybook\n6. Use NUMPROC(NOPFD) compiler option\n7. Add ON SIZE ERROR to arithmetic",
+      "category": "COBOL",
+      "tags": ["s0c7", "numeric", "data-exception", "cobol"]
+    },
+    {
+      "title": "JCL Dataset Not Found - IEF212I",
+      "problem": "JCL step fails with IEF212I dataset not found during allocation.",
+      "solution": "1. Verify dataset name spelling (case sensitive)\n2. Check if dataset exists: LISTD 'dataset.name'\n3. For GDG, verify generation: (+1), (0), (-1)\n4. Check UNIT and VOL if uncataloged\n5. Verify previous step created dataset\n6. Check DISP parameter: OLD vs NEW vs SHR\n7. Ensure quotes around dataset name",
+      "category": "JCL",
+      "tags": ["jcl", "dataset", "ief212i", "allocation"]
+    },
+    {
+      "title": "DB2 SQLCODE -904 Resource Unavailable",
+      "problem": "SQL operation fails with -904 indicating resource not available.",
+      "solution": "1. Check tablespace status: -DISPLAY DATABASE(db)\n2. Check for COPY PENDING: -DISPLAY DATABASE(db) SPACE(*)\n3. Run IMAGE COPY if needed\n4. Check for locks: -DISPLAY THREAD(*)\n5. Verify buffer pool allocation\n6. Contact DBA for resource issues",
+      "category": "DB2",
+      "tags": ["db2", "sqlcode", "-904", "resource"]
+    },
+    {
+      "title": "CICS ASRA Abend - Program Check",
+      "problem": "CICS transaction abends with ASRA (0C4 protection exception).",
+      "solution": "1. Check CEDF transaction dump\n2. Look at offset in program listing\n3. Check for uninitialized pointers\n4. Verify WORKING-STORAGE initialization\n5. Check array bounds\n6. Verify COMMAREA length\n7. Use CEMT I PROG to check program status",
+      "category": "CICS",
+      "tags": ["cics", "asra", "0c4", "program-check"]
+    },
+    {
+      "title": "JES2 Job Output Missing",
+      "problem": "Job completed but output cannot be found in SDSF.",
+      "solution": "1. Check job status in SDSF with job number\n2. Verify OUTPUT class routing\n3. Check MSGCLASS parameter in JOB card\n4. Look in held output: SDSF H command\n5. Check retention period settings\n6. Verify SYSOUT class in DD statements\n7. Check if output routed to printer",
+      "category": "JES",
+      "tags": ["jes2", "sdsf", "output", "missing"]
+    },
+    {
+      "title": "FTP Transfer Failed - Connection Refused",
+      "problem": "FTP connection fails with 'Connection refused' error.",
+      "solution": "1. Check if FTP server is running: NETSTAT\n2. Verify port 21 is listening\n3. Check firewall settings\n4. Test basic connectivity: PING server\n5. Verify FTP.DATA configuration\n6. Check TCPIP.PROFILE settings\n7. Try passive mode: LOCSITE PASSIVE",
+      "category": "Network",
+      "tags": ["ftp", "connection", "tcpip", "network"]
+    },
+    {
+      "title": "Sort Failed - WER027A Insufficient Storage",
+      "problem": "DFSORT job fails with WER027A insufficient storage error.",
+      "solution": "1. Increase REGION: REGION=0M or REGION=32M\n2. Add DYNALLOC parameters in DFSPARM\n3. Use OPTION MAINSIZE=MAX\n4. Increase SORTWORK allocations\n5. Check available storage with D ASM\n6. Consider splitting large files\n7. Use OPTION MOSIZE=MAX",
+      "category": "Utilities",
+      "tags": ["sort", "dfsort", "wer027a", "storage"]
+    },
+    {
+      "title": "TSO Logon Failed - Not Authorized",
+      "problem": "TSO logon fails with 'Not authorized to TSO' message.",
+      "solution": "1. Check RACF TSO segment: LISTUSER userid TSO\n2. Verify TSO authority in RACF\n3. Check if account is revoked: LISTUSER userid\n4. Verify UACC for TSO resource\n5. Check group connections\n6. Contact security administrator\n7. Check password expiration",
+      "category": "Security",
+      "tags": ["tso", "racf", "authorization", "security"]
+    },
+    {
+      "title": "IMS Database Not Available - U0778",
+      "problem": "IMS transaction abends with U0778 database not available.",
+      "solution": "1. Check database status: /DIS DB dbname\n2. Start database if stopped: /STA DB dbname\n3. Check for exclusive locks\n4. Verify PSB and DBD definitions\n5. Check if REORG is running\n6. Verify DBRC registration: /DIS RECON\n7. May need database recovery",
+      "category": "IMS",
+      "tags": ["ims", "u0778", "database", "availability"]
+    },
+    {
+      "title": "VSAM VERIFY Required After Abnormal Close",
+      "problem": "VSAM file unusable after job abend, needs VERIFY processing.",
+      "solution": "1. Run IDCAMS VERIFY command:\n   //VERIFY EXEC PGM=IDCAMS\n   //SYSIN DD *\n   VERIFY DS('vsam.file.name')\n2. If VERIFY fails, try EXPORT/IMPORT\n3. Check for pending updates\n4. Verify exclusive use during VERIFY\n5. May need to REPRO from backup",
+      "category": "VSAM",
+      "tags": ["vsam", "verify", "recovery", "idcams"]
+    },
+    {
+      "title": "Compile Error - IGYPA3082-S Data Name Not Unique",
+      "problem": "COBOL compilation fails with data name not unique error.",
+      "solution": "1. Check for duplicate field names in different levels\n2. Use qualified names: field OF record\n3. Check copybook for conflicts\n4. Verify field definitions in cross-reference\n5. Use RENAME clause if needed\n6. Check for multiple 01 levels with same name",
+      "category": "COBOL",
+      "tags": ["cobol", "compile", "igypa3082", "data-name"]
+    },
+    {
+      "title": "Batch Job Looping - Excessive CPU Usage",
+      "problem": "Batch job consuming excessive CPU and appears to be looping.",
+      "solution": "1. Cancel job: C jobname or C jobnumber\n2. Check for infinite loops in logic\n3. Review conditional statements\n4. Check file end-of-file handling\n5. Verify loop exit conditions\n6. Use DISPLAY to trace execution\n7. Check for recursive calls",
+      "category": "Performance",
+      "tags": ["batch", "loop", "cpu", "performance"]
+    },
+    {
+      "title": "RACF Access Denied - ICH408I",
+      "problem": "Access denied with ICH408I insufficient access authority.",
+      "solution": "1. Check current access: LISTDSD 'dataset.name'\n2. Request access from data owner\n3. Check group access rights\n4. Verify resource profile exists\n5. Check universal access (UACC)\n6. Submit access request via proper channels\n7. Check if dataset is protected",
+      "category": "Security",
+      "tags": ["racf", "ich408i", "access", "authority"]
+    },
+    {
+      "title": "ISPF Edit Error - Member In Use",
+      "problem": "Cannot edit member because it's in use by another user.",
+      "solution": "1. Check who has member: ISPF 3.4 > M (member list)\n2. Use ENQUEUE display: ENQ command\n3. Contact user who has member locked\n4. Try VIEW instead of EDIT for read-only\n5. Check for batch job using member\n6. Wait for lock to be released\n7. Use ISPF Browse if only viewing needed",
+      "category": "ISPF",
+      "tags": ["ispf", "edit", "member", "lock"]
+    },
+    {
+      "title": "Abend S013 - Dataset Not Found or Wrong Volume",
+      "problem": "Job abends with S013 indicating dataset open failure.",
+      "solution": "1. Verify dataset exists on specified volume\n2. Check UNIT and VOL parameters\n3. Verify dataset is cataloged properly\n4. Check for volume mounting issues\n5. Verify device allocation\n6. Check for conflicting UNIT types\n7. Ensure volume is online",
+      "category": "JCL",
+      "tags": ["s013", "dataset", "volume", "open"]
+    },
+    {
+      "title": "COBOL CALL Program Not Found",
+      "problem": "COBOL program abends when calling subprogram - not found in library.",
+      "solution": "1. Verify subprogram in STEPLIB/JOBLIB\n2. Check spelling of CALL statement\n3. Verify subprogram was compiled and linked\n4. Check CALL literal vs variable\n5. Verify load module name matches PROGRAM-ID\n6. Check library concatenation order\n7. Ensure proper linking with main program",
+      "category": "COBOL",
+      "tags": ["cobol", "call", "subprogram", "library"]
+    },
+    {
+      "title": "GDG All Generations Deleted Accidentally",
+      "problem": "All generations of GDG were accidentally deleted, need recovery.",
+      "solution": "1. Check if catalog entry still exists: LISTCAT GDG\n2. Restore from backup if available\n3. Recreate GDG base if needed: DEFINE GDG\n4. Check archive tapes for generations\n5. Contact storage management for recovery\n6. Check HSM if datasets were migrated\n7. Review retention policies",
+      "category": "Data",
+      "tags": ["gdg", "delete", "recovery", "backup"]
+    },
+    {
+      "title": "SDSF Cannot Display Job Output",
+      "problem": "SDSF shows job completed but cannot display output datasets.",
+      "solution": "1. Check SDSF settings: PREFIX command\n2. Verify job output class authority\n3. Check if output was purged\n4. Try different SDSF panels: O, H, ST\n5. Check output routing and destinations\n6. Verify RACF access to output class\n7. Check retention period settings",
+      "category": "SDSF",
+      "tags": ["sdsf", "output", "display", "class"]
+    },
+    {
+      "title": "Performance Problem - SQL Query Running Slow",
+      "problem": "DB2 SQL query taking excessive time to complete.",
+      "solution": "1. Check execution plan: EXPLAIN PLAN\n2. Update table statistics: RUNSTATS\n3. Check for missing indexes\n4. Verify optimal join order\n5. Consider query rewrite\n6. Check for table locks: -DISPLAY THREAD\n7. Monitor buffer pool efficiency\n8. Consider using OPTIMIZE FOR n ROWS",
+      "category": "DB2",
+      "tags": ["db2", "performance", "sql", "slow"]
+    }
+  ]
+}

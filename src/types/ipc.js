@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IPCSchemas = exports.IPCErrorCode = void 0;
 const zod_1 = require("zod");
-var IPCErrorCode;
+let IPCErrorCode;
 (function (IPCErrorCode) {
     IPCErrorCode["INVALID_CHANNEL"] = "IPC_INVALID_CHANNEL";
     IPCErrorCode["VALIDATION_FAILED"] = "IPC_VALIDATION_FAILED";

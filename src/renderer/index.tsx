@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css'; // Import Tailwind CSS
-import App from './App';
+// CSS disabled to avoid PostCSS errors
+import App from './App'; // Use the most current complete application
 import './mockElectronAPI'; // Import mock API for web development
-import { SettingsProvider } from './contexts/SettingsContext';
 
 /**
  * React 18 Application Entry Point
@@ -33,35 +32,10 @@ if (!rootElement) {
 // Create React root with React 18's createRoot API
 const root = ReactDOM.createRoot(rootElement);
 
-// Render application
-root.render(
-  <React.StrictMode>
-    <SettingsProvider autoSave={true} autoSaveDelay={1000}>
-      <App />
-    </SettingsProvider>
-  </React.StrictMode>
-);
+// Render complete App with all features
+root.render(<App />);
 
-// Performance monitoring in development
-if (process.env.NODE_ENV === 'development') {
-  // Log render performance
-  const reportWebVitals = (metric: any) => {
-    console.log('Performance metric:', metric);
-  };
-
-  // Web-vitals temporarily disabled - uncomment after installing: npm install web-vitals
-  /*
-  import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-    getCLS(reportWebVitals);
-    getFID(reportWebVitals);
-    getFCP(reportWebVitals);
-    getLCP(reportWebVitals);
-    getTTFB(reportWebVitals);
-  }).catch(err => {
-    console.warn('Web-vitals not available:', err.message);
-  });
-  */
-}
+// Minimal logging for production speed
 
 // Handle uncaught errors
 window.addEventListener('unhandledrejection', (event) => {

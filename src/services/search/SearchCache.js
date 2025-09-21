@@ -221,7 +221,7 @@ class SearchCache {
         const { popularQueries = [], recentSearches = [], predictedTerms = [] } = warmingData;
         for (const query of popularQueries) {
             const cacheKey = this.generateQueryCacheKey(query, {});
-            await this.set(cacheKey + ':warm', true, this.config.defaultTTL * 2);
+            await this.set(`${cacheKey  }:warm`, true, this.config.defaultTTL * 2);
         }
         console.log(`Cache warmed with ${popularQueries.length} popular queries, ${recentSearches.length} recent searches, ${predictedTerms.length} predicted terms`);
     }

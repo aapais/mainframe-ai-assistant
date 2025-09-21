@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import React from 'react';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { customRender, TestDataGenerator, MockFactory, AssertionHelpers, userEvent } from '../utils/TestingUtilities';
 import { KBEntry, SearchResult } from '../../src/types';
@@ -373,10 +374,10 @@ export class PerformanceComponentTest extends BaseComponentTest {
           }
         );
 
-        const { rerender } = customRender(<MemoizedComponent data={[]} />);
+        const { rerender } = customRender(React.createElement(MemoizedComponent, { data: [] }));
 
         // Re-render with same props
-        rerender(<MemoizedComponent data={[]} />);
+        rerender(React.createElement(MemoizedComponent, { data: [] }));
 
         // Should only render once due to memoization
         expect(renderSpy).toHaveBeenCalledTimes(1);

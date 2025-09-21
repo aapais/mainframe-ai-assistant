@@ -1,6 +1,5 @@
 import React, { memo, useMemo } from 'react';
 import { AlertCircle, Code, Terminal, FileWarning } from 'lucide-react';
-import styles from './ProblemDisplay.module.css';
 
 export interface ProblemDisplayProps {
   problem: string;

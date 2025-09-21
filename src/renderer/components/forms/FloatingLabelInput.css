@@ -1,0 +1,414 @@
+/* Floating Label Input Styles */
+.floating-label-input {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* Container */
+.floating-label-input__container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Base Input Styles */
+.floating-label-input__input {
+  width: 100%;
+  padding: 1rem 0.75rem 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: white;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #111827;
+  transition: all 0.15s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.floating-label-input__input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Size Variants */
+.floating-label-input--small .floating-label-input__input {
+  padding: 0.875rem 0.625rem 0.375rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+.floating-label-input--large .floating-label-input__input {
+  padding: 1.25rem 1rem 0.625rem 1rem;
+  font-size: 1rem;
+}
+
+/* Style Variants */
+.floating-label-input--filled .floating-label-input__input {
+  background: #f9fafb;
+  border-color: transparent;
+}
+
+.floating-label-input--filled .floating-label-input__input:focus {
+  background: white;
+  border-color: #3b82f6;
+}
+
+.floating-label-input--outlined .floating-label-input__input {
+  border-width: 2px;
+}
+
+/* Floating Label */
+.floating-label-input__label {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.875rem;
+  color: #6b7280;
+  background: white;
+  padding: 0 0.25rem;
+  transition: all 0.15s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* Label Animation States */
+.floating-label-input--focused .floating-label-input__label,
+.floating-label-input--has-value .floating-label-input__label {
+  top: 0;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #3b82f6;
+}
+
+.floating-label-input--small .floating-label-input__label {
+  left: 0.625rem;
+  font-size: 0.75rem;
+}
+
+.floating-label-input--small.floating-label-input--focused .floating-label-input__label,
+.floating-label-input--small.floating-label-input--has-value .floating-label-input__label {
+  font-size: 0.625rem;
+}
+
+.floating-label-input--large .floating-label-input__label {
+  left: 1rem;
+  font-size: 1rem;
+}
+
+.floating-label-input--large.floating-label-input--focused .floating-label-input__label,
+.floating-label-input--large.floating-label-input--has-value .floating-label-input__label {
+  font-size: 0.875rem;
+}
+
+/* Required Indicator */
+.floating-label-input__required {
+  color: #ef4444;
+  margin-left: 0.125rem;
+}
+
+/* Actions Container */
+.floating-label-input__actions {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 2;
+}
+
+/* Action Buttons */
+.floating-label-input__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.floating-label-input__action:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.floating-label-input__action:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Specific Action Styles */
+.floating-label-input__copy {
+  color: #059669;
+}
+
+.floating-label-input__copy:hover {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.floating-label-input__error-icon {
+  color: #ef4444;
+}
+
+.floating-label-input__success-icon {
+  color: #10b981;
+}
+
+/* Validation Spinner */
+.floating-label-input__validating {
+  pointer-events: none;
+}
+
+.floating-label-input__spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: floating-label-input-spin 1s linear infinite;
+}
+
+@keyframes floating-label-input-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* State Styles */
+.floating-label-input--disabled .floating-label-input__input {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.floating-label-input--disabled .floating-label-input__label {
+  color: #9ca3af;
+}
+
+.floating-label-input--readonly .floating-label-input__input {
+  background: #f9fafb;
+  cursor: default;
+}
+
+.floating-label-input--error .floating-label-input__input {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.floating-label-input--error .floating-label-input__label {
+  color: #ef4444;
+}
+
+.floating-label-input--success .floating-label-input__input {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.floating-label-input--success .floating-label-input__label {
+  color: #10b981;
+}
+
+/* Help Text */
+.floating-label-input__help {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.25;
+}
+
+/* Hint Text */
+.floating-label-input__hint {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.25;
+}
+
+/* Error Message */
+.floating-label-input__error {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+  line-height: 1.25;
+}
+
+/* Character Count */
+.floating-label-input__character-count {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+  line-height: 1.25;
+}
+
+.floating-label-input__character-count--near {
+  color: #f59e0b;
+}
+
+.floating-label-input__character-count--over {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .floating-label-input__input {
+    background: #1f2937;
+    color: #f9fafb;
+    border-color: #374151;
+  }
+
+  .floating-label-input__input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  }
+
+  .floating-label-input__label {
+    background: #1f2937;
+    color: #9ca3af;
+  }
+
+  .floating-label-input--focused .floating-label-input__label,
+  .floating-label-input--has-value .floating-label-input__label {
+    color: #60a5fa;
+  }
+
+  .floating-label-input--filled .floating-label-input__input {
+    background: #111827;
+  }
+
+  .floating-label-input--filled .floating-label-input__input:focus {
+    background: #1f2937;
+  }
+
+  .floating-label-input--disabled .floating-label-input__input {
+    background: #111827;
+    color: #6b7280;
+  }
+
+  .floating-label-input--readonly .floating-label-input__input {
+    background: #111827;
+  }
+
+  .floating-label-input__action:hover {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .floating-label-input__help,
+  .floating-label-input__hint,
+  .floating-label-input__character-count {
+    color: #9ca3af;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .floating-label-input__input {
+    border-width: 2px;
+  }
+
+  .floating-label-input__input:focus {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+  }
+
+  .floating-label-input--error .floating-label-input__input {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3);
+  }
+
+  .floating-label-input--success .floating-label-input__input {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .floating-label-input__label,
+  .floating-label-input__input,
+  .floating-label-input__action {
+    transition: none;
+  }
+
+  .floating-label-input__spinner {
+    animation: none;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .floating-label-input {
+    margin-bottom: 1.25rem;
+  }
+
+  .floating-label-input__input {
+    font-size: 1rem; /* Prevents zoom on iOS */
+  }
+
+  .floating-label-input--small .floating-label-input__input {
+    font-size: 0.875rem;
+  }
+
+  .floating-label-input__actions {
+    right: 0.75rem;
+  }
+
+  .floating-label-input__action {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+/* Touch Device Enhancements */
+@media (hover: none) and (pointer: coarse) {
+  .floating-label-input__action {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .floating-label-input__action:hover {
+    background: transparent;
+  }
+
+  .floating-label-input__action:active {
+    background: #f3f4f6;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .floating-label-input__actions {
+    display: none;
+  }
+
+  .floating-label-input__input {
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+
+  .floating-label-input__label {
+    position: static;
+    transform: none;
+    background: transparent;
+    color: #000;
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+    display: block;
+  }
+}

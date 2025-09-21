@@ -302,7 +302,7 @@ export function IPCProvider({ children, client = ipcClient, bridge = ipcBridge }
   }, [state.theme, client, reportError]);
 
   // Performance tracking
-  const trackOperation = useCallback(async <T>(operation: () => Promise<T>): Promise<T> => {
+  const trackOperation = useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
     dispatch({ type: 'INCREMENT_PENDING_OPERATIONS' });
     const startTime = performance.now();
     

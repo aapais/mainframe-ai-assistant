@@ -39,7 +39,7 @@ const buttonVariants = cva(
           'text-primary underline-offset-4 hover:underline',
           'bg-transparent border-transparent shadow-none px-0'
         ],
-        // Mainframe-specific variants
+        // Enhanced variants with glassmorphism and gradients
         success: [
           'bg-success text-success-foreground shadow hover:bg-success/90',
           'border border-success'
@@ -47,6 +47,26 @@ const buttonVariants = cva(
         warning: [
           'bg-warning text-warning-foreground shadow hover:bg-warning/90',
           'border border-warning'
+        ],
+        glass: [
+          'backdrop-blur-md bg-white/10 border border-white/20 text-white',
+          'hover:bg-white/20 hover:border-white/30',
+          'shadow-lg hover:shadow-xl'
+        ],
+        gradient: [
+          'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-0',
+          'hover:from-violet-700 hover:to-purple-700',
+          'shadow-lg hover:shadow-xl hover:scale-[1.02]'
+        ],
+        'gradient-success': [
+          'bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0',
+          'hover:from-emerald-600 hover:to-green-700',
+          'shadow-lg hover:shadow-xl'
+        ],
+        'gradient-danger': [
+          'bg-gradient-to-r from-red-500 to-rose-600 text-white border-0',
+          'hover:from-red-600 hover:to-rose-700',
+          'shadow-lg hover:shadow-xl'
         ],
         // Terminal-style variants for mainframe theme
         terminal: [
@@ -61,13 +81,16 @@ const buttonVariants = cva(
         ]
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-8 px-3 py-1 text-xs',
-        lg: 'h-12 px-8 py-3 text-base',
-        xl: 'h-14 px-10 py-4 text-lg',
-        icon: 'h-10 w-10 p-0',
-        'icon-sm': 'h-8 w-8 p-0',
-        'icon-lg': 'h-12 w-12 p-0'
+        xs: 'h-7 px-2 py-1 text-xs min-w-[44px]',
+        sm: 'h-8 px-3 py-1 text-xs min-w-[44px]',
+        default: 'h-10 px-4 py-2 min-w-[44px]',
+        lg: 'h-12 px-8 py-3 text-base min-w-[44px]',
+        xl: 'h-14 px-10 py-4 text-lg min-w-[44px]',
+        icon: 'h-10 w-10 p-0 min-w-[44px]',
+        'icon-xs': 'h-7 w-7 p-0 min-w-[44px]',
+        'icon-sm': 'h-8 w-8 p-0 min-w-[44px]',
+        'icon-lg': 'h-12 w-12 p-0 min-w-[44px]',
+        'icon-xl': 'h-14 w-14 p-0 min-w-[44px]'
       },
       fullWidth: {
         true: 'w-full',
@@ -92,6 +115,9 @@ export interface ButtonProps
   loadingText?: string;
   tooltip?: string;
   badge?: string | number;
+  ripple?: boolean;
+  shine?: boolean;
+  pulse?: boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -106,11 +132,35 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     rightIcon,
     loadingText,
     disabled,
+    ripple = false,
+    shine = false,
+    pulse = false,
     children,
+    onClick,
     ...props
   }, ref) => {
     const isDisabled = disabled || loading;
     const isIconOnly = !children && (leftIcon || rightIcon);
+    const [ripples, setRipples] = React.useState<Array<{ id: number; x: number; y: number }>>([]);
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (ripple && !isDisabled) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const id = Date.now();
+
+        setRipples(prev => [...prev, { id, x, y }]);
+
+        setTimeout(() => {
+          setRipples(prev => prev.filter(r => r.id !== id));
+        }, 600);
+      }
+
+      if (!isDisabled) {
+        onClick?.(event);
+      }
+    };
 
     const LoadingSpinner = () => (
       <svg
@@ -176,14 +226,43 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
-        className={cn(buttonVariants({ variant, size, fullWidth }), className)}
+        className={cn(
+          buttonVariants({ variant, size, fullWidth }),
+          ripple && 'relative overflow-hidden',
+          shine && 'relative overflow-hidden group',
+          pulse && 'animate-pulse',
+          className
+        )}
         ref={ref}
         disabled={isDisabled}
         aria-disabled={isDisabled}
         aria-busy={loading}
+        onClick={handleClick}
         {...props}
       >
+        {/* Shine Effect */}
+        {shine && (
+          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        )}
+
+        {/* Button Content */}
         {buttonContent}
+
+        {/* Ripple Effects */}
+        {ripples.map(({ id, x, y }) => (
+          <div
+            key={id}
+            className="absolute pointer-events-none"
+            style={{
+              left: x - 2,
+              top: y - 2,
+              width: 4,
+              height: 4,
+            }}
+          >
+            <div className="absolute inset-0 bg-white/30 rounded-full animate-[ripple_0.6s_ease-out]" />
+          </div>
+        ))}
       </button>
     );
   }

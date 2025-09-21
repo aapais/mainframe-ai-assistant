@@ -489,7 +489,7 @@ class QueryCache {
             missRate: Math.round((1 - hitRate) * 100) / 100,
             avgResponseTime: Math.round(avgResponseTime),
             evictionCount: this.stats.evictions,
-            topQueries: topQueries
+            topQueries
         };
     }
     compress(data) {

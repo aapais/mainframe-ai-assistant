@@ -509,7 +509,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ currentPath = '/settings/ge
                 <p className="text-gray-600">Configure your Accenture Mainframe AI Assistant</p>
               </div>
             </div>
-            <SearchCommand />
+            {/* SearchCommand removed - using SettingsModal instead */}
           </div>
         </div>
       </div>

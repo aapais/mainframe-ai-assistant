@@ -528,7 +528,7 @@ export class PerformanceTestRunner {
   }
 }
 
-export interface PerformanceStats {
+export type PerformanceStats = {
   [K in keyof PerformanceMetrics]: {
     min: number;
     max: number;
@@ -536,7 +536,7 @@ export interface PerformanceStats {
     p95: number;
     standardDeviation: number;
   };
-}
+};
 
 export interface PerformanceTestResult {
   averageMetrics: PerformanceMetrics;

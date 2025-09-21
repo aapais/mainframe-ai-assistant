@@ -7,8 +7,8 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Import Accenture branding components
-import AccentureLogo from './components/AccentureLogo';
-import AccentureFooter from './components/AccentureFooter';
+import AccentureLogo from './components/brand/AccentureLogo';
+import AccentureFooter from './components/brand/AccentureFooter';
 
 // Import AI transparency components
 import AuthorizationDialog from './components/ai/AuthorizationDialog';

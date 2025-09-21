@@ -89,7 +89,7 @@ class QueryAnalyzer {
     optimizeQuery(query) {
         const similarQueries = this.findSimilarQueries(query, 5);
         const pattern = this.identifyPattern(query, this.parseQuery(query));
-        let optimizedQuery = query;
+        const optimizedQuery = query;
         const suggestions = [];
         let confidence = 0.5;
         let reasoning = 'No optimization patterns found';
@@ -259,7 +259,7 @@ class QueryAnalyzer {
     }
     extractPattern(parsedQuery) {
         return parsedQuery.terms
-            .map(t => `${t.field ? t.field + ':' : ''}[${t.operator}]`)
+            .map(t => `${t.field ? `${t.field  }:` : ''}[${t.operator}]`)
             .join(' ');
     }
     findOrCreateCluster(query, pattern) {

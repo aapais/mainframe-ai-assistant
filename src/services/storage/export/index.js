@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExportImportServiceFactory = exports.ValidationService = exports.DataTransformer = exports.FormatConverter = exports.ImportService = exports.ExportService = void 0;
-var ExportService_1 = require("./ExportService");
-Object.defineProperty(exports, "ExportService", { enumerable: true, get: function () { return ExportService_1.ExportService; } });
-var ImportService_1 = require("./ImportService");
-Object.defineProperty(exports, "ImportService", { enumerable: true, get: function () { return ImportService_1.ImportService; } });
-var FormatConverter_1 = require("./FormatConverter");
-Object.defineProperty(exports, "FormatConverter", { enumerable: true, get: function () { return FormatConverter_1.FormatConverter; } });
-var DataTransformer_1 = require("./DataTransformer");
-Object.defineProperty(exports, "DataTransformer", { enumerable: true, get: function () { return DataTransformer_1.DataTransformer; } });
-var ValidationService_1 = require("./ValidationService");
-Object.defineProperty(exports, "ValidationService", { enumerable: true, get: function () { return ValidationService_1.ValidationService; } });
+const ExportService_1 = require("./ExportService");
+Object.defineProperty(exports, "ExportService", { enumerable: true, get () { return ExportService_1.ExportService; } });
+const ImportService_1 = require("./ImportService");
+Object.defineProperty(exports, "ImportService", { enumerable: true, get () { return ImportService_1.ImportService; } });
+const FormatConverter_1 = require("./FormatConverter");
+Object.defineProperty(exports, "FormatConverter", { enumerable: true, get () { return FormatConverter_1.FormatConverter; } });
+const DataTransformer_1 = require("./DataTransformer");
+Object.defineProperty(exports, "DataTransformer", { enumerable: true, get () { return DataTransformer_1.DataTransformer; } });
+const ValidationService_1 = require("./ValidationService");
+Object.defineProperty(exports, "ValidationService", { enumerable: true, get () { return ValidationService_1.ValidationService; } });
 class ExportImportServiceFactory {
     static createExportService(kbService, options) {
         return new ExportService(kbService, options);

@@ -16,7 +16,7 @@ import {
 } from '../../../testing/accessibility';
 
 import KBSearchBar from '../../KBSearchBar';
-import { SearchInput } from '../../common/SearchInput';
+import { SearchInput } from '../../ui/Input';
 import { SearchProvider } from '../../../contexts/SearchContext';
 
 // Extend Jest matchers

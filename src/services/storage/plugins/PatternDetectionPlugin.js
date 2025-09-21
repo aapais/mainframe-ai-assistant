@@ -173,7 +173,7 @@ class PatternDetectionPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
         }
         const errorGroups = new Map();
         incidents.forEach(incident => {
-            const errorCode = this.extractErrorCode(incident.title + ' ' + incident.description);
+            const errorCode = this.extractErrorCode(`${incident.title  } ${  incident.description}`);
             if (errorCode) {
                 if (!errorGroups.has(errorCode)) {
                     errorGroups.set(errorCode, []);
@@ -259,7 +259,7 @@ class PatternDetectionPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
         const hasComponents = incidents.some(i => i.component);
         if (hasComponents)
             score += 20;
-        const hasErrorCodes = incidents.some(i => this.extractErrorCode(i.title + ' ' + i.description));
+        const hasErrorCodes = incidents.some(i => this.extractErrorCode(`${i.title  } ${  i.description}`));
         if (hasErrorCodes)
             score += 30;
         const criticalCount = incidents.filter(i => i.severity === 'critical').length;
@@ -306,7 +306,7 @@ class PatternDetectionPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
             .filter(c => c)
             .join(',');
         const errorCodes = pattern.incidents
-            .map(i => this.extractErrorCode(i.title + ' ' + i.description))
+            .map(i => this.extractErrorCode(`${i.title  } ${  i.description}`))
             .filter(c => c)
             .join(',');
         return `${pattern.type}-${components}-${errorCodes}`;

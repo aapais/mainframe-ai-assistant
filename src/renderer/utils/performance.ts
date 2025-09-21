@@ -1,5 +1,5 @@
 // Performance optimization utilities for the component library
-import { memo, useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import React, { memo, useMemo, useCallback, useRef, useEffect, useState } from 'react';
 
 /**
  * Lazy loading utility for components
@@ -12,9 +12,9 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
   
   if (fallback) {
     return memo((props) => (
-      <React.Suspense fallback={<fallback />}>
-        <LazyComponent {...props} />
-      </React.Suspense>
+      React.createElement(React.Suspense, { fallback: React.createElement(fallback) },
+        React.createElement(LazyComponent, props)
+      )
     )) as React.LazyExoticComponent<T>;
   }
   
@@ -350,7 +350,7 @@ export function withPerformanceMonitoring<P extends object>(
       console.log(`${componentName} render time: ${renderTime.toFixed(2)}ms`);
     });
 
-    return <MemoizedComponent {...props} />;
+    return React.createElement(MemoizedComponent, props);
   });
 }
 

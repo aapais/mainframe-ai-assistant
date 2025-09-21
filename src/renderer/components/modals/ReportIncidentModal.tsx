@@ -32,48 +32,48 @@ interface ValidationErrors {
 
 // Incident-specific categories
 const INCIDENT_CATEGORIES = [
-  { value: 'System Outage', label: 'System Outage', description: 'Complete system or service failure' },
-  { value: 'Performance', label: 'Performance Issue', description: 'Slow response times or degraded performance' },
-  { value: 'Database', label: 'Database Issue', description: 'DB2, IMS, or VSAM related problems' },
-  { value: 'Application', label: 'Application Error', description: 'COBOL, CICS, or batch job failures' },
-  { value: 'Security', label: 'Security Incident', description: 'RACF, access control, or security breaches' },
-  { value: 'Network', label: 'Network Issue', description: 'Connectivity or communication problems' },
-  { value: 'Hardware', label: 'Hardware Failure', description: 'Physical system or storage issues' },
-  { value: 'Capacity', label: 'Capacity Issue', description: 'Storage, memory, or processing limits' },
-  { value: 'Data', label: 'Data Issue', description: 'Data corruption, loss, or integrity problems' },
-  { value: 'Configuration', label: 'Configuration Error', description: 'System or application configuration issues' },
-  { value: 'Other', label: 'Other/Miscellaneous', description: 'Other types of incidents' }
+  { value: 'System Outage', label: 'Falha do Sistema', description: 'Falha completa do sistema ou serviço' },
+  { value: 'Performance', label: 'Problema de Performance', description: 'Tempos de resposta lentos ou performance degradada' },
+  { value: 'Database', label: 'Problema de Banco de Dados', description: 'Problemas relacionados a DB2, IMS ou VSAM' },
+  { value: 'Application', label: 'Erro de Aplicação', description: 'Falhas em COBOL, CICS ou jobs batch' },
+  { value: 'Security', label: 'Incidente de Segurança', description: 'RACF, controle de acesso ou violações de segurança' },
+  { value: 'Network', label: 'Problema de Rede', description: 'Problemas de conectividade ou comunicação' },
+  { value: 'Hardware', label: 'Falha de Hardware', description: 'Problemas físicos do sistema ou armazenamento' },
+  { value: 'Capacity', label: 'Problema de Capacidade', description: 'Limites de armazenamento, memória ou processamento' },
+  { value: 'Data', label: 'Problema de Dados', description: 'Corrupção, perda ou problemas de integridade de dados' },
+  { value: 'Configuration', label: 'Erro de Configuração', description: 'Problemas de configuração do sistema ou aplicação' },
+  { value: 'Other', label: 'Outros/Diversos', description: 'Outros tipos de incidentes' }
 ];
 
 const PRIORITY_LEVELS = [
-  { value: 'P1', label: 'P1 - Critical', color: 'text-red-600', description: 'Complete service failure, immediate action required' },
-  { value: 'P2', label: 'P2 - High', color: 'text-orange-600', description: 'Significant impact, requires urgent attention' },
-  { value: 'P3', label: 'P3 - Medium', color: 'text-yellow-600', description: 'Moderate impact, normal timeline' },
-  { value: 'P4', label: 'P4 - Low', color: 'text-green-600', description: 'Minor impact, can be addressed when convenient' }
+  { value: 'P1', label: 'P1 - Crítica', color: 'text-red-600', description: 'Falha completa do serviço, ação imediata necessária' },
+  { value: 'P2', label: 'P2 - Alta', color: 'text-orange-600', description: 'Impacto significativo, requer atenção urgente' },
+  { value: 'P3', label: 'P3 - Média', color: 'text-yellow-600', description: 'Impacto moderado, cronograma normal' },
+  { value: 'P4', label: 'P4 - Baixa', color: 'text-green-600', description: 'Impacto menor, pode ser resolvido quando conveniente' }
 ];
 
 const IMPACT_LEVELS = [
-  { value: 'Critical', label: 'Critical', description: 'Business critical systems affected, major revenue impact' },
-  { value: 'High', label: 'High', description: 'Important business functions impacted' },
-  { value: 'Medium', label: 'Medium', description: 'Some business functions affected' },
-  { value: 'Low', label: 'Low', description: 'Minor impact on business operations' }
+  { value: 'Critical', label: 'Crítico', description: 'Sistemas críticos para o negócio afetados, grande impacto na receita' },
+  { value: 'High', label: 'Alto', description: 'Funções importantes do negócio impactadas' },
+  { value: 'Medium', label: 'Médio', description: 'Algumas funções do negócio afetadas' },
+  { value: 'Low', label: 'Baixo', description: 'Impacto menor nas operações do negócio' }
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'Open', label: 'Open', description: 'Newly reported incident' },
-  { value: 'In Progress', label: 'In Progress', description: 'Incident is being worked on' },
-  { value: 'Pending', label: 'Pending', description: 'Waiting for external input or resources' },
-  { value: 'Resolved', label: 'Resolved', description: 'Issue has been fixed' },
-  { value: 'Closed', label: 'Closed', description: 'Incident is complete and verified' }
+  { value: 'aberto', label: 'Aberto', description: 'Incidente recém-reportado' },
+  { value: 'em_tratamento', label: 'Em Tratamento', description: 'Incidente está sendo trabalhado' },
+  { value: 'em_revisao', label: 'Em Revisão', description: 'Aguardando entrada externa ou recursos' },
+  { value: 'resolvido', label: 'Resolvido', description: 'Problema foi corrigido' },
+  { value: 'fechado', label: 'Fechado', description: 'Incidente completo e verificado' }
 ];
 
 // Common incident tags for auto-suggestions
 const COMMON_INCIDENT_TAGS = [
-  'outage', 'performance', 'timeout', 'connection-failed', 'abend', 'error-code',
-  'batch-failure', 'online-down', 'database-error', 'file-corruption', 'memory-issue',
-  'capacity-exceeded', 'security-breach', 'access-denied', 'network-issue',
-  'hardware-failure', 'configuration-error', 'deployment-issue', 'emergency',
-  'planned-maintenance', 'unplanned-downtime', 'rollback-required'
+  'falha', 'performance', 'timeout', 'conexao-falhou', 'abend', 'codigo-erro',
+  'falha-batch', 'online-inativo', 'erro-banco-dados', 'corrupcao-arquivo', 'problema-memoria',
+  'capacidade-excedida', 'violacao-seguranca', 'acesso-negado', 'problema-rede',
+  'falha-hardware', 'erro-configuracao', 'problema-deploy', 'emergencia',
+  'manutencao-programada', 'downtime-nao-planejado', 'rollback-necessario'
 ];
 
 export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
@@ -116,7 +116,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
         impact: '',
         category: 'Other',
         priority: 'P3',
-        status: 'Open',
+        status: 'aberto',
         assignee: '',
         tags: []
       });
@@ -145,37 +145,37 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
     const errors: ValidationErrors = {};
 
     if (!formData.title.trim()) {
-      errors.title = 'Incident title is required';
+      errors.title = 'Título do incidente é obrigatório';
     } else if (formData.title.length < 10) {
-      errors.title = 'Title must be at least 10 characters';
+      errors.title = 'Título deve ter pelo menos 10 caracteres';
     } else if (formData.title.length > 200) {
-      errors.title = 'Title must be less than 200 characters';
+      errors.title = 'Título deve ter menos de 200 caracteres';
     }
 
     if (!formData.description.trim()) {
-      errors.description = 'Incident description is required';
+      errors.description = 'Descrição do incidente é obrigatória';
     } else if (formData.description.length < 20) {
-      errors.description = 'Description must be at least 20 characters';
+      errors.description = 'Descrição deve ter pelo menos 20 caracteres';
     } else if (formData.description.length > 5000) {
-      errors.description = 'Description must be less than 5000 characters';
+      errors.description = 'Descrição deve ter menos de 5000 caracteres';
     }
 
     if (!formData.impact.trim()) {
-      errors.impact = 'Impact assessment is required';
+      errors.impact = 'Avaliação de impacto é obrigatória';
     } else if (formData.impact.length < 10) {
-      errors.impact = 'Impact description must be at least 10 characters';
+      errors.impact = 'Descrição do impacto deve ter pelo menos 10 caracteres';
     }
 
     if (!formData.category) {
-      errors.category = 'Category is required';
+      errors.category = 'Categoria é obrigatória';
     }
 
     if (!formData.priority) {
-      errors.priority = 'Priority is required';
+      errors.priority = 'Prioridade é obrigatória';
     }
 
     if (formData.tags.length > 10) {
-      errors.tags = 'Maximum 10 tags allowed';
+      errors.tags = 'Máximo de 10 tags permitidas';
     }
 
     setValidationErrors(errors);
@@ -266,7 +266,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
 
   return (
     <Modal open={isOpen} onOpenChange={onClose}>
-      <ModalContent size="3xl" open={isOpen} className="max-h-[90vh] overflow-hidden">
+      <ModalContent size="3xl" open={isOpen} className="max-h-[90vh] overflow-hidden flex flex-col">
         <ModalHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -275,33 +275,33 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
               </div>
               <div>
                 <ModalTitle className="text-xl font-semibold text-gray-900">
-                  Report New Incident
+                  Reportar Novo Incidente
                 </ModalTitle>
                 <ModalDescription className="text-sm text-gray-600">
-                  Create a new incident report for the Accenture Mainframe System
+                  Criar um novo relatório de incidente para o Sistema Mainframe Accenture
                 </ModalDescription>
               </div>
             </div>
             <div className="text-xs text-gray-500">
-              Incident Management System
+              Sistema de Gestão de Incidentes
             </div>
           </div>
-          <ModalClose />
+          <ModalClose onClose={onClose} />
         </ModalHeader>
 
-        <ModalBody className="overflow-y-auto px-6">
+        <ModalBody className="overflow-y-auto px-6 flex-1 min-h-0">
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
             {/* Title Field */}
             <div className="space-y-2">
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Incident Title <span className="text-red-500">*</span>
+                Título do Incidente <span className="text-red-500">*</span>
               </label>
               <input
                 id="title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Brief, descriptive title (e.g., 'Production DB2 Database Unavailable - SQLCODE -904')"
+                placeholder="Título breve e descritivo (ex: 'Banco de Dados DB2 de Produção Indisponível - SQLCODE -904')"
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 ${
                   validationErrors.title ? 'border-red-300' : 'border-gray-300'
                 }`}
@@ -320,7 +320,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                Include system names, error codes, or key symptoms for quick identification
+                Inclua nomes de sistemas, códigos de erro ou sintomas principais para identificação rápida
               </p>
             </div>
 
@@ -330,7 +330,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
               <div className="space-y-2">
                 <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
                   <AlertTriangle className="inline h-4 w-4 mr-1" />
-                  Priority <span className="text-red-500">*</span>
+                  Prioridade <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="priority"
@@ -353,7 +353,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
               <div className="space-y-2">
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700">
                   <FolderOpen className="inline h-4 w-4 mr-1" />
-                  Category <span className="text-red-500">*</span>
+                  Categoria <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="category"
@@ -394,13 +394,13 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
             {/* Incident Description */}
             <div className="space-y-2">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Incident Description <span className="text-red-500">*</span>
+                Descrição do Incidente <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Describe what happened, when it occurred, what systems are affected, and any error messages observed..."
+                placeholder="Descreva o que aconteceu, quando ocorreu, quais sistemas foram afetados e quaisquer mensagens de erro observadas..."
                 rows={4}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-y ${
                   validationErrors.description ? 'border-red-300' : 'border-gray-300'
@@ -419,14 +419,14 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                Include: Timeline, affected systems, error messages, user impact, and steps taken so far
+                Inclua: Cronograma, sistemas afetados, mensagens de erro, impacto no usuário e medidas tomadas até agora
               </p>
             </div>
 
             {/* Impact Assessment */}
             <div className="space-y-2">
               <label htmlFor="impact" className="block text-sm font-medium text-gray-700">
-                Business Impact <span className="text-red-500">*</span>
+                Impacto no Negócio <span className="text-red-500">*</span>
               </label>
               <div className="mb-2">
                 <select
@@ -439,7 +439,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-2"
                 >
-                  <option value="">Select Impact Level</option>
+                  <option value="">Selecionar Nível de Impacto</option>
                   {IMPACT_LEVELS.map(level => (
                     <option key={level.value} value={level.value}>
                       {level.label} - {level.description}
@@ -451,7 +451,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                 id="impact"
                 value={formData.impact}
                 onChange={(e) => handleInputChange('impact', e.target.value)}
-                placeholder="Describe the business impact: number of users affected, revenue impact, affected business processes..."
+                placeholder="Descreva o impacto no negócio: número de usuários afetados, impacto na receita, processos de negócio afetados..."
                 rows={3}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-y ${
                   validationErrors.impact ? 'border-red-300' : 'border-gray-300'
@@ -475,18 +475,18 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
             <div className="space-y-2">
               <label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
                 <Users className="inline h-4 w-4 mr-1" />
-                Assign To (Optional)
+                Atribuir Para (Opcional)
               </label>
               <input
                 id="assignee"
                 type="text"
                 value={formData.assignee}
                 onChange={(e) => handleInputChange('assignee', e.target.value)}
-                placeholder="Username or team (leave blank for auto-assignment)"
+                placeholder="Nome de usuário ou equipe (deixe em branco para atribuição automática)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
               <p className="text-xs text-gray-500">
-                Leave blank for automatic assignment based on category and priority
+                Deixe em branco para atribuição automática baseada na categoria e prioridade
               </p>
             </div>
 
@@ -504,7 +504,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagKeyPress}
-                  placeholder="Add relevant keywords (press Enter)"
+                  placeholder="Adicione palavras-chave relevantes (pressione Enter)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   maxLength={30}
                   disabled={formData.tags.length >= 10}
@@ -553,7 +553,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                 <span className="text-sm text-red-600">{validationErrors.tags}</span>
               )}
               <p className="text-xs text-gray-500">
-                Add relevant keywords to help categorize and search for this incident
+                Adicione palavras-chave relevantes para ajudar a categorizar e buscar este incidente
               </p>
             </div>
           </form>
@@ -562,7 +562,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
         <ModalFooter>
           <div className="flex justify-between items-center w-full">
             <div className="text-xs text-gray-500">
-              All fields marked with * are required
+              Todos os campos marcados com * são obrigatórios
             </div>
             <div className="flex space-x-3">
               <button
@@ -571,7 +571,7 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                 disabled={isSubmitting}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 type="submit"
@@ -582,12 +582,12 @@ export const ReportIncidentModal: React.FC<ReportIncidentModalProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Reporting...
+                    Reportando...
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Report Incident
+                    Reportar Incidente
                   </>
                 )}
               </button>

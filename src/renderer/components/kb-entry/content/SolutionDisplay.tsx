@@ -1,6 +1,5 @@
 import React, { memo, useState, useMemo } from 'react';
 import { CheckCircle, Code, Copy, ChevronDown, ChevronUp, FileCode, Terminal, Lightbulb, AlertTriangle } from 'lucide-react';
-import styles from './SolutionDisplay.module.css';
 
 export interface SolutionDisplayProps {
   solution: string;

@@ -287,7 +287,7 @@ export interface IncidentData {
   description: string;
   component?: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'aberto' | 'em_tratamento' | 'resolvido' | 'fechado';
   created_at?: Date;
   resolved_at?: Date;
   resolution?: string;
@@ -302,7 +302,7 @@ export interface Incident extends IncidentData {
 }
 
 export interface IncidentCriteria {
-  status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status?: 'aberto' | 'em_tratamento' | 'resolvido' | 'fechado';
   severity?: 'low' | 'medium' | 'high' | 'critical';
   component?: string;
   pattern_id?: string;
@@ -316,7 +316,7 @@ export interface IncidentUpdate {
   description?: string;
   component?: string;
   severity?: 'low' | 'medium' | 'high' | 'critical';
-  status?: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status?: 'aberto' | 'em_tratamento' | 'resolvido' | 'fechado';
   resolution?: string;
   resolved_at?: Date;
 }

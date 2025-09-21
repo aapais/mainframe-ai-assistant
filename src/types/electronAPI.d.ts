@@ -16,6 +16,9 @@ import {
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+    api: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
   }
 }
 

@@ -264,11 +264,24 @@ export class IncidentService {
         priority,
         assignedTo,
         reporter,
-        status: 'open'
+        status: kbEntryData.status || 'aberto'
       });
       return result.id;
     } catch (error) {
       console.error('Error creating incident:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk create incidents (for file imports)
+   */
+  async bulkCreateIncidents(incidents: Partial<IncidentKBEntry>[]): Promise<{ successful: number; failed: number; errors: string[] }> {
+    try {
+      const result = await window.api.invoke('incident:bulkCreate', { incidents });
+      return result;
+    } catch (error) {
+      console.error('Error bulk creating incidents:', error);
       throw error;
     }
   }
@@ -395,16 +408,15 @@ export class IncidentService {
    */
   getStatusInfo(status: string) {
     const statusMap = {
-      'open': { label: 'Open', color: '#6b7280' },
-      'assigned': { label: 'Assigned', color: '#3b82f6' },
-      'in_progress': { label: 'In Progress', color: '#f59e0b' },
-      'pending_review': { label: 'Pending Review', color: '#8b5cf6' },
-      'resolved': { label: 'Resolved', color: '#10b981' },
-      'closed': { label: 'Closed', color: '#6b7280' },
-      'reopened': { label: 'Reopened', color: '#ef4444' }
+      'aberto': { label: 'Aberto', color: '#6b7280' },
+      'em_tratamento': { label: 'Em Tratamento', color: '#f59e0b' },
+      'em_revisao': { label: 'Em Revisão', color: '#8b5cf6' },
+      'resolvido': { label: 'Resolvido', color: '#10b981' },
+      'fechado': { label: 'Fechado', color: '#6b7280' },
+      'reaberto': { label: 'Reaberto', color: '#ef4444' }
     };
 
-    return statusMap[status as keyof typeof statusMap] || statusMap['open'];
+    return statusMap[status as keyof typeof statusMap] || statusMap['aberto'];
   }
 }
 

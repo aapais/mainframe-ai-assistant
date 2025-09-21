@@ -318,7 +318,7 @@ class TemplateEnginePlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
         const lines = code.split('\n');
         return lines.map((line, index) => {
             const lineNum = (index + 1).toString().padStart(6, '0');
-            return lineNum + ' ' + line;
+            return `${lineNum  } ${  line}`;
         }).join('\n');
     }
     ensureFixedFormat(code) {
@@ -352,7 +352,7 @@ class TemplateEnginePlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
       * Template: Auto-generated
       * Warning: Modify with caution
       *
-    `.replace(/^      /gm, '');
+    `.replace(/^ {6}/gm, '');
         return header + code;
     }
     formatCode(code) {

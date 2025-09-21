@@ -239,7 +239,7 @@ class WebSocketMonitoring {
     }
     broadcastMessage(type, data) {
         const message = {
-            type: type,
+            type,
             data,
             timestamp: Date.now(),
             id: this.generateMessageId()

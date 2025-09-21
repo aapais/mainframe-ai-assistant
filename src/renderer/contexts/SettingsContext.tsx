@@ -63,6 +63,16 @@ export interface DashboardPreferences {
   compactMode: boolean;
   enableAnimations: boolean;
   maxItemsPerPage: number;
+  floatingCostWidget: {
+    enabled: boolean;
+    position: { x: number; y: number };
+    autoHide: boolean;
+    autoHideTimeout: number;
+    draggable: boolean;
+    realTimeUpdates: boolean;
+    updateInterval: number;
+    defaultExpanded: boolean;
+  };
 }
 
 export interface UIPreferences {
@@ -240,7 +250,17 @@ const createDefaultSettings = (): UserSettings => ({
     showWelcomeMessage: true,
     compactMode: false,
     enableAnimations: true,
-    maxItemsPerPage: 50
+    maxItemsPerPage: 50,
+    floatingCostWidget: {
+      enabled: true,
+      position: { x: window.innerWidth - 300, y: 20 },
+      autoHide: false,
+      autoHideTimeout: 10000,
+      draggable: true,
+      realTimeUpdates: true,
+      updateInterval: 30000,
+      defaultExpanded: false
+    }
   },
   ui: {
     theme: 'system',
@@ -910,6 +930,18 @@ export function useNotificationSettings() {
   return {
     notifications: state.settings.notifications,
     updateNotifications: actions.updateNotifications
+  };
+}
+
+export function useFloatingCostWidget() {
+  const { state, actions } = useSettings();
+  return {
+    floatingCostWidget: state.settings.dashboard.floatingCostWidget,
+    updateFloatingCostWidget: useCallback(async (updates: Partial<typeof state.settings.dashboard.floatingCostWidget>): Promise<boolean> => {
+      return await actions.updateDashboard({
+        floatingCostWidget: { ...state.settings.dashboard.floatingCostWidget, ...updates }
+      });
+    }, [state.settings.dashboard.floatingCostWidget, actions.updateDashboard])
   };
 }
 

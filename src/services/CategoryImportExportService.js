@@ -76,7 +76,7 @@ class CategoryImportExportService {
     }
     async exportCategories(categories, options = {}) {
         const opts = exports.ExportOptionsSchema.parse(options);
-        let filteredCategories = this.filterCategoriesForExport(categories, opts);
+        const filteredCategories = this.filterCategoriesForExport(categories, opts);
         switch (opts.format) {
             case 'json':
                 return this.exportAsJSON(filteredCategories, opts);
@@ -556,7 +556,7 @@ class CategoryImportExportService {
     }
     categoryToCSVRow(category, headers, options) {
         return headers.map(header => {
-            let value = category[header];
+            const value = category[header];
             if (value === null || value === undefined) {
                 return '';
             }

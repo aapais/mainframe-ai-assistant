@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Filter Manual Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .search-box:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .clear-button {
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .clear-button:hover {
+            background: #5a6268;
+        }
+        .incident-item {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            background: #fff;
+        }
+        .incident-item.hidden {
+            display: none;
+        }
+        .incident-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .incident-problem {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .incident-number {
+            color: #007bff;
+            font-size: 12px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        .test-cases {
+            margin-top: 30px;
+        }
+        .test-case {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .expected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Search Filter Manual Test</h1>
+
+        <div class="instructions">
+            <h3>Test Instructions:</h3>
+            <ol>
+                <li>Try searching for "JCL" - should show 1 item</li>
+                <li>Clear the search by deleting all text - should show all 3 items</li>
+                <li>Search for "  " (spaces only) - should show all 3 items</li>
+                <li>Click the Clear button - should show all 3 items</li>
+                <li>Search for "DB" - should show 1 item</li>
+                <li>Search for "INC-2024" - should show all 3 items</li>
+            </ol>
+        </div>
+
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <input
+                type="text"
+                id="searchInput"
+                class="search-box"
+                placeholder="Search incidents..."
+                style="flex: 1;"
+            >
+            <button id="clearButton" class="clear-button">✕ Clear</button>
+        </div>
+
+        <div class="status">
+            <strong>Total visible items: <span id="visibleCount">3</span> / 3</strong>
+            <br>
+            <strong>Search query: "<span id="searchQuery"></span>"</strong>
+            <br>
+            <strong>Search query length: <span id="queryLength">0</span></strong>
+            <br>
+            <strong>Trimmed length: <span id="trimmedLength">0</span></strong>
+        </div>
+
+        <div id="incidentList">
+            <div class="incident-item" data-testid="incident-item">
+                <div class="incident-title">JCL Job Failing with S0C4 ABEND</div>
+                <div class="incident-problem">Production JCL job failing with system completion code S0C4</div>
+                <div class="incident-number">INC-2024-001</div>
+            </div>
+
+            <div class="incident-item" data-testid="incident-item">
+                <div class="incident-title">DB2 Connection Pool Exhausted</div>
+                <div class="incident-problem">Application unable to connect to DB2, connection pool shows all connections in use</div>
+                <div class="incident-number">INC-2024-002</div>
+            </div>
+
+            <div class="incident-item" data-testid="incident-item">
+                <div class="incident-title">VSAM File Corruption Detected</div>
+                <div class="incident-problem">VSAM dataset showing logical record length inconsistencies</div>
+                <div class="incident-number">INC-2024-003</div>
+            </div>
+        </div>
+
+        <div class="test-cases">
+            <h3>Test Cases to Validate:</h3>
+
+            <div class="test-case">
+                <strong>Test 1: Basic Search</strong><br>
+                Search: "JCL"<br>
+                <span class="expected">Expected: 1 item visible (JCL job)</span>
+            </div>
+
+            <div class="test-case">
+                <strong>Test 2: Empty Search</strong><br>
+                Search: "" (empty)<br>
+                <span class="expected">Expected: 3 items visible (all items)</span>
+            </div>
+
+            <div class="test-case">
+                <strong>Test 3: Whitespace Search (THE BUG)</strong><br>
+                Search: "   " (spaces only)<br>
+                <span class="expected">Expected: 3 items visible (all items) - This was the bug!</span>
+            </div>
+
+            <div class="test-case">
+                <strong>Test 4: Clear Button</strong><br>
+                Action: Click Clear button<br>
+                <span class="expected">Expected: 3 items visible, search input empty</span>
+            </div>
+
+            <div class="test-case">
+                <strong>Test 5: Case Insensitive</strong><br>
+                Search: "jcl" (lowercase)<br>
+                <span class="expected">Expected: 1 item visible (JCL job)</span>
+            </div>
+
+            <div class="test-case">
+                <strong>Test 6: Partial Match</strong><br>
+                Search: "DB"<br>
+                <span class="expected">Expected: 1 item visible (DB2 connection)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data
+        const incidents = [
+            {
+                title: "JCL Job Failing with S0C4 ABEND",
+                problem: "Production JCL job failing with system completion code S0C4",
+                incident_number: "INC-2024-001"
+            },
+            {
+                title: "DB2 Connection Pool Exhausted",
+                problem: "Application unable to connect to DB2, connection pool shows all connections in use",
+                incident_number: "INC-2024-002"
+            },
+            {
+                title: "VSAM File Corruption Detected",
+                problem: "VSAM dataset showing logical record length inconsistencies",
+                incident_number: "INC-2024-003"
+            }
+        ];
+
+        // Get DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const clearButton = document.getElementById('clearButton');
+        const incidentItems = document.querySelectorAll('.incident-item');
+        const visibleCount = document.getElementById('visibleCount');
+        const searchQueryDisplay = document.getElementById('searchQuery');
+        const queryLengthDisplay = document.getElementById('queryLength');
+        const trimmedLengthDisplay = document.getElementById('trimmedLength');
+
+        // Search function - FIXED VERSION
+        function performSearch(query) {
+            // Update debug info
+            searchQueryDisplay.textContent = query;
+            queryLengthDisplay.textContent = query.length;
+            trimmedLengthDisplay.textContent = query.trim().length;
+
+            let visibleItems = 0;
+
+            // THE FIX: Check for trim().length > 0
+            if (query && query.trim().length > 0) {
+                const trimmedQuery = query.trim().toLowerCase();
+
+                incidentItems.forEach((item, index) => {
+                    const incident = incidents[index];
+                    const matches =
+                        incident.title.toLowerCase().includes(trimmedQuery) ||
+                        incident.problem.toLowerCase().includes(trimmedQuery) ||
+                        incident.incident_number.toLowerCase().includes(trimmedQuery);
+
+                    if (matches) {
+                        item.classList.remove('hidden');
+                        visibleItems++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            } else {
+                // Show all items when search is empty or whitespace-only
+                incidentItems.forEach(item => {
+                    item.classList.remove('hidden');
+                    visibleItems++;
+                });
+            }
+
+            visibleCount.textContent = visibleItems;
+        }
+
+        // Search function - BUGGY VERSION (for comparison)
+        function performSearchBuggy(query) {
+            let visibleItems = 0;
+
+            // THE BUG: Only checks if query exists, not if it has meaningful content
+            if (query) {
+                const lowerQuery = query.toLowerCase();
+
+                incidentItems.forEach((item, index) => {
+                    const incident = incidents[index];
+                    const matches =
+                        incident.title.toLowerCase().includes(lowerQuery) ||
+                        incident.problem.toLowerCase().includes(lowerQuery) ||
+                        incident.incident_number.toLowerCase().includes(lowerQuery);
+
+                    if (matches) {
+                        item.classList.remove('hidden');
+                        visibleItems++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            } else {
+                // Show all items only when search is empty
+                incidentItems.forEach(item => {
+                    item.classList.remove('hidden');
+                    visibleItems++;
+                });
+            }
+
+            return visibleItems;
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            performSearch(e.target.value);
+        });
+
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            performSearch('');
+        });
+
+        // Initial load
+        performSearch('');
+
+        // Add some debugging to console
+        console.log('Search Filter Test Loaded');
+        console.log('Test the following scenarios:');
+        console.log('1. Search for "JCL" - should show 1 item');
+        console.log('2. Clear search - should show 3 items');
+        console.log('3. Search for "   " (spaces) - should show 3 items (this was the bug!)');
+        console.log('4. Use clear button - should show 3 items');
+
+        // Demonstrate the bug vs fix
+        window.demonstrateBug = function() {
+            console.log('=== Demonstrating the Bug ===');
+
+            // Test with whitespace
+            const whitespaceQuery = "   ";
+
+            console.log(`Testing query: "${whitespaceQuery}"`);
+            console.log(`Query length: ${whitespaceQuery.length}`);
+            console.log(`Trimmed length: ${whitespaceQuery.trim().length}`);
+
+            // Buggy version
+            const buggyResults = performSearchBuggy(whitespaceQuery);
+            console.log(`Buggy version results: ${buggyResults} items`);
+
+            // Fixed version
+            performSearch(whitespaceQuery);
+            console.log(`Fixed version results: ${document.getElementById('visibleCount').textContent} items`);
+        };
+
+        // Make function available globally for testing
+        window.testSearch = performSearch;
+    </script>
+</body>
+</html>

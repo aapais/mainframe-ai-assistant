@@ -41,6 +41,7 @@ import {
   Filter
 } from 'lucide-react';
 import { useDashboardPreferences, useSettingsActions } from '../../contexts/SettingsContext';
+import FloatingWidgetSettings from './FloatingWidgetSettings';
 
 // Accenture theme colors
 const accentureTheme = {
@@ -502,6 +503,25 @@ const WidgetConfigurationSettings: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Floating Widget Settings */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader style={{ backgroundColor: accentureTheme.primary, color: 'white' }}>
+          <CardTitle className="flex items-center">
+            <Maximize2 className="w-5 h-5 mr-2" />
+            Floating Cost Widget
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <FloatingWidgetSettings
+            showAdvanced={true}
+            allowReset={true}
+            onSettingsChange={(settings) => {
+              showNotification('success', 'Floating widget settings updated');
+            }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Layout Preview */}
       <Card className="border-0 shadow-lg">

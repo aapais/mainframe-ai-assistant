@@ -1,29 +1,96 @@
-node_modules/\n.swarm/\n.hive-mind/\n.claude/\nCLAUDE.local.md\ndist/\nbuild/
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
+# Build outputs
+dist/
+build/
+dist-packages/
+*.tsbuildinfo
+coverage/
+temp/
 
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Claude Flow generated files
-.claude/settings.local.json
-.mcp.json
-claude-flow.config.json
-.swarm/
-.hive-mind/
-memory/claude-flow-data.json
-memory/sessions/*
-!memory/sessions/README.md
-memory/agents/*
-!memory/agents/README.md
-coordination/memory_bank/*
-coordination/subtasks/*
-coordination/orchestration/*
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Database files
 *.db
 *.db-journal
 *.db-wal
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal
+
+# Claude Flow generated files
+.claude/
+.swarm/
+.hive-mind/
+.mcp.json
+claude-flow.config.json
+memory/
+coordination/
+CLAUDE.local.md
 claude-flow
 claude-flow.bat
 claude-flow.ps1
 hive-mind-prompt-*.txt
+
+# Test results
+test-results/
+playwright-report/
+screenshots/
+
+# Backup and temporary files
+*.backup
+*.bak
+*.tmp
+*~
+.#*
+
+# Package manager locks (keep only one)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Configuration backups
+*.config.backup
+*.config.bak
+postcss.config.js.disabled
+
+# Documentation build
+docs/build/
+
+# Electron specific
+out/
+app/
+.electron-gyp/

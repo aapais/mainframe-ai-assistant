@@ -161,7 +161,7 @@ class AnalyticsPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
             },
             generated_at: new Date(),
             chart_configs: chartConfigs,
-            insights: insights,
+            insights,
             recommendations: await this.generateRecommendations(type, reportData, insights)
         };
         this.reports.set(report.id, report);
@@ -856,7 +856,7 @@ class AnalyticsPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
             target_metric: target,
             features_used: features,
             historical_data: historicalData,
-            predictions: predictions,
+            predictions,
             model_info: {
                 type: 'linear_trend',
                 accuracy: 0.75,
@@ -1060,10 +1060,10 @@ class AnalyticsPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
             if (deviation > 2) {
                 anomalies.push({
                     date: data[i].date,
-                    value: value,
+                    value,
                     expected_min: mean - 2 * stdDev,
                     expected_max: mean + 2 * stdDev,
-                    deviation: deviation,
+                    deviation,
                     type: value > mean ? 'spike' : 'dip',
                     severity: deviation > 3 ? 'high' : 'medium',
                     confidence: Math.min(95, deviation * 30)
@@ -1092,7 +1092,7 @@ class AnalyticsPlugin extends BaseStoragePlugin_1.BaseStoragePlugin {
         });
         return Array.from(severityGroups.entries()).map(([severity, data]) => ({
             name: severity,
-            data: data
+            data
         }));
     }
     async getUniqueUserCount(timeRange) {

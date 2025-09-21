@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accenture Mainframe AI Assistant - Integrated Incident & Knowledge Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --accenture-purple: #A100FF;
+            --accenture-dark-purple: #7F39FB;
+            --accenture-light-purple: #E8D5FF;
+        }
+
+        .accenture-gradient {
+            background: linear-gradient(135deg, var(--accenture-purple), var(--accenture-dark-purple));
+        }
+
+        .tab-active {
+            background: var(--accenture-purple);
+            color: white;
+        }
+
+        .tab-inactive {
+            background: white;
+            color: #6B7280;
+            border: 1px solid #E5E7EB;
+        }
+
+        .tab-inactive:hover {
+            background: #F9FAFB;
+            color: var(--accenture-purple);
+        }
+
+        .view-toggle-active {
+            background: var(--accenture-purple);
+            color: white;
+        }
+
+        .view-toggle-inactive {
+            background: #F3F4F6;
+            color: #6B7280;
+        }
+
+        .notification {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .status-aberto { background: #FEE2E2; color: #991B1B; }
+        .status-em_tratamento { background: #FEF3C7; color: #92400E; }
+        .status-resolvido { background: #D1FAE5; color: #065F46; }
+        .status-fechado { background: #E0E7FF; color: #3730A3; }
+
+        .priority-p1 { background: #FEE2E2; color: #991B1B; }
+        .priority-p2 { background: #FED7AA; color: #9A3412; }
+        .priority-p3 { background: #FEF3C7; color: #92400E; }
+        .priority-p4 { background: #E0F2FE; color: #075985; }
+
+        .knowledge-entry {
+            border-left: 4px solid var(--accenture-purple);
+            background: linear-gradient(to right, #F8FAFC, #FFFFFF);
+        }
+
+        .incident-entry {
+            border-left: 4px solid #059669;
+        }
+
+        .search-highlight {
+            background: #FEF3C7;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // API Service
+        const API_BASE = 'http://localhost:3001/api';
+
+        const apiService = {
+            async getIncidents() {
+                try {
+                    const response = await fetch(`${API_BASE}/incidents`);
+                    if (!response.ok) throw new Error('Failed to fetch incidents');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching incidents:', error);
+                    return [];
+                }
+            },
+
+            async createIncident(incident) {
+                try {
+                    const response = await fetch(`${API_BASE}/incidents`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(incident)
+                    });
+                    if (!response.ok) throw new Error('Failed to create incident');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error creating incident:', error);
+                    throw error;
+                }
+            },
+
+            async updateIncident(id, incident) {
+                try {
+                    const response = await fetch(`${API_BASE}/incidents/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(incident)
+                    });
+                    if (!response.ok) throw new Error('Failed to update incident');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error updating incident:', error);
+                    throw error;
+                }
+            },
+
+            async deleteIncident(id) {
+                try {
+                    const response = await fetch(`${API_BASE}/incidents/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (!response.ok) throw new Error('Failed to delete incident');
+                    return true;
+                } catch (error) {
+                    console.error('Error deleting incident:', error);
+                    throw error;
+                }
+            },
+
+            async searchIncidents(query) {
+                try {
+                    const response = await fetch(`${API_BASE}/incidents/search?q=${encodeURIComponent(query)}`);
+                    if (!response.ok) throw new Error('Failed to search incidents');
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error searching incidents:', error);
+                    return [];
+                }
+            }
+        };
+
+        // Utility functions
+        const getStatusLabel = (status) => {
+            const labels = {
+                'aberto': 'Aberto',
+                'em_tratamento': 'Em Tratamento',
+                'resolvido': 'Resolvido',
+                'fechado': 'Fechado'
+            };
+            return labels[status] || status;
+        };
+
+        const formatDate = (dateString) => {
+            return new Date(dateString).toLocaleDateString('pt-BR');
+        };
+
+        // Chart initialization
+        const initCharts = (incidents) => {
+            // Calculate metrics from incidents
+            const openIncidents = incidents.filter(i => ['aberto', 'em_tratamento'].includes(i.status)).length;
+            const resolvedIncidents = incidents.filter(i => i.status === 'resolvido').length;
+            const knowledgeCount = incidents.filter(i => i.type === 'knowledge' || i.status === 'resolvido').length;
+
+            // Update metric cards
+            const metricsData = {
+                open: openIncidents,
+                knowledge: knowledgeCount,
+                resolved: resolvedIncidents,
+                avgTime: '2.4h'
+            };
+
+            // Incident Trends Chart
+            setTimeout(() => {
+                const trendsCtx = document.getElementById('incidentTrendsChart');
+                if (trendsCtx) {
+                    new Chart(trendsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                            datasets: [{
+                                label: 'Novos Incidentes',
+                                data: [3, 2, 3, 4, 1, 3, 2],
+                                borderColor: '#A100FF',
+                                backgroundColor: 'rgba(161, 0, 255, 0.1)',
+                                tension: 0.4
+                            }, {
+                                label: 'Resolvidos',
+                                data: [2, 3, 4, 3, 4, 2, 3],
+                                borderColor: '#059669',
+                                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Priority Distribution Chart
+                const priorityCtx = document.getElementById('priorityChart');
+                if (priorityCtx) {
+                    const p1Count = incidents.filter(i => i.priority === 'P1').length;
+                    const p2Count = incidents.filter(i => i.priority === 'P2').length;
+                    const p3Count = incidents.filter(i => i.priority === 'P3').length;
+                    const p4Count = incidents.filter(i => i.priority === 'P4').length;
+
+                    new Chart(priorityCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['P1 - Crítica', 'P2 - Alta', 'P3 - Média', 'P4 - Baixa'],
+                            datasets: [{
+                                data: [p1Count, p2Count, p3Count, p4Count],
+                                backgroundColor: ['#EF4444', '#F97316', '#EAB308', '#22C55E']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 100);
+
+            return metricsData;
+        };
+
+        // Main App Component
+        const MainApp = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [currentView, setCurrentView] = useState('all');
+            const [incidents, setIncidents] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [notifications, setNotifications] = useState([]);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [filterStatus, setFilterStatus] = useState('');
+            const [filterPriority, setFilterPriority] = useState('');
+            const [filterCategory, setFilterCategory] = useState('');
+            const [showCreateIncident, setShowCreateIncident] = useState(false);
+            const [showBulkImport, setShowBulkImport] = useState(false);
+            const [metrics, setMetrics] = useState({ open: 0, knowledge: 0, resolved: 0, avgTime: '2.4h' });
+
+            const [newIncident, setNewIncident] = useState({
+                title: '',
+                description: '',
+                priority: 'P3',
+                category: 'JCL'
+            });
+
+            // Load incidents on mount
+            useEffect(() => {
+                loadIncidents();
+            }, []);
+
+            // Update charts when incidents change
+            useEffect(() => {
+                if (incidents.length > 0 && activeTab === 'dashboard') {
+                    const metricsData = initCharts(incidents);
+                    setMetrics(metricsData);
+                }
+            }, [incidents, activeTab]);
+
+            const loadIncidents = async () => {
+                setLoading(true);
+                try {
+                    const data = await apiService.getIncidents();
+                    setIncidents(data);
+                    setError(null);
+                } catch (err) {
+                    setError('Erro ao carregar incidentes');
+                    console.error('Error loading incidents:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const showNotification = (message, type = 'info') => {
+                const notification = { id: Date.now(), message, type };
+                setNotifications(prev => [...prev, notification]);
+                setTimeout(() => {
+                    removeNotification(notification.id);
+                }, 5000);
+            };
+
+            const removeNotification = (id) => {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+            };
+
+            const createIncident = async (e) => {
+                e.preventDefault();
+                try {
+                    const incident = {
+                        ...newIncident,
+                        status: 'aberto',
+                        type: 'incident',
+                        reporter: 'user@accenture.com'
+                    };
+
+                    await apiService.createIncident(incident);
+                    await loadIncidents();
+                    setShowCreateIncident(false);
+                    setNewIncident({ title: '', description: '', priority: 'P3', category: 'JCL' });
+                    showNotification('Incidente criado com sucesso!', 'success');
+                } catch (err) {
+                    showNotification('Erro ao criar incidente', 'error');
+                }
+            };
+
+            const deleteEntry = async (entry) => {
+                if (confirm('Tem certeza que deseja excluir este item?')) {
+                    try {
+                        await apiService.deleteIncident(entry.id);
+                        await loadIncidents();
+                        showNotification('Item excluído com sucesso!', 'success');
+                    } catch (err) {
+                        showNotification('Erro ao excluir item', 'error');
+                    }
+                }
+            };
+
+            const viewEntry = (entry) => {
+                alert('Ver detalhes: ' + entry.title);
+            };
+
+            const editEntry = (entry) => {
+                alert('Editar: ' + entry.title);
+            };
+
+            const processBulkImport = () => {
+                setShowBulkImport(false);
+                showNotification('Importação bulk processada com sucesso!', 'success');
+            };
+
+            // Filter incidents
+            const filteredIncidents = incidents.filter(entry => {
+                const matchesSearch = !searchQuery ||
+                    entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    entry.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+                const matchesStatus = !filterStatus || entry.status === filterStatus;
+                const matchesPriority = !filterPriority || entry.priority === filterPriority;
+                const matchesCategory = !filterCategory || entry.category === filterCategory;
+
+                return matchesSearch && matchesStatus && matchesPriority && matchesCategory;
+            });
+
+            const activeIncidents = filteredIncidents.filter(entry =>
+                entry.type === 'incident' && ['aberto', 'em_tratamento'].includes(entry.status)
+            );
+
+            const knowledgeEntries = filteredIncidents.filter(entry =>
+                entry.type === 'knowledge' || entry.status === 'resolvido'
+            );
+
+            const getCurrentViewData = () => {
+                switch(currentView) {
+                    case 'active': return activeIncidents;
+                    case 'knowledge': return knowledgeEntries;
+                    case 'all':
+                    default: return filteredIncidents;
+                }
+            };
+
+            const getSearchPlaceholder = () => {
+                switch(currentView) {
+                    case 'active': return 'Buscar incidentes ativos...';
+                    case 'knowledge': return 'Buscar na base de conhecimento...';
+                    case 'all':
+                    default: return 'Buscar incidentes e conhecimento...';
+                }
+            };
+
+            return (
+                <div>
+                    {/* Header */}
+                    <header className="accenture-gradient text-white shadow-lg">
+                        <div className="container mx-auto px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                                        <span className="text-xl font-bold text-white">A</span>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-2xl font-bold">Accenture Mainframe AI Assistant</h1>
+                                        <p className="text-sm opacity-90">Integrated Incident & Knowledge Platform v2.0</p>
+                                    </div>
+                                </div>
+                                <button className="w-8 h-8 bg-white bg-opacity-20 rounded-lg flex items-center justify-center hover:bg-opacity-30 transition-all">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Navigation */}
+                    <nav className="bg-white border-b border-gray-200 shadow-sm">
+                        <div className="container mx-auto px-6">
+                            <div className="flex space-x-8">
+                                <button
+                                    onClick={() => setActiveTab('dashboard')}
+                                    className={`px-4 py-3 font-medium transition-all border-b-2 border-transparent ${
+                                        activeTab === 'dashboard' ? 'tab-active' : 'tab-inactive'
+                                    }`}>
+                                    📊 Dashboard
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('incidents')}
+                                    className={`px-4 py-3 font-medium transition-all border-b-2 border-transparent ${
+                                        activeTab === 'incidents' ? 'tab-active' : 'tab-inactive'
+                                    }`}>
+                                    🎯 Incidentes e Conhecimento
+                                    <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                                        {activeIncidents.length}
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('settings')}
+                                    className={`px-4 py-3 font-medium transition-all border-b-2 border-transparent ${
+                                        activeTab === 'settings' ? 'tab-active' : 'tab-inactive'
+                                    }`}>
+                                    ⚙️ Configurações
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {/* Main Content */}
+                    <main className="container mx-auto px-6 py-8">
+                        {loading && (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                                <p className="mt-4 text-gray-600">Carregando dados...</p>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                                {error}
+                                <button onClick={loadIncidents} className="ml-4 underline">Tentar novamente</button>
+                            </div>
+                        )}
+
+                        {/* Dashboard Tab */}
+                        {activeTab === 'dashboard' && !loading && (
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-gray-900">Dashboard Executivo</h2>
+
+                                {/* Metrics Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <div className="flex items-center">
+                                            <div className="p-2 bg-red-100 rounded-lg">
+                                                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                                </svg>
+                                            </div>
+                                            <div className="ml-4">
+                                                <p className="text-sm font-medium text-gray-600">Incidentes Abertos</p>
+                                                <p className="text-2xl font-bold text-gray-900">{metrics.open}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <div className="flex items-center">
+                                            <div className="p-2 bg-blue-100 rounded-lg">
+                                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                                </svg>
+                                            </div>
+                                            <div className="ml-4">
+                                                <p className="text-sm font-medium text-gray-600">Base de Conhecimento</p>
+                                                <p className="text-2xl font-bold text-gray-900">{metrics.knowledge}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <div className="flex items-center">
+                                            <div className="p-2 bg-green-100 rounded-lg">
+                                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </div>
+                                            <div className="ml-4">
+                                                <p className="text-sm font-medium text-gray-600">Resolvidos Hoje</p>
+                                                <p className="text-2xl font-bold text-gray-900">{metrics.resolved}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <div className="flex items-center">
+                                            <div className="p-2 bg-purple-100 rounded-lg">
+                                                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </div>
+                                            <div className="ml-4">
+                                                <p className="text-sm font-medium text-gray-600">Tempo Médio Resolução</p>
+                                                <p className="text-2xl font-bold text-gray-900">{metrics.avgTime}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Charts Row */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Tendências de Incidentes</h3>
+                                        <div style={{position: 'relative', height: '300px'}}>
+                                            <canvas id="incidentTrendsChart"></canvas>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuição por Prioridade</h3>
+                                        <div style={{position: 'relative', height: '300px'}}>
+                                            <canvas id="priorityChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Incidents Tab */}
+                        {activeTab === 'incidents' && !loading && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-2xl font-bold text-gray-900">Gestão de Incidentes e Base de Conhecimento</h2>
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={() => setShowBulkImport(true)}
+                                            className="px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition-all">
+                                            📥 Importação Bulk
+                                        </button>
+                                        <button
+                                            onClick={() => setShowCreateIncident(true)}
+                                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all">
+                                            + Reportar Incidente
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* View Toggle Buttons */}
+                                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-fit">
+                                    <button
+                                        onClick={() => setCurrentView('active')}
+                                        className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                            currentView === 'active' ? 'view-toggle-active' : 'view-toggle-inactive'
+                                        }`}>
+                                        Incidentes Ativos <span className="ml-1 text-xs">({activeIncidents.length})</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentView('all')}
+                                        className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                            currentView === 'all' ? 'view-toggle-active' : 'view-toggle-inactive'
+                                        }`}>
+                                        Todos os Incidentes <span className="ml-1 text-xs">({filteredIncidents.length})</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentView('knowledge')}
+                                        className={`px-4 py-2 rounded-md font-medium transition-all ${
+                                            currentView === 'knowledge' ? 'view-toggle-active' : 'view-toggle-inactive'
+                                        }`}>
+                                        Base de Conhecimento <span className="ml-1 text-xs">({knowledgeEntries.length})</span>
+                                    </button>
+                                </div>
+
+                                {/* Search and Filters */}
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                    <div className="flex flex-col md:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <div className="relative">
+                                                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                                </svg>
+                                                <input
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    type="text"
+                                                    placeholder={getSearchPlaceholder()}
+                                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+                                            </div>
+                                        </div>
+                                        <div className="flex space-x-3">
+                                            <select
+                                                value={filterStatus}
+                                                onChange={(e) => setFilterStatus(e.target.value)}
+                                                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                <option value="">Todos os Status</option>
+                                                <option value="aberto">Aberto</option>
+                                                <option value="em_tratamento">Em Tratamento</option>
+                                                <option value="resolvido">Resolvido</option>
+                                                <option value="fechado">Fechado</option>
+                                            </select>
+                                            <select
+                                                value={filterPriority}
+                                                onChange={(e) => setFilterPriority(e.target.value)}
+                                                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                <option value="">Todas as Prioridades</option>
+                                                <option value="P1">P1 - Crítica</option>
+                                                <option value="P2">P2 - Alta</option>
+                                                <option value="P3">P3 - Média</option>
+                                                <option value="P4">P4 - Baixa</option>
+                                            </select>
+                                            <select
+                                                value={filterCategory}
+                                                onChange={(e) => setFilterCategory(e.target.value)}
+                                                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                <option value="">Todas as Categorias</option>
+                                                <option value="JCL">JCL</option>
+                                                <option value="VSAM">VSAM</option>
+                                                <option value="DB2">DB2</option>
+                                                <option value="CICS">CICS</option>
+                                                <option value="Batch">Batch</option>
+                                                <option value="IMS">IMS</option>
+                                                <option value="Security">Security</option>
+                                                <option value="Network">Network</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Incidents/Knowledge List */}
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50 border-b border-gray-200">
+                                                <tr>
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridade</th>
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                                                    {currentView === 'knowledge' && (
+                                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taxa de Sucesso</th>
+                                                    )}
+                                                    {currentView !== 'knowledge' && (
+                                                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criado</th>
+                                                    )}
+                                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {getCurrentViewData().map(entry => (
+                                                    <tr key={entry.id} className={`${entry.type === 'knowledge' ? 'knowledge-entry' : 'incident-entry'} hover:bg-gray-50 transition-colors`}>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{entry.id}</td>
+                                                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                                                            <div className="font-medium">{entry.title}</div>
+                                                            <div className="text-gray-500 text-xs mt-1 truncate">{entry.description}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className={`status-${entry.status} px-2 py-1 text-xs font-medium rounded-full`}>
+                                                                {getStatusLabel(entry.status)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className={`priority-${entry.priority.toLowerCase()} px-2 py-1 text-xs font-medium rounded-full`}>
+                                                                {entry.priority}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.category}</td>
+                                                        {currentView === 'knowledge' && (
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                                <div className="flex items-center">
+                                                                    <span>{entry.success_rate}%</span>
+                                                                    <div className="ml-2 w-16 bg-gray-200 rounded-full h-2">
+                                                                        <div className="bg-green-500 h-2 rounded-full" style={{width: `${entry.success_rate}%`}}></div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        )}
+                                                        {currentView !== 'knowledge' && (
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(entry.created_at)}</td>
+                                                        )}
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                                            <button onClick={() => viewEntry(entry)} className="text-purple-600 hover:text-purple-900 font-medium">Ver</button>
+                                                            {currentView !== 'knowledge' && (
+                                                                <button onClick={() => editEntry(entry)} className="text-blue-600 hover:text-blue-900 font-medium">Editar</button>
+                                                            )}
+                                                            <button onClick={() => deleteEntry(entry)} className="text-red-600 hover:text-red-900 font-medium">Excluir</button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {getCurrentViewData().length === 0 && (
+                                            <div className="text-center py-12">
+                                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum resultado encontrado</h3>
+                                                <p className="mt-1 text-sm text-gray-500">Tente ajustar os filtros ou termo de busca.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Settings Tab */}
+                        {activeTab === 'settings' && !loading && (
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-gray-900">Configurações do Sistema</h2>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* AI Configuration */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações de IA</h3>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Chave API OpenAI</label>
+                                                <input type="password" className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="sk-..." />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Modelo Padrão</label>
+                                                <select className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                    <option>gpt-4-turbo</option>
+                                                    <option>gpt-3.5-turbo</option>
+                                                    <option>claude-3-sonnet</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Notification Settings */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificações</h3>
+                                        <div className="space-y-4">
+                                            <label className="flex items-center">
+                                                <input type="checkbox" className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                                                <span className="ml-2 text-sm text-gray-700">Notificações por email</span>
+                                            </label>
+                                            <label className="flex items-center">
+                                                <input type="checkbox" className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                                                <span className="ml-2 text-sm text-gray-700">Notificações desktop</span>
+                                            </label>
+                                            <label className="flex items-center">
+                                                <input type="checkbox" className="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+                                                <span className="ml-2 text-sm text-gray-700">Alertas sonoros</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Notifications */}
+                    <div className="fixed top-4 right-4 z-50 space-y-2">
+                        {notifications.map(notification => (
+                            <div key={notification.id} className="notification bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm">
+                                <div className="flex items-start">
+                                    <div className={`flex-shrink-0 w-5 h-5 mt-0.5 ${
+                                        notification.type === 'success' ? 'text-green-500' :
+                                        notification.type === 'error' ? 'text-red-500' : 'text-blue-500'
+                                    }`}>
+                                        <svg fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
+                                        </svg>
+                                    </div>
+                                    <div className="ml-3 flex-1">
+                                        <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                                    </div>
+                                    <button onClick={() => removeNotification(notification.id)} className="ml-3 text-gray-400 hover:text-gray-600">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Create Incident Modal */}
+                    {showCreateIncident && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto">
+                            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                <div className="modal-backdrop fixed inset-0" onClick={() => setShowCreateIncident(false)}></div>
+                                <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-medium text-gray-900">Reportar Novo Incidente</h3>
+                                        <button onClick={() => setShowCreateIncident(false)} className="text-gray-400 hover:text-gray-600">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <form onSubmit={createIncident}>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Título</label>
+                                                <input
+                                                    value={newIncident.title}
+                                                    onChange={(e) => setNewIncident({...newIncident, title: e.target.value})}
+                                                    type="text"
+                                                    required
+                                                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Descrição</label>
+                                                <textarea
+                                                    value={newIncident.description}
+                                                    onChange={(e) => setNewIncident({...newIncident, description: e.target.value})}
+                                                    rows="3"
+                                                    required
+                                                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">Prioridade</label>
+                                                    <select
+                                                        value={newIncident.priority}
+                                                        onChange={(e) => setNewIncident({...newIncident, priority: e.target.value})}
+                                                        required
+                                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                        <option value="P1">P1 - Crítica</option>
+                                                        <option value="P2">P2 - Alta</option>
+                                                        <option value="P3">P3 - Média</option>
+                                                        <option value="P4">P4 - Baixa</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700">Categoria</label>
+                                                    <select
+                                                        value={newIncident.category}
+                                                        onChange={(e) => setNewIncident({...newIncident, category: e.target.value})}
+                                                        required
+                                                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                                        <option value="JCL">JCL</option>
+                                                        <option value="VSAM">VSAM</option>
+                                                        <option value="DB2">DB2</option>
+                                                        <option value="CICS">CICS</option>
+                                                        <option value="Batch">Batch</option>
+                                                        <option value="IMS">IMS</option>
+                                                        <option value="Security">Security</option>
+                                                        <option value="Network">Network</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-6 flex justify-end space-x-3">
+                                            <button type="button" onClick={() => setShowCreateIncident(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                                Cancelar
+                                            </button>
+                                            <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                                Criar Incidente
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Bulk Import Modal */}
+                    {showBulkImport && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto">
+                            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                <div className="modal-backdrop fixed inset-0" onClick={() => setShowBulkImport(false)}></div>
+                                <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-medium text-gray-900">Importação Bulk de Incidentes</h3>
+                                        <button onClick={() => setShowBulkImport(false)} className="text-gray-400 hover:text-gray-600">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Arquivo CSV</label>
+                                            <input type="file" accept=".csv" className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h4 className="text-sm font-medium text-gray-900">Formato do CSV:</h4>
+                                            <p className="text-xs text-gray-600 mt-1">titulo,descricao,prioridade,categoria</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex justify-end space-x-3">
+                                        <button onClick={() => setShowBulkImport(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                            Cancelar
+                                        </button>
+                                        <button onClick={processBulkImport} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                            Importar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Initialize React app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MainApp />);
+    </script>
+</body>
+</html>

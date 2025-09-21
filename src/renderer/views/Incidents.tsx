@@ -1,9 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { AlertTriangle, Database, Brain, Clock, FileText, Settings, Users, Tag, Plus, Upload } from 'lucide-react';
-import LocalSearchTab from '../components/search/LocalSearchTab';
-import AISearchTab from '../components/search/AISearchTab';
+import { AlertTriangle, Brain, Settings, Plus, Upload, List, BarChart3, BookOpen, FileText, Users, Tag } from 'lucide-react';
 import BulkUploadModal from '../components/incident/BulkUploadModal';
+import CreateIncidentModal from '../components/incident/CreateIncidentModal';
+import { IncidentManagementDashboard } from '../components/incident/IncidentManagementDashboard';
+import IncidentQueue from '../components/incident/IncidentQueue';
+import AdvancedFiltersPanel from '../components/incident/AdvancedFiltersPanel';
 import { searchService } from '../services/searchService';
+import { useToastHelpers } from '../components/ui/Toast';
+import { CreateIncident } from '../../backend/core/interfaces/ServiceInterfaces';
 
 export interface IncidentResult {
   id: string;
@@ -20,6 +24,14 @@ export interface IncidentResult {
 }
 
 const Incidents: React.FC = () => {
+  // Main view state
+  const [currentView, setCurrentView] = useState<'dashboard' | 'list'>('dashboard');
+
+  // INTEGRATED APPROACH: Unified view filter state
+  const [viewFilter, setViewFilter] = useState<'active' | 'all' | 'knowledge'>('all');
+
+
+  // Search-related states (kept for future use)
   const [activeTab, setActiveTab] = useState<'local' | 'ai'>('local');
   const [searchQuery, setSearchQuery] = useState('');
   const [localResults, setLocalResults] = useState<IncidentResult[]>([]);
@@ -27,7 +39,25 @@ const Incidents: React.FC = () => {
   const [isLocalSearching, setIsLocalSearching] = useState(false);
   const [isAISearching, setIsAISearching] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  // Modal states
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+  const [isCreateIncidentModalOpen, setIsCreateIncidentModalOpen] = useState(false);
+  const [isCreatingIncident, setIsCreatingIncident] = useState(false);
+
+  // Detail view states
+  const [selectedIncident, setSelectedIncident] = useState<IncidentResult | null>(null);
+  const [showIncidentDetail, setShowIncidentDetail] = useState(false);
+
+  // List and filter states
+  const [allIncidents, setAllIncidents] = useState<IncidentResult[]>([]);
+  const [filters, setFilters] = useState<any>({});
+  const [showFilters, setShowFilters] = useState(false);
+
+  const [breadcrumbs, setBreadcrumbs] = useState([{ label: 'Incidentes', href: '/incidents' }]);
+
+  // Toast notifications
+  const { success, error: showError, info } = useToastHelpers();
 
   // Debounced local search for real-time results
   const performLocalSearch = useCallback(async (query: string) => {
@@ -100,15 +130,115 @@ const Incidents: React.FC = () => {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, activeTab, performLocalSearch]);
 
+  // Handle incident creation
+  const handleCreateIncident = useCallback(async (incidentData: CreateIncident) => {
+    setIsCreatingIncident(true);
+
+    try {
+      // Call the IPC handler for incident creation
+      const result = await window.api.invoke('incident:create', incidentData);
+
+      if (result.success) {
+        success(
+          'Incidente Criado com Sucesso!',
+          `Incidente "${incidentData.title}" foi registrado no sistema.`
+        );
+
+        // Refresh the incident list by performing a new search
+        if (searchQuery.trim()) {
+          if (activeTab === 'local') {
+            performLocalSearch(searchQuery);
+          } else {
+            performAISearch(searchQuery);
+          }
+        }
+
+        // Close the modal
+        setIsCreateIncidentModalOpen(false);
+      } else {
+        throw new Error(result.error || 'Falha ao criar incidente');
+      }
+    } catch (err) {
+      console.error('Erro ao criar incidente:', err);
+      showError(
+        'Erro ao Criar Incidente',
+        err instanceof Error ? err.message : 'Ocorreu um erro inesperado ao criar o incidente.'
+      );
+    } finally {
+      setIsCreatingIncident(false);
+    }
+  }, [searchQuery, activeTab, performLocalSearch, performAISearch, success, showError]);
+
+  // Handle AI analysis for incidents
+  const handleAIAnalysis = useCallback(async (incidentId?: string, incidentData?: any) => {
+    try {
+      info('Análise de IA Iniciada', 'Processando análise inteligente do incidente...');
+
+      if (incidentId) {
+        // Request AI analysis for existing incident
+        const analysisResult = await window.api.invoke('incident:requestAIAnalysis', {
+          incidentId,
+          analysisType: 'comprehensive',
+          includeRecommendations: true
+        });
+
+        if (analysisResult.success) {
+          success(
+            'Análise de IA Concluída',
+            'A análise inteligente foi concluída com recomendações.'
+          );
+
+          // Execute the AI analysis to get insights
+          const executionResult = await window.api.invoke('incident:executeAIAnalysis', {
+            analysisId: analysisResult.analysisId,
+            incidentId
+          });
+
+          if (executionResult.success && executionResult.insights) {
+            info(
+              'Insights Gerados',
+              `${executionResult.insights.length} insights foram identificados pela IA.`
+            );
+          }
+        }
+      } else if (incidentData) {
+        // Perform semantic search for similar incidents
+        const searchResult = await window.api.invoke('incident:semanticSearch', {
+          query: `${incidentData.title} ${incidentData.description}`,
+          limit: 5,
+          threshold: 0.7
+        });
+
+        if (searchResult.success && searchResult.similar_incidents?.length > 0) {
+          info(
+            'Incidentes Similares Encontrados',
+            `${searchResult.similar_incidents.length} incidentes similares foram identificados.`
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Erro na análise de IA:', err);
+      showError(
+        'Erro na Análise de IA',
+        err instanceof Error ? err.message : 'Falha ao executar análise inteligente.'
+      );
+    }
+  }, [info, success, showError]);
+
+  // Handle incident creation error
+  const handleCreateIncidentError = useCallback((error: Error) => {
+    console.error('Erro detalhado ao criar incidente:', error);
+    showError(
+      'Falha na Criação do Incidente',
+      `Detalhes do erro: ${error.message}`
+    );
+  }, [showError]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (activeTab === 'ai') {
       performAISearch(searchQuery);
     }
-  };
-
-  const getTabIcon = (tab: 'local' | 'ai') => {
-    return tab === 'local' ? Database : Brain;
   };
 
   const getResultTypeIcon = (type: IncidentResult['type']) => {
@@ -155,14 +285,14 @@ const Incidents: React.FC = () => {
   const isSearching = activeTab === 'local' ? isLocalSearching : isAISearching;
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
               <AlertTriangle className="w-7 h-7 mr-3 text-red-600 dark:text-red-400" />
-              Gestão de Incidentes
+              Gestão de Incidentes e Base de Conhecimento
             </h1>
 
             {/* Toolbar */}
@@ -178,35 +308,19 @@ const Incidents: React.FC = () => {
             </div>
           </div>
 
-          {/* Search Form */}
-          <form onSubmit={handleSearchSubmit} className="mb-6">
-            <div className="relative">
-              <AlertTriangle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={activeTab === 'local' ? "Pesquisar incidentes, soluções, padrões..." : "Perguntar à IA para analisar incidentes e encontrar soluções..."}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full"></div>
-                </div>
-              )}
-            </div>
-          </form>
-
-          {/* Tab Navigation */}
-          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
-            {(['local', 'ai'] as const).map((tab) => {
-              const Icon = getTabIcon(tab);
-              const isActive = activeTab === tab;
+          {/* Main Navigation Tabs */}
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg mb-6">
+            {[
+              { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+              { key: 'list', label: 'Lista Unificada', icon: List }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = currentView === tab.key;
 
               return (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  key={tab.key}
+                  onClick={() => setCurrentView(tab.key as 'dashboard' | 'list')}
                   className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 ${
                     isActive
                       ? 'bg-white dark:bg-gray-600 text-red-600 dark:text-red-400 shadow-sm'
@@ -214,116 +328,113 @@ const Incidents: React.FC = () => {
                   }`}
                 >
                   <Icon className="w-4 h-4 mr-2" />
-                  {tab === 'local' ? 'Busca Local' : 'Análise com IA'}
-                  {currentResults.length > 0 && (
-                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                      isActive
-                        ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
-                        : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
-                    }`}>
-                      {currentResults.length}
-                    </span>
-                  )}
+                  {tab.label}
                 </button>
               );
             })}
           </div>
+
+          {/* INTEGRATED VIEW FILTER - Only show in list view */}
+          {currentView === 'list' && (
+            <div className="flex space-x-1 bg-blue-50 dark:bg-blue-900/20 p-1 rounded-lg mb-6 border border-blue-200 dark:border-blue-800">
+              {[
+                { key: 'active', label: 'Incidentes Ativos', count: 12, description: 'Incidentes abertos e em tratamento' },
+                { key: 'all', label: 'Todos os Incidentes', count: 247, description: 'Todos os incidentes incluindo resolvidos' },
+                { key: 'knowledge', label: 'Base de Conhecimento', count: 89, description: 'Incidentes resolvidos com soluções validadas' }
+              ].map((filter) => {
+                const isActive = viewFilter === filter.key;
+                return (
+                  <button
+                    key={filter.key}
+                    onClick={() => setViewFilter(filter.key as 'active' | 'all' | 'knowledge')}
+                    className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 hover:bg-blue-100 dark:hover:bg-blue-800/50'
+                    }`}
+                    title={filter.description}
+                  >
+                    <span className="font-medium">{filter.label}</span>
+                    <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                      isActive
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
+                    }`}>
+                      {filter.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        <div className="max-w-4xl mx-auto p-6 h-full">
-          {/* Results Grid */}
-          <div className="space-y-4">
-            {isSearching ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                <p className="mt-2 text-gray-600">Pesquisando incidentes...</p>
-              </div>
-            ) : currentResults.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                {searchQuery ? (
-                  <>Nenhum incidente encontrado para "{searchQuery}". Tente palavras-chave diferentes ou reporte um novo incidente.</>
-                ) : (
-                  <>Digite para pesquisar incidentes, ou clique no botão + para adicionar um novo.</>
-                )}
-              </div>
-            ) : (
-              currentResults.map((result) => {
-                const Icon = getResultTypeIcon(result.type);
-                return (
-                  <div
-                    key={result.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border-l-4 border-red-500"
+      <div className="flex-1">
+        <div className="max-w-6xl mx-auto p-6">
+          {/* Render different views based on currentView */}
+          {currentView === 'dashboard' && (
+            <IncidentManagementDashboard />
+          )}
+
+          {currentView === 'list' && (
+            <div className="space-y-4">
+
+              {/* Filters Panel */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {viewFilter === 'active' ? 'Incidentes Ativos' :
+                   viewFilter === 'knowledge' ? 'Base de Conhecimento' :
+                   'Todos os Incidentes'}
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    {viewFilter === 'active' && 'Incidentes que requerem atenção'}
+                    {viewFilter === 'knowledge' && 'Soluções validadas e documentadas'}
+                    {viewFilter === 'all' && 'Incluindo histórico completo'}
+                  </span>
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <Icon className="w-5 h-5 text-red-600" />
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {result.title}
-                        </h3>
-                      </div>
-                      <div className="flex space-x-2">
-                        {result.priority && (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(result.priority)}`}>
-                            {getPriorityLabel(result.priority)}
-                          </span>
-                        )}
-                        {result.status && (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(result.status)}`}>
-                            {result.status === 'aberto' ? 'Aberto' :
-                             result.status === 'em_tratamento' ? 'Em Tratamento' :
-                             result.status === 'resolvido' ? 'Resolvido' :
-                             result.status === 'fechado' ? 'Fechado' : result.status}
-                          </span>
-                        )}
-                        {result.impact && (
-                          <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
-                            Impacto {result.impact === 'crítica' ? 'Crítico' : result.impact === 'alta' ? 'Alto' : result.impact === 'média' ? 'Médio' : 'Baixo'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Filtros
+                  </button>
+                  {viewFilter === 'knowledge' && (
+                    <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                      <BookOpen className="w-3 h-3 mr-1" />
+                      Modo Conhecimento
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                    <p className="text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">
-                      {result.content}
-                    </p>
+              {showFilters && (
+                <AdvancedFiltersPanel
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  onExport={(filters) => console.log('Export with filters:', filters)}
+                />
+              )}
 
-                    {result.highlights && result.highlights.length > 0 && (
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Destaques Principais:</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {result.highlights.slice(0, 3).map((highlight, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded"
-                            >
-                              {highlight}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              {/* Incident Queue with Integrated Filter */}
+              <IncidentQueue
+                filters={{...filters, viewMode: viewFilter}} // Pass view filter to queue
+                onIncidentSelect={(incident) => {
+                  setSelectedIncident(incident);
+                  setShowIncidentDetail(true);
+                }}
+                onBulkAction={(action, incidents) => {
+                  console.log('Bulk action:', action, incidents);
+                }}
+                showKnowledgeColumns={viewFilter === 'knowledge'}
+                showActiveOnly={viewFilter === 'active'}
+              />
+            </div>
+          )}
 
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center space-x-4">
-                        <span className="capitalize">{result.type}</span>
-                        {result.lastModified && (
-                          <span>Atualizado em {result.lastModified.toLocaleDateString('pt-BR')}</span>
-                        )}
-                      </div>
-                      {result.relevanceScore && (
-                        <span className="text-green-600">
-                          {Math.round(result.relevanceScore * 100)}% de correspondência
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
         </div>
       </div>
 
@@ -332,10 +443,7 @@ const Incidents: React.FC = () => {
         <button
           className="bg-red-600 hover:bg-red-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           title="Reportar Novo Incidente"
-          onClick={() => {
-            // This would trigger the report incident modal
-            console.log('Report new incident');
-          }}
+          onClick={() => setIsCreateIncidentModalOpen(true)}
         >
           <Plus className="w-6 h-6" />
         </button>
@@ -346,6 +454,72 @@ const Incidents: React.FC = () => {
         open={isBulkUploadModalOpen}
         onOpenChange={setIsBulkUploadModalOpen}
       />
+
+      {/* Create Incident Modal */}
+      <CreateIncidentModal
+        isOpen={isCreateIncidentModalOpen}
+        onClose={() => setIsCreateIncidentModalOpen(false)}
+        onSubmit={handleCreateIncident}
+        onError={handleCreateIncidentError}
+        loading={isCreatingIncident}
+      />
+
+      {/* Incident Detail View */}
+      {selectedIncident && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {selectedIncident.title}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowIncidentDetail(false);
+                    setSelectedIncident(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">Fechar</span>
+                  ×
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="flex space-x-2">
+                  {selectedIncident.priority && (
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(selectedIncident.priority)}`}>
+                      {getPriorityLabel(selectedIncident.priority)}
+                    </span>
+                  )}
+                  {selectedIncident.status && (
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedIncident.status)}`}>
+                      {selectedIncident.status === 'aberto' ? 'Aberto' :
+                       selectedIncident.status === 'em_tratamento' ? 'Em Tratamento' :
+                       selectedIncident.status === 'resolvido' ? 'Resolvido' :
+                       selectedIncident.status === 'fechado' ? 'Fechado' : selectedIncident.status}
+                    </span>
+                  )}
+                </div>
+                <div className="text-gray-700 dark:text-gray-300">
+                  {selectedIncident.content}
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={() => {
+                      setShowIncidentDetail(false);
+                      setSelectedIncident(null);
+                    }}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

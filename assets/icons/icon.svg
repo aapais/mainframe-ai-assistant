@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A100FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#grad1)" stroke="#FFFFFF" stroke-width="4"/>
+
+  <!-- AI Brain representation -->
+  <g transform="translate(256,256)">
+    <!-- Central node -->
+    <circle cx="0" cy="0" r="40" fill="#FFFFFF" opacity="0.9"/>
+
+    <!-- Connection lines -->
+    <g stroke="#FFFFFF" stroke-width="3" opacity="0.7">
+      <line x1="0" y1="-40" x2="0" y2="-100"/>
+      <line x1="40" y1="0" x2="100" y2="0"/>
+      <line x1="0" y1="40" x2="0" y2="100"/>
+      <line x1="-40" y1="0" x2="-100" y2="0"/>
+      <line x1="-28" y1="-28" x2="-70" y2="-70"/>
+      <line x1="28" y1="-28" x2="70" y2="-70"/>
+      <line x1="28" y1="28" x2="70" y2="70"/>
+      <line x1="-28" y1="28" x2="-70" y2="70"/>
+    </g>
+
+    <!-- Outer nodes -->
+    <circle cx="0" cy="-100" r="20" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="100" cy="0" r="20" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="0" cy="100" r="20" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="-100" cy="0" r="20" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="-70" cy="-70" r="15" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="70" cy="-70" r="15" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="70" cy="70" r="15" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="-70" cy="70" r="15" fill="#FFFFFF" opacity="0.8"/>
+
+    <!-- AI symbol in center -->
+    <text x="0" y="8" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#A100FF">AI</text>
+  </g>
+
+  <!-- Accenture 'A' symbol at bottom -->
+  <g transform="translate(256,400)">
+    <polygon points="-20,20 0,-20 20,20 10,20 5,5 -5,5 -10,20" fill="#FFFFFF" opacity="0.9"/>
+    <rect x="-8" y="2" width="16" height="3" fill="#A100FF"/>
+  </g>
+</svg>

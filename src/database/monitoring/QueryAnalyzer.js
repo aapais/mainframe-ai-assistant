@@ -114,7 +114,7 @@ class QueryAnalyzer extends events_1.EventEmitter {
                     this.tableSchemas.set(table.name, {
                         name: table.name,
                         columns: schema,
-                        indexes: indexes
+                        indexes
                     });
                 }
                 catch (error) {

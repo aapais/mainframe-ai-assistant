@@ -105,7 +105,7 @@ class PerformanceTestHelper extends events_1.EventEmitter {
             metrics.push({
                 executionTime: Date.now() - startTime,
                 memoryUsage: memUsage,
-                cpuUsage: cpuUsage
+                cpuUsage
             });
         }, interval);
         while (Date.now() < endTime) {

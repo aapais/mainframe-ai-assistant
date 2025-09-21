@@ -6,6 +6,17 @@
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
 import type { KBEntry, KBEntryInput, KBEntryUpdate, KBCategory } from './index';
+import type {
+  UnifiedEntry,
+  UnifiedEntryInput,
+  UnifiedEntryUpdate,
+  UnifiedSearchQuery,
+  UnifiedSearchResult,
+  KnowledgeBaseEntry,
+  IncidentEntry,
+  isIncident,
+  isKnowledge
+} from './unified';
 
 // ========================
 // Service Configuration
@@ -988,3 +999,257 @@ export interface EnhancedImportOptions extends ImportOptions {
 
 // Note: EnhancedExportOptions and EnhancedImportOptions are the main interfaces
 // The original ExportOptions and ImportOptions are defined earlier in this file
+
+// ===========================
+// UNIFIED ENTRY SERVICE INTERFACES
+// ===========================
+
+/**
+ * Unified Storage Service Interface
+ * Replaces separate KB and Incident storage services
+ */
+export interface IUnifiedStorageService {
+  // Core CRUD operations
+  create(entry: UnifiedEntryInput): Promise<string>;
+  getById(id: string): Promise<UnifiedEntry | null>;
+  update(id: string, updates: UnifiedEntryUpdate): Promise<void>;
+  delete(id: string): Promise<void>;
+
+  // Search and query operations
+  search(query: UnifiedSearchQuery): Promise<UnifiedSearchResult[]>;
+  searchLocal(queryString: string, options?: UnifiedSearchQuery): Promise<UnifiedSearchResult[]>;
+  searchWithAI(queryString: string, options?: UnifiedSearchQuery): Promise<UnifiedSearchResult[]>;
+
+  // Bulk operations
+  createBulk(entries: UnifiedEntryInput[]): Promise<string[]>;
+  updateBulk(updates: Array<{ id: string; updates: UnifiedEntryUpdate }>): Promise<void>;
+  deleteBulk(ids: string[]): Promise<void>;
+
+  // Analytics and metrics
+  getMetrics(): Promise<UnifiedStorageMetrics>;
+  getUsageStats(entryId: string): Promise<EntryUsageStats>;
+
+  // Entry type specific operations
+  getKnowledgeEntries(query?: Partial<UnifiedSearchQuery>): Promise<KnowledgeBaseEntry[]>;
+  getIncidentEntries(query?: Partial<UnifiedSearchQuery>): Promise<IncidentEntry[]>;
+
+  // Migration support
+  migrateFromSeparateTables(): Promise<{ migrated: number; errors: string[] }>;
+  validateDataIntegrity(): Promise<DataIntegrityReport>;
+}
+
+/**
+ * Backward compatibility storage service
+ * Maintains existing API while using unified storage underneath
+ */
+export interface ILegacyKBStorageService {
+  // Legacy KB operations mapped to unified storage
+  addEntry(entry: Omit<KnowledgeBaseEntry, 'id' | 'entry_type' | 'created_at' | 'updated_at' | 'version'>): Promise<string>;
+  getEntries(query?: { category?: string; tags?: string[]; limit?: number }): Promise<KnowledgeBaseEntry[]>;
+  updateEntry(id: string, updates: Partial<KnowledgeBaseEntry>): Promise<void>;
+  deleteEntry(id: string): Promise<void>;
+  searchEntries(query: string, useAI?: boolean): Promise<Array<{ entry: KnowledgeBaseEntry; score: number }>>;
+}
+
+/**
+ * Enhanced Search Service for Unified Entries
+ */
+export interface IUnifiedSearchService {
+  // Text search
+  fullTextSearch(query: string, options?: UnifiedSearchQuery): Promise<UnifiedSearchResult[]>;
+
+  // Semantic/AI search
+  semanticSearch(query: string, options?: UnifiedSearchQuery): Promise<UnifiedSearchResult[]>;
+
+  // Hybrid search (combines multiple search strategies)
+  hybridSearch(query: string, options?: UnifiedSearchQuery): Promise<UnifiedSearchResult[]>;
+
+  // Category and tag filtering
+  filterByCategory(entries: UnifiedEntry[], categories: string[]): UnifiedEntry[];
+  filterByTags(entries: UnifiedEntry[], tags: string[]): UnifiedEntry[];
+
+  // Entry type specific search
+  searchKnowledge(query: string): Promise<KnowledgeBaseEntry[]>;
+  searchIncidents(query: string): Promise<IncidentEntry[]>;
+
+  // Search suggestions and autocomplete
+  getSuggestions(partialQuery: string): Promise<string[]>;
+  getRelatedEntries(entryId: string, limit?: number): Promise<UnifiedEntry[]>;
+
+  // Search analytics
+  recordSearch(query: string, results: UnifiedSearchResult[], userSelection?: string): Promise<void>;
+  getSearchAnalytics(): Promise<SearchAnalytics>;
+}
+
+/**
+ * Incident Management Service using Unified Storage
+ */
+export interface IIncidentService {
+  // Incident lifecycle
+  createIncident(input: Omit<IncidentEntry, 'id' | 'entry_type' | 'created_at' | 'updated_at' | 'version'>): Promise<string>;
+  updateIncidentStatus(id: string, status: IncidentEntry['status'], comment?: string): Promise<void>;
+  assignIncident(id: string, assigneeId: string): Promise<void>;
+  resolveIncident(id: string, solution: string, resolutionType?: string): Promise<void>;
+  closeIncident(id: string): Promise<void>;
+  reopenIncident(id: string, reason: string): Promise<void>;
+
+  // Incident querying
+  getIncidentQueue(filters?: IncidentQueueFilters): Promise<IncidentEntry[]>;
+  getIncidentById(id: string): Promise<IncidentEntry | null>;
+  getIncidentHistory(id: string): Promise<IncidentStatusChange[]>;
+
+  // Analytics and reporting
+  getIncidentMetrics(timeframe?: string): Promise<IncidentMetrics>;
+  getSLAReport(timeframe?: string): Promise<SLAReport>;
+  getTeamPerformance(teamId?: string, timeframe?: string): Promise<TeamPerformanceReport>;
+
+  // Knowledge base integration
+  suggestKBEntries(incidentId: string): Promise<Array<{ kb_entry: KnowledgeBaseEntry; relevance: number }>>;
+  createKBFromIncident(incidentId: string, metadata?: any): Promise<string>;
+
+  // Bulk operations
+  bulkAssign(incidentIds: string[], assigneeId: string): Promise<void>;
+  bulkUpdateStatus(incidentIds: string[], status: IncidentEntry['status']): Promise<void>;
+  bulkEscalate(incidentIds: string[], escalationLevel: IncidentEntry['escalation_level']): Promise<void>;
+}
+
+// ===========================
+// UNIFIED SUPPORTING TYPES
+// ===========================
+
+export interface UnifiedStorageMetrics {
+  total_entries: number;
+  knowledge_entries: number;
+  incident_entries: number;
+  avg_response_time_ms: number;
+  cache_hit_rate: number;
+  storage_size_mb: number;
+  daily_searches: number;
+  most_accessed_categories: Array<{ category: string; count: number }>;
+}
+
+export interface EntryUsageStats {
+  entry_id: string;
+  view_count: number;
+  search_hits: number;
+  success_rate: number;
+  last_accessed: Date;
+  avg_effectiveness_rating: number;
+  common_search_terms: string[];
+}
+
+export interface DataIntegrityReport {
+  total_entries: number;
+  valid_entries: number;
+  invalid_entries: Array<{ id: string; errors: string[] }>;
+  orphaned_references: string[];
+  duplicate_candidates: Array<{ id1: string; id2: string; similarity: number }>;
+  missing_required_fields: Array<{ id: string; missing_fields: string[] }>;
+}
+
+export interface IncidentQueueFilters {
+  status?: IncidentEntry['status'][];
+  priority?: IncidentEntry['priority'][];
+  assigned_to?: string[];
+  category?: string[];
+  created_after?: Date;
+  created_before?: Date;
+  sla_breach_only?: boolean;
+}
+
+export interface IncidentStatusChange {
+  id: string;
+  incident_id: string;
+  from_status: IncidentEntry['status'];
+  to_status: IncidentEntry['status'];
+  changed_by: string;
+  change_reason?: string;
+  timestamp: Date;
+}
+
+export interface IncidentMetrics {
+  total_open: number;
+  total_assigned: number;
+  total_in_progress: number;
+  total_resolved_today: number;
+  avg_resolution_time_hours: number;
+  sla_breaches: number;
+  priority_distribution: Record<IncidentEntry['priority'], number>;
+  status_distribution: Record<IncidentEntry['status'], number>;
+}
+
+export interface SLAReport {
+  timeframe: string;
+  total_incidents: number;
+  sla_met: number;
+  sla_missed: number;
+  compliance_percentage: number;
+  avg_resolution_time: number;
+  breach_reasons: Array<{ reason: string; count: number }>;
+}
+
+export interface TeamPerformanceReport {
+  team_id?: string;
+  timeframe: string;
+  incidents_handled: number;
+  incidents_resolved: number;
+  avg_resolution_time: number;
+  sla_compliance: number;
+  member_performance: Array<{
+    member_id: string;
+    incidents_handled: number;
+    resolution_rate: number;
+    avg_resolution_time: number;
+  }>;
+}
+
+export interface SearchAnalytics {
+  total_searches: number;
+  unique_queries: number;
+  avg_results_per_search: number;
+  most_common_queries: Array<{ query: string; count: number }>;
+  search_success_rate: number;
+  avg_search_time_ms: number;
+  entry_type_preferences: {
+    knowledge: number;
+    incident: number;
+    both: number;
+  };
+}
+
+/**
+ * Service factory for creating unified service instances
+ */
+export interface IServiceFactory {
+  createStorageService(): IUnifiedStorageService;
+  createSearchService(): IUnifiedSearchService;
+  createIncidentService(): IIncidentService;
+  createLegacyKBService(): ILegacyKBStorageService;
+}
+
+/**
+ * Event types for unified entry operations
+ */
+export type UnifiedEntryEvent =
+  | { type: 'ENTRY_CREATED'; payload: { entry: UnifiedEntry } }
+  | { type: 'ENTRY_UPDATED'; payload: { id: string; before: UnifiedEntry; after: UnifiedEntry } }
+  | { type: 'ENTRY_DELETED'; payload: { id: string; entry: UnifiedEntry } }
+  | { type: 'SEARCH_PERFORMED'; payload: { query: UnifiedSearchQuery; results: UnifiedSearchResult[] } }
+  | { type: 'INCIDENT_STATUS_CHANGED'; payload: { incident: IncidentEntry; from_status: string; to_status: string } }
+  | { type: 'KB_SUGGESTION_APPLIED'; payload: { incident_id: string; kb_entry_id: string } };
+
+/**
+ * Event handler interface
+ */
+export interface IEventHandler<T = any> {
+  handle(event: T): Promise<void> | void;
+}
+
+/**
+ * Event bus for cross-service communication
+ */
+export interface IEventBus {
+  emit(event: UnifiedEntryEvent): void;
+  subscribe<T extends UnifiedEntryEvent>(eventType: T['type'], handler: IEventHandler<T>): () => void;
+  unsubscribe(eventType: string, handler: IEventHandler): void;
+}

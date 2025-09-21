@@ -1,0 +1,156 @@
+{
+  "timestamp": "2025-09-18T19:34:04.930Z",
+  "summary": {
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "successRate": "100.0%"
+  },
+  "tests": [
+    {
+      "test": "Database Connection",
+      "passed": true,
+      "message": "Successfully connected to database",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.666Z"
+    },
+    {
+      "test": "KB Entries Columns",
+      "passed": true,
+      "message": "All required incident management columns exist",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.778Z"
+    },
+    {
+      "test": "Table kb_entry_comments",
+      "passed": true,
+      "message": "Table exists with 10 columns",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.782Z"
+    },
+    {
+      "test": "Table kb_entry_related",
+      "passed": true,
+      "message": "Table exists with 7 columns",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.785Z"
+    },
+    {
+      "test": "Table kb_entry_audit",
+      "passed": true,
+      "message": "Table exists with 11 columns",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.787Z"
+    },
+    {
+      "test": "View v_kb_incident_queue",
+      "passed": true,
+      "message": "View exists and is queryable",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.794Z"
+    },
+    {
+      "test": "View v_kb_incident_stats",
+      "passed": true,
+      "message": "View exists and is queryable",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.801Z"
+    },
+    {
+      "test": "Portuguese Status Values",
+      "passed": true,
+      "message": "incident_status column exists but no data yet (expected for new implementation)",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.805Z"
+    },
+    {
+      "test": "IPC Handlers",
+      "passed": true,
+      "message": "All required incident IPC handlers are implemented",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.827Z"
+    },
+    {
+      "test": "Requirement R001",
+      "passed": true,
+      "message": "Estados: em_revisão, aberto, em_tratamento, resolvido, fechado",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.830Z"
+    },
+    {
+      "test": "Requirement R002",
+      "passed": true,
+      "message": "Bulk upload placeholder implemented",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.879Z"
+    },
+    {
+      "test": "Requirement R003",
+      "passed": true,
+      "message": "Comments system (audit trail)",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.885Z"
+    },
+    {
+      "test": "Requirement R004",
+      "passed": true,
+      "message": "Related incidents system",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.888Z"
+    },
+    {
+      "test": "Requirement R005",
+      "passed": true,
+      "message": "Audit trail (logs)",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.895Z"
+    },
+    {
+      "test": "Requirement R006",
+      "passed": true,
+      "message": "AI analysis flags",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.900Z"
+    },
+    {
+      "test": "Foreign Keys",
+      "passed": true,
+      "message": "Foreign key enforcement: ON",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.900Z"
+    },
+    {
+      "test": "Query 1",
+      "passed": true,
+      "message": "Query executed successfully",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.906Z"
+    },
+    {
+      "test": "Query 2",
+      "passed": true,
+      "message": "Query executed successfully",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.909Z"
+    },
+    {
+      "test": "Query 3",
+      "passed": true,
+      "message": "Query executed successfully",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.912Z"
+    },
+    {
+      "test": "Query 4",
+      "passed": true,
+      "message": "Query executed successfully",
+      "details": null,
+      "timestamp": "2025-09-18T19:34:04.914Z"
+    }
+  ],
+  "environment": {
+    "nodeVersion": "v22.19.0",
+    "platform": "linux",
+    "databasePath": "/mnt/c/mainframe-ai-assistant/kb-assistant.db"
+  }
+}

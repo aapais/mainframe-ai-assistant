@@ -289,7 +289,7 @@ class SearchCacheManager {
     async prefetchQueries(baseQuery, variations) {
         const prefetchPromises = variations.map(async (variation) => {
             try {
-                const query = baseQuery + ' ' + variation;
+                const query = `${baseQuery  } ${  variation}`;
                 const cached = await this.get(query);
                 if (!cached) {
                     console.log(`Prefetch candidate: ${query}`);
@@ -361,10 +361,10 @@ class SearchCacheManager {
                 entry: {
                     ...result.entry,
                     problem: result.entry.problem.length > 500
-                        ? result.entry.problem.substring(0, 500) + '...'
+                        ? `${result.entry.problem.substring(0, 500)  }...`
                         : result.entry.problem,
                     solution: result.entry.solution.length > 500
-                        ? result.entry.solution.substring(0, 500) + '...'
+                        ? `${result.entry.solution.substring(0, 500)  }...`
                         : result.entry.solution
                 }
             }))

@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
 import { Eye, TrendingUp, Users, BarChart3 } from 'lucide-react';
-import styles from './UsageStats.module.css';
 
 export interface UsageStatsProps {
   count: number;

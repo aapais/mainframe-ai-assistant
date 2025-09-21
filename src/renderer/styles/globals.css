@@ -52,13 +52,8 @@
   --duration-normal: 250ms;
   --duration-slow: 350ms;
   
-  /* Z-index scale */
-  --z-dropdown: 50;
-  --z-modal: 60;
-  --z-popover: 70;
-  --z-tooltip: 80;
-  --z-toast: 90;
-  --z-max: 100;
+  /* Z-index scale - using unified system */
+  /* Import z-index-system.css in main stylesheet for proper hierarchy */
 }
 
 /* Light theme variables (default) - WCAG AA compliant contrast ratios */

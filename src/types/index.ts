@@ -404,6 +404,79 @@ export interface AppConfig {
 }
 
 // ===========================
+// UNIFIED ENTRY TYPES
+// ===========================
+
+// Export unified types for the new unified table structure
+export * from './unified';
+
+// Backward compatibility aliases - maintain existing API
+export type { UnifiedEntry as Entry } from './unified';
+export type { KnowledgeBaseEntry as KBEntry } from './unified';
+export type { IncidentEntry as IncidentKBEntry } from './unified';
+export type { KnowledgeEntryInput as KBEntryInput } from './unified';
+export type { KnowledgeEntryUpdate as KBEntryUpdate } from './unified';
+export type { UnifiedSearchQuery as SearchQuery } from './unified';
+export type { UnifiedSearchResult as SearchResult } from './unified';
+
+// Type guards for runtime type checking
+export {
+  isIncident,
+  isKnowledge,
+  isValidIncident,
+  isValidKnowledge,
+  mapRowToUnifiedEntry,
+  mapUnifiedEntryToRow
+} from './unified';
+
+// ===========================
+// UPDATED SERVICE INTERFACES
+// ===========================
+
+/** Updated Electron API for unified entries */
+export interface ElectronAPIUpdated {
+  // Unified entry operations
+  getEntries: (query?: UnifiedSearchQuery) => Promise<UnifiedSearchResult[]>;
+  addEntry: (entry: UnifiedEntryInput) => Promise<string>;
+  updateEntry: (id: string, entry: UnifiedEntryUpdate) => Promise<void>;
+  deleteEntry: (id: string) => Promise<void>;
+  rateEntry: (id: string, successful: boolean, comment?: string) => Promise<void>;
+
+  // Legacy KB operations (for backward compatibility)
+  getKBEntries: (query?: SearchQuery) => Promise<SearchResult[]>;
+  addKBEntry: (entry: Omit<KBEntry, 'id'>) => Promise<string>;
+  updateKBEntry: (id: string, entry: Partial<KBEntry>) => Promise<void>;
+  deleteKBEntry: (id: string) => Promise<void>;
+
+  // Search operations
+  searchLocal: (query: string, options?: UnifiedSearchQuery) => Promise<UnifiedSearchResult[]>;
+  searchWithAI: (query: string, options?: UnifiedSearchQuery) => Promise<UnifiedSearchResult[]>;
+
+  // System operations
+  getMetrics: () => Promise<DatabaseMetrics>;
+  exportKB: (path: string) => Promise<void>;
+  importKB: (path: string) => Promise<number>;
+
+  // Application lifecycle
+  openDevTools: () => void;
+  getAppVersion: () => Promise<string>;
+  checkForUpdates: () => Promise<boolean>;
+}
+
+/** Updated Application State for unified entries */
+export interface AppStateUpdated {
+  currentView: 'search' | 'browse' | 'add' | 'metrics' | 'settings' | 'incidents';
+  searchResults: UnifiedSearchResult[];
+  selectedEntry: UnifiedEntry | null;
+  isLoading: boolean;
+  error: string | null;
+  notifications: Notification[];
+
+  // Entry type filter
+  entryTypeFilter: 'all' | 'knowledge' | 'incident';
+}
+
+// ===========================
 // EXPORT ALL TYPES
 // ===========================
 

@@ -164,7 +164,7 @@ class BatchProcessor extends events_1.EventEmitter {
     async processSequentially(batches, processor, progressCallback, errorCallback) {
         const results = [];
         const startTime = perf_hooks_1.performance.now();
-        let batchTimes = [];
+        const batchTimes = [];
         for (let i = 0; i < batches.length; i++) {
             const batchStartTime = perf_hooks_1.performance.now();
             try {

@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations, configureAxe } from 'jest-axe';
@@ -212,9 +213,10 @@ export class ComponentAccessibilityTest extends BaseAccessibilityTest {
         };
 
         const { container } = customRender(
-          <div role="alert" aria-live="assertive">
-            Search error occurred
-          </div>
+          React.createElement('div', {
+            role: 'alert',
+            'aria-live': 'assertive'
+          }, 'Search error occurred')
         );
 
         const errorAlert = screen.getByRole('alert');
@@ -387,24 +389,18 @@ export class FocusManagementTest extends BaseAccessibilityTest {
         const DynamicComponent = () => {
           const [showExtra, setShowExtra] = React.useState(false);
 
-          return (
-            <div>
-              <button onClick={() => setShowExtra(!showExtra)}>
-                Toggle Content
-              </button>
-              <input type="text" placeholder="Always visible" />
-              {showExtra && (
-                <div>
-                  <input type="text" placeholder="Dynamic input" />
-                  <button>Dynamic button</button>
-                </div>
-              )}
-              <button>Final button</button>
-            </div>
+          return React.createElement('div', null,
+            React.createElement('button', { onClick: () => setShowExtra(!showExtra) }, 'Toggle Content'),
+            React.createElement('input', { type: 'text', placeholder: 'Always visible' }),
+            showExtra && React.createElement('div', null,
+              React.createElement('input', { type: 'text', placeholder: 'Dynamic input' }),
+              React.createElement('button', null, 'Dynamic button')
+            ),
+            React.createElement('button', null, 'Final button')
           );
         };
 
-        customRender(<DynamicComponent />);
+        customRender(React.createElement(DynamicComponent));
 
         const user = userEvent.setup();
         const toggleButton = screen.getByRole('button', { name: /toggle/i });
@@ -429,17 +425,17 @@ export class FocusManagementTest extends BaseAccessibilityTest {
       it('traps focus in modal dialogs', async () => {
         const ModalComponent = () => {
           return (
-            <div role="dialog" aria-modal="true" aria-labelledby="modal-title">
-              <h2 id="modal-title">Modal Dialog</h2>
-              <input type="text" placeholder="First input" />
-              <input type="text" placeholder="Second input" />
-              <button>OK</button>
-              <button>Cancel</button>
-            </div>
+            React.createElement('div', { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'modal-title' },
+              React.createElement('h2', { id: 'modal-title' }, 'Modal Dialog'),
+              React.createElement('input', { type: 'text', placeholder: 'First input' }),
+              React.createElement('input', { type: 'text', placeholder: 'Second input' }),
+              React.createElement('button', null, 'OK'),
+              React.createElement('button', null, 'Cancel')
+            )
           );
         };
 
-        customRender(<ModalComponent />);
+        customRender(React.createElement(ModalComponent));
 
         const user = userEvent.setup();
         const modal = screen.getByRole('dialog');
@@ -469,26 +465,17 @@ export class FocusManagementTest extends BaseAccessibilityTest {
         const AppWithModal = () => {
           const [modalOpen, setModalOpen] = React.useState(false);
 
-          return (
-            <div>
-              <button onClick={() => setModalOpen(true)}>
-                Open Modal
-              </button>
-              <input type="text" placeholder="Outside modal" />
-
-              {modalOpen && (
-                <div role="dialog" aria-modal="true">
-                  <h2>Modal</h2>
-                  <button onClick={() => setModalOpen(false)}>
-                    Close
-                  </button>
-                </div>
-              )}
-            </div>
+          return React.createElement('div', null,
+            React.createElement('button', { onClick: () => setModalOpen(true) }, 'Open Modal'),
+            React.createElement('input', { type: 'text', placeholder: 'Outside modal' }),
+            modalOpen && React.createElement('div', { role: 'dialog', 'aria-modal': 'true' },
+              React.createElement('h2', null, 'Modal'),
+              React.createElement('button', { onClick: () => setModalOpen(false) }, 'Close')
+            )
           );
         };
 
-        customRender(<AppWithModal />);
+        customRender(React.createElement(AppWithModal));
 
         const user = userEvent.setup();
         const openButton = screen.getByRole('button', { name: /open modal/i });
@@ -519,39 +506,29 @@ export class ScreenReaderTest extends BaseAccessibilityTest {
   testScreenReaderSupport(): void {
     describe('Screen Reader Support', () => {
       it('provides meaningful page structure', () => {
-        const PageComponent = () => (
-          <div>
-            <header>
-              <h1>Mainframe KB Assistant</h1>
-              <nav aria-label="Main navigation">
-                <a href="#search">Search</a>
-                <a href="#entries">Entries</a>
-              </nav>
-            </header>
-
-            <main>
-              <section aria-labelledby="search-heading">
-                <h2 id="search-heading">Search Knowledge Base</h2>
-                {/* Search content */}
-              </section>
-
-              <section aria-labelledby="results-heading">
-                <h2 id="results-heading">Search Results</h2>
-                {/* Results content */}
-              </section>
-            </main>
-
-            <aside aria-label="Additional tools">
-              {/* Sidebar content */}
-            </aside>
-
-            <footer>
-              <p>© 2025 Company Name</p>
-            </footer>
-          </div>
+        const PageComponent = () => React.createElement('div', null,
+          React.createElement('header', null,
+            React.createElement('h1', null, 'Mainframe KB Assistant'),
+            React.createElement('nav', { 'aria-label': 'Main navigation' },
+              React.createElement('a', { href: '#search' }, 'Search'),
+              React.createElement('a', { href: '#entries' }, 'Entries')
+            )
+          ),
+          React.createElement('main', null,
+            React.createElement('section', { 'aria-labelledby': 'search-heading' },
+              React.createElement('h2', { id: 'search-heading' }, 'Search Knowledge Base')
+            ),
+            React.createElement('section', { 'aria-labelledby': 'results-heading' },
+              React.createElement('h2', { id: 'results-heading' }, 'Search Results')
+            )
+          ),
+          React.createElement('aside', { 'aria-label': 'Additional tools' }),
+          React.createElement('footer', null,
+            React.createElement('p', null, '© 2025 Company Name')
+          )
         );
 
-        const { container } = customRender(<PageComponent />);
+        const { container } = customRender(React.createElement(PageComponent));
 
         // Check landmark structure
         expect(screen.getByRole('banner')).toBeInTheDocument(); // header
@@ -582,33 +559,21 @@ export class ScreenReaderTest extends BaseAccessibilityTest {
             }, 100);
           };
 
-          return (
-            <div>
-              <button onClick={performSearch}>Search</button>
-
-              {loading && (
-                <div role="status" aria-live="polite">
-                  Searching...
-                </div>
-              )}
-
-              <div role="region" aria-live="polite" aria-label="Search results">
-                {results.length > 0 && (
-                  <div>
-                    <p>{results.length} results found</p>
-                    <ul>
-                      {results.map((result, index) => (
-                        <li key={index}>{result}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
+          return React.createElement('div', null,
+            React.createElement('button', { onClick: performSearch }, 'Search'),
+            loading && React.createElement('div', { role: 'status', 'aria-live': 'polite' }, 'Searching...'),
+            React.createElement('div', { role: 'region', 'aria-live': 'polite', 'aria-label': 'Search results' },
+              results.length > 0 && React.createElement('div', null,
+                React.createElement('p', null, `${results.length} results found`),
+                React.createElement('ul', null,
+                  ...results.map((result, index) => React.createElement('li', { key: index }, result))
+                )
+              )
+            )
           );
         };
 
-        customRender(<SearchWithAnnouncements />);
+        customRender(React.createElement(SearchWithAnnouncements));
 
         const searchButton = screen.getByRole('button', { name: /search/i });
         await userEvent.click(searchButton);
@@ -624,37 +589,33 @@ export class ScreenReaderTest extends BaseAccessibilityTest {
       });
 
       it('provides accessible data tables', () => {
-        const DataTableComponent = () => (
-          <table role="table" aria-label="Knowledge base entries">
-            <caption>
-              Knowledge Base Entries (5 total)
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Title</th>
-                <th scope="col">Category</th>
-                <th scope="col">Usage Count</th>
-                <th scope="col">Success Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>VSAM Status 35 Error</td>
-                <td>VSAM</td>
-                <td>25</td>
-                <td>92%</td>
-              </tr>
-              <tr>
-                <td>S0C7 Data Exception</td>
-                <td>Batch</td>
-                <td>18</td>
-                <td>88%</td>
-              </tr>
-            </tbody>
-          </table>
+        const DataTableComponent = () => React.createElement('table', { role: 'table', 'aria-label': 'Knowledge base entries' },
+          React.createElement('caption', null, 'Knowledge Base Entries (5 total)'),
+          React.createElement('thead', null,
+            React.createElement('tr', null,
+              React.createElement('th', { scope: 'col' }, 'Title'),
+              React.createElement('th', { scope: 'col' }, 'Category'),
+              React.createElement('th', { scope: 'col' }, 'Usage Count'),
+              React.createElement('th', { scope: 'col' }, 'Success Rate')
+            )
+          ),
+          React.createElement('tbody', null,
+            React.createElement('tr', null,
+              React.createElement('td', null, 'VSAM Status 35 Error'),
+              React.createElement('td', null, 'VSAM'),
+              React.createElement('td', null, '25'),
+              React.createElement('td', null, '92%')
+            ),
+            React.createElement('tr', null,
+              React.createElement('td', null, 'S0C7 Data Exception'),
+              React.createElement('td', null, 'Batch'),
+              React.createElement('td', null, '18'),
+              React.createElement('td', null, '88%')
+            )
+          )
         );
 
-        customRender(<DataTableComponent />);
+        customRender(React.createElement(DataTableComponent));
 
         const table = screen.getByRole('table');
         expect(table).toHaveAttribute('aria-label');

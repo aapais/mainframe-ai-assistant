@@ -314,7 +314,7 @@ export function customRender(
 
   // Create wrapper with providers if needed
   const AllTheProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    return <>{children}</>;
+    return React.createElement(React.Fragment, null, children);
   };
 
   return render(ui, { wrapper: AllTheProviders, ...renderOptions });
