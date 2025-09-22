@@ -92,5 +92,5 @@ docs/build/
 
 # Electron specific
 out/
-app/
+old/
 .electron-gyp/
