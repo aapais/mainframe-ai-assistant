@@ -45,12 +45,13 @@ function createWindow() {
 
   // Wait for backend to be ready then load the app
   setTimeout(() => {
-    // Load the integrated HTML file directly
-    mainWindow.loadFile('Accenture-Mainframe-AI-Assistant-Integrated.html');
-
-    // Open DevTools in development
+    // Load the Next.js app in development
     if (process.env.NODE_ENV === 'development') {
+      mainWindow.loadURL('http://localhost:3000'); // Next.js dev server
       mainWindow.webContents.openDevTools();
+    } else {
+      // In production, load the built Next.js app
+      mainWindow.loadFile(path.join(__dirname, 'src/renderer/out/index.html'));
     }
   }, 2000);
 

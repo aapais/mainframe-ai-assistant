@@ -20,7 +20,10 @@
     "electron": "^27.0.0"
   },
   "devDependencies": {
-    "electron-builder": "^24.6.4"
+    "@types/react": "19.1.13",
+    "electron-builder": "^24.6.4",
+    "lint-staged": "^16.2.0",
+    "typescript": "5.9.2"
   },
   "build": {
     "appId": "com.accenture.mainframe.assistant",
@@ -29,6 +32,7 @@
       "output": "dist"
     },
     "files": [
+      "app/**/*",
       "main.js",
       "Accenture-Mainframe-AI-Assistant-Integrated.html",
       "scripts/**/*",

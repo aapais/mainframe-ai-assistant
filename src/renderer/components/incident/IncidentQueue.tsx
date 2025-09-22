@@ -8,6 +8,7 @@ import PriorityBadge from './PriorityBadge';
 import StatusBadge from './StatusBadge';
 import RelatedIncidentsPanel from './RelatedIncidentsPanel';
 import BulkUploadModal from './BulkUploadModal';
+import EditIncidentModal from './EditIncidentModal';
 import { useSearchDebounce } from '../../hooks/useSmartDebounce';
 import { useGlobalKeyboardShortcuts } from '../../hooks/useGlobalKeyboardShortcuts';
 import IncidentService from '../../services/IncidentService';
@@ -48,6 +49,11 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
   const [selectedIncident, setSelectedIncident] = useState<IncidentKBEntry | null>(null);
   const [showRelatedPanel, setShowRelatedPanel] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+
+  // Modal states
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [selectedIncidentForModal, setSelectedIncidentForModal] = useState<IncidentKBEntry | null>(null);
 
   // Enhanced search with smart debouncing
   const {
@@ -302,7 +308,7 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
           reporter: 'legacy.app@company.com',
           resolution_time: 105,
           resolver: 'ims.specialist@company.com'
-        }
+        },
         {
           id: '1',
           title: 'JCL Job Failing with S0C4 ABEND',
@@ -507,6 +513,46 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
     } catch (error) {
       console.error('Error starting treatment:', error);
       // Could add toast notification here
+    }
+  };
+
+  // Handle View modal
+  const handleView = (incident: IncidentKBEntry, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setSelectedIncidentForModal(incident);
+    setOpenViewModal(true);
+  };
+
+  // Handle Edit modal
+  const handleEdit = (incident: IncidentKBEntry, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setSelectedIncidentForModal(incident);
+    setOpenEditModal(true);
+  };
+
+  // Handle incident update from edit modal
+  const handleIncidentUpdate = async (id: string, changes: Partial<IncidentKBEntry>, auditInfo: any) => {
+    try {
+      // Update the incident in the local state
+      setIncidents(prev => prev.map(incident =>
+        incident.id === id
+          ? { ...incident, ...changes, updated_at: new Date() }
+          : incident
+      ));
+
+      // In a real app, this would call the API
+      console.log('Incident updated:', { id, changes, auditInfo });
+
+      // Close the modal
+      setOpenEditModal(false);
+      setSelectedIncidentForModal(null);
+    } catch (error) {
+      console.error('Error updating incident:', error);
+      throw error;
     }
   };
 
@@ -1003,7 +1049,23 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
                   )}
                   <td className="px-4 py-3">
                     <div className="flex items-center space-x-2">
-                      {/* INTEGRATED VIEW: Different actions for different modes */}
+                      {/* Standard View and Edit buttons for all incidents */}
+                      <button
+                        onClick={(e) => handleView(incident, e)}
+                        className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                        title="Ver detalhes do incidente"
+                      >
+                        Ver
+                      </button>
+                      <button
+                        onClick={(e) => handleEdit(incident, e)}
+                        className="text-green-600 hover:text-green-800 text-xs font-medium"
+                        title="Editar incidente"
+                      >
+                        Editar
+                      </button>
+
+                      {/* INTEGRATED VIEW: Additional actions for different modes */}
                       {showKnowledgeColumns ? (
                         // Knowledge base actions
                         <>
@@ -1012,18 +1074,10 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
                               e.stopPropagation();
                               // Handle reuse solution action
                             }}
-                            className="text-green-600 hover:text-green-800 text-xs"
+                            className="text-purple-600 hover:text-purple-800 text-xs"
+                            title="Reutilizar solução"
                           >
                             Reutilizar
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle update solution action
-                            }}
-                            className="text-blue-600 hover:text-blue-800 text-xs"
-                          >
-                            Atualizar
                           </button>
                         </>
                       ) : (
@@ -1036,8 +1090,9 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
                                 handleStartTreatment(incident.id);
                               }}
                               className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                              title="Iniciar tratamento"
                             >
-                              Iniciar Tratamento
+                              Tratar
                             </button>
                           )}
                           <button
@@ -1045,18 +1100,10 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
                               e.stopPropagation();
                               // Handle assign action
                             }}
-                            className="text-blue-600 hover:text-blue-800 text-xs"
+                            className="text-gray-600 hover:text-gray-800 text-xs"
+                            title="Atribuir responsável"
                           >
                             Assign
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle comment action
-                            }}
-                            className="text-green-600 hover:text-green-800 text-xs"
-                          >
-                            Comment
                           </button>
                         </>
                       )}
@@ -1207,6 +1254,216 @@ const IncidentQueue: React.FC<EnhancedIncidentQueueProps> = ({
         onClose={() => setShowBulkUpload(false)}
         onSuccess={handleBulkUploadSuccess}
       />
+
+      {/* View Modal */}
+      {openViewModal && selectedIncidentForModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Visualizar Incidente
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {selectedIncidentForModal.incident_number} - {selectedIncidentForModal.title}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setOpenViewModal(false);
+                  setSelectedIncidentForModal(null);
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="space-y-6">
+                {/* Incident Details */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Título
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">
+                      {selectedIncidentForModal.title}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número do Incidente
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">
+                      {selectedIncidentForModal.incident_number}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descrição do Problema
+                  </label>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">
+                    {selectedIncidentForModal.problem}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Solução
+                  </label>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">
+                    {selectedIncidentForModal.solution}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Prioridade
+                    </label>
+                    <PriorityBadge priority={selectedIncidentForModal.priority} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <StatusBadge status={selectedIncidentForModal.status} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Categoria
+                    </label>
+                    <p className="text-sm text-gray-900 capitalize">{selectedIncidentForModal.category}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Impacto nos Negócios
+                    </label>
+                    <p className="text-sm text-gray-900 capitalize">{selectedIncidentForModal.business_impact}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Atribuído Para
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {selectedIncidentForModal.assigned_to || 'Não atribuído'}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedIncidentForModal.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Criado em
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {selectedIncidentForModal.created_at.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Reportado por
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {selectedIncidentForModal.reporter || selectedIncidentForModal.created_by}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedIncidentForModal.resolution_time && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tempo de Resolução
+                    </label>
+                    <p className="text-sm text-gray-900">
+                      {selectedIncidentForModal.resolution_time} minutos
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setOpenViewModal(false);
+                  setSelectedIncidentForModal(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => {
+                  setOpenViewModal(false);
+                  setOpenEditModal(true);
+                  // selectedIncidentForModal já está definido
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Editar Incidente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {openEditModal && selectedIncidentForModal && (
+        <EditIncidentModal
+          isOpen={openEditModal}
+          onClose={() => {
+            setOpenEditModal(false);
+            setSelectedIncidentForModal(null);
+          }}
+          onSubmit={handleIncidentUpdate}
+          onError={(error) => {
+            console.error('Error in edit modal:', error);
+            // You could show a toast notification here
+          }}
+          incident={{
+            id: selectedIncidentForModal.id,
+            title: selectedIncidentForModal.title,
+            description: selectedIncidentForModal.problem,
+            impact: 'média' as any, // Convert from business_impact
+            category: selectedIncidentForModal.category,
+            priority: selectedIncidentForModal.priority,
+            status: selectedIncidentForModal.status,
+            affected_system: 'Sistema Principal', // Default value
+            assigned_to: selectedIncidentForModal.assigned_to || '',
+            reported_by: selectedIncidentForModal.reporter || selectedIncidentForModal.created_by,
+            incident_date: selectedIncidentForModal.created_at.toISOString().split('T')[0],
+            tags: selectedIncidentForModal.tags,
+            created_at: selectedIncidentForModal.created_at,
+            updated_at: selectedIncidentForModal.updated_at,
+            resolution_notes: selectedIncidentForModal.solution
+          }}
+        />
+      )}
     </div>
   );
 };

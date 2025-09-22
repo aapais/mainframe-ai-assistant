@@ -22,10 +22,9 @@ import {
 // Views and Pages
 import IncidentDashboard from './views/IncidentDashboard';
 import Incidents from './views/Incidents';
-import Settings from './pages/Settings';
 
 // Components
-import { SettingsNavigation } from './components/settings/SettingsNavigation';
+import SettingsDropdown from './components/settings/SettingsDropdown';
 import ReportIncidentModal from './components/modals/ReportIncidentModal';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import { Button } from './components/ui/Button';
@@ -72,8 +71,6 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Settings navigation state
-  const [settingsPath, setSettingsPath] = useState('/settings/general/profile');
 
   // Modal states
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -116,10 +113,6 @@ function App() {
     }
   };
 
-  // Handle settings navigation
-  const handleSettingsNavigate = (path: string) => {
-    setSettingsPath(path);
-  };
 
   // Navigation tabs - INTEGRATED APPROACH: Knowledge Base is now part of Incidents
   const navTabs: NavTab[] = [
@@ -137,26 +130,6 @@ function App() {
       component: <Incidents />,
       description: 'Gestão completa de incidentes e base de conhecimento integrada',
       badge: notifications > 0 ? notifications.toString() : undefined
-    },
-    {
-      id: 'settings',
-      label: 'Configurações',
-      icon: <SettingsIcon className="w-5 h-5" />,
-      component: (
-        <div className="flex h-full">
-          <div className="w-80 border-r border-gray-200 bg-white">
-            <SettingsNavigation
-              currentPath={settingsPath}
-              onNavigate={handleSettingsNavigate}
-              isMobile={false}
-            />
-          </div>
-          <div className="flex-1">
-            <Settings currentPath={settingsPath} />
-          </div>
-        </div>
-      ),
-      description: 'Configurações da aplicação e preferências'
     }
   ];
 
@@ -246,6 +219,9 @@ function App() {
                     </span>
                   )}
                 </button>
+
+                {/* Settings Dropdown */}
+                <SettingsDropdown user={user} />
 
                 {/* Report Incident Button */}
                 <Button

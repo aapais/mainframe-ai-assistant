@@ -63,7 +63,7 @@ class RealAPIHandler(BaseHTTPRequestHandler):
 
             self.wfile.write(json.dumps(response, indent=2).encode())
 
-        elif path == '/api/incidents':
+        elif path == '/api/incidents' or path == '/api/entries':
             try:
                 with closing(self.get_db_connection()) as conn:
                     cursor = conn.cursor()
@@ -294,7 +294,7 @@ class RealAPIHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {format % args}")
 
-def run_server(port=3001):
+def run_server(port=8089):
     # Test database connection
     try:
         with closing(sqlite3.connect(DB_PATH)) as conn:

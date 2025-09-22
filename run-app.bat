@@ -1,0 +1,6 @@
+@echo off
+echo Installing dependencies...
+call npm install electron --no-save
+echo Starting application...
+call npx electron .
+pause

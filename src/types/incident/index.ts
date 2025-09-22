@@ -37,12 +37,19 @@ export interface IncidentKBEntry extends KBEntry {
   affected_systems?: string[];
   business_impact?: 'low' | 'medium' | 'high' | 'critical';
   customer_impact?: boolean;
-  
+
   // Tracking fields
   reporter?: string;
   resolver?: string;
   incident_number?: string;
   external_ticket_id?: string;
+
+  // Treatment fields
+  treatment_analysis?: string;
+  actions_taken?: string;
+  next_steps?: string;
+  treatment_started_at?: Date;
+  treatment_notes?: string;
 }
 
 // ===========================
