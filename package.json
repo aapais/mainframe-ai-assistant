@@ -16,10 +16,9 @@
     "start:frontend": "python3 scripts/integrated-server.py",
     "clean": "rm -rf dist app/node_modules app/.next"
   },
-  "dependencies": {
-    "electron": "^27.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "electron": "^27.0.0",
     "@types/react": "^19.1.13",
     "electron-builder": "^24.6.4",
     "lint-staged": "^16.2.0",

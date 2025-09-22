@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { AlertTriangle, Brain, Settings, Plus, Upload, List, BarChart3, FileText, Users, Tag } from 'lucide-react';
+import { AlertTriangle, Brain, Settings, Plus, Upload, List, BarChart3, BookOpen, FileText, Users, Tag } from 'lucide-react';
 import BulkUploadModal from '../components/incident/BulkUploadModal';
 import CreateIncidentModal from '../components/incident/CreateIncidentModal';
 import { IncidentManagementDashboard } from '../components/incident/IncidentManagementDashboard';
@@ -28,7 +28,7 @@ const Incidents: React.FC = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'list'>('dashboard');
 
   // INTEGRATED APPROACH: Unified view filter state
-  const [viewFilter, setViewFilter] = useState<'active' | 'all'>('all');
+  const [viewFilter, setViewFilter] = useState<'active' | 'all' | 'knowledge'>('all');
 
 
   // Search-related states (kept for future use)
@@ -292,7 +292,7 @@ const Incidents: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
               <AlertTriangle className="w-7 h-7 mr-3 text-red-600 dark:text-red-400" />
-              Gestão de Incidentes
+              Gestão de Incidentes e Base de Conhecimento
             </h1>
 
             {/* Toolbar */}
@@ -339,13 +339,14 @@ const Incidents: React.FC = () => {
             <div className="flex space-x-1 bg-blue-50 dark:bg-blue-900/20 p-1 rounded-lg mb-6 border border-blue-200 dark:border-blue-800">
               {[
                 { key: 'active', label: 'Incidentes Ativos', count: 12, description: 'Incidentes abertos e em tratamento' },
-                { key: 'all', label: 'Todos os Incidentes', count: 247, description: 'Todos os incidentes incluindo resolvidos' }
+                { key: 'all', label: 'Todos os Incidentes', count: 247, description: 'Todos os incidentes incluindo resolvidos' },
+                { key: 'knowledge', label: 'Base de Conhecimento', count: 89, description: 'Incidentes resolvidos com soluções validadas' }
               ].map((filter) => {
                 const isActive = viewFilter === filter.key;
                 return (
                   <button
                     key={filter.key}
-                    onClick={() => setViewFilter(filter.key as 'active' | 'all')}
+                    onClick={() => setViewFilter(filter.key as 'active' | 'all' | 'knowledge')}
                     className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-sm'
@@ -384,10 +385,13 @@ const Incidents: React.FC = () => {
               {/* Filters Panel */}
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {viewFilter === 'active' ? 'Incidentes Ativos' : 'Todos os Incidentes'}
+                  {viewFilter === 'active' ? 'Incidentes Ativos' :
+                   viewFilter === 'knowledge' ? 'Base de Conhecimento' :
+                   'Todos os Incidentes'}
                   <span className="text-sm font-normal text-gray-500 ml-2">
                     {viewFilter === 'active' && 'Incidentes que requerem atenção'}
-                    {viewFilter === 'all' && 'Incluindo histórico completo e incidentes resolvidos'}
+                    {viewFilter === 'knowledge' && 'Soluções validadas e documentadas'}
+                    {viewFilter === 'all' && 'Incluindo histórico completo'}
                   </span>
                 </h2>
                 <div className="flex items-center space-x-2">
@@ -398,6 +402,12 @@ const Incidents: React.FC = () => {
                     <Settings className="w-4 h-4 mr-2" />
                     Filtros
                   </button>
+                  {viewFilter === 'knowledge' && (
+                    <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
+                      <BookOpen className="w-3 h-3 mr-1" />
+                      Modo Conhecimento
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -419,7 +429,7 @@ const Incidents: React.FC = () => {
                 onBulkAction={(action, incidents) => {
                   console.log('Bulk action:', action, incidents);
                 }}
-                showKnowledgeColumns={false}
+                showKnowledgeColumns={viewFilter === 'knowledge'}
                 showActiveOnly={viewFilter === 'active'}
               />
             </div>

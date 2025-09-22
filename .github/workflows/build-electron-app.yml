@@ -1,0 +1,117 @@
+name: Build Electron App
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Move electron to devDependencies
+        run: |
+          npm uninstall electron --save || true
+          npm install electron --save-dev
+
+      # Build for Linux
+      - name: Build Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run build:linux
+        continue-on-error: true
+
+      # Build for Windows
+      - name: Build Windows
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
+        continue-on-error: true
+
+      # Build for macOS
+      - name: Build macOS
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
+        continue-on-error: true
+
+      # Upload Linux artifacts
+      - name: Upload Linux artifacts
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.snap
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # Upload Windows artifacts
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            dist/*.exe
+            dist/*.msi
+            dist/*.zip
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # Upload macOS artifacts
+      - name: Upload macOS artifacts
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: |
+            dist/*.dmg
+            dist/*.pkg
+            dist/*.zip
+          retention-days: 7
+          if-no-files-found: ignore
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release-artifacts/linux-build/*
+            release-artifacts/windows-build/*
+            release-artifacts/macos-build/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

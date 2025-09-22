@@ -1,29 +1,5 @@
 # Claude Code Configuration - SPARC Development Environment
 
-## 🚨 CRITICAL PROJECT RULES - APLICAÇÃO REAL, NÃO DEMOS
-
-**REGRAS ABSOLUTAS DO PROJETO**:
-1. **NUNCA CRIAR DEMOS OU VERSÕES SIMPLIFICADAS** - Estamos desenvolvendo uma aplicação REAL em produção
-2. **SEMPRE TRABALHAR COM OS ARQUIVOS REAIS** do projeto (TypeScript, React, Next.js)
-3. **NUNCA CRIAR WORKAROUNDS SEM CONSENTIMENTO** - Sempre perguntar antes de contornar problemas
-4. **SEMPRE TENTAR RESOLUÇÃO DIRETA** dos problemas antes de propor alternativas
-5. **NUNCA GERAR ARQUIVOS HTML ESTÁTICOS** como substitutos da aplicação real
-6. **SEMPRE EXECUTAR A APLICAÇÃO REAL** - Next.js + Electron + Backend, não versões simplificadas
-
-## 🎯 ABORDAGEM PARA RESOLUÇÃO DE PROBLEMAS
-
-**QUANDO ENCONTRAR UM ERRO**:
-1. **PRIMEIRO**: Identificar a causa raiz do problema
-2. **SEGUNDO**: Propor a solução direta para o problema real
-3. **TERCEIRO**: Implementar a correção nos arquivos corretos do projeto
-4. **QUARTO**: Testar a solução na aplicação real
-5. **NUNCA**: Criar uma versão alternativa ou demo para "demonstrar" funcionalidade
-
-**SE A SOLUÇÃO DIRETA NÃO FUNCIONAR**:
-- **SEMPRE** informar o usuário sobre o problema específico
-- **SEMPRE** pedir permissão antes de tentar workarounds
-- **NUNCA** assumir que uma demo ou versão simplificada é aceitável
-
 ## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
 
 **ABSOLUTE RULES**:
@@ -374,6 +350,3 @@ NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 Never save working files, text/mds and tests to the root folder.
-NEVER create HTML demo files - always work with the real application.
-NEVER create workarounds without explicit user consent.
-ALWAYS try to solve the actual problem directly first.

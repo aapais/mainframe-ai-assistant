@@ -11,11 +11,6 @@ export { default as CacheService } from './CacheService';
 export { default as MetricsService } from './MetricsService';
 export { default as ImportExportService } from './ImportExportService';
 
-// Incident Management Services
-export { IncidentService } from './IncidentService';
-export { IncidentAIService } from './IncidentAIService';
-export { AIResolverService, default as AIResolver } from './aiResolver';
-
 // Enhanced Export/Import Services
 export {
   ExportService,

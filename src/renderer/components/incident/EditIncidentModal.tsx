@@ -20,18 +20,7 @@ import {
   ArrowRight,
   RotateCcw,
   MessageSquare,
-  FileWarning,
-  Wrench,
-  ClipboardList,
-  ArrowUpRight,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-  CheckCircle2,
-  XCircle,
-  Lightbulb,
-  Target,
-  TrendingDown
+  FileWarning
 } from 'lucide-react';
 import {
   Modal,
@@ -69,26 +58,6 @@ interface IncidentData {
   sla_deadline?: Date;
   business_impact_rating?: number;
   estimated_resolution?: Date;
-  // Campos para tratamento de incidente
-  treatment_analysis?: string;
-  actions_taken?: string;
-  next_steps?: string;
-  treatment_started_at?: Date;
-  treatment_notes?: string;
-}
-
-interface AIProposal {
-  id: string;
-  confidence: number;
-  estimated_resolution_time: string;
-  risk_level: 'baixo' | 'medio' | 'alto';
-  analysis: string;
-  actions_taken: string;
-  next_steps: string;
-  treatment_notes?: string;
-  reasoning: string;
-  success_probability: number;
-  generated_at: Date;
 }
 
 interface EditIncidentModalProps {
@@ -120,9 +89,6 @@ interface ValidationErrors {
   reported_by?: string;
   tags?: string;
   change_reason?: string;
-  treatment_analysis?: string;
-  actions_taken?: string;
-  next_steps?: string;
 }
 
 interface FieldChange {
@@ -225,16 +191,6 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
   const [showAuditTrail, setShowAuditTrail] = useState(false);
   const [criticalChange, setCriticalChange] = useState(false);
 
-  // Treatment-specific state
-  const [showTreatmentSection, setShowTreatmentSection] = useState(false);
-  const [treatmentStarted, setTreatmentStarted] = useState(false);
-
-  // AI Proposal state
-  const [aiProposal, setAIProposal] = useState<AIProposal | null>(null);
-  const [generatingProposal, setGeneratingProposal] = useState(false);
-  const [showProposal, setShowProposal] = useState(false);
-  const [proposalError, setProposalError] = useState<string | null>(null);
-
   // Refs
   const formRef = useRef<HTMLFormElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
@@ -252,12 +208,6 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
       setShowConfirmDialog(false);
       setPendingChanges(null);
       setCriticalChange(false);
-      setShowTreatmentSection(false);
-      setTreatmentStarted(false);
-      setAIProposal(null);
-      setGeneratingProposal(false);
-      setShowProposal(false);
-      setProposalError(null);
     }
   }, [isOpen, incident]);
 
@@ -353,25 +303,6 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
       errors.change_reason = 'Motivo da mudança é obrigatório para alterações críticas';
     }
 
-    // Validation for treatment fields
-    if (treatmentStarted || showTreatmentSection) {
-      if (!formData.treatment_analysis?.trim()) {
-        errors.treatment_analysis = 'Análise do problema é obrigatória para iniciar o tratamento';
-      } else if (formData.treatment_analysis.length < 20) {
-        errors.treatment_analysis = 'Análise deve ter pelo menos 20 caracteres';
-      }
-
-      if (!formData.actions_taken?.trim()) {
-        errors.actions_taken = 'Ações tomadas são obrigatórias';
-      } else if (formData.actions_taken.length < 10) {
-        errors.actions_taken = 'Ações tomadas devem ter pelo menos 10 caracteres';
-      }
-
-      if (!formData.next_steps?.trim()) {
-        errors.next_steps = 'Próximos passos são obrigatórios';
-      }
-    }
-
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   }, [formData, originalData, criticalChange, changeReason]);
@@ -442,165 +373,6 @@ export const EditIncidentModal: React.FC<EditIncidentModalProps> = ({
       setAISuggestionLoading(false);
     }
   }, [formData.title, formData.description, formData.category, formData.priority, formData.impact, formData.tags, trackFieldChange]);
-
-  // Handle incident treatment
-  const handleTreatIncident = useCallback(async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Mark treatment as started and update status
-      const treatmentData: Partial<IncidentData> = {
-        status: 'em_tratamento',
-        treatment_started_at: new Date(),
-        treatment_analysis: formData.treatment_analysis,
-        actions_taken: formData.actions_taken,
-        next_steps: formData.next_steps,
-        treatment_notes: formData.treatment_notes
-      };
-
-      // Track the treatment fields as changed
-      Object.keys(treatmentData).forEach(field => {
-        trackFieldChange(field, (treatmentData as any)[field], (originalData as any)[field]);
-      });
-
-      // Update form data
-      setFormData(prev => ({ ...prev, ...treatmentData }));
-
-      // Build audit info for treatment
-      const auditInfo: AuditInfo = {
-        changedFields: ['status', 'treatment_started_at', 'treatment_analysis', 'actions_taken', 'next_steps'],
-        changeReason: 'Início do tratamento do incidente',
-        changedBy: 'current-user', // This should come from auth context
-        previousValues: {
-          status: originalData.status,
-          treatment_started_at: originalData.treatment_started_at,
-          treatment_analysis: originalData.treatment_analysis,
-          actions_taken: originalData.actions_taken,
-          next_steps: originalData.next_steps
-        },
-        newValues: treatmentData,
-        timestamp: new Date(),
-        requiresApproval: false,
-        criticalChange: true
-      };
-
-      await onSubmit(incident.id, treatmentData, auditInfo);
-      setTreatmentStarted(true);
-      onClose();
-    } catch (error) {
-      console.error('Error starting incident treatment:', error);
-      onError?.(error as Error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [formData, originalData, incident.id, validateForm, trackFieldChange, onSubmit, onClose, onError]);
-
-  // Generate AI proposal for resolution
-  const handleGenerateAIProposal = useCallback(async () => {
-    if (!formData.title.trim() || !formData.description.trim()) {
-      setProposalError('Título e descrição são obrigatórios para gerar proposta com IA');
-      return;
-    }
-
-    setGeneratingProposal(true);
-    setProposalError(null);
-
-    try {
-      // Mock AI proposal generation - in production, this would call the AIResolverService
-      // const aiResolverService = new AIResolverService(incidentService, aiService);
-      // const proposal = await aiResolverService.generateResolutionProposal(formData);
-
-      // Mock proposal for demonstration
-      setTimeout(() => {
-        const mockProposal: AIProposal = {
-          id: `proposal-${Date.now()}`,
-          confidence: 0.85,
-          estimated_resolution_time: '2-4 horas',
-          risk_level: 'medio',
-          analysis: `Análise automática do incidente "${formData.title}" indica problema similar a casos anteriores na categoria ${formData.category}.
-
-Baseado em 8 incidentes similares com 87% de taxa de sucesso, o problema parece estar relacionado a configuração ou falha de componente específico.
-
-Recomenda-se verificação inicial dos logs do sistema e aplicação de correção padrão conforme procedimentos já validados.`,
-
-          actions_taken: `1. Verificar logs do sistema para identificar erros específicos
-2. Analisar configurações atuais vs. configurações padrão
-3. Executar script de diagnóstico automático
-4. Aplicar correção baseada em padrão identificado
-5. Realizar teste de funcionalidade após correção`,
-
-          next_steps: `1. Monitorar sistema por 1 hora após aplicação da correção
-2. Validar funcionamento com usuários afetados
-3. Documentar solução aplicada para referência futura
-4. Agendar revisão preventiva em 30 dias`,
-
-          treatment_notes: `Proposta baseada em análise de 8 casos similares. Taxa de sucesso histórica: 87%.
-Tempo médio de resolução: 2.5 horas. Recomenda-se execução durante horário comercial para facilitar validação com usuários.`,
-
-          reasoning: `Esta proposta foi gerada analisando incidentes similares com características parecidas:
-- Mesma categoria (${formData.category})
-- Sintomas similares no título/descrição
-- Histórico de resoluções bem-sucedidas
-- Tempo de resolução médio compatível com SLA`,
-
-          success_probability: 0.87,
-          generated_at: new Date()
-        };
-
-        setAIProposal(mockProposal);
-        setShowProposal(true);
-        setGeneratingProposal(false);
-      }, 2500);
-
-    } catch (error) {
-      console.error('Error generating AI proposal:', error);
-      setProposalError('Erro ao gerar proposta com IA. Tente novamente.');
-      setGeneratingProposal(false);
-    }
-  }, [formData.title, formData.description, formData.category]);
-
-  // Accept AI proposal
-  const handleAcceptProposal = useCallback(() => {
-    if (!aiProposal) return;
-
-    // Auto-fill treatment fields with AI proposal
-    const treatmentData = {
-      treatment_analysis: aiProposal.analysis,
-      actions_taken: aiProposal.actions_taken,
-      next_steps: aiProposal.next_steps,
-      treatment_notes: aiProposal.treatment_notes || ''
-    };
-
-    // Update form data
-    setFormData(prev => ({ ...prev, ...treatmentData }));
-
-    // Track changes
-    Object.entries(treatmentData).forEach(([field, value]) => {
-      trackFieldChange(field, value, (formData as any)[field]);
-    });
-
-    setShowProposal(false);
-
-    // Show treatment section if not already shown
-    if (!showTreatmentSection) {
-      setShowTreatmentSection(true);
-    }
-  }, [aiProposal, formData, trackFieldChange, showTreatmentSection]);
-
-  // Reject AI proposal
-  const handleRejectProposal = useCallback(() => {
-    setShowProposal(false);
-    setAIProposal(null);
-  }, []);
-
-  // Check if incident can be treated
-  const canTreatIncident = () => {
-    return formData.status !== 'fechado' && formData.status !== 'resolvido';
-  };
 
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -1256,307 +1028,6 @@ Tempo médio de resolução: 2.5 horas. Recomenda-se execução durante horário
                 )}
               </div>
 
-              {/* Treatment Section */}
-              {canTreatIncident() && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <Wrench className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-green-900">
-                          Tratar Incidente
-                        </h3>
-                        <p className="text-xs text-green-700">
-                          Inicie o tratamento deste incidente preenchendo as informações abaixo
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {/* AI Proposal Button */}
-                      <button
-                        type="button"
-                        onClick={handleGenerateAIProposal}
-                        disabled={generatingProposal || !formData.title.trim() || !formData.description.trim()}
-                        className="flex items-center px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-100 border border-purple-300 rounded-md hover:bg-purple-200 disabled:opacity-50"
-                      >
-                        {generatingProposal ? (
-                          <>
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                            Gerando...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            Gerar Proposta com IA
-                          </>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowTreatmentSection(!showTreatmentSection)}
-                        className="flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 border border-green-300 rounded-md hover:bg-green-200"
-                      >
-                        {showTreatmentSection ? (
-                          <>
-                            <ChevronUp className="h-3 w-3 mr-1" />
-                            Ocultar
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="h-3 w-3 mr-1" />
-                            Mostrar
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Error message for AI proposal */}
-                  {proposalError && (
-                    <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                      <div className="flex items-center">
-                        <XCircle className="h-4 w-4 text-red-600 mr-2" />
-                        <span className="text-sm text-red-800">{proposalError}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Proposal Display */}
-                  {showProposal && aiProposal && (
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div className="p-2 bg-purple-100 rounded-lg">
-                            <Lightbulb className="h-5 w-5 text-purple-600" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-semibold text-purple-900">
-                              Proposta de Resolução Gerada por IA
-                            </h4>
-                            <div className="flex items-center space-x-4 text-xs text-purple-700 mt-1">
-                              <span className="flex items-center">
-                                <Target className="h-3 w-3 mr-1" />
-                                Confiança: {Math.round(aiProposal.confidence * 100)}%
-                              </span>
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Tempo estimado: {aiProposal.estimated_resolution_time}
-                              </span>
-                              <span className="flex items-center">
-                                <Shield className={`h-3 w-3 mr-1 ${
-                                  aiProposal.risk_level === 'baixo' ? 'text-green-600' :
-                                  aiProposal.risk_level === 'medio' ? 'text-yellow-600' : 'text-red-600'
-                                }`} />
-                                Risco: {aiProposal.risk_level}
-                              </span>
-                              <span className="flex items-center">
-                                <TrendingDown className="h-3 w-3 mr-1" />
-                                Sucesso: {Math.round(aiProposal.success_probability * 100)}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowProposal(false)}
-                          className="text-purple-600 hover:text-purple-800"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-
-                      {/* AI Proposal Content */}
-                      <div className="space-y-3">
-                        {/* Analysis */}
-                        <div className="bg-white rounded-md p-3">
-                          <h5 className="text-xs font-medium text-gray-700 mb-2">Análise do Problema:</h5>
-                          <p className="text-sm text-gray-900 whitespace-pre-line">{aiProposal.analysis}</p>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="bg-white rounded-md p-3">
-                          <h5 className="text-xs font-medium text-gray-700 mb-2">Ações Recomendadas:</h5>
-                          <p className="text-sm text-gray-900 whitespace-pre-line">{aiProposal.actions_taken}</p>
-                        </div>
-
-                        {/* Next Steps */}
-                        <div className="bg-white rounded-md p-3">
-                          <h5 className="text-xs font-medium text-gray-700 mb-2">Próximos Passos:</h5>
-                          <p className="text-sm text-gray-900 whitespace-pre-line">{aiProposal.next_steps}</p>
-                        </div>
-
-                        {/* Reasoning */}
-                        <div className="bg-white rounded-md p-3">
-                          <h5 className="text-xs font-medium text-gray-700 mb-2">Justificativa:</h5>
-                          <p className="text-sm text-gray-600 whitespace-pre-line">{aiProposal.reasoning}</p>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex justify-end space-x-3 pt-3 border-t border-purple-200">
-                        <button
-                          type="button"
-                          onClick={handleRejectProposal}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Rejeitar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleAcceptProposal}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
-                        >
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Aceitar e Preencher
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {showTreatmentSection && (
-                    <div className="space-y-4 mt-4">
-                      {/* Treatment Analysis */}
-                      <div className="space-y-2">
-                        <label htmlFor="treatment_analysis" className="block text-sm font-medium text-gray-700">
-                          <ClipboardList className="inline h-4 w-4 mr-1" />
-                          Análise do Problema <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          id="treatment_analysis"
-                          value={formData.treatment_analysis || ''}
-                          onChange={(e) => handleInputChange('treatment_analysis', e.target.value)}
-                          placeholder="Descreva sua análise inicial do problema, possíveis causas e impactos identificados..."
-                          rows={3}
-                          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
-                            validationErrors.treatment_analysis ? 'border-red-300' :
-                            changedFields.has('treatment_analysis') ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                          }`}
-                          maxLength={2000}
-                        />
-                        {validationErrors.treatment_analysis && (
-                          <span className="text-sm text-red-600 flex items-center">
-                            <AlertTriangle className="h-4 w-4 mr-1" />
-                            {validationErrors.treatment_analysis}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Actions Taken */}
-                      <div className="space-y-2">
-                        <label htmlFor="actions_taken" className="block text-sm font-medium text-gray-700">
-                          <Activity className="inline h-4 w-4 mr-1" />
-                          Ações Tomadas <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          id="actions_taken"
-                          value={formData.actions_taken || ''}
-                          onChange={(e) => handleInputChange('actions_taken', e.target.value)}
-                          placeholder="Liste as ações já realizadas ou que serão executadas imediatamente..."
-                          rows={3}
-                          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
-                            validationErrors.actions_taken ? 'border-red-300' :
-                            changedFields.has('actions_taken') ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                          }`}
-                          maxLength={2000}
-                        />
-                        {validationErrors.actions_taken && (
-                          <span className="text-sm text-red-600 flex items-center">
-                            <AlertTriangle className="h-4 w-4 mr-1" />
-                            {validationErrors.actions_taken}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Next Steps */}
-                      <div className="space-y-2">
-                        <label htmlFor="next_steps" className="block text-sm font-medium text-gray-700">
-                          <ArrowUpRight className="inline h-4 w-4 mr-1" />
-                          Próximos Passos <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          id="next_steps"
-                          value={formData.next_steps || ''}
-                          onChange={(e) => handleInputChange('next_steps', e.target.value)}
-                          placeholder="Defina os próximos passos para resolução do incidente..."
-                          rows={3}
-                          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
-                            validationErrors.next_steps ? 'border-red-300' :
-                            changedFields.has('next_steps') ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                          }`}
-                          maxLength={1000}
-                        />
-                        {validationErrors.next_steps && (
-                          <span className="text-sm text-red-600 flex items-center">
-                            <AlertTriangle className="h-4 w-4 mr-1" />
-                            {validationErrors.next_steps}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Treatment Notes (Optional) */}
-                      <div className="space-y-2">
-                        <label htmlFor="treatment_notes" className="block text-sm font-medium text-gray-700">
-                          <MessageSquare className="inline h-4 w-4 mr-1" />
-                          Observações do Tratamento (Opcional)
-                        </label>
-                        <textarea
-                          id="treatment_notes"
-                          value={formData.treatment_notes || ''}
-                          onChange={(e) => handleInputChange('treatment_notes', e.target.value)}
-                          placeholder="Observações adicionais sobre o tratamento..."
-                          rows={2}
-                          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
-                            changedFields.has('treatment_notes') ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                          }`}
-                          maxLength={1000}
-                        />
-                      </div>
-
-                      {/* Treatment Action Button */}
-                      <div className="flex justify-end pt-2">
-                        <button
-                          type="button"
-                          onClick={handleTreatIncident}
-                          disabled={isSubmitting || !formData.treatment_analysis?.trim() || !formData.actions_taken?.trim() || !formData.next_steps?.trim()}
-                          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Iniciando Tratamento...
-                            </>
-                          ) : (
-                            <>
-                              <Wrench className="h-4 w-4 mr-2" />
-                              Iniciar Tratamento
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Status Alert for Closed/Resolved Incidents */}
-              {!canTreatIncident() && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-5 w-5 text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">
-                      Incidente {formData.status === 'fechado' ? 'Fechado' : 'Resolvido'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Este incidente não pode ser tratado pois já está {formData.status === 'fechado' ? 'fechado' : 'resolvido'}.
-                  </p>
-                </div>
-              )}
-
               {/* Change Reason (required for critical changes) */}
               {criticalChange && (
                 <div className="space-y-2">
@@ -1625,27 +1096,6 @@ Tempo médio de resolução: 2.5 horas. Recomenda-se execução durante horário
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Reverter
                 </button>
-                {/* Treatment Button (if treatment section is shown and valid) */}
-                {showTreatmentSection && canTreatIncident() && (
-                  <button
-                    type="button"
-                    onClick={handleTreatIncident}
-                    disabled={isSubmitting || !formData.treatment_analysis?.trim() || !formData.actions_taken?.trim() || !formData.next_steps?.trim()}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Tratando...
-                      </>
-                    ) : (
-                      <>
-                        <Wrench className="h-4 w-4 mr-2" />
-                        Tratar Incidente
-                      </>
-                    )}
-                  </button>
-                )}
                 <button
                   type="submit"
                   onClick={handleSubmit}
