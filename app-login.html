@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mainframe AI Assistant - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            color: white;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .status-box {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .status-box.checking {
+            border-left-color: #ffc107;
+        }
+
+        .status-box.error {
+            border-left-color: #dc3545;
+        }
+
+        .login-methods {
+            margin-bottom: 20px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-windows {
+            background: #0078d4;
+            color: white;
+        }
+
+        .btn-windows:hover {
+            background: #106ebe;
+        }
+
+        .btn-demo {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-demo:hover {
+            background: #5a6268;
+        }
+
+        .separator {
+            text-align: center;
+            margin: 20px 0;
+            color: #999;
+            position: relative;
+        }
+
+        .separator::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .separator::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-section {
+            background: #e7f3ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-title {
+            color: #0066cc;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .info-list {
+            list-style: none;
+        }
+
+        .info-list li {
+            padding: 5px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .info-list li::before {
+            content: '✓ ';
+            color: #28a745;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Login Screen -->
+        <div class="login-container" id="loginScreen">
+            <div class="logo-section">
+                <div class="logo">🤖</div>
+                <h1>Mainframe AI Assistant</h1>
+                <p class="subtitle">Sistema de Gestão de Conhecimento</p>
+            </div>
+
+            <div class="status-box checking" id="statusBox">
+                <strong>Estado:</strong> <span id="statusText">A verificar autenticação...</span>
+            </div>
+
+            <div class="login-methods">
+                <button class="login-btn btn-windows" onclick="loginWindows()" id="windowsLoginBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" style="margin-right: 10px;">
+                        <path d="M0 3.45L9.75 2.1v9.4H0m10.95-9.55L24 0v11.4H10.95m-10.95 1.2h9.75v9.4L0 20.55m10.95 1.35L24 24V12.65H10.95"/>
+                    </svg>
+                    Entrar com Windows (Automático)
+                </button>
+
+                <div class="separator">ou</div>
+
+                <button class="login-btn btn-demo" onclick="loginDemo()">
+                    Entrar como Demonstração
+                </button>
+            </div>
+
+            <div class="info-section">
+                <div class="info-title">ℹ️ Informações do Sistema</div>
+                <ul class="info-list">
+                    <li>Login automático com credenciais Windows</li>
+                    <li>Não requer Azure AD ou configuração</li>
+                    <li>Funciona offline e localmente</li>
+                    <li>Sessões seguras de 8 horas</li>
+                    <li>Suporte completo para API Keys</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Configuração das APIs
+        const API_WINDOWS = 'http://localhost:3004'; // Python Windows Local
+        const API_BACKEND = 'http://localhost:3005'; // Node.js Backend
+
+        let currentUser = null;
+        let authToken = null;
+
+        // Verifica estado inicial
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Mainframe AI Assistant iniciado');
+
+            // Sempre mostra a tela de login
+            // (o index.html vai verificar se tem token)
+            updateStatus('ready', '✅ Pronto para login');
+        });
+
+        function updateStatus(type, message) {
+            const statusBox = document.getElementById('statusBox');
+            const statusText = document.getElementById('statusText');
+
+            statusBox.className = 'status-box ' + (type === 'error' ? 'error' : type === 'checking' ? 'checking' : '');
+            statusText.textContent = message;
+        }
+
+        async function loginWindows() {
+            updateStatus('checking', '🔐 A autenticar com Windows...');
+
+            try {
+                // Usa diretamente o servidor Python que está funcionando
+                const response = await fetch(`${API_WINDOWS}/api/auth/windows/login`);
+                const data = await response.json();
+
+                console.log('Resposta do servidor:', data);
+
+                if (data.success) {
+                    authToken = data.token;
+                    currentUser = data.user;
+
+                    // Salva no localStorage
+                    localStorage.setItem('auth_token', authToken);
+                    localStorage.setItem('user_data', JSON.stringify(currentUser));
+
+                    updateStatus('success', '✅ Login realizado com sucesso!');
+
+                    setTimeout(() => {
+                        // Redireciona para a aplicação principal
+                        window.location.href = '/index.html';
+                    }, 1000);
+                } else {
+                    updateStatus('error', '❌ Erro no login: ' + (data.error || 'Falha desconhecida'));
+                }
+            } catch (error) {
+                updateStatus('error', '❌ Erro de conexão. Verifique se o servidor está rodando.');
+                console.error('Erro:', error);
+            }
+        }
+
+        function loginDemo() {
+            // Login de demonstração
+            currentUser = {
+                username: 'demo',
+                displayName: 'Usuário Demo',
+                email: 'demo@mainframe.local',
+                domain: 'LOCAL',
+                computer: 'DEMO-PC'
+            };
+
+            authToken = 'demo-token-' + Date.now();
+
+            localStorage.setItem('auth_token', authToken);
+            localStorage.setItem('user_data', JSON.stringify(currentUser));
+
+            updateStatus('success', '✅ Entrando como demonstração...');
+
+            setTimeout(() => {
+                // Redireciona para a aplicação principal
+                window.location.href = '/index.html';
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>
