@@ -1,0 +1,270 @@
+[
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Sheet1_0",
+    "title": "[Excel] Contratacao_conta_business _conta_business_+",
+    "content": "IDENTIFICADOR: Contratacao_conta_business _conta_business_+\nDESCRIÇÃO: Contratação conta business e conta business +\nTIPO: FAQ\nEXPRESSÕES CHAVE: Contratação&&Conta&&(Caixa||Business)&&ZP050\nPERGUNTA/INTERAÇÃO: Ao tentar contratar um pacote Conta Business e Conta Business + está a dar erro \"ZP 050 ACCAO NAO PERMITIDA PARA TIPO DE PACOTE\".\nRESPOSTA (GrupoI): De acordo com a informação em https://somoscaixa.grupocgd.com/negocio/empresas/transacional-e-protecao/contas/Paginas/Conta-Caixa-Business.aspx tratando-se de um produto Conta Caixa a subscrição deve ser efetuada através da ZP.03.00",
+    "summary": "IDENTIFICADOR: Contratacao_conta_business _conta_business_+\nDESCRIÇÃO: Contratação conta business e conta business +\nTIPO: FAQ\nEXPRESSÕES CHAVE: Contratação&&Conta&&(Caixa||Business)&&ZP050\nPERGUNTA/INTERAÇÃO: Ao tentar contratar um pacote Conta Business e Conta Business + está a dar erro \"ZP 050 ACCAO NAO PERMITIDA PARA TIPO DE PACOTE\".\nRESPOSTA (GrupoI): De acordo com a informação em https://somoscaixa.grupocgd.com/negocio/empresas/transacional-e-protecao/contas/Paginas/Conta-Caixa-Business.as",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Sheet1",
+      "row": 0
+    },
+    "chunks": [
+      {
+        "chunk_id": "Sheet1_0",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "IDENTIFICADOR: Contratacao_conta_business _conta_business_+\nDESCRIÇÃO: Contratação conta business e conta business +\nTIPO: FAQ\nEXPRESSÕES CHAVE: Contratação&&Conta&&(Caixa||Business)&&ZP050\nPERGUNTA/INTERAÇÃO: Ao tentar contratar um pacote Conta Business e Conta Business + está a dar erro \"ZP 050 ACCAO NAO PERMITIDA PARA TIPO DE PACOTE\".\nRESPOSTA (GrupoI): De acordo com a informação em https://somoscaixa.grupocgd.com/negocio/empresas/transacional-e-protecao/contas/Paginas/Conta-Caixa-Business.aspx tratando-se de um produto Conta Caixa a subscrição deve ser efetuada através da ZP.03.00",
+        "content_type": "table_row",
+        "chunk_index": 0,
+        "total_chunks": 6,
+        "metadata": {
+          "sheet": "Sheet1",
+          "row": 0
+        },
+        "embedding_text": "IDENTIFICADOR: Contratacao_conta_business _conta_business_+\nDESCRIÇÃO: Contratação conta business e conta business +\nTIPO: FAQ\nEXPRESSÕES CHAVE: Contratação&&Conta&&(Caixa||Business)&&ZP050\nPERGUNTA/INTERAÇÃO: Ao tentar contratar um pacote Conta Business e Conta Business + está a dar erro \"ZP 050 ACCAO NAO PERMITIDA PARA TIPO DE PACOTE\".\nRESPOSTA (GrupoI): De acordo com a informação em https://somoscaixa.grupocgd.com/negocio/empresas/transacional-e-protecao/contas/Paginas/Conta-Caixa-Business.aspx tratando-se de um produto Conta Caixa a subscrição deve ser efetuada através da ZP.03.00"
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Sheet1_sheet",
+    "title": "[Excel Sheet] Sheet1 - Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "content": "Sheet: Sheet1\nLinhas: 1\nColunas: 6\nColunas: IDENTIFICADOR, DESCRIÇÃO, TIPO, EXPRESSÕES CHAVE, PERGUNTA/INTERAÇÃO, RESPOSTA (GrupoI)\n\nAmostra de dados:\n                                  IDENTIFICADOR                                      DESCRIÇÃO TIPO                              EXPRESSÕES CHAVE                                                                                                                 PERGUNTA/INTERAÇÃO                                                                                                                                                                                                                         RESPOSTA (GrupoI)\n0  Contratacao_conta_business _conta_business_+  Contratação conta business e conta business +  FAQ  Contratação&&Conta&&(Caixa||Business)&&ZP050  Ao tentar contratar um pacote Conta Business e Conta Business + está a dar erro \"ZP 050 ACCAO NAO PERMITIDA PARA TIPO DE PACOTE\".  De acordo com a informação em https://somoscaixa.grupocgd.com/negocio/empresas/transacional-e-protecao/contas/Paginas/Conta-Caixa-Business.aspx tratando-se de um produto Conta Caixa a subscrição deve ser efetuada através da ZP.03.00",
+    "summary": "Sheet: Sheet1 | Linhas: 1 | Colunas: 6 | Colunas: IDENTIFICADOR, DESCRIÇÃO, TIPO, EXPRESSÕES CHAVE, PERGUNTA/INTERAÇÃO, RESPOSTA (GrupoI)",
+    "category": "Spreadsheet",
+    "tags": [
+      "Sheet1",
+      "excel",
+      "tabela"
+    ],
+    "confidence_score": 0.9,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel_sheet",
+    "metadata": {
+      "total_rows": 1,
+      "total_cols": 6
+    },
+    "chunks": [],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_0",
+    "title": "[Excel] Coluna - Observações - Domínios",
+    "content": "Unnamed: 1: Coluna\nUnnamed: 2: Observações\nUnnamed: 3: Domínios",
+    "summary": "Unnamed: 1: Coluna\nUnnamed: 2: Observações\nUnnamed: 3: Domínios",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Instruções",
+      "row": 0
+    },
+    "chunks": [
+      {
+        "chunk_id": "Instruções_0",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "Unnamed: 1: Coluna\nUnnamed: 2: Observações\nUnnamed: 3: Domínios",
+        "content_type": "table_row",
+        "chunk_index": 0,
+        "total_chunks": 3,
+        "metadata": {
+          "sheet": "Instruções",
+          "row": 0
+        },
+        "embedding_text": "Unnamed: 1: Coluna\nUnnamed: 2: Observações\nUnnamed: 3: Domínios"
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_1",
+    "title": "[Excel] IDENTIFICADOR - Identificador único da FAQ\nDeverá ter uma descrição que enquadre o tema da FAQ        \nNão utilizar caracteres especiais, nem espaços.\nNo mesmo identificador podem ser criadas várias expressões chave e várias perguntas que conduzam à mesma resposta.\nCaso seja necessário repetir o mesmo identificador por se tratarem de diferentes FAQ's sobre o mesmo tema, distinguir o identificador colocando um dígito no final (PlanoLimites1, PlanoLimites2, PlanoLimites3, ...)",
+    "content": "Unnamed: 1: IDENTIFICADOR\nUnnamed: 2: Identificador único da FAQ\nDeverá ter uma descrição que enquadre o tema da FAQ        \nNão utilizar caracteres especiais, nem espaços.\nNo mesmo identificador podem ser criadas várias expressões chave e várias perguntas que conduzam à mesma resposta.\nCaso seja necessário repetir o mesmo identificador por se tratarem de diferentes FAQ's sobre o mesmo tema, distinguir o identificador colocando um dígito no final (PlanoLimites1, PlanoLimites2, PlanoLimites3, ...)",
+    "summary": "Unnamed: 1: IDENTIFICADOR\nUnnamed: 2: Identificador único da FAQ\nDeverá ter uma descrição que enquadre o tema da FAQ        \nNão utilizar caracteres especiais, nem espaços.\nNo mesmo identificador podem ser criadas várias expressões chave e várias perguntas que conduzam à mesma resposta.\nCaso seja necessário repetir o mesmo identificador por se tratarem de diferentes FAQ's sobre o mesmo tema, distinguir o identificador colocando um dígito no final (PlanoLimites1, PlanoLimites2, PlanoLimites3, ...",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Instruções",
+      "row": 1
+    },
+    "chunks": [
+      {
+        "chunk_id": "Instruções_1",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "Unnamed: 1: IDENTIFICADOR\nUnnamed: 2: Identificador único da FAQ\nDeverá ter uma descrição que enquadre o tema da FAQ        \nNão utilizar caracteres especiais, nem espaços.\nNo mesmo identificador podem ser criadas várias expressões chave e várias perguntas que conduzam à mesma resposta.\nCaso seja necessário repetir o mesmo identificador por se tratarem de diferentes FAQ's sobre o mesmo tema, distinguir o identificador colocando um dígito no final (PlanoLimites1, PlanoLimites2, PlanoLimites3, ...)",
+        "content_type": "table_row",
+        "chunk_index": 1,
+        "total_chunks": 3,
+        "metadata": {
+          "sheet": "Instruções",
+          "row": 1
+        },
+        "embedding_text": "Unnamed: 1: IDENTIFICADOR\nUnnamed: 2: Identificador único da FAQ\nDeverá ter uma descrição que enquadre o tema da FAQ        \nNão utilizar caracteres especiais, nem espaços.\nNo mesmo identificador podem ser criadas várias expressões chave e várias perguntas que conduzam à mesma resposta.\nCaso seja necessário repetir o mesmo identificador por se tratarem de diferentes FAQ's sobre o mesmo tema, distinguir o identificador colocando um dígito no final (PlanoLimites1, PlanoLimites2, PlanoLimites3, ...)"
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_2",
+    "title": "[Excel] TIPO - Define a prioridade da FAQ a apresentar, quando uma questão colocada reúne expressões de duas ou mais FAQs\nCaso uma questão colocada pelo utilizador combine 2 FAQs, com o mesmo TIPO/Prioridade, o Chatbot irá questionar qual das questões pretende ver respondida. - 0 - prioridade baixa (TEASER)\n1 - prioridade média (WARNING)\n2 - prioridade alta (FAQ)",
+    "content": "Unnamed: 1: TIPO\nUnnamed: 2: Define a prioridade da FAQ a apresentar, quando uma questão colocada reúne expressões de duas ou mais FAQs\nCaso uma questão colocada pelo utilizador combine 2 FAQs, com o mesmo TIPO/Prioridade, o Chatbot irá questionar qual das questões pretende ver respondida.\nUnnamed: 3: 0 - prioridade baixa (TEASER)\n1 - prioridade média (WARNING)\n2 - prioridade alta (FAQ)",
+    "summary": "Unnamed: 1: TIPO\nUnnamed: 2: Define a prioridade da FAQ a apresentar, quando uma questão colocada reúne expressões de duas ou mais FAQs\nCaso uma questão colocada pelo utilizador combine 2 FAQs, com o mesmo TIPO/Prioridade, o Chatbot irá questionar qual das questões pretende ver respondida.\nUnnamed: 3: 0 - prioridade baixa (TEASER)\n1 - prioridade média (WARNING)\n2 - prioridade alta (FAQ)",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Instruções",
+      "row": 2
+    },
+    "chunks": [
+      {
+        "chunk_id": "Instruções_2",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "Unnamed: 1: TIPO\nUnnamed: 2: Define a prioridade da FAQ a apresentar, quando uma questão colocada reúne expressões de duas ou mais FAQs\nCaso uma questão colocada pelo utilizador combine 2 FAQs, com o mesmo TIPO/Prioridade, o Chatbot irá questionar qual das questões pretende ver respondida.\nUnnamed: 3: 0 - prioridade baixa (TEASER)\n1 - prioridade média (WARNING)\n2 - prioridade alta (FAQ)",
+        "content_type": "table_row",
+        "chunk_index": 2,
+        "total_chunks": 3,
+        "metadata": {
+          "sheet": "Instruções",
+          "row": 2
+        },
+        "embedding_text": "Unnamed: 1: TIPO\nUnnamed: 2: Define a prioridade da FAQ a apresentar, quando uma questão colocada reúne expressões de duas ou mais FAQs\nCaso uma questão colocada pelo utilizador combine 2 FAQs, com o mesmo TIPO/Prioridade, o Chatbot irá questionar qual das questões pretende ver respondida.\nUnnamed: 3: 0 - prioridade baixa (TEASER)\n1 - prioridade média (WARNING)\n2 - prioridade alta (FAQ)"
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_3",
+    "title": "[Excel] EXPRESSÕES CHAVE - Palavras ou expressões chave que ativam a FAQ.\nAs expressões podem juntar palavras chave com 'E' ou 'Ou'.  Para 'E' utiliza-se o símbolo &&.  Para 'Ou' utiliza-se o símbolo ||.\nPoderão existir espaços nas Expressões, desde que estas sejam colocadas entre parêntesis. Ex. (Cor de laranja)\nNão repetir uma expressão chave em FAQs diferentes, para evitar conflito nas respostas.\nSó se pode usar && e || na mesma FAQ, desde que se utilizem os parêntesis, com as mesmas regras utilizadas numa operação lógica. Ex. '(recirculador&&contagem)||(contagem de notas)'",
+    "content": "Unnamed: 1: EXPRESSÕES CHAVE\nUnnamed: 2: Palavras ou expressões chave que ativam a FAQ.\nAs expressões podem juntar palavras chave com 'E' ou 'Ou'.  Para 'E' utiliza-se o símbolo &&.  Para 'Ou' utiliza-se o símbolo ||.\nPoderão existir espaços nas Expressões, desde que estas sejam colocadas entre parêntesis. Ex. (Cor de laranja)\nNão repetir uma expressão chave em FAQs diferentes, para evitar conflito nas respostas.\nSó se pode usar && e || na mesma FAQ, desde que se utilizem os parêntesis, com as mesmas regras utilizadas numa operação lógica. Ex. '(recirculador&&contagem)||(contagem de notas)'",
+    "summary": "Unnamed: 1: EXPRESSÕES CHAVE\nUnnamed: 2: Palavras ou expressões chave que ativam a FAQ.\nAs expressões podem juntar palavras chave com 'E' ou 'Ou'.  Para 'E' utiliza-se o símbolo &&.  Para 'Ou' utiliza-se o símbolo ||.\nPoderão existir espaços nas Expressões, desde que estas sejam colocadas entre parêntesis. Ex. (Cor de laranja)\nNão repetir uma expressão chave em FAQs diferentes, para evitar conflito nas respostas.\nSó se pode usar && e || na mesma FAQ, desde que se utilizem os parêntesis, com as m",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Instruções",
+      "row": 3
+    },
+    "chunks": [
+      {
+        "chunk_id": "Instruções_3",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "Unnamed: 1: EXPRESSÕES CHAVE\nUnnamed: 2: Palavras ou expressões chave que ativam a FAQ.\nAs expressões podem juntar palavras chave com 'E' ou 'Ou'.  Para 'E' utiliza-se o símbolo &&.  Para 'Ou' utiliza-se o símbolo ||.\nPoderão existir espaços nas Expressões, desde que estas sejam colocadas entre parêntesis. Ex. (Cor de laranja)\nNão repetir uma expressão chave em FAQs diferentes, para evitar conflito nas respostas.\nSó se pode usar && e || na mesma FAQ, desde que se utilizem os parêntesis, com as mesmas regras utilizadas numa operação lógica. Ex. '(recirculador&&contagem)||(contagem de notas)'",
+        "content_type": "table_row",
+        "chunk_index": 3,
+        "total_chunks": 3,
+        "metadata": {
+          "sheet": "Instruções",
+          "row": 3
+        },
+        "embedding_text": "Unnamed: 1: EXPRESSÕES CHAVE\nUnnamed: 2: Palavras ou expressões chave que ativam a FAQ.\nAs expressões podem juntar palavras chave com 'E' ou 'Ou'.  Para 'E' utiliza-se o símbolo &&.  Para 'Ou' utiliza-se o símbolo ||.\nPoderão existir espaços nas Expressões, desde que estas sejam colocadas entre parêntesis. Ex. (Cor de laranja)\nNão repetir uma expressão chave em FAQs diferentes, para evitar conflito nas respostas.\nSó se pode usar && e || na mesma FAQ, desde que se utilizem os parêntesis, com as mesmas regras utilizadas numa operação lógica. Ex. '(recirculador&&contagem)||(contagem de notas)'"
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_4",
+    "title": "[Excel] PERGUNTA/ INTERAÇÃO - As perguntas/interações são únicas.\nNão repetir uma pergunta para FAQs diferentes.\nO ideal é ter várias perguntas e poucas expressões chave.\nTentar criar o maior número possível de variantes dessa pergunta que levem à mesma resposta.",
+    "content": "Unnamed: 1: PERGUNTA/ INTERAÇÃO\nUnnamed: 2: As perguntas/interações são únicas.\nNão repetir uma pergunta para FAQs diferentes.\nO ideal é ter várias perguntas e poucas expressões chave.\nTentar criar o maior número possível de variantes dessa pergunta que levem à mesma resposta.",
+    "summary": "Unnamed: 1: PERGUNTA/ INTERAÇÃO\nUnnamed: 2: As perguntas/interações são únicas.\nNão repetir uma pergunta para FAQs diferentes.\nO ideal é ter várias perguntas e poucas expressões chave.\nTentar criar o maior número possível de variantes dessa pergunta que levem à mesma resposta.",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Instruções",
+      "row": 4
+    },
+    "chunks": [
+      {
+        "chunk_id": "Instruções_4",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "Unnamed: 1: PERGUNTA/ INTERAÇÃO\nUnnamed: 2: As perguntas/interações são únicas.\nNão repetir uma pergunta para FAQs diferentes.\nO ideal é ter várias perguntas e poucas expressões chave.\nTentar criar o maior número possível de variantes dessa pergunta que levem à mesma resposta.",
+        "content_type": "table_row",
+        "chunk_index": 4,
+        "total_chunks": 3,
+        "metadata": {
+          "sheet": "Instruções",
+          "row": 4
+        },
+        "embedding_text": "Unnamed: 1: PERGUNTA/ INTERAÇÃO\nUnnamed: 2: As perguntas/interações são únicas.\nNão repetir uma pergunta para FAQs diferentes.\nO ideal é ter várias perguntas e poucas expressões chave.\nTentar criar o maior número possível de variantes dessa pergunta que levem à mesma resposta."
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_5",
+    "title": "[Excel] RESPOSTA - A resposta poderá ser configurada como:\n* Texto\n* Texto + espaço + Link para site/página\n* Link para site/página",
+    "content": "Unnamed: 1: RESPOSTA\nUnnamed: 2: A resposta poderá ser configurada como:\n* Texto\n* Texto + espaço + Link para site/página\n* Link para site/página",
+    "summary": "Unnamed: 1: RESPOSTA\nUnnamed: 2: A resposta poderá ser configurada como:\n* Texto\n* Texto + espaço + Link para site/página\n* Link para site/página",
+    "category": "Spreadsheet Data",
+    "tags": [],
+    "confidence_score": 0.8,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel",
+    "metadata": {
+      "sheet": "Instruções",
+      "row": 5
+    },
+    "chunks": [
+      {
+        "chunk_id": "Instruções_5",
+        "document_id": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8",
+        "content": "Unnamed: 1: RESPOSTA\nUnnamed: 2: A resposta poderá ser configurada como:\n* Texto\n* Texto + espaço + Link para site/página\n* Link para site/página",
+        "content_type": "table_row",
+        "chunk_index": 5,
+        "total_chunks": 3,
+        "metadata": {
+          "sheet": "Instruções",
+          "row": 5
+        },
+        "embedding_text": "Unnamed: 1: RESPOSTA\nUnnamed: 2: A resposta poderá ser configurada como:\n* Texto\n* Texto + espaço + Link para site/página\n* Link para site/página"
+      }
+    ],
+    "created_by": "auto_import",
+    "embedding_text": null
+  },
+  {
+    "uuid": "5534aec610536613b9e46c5f2350891695753597dc03b1370233873e4b9f25a8_Instruções_sheet",
+    "title": "[Excel Sheet] Instruções - Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "content": "Sheet: Instruções\nLinhas: 6\nColunas: 3\nColunas: Unnamed: 1, Unnamed: 2, Unnamed: 3\n\nAmostra de dados:\n            Unnamed: 1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        Unnamed: 2                                                                                Unnamed: 3\n0               Coluna                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       Observações                                                                                  Domínios\n1        IDENTIFICADOR                                                                                               Identificador único da FAQ\\nDeverá ter uma descrição que enquadre o tema da FAQ        \\nNão utilizar caracteres especiais, nem espaços.\\nNo mesmo identificador podem ser criadas várias expressões chave e várias perguntas que conduzam à mesma resposta.\\nCaso seja necessário repetir o mesmo identificador por se tratarem de diferentes FAQ's sobre o mesmo tema, distinguir o identificador colocando um dígito no final (PlanoLimites1, PlanoLimites2, PlanoLimites3, ...)                                                                                       NaN\n2                 TIPO                                                                                                                                                                                                                                                                                                           Define a prioridade da FAQ a apresentar, quando uma questão colocada reúne expressões de duas ou mais FAQs\\nCaso uma questão colocada pelo utilizador combine 2 FAQs, com o mesmo TIPO/Prioridade, o Chatbot irá questionar qual das questões pretende ver respondida.   0 - prioridade baixa (TEASER)\\n1 - prioridade média (WARNING)\\n2 - prioridade alta (FAQ)\n3     EXPRESSÕES CHAVE  Palavras ou expressões chave que ativam a FAQ.\\nAs expressões podem juntar palavras chave com 'E' ou 'Ou'.  Para 'E' utiliza-se o símbolo &&.  Para 'Ou' utiliza-se o símbolo ||.\\nPoderão existir espaços nas Expressões, desde que estas sejam colocadas entre parêntesis. Ex. (Cor de laranja)\\nNão repetir uma expressão chave em FAQs diferentes, para evitar conflito nas respostas.\\nSó se pode usar && e || na mesma FAQ, desde que se utilizem os parêntesis, com as mesmas regras utilizadas numa operação lógica. Ex. '(recirculador&&contagem)||(contagem de notas)'                                                                                       NaN\n4  PERGUNTA/ INTERAÇÃO                                                                                                                                                                                                                                                                                                                                    As perguntas/interações são únicas.\\nNão repetir uma pergunta para FAQs diferentes.\\nO ideal é ter várias perguntas e poucas expressões chave.\\nTentar criar o maior número possível de variantes dessa pergunta que levem à mesma resposta.\\n                                                                                       NaN\n5             RESPOSTA                                                                                                                                                                                                                                                                                                                                                                                                                                                               A resposta poderá ser configurada como:\\n* Texto\\n* Texto + espaço + Link para site/página\\n* Link para site/página                                                                                       NaN",
+    "summary": "Sheet: Instruções | Linhas: 6 | Colunas: 3 | Colunas: Unnamed: 1, Unnamed: 2, Unnamed: 3",
+    "category": "Spreadsheet",
+    "tags": [
+      "Instruções",
+      "excel",
+      "tabela"
+    ],
+    "confidence_score": 0.9,
+    "source": "Matriz_Vertente_Funcional_Estruturantes.xlsx",
+    "document_type": "excel_sheet",
+    "metadata": {
+      "total_rows": 6,
+      "total_cols": 3
+    },
+    "chunks": [],
+    "created_by": "auto_import",
+    "embedding_text": null
+  }
+]

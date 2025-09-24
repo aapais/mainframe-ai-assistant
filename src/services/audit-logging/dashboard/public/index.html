@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Auditoria - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1><i class="icon-shield"></i> Sistema de Auditoria</h1>
+                <div class="header-info">
+                    <span class="status-indicator" id="connectionStatus">
+                        <i class="icon-circle"></i> Conectado
+                    </span>
+                    <span class="last-update" id="lastUpdate">
+                        Última atualização: --:--
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="dashboard-nav">
+            <ul>
+                <li><a href="#overview" class="nav-link active" data-section="overview">
+                    <i class="icon-dashboard"></i> Visão Geral
+                </a></li>
+                <li><a href="#compliance" class="nav-link" data-section="compliance">
+                    <i class="icon-check-circle"></i> Compliance
+                </a></li>
+                <li><a href="#analytics" class="nav-link" data-section="analytics">
+                    <i class="icon-bar-chart"></i> Analytics
+                </a></li>
+                <li><a href="#logs" class="nav-link" data-section="logs">
+                    <i class="icon-file-text"></i> Logs
+                </a></li>
+                <li><a href="#alerts" class="nav-link" data-section="alerts">
+                    <i class="icon-alert-triangle"></i> Alertas
+                </a></li>
+                <li><a href="#reports" class="nav-link" data-section="reports">
+                    <i class="icon-file"></i> Relatórios
+                </a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Overview Section -->
+            <section id="overview" class="dashboard-section active">
+                <div class="section-header">
+                    <h2>Visão Geral do Sistema</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" id="refreshOverview">
+                            <i class="icon-refresh"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>Total de Eventos</h3>
+                            <i class="icon-activity"></i>
+                        </div>
+                        <div class="metric-value" id="totalEvents">--</div>
+                        <div class="metric-change positive" id="eventsChange">
+                            <i class="icon-trending-up"></i> +12% última hora
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>SLA Compliance</h3>
+                            <i class="icon-target"></i>
+                        </div>
+                        <div class="metric-value" id="slaCompliance">--</div>
+                        <div class="metric-change" id="slaChange">
+                            <i class="icon-trending-down"></i> -2% última hora
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>Alertas Críticos</h3>
+                            <i class="icon-alert-circle"></i>
+                        </div>
+                        <div class="metric-value critical" id="criticalAlerts">--</div>
+                        <div class="metric-change negative" id="alertsChange">
+                            <i class="icon-trending-up"></i> +3 última hora
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <h3>LLM Success Rate</h3>
+                            <i class="icon-cpu"></i>
+                        </div>
+                        <div class="metric-value" id="llmSuccessRate">--</div>
+                        <div class="metric-change positive" id="llmChange">
+                            <i class="icon-trending-up"></i> +5% última hora
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <h3>Eventos por Hora</h3>
+                        <canvas id="eventsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Performance de Resolução</h3>
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Compliance Section -->
+            <section id="compliance" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Status de Compliance</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" id="generateReport">
+                            <i class="icon-download"></i> Gerar Relatório
+                        </button>
+                    </div>
+                </div>
+
+                <div class="compliance-grid">
+                    <div class="compliance-card sox">
+                        <div class="compliance-header">
+                            <h3>SOX Compliance</h3>
+                            <div class="compliance-status compliant">
+                                <i class="icon-check"></i> Compliant
+                            </div>
+                        </div>
+                        <div class="compliance-details">
+                            <div class="detail-item">
+                                <span>Controles Internos:</span>
+                                <span class="status-badge green">Efetivos</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>Certificação 302:</span>
+                                <span class="status-badge green">Em dia</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>Seção 404:</span>
+                                <span class="status-badge yellow">Pendente</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="compliance-card bacen">
+                        <div class="compliance-header">
+                            <h3>BACEN Compliance</h3>
+                            <div class="compliance-status warning">
+                                <i class="icon-alert-triangle"></i> Atenção
+                            </div>
+                        </div>
+                        <div class="compliance-details">
+                            <div class="detail-item">
+                                <span>Circular 3909:</span>
+                                <span class="status-badge green">Compliant</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>Circular 3978:</span>
+                                <span class="status-badge yellow">Revisão</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>Risco Operacional:</span>
+                                <span class="status-badge red">Alto</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="compliance-card lgpd">
+                        <div class="compliance-header">
+                            <h3>LGPD Compliance</h3>
+                            <div class="compliance-status compliant">
+                                <i class="icon-check"></i> Compliant
+                            </div>
+                        </div>
+                        <div class="compliance-details">
+                            <div class="detail-item">
+                                <span>Proteção de Dados:</span>
+                                <span class="status-badge green">Adequada</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>Direitos dos Titulares:</span>
+                                <span class="status-badge green">Atendidos</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>DPO Designado:</span>
+                                <span class="status-badge green">Sim</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Analytics e Insights</h2>
+                    <div class="section-actions">
+                        <select id="analyticsTimeframe">
+                            <option value="24h">Últimas 24h</option>
+                            <option value="7d">Últimos 7 dias</option>
+                            <option value="30d">Últimos 30 dias</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-chart">
+                        <h3>Tendências de Incidentes</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="analytics-insights">
+                        <h3>Insights Automáticos</h3>
+                        <div id="insightsList" class="insights-list">
+                            <!-- Insights will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section id="logs" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Logs de Auditoria</h2>
+                    <div class="section-actions">
+                        <input type="text" id="logSearch" placeholder="Buscar logs...">
+                        <button class="btn btn-secondary" id="filterLogs">
+                            <i class="icon-filter"></i> Filtrar
+                        </button>
+                        <button class="btn btn-primary" id="exportLogs">
+                            <i class="icon-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="logs-container">
+                    <div class="logs-filters">
+                        <div class="filter-group">
+                            <label>Tipo de Evento:</label>
+                            <select id="eventTypeFilter">
+                                <option value="">Todos</option>
+                                <option value="LLM_INTERACTION">Interação LLM</option>
+                                <option value="OPERATOR_ACTION">Ação Operador</option>
+                                <option value="SYSTEM_DECISION">Decisão Sistema</option>
+                                <option value="SLA_METRICS">Métricas SLA</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Severidade:</label>
+                            <select id="severityFilter">
+                                <option value="">Todas</option>
+                                <option value="LOW">Baixa</option>
+                                <option value="MEDIUM">Média</option>
+                                <option value="HIGH">Alta</option>
+                                <option value="CRITICAL">Crítica</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Período:</label>
+                            <input type="datetime-local" id="startDate">
+                            <input type="datetime-local" id="endDate">
+                        </div>
+                    </div>
+
+                    <div class="logs-table-container">
+                        <table id="logsTable" class="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Tipo</th>
+                                    <th>Incidente ID</th>
+                                    <th>Operador</th>
+                                    <th>Descrição</th>
+                                    <th>Severidade</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Logs will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts Section -->
+            <section id="alerts" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Alertas e Anomalias</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-secondary" id="markAllRead">
+                            <i class="icon-check"></i> Marcar como Lidos
+                        </button>
+                        <button class="btn btn-primary" id="configureAlerts">
+                            <i class="icon-settings"></i> Configurar
+                        </button>
+                    </div>
+                </div>
+
+                <div id="alertsList" class="alerts-list">
+                    <!-- Alerts will be populated here -->
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="dashboard-section">
+                <div class="section-header">
+                    <h2>Relatórios de Compliance</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" id="scheduleReport">
+                            <i class="icon-calendar"></i> Agendar Relatório
+                        </button>
+                    </div>
+                </div>
+
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <div class="report-header">
+                            <h3>Relatório SOX</h3>
+                            <span class="report-status scheduled">Agendado</span>
+                        </div>
+                        <div class="report-details">
+                            <p>Próxima geração: 01/01/2024</p>
+                            <p>Frequência: Trimestral</p>
+                        </div>
+                        <div class="report-actions">
+                            <button class="btn btn-small">Gerar Agora</button>
+                            <button class="btn btn-small btn-secondary">Configurar</button>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-header">
+                            <h3>Relatório BACEN</h3>
+                            <span class="report-status pending">Pendente</span>
+                        </div>
+                        <div class="report-details">
+                            <p>Vencimento: 15/12/2023</p>
+                            <p>Frequência: Mensal</p>
+                        </div>
+                        <div class="report-actions">
+                            <button class="btn btn-small">Gerar Agora</button>
+                            <button class="btn btn-small btn-secondary">Configurar</button>
+                        </div>
+                    </div>
+
+                    <div class="report-card">
+                        <div class="report-header">
+                            <h3>Relatório LGPD</h3>
+                            <span class="report-status completed">Concluído</span>
+                        </div>
+                        <div class="report-details">
+                            <p>Última geração: 01/11/2023</p>
+                            <p>Frequência: Anual</p>
+                        </div>
+                        <div class="report-actions">
+                            <button class="btn btn-small">Baixar</button>
+                            <button class="btn btn-small btn-secondary">Visualizar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <span>&copy; 2023 Sistema de Auditoria Bancária</span>
+                <span>Versão 1.0.0</span>
+                <span id="systemStatus" class="system-status">
+                    <i class="icon-circle"></i> Sistema Operacional
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div id="logDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detalhes do Log</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="logDetailContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Exportar Dados</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm">
+                    <div class="form-group">
+                        <label>Tipo de Dados:</label>
+                        <select id="exportType">
+                            <option value="audit_logs">Logs de Auditoria</option>
+                            <option value="analytics_report">Relatório de Analytics</option>
+                            <option value="compliance_report">Relatório de Compliance</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Formato:</label>
+                        <select id="exportFormat">
+                            <option value="json">JSON</option>
+                            <option value="csv">CSV</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Período:</label>
+                        <input type="date" id="exportStartDate">
+                        <input type="date" id="exportEndDate">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Exportar</button>
+                        <button type="button" class="btn btn-secondary modal-close">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

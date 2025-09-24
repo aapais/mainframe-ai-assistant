@@ -1,0 +1,14 @@
+{
+  "feedback": [
+    {
+      "incidentId": "INC-FEEDBACK",
+      "correctCategory": "infrastructure",
+      "confidence": 0.9,
+      "userFeedback": "Categoria estava incorreta",
+      "timestamp": "2025-09-23T10:41:07.274Z",
+      "processed": true
+    }
+  ],
+  "totalFeedback": 1,
+  "lastUpdate": "2025-09-23T10:41:07.288Z"
+}

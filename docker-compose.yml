@@ -1,0 +1,153 @@
+# Docker Compose configuration for Mainframe AI Assistant
+
+services:
+  # PostgreSQL with pgvector for enhanced vector similarity search
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mainframe-ai-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./scripts/database/seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql
+    environment:
+      - POSTGRES_DB=mainframe_ai
+      - POSTGRES_USER=mainframe_user
+      - POSTGRES_PASSWORD=mainframe_pass
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mainframe_user -d mainframe_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mainframe-network
+
+  # ChromaDB Vector Database (backup/alternative vector store)
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: mainframe-ai-chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - CHROMA_SERVER_AUTHN_CREDENTIALS_FILE=/chroma/chroma/auth.txt
+      - CHROMA_SERVER_AUTHN_PROVIDER=chromadb.auth.basic_authn.BasicAuthenticationServerProvider
+    restart: unless-stopped
+    networks:
+      - mainframe-network
+    profiles:
+      - chroma
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    container_name: mainframe-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass redis_pass
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mainframe-network
+
+  # Mainframe AI Assistant Application
+  mainframe-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mainframe-ai-app
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      # Database configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mainframe_ai
+      DB_USER: mainframe_user
+      DB_PASSWORD: mainframe_pass
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_pass
+      # AI/ML configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
+      # Security
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-key}
+      SESSION_SECRET: ${SESSION_SECRET:-your-session-secret}
+      # Logging
+      LOG_LEVEL: debug
+      # Vector search configuration
+      VECTOR_DIMENSION: 1536
+      SIMILARITY_THRESHOLD: 0.7
+    ports:
+      - "3000:3000"
+      - "3001:3001"  # For development/debug
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mainframe-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - app
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mainframe-ai-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mainframe.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - mainframe-network
+    profiles:
+      - admin
+
+networks:
+  mainframe-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  logs:
+    driver: local

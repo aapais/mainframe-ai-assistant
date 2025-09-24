@@ -10,7 +10,7 @@
   "maxWorkers": 1,
   "testTimeout": 300000,
   "verbose": false,
-  "collectCoverage": true,
+  "collectCoverage": false,
   "coverageDirectory": "/mnt/c/mainframe-ai-assistant/coverage/database",
   "coverageReporters": [
     "text",

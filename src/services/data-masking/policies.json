@@ -1,0 +1,345 @@
+{
+  "strict": {
+    "name": "Strict Security Policy",
+    "description": "Maximum security for critical banking operations",
+    "level": "critical",
+    "defaultStrategy": {
+      "type": "redaction",
+      "reversible": false,
+      "replacement": "[CLASSIFIED]"
+    },
+    "strategies": {
+      "cpf": {
+        "type": "hashing",
+        "algorithm": "sha256",
+        "prefix": "CPF",
+        "length": 8,
+        "reversible": false
+      },
+      "cnpj": {
+        "type": "hashing",
+        "algorithm": "sha256",
+        "prefix": "CNPJ",
+        "length": 8,
+        "reversible": false
+      },
+      "creditCard": {
+        "type": "redaction",
+        "replacement": "[CARTAO-PROTEGIDO]",
+        "reversible": false
+      },
+      "cvv": {
+        "type": "redaction",
+        "replacement": "***",
+        "reversible": false
+      },
+      "bankAccount": {
+        "type": "hashing",
+        "algorithm": "sha256",
+        "prefix": "CONTA",
+        "length": 6,
+        "reversible": false
+      },
+      "password": {
+        "type": "redaction",
+        "replacement": "[SENHA-PROTEGIDA]",
+        "reversible": false
+      },
+      "apiKey": {
+        "type": "redaction",
+        "replacement": "[API-KEY-PROTEGIDA]",
+        "reversible": false
+      },
+      "pixKey": {
+        "type": "hashing",
+        "algorithm": "sha256",
+        "prefix": "PIX",
+        "length": 8,
+        "reversible": false
+      },
+      "fullName": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "email": {
+        "type": "partial",
+        "showFirst": 2,
+        "showLast": 0,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "mobilePhone": {
+        "type": "partial",
+        "showFirst": 4,
+        "showLast": 2,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "address": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "monetaryAmount": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "ssn": {
+        "type": "redaction",
+        "replacement": "[SSN-PROTEGIDO]",
+        "reversible": false
+      },
+      "connectionString": {
+        "type": "redaction",
+        "replacement": "[CONNECTION-PROTEGIDA]",
+        "reversible": false
+      },
+      "sensitiveUrl": {
+        "type": "redaction",
+        "replacement": "[URL-PROTEGIDA]",
+        "reversible": false
+      }
+    }
+  },
+
+  "balanced": {
+    "name": "Balanced Security Policy",
+    "description": "Balance between security and functionality",
+    "level": "high",
+    "defaultStrategy": {
+      "type": "partial",
+      "showFirst": 2,
+      "showLast": 2,
+      "maskChar": "*",
+      "reversible": false
+    },
+    "strategies": {
+      "cpf": {
+        "type": "partial",
+        "showFirst": 3,
+        "showLast": 2,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "cnpj": {
+        "type": "partial",
+        "showFirst": 4,
+        "showLast": 2,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "creditCard": {
+        "type": "partial",
+        "showFirst": 4,
+        "showLast": 4,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "cvv": {
+        "type": "redaction",
+        "replacement": "***",
+        "reversible": false
+      },
+      "bankAccount": {
+        "type": "partial",
+        "showFirst": 2,
+        "showLast": 2,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "password": {
+        "type": "redaction",
+        "replacement": "[PROTEGIDA]",
+        "reversible": false
+      },
+      "apiKey": {
+        "type": "partial",
+        "showFirst": 4,
+        "showLast": 4,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "pixKey": {
+        "type": "partial",
+        "showFirst": 3,
+        "showLast": 3,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "fullName": {
+        "type": "partial",
+        "showFirst": 1,
+        "showLast": 1,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "email": {
+        "type": "partial",
+        "showFirst": 3,
+        "showLast": 0,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "mobilePhone": {
+        "type": "partial",
+        "showFirst": 5,
+        "showLast": 4,
+        "maskChar": "*",
+        "reversible": false
+      },
+      "monetaryAmount": {
+        "type": "partial",
+        "showFirst": 2,
+        "showLast": 2,
+        "maskChar": "X",
+        "reversible": false
+      }
+    }
+  },
+
+  "development": {
+    "name": "Development Policy",
+    "description": "Reversible masking for development and testing",
+    "level": "medium",
+    "defaultStrategy": {
+      "type": "tokenization",
+      "reversible": true
+    },
+    "strategies": {
+      "cpf": {
+        "type": "tokenization",
+        "reversible": true
+      },
+      "cnpj": {
+        "type": "tokenization",
+        "reversible": true
+      },
+      "creditCard": {
+        "type": "format_preserving",
+        "reversible": false
+      },
+      "cvv": {
+        "type": "redaction",
+        "replacement": "***",
+        "reversible": false
+      },
+      "bankAccount": {
+        "type": "tokenization",
+        "reversible": true
+      },
+      "password": {
+        "type": "redaction",
+        "replacement": "[DEV-PASSWORD]",
+        "reversible": false
+      },
+      "apiKey": {
+        "type": "redaction",
+        "replacement": "[DEV-API-KEY]",
+        "reversible": false
+      },
+      "pixKey": {
+        "type": "tokenization",
+        "reversible": true
+      },
+      "fullName": {
+        "type": "encryption",
+        "reversible": true
+      },
+      "email": {
+        "type": "tokenization",
+        "reversible": true
+      },
+      "mobilePhone": {
+        "type": "format_preserving",
+        "reversible": false
+      },
+      "monetaryAmount": {
+        "type": "format_preserving",
+        "reversible": false
+      }
+    }
+  },
+
+  "external_critical_external": {
+    "name": "External Service - Critical Protection",
+    "description": "Maximum protection for external LLM processing",
+    "level": "critical",
+    "defaultStrategy": {
+      "type": "redaction",
+      "replacement": "[DADOS-PROTEGIDOS]",
+      "reversible": false
+    },
+    "strategies": {
+      "cpf": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "cnpj": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "creditCard": {
+        "type": "redaction",
+        "replacement": "[CARTAO-SUBSTITUIDO]",
+        "reversible": false
+      },
+      "cvv": {
+        "type": "redaction",
+        "replacement": "***",
+        "reversible": false
+      },
+      "bankAccount": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "password": {
+        "type": "redaction",
+        "replacement": "[SENHA-REMOVIDA]",
+        "reversible": false
+      },
+      "apiKey": {
+        "type": "redaction",
+        "replacement": "[TOKEN-REMOVIDO]",
+        "reversible": false
+      },
+      "pixKey": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "fullName": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "email": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "mobilePhone": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "address": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "monetaryAmount": {
+        "type": "substitution",
+        "reversible": false
+      },
+      "ssn": {
+        "type": "redaction",
+        "replacement": "[SSN-REMOVIDO]",
+        "reversible": false
+      },
+      "connectionString": {
+        "type": "redaction",
+        "replacement": "[CONEXAO-REMOVIDA]",
+        "reversible": false
+      },
+      "sensitiveUrl": {
+        "type": "redaction",
+        "replacement": "[URL-REMOVIDA]",
+        "reversible": false
+      }
+    }
+  }
+}

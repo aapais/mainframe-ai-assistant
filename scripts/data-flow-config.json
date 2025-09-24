@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "lastOptimization": "2025-09-22T19:32:19.122Z",
+  "statusMappings": {
+    "backend_to_frontend": {
+      "aberto": "Aberto",
+      "em_tratamento": "Em Tratamento",
+      "resolvido": "Resolvido",
+      "fechado": "Fechado"
+    },
+    "frontend_to_backend": {
+      "Aberto": "aberto",
+      "Em Tratamento": "em_tratamento",
+      "Resolvido": "resolvido",
+      "Fechado": "fechado"
+    }
+  },
+  "validationRules": {
+    "status": {
+      "required": true,
+      "allowedValues": [
+        "aberto",
+        "em_tratamento",
+        "resolvido",
+        "fechado"
+      ],
+      "defaultValue": "aberto"
+    },
+    "priority": {
+      "required": true,
+      "allowedValues": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "mapping": {
+        "Crítica": "P1",
+        "Alta": "P2",
+        "Média": "P3",
+        "Baixa": "P4"
+      }
+    },
+    "severity": {
+      "required": true,
+      "allowedValues": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "defaultValue": "medium"
+    }
+  },
+  "apiOptimizations": {
+    "cacheConfig": {
+      "ttl": 300000,
+      "maxSize": 100
+    },
+    "batchSize": 50,
+    "debounceMs": 300
+  },
+  "changesApplied": 6
+}

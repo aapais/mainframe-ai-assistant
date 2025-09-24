@@ -1,0 +1,142 @@
+[
+  {
+    "id": "4e77aafb-d65f-4bf6-90b0-4cc866505c7b",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T10:24:58.074Z",
+      "updated_at": "2025-09-23T10:24:58.074Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  },
+  {
+    "id": "ec9f0d74-0995-4b8b-b00f-30db3b016479",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T10:33:09.738Z",
+      "updated_at": "2025-09-23T10:33:09.738Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  },
+  {
+    "id": "78b61bda-dcc3-4de1-a74f-f86abcebe505",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T10:45:20.396Z",
+      "updated_at": "2025-09-23T10:45:20.396Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  },
+  {
+    "id": "027997bd-0fdd-44f3-9052-081dd840f603",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T10:45:48.498Z",
+      "updated_at": "2025-09-23T10:45:48.498Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  },
+  {
+    "id": "fe638569-c8c3-4aba-8d6d-707a66cf1b8f",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T10:46:24.039Z",
+      "updated_at": "2025-09-23T10:46:24.039Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  },
+  {
+    "id": "0a7f2130-51dc-482f-a615-85385040710e",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T10:48:11.398Z",
+      "updated_at": "2025-09-23T10:48:11.398Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  },
+  {
+    "id": "fa241282-1b36-45fd-8412-5a673842ecb4",
+    "type": "solution",
+    "technical_area": "CICS",
+    "business_area": "Pagamentos",
+    "title": "CICS Transaction Timeout Resolution",
+    "content": "Increase DTIMOUT parameter in CICS region",
+    "tags": [
+      "cics",
+      "timeout",
+      "performance"
+    ],
+    "metadata": {
+      "created_at": "2025-09-23T11:42:43.067Z",
+      "updated_at": "2025-09-23T11:42:43.067Z",
+      "created_by": "system",
+      "success_rate": 0,
+      "usage_count": 0
+    }
+  }
+]

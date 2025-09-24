@@ -1,0 +1,551 @@
+name: Comprehensive Testing Suite - AI Incident Resolution System
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC for regression testing
+    - cron: '0 2 * * *'
+
+jobs:
+  # Security and Dependency Scanning
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Node.js security audit
+        run: |
+          npm audit --audit-level moderate
+          npm audit --json > security-audit.json
+
+      - name: Upload security audit results
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-audit-results
+          path: security-audit.json
+
+  # Unit Testing
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd tests/unit
+          npm ci
+
+      - name: Run unit tests
+        run: |
+          cd tests/unit
+          npm run test:coverage
+        env:
+          NODE_ENV: test
+          CI: true
+
+      - name: Upload unit test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./tests/unit/coverage/lcov.info
+          flags: unit-tests
+          name: unit-tests-${{ matrix.node-version }}
+
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: unit-test-results-${{ matrix.node-version }}
+          path: |
+            tests/unit/coverage/
+            tests/unit/reports/
+
+  # Integration Testing
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      sqlite:
+        image: keinos/sqlite3:latest
+        options: >-
+          --health-cmd "sqlite3 --version"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          cd tests/integration
+          npm ci
+
+      - name: Initialize test database
+        run: |
+          python scripts/setup-test-db.py
+
+      - name: Start backend server
+        run: |
+          python scripts/real-db-server.py &
+          sleep 10
+        env:
+          PORT: 8080
+          NODE_ENV: test
+
+      - name: Run integration tests
+        run: |
+          cd tests/integration
+          npm run test:coverage
+        env:
+          API_BASE_URL: http://localhost:8080
+          NODE_ENV: test
+
+      - name: Upload integration test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./tests/integration/coverage/lcov.info
+          flags: integration-tests
+          name: integration-tests
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            tests/integration/coverage/
+            tests/integration/reports/
+
+  # Performance Testing
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          cd tests/performance
+          npm ci
+
+      - name: Start performance test environment
+        run: |
+          python scripts/real-db-server.py &
+          sleep 15
+
+      - name: Run performance tests
+        run: |
+          cd tests/performance
+          npm run test:performance
+        env:
+          PERFORMANCE_TEST_MODE: true
+          API_BASE_URL: http://localhost:8080
+
+      - name: Generate performance report
+        run: |
+          cd tests/performance
+          npm run report:generate
+
+      - name: Upload performance test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-test-results
+          path: |
+            tests/performance/reports/
+            tests/performance/benchmarks/
+
+      - name: Performance regression check
+        run: |
+          cd tests/performance
+          npm run regression:check
+        continue-on-error: true
+
+  # Security Testing
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install security testing tools
+        run: |
+          pip install bandit safety
+          cd tests/security
+          npm ci
+
+      - name: Run Python security scans
+        run: |
+          bandit -r scripts/ -f json -o security-bandit-report.json
+          safety check --json --output security-safety-report.json
+        continue-on-error: true
+
+      - name: Start test environment
+        run: |
+          python scripts/real-db-server.py &
+          sleep 10
+
+      - name: Run security tests
+        run: |
+          cd tests/security
+          npm run test:security
+        env:
+          SECURITY_TEST_MODE: true
+          API_BASE_URL: http://localhost:8080
+
+      - name: Run penetration tests
+        run: |
+          cd tests/security
+          npm run test:penetration
+        continue-on-error: true
+
+      - name: Upload security test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-test-results
+          path: |
+            security-*-report.json
+            tests/security/reports/
+
+  # Compliance Testing
+  compliance-tests:
+    name: Compliance Tests (LGPD/SOX/BACEN)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd tests/compliance
+          npm ci
+
+      - name: Run LGPD compliance tests
+        run: |
+          cd tests/compliance
+          npm run test:lgpd
+        env:
+          COMPLIANCE_TEST_MODE: true
+
+      - name: Run SOX compliance tests
+        run: |
+          cd tests/compliance
+          npm run test:sox
+        env:
+          COMPLIANCE_TEST_MODE: true
+
+      - name: Run BACEN compliance tests
+        run: |
+          cd tests/compliance
+          npm run test:bacen
+        env:
+          COMPLIANCE_TEST_MODE: true
+
+      - name: Generate compliance report
+        run: |
+          cd tests/compliance
+          npm run report:compliance
+
+      - name: Upload compliance test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: compliance-test-results
+          path: |
+            tests/compliance/reports/
+            tests/compliance/audit-logs/
+
+  # AI/ML Model Testing
+  ai-model-tests:
+    name: AI/ML Model Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Python for ML
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install AI/ML dependencies
+        run: |
+          pip install scikit-learn pandas numpy matplotlib seaborn
+          cd tests/ai
+          npm ci
+
+      - name: Run model accuracy tests
+        run: |
+          cd tests/ai
+          npm run test:accuracy
+        env:
+          AI_TEST_MODE: true
+
+      - name: Run bias detection tests
+        run: |
+          cd tests/ai
+          npm run test:bias
+        env:
+          AI_BIAS_TESTING: true
+
+      - name: Run model performance tests
+        run: |
+          cd tests/ai
+          npm run test:performance
+        env:
+          AI_PERFORMANCE_TESTING: true
+
+      - name: Generate AI model report
+        run: |
+          cd tests/ai
+          npm run report:models
+
+      - name: Upload AI test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: ai-model-test-results
+          path: |
+            tests/ai/reports/
+            tests/ai/model-metrics/
+
+  # End-to-End Testing
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          cd tests/e2e
+          npm ci
+          npx playwright install
+
+      - name: Start full application
+        run: |
+          python scripts/real-db-server.py &
+          npm start &
+          sleep 20
+
+      - name: Run E2E tests
+        run: |
+          cd tests/e2e
+          npm run test:e2e
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            tests/e2e/test-results/
+            tests/e2e/screenshots/
+
+  # Test Report Aggregation
+  test-report:
+    name: Generate Comprehensive Test Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, performance-tests, security-tests, compliance-tests, ai-model-tests, e2e-tests]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Install report generator dependencies
+        run: |
+          npm install -g allure-commandline
+          pip install jinja2 markdown
+
+      - name: Generate comprehensive test report
+        run: |
+          python scripts/generate-test-report.py
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Upload comprehensive test report
+        uses: actions/upload-artifact@v3
+        with:
+          name: comprehensive-test-report
+          path: |
+            test-reports/
+            coverage-summary/
+
+      - name: Comment test results on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'test-reports/summary.md';
+
+            if (fs.existsSync(reportPath)) {
+              const testSummary = fs.readFileSync(reportPath, 'utf8');
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 🧪 Test Results Summary\n\n${testSummary}`
+              });
+            }
+
+  # Quality Gate
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [security-scan, unit-tests, integration-tests, performance-tests, security-tests, compliance-tests, ai-model-tests]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download test results
+        uses: actions/download-artifact@v3
+
+      - name: Quality gate evaluation
+        run: |
+          python scripts/quality-gate.py
+        env:
+          MINIMUM_COVERAGE: 80
+          MAXIMUM_SECURITY_ISSUES: 0
+          MINIMUM_PERFORMANCE_SCORE: 85
+          REQUIRED_COMPLIANCE_SCORE: 95
+          MINIMUM_AI_ACCURACY: 85
+
+      - name: Fail if quality gate not met
+        run: |
+          if [ -f "quality-gate-failed.txt" ]; then
+            echo "Quality gate failed!"
+            cat quality-gate-failed.txt
+            exit 1
+          else
+            echo "Quality gate passed!"
+          fi
+
+# Workflow notifications
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [quality-gate, test-report]
+    if: always()
+    steps:
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `CI/CD Pipeline Failed - ${context.ref}`,
+              body: `The comprehensive testing pipeline failed for commit ${context.sha}.\n\nPlease check the workflow run: ${context.runUrl}`,
+              labels: ['bug', 'ci-failure', 'high-priority']
+            });
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "All tests passed successfully! 🎉"
+          echo "Deployment ready for: ${{ github.ref }}"
