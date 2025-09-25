@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('windowsAuth', {
       computer: hostname,
       isInDomain: domain !== 'WORKGROUP' && domain !== hostname,
       upn: `${userInfo.username}@${domain.toLowerCase()}.local`,
-      home: userInfo.homedir
+      home: userInfo.homedir,
     };
   },
 
@@ -45,24 +45,24 @@ contextBridge.exposeInMainWorld('windowsAuth', {
   },
 
   // Salva token
-  saveToken: async (token) => {
+  saveToken: async token => {
     return await ipcRenderer.invoke('windows-auth:save-token', token);
   },
 
   // Listeners para eventos de autenticação
-  onAuthStateChanged: (callback) => {
+  onAuthStateChanged: callback => {
     ipcRenderer.on('auth-state-changed', (event, data) => callback(data));
   },
 
-  onSessionExpired: (callback) => {
-    ipcRenderer.on('session-expired', (event) => callback());
+  onSessionExpired: callback => {
+    ipcRenderer.on('session-expired', event => callback());
   },
 
   // Remove listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('auth-state-changed');
     ipcRenderer.removeAllListeners('session-expired');
-  }
+  },
 });
 
 // Expõe informações do ambiente
@@ -71,7 +71,7 @@ contextBridge.exposeInMainWorld('appInfo', {
   platform: process.platform,
   version: process.versions.electron,
   nodeVersion: process.versions.node,
-  chromeVersion: process.versions.chrome
+  chromeVersion: process.versions.chrome,
 });
 
 // Auto-login ao carregar (opcional)
@@ -93,9 +93,11 @@ window.addEventListener('DOMContentLoaded', async () => {
           console.log('✅ Login automático realizado:', result.user.username);
 
           // Dispara evento para a aplicação
-          window.dispatchEvent(new CustomEvent('windows-auth-success', {
-            detail: result
-          }));
+          window.dispatchEvent(
+            new CustomEvent('windows-auth-success', {
+              detail: result,
+            })
+          );
         }
       } else {
         console.log('✅ Já autenticado com token existente');

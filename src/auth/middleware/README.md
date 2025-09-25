@@ -1,24 +1,34 @@
 # SSO Middleware System
 
-Complete Express.js SSO middleware system with OAuth2/OIDC support, JWT authentication, route protection, rate limiting, session management, security headers, CORS configuration, and multi-provider support.
+Complete Express.js SSO middleware system with OAuth2/OIDC support, JWT
+authentication, route protection, rate limiting, session management, security
+headers, CORS configuration, and multi-provider support.
 
 ## Features
 
-- **JWT Authentication**: Complete JWT token validation with refresh token handling
-- **Multi-Provider SSO**: Support for Google, Microsoft, Azure AD, Okta, Auth0, SAML, LDAP, and generic OIDC
+- **JWT Authentication**: Complete JWT token validation with refresh token
+  handling
+- **Multi-Provider SSO**: Support for Google, Microsoft, Azure AD, Okta, Auth0,
+  SAML, LDAP, and generic OIDC
 - **Route Protection**: Role-based and permission-based access control
 - **Rate Limiting**: Comprehensive rate limiting for authentication endpoints
-- **Session Management**: Advanced session management with device tracking and security monitoring
+- **Session Management**: Advanced session management with device tracking and
+  security monitoring
 - **Security Headers**: Complete set of security headers (CSP, HSTS, etc.)
 - **CORS Configuration**: Flexible CORS handling for SSO and API endpoints
-- **Error Handling**: Comprehensive error handling with logging and security event tracking
+- **Error Handling**: Comprehensive error handling with logging and security
+  event tracking
 - **Middleware Composition**: Easy-to-use middleware chain composition utilities
 
 ## Quick Start
 
 ```typescript
 import express from 'express';
-import { createAuthChain, createSSOChain, createAPIChain } from './auth/middleware';
+import {
+  createAuthChain,
+  createSSOChain,
+  createAPIChain,
+} from './auth/middleware';
 
 const app = express();
 
@@ -29,10 +39,13 @@ app.use('/api/auth/sso', ...createSSOChain());
 app.use('/api/auth/login', ...createLoginChain());
 
 // Apply API protection to protected routes
-app.use('/api/protected', ...createAPIChain({
-  roles: ['user', 'admin'],
-  permissions: ['read', 'write']
-}));
+app.use(
+  '/api/protected',
+  ...createAPIChain({
+    roles: ['user', 'admin'],
+    permissions: ['read', 'write'],
+  })
+);
 
 // Apply admin-only protection
 app.use('/api/admin', ...createAdminChain());
@@ -68,11 +81,13 @@ import { tokenValidation } from './auth/middleware';
 app.use(tokenValidation.validate());
 
 // Strict validation with MFA requirement
-app.use(tokenValidation.validate({
-  requireMFA: true,
-  maxAge: 3600,
-  validateScope: ['read', 'write']
-}));
+app.use(
+  tokenValidation.validate({
+    requireMFA: true,
+    maxAge: 3600,
+    validateScope: ['read', 'write'],
+  })
+);
 
 // Refresh token validation
 app.use(tokenValidation.validateRefreshToken());
@@ -134,10 +149,12 @@ app.use('/auth/sso/callback', authRateLimit.ssoCallback());
 app.use(authRateLimit.userSpecific(1000, 60000)); // 1000 requests per minute
 
 // Role-based rate limiting
-app.use(authRateLimit.roleBasedLimit({
-  user: { max: 100, windowMs: 60000 },
-  admin: { max: 1000, windowMs: 60000 }
-}));
+app.use(
+  authRateLimit.roleBasedLimit({
+    user: { max: 100, windowMs: 60000 },
+    admin: { max: 1000, windowMs: 60000 },
+  })
+);
 ```
 
 ### 5. SessionMiddleware
@@ -151,13 +168,15 @@ import { sessionMiddleware } from './auth/middleware';
 app.use(sessionMiddleware().manage());
 
 // Strict session management
-app.use(sessionMiddleware({
-  strictIpValidation: true,
-  logoutOnSuspiciousActivity: true,
-  maxConcurrentSessions: 1,
-  trackDevices: true,
-  trackLocation: true
-}).manage());
+app.use(
+  sessionMiddleware({
+    strictIpValidation: true,
+    logoutOnSuspiciousActivity: true,
+    maxConcurrentSessions: 1,
+    trackDevices: true,
+    trackLocation: true,
+  }).manage()
+);
 ```
 
 ### 6. SecurityHeadersMiddleware
@@ -220,10 +239,16 @@ app.use(multiProviderMiddleware.validateProvider());
 app.use(multiProviderMiddleware.routeToProvider());
 
 // Handle provider-specific callbacks
-app.use('/auth/sso/callback/:providerId', multiProviderMiddleware.handleProviderCallback());
+app.use(
+  '/auth/sso/callback/:providerId',
+  multiProviderMiddleware.handleProviderCallback()
+);
 
 // Provider health check
-app.get('/auth/providers/health', multiProviderMiddleware.checkProviderHealth());
+app.get(
+  '/auth/providers/health',
+  multiProviderMiddleware.checkProviderHealth()
+);
 ```
 
 ### 9. ErrorHandlingMiddleware
@@ -266,9 +291,9 @@ const customChain = createAuthChain({
   session: 'standard',
   protection: {
     roles: ['admin'],
-    requireMFA: true
+    requireMFA: true,
   },
-  errors: true
+  errors: true,
 });
 
 app.use('/secure-endpoint', ...customChain);
@@ -337,12 +362,16 @@ The middleware integrates seamlessly with existing services:
 
 ## Security Features
 
-- **JWT Security**: Secure token generation with proper expiration and blacklisting
-- **Session Security**: Device tracking, IP validation, and suspicious activity detection
+- **JWT Security**: Secure token generation with proper expiration and
+  blacklisting
+- **Session Security**: Device tracking, IP validation, and suspicious activity
+  detection
 - **Rate Limiting**: Multiple rate limiting strategies to prevent abuse
 - **CORS Protection**: Flexible CORS policies for different endpoint types
-- **Security Headers**: Complete set of security headers following best practices
-- **Error Handling**: Secure error responses that don't leak sensitive information
+- **Security Headers**: Complete set of security headers following best
+  practices
+- **Error Handling**: Secure error responses that don't leak sensitive
+  information
 - **Audit Logging**: Comprehensive logging of all authentication events
 
 ## Performance Features
@@ -351,7 +380,8 @@ The middleware integrates seamlessly with existing services:
 - **Connection Pooling**: Efficient database connection management
 - **Token Validation**: Fast token validation with caching
 - **Rate Limiting**: Efficient rate limiting with minimal overhead
-- **Middleware Composition**: Optimized middleware chains to reduce processing overhead
+- **Middleware Composition**: Optimized middleware chains to reduce processing
+  overhead
 
 ## Testing
 
@@ -364,15 +394,18 @@ import { testAuthMiddleware } from './auth/middleware/testing';
 const testResult = await testAuthMiddleware({
   middleware: createAPIChain(),
   user: mockUser,
-  request: mockRequest
+  request: mockRequest,
 });
 ```
 
 ## Monitoring and Metrics
 
-- **Authentication Metrics**: Track login success rates, token usage, provider performance
-- **Security Events**: Monitor suspicious activities, rate limit violations, failed attempts
-- **Performance Metrics**: Track middleware performance, response times, error rates
+- **Authentication Metrics**: Track login success rates, token usage, provider
+  performance
+- **Security Events**: Monitor suspicious activities, rate limit violations,
+  failed attempts
+- **Performance Metrics**: Track middleware performance, response times, error
+  rates
 - **Provider Health**: Monitor SSO provider availability and response times
 
 ## Best Practices

@@ -2,7 +2,10 @@
 
 ## Overview
 
-This directory contains comprehensive database migrations for implementing a robust Single Sign-On (SSO) system with the mainframe AI assistant. The migration system provides enterprise-grade authentication, authorization, audit logging, security monitoring, and data integrity features.
+This directory contains comprehensive database migrations for implementing a
+robust Single Sign-On (SSO) system with the mainframe AI assistant. The
+migration system provides enterprise-grade authentication, authorization, audit
+logging, security monitoring, and data integrity features.
 
 ## Migration Files
 
@@ -82,6 +85,7 @@ This directory contains comprehensive database migrations for implementing a rob
 ## Key Features
 
 ### 🔐 Security Features
+
 - **Multi-Factor Authentication** support
 - **Advanced Threat Detection** with machine learning patterns
 - **IP Reputation Management** with automatic blocking
@@ -90,6 +94,7 @@ This directory contains comprehensive database migrations for implementing a rob
 - **Session Security** with device trust management
 
 ### 👥 User Management
+
 - **Multi-Provider SSO** (OAuth2, OIDC, SAML, LDAP)
 - **Role-Based Access Control** with hierarchical permissions
 - **User Groups** with automated provisioning
@@ -97,6 +102,7 @@ This directory contains comprehensive database migrations for implementing a rob
 - **Account Linking** between multiple identities
 
 ### 📊 Monitoring & Analytics
+
 - **Real-time Dashboards** for system health
 - **Security Event Analytics** with risk scoring
 - **API Usage Monitoring** with performance metrics
@@ -104,6 +110,7 @@ This directory contains comprehensive database migrations for implementing a rob
 - **Audit Trail** with full-text search
 
 ### 🛡️ Data Protection
+
 - **Automated Backups** with encryption
 - **Data Validation** with business rules
 - **Rollback Procedures** for safe migrations
@@ -162,6 +169,7 @@ SSO SYSTEM ARCHITECTURE
 ## Performance Optimizations
 
 ### Indexing Strategy
+
 - **Primary Keys**: UUID-based for distributed systems
 - **Foreign Keys**: Optimized for join operations
 - **Composite Indexes**: For multi-column queries
@@ -169,6 +177,7 @@ SSO SYSTEM ARCHITECTURE
 - **Full-Text Search**: For audit log searching
 
 ### Query Optimization
+
 - **Materialized Views** for complex analytics
 - **Query Caching** for frequently accessed data
 - **Connection Pooling** for scalability
@@ -178,6 +187,7 @@ SSO SYSTEM ARCHITECTURE
 ## Security Considerations
 
 ### Data Protection
+
 - **Field-Level Encryption** for sensitive data
 - **Hash-Based Storage** for passwords and tokens
 - **Salt-Based Hashing** for password security
@@ -185,6 +195,7 @@ SSO SYSTEM ARCHITECTURE
 - **Data Masking** in non-production environments
 
 ### Access Control
+
 - **Principle of Least Privilege** in default roles
 - **Time-Based Access Control** with expiration
 - **IP-Based Restrictions** for sensitive operations
@@ -194,6 +205,7 @@ SSO SYSTEM ARCHITECTURE
 ## Compliance Features
 
 ### Regulatory Support
+
 - **GDPR Compliance** with data subject rights
 - **HIPAA Support** for healthcare data
 - **SOX Compliance** for financial controls
@@ -201,6 +213,7 @@ SSO SYSTEM ARCHITECTURE
 - **SOC 2** controls for service organizations
 
 ### Audit Requirements
+
 - **Immutable Audit Logs** with checksums
 - **Retention Policies** with legal hold
 - **Data Lineage** tracking for changes
@@ -210,12 +223,14 @@ SSO SYSTEM ARCHITECTURE
 ## Migration Execution
 
 ### Prerequisites
+
 1. Database backup before migration
 2. Sufficient disk space for new tables
 3. Administrative privileges
 4. Network connectivity for external providers
 
 ### Execution Steps
+
 1. Run migrations in sequential order (001-010)
 2. Verify each migration with validation queries
 3. Test rollback procedures on non-production
@@ -223,6 +238,7 @@ SSO SYSTEM ARCHITECTURE
 5. Set up monitoring and alerting
 
 ### Post-Migration Tasks
+
 1. Configure SSO providers
 2. Create initial user accounts
 3. Set up backup schedules
@@ -243,12 +259,14 @@ Each migration includes comprehensive rollback SQL in the `-- DOWN` section:
 ## Monitoring and Maintenance
 
 ### Health Checks
+
 - **System Health View** (`v_sso_system_health`)
 - **Compliance Overview** (`v_sso_compliance_overview`)
 - **Security Metrics** (`v_sso_security_summary`)
 - **Performance Monitoring** with query optimization
 
 ### Maintenance Tasks
+
 - **Cleanup Jobs** for expired sessions and tokens
 - **Backup Verification** with automated testing
 - **Key Rotation** for encryption keys
@@ -258,6 +276,7 @@ Each migration includes comprehensive rollback SQL in the `-- DOWN` section:
 ## TypeScript Integration
 
 The system includes comprehensive TypeScript schemas in:
+
 - `src/database/schemas/SSOSystem.schema.ts`
 - **Zod Validation** for runtime type safety
 - **Full Type Coverage** for all database entities
@@ -267,16 +286,20 @@ The system includes comprehensive TypeScript schemas in:
 ## Support and Documentation
 
 ### Additional Resources
+
 - **Migration Logs** in `sso_migration_checkpoints`
 - **Validation Results** in `sso_validation_executions`
 - **System Metrics** in monitoring tables
 - **Error Tracking** in audit logs
 
 ### Troubleshooting
+
 1. Check migration execution logs
 2. Validate foreign key constraints
 3. Review security event logs
 4. Monitor system health metrics
 5. Consult audit trail for issues
 
-This SSO system provides enterprise-grade authentication and authorization capabilities with comprehensive security, compliance, and monitoring features suitable for mainframe AI assistant environments.
+This SSO system provides enterprise-grade authentication and authorization
+capabilities with comprehensive security, compliance, and monitoring features
+suitable for mainframe AI assistant environments.

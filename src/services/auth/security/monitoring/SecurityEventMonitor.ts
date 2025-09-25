@@ -69,7 +69,7 @@ export class SecurityEventMonitor extends EventEmitter {
       triggers: 0,
       lastTriggered: null,
       averageResponseTime: 0,
-      falsePositives: 0
+      falsePositives: 0,
     });
     this.emit('ruleAdded', rule);
   }
@@ -109,8 +109,8 @@ export class SecurityEventMonitor extends EventEmitter {
         triggers: 0,
         lastTriggered: null,
         averageResponseTime: 0,
-        falsePositives: 0
-      }
+        falsePositives: 0,
+      },
     }));
   }
 
@@ -137,7 +137,6 @@ export class SecurityEventMonitor extends EventEmitter {
       // Update processing metrics
       const processingTime = Date.now() - startTime;
       this.emit('eventProcessed', { event, processingTime });
-
     } catch (error) {
       console.error('Error processing security event:', error);
       this.emit('processingError', { event, error });
@@ -163,7 +162,7 @@ export class SecurityEventMonitor extends EventEmitter {
     // All conditions must match (AND logic)
     return {
       matches: matchedConditions.length === rule.conditions.length,
-      matchedConditions
+      matchedConditions,
     };
   }
 
@@ -181,9 +180,7 @@ export class SecurityEventMonitor extends EventEmitter {
         return fieldValue === condition.value;
 
       case 'contains':
-        return String(fieldValue).toLowerCase().includes(
-          String(condition.value).toLowerCase()
-        );
+        return String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase());
 
       case 'greaterThan':
         return Number(fieldValue) > Number(condition.value);
@@ -195,8 +192,7 @@ export class SecurityEventMonitor extends EventEmitter {
         return new RegExp(condition.value).test(String(fieldValue));
 
       case 'in':
-        return Array.isArray(condition.value) &&
-               condition.value.includes(fieldValue);
+        return Array.isArray(condition.value) && condition.value.includes(fieldValue);
 
       default:
         return false;
@@ -240,9 +236,9 @@ export class SecurityEventMonitor extends EventEmitter {
       description: `Security rule '${rule.name}' triggered`,
       metadata: {
         riskScore: event.riskScore,
-        eventId: event.id
+        eventId: event.id,
       },
-      status: 'OPEN'
+      status: 'OPEN',
     };
 
     // Update rule metrics
@@ -260,17 +256,12 @@ export class SecurityEventMonitor extends EventEmitter {
     this.emit('securityAlert', alert);
 
     // Log the alert
-    await this.auditService.logSecurityEvent(
-      'rule_triggered',
-      rule.severity,
-      event.ipAddress,
-      {
-        ruleId: rule.id,
-        ruleName: rule.name,
-        alertId: alert.id,
-        triggerEvent: event.id
-      }
-    );
+    await this.auditService.logSecurityEvent('rule_triggered', rule.severity, event.ipAddress, {
+      ruleId: rule.id,
+      ruleName: rule.name,
+      alertId: alert.id,
+      triggerEvent: event.id,
+    });
   }
 
   /**
@@ -294,7 +285,7 @@ export class SecurityEventMonitor extends EventEmitter {
         case 'log':
           console.log(`Security Alert: ${alert.description}`, {
             alert,
-            config: action.config
+            config: action.config,
           });
           break;
 
@@ -387,18 +378,18 @@ export class SecurityEventMonitor extends EventEmitter {
           {
             field: 'eventType',
             operator: 'equals',
-            value: 'AUTHENTICATION'
+            value: 'AUTHENTICATION',
           },
           {
             field: 'outcome',
             operator: 'equals',
-            value: 'FAILURE'
-          }
+            value: 'FAILURE',
+          },
         ],
         actions: [
           { type: 'alert', config: { channels: ['email', 'slack'] } },
-          { type: 'block', config: { duration: 1800 } } // 30 minutes
-        ]
+          { type: 'block', config: { duration: 1800 } }, // 30 minutes
+        ],
       },
       {
         id: 'suspicious_api_access',
@@ -411,18 +402,18 @@ export class SecurityEventMonitor extends EventEmitter {
           {
             field: 'eventType',
             operator: 'equals',
-            value: 'API_ACCESS'
+            value: 'API_ACCESS',
           },
           {
             field: 'riskScore',
             operator: 'greaterThan',
-            value: 70
-          }
+            value: 70,
+          },
         ],
         actions: [
           { type: 'alert', config: { channels: ['log'] } },
-          { type: 'log', config: {} }
-        ]
+          { type: 'log', config: {} },
+        ],
       },
       {
         id: 'privileged_access_off_hours',
@@ -435,19 +426,19 @@ export class SecurityEventMonitor extends EventEmitter {
           {
             field: 'details.privilegedUser',
             operator: 'equals',
-            value: true
+            value: true,
           },
           {
             field: 'eventType',
             operator: 'in',
-            value: ['ADMIN_ACTION', 'CONFIGURATION_CHANGE']
-          }
+            value: ['ADMIN_ACTION', 'CONFIGURATION_CHANGE'],
+          },
         ],
         actions: [
           { type: 'alert', config: { channels: ['email', 'sms'] } },
-          { type: 'notify', config: { escalate: true } }
-        ]
-      }
+          { type: 'notify', config: { escalate: true } },
+        ],
+      },
     ];
 
     defaultRules.forEach(rule => this.addRule(rule));

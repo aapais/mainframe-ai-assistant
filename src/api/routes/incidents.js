@@ -22,7 +22,7 @@ const wsNotifier = new WebSocketNotifier();
 const initializeEngine = async () => ({
   submitResolutionFeedback: async () => ({ success: true }),
   getMetrics: () => ({}),
-  performHealthCheck: async () => ({ overall: 'healthy' })
+  performHealthCheck: async () => ({ overall: 'healthy' }),
 });
 
 /**

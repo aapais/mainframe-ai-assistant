@@ -27,5 +27,5 @@ export type {
   PasswordChangeData,
   MFASetupData,
   AuthError,
-  AuthContextType
+  AuthContextType,
 } from './types/auth.types';

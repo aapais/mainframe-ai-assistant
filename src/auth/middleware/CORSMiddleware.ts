@@ -2,7 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from './SSOJWTMiddleware';
 
 export interface CORSConfig {
-  origins: string[] | boolean | ((origin: string, callback: (err: Error | null, allowed?: boolean) => void) => void);
+  origins:
+    | string[]
+    | boolean
+    | ((origin: string, callback: (err: Error | null, allowed?: boolean) => void) => void);
   methods: string[];
   allowedHeaders: string[];
   exposedHeaders?: string[];
@@ -35,7 +38,7 @@ export class CORSMiddleware {
         'X-Request-ID',
         'X-CSRF-Token',
         'X-SSO-Provider',
-        'X-Device-ID'
+        'X-Device-ID',
       ],
       exposedHeaders: [
         'X-RateLimit-Limit',
@@ -43,12 +46,12 @@ export class CORSMiddleware {
         'X-RateLimit-Reset',
         'X-New-Token',
         'X-Token-Expires',
-        'X-Session-Renewal-Required'
+        'X-Session-Renewal-Required',
       ],
       credentials: true,
       maxAge: 86400, // 24 hours
       optionsSuccessStatus: 204,
-      ...config
+      ...config,
     };
 
     this.trustedDomainRegex = this.buildTrustedDomainRegex();
@@ -60,7 +63,7 @@ export class CORSMiddleware {
   apply() {
     return (req: Request, res: Response, next: NextFunction) => {
       const origin = req.headers.origin;
-      
+
       // Handle origin
       if (this.isOriginAllowed(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
@@ -75,11 +78,11 @@ export class CORSMiddleware {
       if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Methods', this.config.methods.join(', '));
         res.setHeader('Access-Control-Allow-Headers', this.config.allowedHeaders.join(', '));
-        
+
         if (this.config.maxAge) {
           res.setHeader('Access-Control-Max-Age', this.config.maxAge.toString());
         }
-        
+
         return res.status(this.config.optionsSuccessStatus || 204).end();
       }
 
@@ -98,7 +101,7 @@ export class CORSMiddleware {
   applyForSSO() {
     return (req: Request, res: Response, next: NextFunction) => {
       const origin = req.headers.origin;
-      
+
       // More permissive for SSO callback URLs
       if (this.isSSOOriginAllowed(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin!);
@@ -111,7 +114,7 @@ export class CORSMiddleware {
         'X-SSO-State',
         'X-SSO-Code',
         'X-SSO-Provider',
-        'X-Redirect-URI'
+        'X-Redirect-URI',
       ];
 
       const exposedHeaders = [
@@ -119,7 +122,7 @@ export class CORSMiddleware {
         'X-SSO-Status',
         'X-SSO-Error',
         'X-New-User',
-        'Location'
+        'Location',
       ];
 
       if (req.method === 'OPTIONS') {
@@ -140,13 +143,13 @@ export class CORSMiddleware {
   applyForAuth() {
     return (req: Request, res: Response, next: NextFunction) => {
       const origin = req.headers.origin;
-      
+
       // Strict origin checking for auth endpoints
       if (!this.isAuthOriginAllowed(origin)) {
         return res.status(403).json({
           success: false,
           error: 'CORS_NOT_ALLOWED',
-          message: 'Origin not allowed for authentication endpoints'
+          message: 'Origin not allowed for authentication endpoints',
         });
       }
 
@@ -161,7 +164,7 @@ export class CORSMiddleware {
         'X-CSRF-Token',
         'X-MFA-Code',
         'X-Device-ID',
-        'X-Client-Version'
+        'X-Client-Version',
       ];
 
       const authExposedHeaders = [
@@ -169,7 +172,7 @@ export class CORSMiddleware {
         'X-MFA-Required',
         'X-Token-Expires',
         'X-Rate-Limit-Remaining',
-        'X-Account-Status'
+        'X-Account-Status',
       ];
 
       if (req.method === 'OPTIONS') {
@@ -192,20 +195,20 @@ export class CORSMiddleware {
       const origin = req.headers.origin;
       const userAgent = req.headers['user-agent'] || '';
       const path = req.path;
-      
+
       // Different CORS policies based on context
       if (path.startsWith('/api/auth/sso/')) {
         return this.applyForSSO()(req, res, next);
       }
-      
+
       if (path.startsWith('/api/auth/')) {
         return this.applyForAuth()(req, res, next);
       }
-      
+
       if (path.startsWith('/api/')) {
         return this.applyForAPI()(req, res, next);
       }
-      
+
       // Default CORS for other requests
       return this.apply()(req, res, next);
     };
@@ -217,7 +220,7 @@ export class CORSMiddleware {
   applyForAPI() {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       const origin = req.headers.origin;
-      
+
       // Check if user is authenticated for additional origin validation
       if (req.user && this.isUserOriginTrusted(req.user.id, origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin!);
@@ -238,7 +241,7 @@ export class CORSMiddleware {
         'X-API-Key',
         'X-Requested-With',
         'X-Client-Version',
-        'X-Request-ID'
+        'X-Request-ID',
       ];
 
       const apiExposedHeaders = [
@@ -246,7 +249,7 @@ export class CORSMiddleware {
         'X-RateLimit-Remaining',
         'X-RateLimit-Reset',
         'X-API-Version',
-        'X-Response-Time'
+        'X-Response-Time',
       ];
 
       if (req.method === 'OPTIONS') {
@@ -269,7 +272,7 @@ export class CORSMiddleware {
       const origin = req.headers.origin;
       const isDevelopment = process.env.NODE_ENV === 'development';
       const isProduction = process.env.NODE_ENV === 'production';
-      
+
       if (isDevelopment) {
         // Allow all origins in development
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
@@ -280,7 +283,7 @@ export class CORSMiddleware {
           return res.status(403).json({
             success: false,
             error: 'CORS_FORBIDDEN',
-            message: 'Origin not allowed'
+            message: 'Origin not allowed',
           });
         }
         res.setHeader('Access-Control-Allow-Origin', origin!);
@@ -307,88 +310,88 @@ export class CORSMiddleware {
    */
   private isOriginAllowed(origin?: string): boolean {
     if (!origin) return false;
-    
+
     if (typeof this.config.origins === 'boolean') {
       return this.config.origins;
     }
-    
+
     if (Array.isArray(this.config.origins)) {
       return this.config.origins.includes(origin) || this.isTrustedDomain(origin);
     }
-    
+
     // Custom function to determine origin
     if (typeof this.config.origins === 'function') {
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         this.config.origins(origin, (err, allowed) => {
           resolve(!err && !!allowed);
         });
       }) as any; // Type assertion for sync usage
     }
-    
+
     return false;
   }
 
   private isSSOOriginAllowed(origin?: string): boolean {
     if (!origin) return false;
-    
+
     // Check SSO-specific origins first
     if (this.config.ssoOrigins && this.config.ssoOrigins.includes(origin)) {
       return true;
     }
-    
+
     // Check trusted domains
     if (this.isTrustedDomain(origin)) {
       return true;
     }
-    
+
     // Fall back to regular origin check
     return this.isOriginAllowed(origin);
   }
 
   private isAuthOriginAllowed(origin?: string): boolean {
     if (!origin) return false;
-    
+
     // Auth endpoints are more restrictive
     if (Array.isArray(this.config.origins)) {
       return this.config.origins.includes(origin);
     }
-    
+
     // In development, allow localhost
     if (process.env.NODE_ENV === 'development') {
       return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(origin);
     }
-    
+
     return this.isTrustedDomain(origin);
   }
 
   private isTrustedDomain(origin: string): boolean {
     if (!this.config.trustedDomains) return false;
-    
+
     return this.trustedDomainRegex.some(regex => regex.test(origin));
   }
 
   private buildTrustedDomainRegex(): RegExp[] {
     if (!this.config.trustedDomains) return [];
-    
+
     return this.config.trustedDomains.map(domain => {
       let pattern = domain
-        .replace(/\./g, '\\.')  // Escape dots
-        .replace(/\*/g, '.*');  // Convert wildcards
-      
+        .replace(/\./g, '\\.') // Escape dots
+        .replace(/\*/g, '.*'); // Convert wildcards
+
       if (this.config.allowSubdomains) {
         // Allow subdomains
         pattern = `^https?:\/\/([a-zA-Z0-9-]+\.)*${pattern}(:\\d+)?$`;
       } else {
         pattern = `^https?:\/\/${pattern}(:\\d+)?$`;
       }
-      
+
       return new RegExp(pattern);
     });
   }
 
   private async isUserOriginTrusted(userId: string, origin?: string): Promise<boolean> {
     if (!origin || !userId) return false;
-    
+
     try {
       // TODO: Check user's trusted origins from database
       // This could be based on previous successful logins, etc.
@@ -406,7 +409,7 @@ export class CORSMiddleware {
     if (!this.config.trustedDomains) {
       this.config.trustedDomains = [];
     }
-    
+
     if (!this.config.trustedDomains.includes(domain)) {
       this.config.trustedDomains.push(domain);
       this.trustedDomainRegex = this.buildTrustedDomainRegex();
@@ -418,7 +421,7 @@ export class CORSMiddleware {
    */
   removeTrustedDomain(domain: string): void {
     if (!this.config.trustedDomains) return;
-    
+
     const index = this.config.trustedDomains.indexOf(domain);
     if (index > -1) {
       this.config.trustedDomains.splice(index, 1);
@@ -441,32 +444,32 @@ export const corsMiddleware = {
     origins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true,
     trustedDomains: process.env.TRUSTED_DOMAINS?.split(','),
-    allowSubdomains: true
+    allowSubdomains: true,
   }),
-  
+
   // Strict CORS for production
   production: new CORSMiddleware({
     origins: process.env.CORS_ORIGINS?.split(',') || [],
     credentials: true,
     maxAge: 300, // 5 minutes for production
     trustedDomains: process.env.TRUSTED_DOMAINS?.split(','),
-    allowSubdomains: false
+    allowSubdomains: false,
   }),
-  
+
   // Development CORS (permissive)
   development: new CORSMiddleware({
     origins: true,
     credentials: true,
     trustedDomains: ['localhost', '127.0.0.1', '0.0.0.0'],
-    allowSubdomains: true
+    allowSubdomains: true,
   }),
-  
+
   // SSO-specific CORS
   sso: new CORSMiddleware({
     origins: process.env.CORS_ORIGINS?.split(',') || [],
     ssoOrigins: process.env.SSO_ORIGINS?.split(','),
     credentials: true,
     maxAge: 300,
-    methods: ['GET', 'POST', 'OPTIONS']
-  })
+    methods: ['GET', 'POST', 'OPTIONS'],
+  }),
 };

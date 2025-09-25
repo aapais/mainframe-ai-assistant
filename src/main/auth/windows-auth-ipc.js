@@ -10,7 +10,7 @@ const Store = require('electron-store');
 // Inicializa store seguro para tokens
 const secureStore = new Store({
   name: 'auth-secure',
-  encryptionKey: 'windows-auth-encryption-key'
+  encryptionKey: 'windows-auth-encryption-key',
 });
 
 // Inicializa serviço de autenticação
@@ -21,7 +21,7 @@ const windowsAuth = new WindowsAuthService();
  */
 function setupAuthHandlers() {
   // Handler para login
-  ipcMain.handle('windows-auth:login', async (event) => {
+  ipcMain.handle('windows-auth:login', async event => {
     try {
       console.log('📱 Requisição de login recebida');
 
@@ -43,7 +43,7 @@ function setupAuthHandlers() {
         // Notifica todas as janelas
         event.sender.send('auth-state-changed', {
           authenticated: true,
-          user: result.user
+          user: result.user,
         });
       }
 
@@ -52,20 +52,20 @@ function setupAuthHandlers() {
       console.error('❌ Erro no login:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   });
 
   // Handler para verificar status
-  ipcMain.handle('windows-auth:status', async (event) => {
+  ipcMain.handle('windows-auth:status', async event => {
     try {
       const token = getStoredToken();
 
       if (!token) {
         return {
           authenticated: false,
-          message: 'Sem token armazenado'
+          message: 'Sem token armazenado',
         };
       }
 
@@ -74,13 +74,13 @@ function setupAuthHandlers() {
     } catch (error) {
       return {
         authenticated: false,
-        error: error.message
+        error: error.message,
       };
     }
   });
 
   // Handler para logout
-  ipcMain.handle('windows-auth:logout', async (event) => {
+  ipcMain.handle('windows-auth:logout', async event => {
     try {
       const token = getStoredToken();
 
@@ -95,23 +95,23 @@ function setupAuthHandlers() {
       // Notifica todas as janelas
       event.sender.send('auth-state-changed', {
         authenticated: false,
-        user: null
+        user: null,
       });
 
       return {
         success: true,
-        message: 'Logout realizado'
+        message: 'Logout realizado',
       };
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   });
 
   // Handler para obter token
-  ipcMain.handle('windows-auth:get-token', async (event) => {
+  ipcMain.handle('windows-auth:get-token', async event => {
     return getStoredToken();
   });
 
@@ -131,12 +131,12 @@ function setupAuthHandlers() {
   });
 
   // Handler para obter dados do usuário
-  ipcMain.handle('windows-auth:get-user', async (event) => {
+  ipcMain.handle('windows-auth:get-user', async event => {
     return secureStore.get('user_data', null);
   });
 
   // Handler para renovar token
-  ipcMain.handle('windows-auth:refresh', async (event) => {
+  ipcMain.handle('windows-auth:refresh', async event => {
     try {
       const currentToken = getStoredToken();
 
@@ -156,12 +156,12 @@ function setupAuthHandlers() {
       return {
         success: true,
         message: 'Token ainda válido',
-        user: status.user
+        user: status.user,
       };
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   });
@@ -237,5 +237,5 @@ module.exports = {
   setupAuthHandlers,
   startTokenMonitor,
   cleanupOnExit,
-  getStoredToken
+  getStoredToken,
 };

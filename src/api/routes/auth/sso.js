@@ -12,14 +12,14 @@ const requireAdmin = (req, res, next) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({
       success: false,
-      message: 'Acesso negado - privilégios de administrador requeridos'
+      message: 'Acesso negado - privilégios de administrador requeridos',
     });
   }
   next();
 };
 
 // Validation middleware
-const validateRequest = (schema) => async (req, res, next) => {
+const validateRequest = schema => async (req, res, next) => {
   try {
     const result = schema.safeParse(req.body);
     if (!result.success) {
@@ -28,8 +28,8 @@ const validateRequest = (schema) => async (req, res, next) => {
         message: 'Dados de entrada inválidos',
         errors: result.error.issues.map(issue => ({
           field: issue.path.join('.'),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       });
     }
     req.validatedData = result.data;
@@ -38,7 +38,7 @@ const validateRequest = (schema) => async (req, res, next) => {
     logger.error('Erro na validação:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno de validação'
+      message: 'Erro interno de validação',
     });
   }
 };
@@ -164,18 +164,18 @@ router.get('/configurations', authMiddleware, requireAdmin, async (req, res) => 
       defaultRole: config.defaultRole,
       attributeMapping: config.attributeMapping,
       createdAt: config.createdAt,
-      updatedAt: config.updatedAt
+      updatedAt: config.updatedAt,
     }));
 
     res.json({
       success: true,
-      configurations: sanitizedConfigs
+      configurations: sanitizedConfigs,
     });
   } catch (error) {
     logger.error('Erro ao buscar configurações SSO:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -195,7 +195,7 @@ router.get('/configurations/:configId', authMiddleware, requireAdmin, async (req
 
     res.json({
       success: true,
-      configuration: sanitizedConfig
+      configuration: sanitizedConfig,
     });
   } catch (error) {
     logger.error('Erro ao buscar configuração SSO:', error);
@@ -203,13 +203,13 @@ router.get('/configurations/:configId', authMiddleware, requireAdmin, async (req
     if (error.message.includes('não encontrada')) {
       return res.status(404).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -219,58 +219,70 @@ router.get('/configurations/:configId', authMiddleware, requireAdmin, async (req
  * @desc Create new SSO configuration
  * @access Private (Admin)
  */
-router.post('/configurations', authMiddleware, requireAdmin, validateRequest(ssoConfigSchema), async (req, res) => {
-  try {
-    const configuration = await ssoManagementService.createSSOConfiguration(req.validatedData);
+router.post(
+  '/configurations',
+  authMiddleware,
+  requireAdmin,
+  validateRequest(ssoConfigSchema),
+  async (req, res) => {
+    try {
+      const configuration = await ssoManagementService.createSSOConfiguration(req.validatedData);
 
-    // Remove sensitive data
-    const { clientSecret, ...sanitizedConfig } = configuration;
+      // Remove sensitive data
+      const { clientSecret, ...sanitizedConfig } = configuration;
 
-    res.status(201).json({
-      success: true,
-      message: 'Configuração SSO criada com sucesso',
-      configuration: sanitizedConfig
-    });
-  } catch (error) {
-    logger.error('Erro ao criar configuração SSO:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor'
-    });
+      res.status(201).json({
+        success: true,
+        message: 'Configuração SSO criada com sucesso',
+        configuration: sanitizedConfig,
+      });
+    } catch (error) {
+      logger.error('Erro ao criar configuração SSO:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
   }
-});
+);
 
 /**
  * @route PUT /api/auth/sso/configurations/:configId
  * @desc Update SSO configuration
  * @access Private (Admin)
  */
-router.put('/configurations/:configId', authMiddleware, requireAdmin, validateRequest(ssoConfigSchema.partial()), async (req, res) => {
-  try {
-    const { configId } = req.params;
+router.put(
+  '/configurations/:configId',
+  authMiddleware,
+  requireAdmin,
+  validateRequest(ssoConfigSchema.partial()),
+  async (req, res) => {
+    try {
+      const { configId } = req.params;
 
-    await ssoManagementService.updateSSOConfiguration(configId, req.validatedData);
+      await ssoManagementService.updateSSOConfiguration(configId, req.validatedData);
 
-    res.json({
-      success: true,
-      message: 'Configuração SSO atualizada com sucesso'
-    });
-  } catch (error) {
-    logger.error('Erro ao atualizar configuração SSO:', error);
+      res.json({
+        success: true,
+        message: 'Configuração SSO atualizada com sucesso',
+      });
+    } catch (error) {
+      logger.error('Erro ao atualizar configuração SSO:', error);
 
-    if (error.message.includes('não encontrada')) {
-      return res.status(404).json({
+      if (error.message.includes('não encontrada')) {
+        return res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      res.status(500).json({
         success: false,
-        message: error.message
+        message: 'Erro interno do servidor',
       });
     }
-
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor'
-    });
   }
-});
+);
 
 /**
  * @route DELETE /api/auth/sso/configurations/:configId
@@ -285,7 +297,7 @@ router.delete('/configurations/:configId', authMiddleware, requireAdmin, async (
 
     res.json({
       success: true,
-      message: 'Configuração SSO deletada com sucesso'
+      message: 'Configuração SSO deletada com sucesso',
     });
   } catch (error) {
     logger.error('Erro ao deletar configuração SSO:', error);
@@ -293,13 +305,13 @@ router.delete('/configurations/:configId', authMiddleware, requireAdmin, async (
     if (error.message.includes('não encontrada')) {
       return res.status(404).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -317,13 +329,13 @@ router.post('/configurations/:configId/test', authMiddleware, requireAdmin, asyn
 
     res.json({
       success: true,
-      testResult
+      testResult,
     });
   } catch (error) {
     logger.error('Erro ao testar configuração SSO:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -342,13 +354,13 @@ router.get('/login/:configId', async (req, res) => {
 
     res.json({
       success: true,
-      loginUrl
+      loginUrl,
     });
   } catch (error) {
     logger.error('Erro ao gerar URL de login SSO:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -370,19 +382,19 @@ router.post('/callback/:configId', async (req, res) => {
         success: true,
         message: 'Autenticação SSO bem-sucedida',
         user: result.user,
-        token: result.token
+        token: result.token,
       });
     } else {
       res.status(401).json({
         success: false,
-        message: result.error || 'Falha na autenticação SSO'
+        message: result.error || 'Falha na autenticação SSO',
       });
     }
   } catch (error) {
     logger.error('Erro no callback SSO:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -398,13 +410,13 @@ router.get('/statistics', authMiddleware, requireAdmin, async (req, res) => {
 
     res.json({
       success: true,
-      statistics
+      statistics,
     });
   } catch (error) {
     logger.error('Erro ao buscar estatísticas SSO:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -426,8 +438,8 @@ router.get('/providers', async (req, res) => {
           'Crie um novo projeto ou selecione um existente',
           'Ative a Google+ API',
           'Crie credenciais OAuth 2.0',
-          'Configure URLs de redirecionamento'
-        ]
+          'Configure URLs de redirecionamento',
+        ],
       },
       {
         id: 'microsoft',
@@ -438,8 +450,8 @@ router.get('/providers', async (req, res) => {
           'Vá para Azure Active Directory',
           'Registre uma nova aplicação',
           'Configure permissões de API',
-          'Obtenha Client ID e Secret'
-        ]
+          'Obtenha Client ID e Secret',
+        ],
       },
       {
         id: 'okta',
@@ -450,8 +462,8 @@ router.get('/providers', async (req, res) => {
           'Crie uma nova aplicação',
           'Configure como Web Application',
           'Configure URLs de redirecionamento',
-          'Obtenha Client ID e Secret'
-        ]
+          'Obtenha Client ID e Secret',
+        ],
       },
       {
         id: 'auth0',
@@ -462,8 +474,8 @@ router.get('/providers', async (req, res) => {
           'Crie uma nova aplicação',
           'Configure como Regular Web Application',
           'Configure URLs permitidas',
-          'Obtenha Client ID e Secret'
-        ]
+          'Obtenha Client ID e Secret',
+        ],
       },
       {
         id: 'saml',
@@ -473,20 +485,20 @@ router.get('/providers', async (req, res) => {
           'Obtenha metadados XML do provedor SAML',
           'Configure URLs de SSO e SLO',
           'Configure mapeamento de atributos',
-          'Teste a configuração'
-        ]
-      }
+          'Teste a configuração',
+        ],
+      },
     ];
 
     res.json({
       success: true,
-      providers
+      providers,
     });
   } catch (error) {
     logger.error('Erro ao buscar provedores SSO:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });

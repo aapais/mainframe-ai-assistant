@@ -105,7 +105,8 @@ export class MiddlewareComposer {
 
     // 5. Authentication (if enabled)
     if (config.authentication !== false) {
-      const authType = typeof config.authentication === 'string' ? config.authentication : 'required';
+      const authType =
+        typeof config.authentication === 'string' ? config.authentication : 'required';
       switch (authType) {
         case 'optional':
           middlewares.push(ssoJWTMiddleware.optionalAuth());
@@ -120,10 +121,12 @@ export class MiddlewareComposer {
       const validationType = typeof config.validation === 'string' ? config.validation : 'standard';
       switch (validationType) {
         case 'strict':
-          middlewares.push(tokenValidation.validate({ 
-            requireMFA: true,
-            maxAge: 3600 // 1 hour
-          }));
+          middlewares.push(
+            tokenValidation.validate({
+              requireMFA: true,
+              maxAge: 3600, // 1 hour
+            })
+          );
           break;
         default:
           middlewares.push(tokenValidation.validate());
@@ -135,11 +138,13 @@ export class MiddlewareComposer {
       const sessionType = typeof config.session === 'string' ? config.session : 'standard';
       switch (sessionType) {
         case 'strict':
-          middlewares.push(sessionMiddleware({
-            strictIpValidation: true,
-            logoutOnSuspiciousActivity: true,
-            maxConcurrentSessions: 1
-          }).manage());
+          middlewares.push(
+            sessionMiddleware({
+              strictIpValidation: true,
+              logoutOnSuspiciousActivity: true,
+              maxConcurrentSessions: 1,
+            }).manage()
+          );
           break;
         default:
           middlewares.push(sessionMiddleware().manage());
@@ -149,15 +154,17 @@ export class MiddlewareComposer {
     // 8. Route Protection (if configured)
     if (config.protection) {
       const { roles, permissions, requireOwnership, requireMFA } = config.protection;
-      
+
       if (roles || permissions) {
-        middlewares.push(routeProtection.protect({
-          roles,
-          permissions,
-          allowOwner: requireOwnership
-        }));
+        middlewares.push(
+          routeProtection.protect({
+            roles,
+            permissions,
+            allowOwner: requireOwnership,
+          })
+        );
       }
-      
+
       if (requireMFA) {
         middlewares.push(routeProtection.requireMFA());
       }
@@ -183,7 +190,7 @@ export class MiddlewareComposer {
       authentication: false, // SSO handles its own auth
       validation: false,
       session: false,
-      errors: true
+      errors: true,
     });
   }
 
@@ -198,18 +205,20 @@ export class MiddlewareComposer {
       authentication: false, // Login creates auth
       validation: false,
       session: false,
-      errors: true
+      errors: true,
     });
   }
 
   /**
    * Create API protection middleware chain
    */
-  static createAPIChain(options: {
-    roles?: UserRole[];
-    permissions?: string[];
-    requireMFA?: boolean;
-  } = {}): RequestHandler[] {
+  static createAPIChain(
+    options: {
+      roles?: UserRole[];
+      permissions?: string[];
+      requireMFA?: boolean;
+    } = {}
+  ): RequestHandler[] {
     return this.createAuthChain({
       cors: 'api',
       security: 'api',
@@ -220,9 +229,9 @@ export class MiddlewareComposer {
       protection: {
         roles: options.roles,
         permissions: options.permissions,
-        requireMFA: options.requireMFA
+        requireMFA: options.requireMFA,
       },
-      errors: true
+      errors: true,
     });
   }
 
@@ -239,9 +248,9 @@ export class MiddlewareComposer {
       session: 'strict',
       protection: {
         roles: ['admin', 'super_admin'],
-        requireMFA: true
+        requireMFA: true,
       },
-      errors: true
+      errors: true,
     });
   }
 
@@ -257,7 +266,7 @@ export class MiddlewareComposer {
       validation: false,
       session: false,
       protection: undefined,
-      errors: true
+      errors: true,
     });
   }
 
@@ -271,7 +280,7 @@ export class MiddlewareComposer {
       authRateLimit.tokenRefresh(),
       tokenValidation.validateRefreshToken(),
       ssoJWTMiddleware.refreshToken(),
-      errorHandling.handleJWTErrors()
+      errorHandling.handleJWTErrors(),
     ];
   }
 
@@ -287,9 +296,9 @@ export class MiddlewareComposer {
       validation: 'strict',
       session: 'standard',
       protection: {
-        requireMFA: true
+        requireMFA: true,
       },
-      errors: true
+      errors: true,
     });
   }
 
@@ -304,14 +313,14 @@ export class MiddlewareComposer {
         if (i <= index) {
           throw new Error('next() called multiple times');
         }
-        
+
         index = i;
         const middleware = middlewares[i];
-        
+
         if (!middleware) {
           return next();
         }
-        
+
         try {
           middleware(req, res, (err?: any) => {
             if (err) {
@@ -332,16 +341,16 @@ export class MiddlewareComposer {
    * Apply middleware conditionally based on environment
    */
   static conditional(
-    condition: boolean | (() => boolean), 
+    condition: boolean | (() => boolean),
     middleware: RequestHandler
   ): RequestHandler {
     return (req: Request, res: Response, next: NextFunction) => {
       const shouldApply = typeof condition === 'function' ? condition() : condition;
-      
+
       if (shouldApply) {
         return middleware(req, res, next);
       }
-      
+
       next();
     };
   }
@@ -350,20 +359,14 @@ export class MiddlewareComposer {
    * Apply middleware only in development
    */
   static development(middleware: RequestHandler): RequestHandler {
-    return this.conditional(
-      () => process.env.NODE_ENV === 'development',
-      middleware
-    );
+    return this.conditional(() => process.env.NODE_ENV === 'development', middleware);
   }
 
   /**
    * Apply middleware only in production
    */
   static production(middleware: RequestHandler): RequestHandler {
-    return this.conditional(
-      () => process.env.NODE_ENV === 'production',
-      middleware
-    );
+    return this.conditional(() => process.env.NODE_ENV === 'production', middleware);
   }
 }
 

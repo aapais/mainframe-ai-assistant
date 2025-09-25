@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../ui/Dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '../../ui/Dialog';
 import { Button } from '../../ui/Button';
 import { Alert, AlertDescription } from '../../ui/Alert';
 import { Checkbox } from '../../ui/Checkbox';
-import { 
-  LogOut, 
-  AlertTriangle, 
-  Monitor, 
+import {
+  LogOut,
+  AlertTriangle,
+  Monitor,
   Smartphone,
   Shield,
   Clock,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 
 export interface LogoutConfirmationProps {
@@ -25,7 +31,7 @@ export const LogoutConfirmation: React.FC<LogoutConfirmationProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  className
+  className,
 }) => {
   const { logout, user, getSessions } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -62,12 +68,12 @@ export const LogoutConfirmation: React.FC<LogoutConfirmationProps> = ({
         );
 
         await Promise.all(
-          otherSessions.map(session => 
+          otherSessions.map(session =>
             fetch(`/api/auth/sessions/${session.id}`, {
               method: 'DELETE',
               headers: {
-                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-              }
+                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+              },
             })
           )
         );
@@ -75,7 +81,7 @@ export const LogoutConfirmation: React.FC<LogoutConfirmationProps> = ({
 
       // Then logout from current session
       await logout();
-      
+
       onConfirm?.();
       onClose();
     } catch (err) {
@@ -95,61 +101,61 @@ export const LogoutConfirmation: React.FC<LogoutConfirmationProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <LogOut className="w-5 h-5" />
+          <DialogTitle className='flex items-center space-x-2'>
+            <LogOut className='w-5 h-5' />
             <span>Confirm Logout</span>
           </DialogTitle>
-          <DialogDescription>
-            Are you sure you want to sign out of your account?
-          </DialogDescription>
+          <DialogDescription>Are you sure you want to sign out of your account?</DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4">
+
+        <div className='space-y-4'>
           {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="w-4 h-4" />
+            <Alert variant='destructive'>
+              <AlertTriangle className='w-4 h-4' />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
           {/* User Info */}
           {user && (
-            <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+            <div className='flex items-center space-x-3 p-3 bg-muted rounded-lg'>
+              <div className='w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium'>
                 {user.name.charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1">
-                <p className="font-medium">{user.name}</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
+              <div className='flex-1'>
+                <p className='font-medium'>{user.name}</p>
+                <p className='text-sm text-muted-foreground'>{user.email}</p>
               </div>
             </div>
           )}
 
           {/* Session Information */}
           {sessionCount > 1 && (
-            <div className="space-y-3">
+            <div className='space-y-3'>
               <Alert>
-                <Shield className="w-4 h-4" />
+                <Shield className='w-4 h-4' />
                 <AlertDescription>
-                  You have {sessionCount} active session{sessionCount !== 1 ? 's' : ''} across different devices.
+                  You have {sessionCount} active session{sessionCount !== 1 ? 's' : ''} across
+                  different devices.
                 </AlertDescription>
               </Alert>
 
-              <div className="flex items-start space-x-3">
+              <div className='flex items-start space-x-3'>
                 <Checkbox
-                  id="revoke-all"
+                  id='revoke-all'
                   checked={revokeAllSessions}
-                  onCheckedChange={(checked) => setRevokeAllSessions(checked as boolean)}
+                  onCheckedChange={checked => setRevokeAllSessions(checked as boolean)}
                   disabled={isLoggingOut}
                 />
-                <div className="flex-1">
-                  <label htmlFor="revoke-all" className="text-sm font-medium cursor-pointer">
+                <div className='flex-1'>
+                  <label htmlFor='revoke-all' className='text-sm font-medium cursor-pointer'>
                     Sign out from all devices
                   </label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    This will end all your active sessions and sign you out from all devices where you're currently logged in.
+                  <p className='text-xs text-muted-foreground mt-1'>
+                    This will end all your active sessions and sign you out from all devices where
+                    you're currently logged in.
                   </p>
                 </div>
               </div>
@@ -158,35 +164,31 @@ export const LogoutConfirmation: React.FC<LogoutConfirmationProps> = ({
 
           {/* Security Notice */}
           <Alert>
-            <Clock className="w-4 h-4" />
+            <Clock className='w-4 h-4' />
             <AlertDescription>
               For your security, always sign out when using shared or public computers.
             </AlertDescription>
           </Alert>
 
           {/* Action Buttons */}
-          <div className="flex space-x-2 pt-2">
+          <div className='flex space-x-2 pt-2'>
             <Button
-              variant="outline"
+              variant='outline'
               onClick={handleCancel}
               disabled={isLoggingOut}
-              className="flex-1"
+              className='flex-1'
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="flex-1"
-            >
+            <Button onClick={handleLogout} disabled={isLoggingOut} className='flex-1'>
               {isLoggingOut ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                <div className='flex items-center space-x-2'>
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white' />
                   <span>Signing out...</span>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <LogOut className="w-4 h-4" />
+                <div className='flex items-center space-x-2'>
+                  <LogOut className='w-4 h-4' />
                   <span>Sign Out</span>
                 </div>
               )}
@@ -194,8 +196,8 @@ export const LogoutConfirmation: React.FC<LogoutConfirmationProps> = ({
           </div>
 
           {/* Additional Info */}
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">
+          <div className='text-center'>
+            <p className='text-xs text-muted-foreground'>
               You can sign back in anytime using your credentials or SSO provider.
             </p>
           </div>
@@ -219,7 +221,7 @@ export const QuickLogoutButton: React.FC<QuickLogoutButtonProps> = ({
   size = 'md',
   showConfirmation = true,
   className,
-  children
+  children,
 }) => {
   const { logout } = useAuth();
   const [showDialog, setShowDialog] = useState(false);
@@ -255,10 +257,10 @@ export const QuickLogoutButton: React.FC<QuickLogoutButtonProps> = ({
         className={className}
       >
         {isLoading ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+          <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
         ) : (
           <>
-            <LogOut className="w-4 h-4 mr-2" />
+            <LogOut className='w-4 h-4 mr-2' />
             {children || 'Sign Out'}
           </>
         )}

@@ -22,7 +22,7 @@ class UserFactory {
       lastLogin: faker.date.recent(),
       createdAt: faker.date.past(),
       updatedAt: faker.date.recent(),
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -34,7 +34,7 @@ class UserFactory {
     return this.create({
       roles: ['admin', 'user'],
       permissions: ['read', 'write', 'delete', 'admin'],
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -43,24 +43,24 @@ class UserFactory {
       google: {
         providerId: faker.string.alphanumeric(21),
         email: faker.internet.email(),
-        avatar: `https://lh3.googleusercontent.com/a/${faker.string.alphanumeric(20)}`
+        avatar: `https://lh3.googleusercontent.com/a/${faker.string.alphanumeric(20)}`,
       },
       microsoft: {
         providerId: faker.string.uuid(),
         email: faker.internet.email(),
-        avatar: `https://graph.microsoft.com/v1.0/users/${faker.string.uuid()}/photo/$value`
+        avatar: `https://graph.microsoft.com/v1.0/users/${faker.string.uuid()}/photo/$value`,
       },
       okta: {
         providerId: faker.string.alphanumeric(20),
         email: faker.internet.email(),
-        avatar: faker.image.avatar()
-      }
+        avatar: faker.image.avatar(),
+      },
     };
 
     return this.create({
       provider,
       ...providers[provider],
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -71,7 +71,7 @@ class UserFactory {
       email: faker.internet.email(),
       groups: ['employees', 'developers'],
       department: faker.commerce.department(),
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -79,7 +79,7 @@ class UserFactory {
     return this.create({
       isActive: false,
       lastLogin: faker.date.past({ years: 1 }),
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -88,7 +88,7 @@ class UserFactory {
       isVerified: false,
       verificationToken: faker.string.uuid(),
       verificationExpires: faker.date.future(),
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -96,7 +96,7 @@ class UserFactory {
     return this.create({
       resetPasswordToken: faker.string.uuid(),
       resetPasswordExpires: faker.date.future(),
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -138,7 +138,7 @@ class SessionFactory {
       ipAddress: faker.internet.ip(),
       userAgent: faker.internet.userAgent(),
       isActive: true,
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -146,7 +146,7 @@ class SessionFactory {
     return this.create(userId, {
       expiresAt: faker.date.past(),
       isActive: false,
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -157,7 +157,14 @@ class SessionFactory {
 
 class AuthEventFactory {
   static create(userId = null, overrides = {}) {
-    const eventTypes = ['login', 'logout', 'password_change', 'email_change', 'role_change', 'failed_login'];
+    const eventTypes = [
+      'login',
+      'logout',
+      'password_change',
+      'email_change',
+      'role_change',
+      'failed_login',
+    ];
 
     return {
       id: faker.string.uuid(),
@@ -168,7 +175,7 @@ class AuthEventFactory {
       userAgent: faker.internet.userAgent(),
       success: true,
       metadata: {},
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -178,9 +185,9 @@ class AuthEventFactory {
       success: false,
       metadata: {
         reason: 'invalid_credentials',
-        attempts: faker.number.int({ min: 1, max: 5 })
+        attempts: faker.number.int({ min: 1, max: 5 }),
       },
-      ...overrides
+      ...overrides,
     });
   }
 
@@ -191,8 +198,8 @@ class AuthEventFactory {
         metadata: {
           reason: 'invalid_credentials',
           attempts: index + 1,
-          sourceIp: faker.internet.ip()
-        }
+          sourceIp: faker.internet.ip(),
+        },
       })
     );
   }
@@ -201,5 +208,5 @@ class AuthEventFactory {
 module.exports = {
   UserFactory,
   SessionFactory,
-  AuthEventFactory
+  AuthEventFactory,
 };

@@ -33,7 +33,7 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
       const error = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
       const provider = searchParams.get('provider') || 'unknown';
-      
+
       setProvider(provider);
 
       // Handle OAuth errors
@@ -55,7 +55,7 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
         body: JSON.stringify({
           code,
           state,
-          provider
+          provider,
         }),
       });
 
@@ -77,13 +77,12 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
 
       setState('success');
       onSuccess?.();
-      
+
       // Redirect after a brief success message
       setTimeout(() => {
         const redirectTo = searchParams.get('redirect') || '/';
         navigate(redirectTo, { replace: true });
       }, 1500);
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
       setError(errorMessage);
@@ -95,7 +94,7 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
   const handleMFAComplete = async (mfaCode: string) => {
     try {
       setState('loading');
-      
+
       const response = await fetch('/api/auth/mfa/verify', {
         method: 'POST',
         headers: {
@@ -103,7 +102,7 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
         },
         body: JSON.stringify({
           mfaToken,
-          code: mfaCode
+          code: mfaCode,
         }),
       });
 
@@ -116,12 +115,11 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
       localStorage.setItem('auth_token', data.token);
       setState('success');
       onSuccess?.();
-      
+
       setTimeout(() => {
         const redirectTo = searchParams.get('redirect') || '/';
         navigate(redirectTo, { replace: true });
       }, 1500);
-
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'MFA verification failed';
       setError(errorMessage);
@@ -139,11 +137,11 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
     switch (state) {
       case 'loading':
         return (
-          <div className="flex flex-col items-center space-y-4 text-center py-8">
-            <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Completing sign in...</h3>
-              <p className="text-sm text-muted-foreground">
+          <div className='flex flex-col items-center space-y-4 text-center py-8'>
+            <Loader2 className='w-12 h-12 animate-spin text-primary' />
+            <div className='space-y-2'>
+              <h3 className='text-lg font-medium'>Completing sign in...</h3>
+              <p className='text-sm text-muted-foreground'>
                 Please wait while we verify your {provider} authentication.
               </p>
             </div>
@@ -152,34 +150,30 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
 
       case 'success':
         return (
-          <div className="flex flex-col items-center space-y-4 text-center py-8">
-            <CheckCircle className="w-12 h-12 text-green-500" />
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-green-700">Sign in successful!</h3>
-              <p className="text-sm text-muted-foreground">
-                Redirecting you to the application...
-              </p>
+          <div className='flex flex-col items-center space-y-4 text-center py-8'>
+            <CheckCircle className='w-12 h-12 text-green-500' />
+            <div className='space-y-2'>
+              <h3 className='text-lg font-medium text-green-700'>Sign in successful!</h3>
+              <p className='text-sm text-muted-foreground'>Redirecting you to the application...</p>
             </div>
           </div>
         );
 
       case 'error':
         return (
-          <div className="flex flex-col items-center space-y-4 text-center py-8">
-            <XCircle className="w-12 h-12 text-red-500" />
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-red-700">Sign in failed</h3>
-              <p className="text-sm text-muted-foreground max-w-md">
+          <div className='flex flex-col items-center space-y-4 text-center py-8'>
+            <XCircle className='w-12 h-12 text-red-500' />
+            <div className='space-y-2'>
+              <h3 className='text-lg font-medium text-red-700'>Sign in failed</h3>
+              <p className='text-sm text-muted-foreground max-w-md'>
                 {error || 'An unexpected error occurred during authentication.'}
               </p>
             </div>
-            <div className="flex space-x-3 pt-4">
-              <Button variant="outline" onClick={handleRetry}>
+            <div className='flex space-x-3 pt-4'>
+              <Button variant='outline' onClick={handleRetry}>
                 Try Again
               </Button>
-              <Button onClick={() => navigate('/login')}>
-                Back to Login
-              </Button>
+              <Button onClick={() => navigate('/login')}>Back to Login</Button>
             </div>
           </div>
         );
@@ -200,14 +194,12 @@ export const SSOCallback: React.FC<SSOCallbackProps> = ({ onSuccess, onError }) 
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <div className='flex items-center justify-center min-h-screen bg-background p-4'>
+      <Card className='w-full max-w-md'>
+        <CardHeader className='text-center'>
           <CardTitle>SSO Authentication</CardTitle>
         </CardHeader>
-        <CardContent>
-          {renderContent()}
-        </CardContent>
+        <CardContent>{renderContent()}</CardContent>
       </Card>
     </div>
   );
@@ -225,7 +217,7 @@ const MFAVerification: React.FC<MFAVerificationProps> = ({
   provider,
   onVerify,
   onCancel,
-  isLoading
+  isLoading,
 }) => {
   const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -241,56 +233,52 @@ const MFAVerification: React.FC<MFAVerificationProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 text-center py-4">
-      <AlertTriangle className="w-12 h-12 text-yellow-500" />
-      <div className="space-y-2">
-        <h3 className="text-lg font-medium">Multi-Factor Authentication Required</h3>
-        <p className="text-sm text-muted-foreground">
+    <div className='flex flex-col items-center space-y-6 text-center py-4'>
+      <AlertTriangle className='w-12 h-12 text-yellow-500' />
+      <div className='space-y-2'>
+        <h3 className='text-lg font-medium'>Multi-Factor Authentication Required</h3>
+        <p className='text-sm text-muted-foreground'>
           Your {provider} account requires additional verification.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full space-y-4">
+      <form onSubmit={handleSubmit} className='w-full space-y-4'>
         {error && (
-          <Alert variant="destructive">
+          <Alert variant='destructive'>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
-        <div className="space-y-2">
-          <label htmlFor="mfa-code" className="text-sm font-medium">
+
+        <div className='space-y-2'>
+          <label htmlFor='mfa-code' className='text-sm font-medium'>
             Enter 6-digit verification code
           </label>
           <input
-            id="mfa-code"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]{6}"
+            id='mfa-code'
+            type='text'
+            inputMode='numeric'
+            pattern='[0-9]{6}'
             maxLength={6}
-            className="w-full px-3 py-2 border border-input rounded-md text-center text-lg font-mono tracking-widest"
-            placeholder="000000"
+            className='w-full px-3 py-2 border border-input rounded-md text-center text-lg font-mono tracking-widest'
+            placeholder='000000'
             value={mfaCode}
-            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+            onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
             disabled={isLoading}
           />
         </div>
 
-        <div className="flex space-x-3 pt-2">
+        <div className='flex space-x-3 pt-2'>
           <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
+            type='button'
+            variant='outline'
+            className='flex-1'
             onClick={onCancel}
             disabled={isLoading}
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            className="flex-1"
-            disabled={mfaCode.length !== 6 || isLoading}
-          >
-            {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          <Button type='submit' className='flex-1' disabled={mfaCode.length !== 6 || isLoading}>
+            {isLoading && <Loader2 className='w-4 h-4 mr-2 animate-spin' />}
             Verify
           </Button>
         </div>

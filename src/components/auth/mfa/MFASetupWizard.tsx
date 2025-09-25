@@ -7,19 +7,19 @@ import { Input } from '../../ui/Input';
 import { Badge } from '../../ui/Badge';
 import { Alert, AlertDescription } from '../../ui/Alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/Dialog';
-import { 
-  Smartphone, 
-  Mail, 
-  Key, 
-  QrCode, 
-  Copy, 
-  Check, 
-  ArrowRight, 
+import {
+  Smartphone,
+  Mail,
+  Key,
+  QrCode,
+  Copy,
+  Check,
+  ArrowRight,
   ArrowLeft,
   Shield,
   Download,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
@@ -38,29 +38,29 @@ const mfaMethods = [
     name: 'Authenticator App',
     description: 'Use an app like Google Authenticator, Authy, or 1Password',
     icon: Smartphone,
-    recommended: true
+    recommended: true,
   },
   {
     id: 'sms',
     name: 'SMS Text Message',
     description: 'Receive codes via SMS to your phone number',
     icon: Smartphone,
-    recommended: false
+    recommended: false,
   },
   {
     id: 'email',
     name: 'Email',
     description: 'Receive codes via email (backup method only)',
     icon: Mail,
-    recommended: false
-  }
+    recommended: false,
+  },
 ];
 
 export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
   isOpen,
   onClose,
   onComplete,
-  className
+  className,
 }) => {
   const { setupMFA } = useAuth();
   const [currentStep, setCurrentStep] = useState<SetupStep>('method');
@@ -101,7 +101,7 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
 
   const handleNextStep = async () => {
     setError(null);
-    
+
     switch (currentStep) {
       case 'method':
         if (!selectedMethod) {
@@ -113,7 +113,7 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
           await generateTOTPSecret();
         }
         break;
-        
+
       case 'configure':
         if (selectedMethod === 'sms' && !phoneNumber.trim()) {
           setError('Please enter your phone number');
@@ -124,7 +124,7 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
           await sendVerificationCode();
         }
         break;
-        
+
       case 'verify':
         if (!verificationCode.trim()) {
           setError('Please enter the verification code');
@@ -132,11 +132,11 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
         }
         await verifyAndSetupMFA();
         break;
-        
+
       case 'backup':
         setCurrentStep('complete');
         break;
-        
+
       case 'complete':
         onComplete();
         onClose();
@@ -167,8 +167,8 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
       const response = await fetch('/api/auth/mfa/totp/generate', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+        },
       });
 
       if (!response.ok) {
@@ -193,12 +193,12 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
         body: JSON.stringify({
           method: selectedMethod,
-          phoneNumber: phoneNumber
-        })
+          phoneNumber: phoneNumber,
+        }),
       });
 
       if (!response.ok) {
@@ -214,11 +214,11 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
   const verifyAndSetupMFA = async () => {
     try {
       setIsLoading(true);
-      
+
       const mfaData: MFASetupData = {
         method: selectedMethod as 'totp' | 'sms' | 'email',
         ...(selectedMethod === 'sms' && { phoneNumber }),
-        ...(selectedMethod === 'totp' && { secret: setupData.secret })
+        ...(selectedMethod === 'totp' && { secret: setupData.secret }),
       };
 
       // First verify the code
@@ -226,12 +226,12 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
         },
         body: JSON.stringify({
           ...mfaData,
-          code: verificationCode
-        })
+          code: verificationCode,
+        }),
       });
 
       if (!verifyResponse.ok) {
@@ -245,8 +245,8 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
       const backupResponse = await fetch('/api/auth/mfa/backup-codes', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+        },
       });
 
       if (backupResponse.ok) {
@@ -282,10 +282,12 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
   };
 
   const downloadBackupCodes = () => {
-    const content = `Backup Codes for Multi-Factor Authentication\n\n${
-      backupCodes.map((code, index) => `${index + 1}. ${code}`).join('\n')
-    }\n\nIMPORTANT:\n- Store these codes in a safe place\n- Each code can only be used once\n- Use these codes if you lose access to your primary MFA method\n\nGenerated on: ${new Date().toLocaleString()}`;
-    
+    const content = `Backup Codes for Multi-Factor Authentication\n\n${backupCodes
+      .map((code, index) => `${index + 1}. ${code}`)
+      .join(
+        '\n'
+      )}\n\nIMPORTANT:\n- Store these codes in a safe place\n- Each code can only be used once\n- Use these codes if you lose access to your primary MFA method\n\nGenerated on: ${new Date().toLocaleString()}`;
+
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -301,43 +303,41 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
     switch (currentStep) {
       case 'method':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Choose Your MFA Method</h3>
-              <p className="text-sm text-muted-foreground">
+          <div className='space-y-6'>
+            <div className='text-center'>
+              <h3 className='text-lg font-medium mb-2'>Choose Your MFA Method</h3>
+              <p className='text-sm text-muted-foreground'>
                 Select how you'd like to receive verification codes
               </p>
             </div>
-            
-            <div className="space-y-3">
-              {mfaMethods.map((method) => {
+
+            <div className='space-y-3'>
+              {mfaMethods.map(method => {
                 const IconComponent = method.icon;
                 return (
                   <div
                     key={method.id}
                     className={cn(
-                      "flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors",
+                      'flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors',
                       selectedMethod === method.id
-                        ? "border-primary bg-primary/5"
-                        : "border-input hover:bg-muted"
+                        ? 'border-primary bg-primary/5'
+                        : 'border-input hover:bg-muted'
                     )}
                     onClick={() => handleMethodSelect(method.id)}
                   >
-                    <IconComponent className="w-5 h-5" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-medium">{method.name}</h4>
+                    <IconComponent className='w-5 h-5' />
+                    <div className='flex-1'>
+                      <div className='flex items-center space-x-2'>
+                        <h4 className='font-medium'>{method.name}</h4>
                         {method.recommended && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant='secondary' className='text-xs'>
                             Recommended
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{method.description}</p>
+                      <p className='text-sm text-muted-foreground'>{method.description}</p>
                     </div>
-                    {selectedMethod === method.id && (
-                      <Check className="w-5 h-5 text-primary" />
-                    )}
+                    {selectedMethod === method.id && <Check className='w-5 h-5 text-primary' />}
                   </div>
                 );
               })}
@@ -348,39 +348,39 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
       case 'configure':
         if (selectedMethod === 'totp') {
           return (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-lg font-medium mb-2">Set Up Authenticator App</h3>
-                <p className="text-sm text-muted-foreground">
+            <div className='space-y-6'>
+              <div className='text-center'>
+                <h3 className='text-lg font-medium mb-2'>Set Up Authenticator App</h3>
+                <p className='text-sm text-muted-foreground'>
                   Scan the QR code with your authenticator app
                 </p>
               </div>
-              
+
               {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">Generating QR code...</p>
+                <div className='text-center py-8'>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+                  <p className='text-sm text-muted-foreground'>Generating QR code...</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="inline-block p-4 bg-white border rounded-lg">
-                      <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+                <div className='space-y-6'>
+                  <div className='text-center'>
+                    <div className='inline-block p-4 bg-white border rounded-lg'>
+                      <img src={qrCodeUrl} alt='QR Code' className='w-48 h-48' />
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Can't scan? Enter this key manually:</p>
-                    <div className="flex items-center space-x-2">
-                      <code className="flex-1 px-3 py-2 bg-muted rounded font-mono text-sm">
+
+                  <div className='space-y-2'>
+                    <p className='text-sm font-medium'>Can't scan? Enter this key manually:</p>
+                    <div className='flex items-center space-x-2'>
+                      <code className='flex-1 px-3 py-2 bg-muted rounded font-mono text-sm'>
                         {manualKey}
                       </code>
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant='outline'
+                        size='sm'
                         onClick={() => copyToClipboard(manualKey)}
                       >
-                        <Copy className="w-4 h-4" />
+                        <Copy className='w-4 h-4' />
                       </Button>
                     </div>
                   </div>
@@ -390,23 +390,23 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
           );
         } else if (selectedMethod === 'sms') {
           return (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-lg font-medium mb-2">Enter Your Phone Number</h3>
-                <p className="text-sm text-muted-foreground">
+            <div className='space-y-6'>
+              <div className='text-center'>
+                <h3 className='text-lg font-medium mb-2'>Enter Your Phone Number</h3>
+                <p className='text-sm text-muted-foreground'>
                   We'll send verification codes to this number
                 </p>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Phone Number</label>
+
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>Phone Number</label>
                 <Input
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  type='tel'
+                  placeholder='+1 (555) 123-4567'
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={e => setPhoneNumber(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className='text-xs text-muted-foreground'>
                   Include your country code (e.g., +1 for US)
                 </p>
               </div>
@@ -414,10 +414,10 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
           );
         } else {
           return (
-            <div className="text-center py-8">
-              <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Email MFA Setup</h3>
-              <p className="text-sm text-muted-foreground">
+            <div className='text-center py-8'>
+              <Mail className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
+              <h3 className='text-lg font-medium mb-2'>Email MFA Setup</h3>
+              <p className='text-sm text-muted-foreground'>
                 We'll send verification codes to your registered email address
               </p>
             </div>
@@ -426,41 +426,40 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
 
       case 'verify':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Enter Verification Code</h3>
-              <p className="text-sm text-muted-foreground">
+          <div className='space-y-6'>
+            <div className='text-center'>
+              <h3 className='text-lg font-medium mb-2'>Enter Verification Code</h3>
+              <p className='text-sm text-muted-foreground'>
                 {selectedMethod === 'totp'
                   ? 'Enter the 6-digit code from your authenticator app'
                   : selectedMethod === 'sms'
-                  ? 'Enter the code sent to your phone'
-                  : 'Enter the code sent to your email'
-                }
+                    ? 'Enter the code sent to your phone'
+                    : 'Enter the code sent to your email'}
               </p>
             </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Verification Code</label>
+
+            <div className='space-y-4'>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>Verification Code</label>
                 <Input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
+                  type='text'
+                  inputMode='numeric'
+                  pattern='[0-9]{6}'
                   maxLength={6}
-                  className="text-center text-lg font-mono tracking-widest"
-                  placeholder="000000"
+                  className='text-center text-lg font-mono tracking-widest'
+                  placeholder='000000'
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                  onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
-              
+
               {(selectedMethod === 'sms' || selectedMethod === 'email') && (
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant='outline'
+                  size='sm'
                   onClick={sendVerificationCode}
                   disabled={isLoading}
-                  className="w-full"
+                  className='w-full'
                 >
                   Resend Code
                 </Button>
@@ -471,46 +470,39 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
 
       case 'backup':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Save Your Backup Codes</h3>
-              <p className="text-sm text-muted-foreground">
-                Store these codes in a safe place. You can use them to access your account if you lose your phone.
+          <div className='space-y-6'>
+            <div className='text-center'>
+              <h3 className='text-lg font-medium mb-2'>Save Your Backup Codes</h3>
+              <p className='text-sm text-muted-foreground'>
+                Store these codes in a safe place. You can use them to access your account if you
+                lose your phone.
               </p>
             </div>
-            
+
             <Alert>
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className='w-4 h-4' />
               <AlertDescription>
                 Each backup code can only be used once. Generate new codes if you run out.
               </AlertDescription>
             </Alert>
-            
-            <div className="space-y-3">
+
+            <div className='space-y-3'>
               {backupCodes.map((code, index) => (
-                <div key={code} className="flex items-center justify-between p-3 bg-muted rounded">
-                  <span className="font-mono">{code}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(code, code)}
-                  >
+                <div key={code} className='flex items-center justify-between p-3 bg-muted rounded'>
+                  <span className='font-mono'>{code}</span>
+                  <Button variant='ghost' size='sm' onClick={() => copyToClipboard(code, code)}>
                     {copiedCodes.has(code) ? (
-                      <Check className="w-4 h-4 text-green-600" />
+                      <Check className='w-4 h-4 text-green-600' />
                     ) : (
-                      <Copy className="w-4 h-4" />
+                      <Copy className='w-4 h-4' />
                     )}
                   </Button>
                 </div>
               ))}
             </div>
-            
-            <Button
-              variant="outline"
-              onClick={downloadBackupCodes}
-              className="w-full"
-            >
-              <Download className="w-4 h-4 mr-2" />
+
+            <Button variant='outline' onClick={downloadBackupCodes} className='w-full'>
+              <Download className='w-4 h-4 mr-2' />
               Download Backup Codes
             </Button>
           </div>
@@ -518,20 +510,21 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
 
       case 'complete':
         return (
-          <div className="text-center space-y-6">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className='text-center space-y-6'>
+            <div className='mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center'>
+              <CheckCircle className='w-8 h-8 text-green-600' />
             </div>
             <div>
-              <h3 className="text-lg font-medium mb-2">MFA Setup Complete!</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className='text-lg font-medium mb-2'>MFA Setup Complete!</h3>
+              <p className='text-sm text-muted-foreground'>
                 Your account is now protected with multi-factor authentication.
               </p>
             </div>
-            <Alert className="border-green-200 bg-green-50 text-green-800">
-              <Shield className="w-4 h-4" />
+            <Alert className='border-green-200 bg-green-50 text-green-800'>
+              <Shield className='w-4 h-4' />
               <AlertDescription>
-                Your account security has been significantly improved. You'll be asked for verification codes when signing in from new devices.
+                Your account security has been significantly improved. You'll be asked for
+                verification codes when signing in from new devices.
               </AlertDescription>
             </Alert>
           </div>
@@ -552,61 +545,62 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Shield className="w-5 h-5" />
+          <DialogTitle className='flex items-center space-x-2'>
+            <Shield className='w-5 h-5' />
             <span>Setup Multi-Factor Authentication</span>
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6">
+
+        <div className='space-y-6'>
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Step {['method', 'configure', 'verify', 'backup', 'complete'].indexOf(currentStep) + 1} of 5</span>
+          <div className='space-y-2'>
+            <div className='flex justify-between text-xs text-muted-foreground'>
+              <span>
+                Step{' '}
+                {['method', 'configure', 'verify', 'backup', 'complete'].indexOf(currentStep) + 1}{' '}
+                of 5
+              </span>
               <span>{Math.round(getStepProgress())}%</span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
+            <div className='w-full bg-muted rounded-full h-2'>
               <div
-                className="bg-primary h-2 rounded-full transition-all duration-300"
+                className='bg-primary h-2 rounded-full transition-all duration-300'
                 style={{ width: `${getStepProgress()}%` }}
               />
             </div>
           </div>
-          
+
           {/* Error Alert */}
           {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="w-4 h-4" />
+            <Alert variant='destructive'>
+              <AlertTriangle className='w-4 h-4' />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {/* Step Content */}
           {getStepContent()}
-          
+
           {/* Navigation Buttons */}
-          <div className="flex space-x-2 pt-4">
+          <div className='flex space-x-2 pt-4'>
             {currentStep !== 'method' && currentStep !== 'complete' && (
-              <Button
-                variant="outline"
-                onClick={handlePreviousStep}
-                disabled={isLoading}
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
+              <Button variant='outline' onClick={handlePreviousStep} disabled={isLoading}>
+                <ArrowLeft className='w-4 h-4 mr-1' />
                 Back
               </Button>
             )}
-            
+
             <Button
               onClick={handleNextStep}
-              disabled={isLoading || (
-                currentStep === 'method' && !selectedMethod ||
-                currentStep === 'configure' && selectedMethod === 'sms' && !phoneNumber.trim() ||
-                currentStep === 'verify' && !verificationCode.trim()
-              )}
-              className="flex-1"
+              disabled={
+                isLoading ||
+                (currentStep === 'method' && !selectedMethod) ||
+                (currentStep === 'configure' && selectedMethod === 'sms' && !phoneNumber.trim()) ||
+                (currentStep === 'verify' && !verificationCode.trim())
+              }
+              className='flex-1'
             >
               {isLoading ? (
                 'Processing...'
@@ -615,7 +609,7 @@ export const MFASetupWizard: React.FC<MFASetupWizardProps> = ({
               ) : (
                 <>
                   {currentStep === 'verify' ? 'Verify & Enable' : 'Continue'}
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className='w-4 h-4 ml-1' />
                 </>
               )}
             </Button>

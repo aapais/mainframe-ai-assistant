@@ -33,7 +33,7 @@ const getWindowsConfig = () => {
         'profile',
         'email',
         'User.Read',
-        'offline_access' // Para refresh tokens
+        'offline_access', // Para refresh tokens
       ],
 
       // Configurações de autenticação
@@ -45,7 +45,8 @@ const getWindowsConfig = () => {
       allowIntegratedAuth: true,
 
       // Callback URL dinâmico
-      redirectUri: process.env.AZURE_REDIRECT_URI || `http://localhost:3001/api/auth/sso/microsoft/callback`
+      redirectUri:
+        process.env.AZURE_REDIRECT_URI || `http://localhost:3001/api/auth/sso/microsoft/callback`,
     },
 
     // Informações do Windows local
@@ -58,9 +59,9 @@ const getWindowsConfig = () => {
       isInDomain: domain !== 'WORKGROUP' && domain !== hostname,
 
       // User Principal Name (UPN) - formato: usuario@empresa.com
-      upn: process.env.USERNAME ?
-        `${process.env.USERNAME}@${domain.toLowerCase()}.com` :
-        `${userInfo.username}@${domain.toLowerCase()}.com`
+      upn: process.env.USERNAME
+        ? `${process.env.USERNAME}@${domain.toLowerCase()}.com`
+        : `${userInfo.username}@${domain.toLowerCase()}.com`,
     },
 
     // Configuração de Single Sign-On
@@ -78,8 +79,8 @@ const getWindowsConfig = () => {
       sessionTimeout: 28800, // 8 horas
 
       // Renovação automática de token
-      autoRenewToken: true
-    }
+      autoRenewToken: true,
+    },
   };
 };
 
@@ -98,7 +99,7 @@ async function getWindowsAuthToken() {
     method: 'windows_integrated',
     user: config.windows.upn,
     domain: config.windows.domain,
-    authenticated: true
+    authenticated: true,
   };
 }
 
@@ -168,7 +169,7 @@ function windowsAuthMiddleware(req, res, next) {
         authenticated: true,
         username: config.windows.username,
         domain: config.windows.domain,
-        upn: config.windows.upn
+        upn: config.windows.upn,
       };
     }
   }
@@ -184,5 +185,5 @@ module.exports = {
   windowsAuthMiddleware,
 
   // Configuração pronta para uso
-  config: getWindowsConfig()
+  config: getWindowsConfig(),
 };

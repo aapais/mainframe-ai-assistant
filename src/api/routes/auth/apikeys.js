@@ -13,7 +13,7 @@ const logger = new Logger('APIKeysAPI');
 router.use(authMiddleware);
 
 // Validation middleware
-const validateRequest = (schema) => async (req, res, next) => {
+const validateRequest = schema => async (req, res, next) => {
   try {
     const result = schema.safeParse(req.body);
     if (!result.success) {
@@ -22,8 +22,8 @@ const validateRequest = (schema) => async (req, res, next) => {
         message: 'Dados de entrada inválidos',
         errors: result.error.issues.map(issue => ({
           field: issue.path.join('.'),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       });
     }
     req.validatedData = result.data;
@@ -32,7 +32,7 @@ const validateRequest = (schema) => async (req, res, next) => {
     logger.error('Erro na validação:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno de validação'
+      message: 'Erro interno de validação',
     });
   }
 };
@@ -45,7 +45,8 @@ class UserAPIKeyService {
 
   async createUserAPIKey(userId, keyData) {
     try {
-      const { name, description, provider, permissions, expiresAt, ipRestrictions, monthlyLimit } = keyData;
+      const { name, description, provider, permissions, expiresAt, ipRestrictions, monthlyLimit } =
+        keyData;
 
       // Generate the actual API key that will be used with external services
       const apiKey = crypto.randomBytes(32).toString('hex');
@@ -62,7 +63,7 @@ class UserAPIKeyService {
         monthlyLimit,
         usageCount: 0,
         lastUsed: null,
-        isActive: true
+        isActive: true,
       });
 
       logger.info(`API key criada para usuário ${userId}: ${name}`);
@@ -78,7 +79,7 @@ class UserAPIKeyService {
         monthlyLimit,
         maskedKey: this.maskApiKey(apiKey),
         createdAt: new Date(),
-        isActive: true
+        isActive: true,
       };
     } catch (error) {
       logger.error(`Erro ao criar API key para usuário ${userId}:`, error);
@@ -102,7 +103,7 @@ class UserAPIKeyService {
         lastUsed: key.lastUsed,
         usageCount: key.usageCount || 0,
         isActive: key.isActive,
-        createdAt: key.createdAt
+        createdAt: key.createdAt,
       }));
     } catch (error) {
       logger.error(`Erro ao buscar API keys do usuário ${userId}:`, error);
@@ -145,7 +146,7 @@ class UserAPIKeyService {
 
       return {
         maskedKey: this.maskApiKey(newApiKey),
-        rotatedAt: new Date()
+        rotatedAt: new Date(),
       };
     } catch (error) {
       logger.error(`Erro ao rotacionar API key ${keyId} do usuário ${userId}:`, error);
@@ -163,7 +164,7 @@ class UserAPIKeyService {
         lastUsed: usage.lastUsed,
         monthlyUsage: usage.monthlyUsage || 0,
         costThisMonth: usage.costThisMonth || 0,
-        usageHistory: usage.history || []
+        usageHistory: usage.history || [],
       };
     } catch (error) {
       logger.error(`Erro ao buscar uso da API key ${keyId} do usuário ${userId}:`, error);
@@ -187,11 +188,13 @@ class UserAPIKeyService {
           operation: 'test',
           timestamp: new Date(),
           success: true,
-          responseTime: testResult.responseTime
+          responseTime: testResult.responseTime,
         });
       }
 
-      logger.info(`Teste de API key ${keyId} para usuário ${userId}: ${testResult.success ? 'sucesso' : 'falha'}`);
+      logger.info(
+        `Teste de API key ${keyId} para usuário ${userId}: ${testResult.success ? 'sucesso' : 'falha'}`
+      );
 
       return testResult;
     } catch (error) {
@@ -224,13 +227,13 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      apiKeys
+      apiKeys,
     });
   } catch (error) {
     logger.error('Erro ao buscar API keys:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -247,13 +250,13 @@ router.post('/', validateRequest(createApiKeySchema), async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'API key criada com sucesso',
-      apiKey
+      apiKey,
     });
   } catch (error) {
     logger.error('Erro ao criar API key:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -272,19 +275,19 @@ router.get('/:keyId', async (req, res) => {
     if (!apiKey) {
       return res.status(404).json({
         success: false,
-        message: 'API key não encontrada'
+        message: 'API key não encontrada',
       });
     }
 
     res.json({
       success: true,
-      apiKey
+      apiKey,
     });
   } catch (error) {
     logger.error('Erro ao buscar API key:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -305,18 +308,18 @@ router.put('/:keyId', async (req, res) => {
       permissions,
       ipRestrictions,
       monthlyLimit,
-      isActive
+      isActive,
     });
 
     res.json({
       success: true,
-      message: 'API key atualizada com sucesso'
+      message: 'API key atualizada com sucesso',
     });
   } catch (error) {
     logger.error('Erro ao atualizar API key:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -334,13 +337,13 @@ router.delete('/:keyId', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'API key deletada com sucesso'
+      message: 'API key deletada com sucesso',
     });
   } catch (error) {
     logger.error('Erro ao deletar API key:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -359,13 +362,13 @@ router.post('/:keyId/rotate', async (req, res) => {
     res.json({
       success: true,
       message: 'API key rotacionada com sucesso',
-      ...result
+      ...result,
     });
   } catch (error) {
     logger.error('Erro ao rotacionar API key:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -383,7 +386,7 @@ router.post('/:keyId/test', async (req, res) => {
 
     res.json({
       success: true,
-      testResult
+      testResult,
     });
   } catch (error) {
     logger.error('Erro ao testar API key:', error);
@@ -391,13 +394,13 @@ router.post('/:keyId/test', async (req, res) => {
     if (error.message.includes('não encontrada')) {
       return res.status(404).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -415,13 +418,13 @@ router.get('/:keyId/usage', async (req, res) => {
 
     res.json({
       success: true,
-      usage
+      usage,
     });
   } catch (error) {
     logger.error('Erro ao buscar uso da API key:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -442,14 +445,14 @@ router.get('/providers', async (req, res) => {
         name: provider.name,
         description: provider.description,
         documentationUrl: provider.documentationUrl,
-        setupInstructions: provider.setupInstructions
-      }))
+        setupInstructions: provider.setupInstructions,
+      })),
     });
   } catch (error) {
     logger.error('Erro ao buscar provedores de API:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });

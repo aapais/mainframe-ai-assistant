@@ -42,22 +42,22 @@ export class TokenValidationMiddleware {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const token = this.extractToken(req);
-        
+
         if (!token) {
           return res.status(401).json({
             success: false,
             error: 'TOKEN_MISSING',
-            message: 'Token de acesso obrigatório'
+            message: 'Token de acesso obrigatório',
           });
         }
 
         const validationResult = await this.validateToken(token, options);
-        
+
         if (!validationResult.valid) {
           return res.status(401).json({
             success: false,
             error: 'TOKEN_VALIDATION_FAILED',
-            message: validationResult.reason || 'Token inválido'
+            message: validationResult.reason || 'Token inválido',
           });
         }
 
@@ -66,33 +66,36 @@ export class TokenValidationMiddleware {
           return res.status(401).json({
             success: false,
             error: 'MFA_REQUIRED',
-            message: 'Autenticação multi-fator obrigatória'
+            message: 'Autenticação multi-fator obrigatória',
           });
         }
 
-        if (options.validateScope && !this.hasRequiredScope(validationResult.payload!, options.validateScope)) {
+        if (
+          options.validateScope &&
+          !this.hasRequiredScope(validationResult.payload!, options.validateScope)
+        ) {
           return res.status(403).json({
             success: false,
             error: 'INSUFFICIENT_SCOPE',
-            message: 'Escopo insuficiente para acessar este recurso'
+            message: 'Escopo insuficiente para acessar este recurso',
           });
         }
 
         // Set validation info in request
         req.tokenValidation = validationResult;
-        
+
         // Set refresh hint if needed
         if (validationResult.needsRefresh) {
           res.setHeader('X-Token-Refresh-Required', 'true');
         }
-        
+
         next();
       } catch (error) {
         console.error('Token validation error:', error);
         return res.status(500).json({
           success: false,
           error: 'VALIDATION_ERROR',
-          message: 'Erro interno na validação do token'
+          message: 'Erro interno na validação do token',
         });
       }
     };
@@ -101,7 +104,10 @@ export class TokenValidationMiddleware {
   /**
    * Validate token structure and claims
    */
-  async validateToken(token: string, options: TokenValidationOptions = {}): Promise<TokenValidationResult> {
+  async validateToken(
+    token: string,
+    options: TokenValidationOptions = {}
+  ): Promise<TokenValidationResult> {
     try {
       // Check if token is blacklisted
       const isBlacklisted = await this.cache.get(`blacklist:${token}`);
@@ -113,7 +119,7 @@ export class TokenValidationMiddleware {
       const decoded = jwt.verify(token, this.jwtSecret, {
         ignoreExpiration: options.allowExpired,
         issuer: options.issuer,
-        audience: options.audience
+        audience: options.audience,
       }) as SSOJWTPayload;
 
       // Validate token age if specified
@@ -145,7 +151,7 @@ export class TokenValidationMiddleware {
         valid: true,
         payload: decoded,
         remainingTime: Math.max(0, remainingTime),
-        needsRefresh
+        needsRefresh,
       };
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
@@ -157,7 +163,7 @@ export class TokenValidationMiddleware {
       if (error.name === 'NotBeforeError') {
         return { valid: false, reason: 'Token ainda não é válido' };
       }
-      
+
       return { valid: false, reason: 'Erro na validação do token' };
     }
   }
@@ -169,26 +175,26 @@ export class TokenValidationMiddleware {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
         const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
-        
+
         if (!refreshToken) {
           return res.status(400).json({
             success: false,
             error: 'REFRESH_TOKEN_MISSING',
-            message: 'Refresh token obrigatório'
+            message: 'Refresh token obrigatório',
           });
         }
 
         // Validate refresh token
         const refreshSecret = process.env.JWT_REFRESH_SECRET || 'default-refresh-secret';
-        
+
         try {
           const decoded = jwt.verify(refreshToken, refreshSecret) as SSOJWTPayload;
-          
+
           if (decoded.tokenType !== 'refresh') {
             return res.status(401).json({
               success: false,
               error: 'INVALID_TOKEN_TYPE',
-              message: 'Token não é um refresh token válido'
+              message: 'Token não é um refresh token válido',
             });
           }
 
@@ -200,7 +206,7 @@ export class TokenValidationMiddleware {
             return res.status(401).json({
               success: false,
               error: 'INVALID_SESSION_OR_USER',
-              message: 'Sessão inválida ou usuário inativo'
+              message: 'Sessão inválida ou usuário inativo',
             });
           }
 
@@ -211,7 +217,7 @@ export class TokenValidationMiddleware {
           return res.status(401).json({
             success: false,
             error: 'INVALID_REFRESH_TOKEN',
-            message: 'Refresh token inválido ou expirado'
+            message: 'Refresh token inválido ou expirado',
           });
         }
       } catch (error) {
@@ -219,7 +225,7 @@ export class TokenValidationMiddleware {
         return res.status(500).json({
           success: false,
           error: 'VALIDATION_ERROR',
-          message: 'Erro na validação do refresh token'
+          message: 'Erro na validação do refresh token',
         });
       }
     };
@@ -232,12 +238,12 @@ export class TokenValidationMiddleware {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const oldToken = this.extractToken(req);
-        
+
         if (!oldToken || !req.user) {
           return res.status(401).json({
             success: false,
             error: 'NO_TOKEN_OR_USER',
-            message: 'Token ou usuário não encontrado'
+            message: 'Token ou usuário não encontrado',
           });
         }
 
@@ -257,14 +263,14 @@ export class TokenValidationMiddleware {
         // Set new tokens in response
         res.setHeader('X-New-Access-Token', tokens.accessToken);
         res.setHeader('X-New-Refresh-Token', tokens.refreshToken);
-        
+
         // Optionally set cookies
         if (req.cookies?.accessToken) {
           res.cookie('accessToken', tokens.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 3600000 // 1 hour
+            maxAge: 3600000, // 1 hour
           });
         }
 
@@ -274,7 +280,7 @@ export class TokenValidationMiddleware {
         return res.status(500).json({
           success: false,
           error: 'ROTATION_ERROR',
-          message: 'Erro na rotação do token'
+          message: 'Erro na rotação do token',
         });
       }
     };
@@ -287,34 +293,34 @@ export class TokenValidationMiddleware {
     return (req: Request, res: Response, next: NextFunction) => {
       try {
         const token = this.extractToken(req);
-        
+
         if (!token) {
           return res.status(400).json({
             success: false,
             error: 'TOKEN_MISSING',
-            message: 'Token obrigatório'
+            message: 'Token obrigatório',
           });
         }
 
         // Decode without verification to check structure
         const decoded = jwt.decode(token, { complete: true });
-        
+
         if (!decoded || typeof decoded !== 'object' || !decoded.payload) {
           return res.status(400).json({
             success: false,
             error: 'MALFORMED_TOKEN',
-            message: 'Token mal formado'
+            message: 'Token mal formado',
           });
         }
 
         const payload = decoded.payload as SSOJWTPayload;
-        
+
         // Validate required fields
         if (!payload.userId || !payload.sessionId || !payload.tokenType) {
           return res.status(400).json({
             success: false,
             error: 'INVALID_TOKEN_STRUCTURE',
-            message: 'Token não contém campos obrigatórios'
+            message: 'Token não contém campos obrigatórios',
           });
         }
 
@@ -324,7 +330,7 @@ export class TokenValidationMiddleware {
         return res.status(400).json({
           success: false,
           error: 'TOKEN_DECODE_ERROR',
-          message: 'Erro ao decodificar token'
+          message: 'Erro ao decodificar token',
         });
       }
     };
@@ -336,11 +342,11 @@ export class TokenValidationMiddleware {
   validateMultiple(sources: ('header' | 'cookie' | 'body')[] = ['header']) {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       const tokens: { source: string; token: string; validation?: TokenValidationResult }[] = [];
-      
+
       // Collect tokens from different sources
       for (const source of sources) {
         let token: string | null = null;
-        
+
         switch (source) {
           case 'header':
             token = this.extractToken(req);
@@ -352,7 +358,7 @@ export class TokenValidationMiddleware {
             token = req.body?.token;
             break;
         }
-        
+
         if (token) {
           tokens.push({ source, token });
         }
@@ -362,7 +368,7 @@ export class TokenValidationMiddleware {
         return res.status(401).json({
           success: false,
           error: 'NO_TOKENS_FOUND',
-          message: 'Nenhum token encontrado nas fontes especificadas'
+          message: 'Nenhum token encontrado nas fontes especificadas',
         });
       }
 
@@ -373,7 +379,7 @@ export class TokenValidationMiddleware {
 
       // Find the first valid token
       const validToken = tokens.find(t => t.validation?.valid);
-      
+
       if (!validToken) {
         return res.status(401).json({
           success: false,
@@ -381,15 +387,15 @@ export class TokenValidationMiddleware {
           message: 'Todos os tokens são inválidos',
           details: tokens.map(t => ({
             source: t.source,
-            reason: t.validation?.reason
-          }))
+            reason: t.validation?.reason,
+          })),
         });
       }
 
       // Set the valid token info in request
       req.tokenValidation = validToken.validation!;
       req.validTokenSource = validToken.source;
-      
+
       next();
     };
   }
@@ -404,11 +410,14 @@ export class TokenValidationMiddleware {
 
   private async validateSession(sessionId: string): Promise<boolean> {
     try {
-      const result = await this.db.get(`
+      const result = await this.db.get(
+        `
         SELECT id FROM user_sessions 
         WHERE id = ? AND status = 'active' AND expires_at > datetime('now')
-      `, [sessionId]);
-      
+      `,
+        [sessionId]
+      );
+
       return !!result;
     } catch (error) {
       console.error('Session validation error:', error);
@@ -418,11 +427,14 @@ export class TokenValidationMiddleware {
 
   private async validateUserStatus(userId: string): Promise<boolean> {
     try {
-      const result = await this.db.get(`
+      const result = await this.db.get(
+        `
         SELECT id FROM users 
         WHERE id = ? AND is_active = 1 AND is_suspended = 0 AND deleted_at IS NULL
-      `, [userId]);
-      
+      `,
+        [userId]
+      );
+
       return !!result;
     } catch (error) {
       console.error('User validation error:', error);
@@ -438,7 +450,7 @@ export class TokenValidationMiddleware {
   private async blacklistToken(token: string, exp: number): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
     const ttl = exp - now;
-    
+
     if (ttl > 0) {
       await this.cache.set(`blacklist:${token}`, 'true', ttl);
     }

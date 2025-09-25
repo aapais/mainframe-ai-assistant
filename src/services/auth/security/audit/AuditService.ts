@@ -34,7 +34,7 @@ export enum AuditEventType {
   SECURITY_EVENT = 'SECURITY_EVENT',
   ADMIN_ACTION = 'ADMIN_ACTION',
   CONFIGURATION_CHANGE = 'CONFIGURATION_CHANGE',
-  COMPLIANCE_EVENT = 'COMPLIANCE_EVENT'
+  COMPLIANCE_EVENT = 'COMPLIANCE_EVENT',
 }
 
 export enum AuditCategory {
@@ -43,7 +43,7 @@ export enum AuditCategory {
   PERFORMANCE = 'PERFORMANCE',
   ERROR = 'ERROR',
   WARNING = 'WARNING',
-  INFO = 'INFO'
+  INFO = 'INFO',
 }
 
 export class AuditService extends EventEmitter {
@@ -77,7 +77,7 @@ export class AuditService extends EventEmitter {
       eventType: event.eventType || AuditEventType.SYSTEM_ACCESS,
       category: event.category || AuditCategory.INFO,
       resource: event.resource || 'unknown',
-      action: event.action || 'unknown'
+      action: event.action || 'unknown',
     };
 
     // Calculate risk score
@@ -118,8 +118,8 @@ export class AuditService extends EventEmitter {
       ipAddress,
       details: {
         ...details,
-        attemptTime: new Date().toISOString()
-      }
+        attemptTime: new Date().toISOString(),
+      },
     });
   }
 
@@ -147,8 +147,8 @@ export class AuditService extends EventEmitter {
         ...details,
         statusCode,
         apiKey: apiKey ? `${apiKey.substring(0, 8)}...` : undefined,
-        responseTime: details.responseTime
-      }
+        responseTime: details.responseTime,
+      },
     });
   }
 
@@ -171,7 +171,7 @@ export class AuditService extends EventEmitter {
       action,
       outcome,
       ipAddress,
-      details
+      details,
     });
   }
 
@@ -192,7 +192,7 @@ export class AuditService extends EventEmitter {
       outcome: severity === 'CRITICAL' ? 'FAILURE' : 'WARNING',
       severity,
       ipAddress,
-      details
+      details,
     });
   }
 
@@ -247,7 +247,7 @@ export class AuditService extends EventEmitter {
       [AuditEventType.SECURITY_EVENT]: 40,
       [AuditEventType.ADMIN_ACTION]: 45,
       [AuditEventType.CONFIGURATION_CHANGE]: 50,
-      [AuditEventType.COMPLIANCE_EVENT]: 20
+      [AuditEventType.COMPLIANCE_EVENT]: 20,
     };
 
     score += eventTypeScores[event.eventType] || 0;
@@ -287,8 +287,10 @@ export class AuditService extends EventEmitter {
    */
   private setupBatchProcessing(): void {
     setInterval(async () => {
-      if (this.auditQueue.length >= this.batchSize ||
-          (this.auditQueue.length > 0 && !this.isFlushingBatch)) {
+      if (
+        this.auditQueue.length >= this.batchSize ||
+        (this.auditQueue.length > 0 && !this.isFlushingBatch)
+      ) {
         await this.flushBatch();
       }
     }, this.flushInterval);
@@ -321,16 +323,19 @@ export class AuditService extends EventEmitter {
    */
   private setupRetentionCleanup(): void {
     // Run cleanup daily
-    setInterval(async () => {
-      try {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
-        const deleted = await this.storage.cleanup(cutoffDate);
-        this.emit('retentionCleanup', { deleted, cutoffDate });
-      } catch (error) {
-        console.error('Retention cleanup failed:', error);
-      }
-    }, 24 * 60 * 60 * 1000); // Daily
+    setInterval(
+      async () => {
+        try {
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - this.retentionDays);
+          const deleted = await this.storage.cleanup(cutoffDate);
+          this.emit('retentionCleanup', { deleted, cutoffDate });
+        } catch (error) {
+          console.error('Retention cleanup failed:', error);
+        }
+      },
+      24 * 60 * 60 * 1000
+    ); // Daily
   }
 
   /**
@@ -338,8 +343,17 @@ export class AuditService extends EventEmitter {
    */
   private exportToCsv(events: AuditEvent[]): Buffer {
     const headers = [
-      'ID', 'Timestamp', 'User ID', 'IP Address', 'Event Type',
-      'Category', 'Resource', 'Action', 'Outcome', 'Severity', 'Risk Score'
+      'ID',
+      'Timestamp',
+      'User ID',
+      'IP Address',
+      'Event Type',
+      'Category',
+      'Resource',
+      'Action',
+      'Outcome',
+      'Severity',
+      'Risk Score',
     ];
 
     const rows = events.map(event => [
@@ -353,12 +367,10 @@ export class AuditService extends EventEmitter {
       event.action,
       event.outcome,
       event.severity,
-      event.riskScore.toString()
+      event.riskScore.toString(),
     ]);
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
 
     return Buffer.from(csv);
   }

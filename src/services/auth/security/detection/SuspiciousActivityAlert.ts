@@ -67,7 +67,7 @@ export enum AnomalyType {
   RAPID_SUCCESSION = 'RAPID_SUCCESSION',
   IMPOSSIBLE_TRAVEL = 'IMPOSSIBLE_TRAVEL',
   SUSPICIOUS_ENDPOINT = 'SUSPICIOUS_ENDPOINT',
-  ABNORMAL_BEHAVIOR = 'ABNORMAL_BEHAVIOR'
+  ABNORMAL_BEHAVIOR = 'ABNORMAL_BEHAVIOR',
 }
 
 export interface SuspiciousAlert {
@@ -133,7 +133,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       .map(profile => ({
         userId: profile.userId,
         riskScore: profile.riskScore,
-        anomalies: profile.anomalies.length
+        anomalies: profile.anomalies.length,
       }))
       .sort((a, b) => b.riskScore - a.riskScore);
   }
@@ -151,7 +151,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
     const recentEvents = await this.auditService.queryEvents({
       userId,
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-      limit: 1000
+      limit: 1000,
     });
 
     const timeline = this.buildActivityTimeline(recentEvents);
@@ -165,7 +165,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       behaviorAnalysis,
       riskAssessment,
       recommendations: this.generateInvestigationRecommendations(profile),
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
   }
 
@@ -295,10 +295,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
             newLocation: location,
             distance: minDistance,
             ipAddress: event.ipAddress,
-            previousLocations: Array.from(profile.geolocation.keys())
+            previousLocations: Array.from(profile.geolocation.keys()),
           },
           riskScore: Math.min(minDistance / 100, 50),
-          confidence: 0.8
+          confidence: 0.8,
         };
       }
     }
@@ -309,10 +309,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
   /**
    * Detect time-based anomalies
    */
-  private detectTimeAnomaly(
-    event: AuditEvent,
-    profile: ActivityProfile
-  ): ActivityAnomaly | null {
+  private detectTimeAnomaly(event: AuditEvent, profile: ActivityProfile): ActivityAnomaly | null {
     const hour = event.timestamp.getHours();
     const totalRequests = Array.from(profile.timePatterns.values()).reduce((a, b) => a + b, 0);
     const hourlyPercentage = (profile.timePatterns.get(hour) || 0) / totalRequests;
@@ -328,10 +325,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
         evidence: {
           hour,
           typicalPercentage: hourlyPercentage * 100,
-          totalRequests
+          totalRequests,
         },
         riskScore: 20,
-        confidence: 0.7
+        confidence: 0.7,
       };
     }
 
@@ -341,10 +338,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
   /**
    * Detect volume-based anomalies
    */
-  private detectVolumeAnomaly(
-    event: AuditEvent,
-    profile: ActivityProfile
-  ): ActivityAnomaly | null {
+  private detectVolumeAnomaly(event: AuditEvent, profile: ActivityProfile): ActivityAnomaly | null {
     const recentHour = new Date();
     recentHour.setMinutes(0, 0, 0);
 
@@ -362,10 +356,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
         evidence: {
           recentCount: recentEvents,
           averageHourly,
-          multiplier: recentEvents / averageHourly
+          multiplier: recentEvents / averageHourly,
         },
         riskScore: Math.min((recentEvents / averageHourly) * 10, 40),
-        confidence: 0.8
+        confidence: 0.8,
       };
     }
 
@@ -375,10 +369,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
   /**
    * Detect device/user agent changes
    */
-  private detectDeviceAnomaly(
-    event: AuditEvent,
-    profile: ActivityProfile
-  ): ActivityAnomaly | null {
+  private detectDeviceAnomaly(event: AuditEvent, profile: ActivityProfile): ActivityAnomaly | null {
     if (!event.userAgent) return null;
 
     const isKnownUserAgent = profile.userAgents.has(event.userAgent);
@@ -395,10 +386,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
         evidence: {
           newUserAgent: event.userAgent,
           knownUserAgents: Array.from(profile.userAgents.keys()),
-          previousCount: userAgentCount
+          previousCount: userAgentCount,
         },
         riskScore: userAgentCount === 1 ? 30 : 15,
-        confidence: 0.7
+        confidence: 0.7,
       };
     }
 
@@ -425,10 +416,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
           eventType: event.eventType,
           resource: event.resource,
           action: event.action,
-          ipAddress: event.ipAddress
+          ipAddress: event.ipAddress,
         },
         riskScore: 40,
-        confidence: 0.9
+        confidence: 0.9,
       };
     }
 
@@ -479,9 +470,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
     if (!accessPattern) {
       // Check if it's a sensitive endpoint
       const sensitivePatterns = ['/admin/', '/api/admin/', '/config/', '/system/'];
-      const isSensitive = sensitivePatterns.some(pattern =>
-        event.resource.includes(pattern)
-      );
+      const isSensitive = sensitivePatterns.some(pattern => event.resource.includes(pattern));
 
       if (isSensitive) {
         return {
@@ -494,10 +483,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
             resource: event.resource,
             action: event.action,
             outcome: event.outcome,
-            firstAccess: true
+            firstAccess: true,
           },
           riskScore: 35,
-          confidence: 0.8
+          confidence: 0.8,
         };
       }
     }
@@ -510,9 +499,10 @@ export class SuspiciousActivityAlert extends EventEmitter {
    */
   private async generateAlert(event: AuditEvent, anomalies: ActivityAnomaly[]): Promise<void> {
     const overallRiskScore = anomalies.reduce((sum, a) => sum + a.riskScore, 0);
-    const maxSeverity = anomalies.reduce((max, a) =>
-      this.compareSeverity(a.severity, max) > 0 ? a.severity : max
-    , 'LOW');
+    const maxSeverity = anomalies.reduce(
+      (max, a) => (this.compareSeverity(a.severity, max) > 0 ? a.severity : max),
+      'LOW'
+    );
 
     const alert: SuspiciousAlert = {
       id: crypto.randomUUID(),
@@ -526,8 +516,8 @@ export class SuspiciousActivityAlert extends EventEmitter {
       metadata: {
         eventCount: anomalies.length,
         highestRisk: Math.max(...anomalies.map(a => a.riskScore)),
-        anomalyTypes: anomalies.map(a => a.type)
-      }
+        anomalyTypes: anomalies.map(a => a.type),
+      },
     };
 
     this.emit('suspiciousActivity', alert);
@@ -541,7 +531,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
         alertId: alert.id,
         anomalyCount: anomalies.length,
         overallRiskScore,
-        anomalyTypes: anomalies.map(a => a.type)
+        anomalyTypes: anomalies.map(a => a.type),
       }
     );
   }
@@ -560,7 +550,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       riskScore: 0,
       baselineEstablished: false,
       lastAnalysis: new Date(),
-      anomalies: []
+      anomalies: [],
     };
   }
 
@@ -572,7 +562,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       requestCount: 0,
       successRate: 1.0,
       locations: [],
-      suspicious: false
+      suspicious: false,
     };
 
     ipActivity.lastSeen = event.timestamp;
@@ -580,7 +570,9 @@ export class SuspiciousActivityAlert extends EventEmitter {
 
     // Update success rate
     const successCount = event.outcome === 'SUCCESS' ? 1 : 0;
-    ipActivity.successRate = (ipActivity.successRate * (ipActivity.requestCount - 1) + successCount) / ipActivity.requestCount;
+    ipActivity.successRate =
+      (ipActivity.successRate * (ipActivity.requestCount - 1) + successCount) /
+      ipActivity.requestCount;
 
     profile.ipAddresses.set(event.ipAddress, ipActivity);
   }
@@ -591,7 +583,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       frequency: 0,
       typicalTimes: [],
       averageDuration: 0,
-      errorRate: 0
+      errorRate: 0,
     };
 
     pattern.frequency++;
@@ -617,7 +609,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       firstSeen: event.timestamp,
       lastSeen: event.timestamp,
       requestCount: 0,
-      confidence: ipInfo.confidence
+      confidence: ipInfo.confidence,
     };
 
     locationActivity.lastSeen = event.timestamp;
@@ -675,14 +667,17 @@ export class SuspiciousActivityAlert extends EventEmitter {
       city: 'Unknown',
       confidence: 0.5,
       latitude: 0,
-      longitude: 0
+      longitude: 0,
     };
 
     this.ipGeolocation.set(ipAddress, mockGeoLocation);
     return mockGeoLocation;
   }
 
-  private calculateDistance(loc1: { country: string; city: string }, loc2: { country: string; city: string }): number {
+  private calculateDistance(
+    loc1: { country: string; city: string },
+    loc2: { country: string; city: string }
+  ): number {
     // Implementation would calculate actual geographical distance
     // For now, return 0 for same country, 1000 for different countries
     return loc1.country === loc2.country ? 0 : 1000;
@@ -699,7 +694,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
   }
 
   private compareSeverity(a: string, b: string): number {
-    const levels = { 'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4 };
+    const levels = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
     return levels[a] - levels[b];
   }
 
@@ -752,16 +747,19 @@ export class SuspiciousActivityAlert extends EventEmitter {
       resource: event.resource,
       outcome: event.outcome,
       ipAddress: event.ipAddress,
-      riskScore: event.riskScore
+      riskScore: event.riskScore,
     }));
   }
 
-  private analyzeBehaviorPatterns(profile: ActivityProfile, events: AuditEvent[]): BehaviorAnalysis {
+  private analyzeBehaviorPatterns(
+    profile: ActivityProfile,
+    events: AuditEvent[]
+  ): BehaviorAnalysis {
     return {
       consistencyScore: this.calculateConsistencyScore(profile),
       riskTrends: this.calculateRiskTrends(events),
       anomalyFrequency: profile.anomalies.length / 30, // per day
-      baselineDeviation: this.calculateBaselineDeviation(profile)
+      baselineDeviation: this.calculateBaselineDeviation(profile),
     };
   }
 
@@ -770,7 +768,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       currentRisk: profile.riskScore,
       riskCategory: profile.riskScore > 70 ? 'HIGH' : profile.riskScore > 40 ? 'MEDIUM' : 'LOW',
       primaryThreats: this.identifyPrimaryThreats(profile),
-      mitigationRecommendations: this.generateInvestigationRecommendations(profile)
+      mitigationRecommendations: this.generateInvestigationRecommendations(profile),
     };
   }
 
@@ -808,7 +806,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
       unusualLocationThreshold: 1000, // km
       volumeMultiplier: 3,
       timeAnomalyThreshold: 0.05,
-      riskScoreThreshold: 50
+      riskScoreThreshold: 50,
     };
   }
 
@@ -816,7 +814,7 @@ export class SuspiciousActivityAlert extends EventEmitter {
     return {
       behaviorClassifier: null,
       anomalyDetector: null,
-      riskPredictor: null
+      riskPredictor: null,
     };
   }
 
@@ -828,9 +826,12 @@ export class SuspiciousActivityAlert extends EventEmitter {
 
   private setupPeriodicAnalysis(): void {
     // Run every 15 minutes
-    setInterval(() => {
-      this.performPeriodicAnalysis();
-    }, 15 * 60 * 1000);
+    setInterval(
+      () => {
+        this.performPeriodicAnalysis();
+      },
+      15 * 60 * 1000
+    );
   }
 
   private async performPeriodicAnalysis(): Promise<void> {

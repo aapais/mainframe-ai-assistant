@@ -5,19 +5,19 @@ import { Card, CardHeader, CardContent, CardTitle } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Alert, AlertDescription } from '../../ui/Alert';
-import { 
-  Monitor, 
-  Smartphone, 
+import {
+  Monitor,
+  Smartphone,
   Tablet,
-  MapPin, 
-  Calendar, 
+  MapPin,
+  Calendar,
   Activity,
   LogOut,
   CheckCircle,
   AlertCircle,
   Shield,
   Trash2,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
@@ -37,24 +37,24 @@ const getDeviceIcon = (userAgent: string) => {
 
 const getDeviceInfo = (userAgent: string) => {
   const ua = userAgent.toLowerCase();
-  
+
   let browser = 'Unknown Browser';
   let os = 'Unknown OS';
-  
+
   // Detect browser
   if (ua.includes('chrome')) browser = 'Chrome';
   else if (ua.includes('firefox')) browser = 'Firefox';
   else if (ua.includes('safari')) browser = 'Safari';
   else if (ua.includes('edge')) browser = 'Edge';
   else if (ua.includes('opera')) browser = 'Opera';
-  
+
   // Detect OS
   if (ua.includes('windows')) os = 'Windows';
   else if (ua.includes('mac')) os = 'macOS';
   else if (ua.includes('linux')) os = 'Linux';
   else if (ua.includes('android')) os = 'Android';
   else if (ua.includes('ios') || ua.includes('iphone') || ua.includes('ipad')) os = 'iOS';
-  
+
   return { browser, os };
 };
 
@@ -63,9 +63,9 @@ const getLocationFromIP = (ipAddress: string) => {
   // For now, return placeholder data
   const locations: Record<string, string> = {
     '127.0.0.1': 'Local Development',
-    '::1': 'Local Development'
+    '::1': 'Local Development',
   };
-  
+
   return locations[ipAddress] || 'Unknown Location';
 };
 
@@ -94,7 +94,11 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
   };
 
   const handleRevokeSession = async (sessionId: string) => {
-    if (!confirm('Are you sure you want to revoke this session? You will be logged out from that device.')) {
+    if (
+      !confirm(
+        'Are you sure you want to revoke this session? You will be logged out from that device.'
+      )
+    ) {
       return;
     }
 
@@ -114,13 +118,17 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
   const handleRevokeAllOtherSessions = async () => {
     const currentSessionId = localStorage.getItem('session_id'); // Assuming current session ID is stored
     const otherSessions = sessions.filter(session => session.id !== currentSessionId);
-    
+
     if (otherSessions.length === 0) {
       setError('No other sessions to revoke');
       return;
     }
 
-    if (!confirm(`Are you sure you want to revoke all other sessions (${otherSessions.length})? This will log you out from all other devices.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to revoke all other sessions (${otherSessions.length})? This will log you out from all other devices.`
+      )
+    ) {
       return;
     }
 
@@ -144,7 +152,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZoneName: 'short'
+      timeZoneName: 'short',
     });
   };
 
@@ -158,47 +166,47 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
     if (!session.isActive) {
       return { label: 'Revoked', variant: 'secondary' as const };
     }
-    
+
     const now = new Date();
     const expiresAt = new Date(session.expiresAt);
-    
+
     if (expiresAt < now) {
       return { label: 'Expired', variant: 'destructive' as const };
     }
-    
+
     if (isCurrentSession(session)) {
       return { label: 'Current Session', variant: 'default' as const };
     }
-    
+
     return { label: 'Active', variant: 'secondary' as const };
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className='flex items-center justify-between'>
             <div>
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="w-5 h-5" />
+              <CardTitle className='flex items-center space-x-2'>
+                <Shield className='w-5 h-5' />
                 <span>Active Sessions</span>
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className='text-sm text-muted-foreground mt-1'>
                 Manage your active sessions across all devices
               </p>
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={loadSessions} disabled={isLoading}>
-                <RefreshCw className={cn("w-4 h-4 mr-2", isLoading && "animate-spin")} />
+            <div className='flex space-x-2'>
+              <Button variant='outline' onClick={loadSessions} disabled={isLoading}>
+                <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
                 Refresh
               </Button>
               <Button
-                variant="destructive"
+                variant='destructive'
                 onClick={handleRevokeAllOtherSessions}
                 disabled={isLoading || sessions.length <= 1}
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className='w-4 h-4 mr-2' />
                 Revoke All Others
               </Button>
             </div>
@@ -207,15 +215,15 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
         <CardContent>
           {/* Alert Messages */}
           {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="w-4 h-4" />
+            <Alert variant='destructive' className='mb-4'>
+              <AlertCircle className='w-4 h-4' />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {success && (
-            <Alert className="border-green-200 bg-green-50 text-green-800 mb-4">
-              <CheckCircle className="w-4 h-4" />
+            <Alert className='border-green-200 bg-green-50 text-green-800 mb-4'>
+              <CheckCircle className='w-4 h-4' />
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
@@ -229,93 +237,99 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                <p className="text-sm text-muted-foreground">Loading sessions...</p>
+            <div className='flex items-center justify-center py-8'>
+              <div className='text-center'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+                <p className='text-sm text-muted-foreground'>Loading sessions...</p>
               </div>
             </div>
           ) : sessions.length === 0 ? (
-            <div className="text-center py-8">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium text-muted-foreground mb-2">No active sessions</p>
-              <p className="text-sm text-muted-foreground">
+            <div className='text-center py-8'>
+              <Shield className='w-12 h-12 text-muted-foreground mx-auto mb-4' />
+              <p className='text-lg font-medium text-muted-foreground mb-2'>No active sessions</p>
+              <p className='text-sm text-muted-foreground'>
                 You don't have any active sessions at the moment
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {sessions.map((session) => {
+            <div className='space-y-4'>
+              {sessions.map(session => {
                 const deviceInfo = getDeviceInfo(session.userAgent);
                 const DeviceIcon = getDeviceIcon(session.userAgent);
                 const status = getSessionStatus(session);
                 const isCurrent = isCurrentSession(session);
-                
+
                 return (
-                  <Card key={session.id} className={cn(
-                    "border transition-colors",
-                    isCurrent && "border-primary bg-primary/5"
-                  )}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3">
-                          <div className="p-2 bg-muted rounded-lg">
-                            <DeviceIcon className="w-5 h-5" />
+                  <Card
+                    key={session.id}
+                    className={cn(
+                      'border transition-colors',
+                      isCurrent && 'border-primary bg-primary/5'
+                    )}
+                  >
+                    <CardContent className='p-4'>
+                      <div className='flex items-start justify-between'>
+                        <div className='flex items-start space-x-3'>
+                          <div className='p-2 bg-muted rounded-lg'>
+                            <DeviceIcon className='w-5 h-5' />
                           </div>
-                          
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <h4 className="font-medium">
+
+                          <div className='flex-1 space-y-2'>
+                            <div className='flex items-center space-x-2'>
+                              <h4 className='font-medium'>
                                 {deviceInfo.browser} on {deviceInfo.os}
                               </h4>
-                              <Badge variant={status.variant}>
-                                {status.label}
-                              </Badge>
+                              <Badge variant={status.variant}>{status.label}</Badge>
                               {isCurrent && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant='outline' className='text-xs'>
                                   This device
                                 </Badge>
                               )}
                             </div>
-                            
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                              <div className="flex items-center space-x-4">
-                                <div className="flex items-center space-x-1">
-                                  <MapPin className="w-3 h-3" />
+
+                            <div className='space-y-1 text-sm text-muted-foreground'>
+                              <div className='flex items-center space-x-4'>
+                                <div className='flex items-center space-x-1'>
+                                  <MapPin className='w-3 h-3' />
                                   <span>{getLocationFromIP(session.ipAddress)}</span>
                                 </div>
-                                <div className="flex items-center space-x-1">
+                                <div className='flex items-center space-x-1'>
                                   <span>IP: {session.ipAddress}</span>
                                 </div>
                               </div>
-                              
-                              <div className="flex items-center space-x-4">
-                                <div className="flex items-center space-x-1">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>Started {formatDate(new Date(session.expiresAt).getTime() - 24*60*60*1000)}</span>
+
+                              <div className='flex items-center space-x-4'>
+                                <div className='flex items-center space-x-1'>
+                                  <Calendar className='w-3 h-3' />
+                                  <span>
+                                    Started{' '}
+                                    {formatDate(
+                                      new Date(session.expiresAt).getTime() - 24 * 60 * 60 * 1000
+                                    )}
+                                  </span>
                                 </div>
-                                <div className="flex items-center space-x-1">
-                                  <Activity className="w-3 h-3" />
+                                <div className='flex items-center space-x-1'>
+                                  <Activity className='w-3 h-3' />
                                   <span>Expires {formatDate(session.expiresAt)}</span>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="ml-4">
+
+                        <div className='ml-4'>
                           {!isCurrent && session.isActive && (
                             <Button
-                              size="sm"
-                              variant="destructive"
+                              size='sm'
+                              variant='destructive'
                               onClick={() => handleRevokeSession(session.id)}
                               disabled={revokingSession === session.id}
                             >
                               {revokingSession === session.id ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                                <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white' />
                               ) : (
                                 <>
-                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  <Trash2 className='w-3 h-3 mr-1' />
                                   Revoke
                                 </>
                               )}
@@ -335,27 +349,27 @@ export const SessionManager: React.FC<SessionManagerProps> = ({ className }) => 
       {/* Security Tips */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Shield className="w-5 h-5" />
+          <CardTitle className='flex items-center space-x-2'>
+            <Shield className='w-5 h-5' />
             <span>Security Tips</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+          <div className='space-y-3 text-sm'>
+            <div className='flex items-start space-x-2'>
+              <CheckCircle className='w-4 h-4 text-green-500 mt-0.5 flex-shrink-0' />
               <p>Regularly review your active sessions and revoke any you don't recognize</p>
             </div>
-            <div className="flex items-start space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <div className='flex items-start space-x-2'>
+              <CheckCircle className='w-4 h-4 text-green-500 mt-0.5 flex-shrink-0' />
               <p>Always log out from shared or public computers</p>
             </div>
-            <div className="flex items-start space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <div className='flex items-start space-x-2'>
+              <CheckCircle className='w-4 h-4 text-green-500 mt-0.5 flex-shrink-0' />
               <p>Enable multi-factor authentication for enhanced security</p>
             </div>
-            <div className="flex items-start space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <div className='flex items-start space-x-2'>
+              <CheckCircle className='w-4 h-4 text-green-500 mt-0.5 flex-shrink-0' />
               <p>Use unique, strong passwords for your account</p>
             </div>
           </div>

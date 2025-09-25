@@ -115,7 +115,7 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm run build
+        run: npm run build:ci
 
       - name: Run tests
         run: npm test

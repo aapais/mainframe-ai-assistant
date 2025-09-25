@@ -22,7 +22,7 @@ export interface RateLimitInfo {
 
 export class AuthRateLimitMiddleware {
   private cache: RedisCache;
-  
+
   constructor() {
     this.cache = new RedisCache();
   }
@@ -34,8 +34,8 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 15 * 60 * 1000, // 15 minutes
       max: 100, // 100 requests per window
-      keyGenerator: (req) => this.getClientIP(req),
-      ...options
+      keyGenerator: req => this.getClientIP(req),
+      ...options,
     };
 
     return this.createRateLimit(config, 'auth');
@@ -48,13 +48,13 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 15 * 60 * 1000, // 15 minutes
       max: 5, // 5 login attempts per window
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const ip = this.getClientIP(req);
         const email = req.body?.email || 'unknown';
         return `${ip}:${email.toLowerCase()}`;
       },
       skipSuccessfulRequests: true,
-      ...options
+      ...options,
     };
 
     return this.createRateLimit(config, 'login');
@@ -67,12 +67,12 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 60 * 60 * 1000, // 1 hour
       max: 3, // 3 reset attempts per hour
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const ip = this.getClientIP(req);
         const email = req.body?.email || 'unknown';
         return `reset:${ip}:${email.toLowerCase()}`;
       },
-      ...options
+      ...options,
     };
 
     return this.createRateLimit(config, 'password_reset');
@@ -85,12 +85,12 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 5 * 60 * 1000, // 5 minutes
       max: 10, // 10 MFA attempts per 5 minutes
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const userId = (req as AuthenticatedRequest).user?.id || this.getClientIP(req);
         return `mfa:${userId}`;
       },
       skipSuccessfulRequests: true,
-      ...options
+      ...options,
     };
 
     return this.createRateLimit(config, 'mfa');
@@ -103,11 +103,11 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 5 * 60 * 1000, // 5 minutes
       max: 20, // 20 refresh requests per 5 minutes
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const userId = (req as AuthenticatedRequest).user?.id || this.getClientIP(req);
         return `refresh:${userId}`;
       },
-      ...options
+      ...options,
     };
 
     return this.createRateLimit(config, 'token_refresh');
@@ -120,12 +120,12 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 10 * 60 * 1000, // 10 minutes
       max: 10, // 10 SSO callbacks per 10 minutes
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const ip = this.getClientIP(req);
         const state = req.query.state || req.body.state || 'unknown';
         return `sso:${ip}:${state}`;
       },
-      ...options
+      ...options,
     };
 
     return this.createRateLimit(config, 'sso_callback');
@@ -138,7 +138,7 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs: 60 * 1000, // 1 minute
       max: 100, // 100 requests per minute
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const apiKey = req.headers['x-api-key'] as string;
         if (apiKey) {
           // Hash the API key for privacy
@@ -146,7 +146,7 @@ export class AuthRateLimitMiddleware {
         }
         return `api:${this.getClientIP(req)}`;
       },
-      ...options
+      ...options,
     };
 
     return this.createRateLimit(config, 'api_key');
@@ -159,14 +159,14 @@ export class AuthRateLimitMiddleware {
     const config: RateLimitRule = {
       windowMs,
       max: maxPerWindow,
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const userId = (req as AuthenticatedRequest).user?.id;
         if (!userId) {
           return `anonymous:${this.getClientIP(req)}`;
         }
         return `user:${userId}`;
       },
-      skipIf: (req) => !(req as AuthenticatedRequest).user // Skip rate limiting for unauthenticated requests
+      skipIf: req => !(req as AuthenticatedRequest).user, // Skip rate limiting for unauthenticated requests
     };
 
     return this.createRateLimit(config, 'user_specific');
@@ -190,7 +190,7 @@ export class AuthRateLimitMiddleware {
       const config: RateLimitRule = {
         windowMs: roleLimit.windowMs || 60 * 1000,
         max: roleLimit.max,
-        keyGenerator: () => `role:${user.role}:${user.id}`
+        keyGenerator: () => `role:${user.role}:${user.id}`,
       };
 
       const rateLimitMiddleware = this.createRateLimit(config, `role_${user.role}`);
@@ -201,35 +201,48 @@ export class AuthRateLimitMiddleware {
   /**
    * Burst protection - allows burst of requests but limits sustained rate
    */
-  burstProtection(burstMax: number, sustainedMax: number, burstWindowMs: number = 10000, sustainedWindowMs: number = 60000) {
+  burstProtection(
+    burstMax: number,
+    sustainedMax: number,
+    burstWindowMs: number = 10000,
+    sustainedWindowMs: number = 60000
+  ) {
     return async (req: Request, res: Response, next: NextFunction) => {
       const key = this.getClientIP(req);
       const now = Date.now();
-      
+
       // Check burst limit
       const burstKey = `burst:${key}`;
       const burstCount = await this.incrementCounter(burstKey, burstWindowMs);
-      
+
       if (burstCount > burstMax) {
-        return this.sendRateLimitResponse(res, {
-          limit: burstMax,
-          remaining: 0,
-          reset: new Date(now + burstWindowMs),
-          retryAfter: Math.ceil(burstWindowMs / 1000)
-        }, 'Burst limit exceeded');
+        return this.sendRateLimitResponse(
+          res,
+          {
+            limit: burstMax,
+            remaining: 0,
+            reset: new Date(now + burstWindowMs),
+            retryAfter: Math.ceil(burstWindowMs / 1000),
+          },
+          'Burst limit exceeded'
+        );
       }
 
       // Check sustained limit
       const sustainedKey = `sustained:${key}`;
       const sustainedCount = await this.incrementCounter(sustainedKey, sustainedWindowMs);
-      
+
       if (sustainedCount > sustainedMax) {
-        return this.sendRateLimitResponse(res, {
-          limit: sustainedMax,
-          remaining: 0,
-          reset: new Date(now + sustainedWindowMs),
-          retryAfter: Math.ceil(sustainedWindowMs / 1000)
-        }, 'Sustained rate limit exceeded');
+        return this.sendRateLimitResponse(
+          res,
+          {
+            limit: sustainedMax,
+            remaining: 0,
+            reset: new Date(now + sustainedWindowMs),
+            retryAfter: Math.ceil(sustainedWindowMs / 1000),
+          },
+          'Sustained rate limit exceeded'
+        );
       }
 
       // Set rate limit headers
@@ -249,14 +262,14 @@ export class AuthRateLimitMiddleware {
     return async (req: Request, res: Response, next: NextFunction) => {
       // Get current system load (simplified example)
       const systemLoad = await this.getSystemLoad();
-      
+
       // Adjust rate limit based on load
       const adjustedMax = Math.floor(baseMax * (1 - systemLoad));
-      
+
       const config: RateLimitRule = {
         windowMs,
         max: Math.max(1, adjustedMax), // Ensure at least 1 request is allowed
-        keyGenerator: (req) => this.getClientIP(req)
+        keyGenerator: req => this.getClientIP(req),
       };
 
       const rateLimitMiddleware = this.createRateLimit(config, 'adaptive');
@@ -277,27 +290,31 @@ export class AuthRateLimitMiddleware {
 
         const key = config.keyGenerator ? config.keyGenerator(req) : this.getClientIP(req);
         const rateLimitKey = `ratelimit:${type}:${key}`;
-        
+
         const now = Date.now();
         const windowStart = now - config.windowMs;
-        
+
         // Get current count
         const count = await this.incrementCounter(rateLimitKey, config.windowMs);
-        
+
         if (count > config.max) {
           // Rate limit exceeded
           await this.logRateLimitViolation(req, type, key, count, config.max);
-          
+
           if (config.onLimitReached) {
             config.onLimitReached(req, res);
           }
-          
-          return this.sendRateLimitResponse(res, {
-            limit: config.max,
-            remaining: 0,
-            reset: new Date(now + config.windowMs),
-            retryAfter: Math.ceil(config.windowMs / 1000)
-          }, `Rate limit exceeded for ${type}`);
+
+          return this.sendRateLimitResponse(
+            res,
+            {
+              limit: config.max,
+              remaining: 0,
+              reset: new Date(now + config.windowMs),
+              retryAfter: Math.ceil(config.windowMs / 1000),
+            },
+            `Rate limit exceeded for ${type}`
+          );
         }
 
         // Set rate limit headers
@@ -321,26 +338,26 @@ export class AuthRateLimitMiddleware {
   private async incrementCounter(key: string, windowMs: number): Promise<number> {
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     try {
       // Remove old entries (sliding window)
       await this.cache.del(`${key}:*`); // Simplified - in practice, use ZREMRANGEBYSCORE
-      
+
       // Add current request
       const requestKey = `${key}:${now}`;
       await this.cache.set(requestKey, '1', Math.ceil(windowMs / 1000));
-      
+
       // Count requests in current window (simplified)
       // In practice, use Redis sorted sets for accurate sliding window
       const pattern = `${key}:*`;
       const keys = await this.cache.keys(pattern);
-      
+
       // Filter keys within window
       const validKeys = keys.filter(k => {
         const timestamp = parseInt(k.split(':').pop() || '0');
         return timestamp > windowStart;
       });
-      
+
       return validKeys.length;
     } catch (error) {
       console.error('Counter increment error:', error);
@@ -364,7 +381,13 @@ export class AuthRateLimitMiddleware {
   /**
    * Log rate limit violation
    */
-  private async logRateLimitViolation(req: Request, type: string, key: string, current: number, limit: number) {
+  private async logRateLimitViolation(
+    req: Request,
+    type: string,
+    key: string,
+    current: number,
+    limit: number
+  ) {
     try {
       console.warn('Rate limit violation:', {
         type,
@@ -375,7 +398,7 @@ export class AuthRateLimitMiddleware {
         userAgent: req.headers['user-agent'],
         path: req.path,
         method: req.method,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Failed to log rate limit violation:', error);
@@ -389,7 +412,7 @@ export class AuthRateLimitMiddleware {
     res.setHeader('X-RateLimit-Limit', info.limit.toString());
     res.setHeader('X-RateLimit-Remaining', info.remaining.toString());
     res.setHeader('X-RateLimit-Reset', info.reset.toISOString());
-    
+
     if (info.retryAfter) {
       res.setHeader('Retry-After', info.retryAfter.toString());
     }
@@ -402,8 +425,8 @@ export class AuthRateLimitMiddleware {
         limit: info.limit,
         remaining: info.remaining,
         resetTime: info.reset.toISOString(),
-        retryAfter: info.retryAfter
-      }
+        retryAfter: info.retryAfter,
+      },
     });
   }
 
@@ -413,7 +436,7 @@ export class AuthRateLimitMiddleware {
   private getClientIP(req: Request): string {
     return (
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-real-ip'] as string) ||
       req.connection.remoteAddress ||
       req.socket.remoteAddress ||
       (req as any).ip ||

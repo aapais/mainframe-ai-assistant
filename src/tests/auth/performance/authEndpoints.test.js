@@ -24,21 +24,21 @@ describe('Authentication Endpoints Performance Tests', () => {
       // Add indices for faster lookups
       emailIndex: new Map(),
       providerIndex: new Map(),
-      sessionIndex: new Map()
+      sessionIndex: new Map(),
     };
 
     // Optimized repositories with caching
     const userRepository = {
-      findByEmail: async (email) => {
+      findByEmail: async email => {
         const userId = mockDatabase.emailIndex.get(email);
         return userId ? mockDatabase.users.get(userId) : null;
       },
-      findById: async (id) => mockDatabase.users.get(id),
-      findByProviderId: async (providerId) => {
+      findById: async id => mockDatabase.users.get(id),
+      findByProviderId: async providerId => {
         const userId = mockDatabase.providerIndex.get(providerId);
         return userId ? mockDatabase.users.get(userId) : null;
       },
-      create: async (userData) => {
+      create: async userData => {
         const user = { ...userData, id: `user-${Date.now()}-${Math.random()}` };
         mockDatabase.users.set(user.id, user);
         mockDatabase.emailIndex.set(user.email, user.id);
@@ -54,21 +54,21 @@ describe('Authentication Endpoints Performance Tests', () => {
           return user;
         }
         return null;
-      }
+      },
     };
 
     const sessionRepository = {
-      create: async (sessionData) => {
+      create: async sessionData => {
         const session = { ...sessionData, id: `session-${Date.now()}-${Math.random()}` };
         mockDatabase.sessions.set(session.id, session);
         mockDatabase.sessionIndex.set(session.token, session.id);
         return session;
       },
-      findByToken: async (token) => {
+      findByToken: async token => {
         const sessionId = mockDatabase.sessionIndex.get(token);
         return sessionId ? mockDatabase.sessions.get(sessionId) : null;
       },
-      deleteByUserId: async (userId) => {
+      deleteByUserId: async userId => {
         const sessions = Array.from(mockDatabase.sessions.values());
         const userSessions = sessions.filter(session => session.userId === userId);
         userSessions.forEach(session => {
@@ -76,7 +76,7 @@ describe('Authentication Endpoints Performance Tests', () => {
           mockDatabase.sessionIndex.delete(session.token);
         });
         return userSessions.length;
-      }
+      },
     };
 
     jwtProvider = new MockJWTProvider();
@@ -117,9 +117,7 @@ describe('Authentication Endpoints Performance Tests', () => {
         for (let i = 0; i < iterations; i++) {
           const start = performance.now();
 
-          await request(app)
-            .get('/auth/google')
-            .expect(302);
+          await request(app).get('/auth/google').expect(302);
 
           const end = performance.now();
           durations.push(end - start);
@@ -145,11 +143,7 @@ describe('Authentication Endpoints Performance Tests', () => {
         const start = performance.now();
 
         for (let i = 0; i < concurrency; i++) {
-          requests.push(
-            request(app)
-              .get('/auth/google')
-              .expect(302)
-          );
+          requests.push(request(app).get('/auth/google').expect(302));
         }
 
         await Promise.all(requests);
@@ -204,7 +198,9 @@ describe('Authentication Endpoints Performance Tests', () => {
         // Pre-create users
         const existingUsers = [];
         for (let i = 0; i < 50; i++) {
-          const user = UserFactory.createOAuthUser('google', { providerId: `google-existing-${i}` });
+          const user = UserFactory.createOAuthUser('google', {
+            providerId: `google-existing-${i}`,
+          });
           await ssoService.userRepository.create(user);
           existingUsers.push(user);
         }
@@ -310,7 +306,7 @@ describe('Authentication Endpoints Performance Tests', () => {
       it('should authorize requests under 20ms', async () => {
         const token = jwtProvider.generateToken({
           userId: 'test-user',
-          exp: Math.floor(Date.now() / 1000) + 3600
+          exp: Math.floor(Date.now() / 1000) + 3600,
         });
 
         const iterations = 200;
@@ -319,10 +315,7 @@ describe('Authentication Endpoints Performance Tests', () => {
         for (let i = 0; i < iterations; i++) {
           const start = performance.now();
 
-          await request(app)
-            .get('/protected')
-            .set('Authorization', `Bearer ${token}`)
-            .expect(200);
+          await request(app).get('/protected').set('Authorization', `Bearer ${token}`).expect(200);
 
           const end = performance.now();
           durations.push(end - start);
@@ -406,7 +399,7 @@ describe('Authentication Endpoints Performance Tests', () => {
           const sessionData = {
             userId: `user-${i}`,
             token: `token-${i}`,
-            expiresAt: new Date(Date.now() + 3600000)
+            expiresAt: new Date(Date.now() + 3600000),
           };
 
           const start = performance.now();
@@ -431,7 +424,7 @@ describe('Authentication Endpoints Performance Tests', () => {
           const sessionData = {
             userId: `user-${i}`,
             token: `lookup-token-${i}`,
-            expiresAt: new Date(Date.now() + 3600000)
+            expiresAt: new Date(Date.now() + 3600000),
           };
           await ssoService.sessionRepository.create(sessionData);
           tokens.push(sessionData.token);
@@ -494,7 +487,7 @@ describe('Authentication Endpoints Performance Tests', () => {
       it('should handle 200 concurrent token validations', async () => {
         const token = jwtProvider.generateToken({
           userId: 'load-test-user',
-          exp: Math.floor(Date.now() / 1000) + 3600
+          exp: Math.floor(Date.now() / 1000) + 3600,
         });
 
         const concurrency = 200;
@@ -504,10 +497,7 @@ describe('Authentication Endpoints Performance Tests', () => {
 
         for (let i = 0; i < concurrency; i++) {
           promises.push(
-            request(app)
-              .get('/protected')
-              .set('Authorization', `Bearer ${token}`)
-              .expect(200)
+            request(app).get('/protected').set('Authorization', `Bearer ${token}`).expect(200)
           );
         }
 
@@ -544,10 +534,7 @@ describe('Authentication Endpoints Performance Tests', () => {
           } else {
             const token = jwtProvider.generateToken({ userId: `user-${i}` });
             promises.push(
-              request(app)
-                .get('/protected')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(200)
+              request(app).get('/protected').set('Authorization', `Bearer ${token}`).expect(200)
             );
           }
 
@@ -634,7 +621,7 @@ describe('Authentication Endpoints Performance Tests', () => {
       console.log(`Cache Performance:
         Uncached Lookup: ${uncachedDuration.toFixed(4)}ms
         Cached Lookup Average: ${avgCachedDuration.toFixed(4)}ms
-        Performance Improvement: ${((uncachedDuration - avgCachedDuration) / uncachedDuration * 100).toFixed(2)}%`);
+        Performance Improvement: ${(((uncachedDuration - avgCachedDuration) / uncachedDuration) * 100).toFixed(2)}%`);
 
       expect(avgCachedDuration).toBeLessThan(uncachedDuration);
     });
@@ -649,7 +636,9 @@ function setupPerformanceTestRoutes(app, ssoService) {
   app.get('/auth/google', (req, res) => {
     const state = `state-${Date.now()}-${Math.random()}`;
     stateStore.set(state, { created: Date.now(), used: false });
-    res.redirect(`https://mock-provider.com/oauth/authorize?state=${state}&client_id=mock-client-id`);
+    res.redirect(
+      `https://mock-provider.com/oauth/authorize?state=${state}&client_id=mock-client-id`
+    );
   });
 
   app.get('/auth/google/callback', async (req, res) => {
@@ -679,7 +668,7 @@ function setupPerformanceTestRoutes(app, ssoService) {
           id: `google-existing-${index}`,
           email: `existing${index}@example.com`,
           name: `Existing User ${index}`,
-          verified_email: true
+          verified_email: true,
         };
       } else {
         const index = code.split('-').pop() || Math.random().toString(36);
@@ -687,7 +676,7 @@ function setupPerformanceTestRoutes(app, ssoService) {
           id: `google-${index}`,
           email: `user${index}@example.com`,
           name: `User ${index}`,
-          verified_email: true
+          verified_email: true,
         };
       }
 
@@ -695,7 +684,7 @@ function setupPerformanceTestRoutes(app, ssoService) {
       const sessionData = {
         userId: user.id,
         token: `session-${Date.now()}-${Math.random()}`,
-        expiresAt: new Date(Date.now() + 3600000)
+        expiresAt: new Date(Date.now() + 3600000),
       };
 
       await ssoService.sessionRepository.create(sessionData);

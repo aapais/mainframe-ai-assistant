@@ -39,25 +39,25 @@ export class ErrorHandlingMiddleware {
       try {
         const context = this.buildErrorContext(req);
         const authError = this.normalizeError(error);
-        
+
         // Log error
         await this.logError(authError, context);
-        
+
         // Send appropriate response based on error type
         await this.sendErrorResponse(res, authError, context);
-        
+
         // Additional error handling based on error type
         await this.handleErrorType(authError, context);
       } catch (handlingError) {
         console.error('Error in error handling middleware:', handlingError);
-        
+
         // Fallback error response
         res.status(500).json({
           success: false,
           error: 'INTERNAL_SERVER_ERROR',
           message: 'An internal server error occurred',
           correlationId: crypto.randomUUID(),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     };
@@ -74,15 +74,15 @@ export class ErrorHandlingMiddleware {
 
       const context = this.buildErrorContext(req);
       const authError = this.normalizeJWTError(error);
-      
+
       await this.logError(authError, context);
-      
+
       // Special handling for JWT errors
       if (authError.code === 'TOKEN_EXPIRED') {
         res.setHeader('X-Token-Expired', 'true');
         res.setHeader('X-Refresh-Required', 'true');
       }
-      
+
       await this.sendErrorResponse(res, authError, context);
     };
   }
@@ -98,14 +98,14 @@ export class ErrorHandlingMiddleware {
 
       const context = this.buildErrorContext(req);
       const authError = this.normalizeSSOError(error);
-      
+
       await this.logError(authError, context);
-      
+
       // SSO errors might need redirect handling
       if (authError.code === 'SSO_CALLBACK_ERROR') {
         return this.handleSSOCallbackError(res, authError, context);
       }
-      
+
       await this.sendErrorResponse(res, authError, context);
     };
   }
@@ -121,9 +121,9 @@ export class ErrorHandlingMiddleware {
 
       const context = this.buildErrorContext(req);
       const authError = this.normalizeRateLimitError(error);
-      
+
       await this.logError(authError, context);
-      
+
       // Set rate limit headers
       if (error.limit) {
         res.setHeader('X-RateLimit-Limit', error.limit.toString());
@@ -137,7 +137,7 @@ export class ErrorHandlingMiddleware {
       if (error.retryAfter) {
         res.setHeader('Retry-After', error.retryAfter.toString());
       }
-      
+
       await this.sendErrorResponse(res, authError, context);
     };
   }
@@ -153,7 +153,7 @@ export class ErrorHandlingMiddleware {
 
       const context = this.buildErrorContext(req);
       const authError = this.normalizeValidationError(error);
-      
+
       await this.logError(authError, context);
       await this.sendErrorResponse(res, authError, context);
     };
@@ -170,15 +170,15 @@ export class ErrorHandlingMiddleware {
 
       const context = this.buildErrorContext(req);
       const authError = this.normalizeDatabaseError(error);
-      
+
       await this.logError(authError, context);
-      
+
       // Don't expose database details in production
       if (process.env.NODE_ENV === 'production') {
         authError.message = 'A database error occurred';
         delete authError.details;
       }
-      
+
       await this.sendErrorResponse(res, authError, context);
     };
   }
@@ -194,12 +194,12 @@ export class ErrorHandlingMiddleware {
 
       const context = this.buildErrorContext(req);
       const authError = this.normalizeProviderError(error);
-      
+
       await this.logError(authError, context);
-      
+
       // Log provider-specific metrics
       await this.logProviderError(authError, context);
-      
+
       await this.sendErrorResponse(res, authError, context);
     };
   }
@@ -210,24 +210,24 @@ export class ErrorHandlingMiddleware {
   handleNotFound() {
     return async (req: Request, res: Response, next: NextFunction) => {
       const context = this.buildErrorContext(req as AuthenticatedRequest);
-      
+
       const authError: AuthError = {
         code: 'ENDPOINT_NOT_FOUND',
         message: `Endpoint ${req.method} ${req.path} not found`,
         statusCode: 404,
         timestamp: new Date(),
         correlationId: crypto.randomUUID(),
-        retryable: false
+        retryable: false,
       };
-      
+
       await this.logError(authError, context);
-      
+
       res.status(404).json({
         success: false,
         error: authError.code,
         message: authError.message,
         correlationId: authError.correlationId,
-        timestamp: authError.timestamp.toISOString()
+        timestamp: authError.timestamp.toISOString(),
       });
     };
   }
@@ -237,7 +237,7 @@ export class ErrorHandlingMiddleware {
    */
   private normalizeError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     // Check for known error types first
     if (this.isJWTError(error)) {
       return this.normalizeJWTError(error);
@@ -257,7 +257,7 @@ export class ErrorHandlingMiddleware {
     if (this.isProviderError(error)) {
       return this.normalizeProviderError(error);
     }
-    
+
     // Generic error
     return {
       code: error.code || 'UNKNOWN_ERROR',
@@ -266,13 +266,13 @@ export class ErrorHandlingMiddleware {
       details: error.details,
       retryable: error.retryable || false,
       timestamp: new Date(),
-      correlationId
+      correlationId,
     };
   }
 
   private normalizeJWTError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     switch (error.name) {
       case 'TokenExpiredError':
         return {
@@ -282,7 +282,7 @@ export class ErrorHandlingMiddleware {
           details: { expiredAt: error.expiredAt },
           retryable: true,
           timestamp: new Date(),
-          correlationId
+          correlationId,
         };
       case 'JsonWebTokenError':
         return {
@@ -291,7 +291,7 @@ export class ErrorHandlingMiddleware {
           statusCode: 401,
           retryable: false,
           timestamp: new Date(),
-          correlationId
+          correlationId,
         };
       case 'NotBeforeError':
         return {
@@ -301,7 +301,7 @@ export class ErrorHandlingMiddleware {
           details: { notBefore: error.notBefore },
           retryable: true,
           timestamp: new Date(),
-          correlationId
+          correlationId,
         };
       default:
         return {
@@ -310,14 +310,14 @@ export class ErrorHandlingMiddleware {
           statusCode: 401,
           retryable: false,
           timestamp: new Date(),
-          correlationId
+          correlationId,
         };
     }
   }
 
   private normalizeSSOError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     return {
       code: error.code || 'SSO_ERROR',
       message: this.sanitizeSSOErrorMessage(error.message || 'SSO authentication failed'),
@@ -325,13 +325,13 @@ export class ErrorHandlingMiddleware {
       details: error.details ? this.sanitizeErrorDetails(error.details) : undefined,
       retryable: error.retryable !== false,
       timestamp: new Date(),
-      correlationId
+      correlationId,
     };
   }
 
   private normalizeRateLimitError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     return {
       code: 'RATE_LIMIT_EXCEEDED',
       message: error.message || 'Rate limit exceeded',
@@ -340,53 +340,57 @@ export class ErrorHandlingMiddleware {
         limit: error.limit,
         remaining: error.remaining,
         reset: error.reset,
-        retryAfter: error.retryAfter
+        retryAfter: error.retryAfter,
       },
       retryable: true,
       timestamp: new Date(),
-      correlationId
+      correlationId,
     };
   }
 
   private normalizeValidationError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     return {
       code: 'VALIDATION_ERROR',
       message: 'Request validation failed',
       statusCode: 400,
       details: {
-        errors: error.errors || [error.message]
+        errors: error.errors || [error.message],
       },
       retryable: false,
       timestamp: new Date(),
-      correlationId
+      correlationId,
     };
   }
 
   private normalizeDatabaseError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     return {
       code: 'DATABASE_ERROR',
-      message: process.env.NODE_ENV === 'production' 
-        ? 'A database error occurred' 
-        : (error.message || 'Database operation failed'),
+      message:
+        process.env.NODE_ENV === 'production'
+          ? 'A database error occurred'
+          : error.message || 'Database operation failed',
       statusCode: 500,
-      details: process.env.NODE_ENV === 'production' ? undefined : {
-        code: error.code,
-        errno: error.errno,
-        sqlMessage: error.sqlMessage
-      },
+      details:
+        process.env.NODE_ENV === 'production'
+          ? undefined
+          : {
+              code: error.code,
+              errno: error.errno,
+              sqlMessage: error.sqlMessage,
+            },
       retryable: true,
       timestamp: new Date(),
-      correlationId
+      correlationId,
     };
   }
 
   private normalizeProviderError(error: any): AuthError {
     const correlationId = crypto.randomUUID();
-    
+
     return {
       code: error.code || 'PROVIDER_ERROR',
       message: this.sanitizeProviderErrorMessage(error.message || 'Provider authentication failed'),
@@ -394,7 +398,7 @@ export class ErrorHandlingMiddleware {
       details: error.details ? this.sanitizeErrorDetails(error.details) : undefined,
       retryable: error.retryable !== false,
       timestamp: new Date(),
-      correlationId
+      correlationId,
     };
   }
 
@@ -437,11 +441,15 @@ export class ErrorHandlingMiddleware {
       path: req.path,
       method: req.method,
       provider: req.ssoProvider,
-      operation: req.headers['x-operation-type'] as string
+      operation: req.headers['x-operation-type'] as string,
     };
   }
 
-  private async sendErrorResponse(res: Response, error: AuthError, context: ErrorContext): Promise<void> {
+  private async sendErrorResponse(
+    res: Response,
+    error: AuthError,
+    context: ErrorContext
+  ): Promise<void> {
     const response = {
       success: false,
       error: error.code,
@@ -449,7 +457,7 @@ export class ErrorHandlingMiddleware {
       correlationId: error.correlationId,
       timestamp: error.timestamp.toISOString(),
       ...(error.details && { details: error.details }),
-      ...(error.retryable !== undefined && { retryable: error.retryable })
+      ...(error.retryable !== undefined && { retryable: error.retryable }),
     };
 
     // Add development-specific info
@@ -457,7 +465,7 @@ export class ErrorHandlingMiddleware {
       (response as any).context = {
         path: context.path,
         method: context.method,
-        ip: context.ip
+        ip: context.ip,
       };
     }
 
@@ -501,10 +509,14 @@ export class ErrorHandlingMiddleware {
     console.warn('Rate limit exceeded from IP:', context.ip);
   }
 
-  private async handleSSOCallbackError(res: Response | null, error: AuthError, context: ErrorContext): Promise<void> {
+  private async handleSSOCallbackError(
+    res: Response | null,
+    error: AuthError,
+    context: ErrorContext
+  ): Promise<void> {
     // Could redirect to error page or retry SSO flow
     console.error('SSO callback error:', error.message);
-    
+
     if (res) {
       const errorUrl = `/auth/error?code=${error.code}&message=${encodeURIComponent(error.message)}`;
       res.redirect(errorUrl);
@@ -518,30 +530,33 @@ export class ErrorHandlingMiddleware {
 
   private async logError(error: AuthError, context: ErrorContext): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO auth_error_log (
           id, correlation_id, error_code, error_message, status_code,
           user_id, session_id, ip_address, user_agent, path, method,
           provider, operation, details, retryable, timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        crypto.randomUUID(),
-        error.correlationId,
-        error.code,
-        error.message,
-        error.statusCode,
-        context.userId,
-        context.sessionId,
-        context.ip,
-        context.userAgent,
-        context.path,
-        context.method,
-        context.provider,
-        context.operation,
-        error.details ? JSON.stringify(error.details) : null,
-        error.retryable || false,
-        error.timestamp.toISOString()
-      ]);
+      `,
+        [
+          crypto.randomUUID(),
+          error.correlationId,
+          error.code,
+          error.message,
+          error.statusCode,
+          context.userId,
+          context.sessionId,
+          context.ip,
+          context.userAgent,
+          context.path,
+          context.method,
+          context.provider,
+          context.operation,
+          error.details ? JSON.stringify(error.details) : null,
+          error.retryable || false,
+          error.timestamp.toISOString(),
+        ]
+      );
     } catch (logError) {
       console.error('Failed to log auth error to database:', logError);
     }
@@ -553,28 +568,31 @@ export class ErrorHandlingMiddleware {
       message: error.message,
       statusCode: error.statusCode,
       context,
-      timestamp: error.timestamp.toISOString()
+      timestamp: error.timestamp.toISOString(),
     });
   }
 
   private async logProviderError(error: AuthError, context: ErrorContext): Promise<void> {
     if (!context.provider) return;
-    
+
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO provider_error_log (
           id, provider, error_code, error_message, correlation_id,
           ip_address, timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [
-        crypto.randomUUID(),
-        context.provider,
-        error.code,
-        error.message,
-        error.correlationId,
-        context.ip,
-        error.timestamp.toISOString()
-      ]);
+      `,
+        [
+          crypto.randomUUID(),
+          context.provider,
+          error.code,
+          error.message,
+          error.correlationId,
+          context.ip,
+          error.timestamp.toISOString(),
+        ]
+      );
     } catch (logError) {
       console.error('Failed to log provider error:', logError);
     }
@@ -599,7 +617,7 @@ export class ErrorHandlingMiddleware {
     }
 
     const sanitized = { ...details };
-    
+
     // Remove sensitive fields
     const sensitiveFields = ['password', 'secret', 'token', 'key', 'authorization'];
     for (const field of sensitiveFields) {
@@ -614,7 +632,7 @@ export class ErrorHandlingMiddleware {
   private getClientIP(req: Request): string {
     return (
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-real-ip'] as string) ||
       req.connection.remoteAddress ||
       req.socket.remoteAddress ||
       (req as any).ip ||

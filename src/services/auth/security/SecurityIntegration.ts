@@ -7,7 +7,10 @@ import { EventEmitter } from 'events';
 import { AuditService, AuditStorage, AuditConfig } from './audit/AuditService';
 import { SecurityEventMonitor, AlertHandler } from './monitoring/SecurityEventMonitor';
 import { FailedLoginDetector, DetectionConfig } from './detection/FailedLoginDetector';
-import { SuspiciousActivityAlert, SuspiciousActivityConfig } from './detection/SuspiciousActivityAlert';
+import {
+  SuspiciousActivityAlert,
+  SuspiciousActivityConfig,
+} from './detection/SuspiciousActivityAlert';
 import { KeyAccessTracker, KeyTrackerConfig } from './tracking/KeyAccessTracker';
 import { SessionMonitor, SessionPolicy, SessionMonitorConfig } from './tracking/SessionMonitor';
 import { IPAllowlistManager, AllowlistConfig } from './detection/IPAllowlistManager';
@@ -132,11 +135,18 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
 
     // Initialize detection components
     this.failedLoginDetector = new FailedLoginDetector(this.auditService, this.config.failedLogin);
-    this.suspiciousActivityAlert = new SuspiciousActivityAlert(this.auditService, this.config.suspiciousActivity);
+    this.suspiciousActivityAlert = new SuspiciousActivityAlert(
+      this.auditService,
+      this.config.suspiciousActivity
+    );
 
     // Initialize tracking components
     this.keyAccessTracker = new KeyAccessTracker(this.auditService, this.config.keyTracking);
-    this.sessionMonitor = new SessionMonitor(this.auditService, this.config.sessionPolicy, this.config.sessionMonitor);
+    this.sessionMonitor = new SessionMonitor(
+      this.auditService,
+      this.config.sessionPolicy,
+      this.config.sessionMonitor
+    );
 
     // Initialize protection components
     this.ipAllowlistManager = new IPAllowlistManager(this.auditService, this.config.ipAllowlist);
@@ -151,7 +161,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
    */
   private setupIntegrations(): void {
     // Failed login detector integration
-    this.failedLoginDetector.on('failedLoginAlert', async (alert) => {
+    this.failedLoginDetector.on('failedLoginAlert', async alert => {
       // Auto-add to IP allowlist if severe
       if (alert.severity === 'HIGH' || alert.severity === 'CRITICAL') {
         await this.ipAllowlistManager.autoBlockIP(
@@ -175,12 +185,12 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
       this.emit('integratedThreatResponse', {
         type: 'failed_login',
         alert,
-        actions: ['ip_blocked', 'rate_limited']
+        actions: ['ip_blocked', 'rate_limited'],
       });
     });
 
     // Suspicious activity integration
-    this.suspiciousActivityAlert.on('suspiciousActivity', async (alert) => {
+    this.suspiciousActivityAlert.on('suspiciousActivity', async alert => {
       // Terminate all user sessions if critical
       if (alert.severity === 'CRITICAL') {
         await this.sessionMonitor.terminateAllUserSessions(
@@ -196,12 +206,12 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
       this.emit('integratedThreatResponse', {
         type: 'suspicious_activity',
         alert,
-        actions: ['sessions_terminated', 'user_quarantined']
+        actions: ['sessions_terminated', 'user_quarantined'],
       });
     });
 
     // Key access tracker integration
-    this.keyAccessTracker.on('keyAlert', async (alert) => {
+    this.keyAccessTracker.on('keyAlert', async alert => {
       // Block IP if key violation is severe
       if (alert.severity === 'HIGH' || alert.severity === 'CRITICAL') {
         await this.ipAllowlistManager.autoBlockIP(
@@ -214,7 +224,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
     });
 
     // Session monitor integration
-    this.sessionMonitor.on('sessionAlert', async (alert) => {
+    this.sessionMonitor.on('sessionAlert', async alert => {
       // Block IP for session hijacking
       if (alert.alertType === 'SESSION_HIJACK') {
         await this.ipAllowlistManager.autoBlockIP(
@@ -227,14 +237,14 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
     });
 
     // IP allowlist integration with rate limiter
-    this.ipAllowlistManager.on('allowlistEvent', (event) => {
+    this.ipAllowlistManager.on('allowlistEvent', event => {
       if (event.eventType === 'BLOCKED') {
         this.blockedEntities.add(event.ipAddress);
       }
     });
 
     // Rate limiter integration
-    this.rateLimiter.on('keyBlocked', (event) => {
+    this.rateLimiter.on('keyBlocked', event => {
       this.blockedEntities.add(event.key);
     });
 
@@ -273,14 +283,14 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
         outcome: 'SUCCESS',
         ipAddress: context.ipAddress,
         userId: context.userId,
-        details: data
+        details: data,
       });
 
       // Check IP allowlist
       const ipCheckResult = await this.ipAllowlistManager.checkIP(context.ipAddress, {
         endpoint: context.resource,
         method: context.action,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       if (ipCheckResult.action === 'BLOCK') {
@@ -289,7 +299,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
           reason: 'IP blocked',
           riskScore: ipCheckResult.riskScore,
           actions: ['blocked'],
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       }
 
@@ -300,7 +310,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
         endpoint: context.resource || 'unknown',
         method: context.action || 'unknown',
         timestamp: new Date(),
-        riskScore: ipCheckResult.riskScore
+        riskScore: ipCheckResult.riskScore,
       });
 
       if (!rateLimitResult.allowed) {
@@ -310,7 +320,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
           riskScore: rateLimitResult.riskScore,
           actions: ['rate_limited'],
           retryAfter: rateLimitResult.retryAfter,
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
         };
       }
 
@@ -327,7 +337,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
               userAgent: context.userAgent || 'unknown',
               timestamp: new Date(),
               success: false,
-              metadata: data
+              metadata: data,
             });
           }
           break;
@@ -341,7 +351,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
               userAgent: context.userAgent,
               statusCode: data.statusCode || 200,
               responseTime: data.responseTime,
-              timestamp: new Date()
+              timestamp: new Date(),
             });
 
             if (!keyResult.allowed) {
@@ -350,7 +360,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
                 reason: keyResult.reason || 'API key access denied',
                 riskScore: keyResult.riskScore,
                 actions: ['api_key_blocked'],
-                processingTime: Date.now() - startTime
+                processingTime: Date.now() - startTime,
               };
             }
 
@@ -364,7 +374,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
               action: context.action || 'unknown',
               resource: context.resource || 'unknown',
               outcome: data.success ? 'SUCCESS' : 'FAILURE',
-              details: data
+              details: data,
             });
           }
           break;
@@ -374,9 +384,8 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
         allowed: true,
         riskScore,
         actions,
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       };
-
     } catch (error) {
       console.error('Error processing security event:', error);
 
@@ -385,7 +394,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
         reason: 'Internal security error',
         riskScore: 100,
         actions: ['error'],
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
       };
     }
   }
@@ -411,8 +420,8 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
         sessionMonitor: 'OPERATIONAL',
         ipAllowlist: 'OPERATIONAL',
         rateLimit: 'OPERATIONAL',
-        compliance: 'OPERATIONAL'
-      }
+        compliance: 'OPERATIONAL',
+      },
     };
   }
 
@@ -430,11 +439,11 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
         totalEvents: await this.getTotalEvents(period),
         securityIncidents: await this.getSecurityIncidents(period),
         blockedThreats: await this.getBlockedThreats(period),
-        complianceScore: await this.getComplianceScore(period)
+        complianceScore: await this.getComplianceScore(period),
       },
       metrics: this.getMetricsForPeriod(period),
       threats: await this.getThreatAnalysis(period),
-      recommendations: await this.generateSecurityRecommendations()
+      recommendations: await this.generateSecurityRecommendations(),
     };
 
     switch (format) {
@@ -458,7 +467,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
       type: alert.ruleName || alert.type || 'SECURITY_ALERT',
       severity: alert.severity,
       description: alert.description,
-      metadata: alert.metadata || {}
+      metadata: alert.metadata || {},
     };
 
     // Send to configured channels
@@ -496,12 +505,10 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
       'security_system'
     );
 
-    await this.auditService.logSecurityEvent(
-      'user_quarantined',
-      'HIGH',
-      'system',
-      { userId, reason }
-    );
+    await this.auditService.logSecurityEvent('user_quarantined', 'HIGH', 'system', {
+      userId,
+      reason,
+    });
 
     this.emit('userQuarantined', { userId, reason });
   }
@@ -516,7 +523,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
 
   private setupAutomatedResponse(): void {
     // Setup automated response rules
-    this.on('integratedThreatResponse', async (response) => {
+    this.on('integratedThreatResponse', async response => {
       // Implement automated response logic
       if (response.alert.severity === 'CRITICAL') {
         // Escalate to security team
@@ -548,7 +555,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
     const auditEvents = await this.auditService.queryEvents({
       startDate: oneHourAgo,
       endDate: now,
-      limit: 10000
+      limit: 10000,
     });
 
     return {
@@ -556,36 +563,36 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
       auditEvents: {
         total: auditEvents.length,
         byType: this.groupEventsByType(auditEvents),
-        bySeverity: this.groupEventsBySeverity(auditEvents)
+        bySeverity: this.groupEventsBySeverity(auditEvents),
       },
       alerts: {
         total: 0, // Would be calculated from alert history
         resolved: 0,
         pending: 0,
-        byType: {}
+        byType: {},
       },
       authentication: {
         totalAttempts: this.countAuthenticationEvents(auditEvents),
         successfulLogins: this.countSuccessfulLogins(auditEvents),
         failedLogins: this.countFailedLogins(auditEvents),
-        blockedAttempts: 0 // Would be calculated
+        blockedAttempts: 0, // Would be calculated
       },
       apiAccess: {
         totalRequests: this.countApiRequests(auditEvents),
         blockedRequests: 0,
         rateLimitViolations: 0,
-        keyViolations: 0
+        keyViolations: 0,
       },
       compliance: {
         overallScore: 85, // Would get from compliance reporter
         activeFindings: 0,
-        resolvedFindings: 0
+        resolvedFindings: 0,
       },
       performance: {
         averageResponseTime: 150, // Would be calculated
         throughput: auditEvents.length,
-        errorRate: 0.05
-      }
+        errorRate: 0.05,
+      },
     };
   }
 
@@ -601,13 +608,14 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
     // Return summary of active threats
     return [
       { type: 'BLOCKED_IPS', count: this.blockedEntities.size, severity: 'MEDIUM' },
-      { type: 'QUARANTINED_USERS', count: this.quarantinedUsers.size, severity: 'HIGH' }
+      { type: 'QUARANTINED_USERS', count: this.quarantinedUsers.size, severity: 'HIGH' },
     ];
   }
 
   private getRecentMetrics(): SecurityMetrics | null {
-    return this.securityMetrics.length > 0 ?
-      this.securityMetrics[this.securityMetrics.length - 1] : null;
+    return this.securityMetrics.length > 0
+      ? this.securityMetrics[this.securityMetrics.length - 1]
+      : null;
   }
 
   private async sendAlertToChannel(
@@ -646,15 +654,11 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
   }
 
   private countSuccessfulLogins(events: any[]): number {
-    return events.filter(e =>
-      e.eventType === 'AUTHENTICATION' && e.outcome === 'SUCCESS'
-    ).length;
+    return events.filter(e => e.eventType === 'AUTHENTICATION' && e.outcome === 'SUCCESS').length;
   }
 
   private countFailedLogins(events: any[]): number {
-    return events.filter(e =>
-      e.eventType === 'AUTHENTICATION' && e.outcome === 'FAILURE'
-    ).length;
+    return events.filter(e => e.eventType === 'AUTHENTICATION' && e.outcome === 'FAILURE').length;
   }
 
   private countApiRequests(events: any[]): number {
@@ -662,8 +666,8 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
   }
 
   private getMetricsForPeriod(period: { start: Date; end: Date }): SecurityMetrics[] {
-    return this.securityMetrics.filter(m =>
-      m.timestamp >= period.start && m.timestamp <= period.end
+    return this.securityMetrics.filter(
+      m => m.timestamp >= period.start && m.timestamp <= period.end
     );
   }
 
@@ -671,7 +675,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
     const events = await this.auditService.queryEvents({
       startDate: period.start,
       endDate: period.end,
-      limit: 100000
+      limit: 100000,
     });
     return events.length;
   }
@@ -696,7 +700,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
     return {
       topThreats: [],
       threatTrends: [],
-      mitigationEffectiveness: {}
+      mitigationEffectiveness: {},
     };
   }
 
@@ -705,7 +709,7 @@ export class SecurityIntegration extends EventEmitter implements AlertHandler {
       'Implement additional MFA requirements for high-risk users',
       'Review and update IP allowlist rules',
       'Enhance rate limiting for API endpoints',
-      'Conduct security awareness training'
+      'Conduct security awareness training',
     ];
   }
 

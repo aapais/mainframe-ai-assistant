@@ -17,7 +17,7 @@ module.exports = async () => {
     performanceData.memory.difference = {
       heapUsed: performanceData.memory.final.heapUsed - performanceData.memory.initial.heapUsed,
       heapTotal: performanceData.memory.final.heapTotal - performanceData.memory.initial.heapTotal,
-      external: performanceData.memory.final.external - performanceData.memory.initial.external
+      external: performanceData.memory.final.external - performanceData.memory.initial.external,
     };
 
     const reportPath = path.join(__dirname, '..', 'test-artifacts', 'performance-report.json');
@@ -58,12 +58,12 @@ module.exports = async () => {
       nodeVersion: process.version,
       platform: process.platform,
       arch: process.arch,
-      pid: process.pid
+      pid: process.pid,
     },
     testSession: {
       duration: global.__TEST_PERFORMANCE__?.totalDuration || 0,
       memoryUsage: global.__TEST_PERFORMANCE__?.memory || {},
-      environment: 'test'
+      environment: 'test',
     },
     coverage: {
       // This would be populated by Jest coverage data
@@ -71,9 +71,9 @@ module.exports = async () => {
         statements: 90,
         branches: 90,
         functions: 90,
-        lines: 90
-      }
-    }
+        lines: 90,
+      },
+    },
   };
 
   const summaryPath = path.join(__dirname, '..', 'test-artifacts', 'test-summary.json');

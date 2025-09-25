@@ -9,7 +9,7 @@ const {
   updateUserSchema,
   changePasswordSchema,
   bulkUserOperationSchema,
-  userQuerySchema
+  userQuerySchema,
 } = require('../../validators/userValidators');
 
 const router = express.Router();
@@ -21,7 +21,7 @@ router.use(authMiddleware);
 router.use(refreshTokenMiddleware);
 
 // Validation middleware
-const validateRequest = (schema) => async (req, res, next) => {
+const validateRequest = schema => async (req, res, next) => {
   try {
     const result = schema.safeParse(req.body);
     if (!result.success) {
@@ -31,8 +31,8 @@ const validateRequest = (schema) => async (req, res, next) => {
         errors: result.error.issues.map(issue => ({
           field: issue.path.join('.'),
           message: issue.message,
-          code: issue.code
-        }))
+          code: issue.code,
+        })),
       });
     }
     req.validatedData = result.data;
@@ -41,12 +41,12 @@ const validateRequest = (schema) => async (req, res, next) => {
     logger.error('Erro na validação:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno de validação'
+      message: 'Erro interno de validação',
     });
   }
 };
 
-const validateQuery = (schema) => async (req, res, next) => {
+const validateQuery = schema => async (req, res, next) => {
   try {
     const result = schema.safeParse(req.query);
     if (!result.success) {
@@ -55,8 +55,8 @@ const validateQuery = (schema) => async (req, res, next) => {
         message: 'Parâmetros de consulta inválidos',
         errors: result.error.issues.map(issue => ({
           field: issue.path.join('.'),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       });
     }
     req.validatedQuery = result.data;
@@ -65,7 +65,7 @@ const validateQuery = (schema) => async (req, res, next) => {
     logger.error('Erro na validação de query:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno de validação'
+      message: 'Erro interno de validação',
     });
   }
 };
@@ -75,7 +75,7 @@ const requireAdmin = (req, res, next) => {
   if (!req.user.isAdmin) {
     return res.status(403).json({
       success: false,
-      message: 'Acesso negado - privilégios de administrador requeridos'
+      message: 'Acesso negado - privilégios de administrador requeridos',
     });
   }
   next();
@@ -92,13 +92,13 @@ router.get('/', requireAdmin, validateQuery(userQuerySchema), async (req, res) =
 
     res.json({
       success: true,
-      ...result
+      ...result,
     });
   } catch (error) {
     logger.error('Erro ao buscar usuários:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -116,7 +116,7 @@ router.get('/:id', async (req, res) => {
     if (!req.user.isAdmin && req.user.id !== id) {
       return res.status(403).json({
         success: false,
-        message: 'Acesso negado'
+        message: 'Acesso negado',
       });
     }
 
@@ -125,19 +125,19 @@ router.get('/:id', async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'Usuário não encontrado'
+        message: 'Usuário não encontrado',
       });
     }
 
     res.json({
       success: true,
-      user
+      user,
     });
   } catch (error) {
     logger.error('Erro ao buscar usuário:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -154,7 +154,7 @@ router.post('/', requireAdmin, validateRequest(createUserSchema), async (req, re
     res.status(201).json({
       success: true,
       message: 'Usuário criado com sucesso',
-      user
+      user,
     });
   } catch (error) {
     logger.error('Erro ao criar usuário:', error);
@@ -162,13 +162,13 @@ router.post('/', requireAdmin, validateRequest(createUserSchema), async (req, re
     if (error.message.includes('já existe')) {
       return res.status(409).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -186,7 +186,7 @@ router.put('/:id', validateRequest(updateUserSchema), async (req, res) => {
     if (!req.user.isAdmin && req.user.id !== id) {
       return res.status(403).json({
         success: false,
-        message: 'Acesso negado'
+        message: 'Acesso negado',
       });
     }
 
@@ -200,7 +200,7 @@ router.put('/:id', validateRequest(updateUserSchema), async (req, res) => {
     res.json({
       success: true,
       message: 'Usuário atualizado com sucesso',
-      user
+      user,
     });
   } catch (error) {
     logger.error('Erro ao atualizar usuário:', error);
@@ -208,13 +208,13 @@ router.put('/:id', validateRequest(updateUserSchema), async (req, res) => {
     if (error.message.includes('não encontrado')) {
       return res.status(404).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -232,7 +232,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     if (req.user.id === id) {
       return res.status(400).json({
         success: false,
-        message: 'Você não pode deletar sua própria conta'
+        message: 'Você não pode deletar sua própria conta',
       });
     }
 
@@ -240,7 +240,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Usuário deletado com sucesso'
+      message: 'Usuário deletado com sucesso',
     });
   } catch (error) {
     logger.error('Erro ao deletar usuário:', error);
@@ -248,13 +248,13 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     if (error.message.includes('não encontrado')) {
       return res.status(404).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -264,65 +264,75 @@ router.delete('/:id', requireAdmin, async (req, res) => {
  * @desc Change user password
  * @access Private
  */
-router.post('/change-password', authRateLimit, validateRequest(changePasswordSchema), async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.validatedData;
+router.post(
+  '/change-password',
+  authRateLimit,
+  validateRequest(changePasswordSchema),
+  async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.validatedData;
 
-    await userService.changePassword(req.user.id, currentPassword, newPassword);
+      await userService.changePassword(req.user.id, currentPassword, newPassword);
 
-    res.json({
-      success: true,
-      message: 'Senha alterada com sucesso'
-    });
-  } catch (error) {
-    logger.error('Erro ao alterar senha:', error);
+      res.json({
+        success: true,
+        message: 'Senha alterada com sucesso',
+      });
+    } catch (error) {
+      logger.error('Erro ao alterar senha:', error);
 
-    if (error.message.includes('incorreta')) {
-      return res.status(400).json({
+      if (error.message.includes('incorreta')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      res.status(500).json({
         success: false,
-        message: error.message
+        message: 'Erro interno do servidor',
       });
     }
-
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor'
-    });
   }
-});
+);
 
 /**
  * @route POST /api/auth/users/bulk-operation
  * @desc Perform bulk operations on users
  * @access Private (Admin)
  */
-router.post('/bulk-operation', requireAdmin, validateRequest(bulkUserOperationSchema), async (req, res) => {
-  try {
-    const { operation, userIds, parameters } = req.validatedData;
+router.post(
+  '/bulk-operation',
+  requireAdmin,
+  validateRequest(bulkUserOperationSchema),
+  async (req, res) => {
+    try {
+      const { operation, userIds, parameters } = req.validatedData;
 
-    // Prevent bulk operation on current user for certain operations
-    if (['deactivate', 'delete'].includes(operation) && userIds.includes(req.user.id)) {
-      return res.status(400).json({
+      // Prevent bulk operation on current user for certain operations
+      if (['deactivate', 'delete'].includes(operation) && userIds.includes(req.user.id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Você não pode executar esta operação em sua própria conta',
+        });
+      }
+
+      const results = await userService.bulkUserOperation(operation, userIds, parameters);
+
+      res.json({
+        success: true,
+        message: `Operação ${operation} executada`,
+        results,
+      });
+    } catch (error) {
+      logger.error('Erro na operação bulk:', error);
+      res.status(500).json({
         success: false,
-        message: 'Você não pode executar esta operação em sua própria conta'
+        message: 'Erro interno do servidor',
       });
     }
-
-    const results = await userService.bulkUserOperation(operation, userIds, parameters);
-
-    res.json({
-      success: true,
-      message: `Operação ${operation} executada`,
-      results
-    });
-  } catch (error) {
-    logger.error('Erro na operação bulk:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro interno do servidor'
-    });
   }
-});
+);
 
 /**
  * @route GET /api/auth/users/statistics
@@ -339,21 +349,21 @@ router.get('/statistics', requireAdmin, async (req, res) => {
       usersByRole: {
         admin: 0,
         analyst: 0,
-        user: 0
+        user: 0,
       },
       recentLogins: 0,
-      usersCreatedThisMonth: 0
+      usersCreatedThisMonth: 0,
     };
 
     res.json({
       success: true,
-      statistics
+      statistics,
     });
   } catch (error) {
     logger.error('Erro ao buscar estatísticas:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });

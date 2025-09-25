@@ -17,7 +17,17 @@ class UserService {
   // User CRUD operations
   async createUser(userData) {
     try {
-      const { email, password, firstName, lastName, role, department, phoneNumber, timezone, language } = userData;
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        role,
+        department,
+        phoneNumber,
+        timezone,
+        language,
+      } = userData;
 
       // Check if user already exists
       const existingUser = await this.getUserByEmail(email);
@@ -54,7 +64,7 @@ class UserService {
         updatedAt: new Date(),
         lastLogin: null,
         lastPasswordChange: new Date(),
-        permissions: this.getDefaultPermissions(role)
+        permissions: this.getDefaultPermissions(role),
       };
 
       // Store in database (implement actual DB logic)
@@ -105,10 +115,11 @@ class UserService {
       const updatedUser = {
         ...existingUser,
         ...updateData,
-        fullName: updateData.firstName || updateData.lastName
-          ? `${updateData.firstName || existingUser.firstName} ${updateData.lastName || existingUser.lastName}`
-          : existingUser.fullName,
-        updatedAt: new Date()
+        fullName:
+          updateData.firstName || updateData.lastName
+            ? `${updateData.firstName || existingUser.firstName} ${updateData.lastName || existingUser.lastName}`
+            : existingUser.fullName,
+        updatedAt: new Date(),
       };
 
       await this.updateUserInDB(userId, updatedUser);
@@ -134,7 +145,7 @@ class UserService {
       await this.updateUserInDB(userId, {
         isActive: false,
         deletedAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       // Invalidate all user sessions
@@ -164,7 +175,7 @@ class UserService {
         createdBefore,
         lastLoginAfter,
         sortBy = 'createdAt',
-        sortOrder = 'desc'
+        sortOrder = 'desc',
       } = query;
 
       const offset = (page - 1) * limit;
@@ -213,7 +224,7 @@ class UserService {
         offset,
         limit,
         sortBy,
-        sortOrder
+        sortOrder,
       });
 
       const total = await this.countUsers(conditions, params);
@@ -230,8 +241,8 @@ class UserService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
-        }
+          totalPages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
       logger.error('Erro ao buscar usuários:', error);
@@ -261,7 +272,7 @@ class UserService {
       await this.updateUserInDB(userId, {
         passwordHash: newPasswordHash,
         lastPasswordChange: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       // Invalidate all sessions except current (if session management is implemented)
@@ -317,7 +328,7 @@ class UserService {
       await this.updateUserInDB(resetData.userId, {
         passwordHash,
         lastPasswordChange: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       // Remove reset token
@@ -339,7 +350,7 @@ class UserService {
     try {
       const results = {
         success: [],
-        failed: []
+        failed: [],
       };
 
       for (const userId of userIds) {
@@ -366,7 +377,7 @@ class UserService {
               await this.updateUserInDB(userId, {
                 role: parameters.role,
                 permissions: this.getDefaultPermissions(parameters.role),
-                updatedAt: new Date()
+                updatedAt: new Date(),
               });
               results.success.push(userId);
               break;
@@ -387,7 +398,9 @@ class UserService {
         }
       }
 
-      logger.info(`Operação bulk ${operation} executada: ${results.success.length} sucessos, ${results.failed.length} falhas`);
+      logger.info(
+        `Operação bulk ${operation} executada: ${results.success.length} sucessos, ${results.failed.length} falhas`
+      );
       return results;
     } catch (error) {
       logger.error('Erro na operação bulk:', error);
@@ -400,7 +413,7 @@ class UserService {
     const permissionsByRole = {
       admin: ['read', 'write', 'admin', 'user_management', 'system_config'],
       analyst: ['read', 'write', 'incident_analysis', 'report_generation'],
-      user: ['read', 'basic_search']
+      user: ['read', 'basic_search'],
     };
 
     return permissionsByRole[role] || ['read'];
@@ -427,7 +440,7 @@ class UserService {
         fullName: 'Admin Sistema',
         role: 'admin',
         isActive: true,
-        permissions: ['read', 'write', 'admin']
+        permissions: ['read', 'write', 'admin'],
       };
     }
     return null;

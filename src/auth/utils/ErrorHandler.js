@@ -63,7 +63,7 @@ class ErrorHandler {
       method: req.method,
       ip: req.ip,
       userAgent: req.get('User-Agent'),
-      userId: req.user?.id
+      userId: req.user?.id,
     });
 
     // Determine error response based on error type
@@ -72,25 +72,29 @@ class ErrorHandler {
         return res.status(401).json({
           success: false,
           error: 'Authentication required',
-          code: 'AUTH_REQUIRED'
+          code: 'AUTH_REQUIRED',
         });
 
       case 'ForbiddenError':
         return res.status(403).json({
           success: false,
           error: 'Access forbidden',
-          code: 'ACCESS_FORBIDDEN'
+          code: 'ACCESS_FORBIDDEN',
         });
 
       case 'SSOProviderError':
-        this.logger.logSecurityViolation('sso_provider_error', {
-          provider: error.provider,
-          error: error.message
-        }, 'high');
+        this.logger.logSecurityViolation(
+          'sso_provider_error',
+          {
+            provider: error.provider,
+            error: error.message,
+          },
+          'high'
+        );
         return res.status(502).json({
           success: false,
           error: 'SSO provider unavailable',
-          code: 'SSO_PROVIDER_ERROR'
+          code: 'SSO_PROVIDER_ERROR',
         });
 
       case 'ValidationError':
@@ -98,32 +102,36 @@ class ErrorHandler {
           success: false,
           error: error.message,
           code: 'VALIDATION_ERROR',
-          field: error.field
+          field: error.field,
         });
 
       case 'RateLimitError':
-        this.logger.logSecurityViolation('rate_limit_exceeded', {
-          ip: req.ip,
-          path: req.path
-        }, 'medium');
+        this.logger.logSecurityViolation(
+          'rate_limit_exceeded',
+          {
+            ip: req.ip,
+            path: req.path,
+          },
+          'medium'
+        );
         return res.status(429).json({
           success: false,
           error: 'Rate limit exceeded',
-          code: 'RATE_LIMIT_EXCEEDED'
+          code: 'RATE_LIMIT_EXCEEDED',
         });
 
       case 'JsonWebTokenError':
         return res.status(401).json({
           success: false,
           error: 'Invalid token',
-          code: 'INVALID_TOKEN'
+          code: 'INVALID_TOKEN',
         });
 
       case 'TokenExpiredError':
         return res.status(401).json({
           success: false,
           error: 'Token expired',
-          code: 'TOKEN_EXPIRED'
+          code: 'TOKEN_EXPIRED',
         });
 
       default:
@@ -133,7 +141,7 @@ class ErrorHandler {
           success: false,
           error: 'Internal server error',
           code: 'INTERNAL_ERROR',
-          ...(isDevelopment && { details: error.message })
+          ...(isDevelopment && { details: error.message }),
         });
     }
   }
@@ -152,7 +160,7 @@ class ErrorHandler {
       ip: req?.ip,
       userAgent: req?.get('User-Agent'),
       path: req?.path,
-      method: req?.method
+      method: req?.method,
     });
   }
 }
@@ -172,5 +180,5 @@ module.exports = {
   ForbiddenError: ErrorHandler.ForbiddenError,
   SSOProviderError: ErrorHandler.SSOProviderError,
   ValidationError: ErrorHandler.ValidationError,
-  RateLimitError: ErrorHandler.RateLimitError
+  RateLimitError: ErrorHandler.RateLimitError,
 };

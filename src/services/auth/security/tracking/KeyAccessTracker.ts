@@ -77,7 +77,7 @@ export enum KeyAnomalyType {
   RATE_LIMIT_ABUSE = 'RATE_LIMIT_ABUSE',
   SUSPICIOUS_PATTERN = 'SUSPICIOUS_PATTERN',
   EXPIRED_KEY_USAGE = 'EXPIRED_KEY_USAGE',
-  REVOKED_KEY_USAGE = 'REVOKED_KEY_USAGE'
+  REVOKED_KEY_USAGE = 'REVOKED_KEY_USAGE',
 }
 
 export interface KeyAlert {
@@ -138,7 +138,7 @@ export class KeyAccessTracker extends EventEmitter {
       userAgents: new Set(),
       errorPatterns: new Map(),
       riskScore: 0,
-      anomalies: []
+      anomalies: [],
     });
 
     await this.auditService.logEvent({
@@ -151,8 +151,8 @@ export class KeyAccessTracker extends EventEmitter {
       details: {
         keyId: keyInfo.keyId,
         userId: keyInfo.userId,
-        permissions: keyInfo.permissions
-      }
+        permissions: keyInfo.permissions,
+      },
     });
 
     this.emit('keyRegistered', keyInfo);
@@ -161,10 +161,7 @@ export class KeyAccessTracker extends EventEmitter {
   /**
    * Track API key usage
    */
-  async trackKeyUsage(
-    keyId: string,
-    request: KeyUsageRequest
-  ): Promise<KeyUsageResult> {
+  async trackKeyUsage(keyId: string, request: KeyUsageRequest): Promise<KeyUsageResult> {
     const keyInfo = this.keyInfo.get(keyId);
     const pattern = this.keyPatterns.get(keyId);
 
@@ -172,7 +169,7 @@ export class KeyAccessTracker extends EventEmitter {
       return {
         allowed: false,
         reason: 'UNKNOWN_KEY',
-        riskScore: 100
+        riskScore: 100,
       };
     }
 
@@ -182,13 +179,13 @@ export class KeyAccessTracker extends EventEmitter {
         type: KeyAnomalyType.REVOKED_KEY_USAGE,
         severity: 'HIGH',
         description: 'Attempt to use revoked API key',
-        evidence: { request }
+        evidence: { request },
       });
 
       return {
         allowed: false,
         reason: 'REVOKED_KEY',
-        riskScore: 90
+        riskScore: 90,
       };
     }
 
@@ -198,13 +195,13 @@ export class KeyAccessTracker extends EventEmitter {
         type: KeyAnomalyType.EXPIRED_KEY_USAGE,
         severity: 'MEDIUM',
         description: 'Attempt to use expired API key',
-        evidence: { expiresAt: keyInfo.expiresAt, request }
+        evidence: { expiresAt: keyInfo.expiresAt, request },
       });
 
       return {
         allowed: false,
         reason: 'EXPIRED_KEY',
-        riskScore: 60
+        riskScore: 60,
       };
     }
 
@@ -217,14 +214,14 @@ export class KeyAccessTracker extends EventEmitter {
           description: 'Request from non-whitelisted IP',
           evidence: {
             requestIP: request.ipAddress,
-            whitelist: keyInfo.ipWhitelist
-          }
+            whitelist: keyInfo.ipWhitelist,
+          },
         });
 
         return {
           allowed: false,
           reason: 'IP_NOT_WHITELISTED',
-          riskScore: 80
+          riskScore: 80,
         };
       }
     }
@@ -238,14 +235,14 @@ export class KeyAccessTracker extends EventEmitter {
         evidence: {
           endpoint: request.endpoint,
           method: request.method,
-          permissions: keyInfo.permissions
-        }
+          permissions: keyInfo.permissions,
+        },
       });
 
       return {
         allowed: false,
         reason: 'INSUFFICIENT_PERMISSIONS',
-        riskScore: 70
+        riskScore: 70,
       };
     }
 
@@ -258,14 +255,14 @@ export class KeyAccessTracker extends EventEmitter {
         description: 'Rate limit exceeded',
         evidence: {
           currentRate: rateLimitResult.currentRate,
-          limit: rateLimitResult.limit
-        }
+          limit: rateLimitResult.limit,
+        },
       });
 
       return {
         allowed: false,
         reason: 'RATE_LIMIT_EXCEEDED',
-        riskScore: 40
+        riskScore: 40,
       };
     }
 
@@ -288,14 +285,14 @@ export class KeyAccessTracker extends EventEmitter {
       {
         responseTime: request.responseTime,
         riskScore,
-        anomalies: anomalies.length
+        anomalies: anomalies.length,
       }
     );
 
     return {
       allowed: true,
       riskScore,
-      anomalies: anomalies.length > 0 ? anomalies : undefined
+      anomalies: anomalies.length > 0 ? anomalies : undefined,
     };
   }
 
@@ -316,15 +313,17 @@ export class KeyAccessTracker extends EventEmitter {
       pattern,
       statistics: {
         totalRequests: pattern.totalRequests,
-        successRate: pattern.totalRequests > 0 ?
-          (pattern.successfulRequests / pattern.totalRequests) * 100 : 0,
+        successRate:
+          pattern.totalRequests > 0
+            ? (pattern.successfulRequests / pattern.totalRequests) * 100
+            : 0,
         averageRequestsPerHour: this.calculateAverageRequestsPerHour(pattern),
         uniqueIPs: pattern.ipAddresses.size,
         uniqueEndpoints: pattern.endpointUsage.size,
         riskScore: pattern.riskScore,
         anomalyCount: pattern.anomalies.length,
-        lastUsed: pattern.lastUsed
-      }
+        lastUsed: pattern.lastUsed,
+      },
     };
   }
 
@@ -337,7 +336,7 @@ export class KeyAccessTracker extends EventEmitter {
       .map(([keyId, pattern]) => ({
         keyId,
         riskScore: pattern.riskScore,
-        anomalies: pattern.anomalies.length
+        anomalies: pattern.anomalies.length,
       }))
       .sort((a, b) => b.riskScore - a.riskScore);
   }
@@ -364,8 +363,8 @@ export class KeyAccessTracker extends EventEmitter {
       details: {
         keyId,
         reason,
-        revokedBy
-      }
+        revokedBy,
+      },
     });
 
     this.emit('keyRevoked', { keyId, reason, revokedBy });
@@ -425,7 +424,7 @@ export class KeyAccessTracker extends EventEmitter {
       successRate: 1.0,
       averageResponseTime: 0,
       lastAccessed: new Date(),
-      methods: new Set()
+      methods: new Set(),
     };
 
     endpointUsage.requestCount++;
@@ -434,15 +433,16 @@ export class KeyAccessTracker extends EventEmitter {
 
     // Update success rate
     const isSuccess = request.statusCode < 400 ? 1 : 0;
-    endpointUsage.successRate = (
-      (endpointUsage.successRate * (endpointUsage.requestCount - 1)) + isSuccess
-    ) / endpointUsage.requestCount;
+    endpointUsage.successRate =
+      (endpointUsage.successRate * (endpointUsage.requestCount - 1) + isSuccess) /
+      endpointUsage.requestCount;
 
     // Update average response time
     if (request.responseTime) {
-      endpointUsage.averageResponseTime = (
-        (endpointUsage.averageResponseTime * (endpointUsage.requestCount - 1)) + request.responseTime
-      ) / endpointUsage.requestCount;
+      endpointUsage.averageResponseTime =
+        (endpointUsage.averageResponseTime * (endpointUsage.requestCount - 1) +
+          request.responseTime) /
+        endpointUsage.requestCount;
     }
 
     pattern.endpointUsage.set(request.endpoint, endpointUsage);
@@ -458,7 +458,7 @@ export class KeyAccessTracker extends EventEmitter {
       successRate: 1.0,
       firstSeen: new Date(),
       lastSeen: new Date(),
-      suspicious: false
+      suspicious: false,
     };
 
     ipUsage.requestCount++;
@@ -466,9 +466,8 @@ export class KeyAccessTracker extends EventEmitter {
 
     // Update success rate
     const isSuccess = request.statusCode < 400 ? 1 : 0;
-    ipUsage.successRate = (
-      (ipUsage.successRate * (ipUsage.requestCount - 1)) + isSuccess
-    ) / ipUsage.requestCount;
+    ipUsage.successRate =
+      (ipUsage.successRate * (ipUsage.requestCount - 1) + isSuccess) / ipUsage.requestCount;
 
     pattern.ipAddresses.set(request.ipAddress, ipUsage);
   }
@@ -476,7 +475,10 @@ export class KeyAccessTracker extends EventEmitter {
   /**
    * Analyze usage pattern for anomalies
    */
-  private async analyzeUsagePattern(keyId: string, request: KeyUsageRequest): Promise<KeyAnomaly[]> {
+  private async analyzeUsagePattern(
+    keyId: string,
+    request: KeyUsageRequest
+  ): Promise<KeyAnomaly[]> {
     const pattern = this.keyPatterns.get(keyId)!;
     const anomalies: KeyAnomaly[] = [];
 
@@ -518,7 +520,10 @@ export class KeyAccessTracker extends EventEmitter {
   /**
    * Detect volume-based anomalies
    */
-  private detectVolumeAnomaly(pattern: KeyUsagePattern, request: KeyUsageRequest): KeyAnomaly | null {
+  private detectVolumeAnomaly(
+    pattern: KeyUsagePattern,
+    request: KeyUsageRequest
+  ): KeyAnomaly | null {
     const currentHour = new Date().getHours();
     const hourlyCount = pattern.requestFrequency.get(currentHour) || 0;
     const averageHourly = this.calculateAverageRequestsPerHour(pattern);
@@ -534,9 +539,9 @@ export class KeyAccessTracker extends EventEmitter {
         evidence: {
           currentHourlyCount: hourlyCount,
           averageHourly,
-          multiplier: hourlyCount / averageHourly
+          multiplier: hourlyCount / averageHourly,
         },
-        riskScore: Math.min((hourlyCount / averageHourly) * 10, 40)
+        riskScore: Math.min((hourlyCount / averageHourly) * 10, 40),
       };
     }
 
@@ -546,7 +551,10 @@ export class KeyAccessTracker extends EventEmitter {
   /**
    * Detect unusual endpoint access
    */
-  private detectUnusualEndpoint(pattern: KeyUsagePattern, request: KeyUsageRequest): KeyAnomaly | null {
+  private detectUnusualEndpoint(
+    pattern: KeyUsagePattern,
+    request: KeyUsageRequest
+  ): KeyAnomaly | null {
     const endpointUsage = pattern.endpointUsage.get(request.endpoint);
 
     // First time accessing this endpoint
@@ -566,9 +574,9 @@ export class KeyAccessTracker extends EventEmitter {
           evidence: {
             endpoint: request.endpoint,
             method: request.method,
-            firstAccess: true
+            firstAccess: true,
           },
-          riskScore: 35
+          riskScore: 35,
         };
       }
     }
@@ -594,9 +602,9 @@ export class KeyAccessTracker extends EventEmitter {
         evidence: {
           newIP: request.ipAddress,
           knownIPs: Array.from(pattern.ipAddresses.keys()),
-          totalUniqueIPs: pattern.ipAddresses.size + 1
+          totalUniqueIPs: pattern.ipAddresses.size + 1,
         },
-        riskScore: 20
+        riskScore: 20,
       };
     }
 
@@ -610,7 +618,8 @@ export class KeyAccessTracker extends EventEmitter {
     const currentHour = new Date().getHours();
     const totalRequests = Array.from(pattern.requestFrequency.values()).reduce((a, b) => a + b, 0);
 
-    if (totalRequests > 50) { // Only analyze if we have enough data
+    if (totalRequests > 50) {
+      // Only analyze if we have enough data
       const hourlyPercentage = (pattern.requestFrequency.get(currentHour) || 0) / totalRequests;
 
       // Less than 2% of typical activity at this hour
@@ -625,9 +634,9 @@ export class KeyAccessTracker extends EventEmitter {
           evidence: {
             hour: currentHour,
             typicalPercentage: hourlyPercentage * 100,
-            totalRequests
+            totalRequests,
           },
-          riskScore: 10
+          riskScore: 10,
         };
       }
     }
@@ -638,7 +647,10 @@ export class KeyAccessTracker extends EventEmitter {
   /**
    * Detect suspicious patterns
    */
-  private detectSuspiciousPattern(pattern: KeyUsagePattern, request: KeyUsageRequest): KeyAnomaly | null {
+  private detectSuspiciousPattern(
+    pattern: KeyUsagePattern,
+    request: KeyUsageRequest
+  ): KeyAnomaly | null {
     const recentFailures = Array.from(pattern.errorPatterns.values()).reduce((a, b) => a + b, 0);
     const failureRate = recentFailures / pattern.totalRequests;
 
@@ -655,9 +667,9 @@ export class KeyAccessTracker extends EventEmitter {
           failureRate: failureRate * 100,
           totalRequests: pattern.totalRequests,
           recentFailures,
-          errorPatterns: Object.fromEntries(pattern.errorPatterns)
+          errorPatterns: Object.fromEntries(pattern.errorPatterns),
         },
-        riskScore: failureRate * 30
+        riskScore: failureRate * 30,
       };
     }
 
@@ -677,7 +689,7 @@ export class KeyAccessTracker extends EventEmitter {
       ...anomalyData,
       type: anomalyData.type!,
       description: anomalyData.description!,
-      evidence: anomalyData.evidence!
+      evidence: anomalyData.evidence!,
     };
 
     const pattern = this.keyPatterns.get(keyId);
@@ -693,7 +705,7 @@ export class KeyAccessTracker extends EventEmitter {
         keyId,
         anomalyId: anomaly.id,
         anomalyType: anomaly.type,
-        evidence: anomaly.evidence
+        evidence: anomaly.evidence,
       }
     );
 
@@ -709,8 +721,9 @@ export class KeyAccessTracker extends EventEmitter {
     request: KeyUsageRequest
   ): Promise<void> {
     const keyInfo = this.keyInfo.get(keyId)!;
-    const maxSeverity = anomalies.reduce((max, a) =>
-      this.compareSeverity(a.severity, max) > 0 ? a.severity : max, 'LOW'
+    const maxSeverity = anomalies.reduce(
+      (max, a) => (this.compareSeverity(a.severity, max) > 0 ? a.severity : max),
+      'LOW'
     );
 
     const alert: KeyAlert = {
@@ -725,8 +738,8 @@ export class KeyAccessTracker extends EventEmitter {
       recommendedActions: this.generateAlertRecommendations(anomalies),
       metadata: {
         requestCount: anomalies.length,
-        riskScoreTotal: anomalies.reduce((sum, a) => sum + a.riskScore, 0)
-      }
+        riskScoreTotal: anomalies.reduce((sum, a) => sum + a.riskScore, 0),
+      },
     };
 
     this.emit('keyAlert', alert);
@@ -737,9 +750,11 @@ export class KeyAccessTracker extends EventEmitter {
    */
   private hasPermission(keyInfo: APIKeyInfo, endpoint: string, method: string): boolean {
     // Implement permission checking logic
-    return keyInfo.permissions.includes('*') ||
-           keyInfo.permissions.includes(`${method}:${endpoint}`) ||
-           keyInfo.permissions.some(p => endpoint.startsWith(p.replace('*', '')));
+    return (
+      keyInfo.permissions.includes('*') ||
+      keyInfo.permissions.includes(`${method}:${endpoint}`) ||
+      keyInfo.permissions.some(p => endpoint.startsWith(p.replace('*', '')))
+    );
   }
 
   private async checkRateLimit(keyId: string, keyInfo: APIKeyInfo): Promise<RateLimitResult> {
@@ -752,7 +767,7 @@ export class KeyAccessTracker extends EventEmitter {
     return {
       allowed: true,
       currentRate: 10,
-      limit: keyInfo.rateLimit.requestsPerMinute
+      limit: keyInfo.rateLimit.requestsPerMinute,
     };
   }
 
@@ -805,12 +820,13 @@ export class KeyAccessTracker extends EventEmitter {
 
   private calculateAverageRequestsPerHour(pattern: KeyUsagePattern): number {
     const hourlyTotals = Array.from(pattern.requestFrequency.values());
-    return hourlyTotals.length > 0 ?
-      hourlyTotals.reduce((a, b) => a + b, 0) / hourlyTotals.length : 0;
+    return hourlyTotals.length > 0
+      ? hourlyTotals.reduce((a, b) => a + b, 0) / hourlyTotals.length
+      : 0;
   }
 
   private compareSeverity(a: string, b: string): number {
-    const levels = { 'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4 };
+    const levels = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
     return levels[a] - levels[b];
   }
 
@@ -850,7 +866,7 @@ export class KeyAccessTracker extends EventEmitter {
           userAgent: event.userAgent,
           statusCode: event.outcome === 'SUCCESS' ? 200 : 400,
           responseTime: event.details.responseTime,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         };
 
         this.trackKeyUsage(event.details.apiKey, request);

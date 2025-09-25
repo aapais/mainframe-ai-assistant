@@ -70,7 +70,7 @@ export const SSOProviderSchema = z.enum([
   'saml',
   'oidc',
   'github',
-  'gitlab'
+  'gitlab',
 ]);
 
 export type SSOProvider = z.infer<typeof SSOProviderSchema>;
@@ -133,12 +133,14 @@ export const UserSessionSchema = z.object({
   deviceType: z.string().max(50).optional(),
   ipAddress: z.string().max(45),
   userAgent: z.string().max(1000),
-  location: z.object({
-    country: z.string().max(100).optional(),
-    region: z.string().max(100).optional(),
-    city: z.string().max(100).optional(),
-    timezone: z.string().max(50).optional(),
-  }).optional(),
+  location: z
+    .object({
+      country: z.string().max(100).optional(),
+      region: z.string().max(100).optional(),
+      city: z.string().max(100).optional(),
+      timezone: z.string().max(50).optional(),
+    })
+    .optional(),
   status: SessionStatusSchema.default('active'),
   expiresAt: z.date(),
   lastActivity: z.date().default(() => new Date()),
@@ -205,7 +207,7 @@ export const SecurityEventSchema = z.object({
     'unusual_location',
     'multiple_sessions',
     'api_key_created',
-    'api_key_compromised'
+    'api_key_compromised',
   ]),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
   description: z.string().max(1000),

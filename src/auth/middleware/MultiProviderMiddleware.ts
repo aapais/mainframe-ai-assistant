@@ -55,9 +55,11 @@ export class MultiProviderMiddleware {
           provider: config.provider,
           priority: config.priority,
           enabled: Boolean(config.is_enabled),
-          domainRestriction: config.domain_restriction ? JSON.parse(config.domain_restriction) : undefined,
+          domainRestriction: config.domain_restriction
+            ? JSON.parse(config.domain_restriction)
+            : undefined,
           roleMapping: config.role_mapping ? JSON.parse(config.role_mapping) : undefined,
-          claimsMapping: config.claims_mapping ? JSON.parse(config.claims_mapping) : undefined
+          claimsMapping: config.claims_mapping ? JSON.parse(config.claims_mapping) : undefined,
         });
       }
     } catch (error) {
@@ -73,9 +75,9 @@ export class MultiProviderMiddleware {
       try {
         const email = req.query.email as string;
         const domain = req.query.domain as string;
-        
+
         const availableProviders = await this.getProvidersForUser(email, domain);
-        
+
         res.json({
           success: true,
           data: {
@@ -83,16 +85,16 @@ export class MultiProviderMiddleware {
               id: config.id,
               name: config.name,
               provider: config.provider,
-              priority: config.priority
-            }))
-          }
+              priority: config.priority,
+            })),
+          },
         });
       } catch (error) {
         console.error('Get available providers error:', error);
         res.status(500).json({
           success: false,
           error: 'PROVIDER_FETCH_ERROR',
-          message: 'Failed to fetch available providers'
+          message: 'Failed to fetch available providers',
         });
       }
     };
@@ -105,36 +107,36 @@ export class MultiProviderMiddleware {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
         const email = req.body.email || req.query.email;
-        
+
         if (!email) {
           return res.status(400).json({
             success: false,
             error: 'EMAIL_REQUIRED',
-            message: 'Email is required for provider auto-selection'
+            message: 'Email is required for provider auto-selection',
           });
         }
 
         const selection = await this.selectProviderForEmail(email);
-        
+
         if (!selection) {
           return res.status(404).json({
             success: false,
             error: 'NO_PROVIDER_FOUND',
-            message: 'No suitable provider found for this email domain'
+            message: 'No suitable provider found for this email domain',
           });
         }
 
         // Store selection in request for next middleware
         (req as any).selectedProvider = selection.provider;
         (req as any).providerSelection = selection;
-        
+
         next();
       } catch (error) {
         console.error('Auto select provider error:', error);
         res.status(500).json({
           success: false,
           error: 'PROVIDER_SELECTION_ERROR',
-          message: 'Failed to auto-select provider'
+          message: 'Failed to auto-select provider',
         });
       }
     };
@@ -147,22 +149,22 @@ export class MultiProviderMiddleware {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
         const providerId = req.params.providerId || req.body.providerId || req.query.providerId;
-        
+
         if (!providerId) {
           return res.status(400).json({
             success: false,
             error: 'PROVIDER_ID_REQUIRED',
-            message: 'Provider ID is required'
+            message: 'Provider ID is required',
           });
         }
 
         const providerConfig = this.providerConfigs.get(providerId);
-        
+
         if (!providerConfig) {
           return res.status(404).json({
             success: false,
             error: 'PROVIDER_NOT_FOUND',
-            message: 'Provider not found or not configured'
+            message: 'Provider not found or not configured',
           });
         }
 
@@ -170,7 +172,7 @@ export class MultiProviderMiddleware {
           return res.status(403).json({
             success: false,
             error: 'PROVIDER_DISABLED',
-            message: 'Provider is currently disabled'
+            message: 'Provider is currently disabled',
           });
         }
 
@@ -183,21 +185,21 @@ export class MultiProviderMiddleware {
               success: false,
               error: 'DOMAIN_NOT_ALLOWED',
               message: 'Email domain not allowed for this provider',
-              allowedDomains: providerConfig.domainRestriction
+              allowedDomains: providerConfig.domainRestriction,
             });
           }
         }
 
         // Store validated provider in request
         (req as any).validatedProvider = providerConfig;
-        
+
         next();
       } catch (error) {
         console.error('Validate provider error:', error);
         res.status(500).json({
           success: false,
           error: 'PROVIDER_VALIDATION_ERROR',
-          message: 'Failed to validate provider'
+          message: 'Failed to validate provider',
         });
       }
     };
@@ -210,12 +212,12 @@ export class MultiProviderMiddleware {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         const provider = (req as any).validatedProvider || (req as any).selectedProvider;
-        
+
         if (!provider) {
           return res.status(400).json({
             success: false,
             error: 'NO_PROVIDER_SELECTED',
-            message: 'No provider selected or validated'
+            message: 'No provider selected or validated',
           });
         }
 
@@ -246,7 +248,7 @@ export class MultiProviderMiddleware {
         res.status(500).json({
           success: false,
           error: 'PROVIDER_ROUTING_ERROR',
-          message: 'Failed to route to provider'
+          message: 'Failed to route to provider',
         });
       }
     };
@@ -260,34 +262,34 @@ export class MultiProviderMiddleware {
       try {
         const providerId = req.params.providerId;
         const providerConfig = this.providerConfigs.get(providerId);
-        
+
         if (!providerConfig) {
           return res.status(404).json({
             success: false,
             error: 'PROVIDER_NOT_FOUND',
-            message: 'Provider not found for callback'
+            message: 'Provider not found for callback',
           });
         }
 
         // Store provider config for callback processing
         (req as any).providerConfig = providerConfig;
-        
+
         // Log callback attempt
         await this.logProviderEvent(providerId, 'callback_received', {
           ip: this.getClientIP(req),
           userAgent: req.headers['user-agent'],
           state: req.query.state || req.body.state,
           hasCode: !!(req.query.code || req.body.code),
-          hasError: !!(req.query.error || req.body.error)
+          hasError: !!(req.query.error || req.body.error),
         });
-        
+
         next();
       } catch (error) {
         console.error('Handle provider callback error:', error);
         res.status(500).json({
           success: false,
           error: 'CALLBACK_ERROR',
-          message: 'Failed to handle provider callback'
+          message: 'Failed to handle provider callback',
         });
       }
     };
@@ -300,30 +302,30 @@ export class MultiProviderMiddleware {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
         const results: Record<string, any> = {};
-        
+
         for (const [id, config] of this.providerConfigs) {
           results[id] = {
             name: config.name,
             provider: config.provider,
             enabled: config.enabled,
-            healthy: await this.checkProviderEndpoints(config)
+            healthy: await this.checkProviderEndpoints(config),
           };
         }
-        
+
         res.json({
           success: true,
           data: {
             providers: results,
             totalProviders: this.providerConfigs.size,
-            healthyProviders: Object.values(results).filter(p => p.healthy).length
-          }
+            healthyProviders: Object.values(results).filter(p => p.healthy).length,
+          },
         });
       } catch (error) {
         console.error('Provider health check error:', error);
         res.status(500).json({
           success: false,
           error: 'HEALTH_CHECK_ERROR',
-          message: 'Failed to check provider health'
+          message: 'Failed to check provider health',
         });
       }
     };
@@ -338,7 +340,11 @@ export class MultiProviderMiddleware {
     next();
   }
 
-  private async handleMicrosoftProvider(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  private async handleMicrosoftProvider(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     // Microsoft/Azure AD-specific logic
     req.headers['x-provider-type'] = 'microsoft';
     next();
@@ -368,7 +374,11 @@ export class MultiProviderMiddleware {
     next();
   }
 
-  private async handleGenericOIDCProvider(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  private async handleGenericOIDCProvider(
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) {
     // Generic OIDC provider logic
     req.headers['x-provider-type'] = 'oidc';
     next();
@@ -378,15 +388,14 @@ export class MultiProviderMiddleware {
    * Helper methods
    */
   private async getProvidersForUser(email?: string, domain?: string): Promise<ProviderConfig[]> {
-    const providers = Array.from(this.providerConfigs.values())
-      .filter(config => config.enabled);
+    const providers = Array.from(this.providerConfigs.values()).filter(config => config.enabled);
 
     if (!email && !domain) {
       return providers.sort((a, b) => a.priority - b.priority);
     }
 
     const userDomain = domain || (email ? email.split('@')[1] : null);
-    
+
     if (!userDomain) {
       return providers.sort((a, b) => a.priority - b.priority);
     }
@@ -405,21 +414,21 @@ export class MultiProviderMiddleware {
   private async selectProviderForEmail(email: string): Promise<ProviderSelection | null> {
     const domain = email.split('@')[1];
     const availableProviders = await this.getProvidersForUser(email);
-    
+
     if (availableProviders.length === 0) {
       return null;
     }
 
     // Try to find provider with domain restriction first
-    const domainSpecificProvider = availableProviders.find(config => 
-      config.domainRestriction && config.domainRestriction.includes(domain)
+    const domainSpecificProvider = availableProviders.find(
+      config => config.domainRestriction && config.domainRestriction.includes(domain)
     );
 
     if (domainSpecificProvider) {
       return {
         provider: domainSpecificProvider,
         reason: 'domain_match',
-        confidence: 0.9
+        confidence: 0.9,
       };
     }
 
@@ -429,7 +438,7 @@ export class MultiProviderMiddleware {
       return {
         provider: companyProvider,
         reason: 'company_detection',
-        confidence: 0.8
+        confidence: 0.8,
       };
     }
 
@@ -437,7 +446,7 @@ export class MultiProviderMiddleware {
     return {
       provider: availableProviders[0],
       reason: 'default_priority',
-      confidence: 0.5
+      confidence: 0.5,
     };
   }
 
@@ -446,13 +455,14 @@ export class MultiProviderMiddleware {
     const corporatePatterns = {
       microsoft: /\.(microsoft|msft|office|outlook)\.com$/,
       google: /\.(google|gmail|googlemail)\.com$/,
-      okta: /\.(okta|oktapreview)\.com$/
+      okta: /\.(okta|oktapreview)\.com$/,
     };
 
     for (const [providerType, pattern] of Object.entries(corporatePatterns)) {
       if (pattern.test(domain)) {
-        const provider = Array.from(this.providerConfigs.values())
-          .find(config => config.provider === providerType && config.enabled);
+        const provider = Array.from(this.providerConfigs.values()).find(
+          config => config.provider === providerType && config.enabled
+        );
         if (provider) {
           return provider;
         }
@@ -473,18 +483,25 @@ export class MultiProviderMiddleware {
     }
   }
 
-  private async logProviderEvent(providerId: string, eventType: string, metadata: any): Promise<void> {
+  private async logProviderEvent(
+    providerId: string,
+    eventType: string,
+    metadata: any
+  ): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO provider_events (id, provider_id, event_type, metadata, timestamp)
         VALUES (?, ?, ?, ?, ?)
-      `, [
-        crypto.randomUUID(),
-        providerId,
-        eventType,
-        JSON.stringify(metadata),
-        new Date().toISOString()
-      ]);
+      `,
+        [
+          crypto.randomUUID(),
+          providerId,
+          eventType,
+          JSON.stringify(metadata),
+          new Date().toISOString(),
+        ]
+      );
     } catch (error) {
       console.error('Failed to log provider event:', error);
     }
@@ -493,7 +510,7 @@ export class MultiProviderMiddleware {
   private getClientIP(req: Request): string {
     return (
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-real-ip'] as string) ||
       req.connection.remoteAddress ||
       req.socket.remoteAddress ||
       (req as any).ip ||

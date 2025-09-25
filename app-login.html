@@ -240,7 +240,7 @@
 
     <script>
         // Configuração das APIs
-        const API_WINDOWS = 'http://localhost:3004'; // Windows Auth Server
+        const API_WINDOWS = 'http://localhost:3001'; // Windows Auth Server
         const API_BACKEND = 'http://localhost:3001'; // Node.js PostgreSQL Server
 
         let currentUser = null;
@@ -268,7 +268,12 @@
 
             try {
                 // Usa diretamente o servidor Python que está funcionando
-                const response = await fetch(`${API_WINDOWS}/api/auth/windows/login`);
+                const response = await fetch(`${API_WINDOWS}/api/auth/windows/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
                 const data = await response.json();
 
                 console.log('Resposta do servidor:', data);

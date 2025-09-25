@@ -77,7 +77,7 @@ export enum SessionFlagType {
   SUSPICIOUS_TIMING = 'SUSPICIOUS_TIMING',
   GEOLOCATION_JUMP = 'GEOLOCATION_JUMP',
   BROWSER_ANOMALY = 'BROWSER_ANOMALY',
-  INACTIVE_TIMEOUT = 'INACTIVE_TIMEOUT'
+  INACTIVE_TIMEOUT = 'INACTIVE_TIMEOUT',
 }
 
 export interface SessionAlert {
@@ -145,7 +145,7 @@ export class SessionMonitor extends EventEmitter {
       activityLog: [],
       riskScore: 0,
       flags: [],
-      metadata: sessionData.metadata || {}
+      metadata: sessionData.metadata || {},
     };
 
     // Check concurrent sessions
@@ -183,8 +183,8 @@ export class SessionMonitor extends EventEmitter {
         loginMethod: session.loginMethod,
         deviceType: session.deviceInfo.type,
         location: session.geoLocation?.city,
-        riskScore: session.riskScore
-      }
+        riskScore: session.riskScore,
+      },
     });
 
     this.emit('sessionCreated', session);
@@ -208,7 +208,7 @@ export class SessionMonitor extends EventEmitter {
     const sessionActivity: SessionActivity = {
       ...activity,
       timestamp: new Date(),
-      riskScore: activityRiskScore
+      riskScore: activityRiskScore,
     };
 
     // Add to activity log
@@ -278,8 +278,8 @@ export class SessionMonitor extends EventEmitter {
         terminatedBy,
         duration: Date.now() - session.createdAt.getTime(),
         activityCount: session.activityLog.length,
-        riskScore: session.riskScore
-      }
+        riskScore: session.riskScore,
+      },
     });
 
     this.emit('sessionTerminated', { session, reason, terminatedBy });
@@ -311,7 +311,7 @@ export class SessionMonitor extends EventEmitter {
       .filter(session => session.riskScore > 50)
       .map(session => ({
         session,
-        riskFactors: this.identifyRiskFactors(session)
+        riskFactors: this.identifyRiskFactors(session),
       }))
       .sort((a, b) => b.session.riskScore - a.session.riskScore);
   }
@@ -328,11 +328,7 @@ export class SessionMonitor extends EventEmitter {
     let terminatedCount = 0;
 
     for (const session of sessions) {
-      const terminated = await this.terminateSession(
-        session.sessionId,
-        reason,
-        terminatedBy
-      );
+      const terminated = await this.terminateSession(session.sessionId, reason, terminatedBy);
       if (terminated) terminatedCount++;
     }
 
@@ -342,14 +338,17 @@ export class SessionMonitor extends EventEmitter {
   /**
    * Validate session integrity
    */
-  async validateSession(sessionId: string, requestData: SessionValidationData): Promise<ValidationResult> {
+  async validateSession(
+    sessionId: string,
+    requestData: SessionValidationData
+  ): Promise<ValidationResult> {
     const session = this.activeSessions.get(sessionId);
 
     if (!session) {
       return {
         valid: false,
         reason: 'SESSION_NOT_FOUND',
-        riskScore: 100
+        riskScore: 100,
       };
     }
 
@@ -357,7 +356,7 @@ export class SessionMonitor extends EventEmitter {
       return {
         valid: false,
         reason: 'SESSION_INACTIVE',
-        riskScore: 90
+        riskScore: 90,
       };
     }
 
@@ -366,7 +365,7 @@ export class SessionMonitor extends EventEmitter {
       return {
         valid: false,
         reason: 'SESSION_EXPIRED',
-        riskScore: 80
+        riskScore: 80,
       };
     }
 
@@ -378,14 +377,14 @@ export class SessionMonitor extends EventEmitter {
         description: 'IP address changed during session',
         evidence: {
           originalIP: session.ipAddress,
-          currentIP: requestData.ipAddress
-        }
+          currentIP: requestData.ipAddress,
+        },
       });
 
       return {
         valid: false,
         reason: 'IP_MISMATCH',
-        riskScore: 85
+        riskScore: 85,
       };
     }
 
@@ -397,36 +396,37 @@ export class SessionMonitor extends EventEmitter {
         description: 'User agent changed during session',
         evidence: {
           originalUserAgent: session.userAgent,
-          currentUserAgent: requestData.userAgent
-        }
+          currentUserAgent: requestData.userAgent,
+        },
       });
     }
 
     // Check device fingerprint if available
-    if (session.deviceFingerprint &&
-        requestData.deviceFingerprint &&
-        session.deviceFingerprint !== requestData.deviceFingerprint) {
-
+    if (
+      session.deviceFingerprint &&
+      requestData.deviceFingerprint &&
+      session.deviceFingerprint !== requestData.deviceFingerprint
+    ) {
       await this.flagSession(session, {
         type: SessionFlagType.DEVICE_CHANGE,
         severity: 'HIGH',
         description: 'Device fingerprint changed during session',
         evidence: {
           originalFingerprint: session.deviceFingerprint,
-          currentFingerprint: requestData.deviceFingerprint
-        }
+          currentFingerprint: requestData.deviceFingerprint,
+        },
       });
 
       return {
         valid: false,
         reason: 'DEVICE_MISMATCH',
-        riskScore: 90
+        riskScore: 90,
       };
     }
 
     return {
       valid: true,
-      riskScore: session.riskScore
+      riskScore: session.riskScore,
     };
   }
 
@@ -443,19 +443,17 @@ export class SessionMonitor extends EventEmitter {
         description: `User has ${existingSessions.length} concurrent sessions`,
         evidence: {
           currentSessions: existingSessions.length,
-          maxAllowed: this.policy.maxConcurrentSessions
-        }
+          maxAllowed: this.policy.maxConcurrentSessions,
+        },
       });
 
       // Optionally terminate oldest session
       if (this.config.autoTerminateOldestSession) {
-        const oldestSession = existingSessions
-          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+        const oldestSession = existingSessions.sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+        )[0];
 
-        await this.terminateSession(
-          oldestSession.sessionId,
-          'Concurrent session limit exceeded'
-        );
+        await this.terminateSession(oldestSession.sessionId, 'Concurrent session limit exceeded');
       }
     }
   }
@@ -486,10 +484,7 @@ export class SessionMonitor extends EventEmitter {
 
     if (userGeoHistory.length > 0) {
       const lastLocation = userGeoHistory[userGeoHistory.length - 1];
-      const distance = this.calculateDistance(
-        lastLocation.location,
-        session.geoLocation
-      );
+      const distance = this.calculateDistance(lastLocation.location, session.geoLocation);
 
       const timeDiff = (Date.now() - lastLocation.timestamp.getTime()) / 1000; // seconds
       const maxSpeed = 800; // km/h (commercial flight speed)
@@ -505,8 +500,8 @@ export class SessionMonitor extends EventEmitter {
             currentLocation: session.geoLocation,
             distance,
             timeDiff,
-            requiredTime
-          }
+            requiredTime,
+          },
         });
       }
     }
@@ -519,8 +514,8 @@ export class SessionMonitor extends EventEmitter {
         description: 'Login from blocked location',
         evidence: {
           location: session.geoLocation,
-          blockedLocations: this.policy.blockedLocations
-        }
+          blockedLocations: this.policy.blockedLocations,
+        },
       });
     }
   }
@@ -542,8 +537,8 @@ export class SessionMonitor extends EventEmitter {
         description: 'Login from new device',
         evidence: {
           newDevice: session.deviceInfo,
-          knownDevices: Array.from(userDevices.devices.keys())
-        }
+          knownDevices: Array.from(userDevices.devices.keys()),
+        },
       });
     }
   }
@@ -562,8 +557,8 @@ export class SessionMonitor extends EventEmitter {
         description: 'Off-hours login detected',
         evidence: {
           loginHour: hour,
-          timestamp: session.createdAt
-        }
+          timestamp: session.createdAt,
+        },
       });
     }
   }
@@ -586,7 +581,7 @@ export class SessionMonitor extends EventEmitter {
         timestamp: new Date(),
         description: 'Privilege escalation attempt detected',
         evidence: { activity },
-        resolved: false
+        resolved: false,
       });
     }
 
@@ -639,8 +634,10 @@ export class SessionMonitor extends EventEmitter {
 
     // Activity risk contribution
     const recentActivities = session.activityLog.slice(-10); // Last 10 activities
-    const avgActivityRisk = recentActivities.length > 0 ?
-      recentActivities.reduce((sum, a) => sum + a.riskScore, 0) / recentActivities.length : 0;
+    const avgActivityRisk =
+      recentActivities.length > 0
+        ? recentActivities.reduce((sum, a) => sum + a.riskScore, 0) / recentActivities.length
+        : 0;
     score += avgActivityRisk;
 
     // Session duration factor
@@ -666,7 +663,7 @@ export class SessionMonitor extends EventEmitter {
       id: crypto.randomUUID(),
       timestamp: new Date(),
       resolved: false,
-      ...flagData
+      ...flagData,
     };
 
     session.flags.push(flag);
@@ -680,7 +677,7 @@ export class SessionMonitor extends EventEmitter {
         sessionId: session.sessionId,
         userId: session.userId,
         flagId: flag.id,
-        evidence: flag.evidence
+        evidence: flag.evidence,
       }
     );
 
@@ -691,8 +688,9 @@ export class SessionMonitor extends EventEmitter {
    * Generate alert for session issues
    */
   private async generateSessionAlert(session: UserSession, flags: SessionFlag[]): Promise<void> {
-    const maxSeverity = flags.reduce((max, f) =>
-      this.compareSeverity(f.severity, max) > 0 ? f.severity : max, 'LOW'
+    const maxSeverity = flags.reduce(
+      (max, f) => (this.compareSeverity(f.severity, max) > 0 ? f.severity : max),
+      'LOW'
     );
 
     const alert: SessionAlert = {
@@ -708,8 +706,8 @@ export class SessionMonitor extends EventEmitter {
       metadata: {
         flagCount: flags.length,
         sessionAge: Date.now() - session.createdAt.getTime(),
-        riskScore: session.riskScore
-      }
+        riskScore: session.riskScore,
+      },
     };
 
     this.emit('sessionAlert', alert);
@@ -725,7 +723,7 @@ export class SessionMonitor extends EventEmitter {
       deviceRegistry = {
         userId: session.userId,
         devices: new Map(),
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       };
       this.deviceRegistry.set(session.userId, deviceRegistry);
     }
@@ -736,7 +734,7 @@ export class SessionMonitor extends EventEmitter {
       firstSeen: session.createdAt,
       lastSeen: session.createdAt,
       fingerprint: session.deviceFingerprint,
-      trusted: false
+      trusted: false,
     });
 
     deviceRegistry.lastUpdated = new Date();
@@ -750,7 +748,7 @@ export class SessionMonitor extends EventEmitter {
     history.push({
       location: session.geoLocation,
       timestamp: session.createdAt,
-      sessionId: session.sessionId
+      sessionId: session.sessionId,
     });
 
     // Keep only last 50 locations
@@ -773,7 +771,7 @@ export class SessionMonitor extends EventEmitter {
       activityCount: session.activityLog.length,
       flagCount: session.flags.length,
       riskScore: session.riskScore,
-      terminationReason
+      terminationReason,
     };
 
     this.sessionHistory.set(session.sessionId, history);
@@ -794,26 +792,33 @@ export class SessionMonitor extends EventEmitter {
     const dLat = this.toRad(loc2.latitude - loc1.latitude);
     const dLon = this.toRad(loc2.longitude - loc1.longitude);
 
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRad(loc1.latitude)) * Math.cos(this.toRad(loc2.latitude)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRad(loc1.latitude)) *
+        Math.cos(this.toRad(loc2.latitude)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 
   private toRad(value: number): number {
-    return value * Math.PI / 180;
+    return (value * Math.PI) / 180;
   }
 
   private isPrivilegeEscalation(activity: SessionActivity): boolean {
     const privilegeActions = ['admin', 'sudo', 'escalate', 'privilege'];
-    return privilegeActions.some(action =>
-      activity.action.toLowerCase().includes(action)
-    ) && activity.outcome === 'FAILURE';
+    return (
+      privilegeActions.some(action => activity.action.toLowerCase().includes(action)) &&
+      activity.outcome === 'FAILURE'
+    );
   }
 
-  private detectUnusualActivity(session: UserSession, activity: SessionActivity): SessionFlag | null {
+  private detectUnusualActivity(
+    session: UserSession,
+    activity: SessionActivity
+  ): SessionFlag | null {
     // Implementation would analyze activity patterns
     // For now, return null
     return null;
@@ -842,7 +847,7 @@ export class SessionMonitor extends EventEmitter {
   }
 
   private compareSeverity(a: string, b: string): number {
-    const levels = { 'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'CRITICAL': 4 };
+    const levels = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
     return levels[a] - levels[b];
   }
 
@@ -878,7 +883,7 @@ export class SessionMonitor extends EventEmitter {
           action: event.action,
           resource: event.resource,
           outcome: event.outcome,
-          details: event.details
+          details: event.details,
         });
       }
     });
@@ -908,8 +913,8 @@ export class SessionMonitor extends EventEmitter {
           description: 'Session inactive for extended period',
           evidence: {
             inactiveMinutes: Math.floor(inactiveTime / (60 * 1000)),
-            threshold: this.policy.inactivityTimeout
-          }
+            threshold: this.policy.inactivityTimeout,
+          },
         });
 
         if (this.config.autoTerminateInactiveSessions) {

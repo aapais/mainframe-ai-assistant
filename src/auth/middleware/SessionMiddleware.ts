@@ -59,7 +59,7 @@ export class SessionMiddleware {
       trackLocation: true,
       strictIpValidation: false,
       logoutOnSuspiciousActivity: true,
-      ...config
+      ...config,
     };
   }
 
@@ -74,7 +74,7 @@ export class SessionMiddleware {
         }
 
         const sessionInfo = await this.getSessionInfo(req.sessionId);
-        
+
         if (!sessionInfo) {
           return this.terminateSession(res, 'SESSION_NOT_FOUND', 'Sessão não encontrada');
         }
@@ -109,14 +109,14 @@ export class SessionMiddleware {
 
         // Add session info to request
         req.sessionInfo = sessionInfo;
-        
+
         next();
       } catch (error) {
         console.error('Session management error:', error);
         return res.status(500).json({
           success: false,
           error: 'SESSION_ERROR',
-          message: 'Erro interno na gestão de sessão'
+          message: 'Erro interno na gestão de sessão',
         });
       }
     };
@@ -125,17 +125,21 @@ export class SessionMiddleware {
   /**
    * Create new session
    */
-  async createSession(userId: string, req: Request, options: Partial<SessionInfo> = {}): Promise<SessionInfo> {
+  async createSession(
+    userId: string,
+    req: Request,
+    options: Partial<SessionInfo> = {}
+  ): Promise<SessionInfo> {
     try {
       // Clean up expired sessions
       await this.cleanupExpiredSessions(userId);
-      
+
       // Check concurrent session limit
       const activeSessions = await this.getActiveSessions(userId);
       if (activeSessions.length >= this.config.maxConcurrentSessions) {
         // Remove oldest session
-        const oldestSession = activeSessions.sort((a, b) => 
-          new Date(a.lastActivity).getTime() - new Date(b.lastActivity).getTime()
+        const oldestSession = activeSessions.sort(
+          (a, b) => new Date(a.lastActivity).getTime() - new Date(b.lastActivity).getTime()
         )[0];
         await this.expireSession(oldestSession.id);
       }
@@ -143,10 +147,10 @@ export class SessionMiddleware {
       const sessionId = crypto.randomUUID();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + this.config.maxAge);
-      
+
       const device = this.extractDeviceInfo(req);
       const location = await this.extractLocationInfo(req);
-      
+
       const sessionInfo: SessionInfo = {
         id: sessionId,
         userId,
@@ -157,23 +161,37 @@ export class SessionMiddleware {
         expiresAt,
         isActive: true,
         metadata: options.metadata || {},
-        ...options
+        ...options,
       };
 
       // Store session in database
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO user_sessions (
           id, user_id, device_id, device_name, device_type, ip_address, user_agent,
           location_country, location_region, location_city, location_timezone,
           status, expires_at, last_activity, created_at, metadata
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        sessionId, userId, device.id, device.name, device.type,
-        location.ip, req.headers['user-agent'],
-        location.country, location.region, location.city, location.timezone,
-        'active', expiresAt.toISOString(), now.toISOString(), now.toISOString(),
-        JSON.stringify(sessionInfo.metadata)
-      ]);
+      `,
+        [
+          sessionId,
+          userId,
+          device.id,
+          device.name,
+          device.type,
+          location.ip,
+          req.headers['user-agent'],
+          location.country,
+          location.region,
+          location.city,
+          location.timezone,
+          'active',
+          expiresAt.toISOString(),
+          now.toISOString(),
+          now.toISOString(),
+          JSON.stringify(sessionInfo.metadata),
+        ]
+      );
 
       // Cache session for faster access
       await this.cache.set(
@@ -186,7 +204,7 @@ export class SessionMiddleware {
         sessionId,
         device: device.name,
         location: `${location.city}, ${location.country}`,
-        ip: location.ip
+        ip: location.ip,
       });
 
       return sessionInfo;
@@ -201,11 +219,14 @@ export class SessionMiddleware {
    */
   async expireSession(sessionId: string, reason?: string): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         UPDATE user_sessions 
         SET status = 'expired', revoked_at = ?, revoked_reason = ?
         WHERE id = ?
-      `, [new Date().toISOString(), reason || 'expired', sessionId]);
+      `,
+        [new Date().toISOString(), reason || 'expired', sessionId]
+      );
 
       await this.cache.del(`session:${sessionId}`);
 
@@ -215,7 +236,7 @@ export class SessionMiddleware {
         await this.logSecurityEvent(sessionInfo.userId, 'session_expired', {
           sessionId,
           reason,
-          device: sessionInfo.device.name
+          device: sessionInfo.device.name,
         });
       }
     } catch (error) {
@@ -228,11 +249,14 @@ export class SessionMiddleware {
    */
   async revokeSession(sessionId: string, revokedBy?: string, reason?: string): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         UPDATE user_sessions 
         SET status = 'revoked', revoked_at = ?, revoked_by = ?, revoked_reason = ?
         WHERE id = ?
-      `, [new Date().toISOString(), revokedBy, reason || 'logout', sessionId]);
+      `,
+        [new Date().toISOString(), revokedBy, reason || 'logout', sessionId]
+      );
 
       await this.cache.del(`session:${sessionId}`);
 
@@ -242,7 +266,7 @@ export class SessionMiddleware {
           sessionId,
           reason,
           revokedBy,
-          device: sessionInfo.device.name
+          device: sessionInfo.device.name,
         });
       }
     } catch (error) {
@@ -253,7 +277,11 @@ export class SessionMiddleware {
   /**
    * Revoke all user sessions
    */
-  async revokeAllUserSessions(userId: string, exceptSessionId?: string, reason?: string): Promise<void> {
+  async revokeAllUserSessions(
+    userId: string,
+    exceptSessionId?: string,
+    reason?: string
+  ): Promise<void> {
     try {
       let query = `
         UPDATE user_sessions 
@@ -280,7 +308,7 @@ export class SessionMiddleware {
       await this.logSecurityEvent(userId, 'all_sessions_revoked', {
         reason,
         exceptSessionId,
-        count: sessions.length
+        count: sessions.length,
       });
     } catch (error) {
       console.error('Revoke all sessions error:', error);
@@ -293,12 +321,15 @@ export class SessionMiddleware {
   async renewSession(sessionId: string): Promise<void> {
     try {
       const newExpiresAt = new Date(Date.now() + this.config.maxAge);
-      
-      await this.db.run(`
+
+      await this.db.run(
+        `
         UPDATE user_sessions 
         SET expires_at = ?, last_activity = ?
         WHERE id = ? AND status = 'active'
-      `, [newExpiresAt.toISOString(), new Date().toISOString(), sessionId]);
+      `,
+        [newExpiresAt.toISOString(), new Date().toISOString(), sessionId]
+      );
 
       // Update cache
       const sessionInfo = await this.getSessionInfo(sessionId);
@@ -328,9 +359,12 @@ export class SessionMiddleware {
       }
 
       // Get from database
-      const result = await this.db.get(`
+      const result = await this.db.get(
+        `
         SELECT * FROM user_sessions WHERE id = ?
-      `, [sessionId]);
+      `,
+        [sessionId]
+      );
 
       if (!result) {
         return null;
@@ -343,20 +377,20 @@ export class SessionMiddleware {
           id: result.device_id,
           name: result.device_name,
           type: result.device_type,
-          trusted: true // TODO: Implement device trust logic
+          trusted: true, // TODO: Implement device trust logic
         },
         location: {
           ip: result.ip_address,
           country: result.location_country,
           region: result.location_region,
           city: result.location_city,
-          timezone: result.location_timezone
+          timezone: result.location_timezone,
         },
         createdAt: new Date(result.created_at),
         lastActivity: new Date(result.last_activity),
         expiresAt: new Date(result.expires_at),
         isActive: result.status === 'active',
-        metadata: result.metadata ? JSON.parse(result.metadata) : {}
+        metadata: result.metadata ? JSON.parse(result.metadata) : {},
       };
 
       // Cache for future requests
@@ -379,11 +413,14 @@ export class SessionMiddleware {
    */
   async getActiveSessions(userId: string): Promise<SessionInfo[]> {
     try {
-      const results = await this.db.all(`
+      const results = await this.db.all(
+        `
         SELECT * FROM user_sessions 
         WHERE user_id = ? AND status = 'active' AND expires_at > datetime('now')
         ORDER BY last_activity DESC
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       return results.map(result => ({
         id: result.id,
@@ -392,20 +429,20 @@ export class SessionMiddleware {
           id: result.device_id,
           name: result.device_name,
           type: result.device_type,
-          trusted: true
+          trusted: true,
         },
         location: {
           ip: result.ip_address,
           country: result.location_country,
           region: result.location_region,
           city: result.location_city,
-          timezone: result.location_timezone
+          timezone: result.location_timezone,
         },
         createdAt: new Date(result.created_at),
         lastActivity: new Date(result.last_activity),
         expiresAt: new Date(result.expires_at),
         isActive: true,
-        metadata: result.metadata ? JSON.parse(result.metadata) : {}
+        metadata: result.metadata ? JSON.parse(result.metadata) : {},
       }));
     } catch (error) {
       console.error('Get active sessions error:', error);
@@ -416,18 +453,21 @@ export class SessionMiddleware {
   /**
    * Private helper methods
    */
-  private async validateSession(req: AuthenticatedRequest, sessionInfo: SessionInfo): Promise<{
+  private async validateSession(
+    req: AuthenticatedRequest,
+    sessionInfo: SessionInfo
+  ): Promise<{
     valid: boolean;
     reason?: string;
   }> {
     try {
       const currentIp = this.getClientIP(req);
-      
+
       // Validate IP if strict validation is enabled
       if (this.config.strictIpValidation && sessionInfo.location.ip !== currentIp) {
         return {
           valid: false,
-          reason: 'IP address changed - session invalidated for security'
+          reason: 'IP address changed - session invalidated for security',
         };
       }
 
@@ -437,7 +477,7 @@ export class SessionMiddleware {
         if (isSuspicious) {
           return {
             valid: false,
-            reason: 'Suspicious activity detected'
+            reason: 'Suspicious activity detected',
           };
         }
       }
@@ -449,17 +489,22 @@ export class SessionMiddleware {
     }
   }
 
-  private async detectSuspiciousActivity(req: AuthenticatedRequest, sessionInfo: SessionInfo): Promise<boolean> {
+  private async detectSuspiciousActivity(
+    req: AuthenticatedRequest,
+    sessionInfo: SessionInfo
+  ): Promise<boolean> {
     try {
       const currentIp = this.getClientIP(req);
       const currentUserAgent = req.headers['user-agent'] || '';
-      
+
       // Check for significant location change
       if (this.config.trackLocation) {
         const currentLocation = await this.extractLocationInfo(req);
-        if (sessionInfo.location.country && 
-            currentLocation.country && 
-            sessionInfo.location.country !== currentLocation.country) {
+        if (
+          sessionInfo.location.country &&
+          currentLocation.country &&
+          sessionInfo.location.country !== currentLocation.country
+        ) {
           return true; // Different country might be suspicious
         }
       }
@@ -486,7 +531,7 @@ export class SessionMiddleware {
 
   private extractDeviceInfo(req: Request): DeviceInfo {
     const userAgent = req.headers['user-agent'] || '';
-    
+
     // Simple device type detection
     let type: DeviceInfo['type'] = 'unknown';
     if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
@@ -499,13 +544,13 @@ export class SessionMiddleware {
       id: crypto.createHash('sha256').update(userAgent).digest('hex').substring(0, 16),
       name: this.generateDeviceName(userAgent),
       type,
-      trusted: false // New devices start as untrusted
+      trusted: false, // New devices start as untrusted
     };
   }
 
   private async extractLocationInfo(req: Request): Promise<LocationInfo> {
     const ip = this.getClientIP(req);
-    
+
     try {
       // TODO: Implement actual IP geolocation
       // For now, return basic info
@@ -514,7 +559,7 @@ export class SessionMiddleware {
         country: 'Unknown',
         region: 'Unknown',
         city: 'Unknown',
-        timezone: 'UTC'
+        timezone: 'UTC',
       };
     } catch (error) {
       console.error('Location extraction error:', error);
@@ -526,21 +571,24 @@ export class SessionMiddleware {
     // Extract browser and OS info from user agent
     const osMatch = userAgent.match(/(Windows|Mac|Linux|Android|iOS)/);
     const browserMatch = userAgent.match(/(Chrome|Firefox|Safari|Edge|Opera)/);
-    
+
     const os = osMatch ? osMatch[1] : 'Unknown OS';
     const browser = browserMatch ? browserMatch[1] : 'Unknown Browser';
-    
+
     return `${browser} on ${os}`;
   }
 
   private async updateSessionActivity(sessionId: string, req: AuthenticatedRequest): Promise<void> {
     try {
       const now = new Date();
-      await this.db.run(`
+      await this.db.run(
+        `
         UPDATE user_sessions 
         SET last_activity = ?, ip_address = ?, user_agent = ?
         WHERE id = ?
-      `, [now.toISOString(), this.getClientIP(req), req.headers['user-agent'], sessionId]);
+      `,
+        [now.toISOString(), this.getClientIP(req), req.headers['user-agent'], sessionId]
+      );
 
       // Update cache
       const sessionInfo = await this.getSessionInfo(sessionId);
@@ -565,11 +613,14 @@ export class SessionMiddleware {
 
   private async cleanupExpiredSessions(userId: string): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         UPDATE user_sessions 
         SET status = 'expired' 
         WHERE user_id = ? AND status = 'active' AND expires_at <= datetime('now')
-      `, [userId]);
+      `,
+        [userId]
+      );
     } catch (error) {
       console.error('Cleanup expired sessions error:', error);
     }
@@ -578,27 +629,27 @@ export class SessionMiddleware {
   private calculateStringSimilarity(str1: string, str2: string): number {
     // Simple similarity calculation
     if (str1 === str2) return 1;
-    
+
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1;
-    
+
     const distance = this.levenshteinDistance(longer, shorter);
     return (longer.length - distance) / longer.length;
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
     const matrix = [];
-    
+
     for (let i = 0; i <= str2.length; i++) {
       matrix[i] = [i];
     }
-    
+
     for (let j = 0; j <= str1.length; j++) {
       matrix[0][j] = j;
     }
-    
+
     for (let i = 1; i <= str2.length; i++) {
       for (let j = 1; j <= str1.length; j++) {
         if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -612,14 +663,14 @@ export class SessionMiddleware {
         }
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
   private getClientIP(req: Request): string {
     return (
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-real-ip'] as string) ||
       req.connection.remoteAddress ||
       req.socket.remoteAddress ||
       (req as any).ip ||
@@ -633,24 +684,27 @@ export class SessionMiddleware {
       error: code,
       message,
       sessionTerminated: true,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
   private async logSecurityEvent(userId: string, eventType: string, metadata: any): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO security_events (id, user_id, event_type, severity, description, metadata, timestamp)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [
-        crypto.randomUUID(),
-        userId,
-        eventType,
-        'medium',
-        `Session event: ${eventType}`,
-        JSON.stringify(metadata),
-        new Date().toISOString()
-      ]);
+      `,
+        [
+          crypto.randomUUID(),
+          userId,
+          eventType,
+          'medium',
+          `Session event: ${eventType}`,
+          JSON.stringify(metadata),
+          new Date().toISOString(),
+        ]
+      );
     } catch (error) {
       console.error('Security event logging error:', error);
     }

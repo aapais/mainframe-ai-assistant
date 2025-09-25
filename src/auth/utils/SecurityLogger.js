@@ -19,19 +19,21 @@ class SecurityLogger {
       transports: [
         new winston.transports.File({
           filename: path.join(process.cwd(), 'logs', 'security-error.log'),
-          level: 'error'
+          level: 'error',
         }),
         new winston.transports.File({
-          filename: path.join(process.cwd(), 'logs', 'security-combined.log')
-        })
-      ]
+          filename: path.join(process.cwd(), 'logs', 'security-combined.log'),
+        }),
+      ],
     });
 
     // Add console transport in development
     if (process.env.NODE_ENV !== 'production') {
-      this.logger.add(new winston.transports.Console({
-        format: winston.format.simple()
-      }));
+      this.logger.add(
+        new winston.transports.Console({
+          format: winston.format.simple(),
+        })
+      );
     }
   }
 
@@ -62,7 +64,7 @@ class SecurityLogger {
       success,
       ip,
       userAgent,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -73,7 +75,7 @@ class SecurityLogger {
       event,
       userId,
       ...details,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -83,7 +85,7 @@ class SecurityLogger {
       violation_type: type,
       severity,
       ...details,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -94,7 +96,7 @@ class SecurityLogger {
       userId,
       resource,
       ...details,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -113,5 +115,5 @@ module.exports = {
       instance = new SecurityLogger();
     }
     return instance;
-  }
+  },
 };

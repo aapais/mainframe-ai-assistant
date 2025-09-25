@@ -3,7 +3,11 @@
  */
 
 const { SSOService } = require('../../../services/auth/SSOService');
-const { MockGoogleProvider, MockMicrosoftProvider, MockOktaProvider } = require('../mocks/ssoProviders.mock');
+const {
+  MockGoogleProvider,
+  MockMicrosoftProvider,
+  MockOktaProvider,
+} = require('../mocks/ssoProviders.mock');
 const { UserFactory } = require('../factories/userFactory');
 
 describe('SSOService Unit Tests', () => {
@@ -17,19 +21,19 @@ describe('SSOService Unit Tests', () => {
       findByProviderId: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
-      delete: jest.fn()
+      delete: jest.fn(),
     };
 
     mockSessionRepository = {
       create: jest.fn(),
       findByToken: jest.fn(),
       delete: jest.fn(),
-      deleteByUserId: jest.fn()
+      deleteByUserId: jest.fn(),
     };
 
     ssoService = new SSOService({
       userRepository: mockUserRepository,
-      sessionRepository: mockSessionRepository
+      sessionRepository: mockSessionRepository,
     });
   });
 
@@ -78,9 +82,9 @@ describe('SSOService Unit Tests', () => {
     });
 
     it('should throw error for unregistered provider', async () => {
-      await expect(
-        ssoService.getAuthorizationUrl('unknown', 'state')
-      ).rejects.toThrow('Provider unknown is not registered');
+      await expect(ssoService.getAuthorizationUrl('unknown', 'state')).rejects.toThrow(
+        'Provider unknown is not registered'
+      );
     });
   });
 
@@ -102,16 +106,16 @@ describe('SSOService Unit Tests', () => {
           access_token: 'mock-access-token',
           token_type: 'Bearer',
           expires_in: 3600,
-          refresh_token: 'mock-refresh-token'
+          refresh_token: 'mock-refresh-token',
         });
       });
 
       it('should handle invalid authorization code', async () => {
         const code = 'invalid-code';
 
-        await expect(
-          ssoService.exchangeCodeForTokens('google', code)
-        ).rejects.toThrow('Invalid authorization code');
+        await expect(ssoService.exchangeCodeForTokens('google', code)).rejects.toThrow(
+          'Invalid authorization code'
+        );
       });
     });
 
@@ -124,14 +128,14 @@ describe('SSOService Unit Tests', () => {
           email: 'test@example.com',
           name: 'Test User',
           picture: 'https://mock-provider.com/avatar/123.jpg',
-          verified_email: true
+          verified_email: true,
         });
       });
 
       it('should handle invalid access token', async () => {
-        await expect(
-          ssoService.getUserProfile('google', 'invalid-token')
-        ).rejects.toThrow('Invalid access token');
+        await expect(ssoService.getUserProfile('google', 'invalid-token')).rejects.toThrow(
+          'Invalid access token'
+        );
       });
     });
   });
@@ -151,7 +155,7 @@ describe('SSOService Unit Tests', () => {
           email: 'newuser@example.com',
           name: 'New User',
           picture: 'avatar.jpg',
-          verified_email: true
+          verified_email: true,
         };
 
         mockUserRepository.findByEmail.mockResolvedValue(null);
@@ -169,7 +173,7 @@ describe('SSOService Unit Tests', () => {
           avatar: profile.picture,
           provider: 'google',
           providerId: profile.id,
-          isVerified: true
+          isVerified: true,
         });
         expect(user).toEqual(newUser);
       });
@@ -180,12 +184,12 @@ describe('SSOService Unit Tests', () => {
           email: 'existing@example.com',
           name: 'Updated User',
           picture: 'new-avatar.jpg',
-          verified_email: true
+          verified_email: true,
         };
 
         const existingUser = UserFactory.createOAuthUser('google', {
           email: 'existing@example.com',
-          providerId: 'google-123'
+          providerId: 'google-123',
         });
 
         mockUserRepository.findByProviderId.mockResolvedValue(existingUser);
@@ -197,7 +201,7 @@ describe('SSOService Unit Tests', () => {
           firstName: 'Updated',
           lastName: 'User',
           avatar: profile.picture,
-          lastLogin: expect.any(Date)
+          lastLogin: expect.any(Date),
         });
       });
 
@@ -205,20 +209,20 @@ describe('SSOService Unit Tests', () => {
         const profile = {
           id: 'google-456',
           email: 'conflict@example.com',
-          name: 'Conflict User'
+          name: 'Conflict User',
         };
 
         const existingUser = UserFactory.create({
           email: 'conflict@example.com',
-          provider: 'local'
+          provider: 'local',
         });
 
         mockUserRepository.findByEmail.mockResolvedValue(existingUser);
         mockUserRepository.findByProviderId.mockResolvedValue(null);
 
-        await expect(
-          ssoService.handleOAuthCallback('google', profile)
-        ).rejects.toThrow('Email address is already associated with another account');
+        await expect(ssoService.handleOAuthCallback('google', profile)).rejects.toThrow(
+          'Email address is already associated with another account'
+        );
       });
     });
 
@@ -233,14 +237,14 @@ describe('SSOService Unit Tests', () => {
         mockUserRepository.update.mockResolvedValue({
           ...existingUser,
           provider: 'google',
-          providerId: 'google-456'
+          providerId: 'google-456',
         });
 
         const result = await ssoService.linkAccount(userId, provider, providerId);
 
         expect(mockUserRepository.update).toHaveBeenCalledWith(userId, {
           provider,
-          providerId
+          providerId,
         });
         expect(result.provider).toBe('google');
       });
@@ -251,13 +255,13 @@ describe('SSOService Unit Tests', () => {
         const providerId = 'google-456';
 
         const existingLinkedUser = UserFactory.createOAuthUser('google', {
-          providerId: 'google-456'
+          providerId: 'google-456',
         });
         mockUserRepository.findByProviderId.mockResolvedValue(existingLinkedUser);
 
-        await expect(
-          ssoService.linkAccount(userId, provider, providerId)
-        ).rejects.toThrow('Provider account is already linked to another user');
+        await expect(ssoService.linkAccount(userId, provider, providerId)).rejects.toThrow(
+          'Provider account is already linked to another user'
+        );
       });
     });
 
@@ -270,14 +274,14 @@ describe('SSOService Unit Tests', () => {
         mockUserRepository.update.mockResolvedValue({
           ...user,
           provider: 'local',
-          providerId: null
+          providerId: null,
         });
 
         const result = await ssoService.unlinkAccount(userId, provider);
 
         expect(mockUserRepository.update).toHaveBeenCalledWith(userId, {
           provider: 'local',
-          providerId: null
+          providerId: null,
         });
         expect(result.provider).toBe('local');
       });
@@ -299,7 +303,7 @@ describe('SSOService Unit Tests', () => {
           userId: user.id,
           token: 'session-token',
           refreshToken: 'refresh-token',
-          expiresAt: new Date(Date.now() + 3600000)
+          expiresAt: new Date(Date.now() + 3600000),
         };
 
         mockSessionRepository.create.mockResolvedValue(sessionData);
@@ -307,7 +311,7 @@ describe('SSOService Unit Tests', () => {
         const session = await ssoService.createSession(user.id, {
           accessToken: 'access-token',
           refreshToken: 'refresh-token',
-          expiresIn: 3600
+          expiresIn: 3600,
         });
 
         expect(mockSessionRepository.create).toHaveBeenCalled();
@@ -324,16 +328,16 @@ describe('SSOService Unit Tests', () => {
         expect(newTokens).toEqual({
           access_token: 'new-mock-access-token',
           token_type: 'Bearer',
-          expires_in: 3600
+          expires_in: 3600,
         });
       });
 
       it('should handle invalid refresh token', async () => {
         const refreshToken = 'invalid-refresh-token';
 
-        await expect(
-          ssoService.refreshAccessToken('google', refreshToken)
-        ).rejects.toThrow('Invalid refresh token');
+        await expect(ssoService.refreshAccessToken('google', refreshToken)).rejects.toThrow(
+          'Invalid refresh token'
+        );
       });
     });
 
@@ -349,9 +353,9 @@ describe('SSOService Unit Tests', () => {
       it('should handle token revocation failure', async () => {
         const accessToken = 'invalid-token';
 
-        await expect(
-          ssoService.revokeToken('google', accessToken)
-        ).rejects.toThrow('Token revocation failed');
+        await expect(ssoService.revokeToken('google', accessToken)).rejects.toThrow(
+          'Token revocation failed'
+        );
       });
     });
 
@@ -372,15 +376,13 @@ describe('SSOService Unit Tests', () => {
   describe('Error Handling', () => {
     it('should handle network errors gracefully', async () => {
       const mockProvider = new MockGoogleProvider();
-      mockProvider.exchangeCodeForToken = jest.fn().mockRejectedValue(
-        new Error('Network error')
-      );
+      mockProvider.exchangeCodeForToken = jest.fn().mockRejectedValue(new Error('Network error'));
 
       ssoService.registerProvider('google', mockProvider);
 
-      await expect(
-        ssoService.exchangeCodeForTokens('google', 'code')
-      ).rejects.toThrow('Network error');
+      await expect(ssoService.exchangeCodeForTokens('google', 'code')).rejects.toThrow(
+        'Network error'
+      );
     });
 
     it('should handle database errors gracefully', async () => {
@@ -389,15 +391,15 @@ describe('SSOService Unit Tests', () => {
       const profile = {
         id: 'google-123',
         email: 'test@example.com',
-        name: 'Test User'
+        name: 'Test User',
       };
 
       mockUserRepository.findByEmail.mockResolvedValue(null);
       mockUserRepository.findByProviderId.mockResolvedValue(null);
 
-      await expect(
-        ssoService.handleOAuthCallback('google', profile)
-      ).rejects.toThrow('Database error');
+      await expect(ssoService.handleOAuthCallback('google', profile)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 

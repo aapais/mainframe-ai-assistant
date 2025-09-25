@@ -22,7 +22,7 @@ var compileETag = require('./utils').compileETag;
 var compileQueryParser = require('./utils').compileQueryParser;
 var compileTrust = require('./utils').compileTrust;
 var resolve = require('node:path').resolve;
-var once = require('once')
+var once = require('once');
 var Router = require('router');
 
 /**
@@ -37,7 +37,7 @@ var flatten = Array.prototype.flat;
  * Application prototype.
  */
 
-var app = exports = module.exports = {};
+var app = (exports = module.exports = {});
 
 /**
  * Variable for trust proxy inheritance back-compat
@@ -73,12 +73,12 @@ app.init = function init() {
       if (router === null) {
         router = new Router({
           caseSensitive: this.enabled('case sensitive routing'),
-          strict: this.enabled('strict routing')
+          strict: this.enabled('strict routing'),
         });
       }
 
       return router;
-    }
+    },
   });
 };
 
@@ -94,31 +94,33 @@ app.defaultConfiguration = function defaultConfiguration() {
   this.enable('x-powered-by');
   this.set('etag', 'weak');
   this.set('env', env);
-  this.set('query parser', 'simple')
+  this.set('query parser', 'simple');
   this.set('subdomain offset', 2);
   this.set('trust proxy', false);
 
   // trust proxy inherit back-compat
   Object.defineProperty(this.settings, trustProxyDefaultSymbol, {
     configurable: true,
-    value: true
+    value: true,
   });
 
   debug('booting in %s mode', env);
 
   this.on('mount', function onmount(parent) {
     // inherit trust proxy
-    if (this.settings[trustProxyDefaultSymbol] === true
-      && typeof parent.settings['trust proxy fn'] === 'function') {
+    if (
+      this.settings[trustProxyDefaultSymbol] === true &&
+      typeof parent.settings['trust proxy fn'] === 'function'
+    ) {
       delete this.settings['trust proxy'];
       delete this.settings['trust proxy fn'];
     }
 
     // inherit protos
-    Object.setPrototypeOf(this.request, parent.request)
-    Object.setPrototypeOf(this.response, parent.response)
-    Object.setPrototypeOf(this.engines, parent.engines)
-    Object.setPrototypeOf(this.settings, parent.settings)
+    Object.setPrototypeOf(this.request, parent.request);
+    Object.setPrototypeOf(this.response, parent.response);
+    Object.setPrototypeOf(this.engines, parent.engines);
+    Object.setPrototypeOf(this.settings, parent.settings);
   });
 
   // setup locals
@@ -151,10 +153,12 @@ app.defaultConfiguration = function defaultConfiguration() {
 
 app.handle = function handle(req, res, callback) {
   // final handler
-  var done = callback || finalhandler(req, res, {
-    env: this.get('env'),
-    onerror: logerror.bind(this)
-  });
+  var done =
+    callback ||
+    finalhandler(req, res, {
+      env: this.get('env'),
+      onerror: logerror.bind(this),
+    });
 
   // set powered by header
   if (this.enabled('x-powered-by')) {
@@ -166,8 +170,8 @@ app.handle = function handle(req, res, callback) {
   res.req = req;
 
   // alter the prototypes
-  Object.setPrototypeOf(req, this.request)
-  Object.setPrototypeOf(res, this.response)
+  Object.setPrototypeOf(req, this.request);
+  Object.setPrototypeOf(res, this.response);
 
   // setup locals
   if (!res.locals) {
@@ -210,7 +214,7 @@ app.use = function use(fn) {
   var fns = flatten.call(slice.call(arguments, offset), Infinity);
 
   if (fns.length === 0) {
-    throw new TypeError('app.use() requires a middleware function')
+    throw new TypeError('app.use() requires a middleware function');
   }
 
   // get router
@@ -230,8 +234,8 @@ app.use = function use(fn) {
     router.use(path, function mounted_app(req, res, next) {
       var orig = req.app;
       fn.handle(req, res, function (err) {
-        Object.setPrototypeOf(req, orig.request)
-        Object.setPrototypeOf(res, orig.response)
+        Object.setPrototypeOf(req, orig.request);
+        Object.setPrototypeOf(res, orig.response);
         next(err);
       });
     });
@@ -297,9 +301,7 @@ app.engine = function engine(ext, fn) {
   }
 
   // get file extension
-  var extension = ext[0] !== '.'
-    ? '.' + ext
-    : ext;
+  var extension = ext[0] !== '.' ? '.' + ext : ext;
 
   // store engine
   this.engines[extension] = fn;
@@ -373,7 +375,7 @@ app.set = function set(setting, val) {
       // trust proxy inherit back-compat
       Object.defineProperty(this.settings, trustProxyDefaultSymbol, {
         configurable: true,
-        value: false
+        value: false,
       });
 
       break;
@@ -397,9 +399,7 @@ app.set = function set(setting, val) {
  */
 
 app.path = function path() {
-  return this.parent
-    ? this.parent.path() + this.mountpath
-    : '';
+  return this.parent ? this.parent.path() + this.mountpath : '';
 };
 
 /**
@@ -552,13 +552,18 @@ app.render = function render(name, options, callback) {
     view = new View(name, {
       defaultEngine: this.get('view engine'),
       root: this.get('views'),
-      engines: engines
+      engines: engines,
     });
 
     if (!view.path) {
-      var dirs = Array.isArray(view.root) && view.root.length > 1
-        ? 'directories "' + view.root.slice(0, -1).join('", "') + '" or "' + view.root[view.root.length - 1] + '"'
-        : 'directory "' + view.root + '"'
+      var dirs =
+        Array.isArray(view.root) && view.root.length > 1
+          ? 'directories "' +
+            view.root.slice(0, -1).join('", "') +
+            '" or "' +
+            view.root[view.root.length - 1] +
+            '"'
+          : 'directory "' + view.root + '"';
       var err = new Error('Failed to lookup view "' + name + '" in views ' + dirs);
       err.view = view;
       return done(err);
@@ -596,14 +601,14 @@ app.render = function render(name, options, callback) {
  */
 
 app.listen = function listen() {
-  var server = http.createServer(this)
-  var args = Array.prototype.slice.call(arguments)
+  var server = http.createServer(this);
+  var args = Array.prototype.slice.call(arguments);
   if (typeof args[args.length - 1] === 'function') {
-    var done = args[args.length - 1] = once(args[args.length - 1])
-    server.once('error', done)
+    var done = (args[args.length - 1] = once(args[args.length - 1]));
+    server.once('error', done);
   }
-  return server.listen.apply(server, args)
-}
+  return server.listen.apply(server, args);
+};
 
 /**
  * Log error using console.error.

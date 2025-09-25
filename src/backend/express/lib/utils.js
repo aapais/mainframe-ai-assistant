@@ -15,7 +15,7 @@
 var { METHODS } = require('node:http');
 var contentType = require('content-type');
 var etag = require('etag');
-var mime = require('mime-types')
+var mime = require('mime-types');
 var proxyaddr = require('proxy-addr');
 var qs = require('qs');
 var querystring = require('querystring');
@@ -24,7 +24,7 @@ var querystring = require('querystring');
  * A list of lowercased HTTP methods that are supported by Node.js.
  * @api private
  */
-exports.methods = METHODS.map((method) => method.toLowerCase());
+exports.methods = METHODS.map(method => method.toLowerCase());
 
 /**
  * Return strong ETag for `body`.
@@ -35,7 +35,7 @@ exports.methods = METHODS.map((method) => method.toLowerCase());
  * @api private
  */
 
-exports.etag = createETagGenerator({ weak: false })
+exports.etag = createETagGenerator({ weak: false });
 
 /**
  * Return weak ETag for `body`.
@@ -46,7 +46,7 @@ exports.etag = createETagGenerator({ weak: false })
  * @api private
  */
 
-exports.wetag = createETagGenerator({ weak: true })
+exports.wetag = createETagGenerator({ weak: true });
 
 /**
  * Normalize the given `type`, for example "html" becomes "text/html".
@@ -56,10 +56,10 @@ exports.wetag = createETagGenerator({ weak: true })
  * @api private
  */
 
-exports.normalizeType = function(type){
+exports.normalizeType = function (type) {
   return ~type.indexOf('/')
     ? acceptParams(type)
-    : { value: (mime.lookup(type) || 'application/octet-stream'), params: {} }
+    : { value: mime.lookup(type) || 'application/octet-stream', params: {} };
 };
 
 /**
@@ -70,10 +70,9 @@ exports.normalizeType = function(type){
  * @api private
  */
 
-exports.normalizeTypes = function(types) {
+exports.normalizeTypes = function (types) {
   return types.map(exports.normalizeType);
 };
-
 
 /**
  * Parse accept params `str` returning an
@@ -84,7 +83,7 @@ exports.normalizeTypes = function(types) {
  * @api private
  */
 
-function acceptParams (str) {
+function acceptParams(str) {
   var length = str.length;
   var colonIndex = str.indexOf(';');
   var index = colonIndex === -1 ? length : colonIndex;
@@ -125,7 +124,7 @@ function acceptParams (str) {
  * @api private
  */
 
-exports.compileETag = function(val) {
+exports.compileETag = function (val) {
   var fn;
 
   if (typeof val === 'function') {
@@ -147,7 +146,7 @@ exports.compileETag = function(val) {
   }
 
   return fn;
-}
+};
 
 /**
  * Compile "query parser" value to function.
@@ -179,7 +178,7 @@ exports.compileQueryParser = function compileQueryParser(val) {
   }
 
   return fn;
-}
+};
 
 /**
  * Compile "proxy trust" value to function.
@@ -189,27 +188,32 @@ exports.compileQueryParser = function compileQueryParser(val) {
  * @api private
  */
 
-exports.compileTrust = function(val) {
+exports.compileTrust = function (val) {
   if (typeof val === 'function') return val;
 
   if (val === true) {
     // Support plain true/false
-    return function(){ return true };
+    return function () {
+      return true;
+    };
   }
 
   if (typeof val === 'number') {
     // Support trusting hop count
-    return function(a, i){ return i < val };
+    return function (a, i) {
+      return i < val;
+    };
   }
 
   if (typeof val === 'string') {
     // Support comma-separated values
-    val = val.split(',')
-      .map(function (v) { return v.trim() })
+    val = val.split(',').map(function (v) {
+      return v.trim();
+    });
   }
 
   return proxyaddr.compile(val || []);
-}
+};
 
 /**
  * Set the charset in a given Content-Type string.
@@ -244,14 +248,12 @@ exports.setCharset = function setCharset(type, charset) {
  * @private
  */
 
-function createETagGenerator (options) {
-  return function generateETag (body, encoding) {
-    var buf = !Buffer.isBuffer(body)
-      ? Buffer.from(body, encoding)
-      : body
+function createETagGenerator(options) {
+  return function generateETag(body, encoding) {
+    var buf = !Buffer.isBuffer(body) ? Buffer.from(body, encoding) : body;
 
-    return etag(buf, options)
-  }
+    return etag(buf, options);
+  };
 }
 
 /**
@@ -264,6 +266,6 @@ function createETagGenerator (options) {
 
 function parseExtendedQueryString(str) {
   return qs.parse(str, {
-    allowPrototypes: true
+    allowPrototypes: true,
   });
 }

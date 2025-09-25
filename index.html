@@ -82,6 +82,32 @@
                 // Adiciona informações do usuário ao objeto window para uso global
                 window.currentUser = user;
                 window.authToken = authToken;
+
+                // Apply saved settings if they exist
+                if (user.settings) {
+                    console.log('📋 Aplicando configurações salvas:', user.settings);
+
+                    // Apply theme
+                    if (user.settings.theme) {
+                        document.body.classList.remove('light', 'dark');
+                        document.body.classList.add(user.settings.theme);
+                        localStorage.setItem('theme', user.settings.theme);
+                    }
+
+                    // Apply language
+                    if (user.settings.language) {
+                        localStorage.setItem('language', user.settings.language);
+                        // If i18n is available, set the language
+                        if (window.i18n && window.i18n.setLanguage) {
+                            window.i18n.setLanguage(user.settings.language);
+                        }
+                    }
+
+                    // Store other settings
+                    if (user.settings.notifications !== undefined) {
+                        localStorage.setItem('notifications', user.settings.notifications);
+                    }
+                }
             } catch (error) {
                 console.error('❌ Erro ao processar dados de autenticação:', error);
                 localStorage.removeItem('auth_token');
@@ -2734,7 +2760,7 @@
                         React.createElement(window.LanguageModal, {
                             isOpen: showLanguageModal,
                             onClose: () => setShowLanguageModal(false),
-                            userId: currentUser?.id || 1
+                            userId: window.currentUser?.id
                         })
                     )}
 
@@ -2743,7 +2769,7 @@
                         React.createElement(window.ThemeModal, {
                             isOpen: showThemeModal,
                             onClose: () => setShowThemeModal(false),
-                            userId: currentUser?.id || 1
+                            userId: window.currentUser?.id
                         })
                     )}
 

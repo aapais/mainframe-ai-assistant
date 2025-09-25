@@ -68,7 +68,13 @@ export interface MFAMethod {
 export interface SecurityEvent {
   id: string;
   userId: string;
-  type: 'login' | 'logout' | 'password_change' | 'mfa_setup' | 'api_key_created' | 'suspicious_activity';
+  type:
+    | 'login'
+    | 'logout'
+    | 'password_change'
+    | 'mfa_setup'
+    | 'api_key_created'
+    | 'suspicious_activity';
   description: string;
   ipAddress: string;
   userAgent: string;

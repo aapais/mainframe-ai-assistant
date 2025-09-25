@@ -1,6 +1,7 @@
 # SSO Authentication Test Suite
 
-Comprehensive test suite for the SSO (Single Sign-On) authentication system with >90% code coverage.
+Comprehensive test suite for the SSO (Single Sign-On) authentication system
+with >90% code coverage.
 
 ## 📁 Test Structure
 
@@ -88,6 +89,7 @@ npm run test:performance-suite
 ## 🧪 Test Categories
 
 ### Unit Tests (`/unit`)
+
 - **SSOService**: OAuth provider registration, token exchange, user management
 - **JWTProvider**: Token generation, validation, refresh
 - **AuthMiddleware**: Request authentication, authorization
@@ -95,6 +97,7 @@ npm run test:performance-suite
 - **SessionManager**: Session creation, validation, cleanup
 
 ### Integration Tests (`/integration`)
+
 - **OAuth Flow**: Complete OAuth authentication flow
 - **Session Management**: Session lifecycle management
 - **Account Linking**: Multi-provider account linking
@@ -102,6 +105,7 @@ npm run test:performance-suite
 - **Database Integration**: Database operations and transactions
 
 ### Security Tests (`/security`)
+
 - **Injection Attacks**: SQL injection, XSS, command injection
 - **Authentication Bypass**: State manipulation, token tampering
 - **Session Security**: Session fixation, hijacking prevention
@@ -109,6 +113,7 @@ npm run test:performance-suite
 - **Input Validation**: Malicious input handling
 
 ### Performance Tests (`/performance`)
+
 - **OAuth Endpoints**: Response time benchmarks
 - **Token Validation**: High-frequency validation performance
 - **Database Queries**: Query optimization validation
@@ -116,6 +121,7 @@ npm run test:performance-suite
 - **Concurrent Load**: Multi-user scenario testing
 
 ### E2E Tests (`/e2e`)
+
 - **Login Components**: OAuth provider selection, authentication flow
 - **Dashboard**: User profile display, navigation
 - **Profile Management**: User information updates
@@ -123,12 +129,14 @@ npm run test:performance-suite
 - **Accessibility**: Screen reader support, keyboard navigation
 
 ### Load Tests (`/load`)
+
 - **Concurrent Authentication**: 1000+ concurrent OAuth flows
 - **Sustained Load**: Long-duration load testing
 - **Resource Exhaustion**: Connection pool and memory limits
 - **Failure Recovery**: Error rate handling and recovery
 
 ### Penetration Tests (`/penetration`)
+
 - **Authentication Bypass**: State parameter attacks, JWT manipulation
 - **Privilege Escalation**: Parameter pollution, method override
 - **Data Exfiltration**: Information disclosure, directory traversal
@@ -138,6 +146,7 @@ npm run test:performance-suite
 ## 🎭 Mock System
 
 ### Mock Providers (`/mocks`)
+
 - **MockGoogleProvider**: Google OAuth simulation
 - **MockMicrosoftProvider**: Microsoft OAuth simulation
 - **MockOktaProvider**: Okta SAML simulation
@@ -145,6 +154,7 @@ npm run test:performance-suite
 - **MockSAMLProvider**: SAML authentication simulation
 
 ### Test Data Factories (`/factories`)
+
 - **UserFactory**: User object generation with various roles and providers
 - **SessionFactory**: Session data with different states
 - **AuthEventFactory**: Authentication event logs including failures
@@ -152,6 +162,7 @@ npm run test:performance-suite
 ## ⚙️ Configuration
 
 ### Test Environment Variables
+
 ```bash
 NODE_ENV=test
 JWT_SECRET=test-secret-key
@@ -161,11 +172,13 @@ TEST_DATABASE_URL=sqlite::memory:
 ```
 
 ### Coverage Thresholds
+
 - **Global**: 90% for branches, functions, lines, statements
 - **Services**: 95% for core authentication services
 - **Critical Components**: 100% for security-critical functions
 
 ### Timeout Configuration
+
 - **Unit Tests**: 5 seconds
 - **Integration Tests**: 30 seconds
 - **Security Tests**: 30 seconds
@@ -176,18 +189,21 @@ TEST_DATABASE_URL=sqlite::memory:
 ## 📊 Test Reporting
 
 ### Coverage Reports
+
 - **Text**: Console output with coverage summary
 - **HTML**: Detailed browser-viewable report
 - **LCOV**: CI/CD integration format
 - **JSON**: Machine-readable coverage data
 
 ### Performance Reports
+
 - **Response Times**: P50, P75, P90, P95, P99 percentiles
 - **Throughput**: Requests per second
 - **Resource Usage**: Memory, CPU, handles
 - **Error Rates**: Success/failure ratios
 
 ### Security Reports
+
 - **Vulnerability Scan**: Known attack pattern results
 - **Penetration Test**: Advanced attack scenario outcomes
 - **Compliance**: Security best practice adherence
@@ -235,8 +251,9 @@ describe('Test Suite Name', () => {
     it('should handle error case', async () => {
       const invalidData = UserFactory.create({ invalid: true });
 
-      await expect(testInstance.method(invalidData))
-        .rejects.toThrow('Expected error message');
+      await expect(testInstance.method(invalidData)).rejects.toThrow(
+        'Expected error message'
+      );
     });
   });
 });
@@ -271,13 +288,13 @@ describe('Test Suite Name', () => {
 
 ### Target Performance Metrics
 
-| Operation | Target Time | Acceptable Time |
-|-----------|-------------|----------------|
-| OAuth Authorization | <50ms | <100ms |
-| OAuth Callback (New User) | <200ms | <500ms |
-| OAuth Callback (Existing User) | <100ms | <200ms |
-| JWT Validation | <5ms | <20ms |
-| Profile Update | <100ms | <300ms |
+| Operation                      | Target Time | Acceptable Time |
+| ------------------------------ | ----------- | --------------- |
+| OAuth Authorization            | <50ms       | <100ms          |
+| OAuth Callback (New User)      | <200ms      | <500ms          |
+| OAuth Callback (Existing User) | <100ms      | <200ms          |
+| JWT Validation                 | <5ms        | <20ms           |
+| Profile Update                 | <100ms      | <300ms          |
 
 ### Load Testing Scenarios
 
@@ -289,12 +306,14 @@ describe('Test Suite Name', () => {
 ## 🎯 Coverage Goals
 
 ### Current Coverage Status
+
 - **Unit Tests**: 95%+ for core services
 - **Integration Tests**: 90%+ for complete flows
 - **Security Tests**: 100% for critical vulnerabilities
 - **E2E Tests**: 85%+ for user journeys
 
 ### Coverage Monitoring
+
 - **Branch Coverage**: Ensure all code paths are tested
 - **Function Coverage**: All functions have at least one test
 - **Line Coverage**: All executable lines are covered
@@ -335,6 +354,6 @@ jest --detectOpenHandles
 
 ---
 
-**Test Coverage Goal**: >90% across all categories
-**Security Focus**: Zero tolerance for authentication vulnerabilities
-**Performance Standard**: Sub-second response times for all operations
+**Test Coverage Goal**: >90% across all categories **Security Focus**: Zero
+tolerance for authentication vulnerabilities **Performance Standard**:
+Sub-second response times for all operations

@@ -24,8 +24,8 @@ class PerformanceMetrics {
       resourceUsage: {
         cpu: [],
         memory: [],
-        handles: []
-      }
+        handles: [],
+      },
     };
     this.startTime = null;
     this.endTime = null;
@@ -47,13 +47,13 @@ class PerformanceMetrics {
       duration,
       success,
       statusCode,
-      timestamp: performance.now()
+      timestamp: performance.now(),
     });
 
     if (!success) {
       this.metrics.errors.push({
         statusCode,
-        timestamp: performance.now()
+        timestamp: performance.now(),
       });
     }
   }
@@ -66,13 +66,13 @@ class PerformanceMetrics {
         heapUsed: usage.heapUsed,
         heapTotal: usage.heapTotal,
         external: usage.external,
-        rss: usage.rss
+        rss: usage.rss,
       });
 
       // Get handle count (approximation)
       this.metrics.resourceUsage.handles.push({
         timestamp: performance.now(),
-        count: process._getActiveHandles?.()?.length || 0
+        count: process._getActiveHandles?.()?.length || 0,
       });
     }, 1000);
   }
@@ -98,7 +98,7 @@ class PerformanceMetrics {
         p99: this.getPercentile(durations, 99),
         min: Math.min(...durations),
         max: Math.max(...durations),
-        avg: durations.reduce((a, b) => a + b, 0) / durations.length
+        avg: durations.reduce((a, b) => a + b, 0) / durations.length,
       };
     }
 
@@ -120,18 +120,20 @@ class PerformanceMetrics {
         failedRequests: this.metrics.errors.length,
         throughput: Math.round(this.metrics.throughput * 100) / 100,
         errorRate: Math.round(this.metrics.errorRate * 100) / 100,
-        duration: Math.round(this.endTime - this.startTime)
+        duration: Math.round(this.endTime - this.startTime),
       },
       responseTime: this.metrics.responseTimePercentiles,
       resourceUsage: {
         peakMemory: Math.max(...this.metrics.resourceUsage.memory.map(m => m.heapUsed)),
-        avgMemory: this.metrics.resourceUsage.memory.reduce((a, m) => a + m.heapUsed, 0) / this.metrics.resourceUsage.memory.length,
-        peakHandles: Math.max(...this.metrics.resourceUsage.handles.map(h => h.count))
+        avgMemory:
+          this.metrics.resourceUsage.memory.reduce((a, m) => a + m.heapUsed, 0) /
+          this.metrics.resourceUsage.memory.length,
+        peakHandles: Math.max(...this.metrics.resourceUsage.handles.map(h => h.count)),
       },
       errors: this.metrics.errors.reduce((acc, error) => {
         acc[error.statusCode] = (acc[error.statusCode] || 0) + 1;
         return acc;
-      }, {})
+      }, {}),
     };
   }
 }
@@ -144,7 +146,7 @@ class LoadTestRunner {
       duration: options.duration || 60000, // 1 minute
       maxRequests: options.maxRequests || Infinity,
       rampUpTime: options.rampUpTime || 10000, // 10 seconds
-      ...options
+      ...options,
     };
     this.metrics = new PerformanceMetrics();
   }
@@ -154,7 +156,9 @@ class LoadTestRunner {
       throw new Error('LoadTestRunner must be run in main thread');
     }
 
-    console.log(`Starting load test with ${this.options.concurrency} workers for ${this.options.duration}ms`);
+    console.log(
+      `Starting load test with ${this.options.concurrency} workers for ${this.options.duration}ms`
+    );
 
     this.metrics.start();
 
@@ -167,14 +171,14 @@ class LoadTestRunner {
         workerData: {
           workerId: i,
           testOptions: this.options,
-          testType: 'worker'
-        }
+          testType: 'worker',
+        },
       });
 
       workers.push(worker);
 
       const workerPromise = new Promise((resolve, reject) => {
-        worker.on('message', (data) => {
+        worker.on('message', data => {
           if (data.type === 'metrics') {
             data.requests.forEach(req => {
               this.metrics.addRequest(req.duration, req.success, req.statusCode);
@@ -183,7 +187,7 @@ class LoadTestRunner {
         });
 
         worker.on('error', reject);
-        worker.on('exit', (code) => {
+        worker.on('exit', code => {
           if (code !== 0) {
             reject(new Error(`Worker stopped with exit code ${code}`));
           } else {
@@ -238,25 +242,24 @@ if (!isMainThread && workerData?.testType === 'worker') {
           duration,
           success: Math.random() > 0.05, // 5% error rate simulation
           statusCode: Math.random() > 0.05 ? 200 : 500,
-          timestamp: requestEnd
+          timestamp: requestEnd,
         });
 
         // Small delay to prevent overwhelming the system
         await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
-
       } catch (error) {
         requests.push({
           duration: 0,
           success: false,
           statusCode: 500,
-          timestamp: performance.now()
+          timestamp: performance.now(),
         });
       }
     }
 
     parentPort.postMessage({
       type: 'metrics',
-      requests
+      requests,
     });
   };
 
@@ -275,16 +278,16 @@ describe('SSO System Load Tests', () => {
     jwtProvider = new MockJWTProvider();
 
     const userRepository = {
-      findByEmail: async (email) => mockDatabase.get(`email:${email}`),
-      findByProviderId: async (providerId) => mockDatabase.get(`provider:${providerId}`),
-      create: async (userData) => {
+      findByEmail: async email => mockDatabase.get(`email:${email}`),
+      findByProviderId: async providerId => mockDatabase.get(`provider:${providerId}`),
+      create: async userData => {
         const user = { ...userData, id: `user-${Date.now()}-${Math.random()}` };
         mockDatabase.set(`email:${user.email}`, user);
         if (user.providerId) {
           mockDatabase.set(`provider:${user.providerId}`, user);
         }
         return user;
-      }
+      },
     };
 
     ssoService = new SSOService({ userRepository, jwtProvider });
@@ -298,7 +301,7 @@ describe('SSO System Load Tests', () => {
     for (let i = 0; i < 1000; i++) {
       const user = UserFactory.create({
         email: `loadtest${i}@example.com`,
-        providerId: `google-${i}`
+        providerId: `google-${i}`,
       });
       await userRepository.create(user);
     }
@@ -322,8 +325,8 @@ describe('SSO System Load Tests', () => {
       const results = await Promise.allSettled(promises);
       const endTime = performance.now();
 
-      const successful = results.filter(result =>
-        result.status === 'fulfilled' && result.value.status === 302
+      const successful = results.filter(
+        result => result.status === 'fulfilled' && result.value.status === 302
       );
       const failed = results.filter(result => result.status === 'rejected');
 
@@ -334,7 +337,7 @@ describe('SSO System Load Tests', () => {
         Total Requests: ${concurrentRequests}
         Successful: ${successful.length}
         Failed: ${failed.length}
-        Success Rate: ${(successful.length / concurrentRequests * 100).toFixed(2)}%
+        Success Rate: ${((successful.length / concurrentRequests) * 100).toFixed(2)}%
         Duration: ${duration.toFixed(2)}ms
         Throughput: ${throughput.toFixed(2)} requests/second`);
 
@@ -346,7 +349,7 @@ describe('SSO System Load Tests', () => {
       const loadTestRunner = new LoadTestRunner({
         concurrency: 20,
         duration: 30000, // 30 seconds
-        rampUpTime: 5000   // 5 seconds ramp-up
+        rampUpTime: 5000, // 5 seconds ramp-up
       });
 
       // Custom test function for OAuth flow
@@ -354,7 +357,8 @@ describe('SSO System Load Tests', () => {
         const requests = [];
         const startTime = performance.now();
 
-        while (performance.now() - startTime < 25000) { // Run for 25 seconds
+        while (performance.now() - startTime < 25000) {
+          // Run for 25 seconds
           try {
             const requestId = Math.floor(Math.random() * 10000);
             const requestStart = performance.now();
@@ -370,15 +374,14 @@ describe('SSO System Load Tests', () => {
               duration,
               success: response.status === 302,
               statusCode: response.status,
-              timestamp: requestEnd
+              timestamp: requestEnd,
             });
-
           } catch (error) {
             requests.push({
               duration: 0,
               success: false,
               statusCode: error.status || 500,
-              timestamp: performance.now()
+              timestamp: performance.now(),
             });
           }
 
@@ -399,15 +402,16 @@ describe('SSO System Load Tests', () => {
       const allRequests = results.flat();
 
       const successful = allRequests.filter(req => req.success);
-      const avgResponseTime = successful.reduce((sum, req) => sum + req.duration, 0) / successful.length;
-      const p95ResponseTime = successful
-        .map(req => req.duration)
-        .sort((a, b) => a - b)[Math.floor(0.95 * successful.length)];
+      const avgResponseTime =
+        successful.reduce((sum, req) => sum + req.duration, 0) / successful.length;
+      const p95ResponseTime = successful.map(req => req.duration).sort((a, b) => a - b)[
+        Math.floor(0.95 * successful.length)
+      ];
 
       console.log(`Sustained Load Test Results:
         Total Requests: ${allRequests.length}
         Successful Requests: ${successful.length}
-        Success Rate: ${(successful.length / allRequests.length * 100).toFixed(2)}%
+        Success Rate: ${((successful.length / allRequests.length) * 100).toFixed(2)}%
         Average Response Time: ${avgResponseTime.toFixed(2)}ms
         P95 Response Time: ${p95ResponseTime.toFixed(2)}ms`);
 
@@ -422,10 +426,12 @@ describe('SSO System Load Tests', () => {
       // Pre-generate tokens
       const tokens = [];
       for (let i = 0; i < 100; i++) {
-        tokens.push(jwtProvider.generateToken({
-          userId: `user-${i}`,
-          exp: Math.floor(Date.now() / 1000) + 3600
-        }));
+        tokens.push(
+          jwtProvider.generateToken({
+            userId: `user-${i}`,
+            exp: Math.floor(Date.now() / 1000) + 3600,
+          })
+        );
       }
 
       const concurrentRequests = 2000;
@@ -436,18 +442,15 @@ describe('SSO System Load Tests', () => {
       for (let i = 0; i < concurrentRequests; i++) {
         const token = tokens[i % tokens.length];
         promises.push(
-          request(app)
-            .get('/protected')
-            .set('Authorization', `Bearer ${token}`)
-            .timeout(1000)
+          request(app).get('/protected').set('Authorization', `Bearer ${token}`).timeout(1000)
         );
       }
 
       const results = await Promise.allSettled(promises);
       const endTime = performance.now();
 
-      const successful = results.filter(result =>
-        result.status === 'fulfilled' && result.value.status === 200
+      const successful = results.filter(
+        result => result.status === 'fulfilled' && result.value.status === 200
       );
 
       const duration = endTime - startTime;
@@ -456,7 +459,7 @@ describe('SSO System Load Tests', () => {
       console.log(`Token Validation Load Test Results:
         Total Requests: ${concurrentRequests}
         Successful: ${successful.length}
-        Success Rate: ${(successful.length / concurrentRequests * 100).toFixed(2)}%
+        Success Rate: ${((successful.length / concurrentRequests) * 100).toFixed(2)}%
         Duration: ${duration.toFixed(2)}ms
         Throughput: ${throughput.toFixed(2)} requests/second`);
 
@@ -470,7 +473,7 @@ describe('SSO System Load Tests', () => {
       const metrics = {
         oauth: { count: 0, totalTime: 0, errors: 0 },
         validation: { count: 0, totalTime: 0, errors: 0 },
-        profile: { count: 0, totalTime: 0, errors: 0 }
+        profile: { count: 0, totalTime: 0, errors: 0 },
       };
 
       for (let i = 0; i < iterations; i++) {
@@ -494,12 +497,11 @@ describe('SSO System Load Tests', () => {
                 metrics.oauth.errors++;
               })
           );
-
         } else if (operation < 0.8) {
           // Token validation (read operation)
           const token = jwtProvider.generateToken({
             userId: `user-${i}`,
-            exp: Math.floor(Date.now() / 1000) + 3600
+            exp: Math.floor(Date.now() / 1000) + 3600,
           });
 
           const startTime = performance.now();
@@ -519,12 +521,11 @@ describe('SSO System Load Tests', () => {
                 metrics.validation.errors++;
               })
           );
-
         } else {
           // Profile update (write operation)
           const token = jwtProvider.generateToken({
             userId: `user-${i}`,
-            exp: Math.floor(Date.now() / 1000) + 3600
+            exp: Math.floor(Date.now() / 1000) + 3600,
           });
 
           const startTime = performance.now();
@@ -553,16 +554,16 @@ describe('SSO System Load Tests', () => {
       const results = {
         oauth: {
           avgTime: metrics.oauth.totalTime / metrics.oauth.count,
-          errorRate: (metrics.oauth.errors / metrics.oauth.count) * 100
+          errorRate: (metrics.oauth.errors / metrics.oauth.count) * 100,
         },
         validation: {
           avgTime: metrics.validation.totalTime / metrics.validation.count,
-          errorRate: (metrics.validation.errors / metrics.validation.count) * 100
+          errorRate: (metrics.validation.errors / metrics.validation.count) * 100,
         },
         profile: {
           avgTime: metrics.profile.totalTime / metrics.profile.count,
-          errorRate: (metrics.profile.errors / metrics.profile.count) * 100
-        }
+          errorRate: (metrics.profile.errors / metrics.profile.count) * 100,
+        },
       };
 
       console.log(`Mixed Operations Load Test Results:
@@ -665,7 +666,7 @@ describe('SSO System Load Tests', () => {
         Max Connections Attempted: ${maxConnections}
         Successful Connections: ${successfulConnections}
         Connection Errors: ${connectionErrors}
-        Success Rate: ${(successfulConnections / maxConnections * 100).toFixed(2)}%`);
+        Success Rate: ${((successfulConnections / maxConnections) * 100).toFixed(2)}%`);
 
       // System should handle at least 80% of connections successfully
       expect(successfulConnections / maxConnections).toBeGreaterThan(0.8);
@@ -746,7 +747,7 @@ function setupLoadTestRoutes(app, ssoService) {
         id: code.includes('existing') ? code.split('-')[1] : `new-${requestCounter}`,
         email: `${code}@example.com`,
         name: `User ${requestCounter}`,
-        verified_email: true
+        verified_email: true,
       };
 
       const user = await ssoService.handleOAuthCallback('google', mockProfile);

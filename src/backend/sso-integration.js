@@ -13,7 +13,11 @@ const { SecureKeyManager } = require('../auth/services/SecureKeyManager');
 const { SSOService } = require('../auth/sso/SSOService');
 
 // Import middleware
-const { createAuthChain, createSSOChain, createAPIChain } = require('../auth/middleware/MiddlewareComposer');
+const {
+  createAuthChain,
+  createSSOChain,
+  createAPIChain,
+} = require('../auth/middleware/MiddlewareComposer');
 
 // Import routes
 const authRoutes = require('../api/routes/auth');
@@ -64,22 +68,24 @@ class SSOIntegration {
 
   setupMiddleware() {
     // Global security middleware for all routes
-    this.app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          scriptSrc: ["'self'"],
-          imgSrc: ["'self'", "data:", "https:"],
-          connectSrc: ["'self'"],
-          fontSrc: ["'self'"],
-          objectSrc: ["'none'"],
-          mediaSrc: ["'self'"],
-          frameSrc: ["'none'"],
+    this.app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+          },
         },
-      },
-      crossOriginEmbedderPolicy: false
-    }));
+        crossOriginEmbedderPolicy: false,
+      })
+    );
 
     // CORS configuration for SSO
     const corsOptions = {
@@ -94,10 +100,12 @@ class SSOIntegration {
           'https://login.microsoftonline.com',
           'https://accounts.google.com',
           'https://dev-*.okta.com',
-          'https://auth0.com'
+          'https://auth0.com',
         ];
 
-        if (allowedOrigins.some(allowed => origin.match(new RegExp(allowed.replace(/\*/g, '.*'))))) {
+        if (
+          allowedOrigins.some(allowed => origin.match(new RegExp(allowed.replace(/\*/g, '.*'))))
+        ) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));
@@ -105,7 +113,7 @@ class SSOIntegration {
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     };
 
     this.app.use(cors(corsOptions));
@@ -121,16 +129,24 @@ class SSOIntegration {
     this.app.use('/api/auth/sso', ...createSSOChain(), ssoRoutes);
 
     // Protected user management routes
-    this.app.use('/api/users', ...createAPIChain({
-      roles: ['user', 'admin'],
-      permissions: ['read']
-    }), userRoutes);
+    this.app.use(
+      '/api/users',
+      ...createAPIChain({
+        roles: ['user', 'admin'],
+        permissions: ['read'],
+      }),
+      userRoutes
+    );
 
     // Admin routes
-    this.app.use('/api/admin', ...createAPIChain({
-      roles: ['admin'],
-      permissions: ['admin']
-    }), this.createAdminRoutes());
+    this.app.use(
+      '/api/admin',
+      ...createAPIChain({
+        roles: ['admin'],
+        permissions: ['admin'],
+      }),
+      this.createAdminRoutes()
+    );
 
     // Existing knowledge base routes - now protected
     const existingKBRoutes = this.app._router?.stack?.find(layer =>
@@ -139,10 +155,13 @@ class SSOIntegration {
 
     if (existingKBRoutes) {
       // Wrap existing KB routes with authentication
-      this.app.use('/api/knowledge-base', ...createAPIChain({
-        roles: ['user', 'analyst', 'admin'],
-        permissions: ['read']
-      }));
+      this.app.use(
+        '/api/knowledge-base',
+        ...createAPIChain({
+          roles: ['user', 'analyst', 'admin'],
+          permissions: ['read'],
+        })
+      );
     }
 
     console.log('✅ SSO routes configured');
@@ -165,7 +184,7 @@ class SSOIntegration {
           },
           database: {
             connections: await this.getDatabaseStatus(),
-          }
+          },
         };
 
         res.json({ success: true, status });
@@ -263,7 +282,7 @@ class SSOIntegration {
     return {
       type: this.db?.client ? 'PostgreSQL' : 'SQLite',
       connected: !!this.db,
-      healthy: true
+      healthy: true,
     };
   }
 
@@ -321,7 +340,7 @@ class SSOIntegration {
     return {
       secureKeyManager: !!this.secureKeyManager,
       ssoService: !!this.ssoService,
-      providers: this.ssoService ? this.ssoService.getAvailableProviders().length : 0
+      providers: this.ssoService ? this.ssoService.getAvailableProviders().length : 0,
     };
   }
 

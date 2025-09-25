@@ -18,18 +18,18 @@ describe('OAuth Flow Integration Tests', () => {
     // Mock database
     mockDatabase = {
       users: new Map(),
-      sessions: new Map()
+      sessions: new Map(),
     };
 
     // Mock repositories
     const userRepository = {
-      findByEmail: (email) => Promise.resolve(
-        Array.from(mockDatabase.users.values()).find(user => user.email === email)
-      ),
-      findByProviderId: (providerId) => Promise.resolve(
-        Array.from(mockDatabase.users.values()).find(user => user.providerId === providerId)
-      ),
-      create: (userData) => {
+      findByEmail: email =>
+        Promise.resolve(Array.from(mockDatabase.users.values()).find(user => user.email === email)),
+      findByProviderId: providerId =>
+        Promise.resolve(
+          Array.from(mockDatabase.users.values()).find(user => user.providerId === providerId)
+        ),
+      create: userData => {
         const user = { ...userData, id: `user-${Date.now()}` };
         mockDatabase.users.set(user.id, user);
         return Promise.resolve(user);
@@ -41,24 +41,25 @@ describe('OAuth Flow Integration Tests', () => {
           return Promise.resolve(user);
         }
         return Promise.resolve(null);
-      }
+      },
     };
 
     const sessionRepository = {
-      create: (sessionData) => {
+      create: sessionData => {
         const session = { ...sessionData, id: `session-${Date.now()}` };
         mockDatabase.sessions.set(session.id, session);
         return Promise.resolve(session);
       },
-      findByToken: (token) => Promise.resolve(
-        Array.from(mockDatabase.sessions.values()).find(session => session.token === token)
-      ),
-      deleteByUserId: (userId) => {
+      findByToken: token =>
+        Promise.resolve(
+          Array.from(mockDatabase.sessions.values()).find(session => session.token === token)
+        ),
+      deleteByUserId: userId => {
         const sessions = Array.from(mockDatabase.sessions.values());
         const userSessions = sessions.filter(session => session.userId === userId);
         userSessions.forEach(session => mockDatabase.sessions.delete(session.id));
         return Promise.resolve(userSessions.length);
-      }
+      },
     };
 
     // Initialize SSO service
@@ -69,12 +70,14 @@ describe('OAuth Flow Integration Tests', () => {
     // Create Express app
     app = express();
     app.use(express.json());
-    app.use(session({
-      secret: 'test-session-secret',
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: false }
-    }));
+    app.use(
+      session({
+        secret: 'test-session-secret',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: false },
+      })
+    );
 
     // Auth routes
     setupAuthRoutes(app, ssoService);
@@ -82,9 +85,7 @@ describe('OAuth Flow Integration Tests', () => {
 
   describe('OAuth Authorization', () => {
     it('should redirect to provider authorization URL', async () => {
-      const response = await request(app)
-        .get('/auth/google')
-        .expect(302);
+      const response = await request(app).get('/auth/google').expect(302);
 
       expect(response.headers.location).toContain('https://mock-provider.com/oauth/authorize');
       expect(response.headers.location).toContain('client_id=mock-client-id');
@@ -94,9 +95,7 @@ describe('OAuth Flow Integration Tests', () => {
     it('should store state in session', async () => {
       const agent = request.agent(app);
 
-      const response = await agent
-        .get('/auth/google')
-        .expect(302);
+      const response = await agent.get('/auth/google').expect(302);
 
       const state = new URL(response.headers.location).searchParams.get('state');
       expect(state).toBeTruthy();
@@ -106,7 +105,7 @@ describe('OAuth Flow Integration Tests', () => {
       await request(app)
         .get('/auth/unsupported')
         .expect(400)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toBe('Provider unsupported is not supported');
         });
     });
@@ -145,7 +144,7 @@ describe('OAuth Flow Integration Tests', () => {
       // Create existing user
       const existingUser = UserFactory.createOAuthUser('google', {
         providerId: 'user-123',
-        email: 'test@example.com'
+        email: 'test@example.com',
       });
       mockDatabase.users.set(existingUser.id, existingUser);
 
@@ -168,7 +167,7 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .get(`/auth/google/callback?code=${code}&state=${state}`)
         .expect(400)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toContain('Invalid authorization code');
         });
     });
@@ -180,7 +179,7 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .get(`/auth/google/callback?code=${code}&state=${invalidState}`)
         .expect(400)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toBe('Invalid state parameter');
         });
     });
@@ -189,7 +188,7 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .get(`/auth/google/callback?state=${state}`)
         .expect(400)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toBe('Authorization code is required');
         });
     });
@@ -199,9 +198,11 @@ describe('OAuth Flow Integration Tests', () => {
       const errorDescription = 'User denied access';
 
       await agent
-        .get(`/auth/google/callback?error=${error}&error_description=${errorDescription}&state=${state}`)
+        .get(
+          `/auth/google/callback?error=${error}&error_description=${errorDescription}&state=${state}`
+        )
         .expect(400)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toBe('OAuth error: access_denied - User denied access');
         });
     });
@@ -216,9 +217,7 @@ describe('OAuth Flow Integration Tests', () => {
       const state = new URL(authResponse.headers.location).searchParams.get('state');
 
       // Complete callback
-      await agent
-        .get(`/auth/google/callback?code=valid-auth-code&state=${state}`)
-        .expect(302);
+      await agent.get(`/auth/google/callback?code=valid-auth-code&state=${state}`).expect(302);
 
       const users = Array.from(mockDatabase.users.values());
       expect(users[0].provider).toBe('google');
@@ -232,9 +231,7 @@ describe('OAuth Flow Integration Tests', () => {
       const state = new URL(authResponse.headers.location).searchParams.get('state');
 
       // Complete callback
-      await agent
-        .get(`/auth/microsoft/callback?code=valid-auth-code&state=${state}`)
-        .expect(302);
+      await agent.get(`/auth/microsoft/callback?code=valid-auth-code&state=${state}`).expect(302);
 
       const users = Array.from(mockDatabase.users.values());
       expect(users[0].provider).toBe('microsoft');
@@ -248,9 +245,7 @@ describe('OAuth Flow Integration Tests', () => {
       const authResponse = await agent.get('/auth/google');
       const state = new URL(authResponse.headers.location).searchParams.get('state');
 
-      await agent
-        .get(`/auth/google/callback?code=valid-auth-code&state=${state}`)
-        .expect(302);
+      await agent.get(`/auth/google/callback?code=valid-auth-code&state=${state}`).expect(302);
 
       // Verify session was created
       const sessions = Array.from(mockDatabase.sessions.values());
@@ -270,7 +265,7 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .get('/protected')
         .expect(200)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.message).toBe('Access granted');
           expect(res.body.user.email).toBe('test@example.com');
         });
@@ -280,7 +275,7 @@ describe('OAuth Flow Integration Tests', () => {
       await request(app)
         .get('/protected')
         .expect(401)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toBe('Authentication required');
         });
     });
@@ -297,14 +292,12 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .post('/auth/logout')
         .expect(200)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.message).toBe('Logged out successfully');
         });
 
       // Verify session was cleared
-      await agent
-        .get('/protected')
-        .expect(401);
+      await agent.get('/protected').expect(401);
     });
   });
 
@@ -314,7 +307,7 @@ describe('OAuth Flow Integration Tests', () => {
       const userRepository = {
         findByEmail: () => Promise.reject(new Error('Database connection failed')),
         findByProviderId: () => Promise.reject(new Error('Database connection failed')),
-        create: () => Promise.reject(new Error('Database connection failed'))
+        create: () => Promise.reject(new Error('Database connection failed')),
       };
 
       const errorSSOService = new SSOService({ userRepository });
@@ -331,18 +324,19 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .get(`/auth/google/callback?code=valid-auth-code&state=${state}`)
         .expect(500)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toContain('Database connection failed');
         });
     });
 
     it('should handle provider service errors', async () => {
       const errorProvider = new MockGoogleProvider();
-      errorProvider.exchangeCodeForToken = () => Promise.reject(new Error('Provider service unavailable'));
+      errorProvider.exchangeCodeForToken = () =>
+        Promise.reject(new Error('Provider service unavailable'));
 
       const errorSSOService = new SSOService({
         userRepository: { findByEmail: () => Promise.resolve(null) },
-        sessionRepository: { create: () => Promise.resolve({}) }
+        sessionRepository: { create: () => Promise.resolve({}) },
       });
       errorSSOService.registerProvider('google', errorProvider);
 
@@ -357,7 +351,7 @@ describe('OAuth Flow Integration Tests', () => {
       await agent
         .get(`/auth/google/callback?code=valid-auth-code&state=${state}`)
         .expect(500)
-        .expect((res) => {
+        .expect(res => {
           expect(res.body.error).toContain('Provider service unavailable');
         });
     });
@@ -377,8 +371,8 @@ describe('OAuth Flow Integration Tests', () => {
       const results = await Promise.allSettled(promises);
 
       // First request should succeed, others should handle gracefully
-      const successful = results.filter(result =>
-        result.status === 'fulfilled' && result.value.status === 302
+      const successful = results.filter(
+        result => result.status === 'fulfilled' && result.value.status === 302
       );
       expect(successful.length).toBeGreaterThan(0);
     });
@@ -409,7 +403,7 @@ function setupAuthRoutes(app, ssoService) {
 
       if (error) {
         return res.status(400).json({
-          error: `OAuth error: ${error} - ${error_description || 'Unknown error'}`
+          error: `OAuth error: ${error} - ${error_description || 'Unknown error'}`,
         });
       }
 
@@ -455,7 +449,9 @@ function setupAuthRoutes(app, ssoService) {
 
     res.json({
       message: 'Access granted',
-      user: user ? { id: user.id, email: user.email, name: `${user.firstName} ${user.lastName}` } : null
+      user: user
+        ? { id: user.id, email: user.email, name: `${user.firstName} ${user.lastName}` }
+        : null,
     });
   });
 

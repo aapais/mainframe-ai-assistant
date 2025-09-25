@@ -5,7 +5,12 @@ import { OAuth2Client } from 'google-auth-library';
 import { Client as OktaClient } from '@okta/okta-sdk-nodejs';
 import { DatabaseManager } from '../../database/DatabaseManager';
 import { SecureKeyManager } from '../services/SecureKeyManager';
-import { User, SSOConfiguration, SSOProvider, UserSSOConnection } from '../../database/schemas/auth/UserSchema';
+import {
+  User,
+  SSOConfiguration,
+  SSOProvider,
+  UserSSOConnection,
+} from '../../database/schemas/auth/UserSchema';
 
 export interface SSOCallbackData {
   code?: string;
@@ -65,7 +70,9 @@ export class SSOService {
           ...config,
           scopes: JSON.parse(config.scopes || '["openid", "profile", "email"]'),
           claimsMapping: JSON.parse(config.claims_mapping || '{}'),
-          domainRestriction: config.domain_restriction ? JSON.parse(config.domain_restriction) : undefined,
+          domainRestriction: config.domain_restriction
+            ? JSON.parse(config.domain_restriction)
+            : undefined,
           metadata: config.metadata ? JSON.parse(config.metadata) : undefined,
         });
       }
@@ -117,9 +124,13 @@ export class SSOService {
     }
   }
 
-  public async handleCallback(callbackData: SSOCallbackData): Promise<{ user: User; token: string; isNewUser: boolean }> {
+  public async handleCallback(
+    callbackData: SSOCallbackData
+  ): Promise<{ user: User; token: string; isNewUser: boolean }> {
     if (callbackData.error) {
-      throw new Error(`Erro de autenticação SSO: ${callbackData.error_description || callbackData.error}`);
+      throw new Error(
+        `Erro de autenticação SSO: ${callbackData.error_description || callbackData.error}`
+      );
     }
 
     if (!callbackData.code || !callbackData.state) {
@@ -133,7 +144,11 @@ export class SSOService {
       throw new Error('Configuração SSO não encontrada');
     }
 
-    const tokenResponse = await this.exchangeCodeForToken(config, callbackData.code, stateData.redirectUri);
+    const tokenResponse = await this.exchangeCodeForToken(
+      config,
+      callbackData.code,
+      stateData.redirectUri
+    );
     const userInfo = await this.getUserInfo(config, tokenResponse);
 
     if (config.domainRestriction && config.domainRestriction.length > 0) {
@@ -156,14 +171,18 @@ export class SSOService {
       metadata: {
         provider: config.provider,
         externalId: userInfo.id,
-        isNewUser
-      }
+        isNewUser,
+      },
     });
 
     return { user, token: jwtToken, isNewUser };
   }
 
-  private async exchangeCodeForToken(config: SSOConfiguration, code: string, redirectUri: string): Promise<TokenResponse> {
+  private async exchangeCodeForToken(
+    config: SSOConfiguration,
+    code: string,
+    redirectUri: string
+  ): Promise<TokenResponse> {
     const tokenUrl = config.tokenUrl || this.getDefaultTokenUrl(config);
 
     const body = new URLSearchParams({
@@ -178,7 +197,7 @@ export class SSOService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       body: body.toString(),
     });
@@ -187,10 +206,13 @@ export class SSOService {
       throw new Error(`Falha na troca de código por token: ${response.statusText}`);
     }
 
-    return await response.json() as TokenResponse;
+    return (await response.json()) as TokenResponse;
   }
 
-  private async getUserInfo(config: SSOConfiguration, tokenResponse: TokenResponse): Promise<UserInfo> {
+  private async getUserInfo(
+    config: SSOConfiguration,
+    tokenResponse: TokenResponse
+  ): Promise<UserInfo> {
     switch (config.provider) {
       case 'google':
         return await this.getGoogleUserInfo(tokenResponse);
@@ -226,7 +248,10 @@ export class SSOService {
     };
   }
 
-  private async getMicrosoftUserInfo(tokenResponse: TokenResponse, config: SSOConfiguration): Promise<UserInfo> {
+  private async getMicrosoftUserInfo(
+    tokenResponse: TokenResponse,
+    config: SSOConfiguration
+  ): Promise<UserInfo> {
     const response = await fetch('https://graph.microsoft.com/v1.0/me', {
       headers: {
         Authorization: `Bearer ${tokenResponse.access_token}`,
@@ -244,8 +269,12 @@ export class SSOService {
     };
   }
 
-  private async getOktaUserInfo(tokenResponse: TokenResponse, config: SSOConfiguration): Promise<UserInfo> {
-    const userInfoUrl = config.userinfoUrl || `${config.metadata?.domain}/oauth2/default/v1/userinfo`;
+  private async getOktaUserInfo(
+    tokenResponse: TokenResponse,
+    config: SSOConfiguration
+  ): Promise<UserInfo> {
+    const userInfoUrl =
+      config.userinfoUrl || `${config.metadata?.domain}/oauth2/default/v1/userinfo`;
 
     const response = await fetch(userInfoUrl, {
       headers: {
@@ -264,7 +293,10 @@ export class SSOService {
     };
   }
 
-  private async getGenericUserInfo(tokenResponse: TokenResponse, config: SSOConfiguration): Promise<UserInfo> {
+  private async getGenericUserInfo(
+    tokenResponse: TokenResponse,
+    config: SSOConfiguration
+  ): Promise<UserInfo> {
     if (!config.userinfoUrl) {
       throw new Error('URL de informações do usuário não configurada');
     }
@@ -288,7 +320,10 @@ export class SSOService {
     };
   }
 
-  private async findOrCreateUser(userInfo: UserInfo, config: SSOConfiguration): Promise<{ user: User; isNewUser: boolean }> {
+  private async findOrCreateUser(
+    userInfo: UserInfo,
+    config: SSOConfiguration
+  ): Promise<{ user: User; isNewUser: boolean }> {
     let user = await this.findUserByEmail(userInfo.email);
     let isNewUser = false;
 
@@ -311,9 +346,12 @@ export class SSOService {
   }
 
   private async findUserByEmail(email: string): Promise<User | null> {
-    const result = await this.db.get(`
+    const result = await this.db.get(
+      `
       SELECT * FROM users WHERE email = ? AND deleted_at IS NULL
-    `, [email]);
+    `,
+      [email]
+    );
 
     return result ? this.mapDatabaseToUser(result) : null;
   }
@@ -341,37 +379,69 @@ export class SSOService {
       updatedAt: new Date(now),
     };
 
-    await this.db.run(`
+    await this.db.run(
+      `
       INSERT INTO users (
         id, email, email_verified, first_name, last_name, display_name,
         avatar_url, role, permissions, is_active, is_suspended, login_attempts,
         mfa_enabled, mfa_methods, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      user.id, user.email, user.emailVerified, user.firstName, user.lastName,
-      user.displayName, user.avatarUrl, user.role, JSON.stringify(user.permissions),
-      user.isActive, user.isSuspended, user.loginAttempts, user.mfaEnabled,
-      JSON.stringify(user.mfaMethods), now, now
-    ]);
+    `,
+      [
+        user.id,
+        user.email,
+        user.emailVerified,
+        user.firstName,
+        user.lastName,
+        user.displayName,
+        user.avatarUrl,
+        user.role,
+        JSON.stringify(user.permissions),
+        user.isActive,
+        user.isSuspended,
+        user.loginAttempts,
+        user.mfaEnabled,
+        JSON.stringify(user.mfaMethods),
+        now,
+        now,
+      ]
+    );
 
     return user;
   }
 
-  private async storeSSOConnection(userId: string, ssoConfigId: string, externalId: string, tokenResponse: TokenResponse): Promise<void> {
+  private async storeSSOConnection(
+    userId: string,
+    ssoConfigId: string,
+    externalId: string,
+    tokenResponse: TokenResponse
+  ): Promise<void> {
     const connectionId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    await this.db.run(`
+    await this.db.run(
+      `
       INSERT OR REPLACE INTO user_sso_connections (
         id, user_id, sso_config_id, external_id, access_token, refresh_token,
         token_expires_at, last_sync, is_active, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      connectionId, userId, ssoConfigId, externalId,
-      tokenResponse.access_token, tokenResponse.refresh_token,
-      tokenResponse.expires_in ? new Date(Date.now() + tokenResponse.expires_in * 1000).toISOString() : null,
-      now, true, now, now
-    ]);
+    `,
+      [
+        connectionId,
+        userId,
+        ssoConfigId,
+        externalId,
+        tokenResponse.access_token,
+        tokenResponse.refresh_token,
+        tokenResponse.expires_in
+          ? new Date(Date.now() + tokenResponse.expires_in * 1000).toISOString()
+          : null,
+        now,
+        true,
+        now,
+        now,
+      ]
+    );
   }
 
   private generateState(): string {
@@ -381,17 +451,23 @@ export class SSOService {
   private async storeState(state: string, providerId: string, redirectUri: string): Promise<void> {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
 
-    await this.db.run(`
+    await this.db.run(
+      `
       INSERT INTO sso_states (state, provider_id, redirect_uri, expires_at, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `, [state, providerId, redirectUri, expiresAt.toISOString(), new Date().toISOString()]);
+    `,
+      [state, providerId, redirectUri, expiresAt.toISOString(), new Date().toISOString()]
+    );
   }
 
   private async validateState(state: string): Promise<{ providerId: string; redirectUri: string }> {
-    const result = await this.db.get(`
+    const result = await this.db.get(
+      `
       SELECT * FROM sso_states
       WHERE state = ? AND expires_at > datetime('now')
-    `, [state]);
+    `,
+      [state]
+    );
 
     if (!result) {
       throw new Error('Estado SSO inválido ou expirado');
@@ -402,7 +478,7 @@ export class SSOService {
 
     return {
       providerId: result.provider_id,
-      redirectUri: result.redirect_uri
+      redirectUri: result.redirect_uri,
     };
   }
 
@@ -423,14 +499,22 @@ export class SSOService {
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
 
-    await this.db.run(`
+    await this.db.run(
+      `
       INSERT INTO user_sessions (
         id, user_id, session_token, expires_at, status, created_at, last_activity
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [
-      sessionId, userId, sessionToken, expiresAt.toISOString(),
-      'active', new Date().toISOString(), new Date().toISOString()
-    ]);
+    `,
+      [
+        sessionId,
+        userId,
+        sessionToken,
+        expiresAt.toISOString(),
+        'active',
+        new Date().toISOString(),
+        new Date().toISOString(),
+      ]
+    );
   }
 
   private async logSecurityEvent(event: {
@@ -441,15 +525,22 @@ export class SSOService {
   }): Promise<void> {
     const eventId = crypto.randomUUID();
 
-    await this.db.run(`
+    await this.db.run(
+      `
       INSERT INTO security_events (
         id, user_id, event_type, severity, description, metadata, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [
-      eventId, event.userId, event.eventType, 'medium',
-      event.description, JSON.stringify(event.metadata || {}),
-      new Date().toISOString()
-    ]);
+    `,
+      [
+        eventId,
+        event.userId,
+        event.eventType,
+        'medium',
+        event.description,
+        JSON.stringify(event.metadata || {}),
+        new Date().toISOString(),
+      ]
+    );
   }
 
   private getDefaultTokenUrl(config: SSOConfiguration): string {
@@ -498,7 +589,9 @@ export class SSOService {
       lastActivity: dbUser.last_activity ? new Date(dbUser.last_activity) : undefined,
       loginAttempts: dbUser.login_attempts || 0,
       lockedUntil: dbUser.locked_until ? new Date(dbUser.locked_until) : undefined,
-      passwordChangedAt: dbUser.password_changed_at ? new Date(dbUser.password_changed_at) : undefined,
+      passwordChangedAt: dbUser.password_changed_at
+        ? new Date(dbUser.password_changed_at)
+        : undefined,
       mfaEnabled: Boolean(dbUser.mfa_enabled),
       mfaSecret: dbUser.mfa_secret,
       mfaMethods: dbUser.mfa_methods ? JSON.parse(dbUser.mfa_methods) : [],
@@ -630,7 +723,7 @@ export class SSOService {
         action_taken TEXT,
         timestamp TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
-      )`
+      )`,
     ];
 
     for (const table of tables) {

@@ -105,8 +105,8 @@ export class FailedLoginDetector extends EventEmitter {
       details: {
         success: attempt.success,
         riskScore: pattern?.riskScore || 0,
-        isBlocked: pattern?.isBlocked || false
-      }
+        isBlocked: pattern?.isBlocked || false,
+      },
     });
   }
 
@@ -143,7 +143,7 @@ export class FailedLoginDetector extends EventEmitter {
   getAllPatterns(): Array<LoginPattern & { analysis: PatternAnalysis }> {
     return Array.from(this.patterns.values()).map(pattern => ({
       ...pattern,
-      analysis: this.analyzePattern(pattern)
+      analysis: this.analyzePattern(pattern),
     }));
   }
 
@@ -163,7 +163,7 @@ export class FailedLoginDetector extends EventEmitter {
       expiry,
       reason,
       blockedBy,
-      automatic: false
+      automatic: false,
     });
 
     const pattern = this.patterns.get(ipAddress);
@@ -172,12 +172,11 @@ export class FailedLoginDetector extends EventEmitter {
       pattern.blockExpiry = expiry;
     }
 
-    await this.auditService.logSecurityEvent(
-      'ip_manually_blocked',
-      'HIGH',
-      ipAddress,
-      { reason, blockedBy, durationMinutes }
-    );
+    await this.auditService.logSecurityEvent('ip_manually_blocked', 'HIGH', ipAddress, {
+      reason,
+      blockedBy,
+      durationMinutes,
+    });
 
     this.emit('ipBlocked', { ipAddress, reason, durationMinutes, manual: true });
   }
@@ -195,12 +194,9 @@ export class FailedLoginDetector extends EventEmitter {
         pattern.blockExpiry = undefined;
       }
 
-      await this.auditService.logSecurityEvent(
-        'ip_unblocked',
-        'MEDIUM',
-        ipAddress,
-        { unblockedBy }
-      );
+      await this.auditService.logSecurityEvent('ip_unblocked', 'MEDIUM', ipAddress, {
+        unblockedBy,
+      });
 
       this.emit('ipUnblocked', { ipAddress, unblockedBy });
     }
@@ -220,7 +216,7 @@ export class FailedLoginDetector extends EventEmitter {
       firstAttempt: attempt.timestamp,
       lastAttempt: attempt.timestamp,
       riskScore: 0,
-      isBlocked: false
+      isBlocked: false,
     };
 
     pattern.attempts.push(attempt);
@@ -262,7 +258,7 @@ export class FailedLoginDetector extends EventEmitter {
       uniqueUserAgents: new Set(),
       typicalHours: new Map(),
       firstSeen: attempt.timestamp,
-      lastSeen: attempt.timestamp
+      lastSeen: attempt.timestamp,
     };
 
     behavior.lastSeen = attempt.timestamp;
@@ -325,7 +321,8 @@ export class FailedLoginDetector extends EventEmitter {
 
     // Adjust based on time distribution
     const timeSpread = this.calculateTimeSpread(pattern.attempts);
-    if (timeSpread < 60) { // Attempts within 1 minute
+    if (timeSpread < 60) {
+      // Attempts within 1 minute
       threshold = Math.ceil(threshold * 0.6); // Much lower threshold for rapid attempts
     }
 
@@ -379,9 +376,7 @@ export class FailedLoginDetector extends EventEmitter {
    * Determine alert type based on pattern analysis
    */
   private determineAlertType(pattern: LoginPattern): FailedLoginAlert['alertType'] {
-    const uniqueUsers = new Set(
-      pattern.attempts.map(a => a.userId).filter(Boolean)
-    );
+    const uniqueUsers = new Set(pattern.attempts.map(a => a.userId).filter(Boolean));
 
     if (uniqueUsers.size > 5) {
       return 'CREDENTIAL_STUFFING';
@@ -439,8 +434,8 @@ export class FailedLoginDetector extends EventEmitter {
         riskScore: pattern.riskScore,
         uniqueUserAgents: new Set(pattern.attempts.map(a => a.userAgent)).size,
         firstAttempt: pattern.firstAttempt,
-        lastAttempt: pattern.lastAttempt
-      }
+        lastAttempt: pattern.lastAttempt,
+      },
     };
 
     this.emit('failedLoginAlert', alert);
@@ -453,7 +448,7 @@ export class FailedLoginDetector extends EventEmitter {
         alertId: alert.id,
         attemptCount: pattern.failureCount,
         riskScore: pattern.riskScore,
-        riskFactors
+        riskFactors,
       }
     );
   }
@@ -470,7 +465,7 @@ export class FailedLoginDetector extends EventEmitter {
       expiry,
       reason: `Automatic block: ${pattern.failureCount} failed attempts`,
       blockedBy: 'system',
-      automatic: true
+      automatic: true,
     });
 
     pattern.isBlocked = true;
@@ -480,7 +475,7 @@ export class FailedLoginDetector extends EventEmitter {
       ipAddress: pattern.ipAddress,
       reason: 'Failed login threshold exceeded',
       durationMinutes: duration,
-      manual: false
+      manual: false,
     });
   }
 
@@ -611,7 +606,7 @@ export class FailedLoginDetector extends EventEmitter {
       riskLevel: pattern.riskScore > 60 ? 'HIGH' : pattern.riskScore > 30 ? 'MEDIUM' : 'LOW',
       behaviorType: this.classifyBehavior(pattern),
       recommendations: this.generateRecommendations(pattern, 'THRESHOLD_EXCEEDED'),
-      nextReviewDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      nextReviewDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
     };
   }
 
@@ -638,7 +633,7 @@ export class FailedLoginDetector extends EventEmitter {
           userAgent: event.userAgent || 'unknown',
           timestamp: event.timestamp,
           success: event.outcome === 'SUCCESS',
-          metadata: event.details
+          metadata: event.details,
         });
       }
     });
@@ -664,8 +659,9 @@ export class FailedLoginDetector extends EventEmitter {
 
   private async performPeriodicAnalysis(): Promise<void> {
     // Analyze patterns for emerging threats
-    const highRiskPatterns = Array.from(this.patterns.values())
-      .filter(p => p.riskScore > 50 && !p.isBlocked);
+    const highRiskPatterns = Array.from(this.patterns.values()).filter(
+      p => p.riskScore > 50 && !p.isBlocked
+    );
 
     for (const pattern of highRiskPatterns) {
       await this.auditService.logEvent({
@@ -678,8 +674,8 @@ export class FailedLoginDetector extends EventEmitter {
         details: {
           riskScore: pattern.riskScore,
           failureCount: pattern.failureCount,
-          timeWindow: this.config.timeWindowMinutes
-        }
+          timeWindow: this.config.timeWindowMinutes,
+        },
       });
     }
   }

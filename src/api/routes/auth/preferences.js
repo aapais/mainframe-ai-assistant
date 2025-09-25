@@ -11,7 +11,7 @@ const logger = new Logger('PreferencesAPI');
 router.use(authMiddleware);
 
 // Validation middleware
-const validateRequest = (schema) => async (req, res, next) => {
+const validateRequest = schema => async (req, res, next) => {
   try {
     const result = schema.safeParse(req.body);
     if (!result.success) {
@@ -20,8 +20,8 @@ const validateRequest = (schema) => async (req, res, next) => {
         message: 'Dados de entrada inválidos',
         errors: result.error.issues.map(issue => ({
           field: issue.path.join('.'),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       });
     }
     req.validatedData = result.data;
@@ -30,7 +30,7 @@ const validateRequest = (schema) => async (req, res, next) => {
     logger.error('Erro na validação:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno de validação'
+      message: 'Erro interno de validação',
     });
   }
 };
@@ -55,26 +55,26 @@ class PreferencesService {
           inApp: true,
           incidents: true,
           systemAlerts: true,
-          weeklyReports: false
+          weeklyReports: false,
         },
         searchSettings: {
           resultsPerPage: 20,
           enableAI: true,
           enableAutoComplete: true,
-          saveSearchHistory: true
+          saveSearchHistory: true,
         },
         securitySettings: {
           sessionTimeout: 3600,
           requireMFA: false,
           loginNotifications: true,
-          suspiciousActivityAlerts: true
+          suspiciousActivityAlerts: true,
         },
         dashboardSettings: {
           layout: 'grid',
           widgetsEnabled: ['incidents', 'analytics', 'recent-activity'],
-          refreshInterval: 300
+          refreshInterval: 300,
         },
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       return defaultPreferences;
@@ -106,7 +106,7 @@ class PreferencesService {
       return {
         userId,
         ...preferences,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
     } catch (error) {
       logger.error(`Erro ao atualizar preferências do usuário ${userId}:`, error);
@@ -195,13 +195,13 @@ router.get('/', async (req, res) => {
 
     res.json({
       success: true,
-      preferences
+      preferences,
     });
   } catch (error) {
     logger.error('Erro ao buscar preferências:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -213,18 +213,21 @@ router.get('/', async (req, res) => {
  */
 router.put('/', validateRequest(userPreferencesSchema), async (req, res) => {
   try {
-    const preferences = await preferencesService.updateUserPreferences(req.user.id, req.validatedData);
+    const preferences = await preferencesService.updateUserPreferences(
+      req.user.id,
+      req.validatedData
+    );
 
     res.json({
       success: true,
       message: 'Preferências atualizadas com sucesso',
-      preferences
+      preferences,
     });
   } catch (error) {
     logger.error('Erro ao atualizar preferências:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -237,12 +240,18 @@ router.put('/', validateRequest(userPreferencesSchema), async (req, res) => {
 router.patch('/:section', async (req, res) => {
   try {
     const { section } = req.params;
-    const allowedSections = ['theme', 'notifications', 'searchSettings', 'securitySettings', 'dashboardSettings'];
+    const allowedSections = [
+      'theme',
+      'notifications',
+      'searchSettings',
+      'securitySettings',
+      'dashboardSettings',
+    ];
 
     if (!allowedSections.includes(section)) {
       return res.status(400).json({
         success: false,
-        message: 'Seção de preferências inválida'
+        message: 'Seção de preferências inválida',
       });
     }
 
@@ -251,7 +260,7 @@ router.patch('/:section', async (req, res) => {
     // Update only the specified section
     const updatedPreferences = {
       ...currentPreferences,
-      [section]: { ...currentPreferences[section], ...req.body }
+      [section]: { ...currentPreferences[section], ...req.body },
     };
 
     // Validate the updated preferences
@@ -260,7 +269,7 @@ router.patch('/:section', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Dados de preferências inválidos',
-        errors: result.error.issues
+        errors: result.error.issues,
       });
     }
 
@@ -269,13 +278,13 @@ router.patch('/:section', async (req, res) => {
     res.json({
       success: true,
       message: `Seção ${section} atualizada com sucesso`,
-      preferences
+      preferences,
     });
   } catch (error) {
     logger.error('Erro ao atualizar seção de preferências:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -292,13 +301,13 @@ router.post('/reset', async (req, res) => {
     res.json({
       success: true,
       message: 'Preferências resetadas para os valores padrão',
-      preferences
+      preferences,
     });
   } catch (error) {
     logger.error('Erro ao resetar preferências:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -323,7 +332,7 @@ router.get('/export', async (req, res) => {
     logger.error('Erro ao exportar preferências:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -340,16 +349,19 @@ router.post('/import', async (req, res) => {
     if (!preferencesData) {
       return res.status(400).json({
         success: false,
-        message: 'Dados de preferências são obrigatórios'
+        message: 'Dados de preferências são obrigatórios',
       });
     }
 
-    const preferences = await preferencesService.importUserPreferences(req.user.id, preferencesData);
+    const preferences = await preferencesService.importUserPreferences(
+      req.user.id,
+      preferencesData
+    );
 
     res.json({
       success: true,
       message: 'Preferências importadas com sucesso',
-      preferences
+      preferences,
     });
   } catch (error) {
     logger.error('Erro ao importar preferências:', error);
@@ -357,13 +369,13 @@ router.post('/import', async (req, res) => {
     if (error.message.includes('inválidos')) {
       return res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });

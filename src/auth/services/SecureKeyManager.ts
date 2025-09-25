@@ -110,18 +110,29 @@ export class SecureKeyManager {
         provider,
         permissions,
         createdAt: new Date(),
-        isActive: true
+        isActive: true,
       };
 
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO encrypted_api_keys
         (id, user_id, key_name, encrypted_key, key_hash, iv, salt, provider, permissions, created_at, is_active)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        keyId, userId, keyName, encryptedKey, keyHash,
-        encryptedAPIKey.iv, encryptedAPIKey.salt, provider,
-        JSON.stringify(permissions), encryptedAPIKey.createdAt.toISOString(), 1
-      ]);
+      `,
+        [
+          keyId,
+          userId,
+          keyName,
+          encryptedKey,
+          keyHash,
+          encryptedAPIKey.iv,
+          encryptedAPIKey.salt,
+          provider,
+          JSON.stringify(permissions),
+          encryptedAPIKey.createdAt.toISOString(),
+          1,
+        ]
+      );
 
       await this.logKeyOperation(userId, keyId, 'CREATED');
 
@@ -133,10 +144,13 @@ export class SecureKeyManager {
 
   public async retrieveAPIKey(userId: string, keyId: string): Promise<string> {
     try {
-      const result = await this.db.get(`
+      const result = await this.db.get(
+        `
         SELECT * FROM encrypted_api_keys
         WHERE id = ? AND user_id = ? AND is_active = 1
-      `, [keyId, userId]);
+      `,
+        [keyId, userId]
+      );
 
       if (!result) {
         throw new Error('Chave API não encontrada');
@@ -170,10 +184,13 @@ export class SecureKeyManager {
 
   public async rotateAPIKey(userId: string, keyId: string, newApiKey: string): Promise<void> {
     try {
-      const existingKey = await this.db.get(`
+      const existingKey = await this.db.get(
+        `
         SELECT * FROM encrypted_api_keys
         WHERE id = ? AND user_id = ? AND is_active = 1
-      `, [keyId, userId]);
+      `,
+        [keyId, userId]
+      );
 
       if (!existingKey) {
         throw new Error('Chave API não encontrada');
@@ -195,14 +212,22 @@ export class SecureKeyManager {
 
       const keyHash = await bcrypt.hash(newApiKey, 12);
 
-      await this.db.run(`
+      await this.db.run(
+        `
         UPDATE encrypted_api_keys
         SET encrypted_key = ?, key_hash = ?, iv = ?, salt = ?, updated_at = ?
         WHERE id = ? AND user_id = ?
-      `, [
-        encryptedKey, keyHash, iv.toString('hex'), salt.toString('hex'),
-        new Date().toISOString(), keyId, userId
-      ]);
+      `,
+        [
+          encryptedKey,
+          keyHash,
+          iv.toString('hex'),
+          salt.toString('hex'),
+          new Date().toISOString(),
+          keyId,
+          userId,
+        ]
+      );
 
       await this.logKeyOperation(userId, keyId, 'ROTATED');
     } catch (error) {
@@ -212,11 +237,14 @@ export class SecureKeyManager {
 
   public async deleteAPIKey(userId: string, keyId: string): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         UPDATE encrypted_api_keys
         SET is_active = 0, deleted_at = ?
         WHERE id = ? AND user_id = ?
-      `, [new Date().toISOString(), keyId, userId]);
+      `,
+        [new Date().toISOString(), keyId, userId]
+      );
 
       await this.logKeyOperation(userId, keyId, 'DELETED');
     } catch (error) {
@@ -241,15 +269,14 @@ export class SecureKeyManager {
       const authTag = cipher.getAuthTag();
       const encryptedData = encrypted + authTag.toString('hex');
 
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT OR REPLACE INTO user_preferences
         (user_id, encrypted_data, iv, salt, updated_at)
         VALUES (?, ?, ?, ?, ?)
-      `, [
-        userId, encryptedData, iv.toString('hex'),
-        salt.toString('hex'), new Date().toISOString()
-      ]);
-
+      `,
+        [userId, encryptedData, iv.toString('hex'), salt.toString('hex'), new Date().toISOString()]
+      );
     } catch (error) {
       throw new Error(`Falha ao armazenar preferências: ${error.message}`);
     }
@@ -257,9 +284,12 @@ export class SecureKeyManager {
 
   public async retrieveUserPreferences(userId: string): Promise<any> {
     try {
-      const result = await this.db.get(`
+      const result = await this.db.get(
+        `
         SELECT * FROM user_preferences WHERE user_id = ?
-      `, [userId]);
+      `,
+        [userId]
+      );
 
       if (!result) {
         return this.getDefaultPreferences();
@@ -295,26 +325,31 @@ export class SecureKeyManager {
       notifications: {
         email: true,
         push: false,
-        inApp: true
+        inApp: true,
       },
       searchSettings: {
         resultsPerPage: 10,
-        enableAI: true
+        enableAI: true,
       },
       securitySettings: {
         sessionTimeout: 3600,
-        requireMFA: false
-      }
+        requireMFA: false,
+      },
     };
   }
 
-  public async getUserAPIKeys(userId: string): Promise<Omit<EncryptedAPIKey, 'encryptedKey' | 'keyHash'>[]> {
-    const results = await this.db.all(`
+  public async getUserAPIKeys(
+    userId: string
+  ): Promise<Omit<EncryptedAPIKey, 'encryptedKey' | 'keyHash'>[]> {
+    const results = await this.db.all(
+      `
       SELECT id, user_id, key_name, provider, permissions, created_at, last_used, expires_at, is_active
       FROM encrypted_api_keys
       WHERE user_id = ? AND is_active = 1
       ORDER BY created_at DESC
-    `, [userId]);
+    `,
+      [userId]
+    );
 
     return results.map(row => ({
       id: row.id,
@@ -327,27 +362,30 @@ export class SecureKeyManager {
       createdAt: new Date(row.created_at),
       lastUsed: row.last_used ? new Date(row.last_used) : undefined,
       expiresAt: row.expires_at ? new Date(row.expires_at) : undefined,
-      isActive: Boolean(row.is_active)
+      isActive: Boolean(row.is_active),
     }));
   }
 
   private async updateLastUsed(keyId: string): Promise<void> {
-    await this.db.run(`
+    await this.db.run(
+      `
       UPDATE encrypted_api_keys
       SET last_used = ?
       WHERE id = ?
-    `, [new Date().toISOString(), keyId]);
+    `,
+      [new Date().toISOString(), keyId]
+    );
   }
 
   private async logKeyOperation(userId: string, keyId: string, operation: string): Promise<void> {
-    await this.db.run(`
+    await this.db.run(
+      `
       INSERT INTO key_audit_log
       (id, user_id, key_id, operation, timestamp, ip_address)
       VALUES (?, ?, ?, ?, ?, ?)
-    `, [
-      crypto.randomUUID(), userId, keyId, operation,
-      new Date().toISOString(), 'system'
-    ]);
+    `,
+      [crypto.randomUUID(), userId, keyId, operation, new Date().toISOString(), 'system']
+    );
   }
 
   public async setupDatabase(): Promise<void> {

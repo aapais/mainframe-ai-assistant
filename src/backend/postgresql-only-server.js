@@ -9,7 +9,8 @@ const path = require('path');
 const fs = require('fs').promises;
 const EmbeddingService = require('../services/embedding-service');
 // const documentProcessorRouter = require('./document-processor-api');
-const settingsRouter = require('../api/settings/settings-api');
+// const settingsRouter = require('../api/settings/settings-api');  // Commented out - using local routes instead
+const { WindowsAuthService } = require('../auth/WindowsAuthService');
 require('dotenv').config();
 
 const app = express();
@@ -26,6 +27,10 @@ const pgConfig = {
 
 // Initialize services
 let embeddingService = null;
+let windowsAuthService = null;
+
+// Initialize Windows Auth Service
+windowsAuthService = new WindowsAuthService();
 
 // Initialize embedding service
 if (process.env.OPENAI_API_KEY) {
@@ -124,7 +129,395 @@ app.use((req, res, next) => {
 // app.use('/api/documents', documentProcessorRouter);
 
 // Settings API routes
-app.use('/api/settings', settingsRouter);
+// app.use('/api/settings', settingsRouter);  // Commented out - using local routes instead
+
+// Windows Authentication Routes
+app.post('/api/auth/windows/login', async (req, res) => {
+  try {
+    const result = await windowsAuthService.loginWithWindows();
+
+    // Ensure user exists in the database
+    if (result.success && result.user) {
+      const userQuery = `
+        INSERT INTO users (id, username, email, display_name, domain, computer, role, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT (id) DO UPDATE
+        SET username = $2,
+            email = $3,
+            display_name = $4,
+            domain = $5,
+            computer = $6,
+            updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+      try {
+        await db.query(userQuery, [
+          result.user.id,
+          result.user.username,
+          result.user.email,
+          result.user.displayName || result.user.username,
+          result.user.domain,
+          result.user.computer,
+          'user'
+        ]);
+        console.log(`User ${result.user.username} synced to database`);
+      } catch (dbError) {
+        console.error('Error syncing user to database:', dbError);
+        // Continue even if database sync fails
+      }
+
+      // Try to load user settings/preferences from database
+      try {
+        const settingsQuery = `
+          SELECT * FROM user_preferences WHERE user_id = $1
+        `;
+        const settingsResult = await db.query(settingsQuery, [result.user.id]);
+
+        if (settingsResult.rows.length > 0) {
+          const settings = settingsResult.rows[0];
+
+          // Create a complete settings object from database columns
+          const completeSettings = {
+            theme: settings.theme || 'light',
+            language: settings.language || 'pt-BR',
+            notifications: settings.notifications !== undefined ? settings.notifications : true,
+            auto_login: settings.auto_login !== undefined ? settings.auto_login : true,
+            session_timeout: settings.session_timeout || 28800,
+            display_name: settings.display_name,
+            email: settings.email
+          };
+
+          // Merge with settings_json if it exists
+          if (settings.settings_json) {
+            try {
+              const savedSettings = typeof settings.settings_json === 'string'
+                ? JSON.parse(settings.settings_json)
+                : settings.settings_json;
+
+              console.log('Loaded settings_json:', savedSettings);
+
+              // Merge savedSettings into completeSettings
+              // This overwrites default values with saved advanced settings
+              Object.assign(completeSettings, savedSettings);
+            } catch (parseError) {
+              console.error('Error parsing settings_json:', parseError);
+            }
+          }
+
+          // Add all settings to the user object
+          result.user.settings = completeSettings;
+
+          // Also set display_name and email on user object directly
+          if (completeSettings.display_name) {
+            result.user.displayName = completeSettings.display_name;
+            result.user.display_name = completeSettings.display_name;
+          }
+          if (completeSettings.email) {
+            result.user.email = completeSettings.email;
+          }
+
+          // Set theme and language on user for immediate use
+          if (completeSettings.theme) {
+            result.user.theme = completeSettings.theme;
+          }
+          if (completeSettings.language) {
+            result.user.language = completeSettings.language;
+          }
+        }
+      } catch (settingsError) {
+        console.error('Error loading user settings:', settingsError);
+        // Continue even if settings load fails
+      }
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('Windows auth error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Authentication failed'
+    });
+  }
+});
+
+app.get('/api/auth/windows/current', (req, res) => {
+  try {
+    const userInfo = windowsAuthService.getCurrentWindowsUser();
+    res.json({
+      success: true,
+      user: userInfo
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// User Routes
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // For now, return mock user data based on Windows auth
+    const userInfo = windowsAuthService.getCurrentWindowsUser();
+
+    res.json({
+      id: userId,
+      username: userInfo.username,
+      email: `${userInfo.username}@${userInfo.domain}.local`,
+      displayName: userInfo.username,
+      preferences: {
+        theme: 'light',
+        language: 'pt',
+        notifications: true
+      },
+      role: 'user',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const updates = req.body;
+
+    console.log('Updating user:', userId, updates);
+
+    // For now, just return success
+    // In production, save to database
+    res.json({
+      success: true,
+      user: {
+        id: userId,
+        ...updates
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+app.patch('/api/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const updates = req.body;
+
+    console.log('Patching user:', userId, updates);
+
+    // Save preferences to database if provided
+    if (updates.preferences) {
+      // First ensure user exists in users table
+      await db.query(`
+        INSERT INTO users (id, username, email, display_name, created_at)
+        VALUES ($1, $2, $3, $2, CURRENT_TIMESTAMP)
+        ON CONFLICT (id) DO NOTHING
+      `, [userId, 'user_' + userId.substring(0, 8), userId + '@local']);
+
+      const query = `
+        INSERT INTO user_settings (user_id, theme, language, notifications, settings_json)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (user_id) DO UPDATE
+        SET theme = COALESCE($2, user_settings.theme),
+            language = COALESCE($3, user_settings.language),
+            notifications = COALESCE($4, user_settings.notifications),
+            settings_json = COALESCE($5, user_settings.settings_json),
+            updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+      const prefs = updates.preferences;
+      await db.query(query, [
+        userId,
+        prefs.theme || 'light',
+        prefs.language || 'pt-BR',
+        prefs.notifications !== undefined ? prefs.notifications : true,
+        JSON.stringify(prefs)
+      ]);
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: userId,
+        ...updates
+      }
+    });
+  } catch (error) {
+    console.error('Error patching user:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Settings specific routes
+app.get('/api/settings/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Check which table exists
+    const checkTableQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'user_preferences'
+      );
+    `;
+
+    const tableCheck = await db.query(checkTableQuery);
+    const hasPreferencesTable = tableCheck.rows[0].exists;
+
+    const tableName = hasPreferencesTable ? 'user_preferences' : 'user_settings';
+    const query = `SELECT * FROM ${tableName} WHERE user_id = $1`;
+
+    const result = await db.query(query, [userId]);
+
+    if (result.rows.length > 0) {
+      let settings = result.rows[0];
+
+      // Parse settings_json if it exists to get complex notification settings
+      if (settings.settings_json) {
+        try {
+          const jsonSettings = typeof settings.settings_json === 'string'
+            ? JSON.parse(settings.settings_json)
+            : settings.settings_json;
+
+          // If notifications is a complex object in settings_json, use it
+          if (jsonSettings.notifications && typeof jsonSettings.notifications === 'object') {
+            settings.notifications = jsonSettings.notifications;
+          }
+        } catch (e) {
+          console.error('Error parsing settings_json:', e);
+        }
+      }
+
+      res.json({
+        success: true,
+        settings: settings
+      });
+    } else {
+      // Return default settings if none exist
+      res.json({
+        success: true,
+        settings: {
+          user_id: userId,
+          theme: 'light',
+          language: 'pt-BR',
+          notifications: true,
+          auto_login: true,
+          session_timeout: 28800
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.post('/api/settings/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const settings = req.body;
+
+    // Check if user_preferences table exists (newer schema)
+    let tableName = 'user_preferences';
+    let checkTableQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'user_preferences'
+      );
+    `;
+
+    const tableCheck = await db.query(checkTableQuery);
+    const hasPreferencesTable = tableCheck.rows[0].exists;
+
+    if (hasPreferencesTable) {
+      // Use user_preferences table
+      const query = `
+        INSERT INTO user_preferences (user_id, theme, language, notifications, auto_login, session_timeout, display_name, email, settings_json, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+        ON CONFLICT (user_id) DO UPDATE
+        SET theme = EXCLUDED.theme,
+            language = EXCLUDED.language,
+            notifications = EXCLUDED.notifications,
+            auto_login = EXCLUDED.auto_login,
+            session_timeout = EXCLUDED.session_timeout,
+            display_name = EXCLUDED.display_name,
+            email = EXCLUDED.email,
+            settings_json = EXCLUDED.settings_json,
+            updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+
+      // Handle notifications properly - if it's an object, store it in settings_json
+      // If it's a simple boolean, use that for the notifications column
+      const notificationsValue = typeof settings.notifications === 'object'
+        ? true  // Default to true if we have a complex object
+        : (settings.notifications !== undefined ? settings.notifications : true);
+
+      // Include the full notifications object in settings_json
+      const fullSettings = {
+        ...settings,
+        notifications: settings.notifications || true
+      };
+
+      const result = await db.query(query, [
+        userId,
+        settings.theme || 'light',
+        settings.language || 'pt-BR',
+        notificationsValue,
+        settings.auto_login !== undefined ? settings.auto_login : true,
+        settings.session_timeout || 28800,
+        settings.display_name || settings.userData?.display_name || null,
+        settings.email || settings.userData?.email || null,
+        JSON.stringify(fullSettings)
+      ]);
+
+      res.json({
+        success: true,
+        settings: result.rows[0]
+      });
+    } else {
+      // Fallback to user_settings table with different approach
+      // First, delete existing settings if any
+      await db.query('DELETE FROM user_settings WHERE user_id = $1', [userId]);
+
+      // Then insert new settings
+      const insertQuery = `
+        INSERT INTO user_settings (user_id, theme, language, notifications, auto_login, session_timeout, settings_json)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+
+      const result = await db.query(insertQuery, [
+        userId,
+        settings.theme || 'light',
+        settings.language || 'pt-BR',
+        settings.notifications !== undefined ? settings.notifications : true,
+        settings.auto_login !== undefined ? settings.auto_login : true,
+        settings.session_timeout || 28800,
+        JSON.stringify(settings)
+      ]);
+
+      res.json({
+        success: true,
+        settings: result.rows[0]
+      });
+    }
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    res.status(500).json({ error: 'Failed to save settings', details: error.message });
+  }
+});
 
 // API Routes
 
@@ -627,6 +1020,68 @@ app.get('/api/knowledge/categories', async (req, res) => {
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+// Sessions endpoint
+app.get('/api/sessions/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // For now, return mock sessions data
+    // In production, this would query from a sessions table
+    const sessions = [
+      {
+        session_id: 'session-' + Date.now(),
+        user_id: userId,
+        ip_address: req.ip || '127.0.0.1',
+        user_agent: req.headers['user-agent'] || 'Unknown',
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 28800000).toISOString(), // 8 hours
+        is_active: true
+      }
+    ];
+
+    res.json({ success: true, sessions });
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch sessions' });
+  }
+});
+
+// Logs endpoint
+app.get('/api/logs', async (req, res) => {
+  try {
+    // For now, return mock logs data
+    // In production, this would query from a logs table
+    const logs = [
+      {
+        id: 1,
+        timestamp: new Date().toISOString(),
+        level: 'INFO',
+        message: 'System started successfully',
+        source: 'Backend'
+      },
+      {
+        id: 2,
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        level: 'WARNING',
+        message: 'High memory usage detected',
+        source: 'Monitor'
+      },
+      {
+        id: 3,
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        level: 'ERROR',
+        message: 'Failed to connect to external service',
+        source: 'API'
+      }
+    ];
+
+    res.json({ success: true, logs });
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    res.status(500).json({ error: 'Failed to fetch logs' });
   }
 });
 

@@ -9,12 +9,7 @@ module.exports = async () => {
   console.log('🚀 Setting up SSO test environment...');
 
   // Create test directories if they don't exist
-  const testDirs = [
-    'coverage',
-    'test-results',
-    'test-artifacts',
-    'temp'
-  ];
+  const testDirs = ['coverage', 'test-results', 'test-artifacts', 'temp'];
 
   for (const dir of testDirs) {
     const dirPath = path.join(__dirname, '..', dir);
@@ -55,8 +50,8 @@ module.exports = async () => {
     startTime: Date.now(),
     suites: {},
     memory: {
-      initial: process.memoryUsage()
-    }
+      initial: process.memoryUsage(),
+    },
   };
 
   global.__TEST_PERFORMANCE__ = performanceData;
@@ -83,7 +78,7 @@ module.exports = async () => {
   global.__TEST_KEYS__ = {
     jwtSecret: process.env.JWT_SECRET,
     encryptionKey: crypto.randomBytes(32),
-    hmacSecret: crypto.randomBytes(64)
+    hmacSecret: crypto.randomBytes(64),
   };
 
   console.log('✅ Test environment setup complete');

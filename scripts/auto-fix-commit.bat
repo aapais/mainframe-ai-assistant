@@ -1,7 +1,23 @@
 @echo off
-REM Script para corrigir automaticamente erros antes de fazer commit (Windows)
+REM Script para corrigir automaticamente TODOS os erros antes de fazer commit (Windows)
+setlocal enabledelayedexpansion
 
 echo 🔧 Corrigindo erros automaticamente antes do commit...
+
+REM 0. Verificar e corrigir configurações de build
+echo 🏗️ Verificando configuração de build...
+findstr /C:"\"build\": \"electron-builder\"" package.json >nul 2>&1
+if %ERRORLEVEL% == 0 (
+    echo   ➡️ Atualizando script de build para desabilitar publicação...
+    powershell -Command "(Get-Content package.json) -replace '\"build\": \"electron-builder\"', '\"build\": \"electron-builder --publish=never\"' | Set-Content package.json"
+)
+
+REM Garantir que publish está configurado como null
+findstr /C:"\"publish\": null" package.json >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo   ➡️ Adicionando publish: null ao build config...
+    powershell -Command "(Get-Content package.json) -replace '\"build\": \{', '\"build\": \{`n    \"publish\": null,' | Set-Content package.json"
+)
 
 REM 1. Corrigir formatação com Prettier
 echo 📝 Formatando código com Prettier...

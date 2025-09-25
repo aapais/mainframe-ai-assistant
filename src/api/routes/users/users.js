@@ -13,7 +13,7 @@ router.get('/profile', async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'Utilizador não encontrado'
+        message: 'Utilizador não encontrado',
       });
     }
 
@@ -28,13 +28,13 @@ router.get('/profile', async (req, res) => {
         role: user.role,
         permissions: JSON.parse(user.permissions || '[]'),
         createdAt: user.created_at,
-        lastLogin: user.last_login
-      }
+        lastLogin: user.last_login,
+      },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro ao obter perfil do utilizador'
+      message: 'Erro ao obter perfil do utilizador',
     });
   }
 });
@@ -49,24 +49,24 @@ router.put('/profile', async (req, res) => {
     const updated = await updateUserProfile(userId, {
       firstName,
       lastName,
-      displayName
+      displayName,
     });
 
     if (updated) {
       res.json({
         success: true,
-        message: 'Perfil actualizado com sucesso'
+        message: 'Perfil actualizado com sucesso',
       });
     } else {
       res.status(400).json({
         success: false,
-        message: 'Erro ao actualizar perfil'
+        message: 'Erro ao actualizar perfil',
       });
     }
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro interno do servidor'
+      message: 'Erro interno do servidor',
     });
   }
 });
@@ -80,12 +80,12 @@ router.get('/preferences', async (req, res) => {
 
     res.json({
       success: true,
-      preferences
+      preferences,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro ao obter preferências'
+      message: 'Erro ao obter preferências',
     });
   }
 });
@@ -100,12 +100,12 @@ router.put('/preferences', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Preferências guardadas com sucesso'
+      message: 'Preferências guardadas com sucesso',
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro ao guardar preferências'
+      message: 'Erro ao guardar preferências',
     });
   }
 });
@@ -119,12 +119,12 @@ router.get('/api-keys', async (req, res) => {
 
     res.json({
       success: true,
-      keys
+      keys,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro ao obter chaves API'
+      message: 'Erro ao obter chaves API',
     });
   }
 });
@@ -146,12 +146,12 @@ router.post('/api-keys', async (req, res) => {
     res.json({
       success: true,
       message: 'Chave API criada com sucesso',
-      keyId
+      keyId,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 });
@@ -166,12 +166,12 @@ router.delete('/api-keys/:keyId', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Chave API eliminada com sucesso'
+      message: 'Chave API eliminada com sucesso',
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 });
@@ -186,12 +186,12 @@ router.get('/sessions', async (req, res) => {
 
     res.json({
       success: true,
-      sessions
+      sessions,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro ao obter sessões'
+      message: 'Erro ao obter sessões',
     });
   }
 });
@@ -206,12 +206,12 @@ router.delete('/sessions/:sessionId', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Sessão revogada com sucesso'
+      message: 'Sessão revogada com sucesso',
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Erro ao revogar sessão'
+      message: 'Erro ao revogar sessão',
     });
   }
 });

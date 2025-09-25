@@ -23,7 +23,7 @@ class WindowsAuthService {
         port: process.env.DB_PORT || 5432,
         database: process.env.DB_NAME || 'mainframe_kb',
         user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD || 'postgres'
+        password: process.env.DB_PASSWORD || 'postgres',
       });
       await this.dbClient.connect();
       console.log('✅ Windows Auth conectado ao PostgreSQL');
@@ -48,7 +48,7 @@ class WindowsAuthService {
       upn: `${userInfo.username}@${domain.toLowerCase()}.local`,
       uid: userInfo.uid,
       gid: userInfo.gid,
-      home: userInfo.homedir
+      home: userInfo.homedir,
     };
   }
 
@@ -58,15 +58,15 @@ class WindowsAuthService {
   generateToken(userData) {
     const header = {
       alg: 'HS256',
-      typ: 'JWT'
+      typ: 'JWT',
     };
 
     const payload = {
       ...userData,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (8 * 60 * 60), // 8 horas
+      exp: Math.floor(Date.now() / 1000) + 8 * 60 * 60, // 8 horas
       iss: 'windows-local-auth',
-      jti: crypto.randomBytes(16).toString('hex')
+      jti: crypto.randomBytes(16).toString('hex'),
     };
 
     const base64Header = Buffer.from(JSON.stringify(header)).toString('base64url');
@@ -125,13 +125,14 @@ class WindowsAuthService {
       domain: windowsUser.domain,
       computer: windowsUser.computer,
       authMethod: 'windows-local',
-      roles: ['user']
+      roles: ['user'],
     };
 
     // Salva sessão no banco se disponível
     if (this.dbClient) {
       try {
-        await this.dbClient.query(`
+        await this.dbClient.query(
+          `
           INSERT INTO user_sessions (
             session_id, user_id, username, email,
             login_method, created_at, expires_at, is_active
@@ -139,7 +140,9 @@ class WindowsAuthService {
           ON CONFLICT (session_id) DO UPDATE SET
             expires_at = NOW() + INTERVAL '8 hours',
             is_active = true
-        `, [userData.id, userData.id, userData.username, userData.email, 'windows-local']);
+        `,
+          [userData.id, userData.id, userData.username, userData.email, 'windows-local']
+        );
       } catch (error) {
         console.log('Sessão salva em memória apenas');
       }
@@ -149,7 +152,7 @@ class WindowsAuthService {
     this.sessions.set(userData.id, {
       ...userData,
       loginTime: new Date(),
-      expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000)
+      expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000),
     });
 
     const token = this.generateToken(userData);
@@ -159,7 +162,7 @@ class WindowsAuthService {
       user: userData,
       token: token,
       expiresIn: 28800, // 8 horas em segundos
-      method: 'Windows Local Authentication'
+      method: 'Windows Local Authentication',
     };
   }
 
@@ -200,8 +203,8 @@ class WindowsAuthService {
         username: payload.username,
         email: payload.email,
         domain: payload.domain,
-        computer: payload.computer
-      }
+        computer: payload.computer,
+      },
     };
   }
 
@@ -268,7 +271,7 @@ class WindowsAuthService {
       } catch (error) {
         res.status(500).json({
           success: false,
-          error: error.message
+          error: error.message,
         });
       }
     });
@@ -283,7 +286,7 @@ class WindowsAuthService {
       res.json({
         ...result,
         windows: windowsUser,
-        server: 'Windows Local Auth'
+        server: 'Windows Local Auth',
       });
     });
 
@@ -299,13 +302,13 @@ class WindowsAuthService {
       if (!req.user) {
         return res.status(401).json({
           success: false,
-          error: 'Não autenticado'
+          error: 'Não autenticado',
         });
       }
 
       res.json({
         success: true,
-        user: req.user
+        user: req.user,
       });
     });
 
@@ -325,5 +328,5 @@ function getWindowsAuth() {
 
 module.exports = {
   WindowsAuthService,
-  getWindowsAuth
+  getWindowsAuth,
 };

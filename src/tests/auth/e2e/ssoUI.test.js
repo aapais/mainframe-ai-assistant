@@ -11,40 +11,59 @@ const React = require('react');
 const LoginPage = ({ onLogin, providers, loading, error }) => {
   return React.createElement('div', { 'data-testid': 'login-page' }, [
     React.createElement('h1', { key: 'title' }, 'Login'),
-    error && React.createElement('div', {
-      key: 'error',
-      'data-testid': 'error-message',
-      role: 'alert'
-    }, error),
-    React.createElement('div', { key: 'providers' },
+    error &&
+      React.createElement(
+        'div',
+        {
+          key: 'error',
+          'data-testid': 'error-message',
+          role: 'alert',
+        },
+        error
+      ),
+    React.createElement(
+      'div',
+      { key: 'providers' },
       providers.map(provider =>
-        React.createElement('button', {
-          key: provider.name,
-          'data-testid': `login-${provider.name}`,
-          onClick: () => onLogin(provider.name),
-          disabled: loading,
-          'aria-label': `Login with ${provider.displayName}`
-        }, loading ? 'Loading...' : `Login with ${provider.displayName}`)
+        React.createElement(
+          'button',
+          {
+            key: provider.name,
+            'data-testid': `login-${provider.name}`,
+            onClick: () => onLogin(provider.name),
+            disabled: loading,
+            'aria-label': `Login with ${provider.displayName}`,
+          },
+          loading ? 'Loading...' : `Login with ${provider.displayName}`
+        )
       )
-    )
+    ),
   ]);
 };
 
 const Dashboard = ({ user, onLogout }) => {
   return React.createElement('div', { 'data-testid': 'dashboard' }, [
     React.createElement('h1', { key: 'welcome' }, `Welcome, ${user.name}!`),
-    React.createElement('div', {
-      key: 'user-info',
-      'data-testid': 'user-info'
-    }, [
-      React.createElement('p', { key: 'email' }, `Email: ${user.email}`),
-      React.createElement('p', { key: 'provider' }, `Provider: ${user.provider}`)
-    ]),
-    React.createElement('button', {
-      key: 'logout',
-      'data-testid': 'logout-button',
-      onClick: onLogout
-    }, 'Logout')
+    React.createElement(
+      'div',
+      {
+        key: 'user-info',
+        'data-testid': 'user-info',
+      },
+      [
+        React.createElement('p', { key: 'email' }, `Email: ${user.email}`),
+        React.createElement('p', { key: 'provider' }, `Provider: ${user.provider}`),
+      ]
+    ),
+    React.createElement(
+      'button',
+      {
+        key: 'logout',
+        'data-testid': 'logout-button',
+        onClick: onLogout,
+      },
+      'Logout'
+    ),
   ]);
 };
 
@@ -52,79 +71,111 @@ const ProfilePage = ({ user, onUpdate, updating, errors }) => {
   const [formData, setFormData] = React.useState({
     firstName: user.firstName || '',
     lastName: user.lastName || '',
-    email: user.email || ''
+    email: user.email || '',
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     onUpdate(formData);
   };
 
   return React.createElement('div', { 'data-testid': 'profile-page' }, [
     React.createElement('h1', { key: 'title' }, 'Profile'),
-    React.createElement('form', {
-      key: 'form',
-      onSubmit: handleSubmit,
-      'data-testid': 'profile-form'
-    }, [
-      React.createElement('div', { key: 'firstName-field' }, [
-        React.createElement('label', {
-          key: 'firstName-label',
-          htmlFor: 'firstName'
-        }, 'First Name'),
-        React.createElement('input', {
-          key: 'firstName-input',
-          id: 'firstName',
-          'data-testid': 'firstName-input',
-          value: formData.firstName,
-          onChange: (e) => setFormData(prev => ({ ...prev, firstName: e.target.value })),
-          'aria-describedby': errors?.firstName ? 'firstName-error' : undefined
-        }),
-        errors?.firstName && React.createElement('span', {
-          key: 'firstName-error',
-          id: 'firstName-error',
-          role: 'alert',
-          'data-testid': 'firstName-error'
-        }, errors.firstName)
-      ]),
-      React.createElement('div', { key: 'lastName-field' }, [
-        React.createElement('label', {
-          key: 'lastName-label',
-          htmlFor: 'lastName'
-        }, 'Last Name'),
-        React.createElement('input', {
-          key: 'lastName-input',
-          id: 'lastName',
-          'data-testid': 'lastName-input',
-          value: formData.lastName,
-          onChange: (e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))
-        })
-      ]),
-      React.createElement('div', { key: 'email-field' }, [
-        React.createElement('label', {
-          key: 'email-label',
-          htmlFor: 'email'
-        }, 'Email'),
-        React.createElement('input', {
-          key: 'email-input',
-          id: 'email',
-          type: 'email',
-          'data-testid': 'email-input',
-          value: formData.email,
-          onChange: (e) => setFormData(prev => ({ ...prev, email: e.target.value }))
-        })
-      ]),
-      React.createElement('button', {
-        key: 'submit',
-        type: 'submit',
-        'data-testid': 'update-profile-button',
-        disabled: updating
-      }, updating ? 'Updating...' : 'Update Profile')
-    ])
+    React.createElement(
+      'form',
+      {
+        key: 'form',
+        onSubmit: handleSubmit,
+        'data-testid': 'profile-form',
+      },
+      [
+        React.createElement('div', { key: 'firstName-field' }, [
+          React.createElement(
+            'label',
+            {
+              key: 'firstName-label',
+              htmlFor: 'firstName',
+            },
+            'First Name'
+          ),
+          React.createElement('input', {
+            key: 'firstName-input',
+            id: 'firstName',
+            'data-testid': 'firstName-input',
+            value: formData.firstName,
+            onChange: e => setFormData(prev => ({ ...prev, firstName: e.target.value })),
+            'aria-describedby': errors?.firstName ? 'firstName-error' : undefined,
+          }),
+          errors?.firstName &&
+            React.createElement(
+              'span',
+              {
+                key: 'firstName-error',
+                id: 'firstName-error',
+                role: 'alert',
+                'data-testid': 'firstName-error',
+              },
+              errors.firstName
+            ),
+        ]),
+        React.createElement('div', { key: 'lastName-field' }, [
+          React.createElement(
+            'label',
+            {
+              key: 'lastName-label',
+              htmlFor: 'lastName',
+            },
+            'Last Name'
+          ),
+          React.createElement('input', {
+            key: 'lastName-input',
+            id: 'lastName',
+            'data-testid': 'lastName-input',
+            value: formData.lastName,
+            onChange: e => setFormData(prev => ({ ...prev, lastName: e.target.value })),
+          }),
+        ]),
+        React.createElement('div', { key: 'email-field' }, [
+          React.createElement(
+            'label',
+            {
+              key: 'email-label',
+              htmlFor: 'email',
+            },
+            'Email'
+          ),
+          React.createElement('input', {
+            key: 'email-input',
+            id: 'email',
+            type: 'email',
+            'data-testid': 'email-input',
+            value: formData.email,
+            onChange: e => setFormData(prev => ({ ...prev, email: e.target.value })),
+          }),
+        ]),
+        React.createElement(
+          'button',
+          {
+            key: 'submit',
+            type: 'submit',
+            'data-testid': 'update-profile-button',
+            disabled: updating,
+          },
+          updating ? 'Updating...' : 'Update Profile'
+        ),
+      ]
+    ),
   ]);
 };
 
-const AccountLinkingPage = ({ user, availableProviders, linkedProviders, onLink, onUnlink, loading }) => {
+const AccountLinkingPage = ({
+  user,
+  availableProviders,
+  linkedProviders,
+  onLink,
+  onUnlink,
+  loading,
+}) => {
   return React.createElement('div', { 'data-testid': 'account-linking-page' }, [
     React.createElement('h1', { key: 'title' }, 'Linked Accounts'),
     React.createElement('div', { key: 'linked-accounts' }, [
@@ -132,31 +183,49 @@ const AccountLinkingPage = ({ user, availableProviders, linkedProviders, onLink,
       linkedProviders.length === 0
         ? React.createElement('p', { key: 'no-linked' }, 'No accounts linked')
         : linkedProviders.map(provider =>
-            React.createElement('div', {
-              key: provider.name,
-              'data-testid': `linked-${provider.name}`
-            }, [
-              React.createElement('span', { key: 'name' }, `${provider.displayName}: ${provider.email}`),
-              React.createElement('button', {
-                key: 'unlink',
-                'data-testid': `unlink-${provider.name}`,
-                onClick: () => onUnlink(provider.name),
-                disabled: loading
-              }, 'Unlink')
-            ])
-          )
+            React.createElement(
+              'div',
+              {
+                key: provider.name,
+                'data-testid': `linked-${provider.name}`,
+              },
+              [
+                React.createElement(
+                  'span',
+                  { key: 'name' },
+                  `${provider.displayName}: ${provider.email}`
+                ),
+                React.createElement(
+                  'button',
+                  {
+                    key: 'unlink',
+                    'data-testid': `unlink-${provider.name}`,
+                    onClick: () => onUnlink(provider.name),
+                    disabled: loading,
+                  },
+                  'Unlink'
+                ),
+              ]
+            )
+          ),
     ]),
     React.createElement('div', { key: 'available-providers' }, [
       React.createElement('h2', { key: 'available-title' }, 'Link New Account'),
-      availableProviders.filter(p => !linkedProviders.find(l => l.name === p.name)).map(provider =>
-        React.createElement('button', {
-          key: provider.name,
-          'data-testid': `link-${provider.name}`,
-          onClick: () => onLink(provider.name),
-          disabled: loading
-        }, `Link ${provider.displayName}`)
-      )
-    ])
+      availableProviders
+        .filter(p => !linkedProviders.find(l => l.name === p.name))
+        .map(provider =>
+          React.createElement(
+            'button',
+            {
+              key: provider.name,
+              'data-testid': `link-${provider.name}`,
+              onClick: () => onLink(provider.name),
+              disabled: loading,
+            },
+            `Link ${provider.displayName}`
+          )
+        ),
+    ]),
   ]);
 };
 
@@ -168,7 +237,7 @@ describe('SSO UI Components E2E Tests', () => {
     mockProviders = [
       { name: 'google', displayName: 'Google', available: true },
       { name: 'microsoft', displayName: 'Microsoft', available: true },
-      { name: 'okta', displayName: 'Okta', available: true }
+      { name: 'okta', displayName: 'Okta', available: true },
     ];
 
     mockAuthService = {
@@ -178,7 +247,7 @@ describe('SSO UI Components E2E Tests', () => {
       linkAccount: jest.fn(),
       unlinkAccount: jest.fn(),
       getCurrentUser: jest.fn(),
-      getLinkedProviders: jest.fn()
+      getLinkedProviders: jest.fn(),
     };
 
     // Reset all mocks
@@ -189,12 +258,14 @@ describe('SSO UI Components E2E Tests', () => {
     it('should render login page with provider buttons', () => {
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: null
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: null,
+        })
+      );
 
       expect(screen.getByTestId('login-page')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Login' })).toBeInTheDocument();
@@ -211,12 +282,14 @@ describe('SSO UI Components E2E Tests', () => {
       const user = userEvent.setup();
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: null
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: null,
+        })
+      );
 
       const googleButton = screen.getByTestId('login-google');
       await user.click(googleButton);
@@ -227,12 +300,14 @@ describe('SSO UI Components E2E Tests', () => {
     it('should show loading state', () => {
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: true,
-        error: null
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: true,
+          error: null,
+        })
+      );
 
       mockProviders.forEach(provider => {
         const button = screen.getByTestId(`login-${provider.name}`);
@@ -245,12 +320,14 @@ describe('SSO UI Components E2E Tests', () => {
       const errorMessage = 'Authentication failed';
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: errorMessage
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: errorMessage,
+        })
+      );
 
       const errorElement = screen.getByTestId('error-message');
       expect(errorElement).toBeInTheDocument();
@@ -262,12 +339,14 @@ describe('SSO UI Components E2E Tests', () => {
       const user = userEvent.setup();
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: null
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: null,
+        })
+      );
 
       // Tab through buttons
       await user.tab();
@@ -287,19 +366,23 @@ describe('SSO UI Components E2E Tests', () => {
       id: 'user-123',
       name: 'John Doe',
       email: 'john@example.com',
-      provider: 'google'
+      provider: 'google',
     };
 
     it('should render dashboard with user information', () => {
       const onLogout = jest.fn();
 
-      render(React.createElement(Dashboard, {
-        user: mockUser,
-        onLogout
-      }));
+      render(
+        React.createElement(Dashboard, {
+          user: mockUser,
+          onLogout,
+        })
+      );
 
       expect(screen.getByTestId('dashboard')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: `Welcome, ${mockUser.name}!` })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: `Welcome, ${mockUser.name}!` })
+      ).toBeInTheDocument();
 
       const userInfo = screen.getByTestId('user-info');
       expect(userInfo).toHaveTextContent(`Email: ${mockUser.email}`);
@@ -310,10 +393,12 @@ describe('SSO UI Components E2E Tests', () => {
       const user = userEvent.setup();
       const onLogout = jest.fn();
 
-      render(React.createElement(Dashboard, {
-        user: mockUser,
-        onLogout
-      }));
+      render(
+        React.createElement(Dashboard, {
+          user: mockUser,
+          onLogout,
+        })
+      );
 
       const logoutButton = screen.getByTestId('logout-button');
       await user.click(logoutButton);
@@ -327,18 +412,20 @@ describe('SSO UI Components E2E Tests', () => {
       id: 'user-123',
       firstName: 'John',
       lastName: 'Doe',
-      email: 'john@example.com'
+      email: 'john@example.com',
     };
 
     it('should render profile form with user data', () => {
       const onUpdate = jest.fn();
 
-      render(React.createElement(ProfilePage, {
-        user: mockUser,
-        onUpdate,
-        updating: false,
-        errors: null
-      }));
+      render(
+        React.createElement(ProfilePage, {
+          user: mockUser,
+          onUpdate,
+          updating: false,
+          errors: null,
+        })
+      );
 
       expect(screen.getByTestId('profile-page')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Profile' })).toBeInTheDocument();
@@ -355,12 +442,14 @@ describe('SSO UI Components E2E Tests', () => {
       const user = userEvent.setup();
       const onUpdate = jest.fn();
 
-      render(React.createElement(ProfilePage, {
-        user: mockUser,
-        onUpdate,
-        updating: false,
-        errors: null
-      }));
+      render(
+        React.createElement(ProfilePage, {
+          user: mockUser,
+          onUpdate,
+          updating: false,
+          errors: null,
+        })
+      );
 
       const firstNameInput = screen.getByTestId('firstName-input');
       await user.clear(firstNameInput);
@@ -372,7 +461,7 @@ describe('SSO UI Components E2E Tests', () => {
       expect(onUpdate).toHaveBeenCalledWith({
         firstName: 'Jane',
         lastName: 'Doe',
-        email: 'john@example.com'
+        email: 'john@example.com',
       });
     });
 
@@ -380,12 +469,14 @@ describe('SSO UI Components E2E Tests', () => {
       const errors = { firstName: 'First name is required' };
       const onUpdate = jest.fn();
 
-      render(React.createElement(ProfilePage, {
-        user: mockUser,
-        onUpdate,
-        updating: false,
-        errors
-      }));
+      render(
+        React.createElement(ProfilePage, {
+          user: mockUser,
+          onUpdate,
+          updating: false,
+          errors,
+        })
+      );
 
       const errorElement = screen.getByTestId('firstName-error');
       expect(errorElement).toBeInTheDocument();
@@ -399,12 +490,14 @@ describe('SSO UI Components E2E Tests', () => {
     it('should disable form during update', () => {
       const onUpdate = jest.fn();
 
-      render(React.createElement(ProfilePage, {
-        user: mockUser,
-        onUpdate,
-        updating: true,
-        errors: null
-      }));
+      render(
+        React.createElement(ProfilePage, {
+          user: mockUser,
+          onUpdate,
+          updating: true,
+          errors: null,
+        })
+      );
 
       const submitButton = screen.getByTestId('update-profile-button');
       expect(submitButton).toBeDisabled();
@@ -415,12 +508,14 @@ describe('SSO UI Components E2E Tests', () => {
       const user = userEvent.setup();
       const onUpdate = jest.fn();
 
-      render(React.createElement(ProfilePage, {
-        user: mockUser,
-        onUpdate,
-        updating: false,
-        errors: null
-      }));
+      render(
+        React.createElement(ProfilePage, {
+          user: mockUser,
+          onUpdate,
+          updating: false,
+          errors: null,
+        })
+      );
 
       const emailInput = screen.getByTestId('email-input');
       expect(emailInput).toHaveAttribute('type', 'email');
@@ -440,25 +535,25 @@ describe('SSO UI Components E2E Tests', () => {
     const mockUser = {
       id: 'user-123',
       name: 'John Doe',
-      email: 'john@example.com'
+      email: 'john@example.com',
     };
 
-    const linkedProviders = [
-      { name: 'google', displayName: 'Google', email: 'john@gmail.com' }
-    ];
+    const linkedProviders = [{ name: 'google', displayName: 'Google', email: 'john@gmail.com' }];
 
     it('should render account linking page', () => {
       const onLink = jest.fn();
       const onUnlink = jest.fn();
 
-      render(React.createElement(AccountLinkingPage, {
-        user: mockUser,
-        availableProviders: mockProviders,
-        linkedProviders,
-        onLink,
-        onUnlink,
-        loading: false
-      }));
+      render(
+        React.createElement(AccountLinkingPage, {
+          user: mockUser,
+          availableProviders: mockProviders,
+          linkedProviders,
+          onLink,
+          onUnlink,
+          loading: false,
+        })
+      );
 
       expect(screen.getByTestId('account-linking-page')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Linked Accounts' })).toBeInTheDocument();
@@ -480,14 +575,16 @@ describe('SSO UI Components E2E Tests', () => {
       const onLink = jest.fn();
       const onUnlink = jest.fn();
 
-      render(React.createElement(AccountLinkingPage, {
-        user: mockUser,
-        availableProviders: mockProviders,
-        linkedProviders: [],
-        onLink,
-        onUnlink,
-        loading: false
-      }));
+      render(
+        React.createElement(AccountLinkingPage, {
+          user: mockUser,
+          availableProviders: mockProviders,
+          linkedProviders: [],
+          onLink,
+          onUnlink,
+          loading: false,
+        })
+      );
 
       const linkButton = screen.getByTestId('link-microsoft');
       await user.click(linkButton);
@@ -500,14 +597,16 @@ describe('SSO UI Components E2E Tests', () => {
       const onLink = jest.fn();
       const onUnlink = jest.fn();
 
-      render(React.createElement(AccountLinkingPage, {
-        user: mockUser,
-        availableProviders: mockProviders,
-        linkedProviders,
-        onLink,
-        onUnlink,
-        loading: false
-      }));
+      render(
+        React.createElement(AccountLinkingPage, {
+          user: mockUser,
+          availableProviders: mockProviders,
+          linkedProviders,
+          onLink,
+          onUnlink,
+          loading: false,
+        })
+      );
 
       const unlinkButton = screen.getByTestId('unlink-google');
       await user.click(unlinkButton);
@@ -519,14 +618,16 @@ describe('SSO UI Components E2E Tests', () => {
       const onLink = jest.fn();
       const onUnlink = jest.fn();
 
-      render(React.createElement(AccountLinkingPage, {
-        user: mockUser,
-        availableProviders: mockProviders,
-        linkedProviders: [],
-        onLink,
-        onUnlink,
-        loading: false
-      }));
+      render(
+        React.createElement(AccountLinkingPage, {
+          user: mockUser,
+          availableProviders: mockProviders,
+          linkedProviders: [],
+          onLink,
+          onUnlink,
+          loading: false,
+        })
+      );
 
       expect(screen.getByText('No accounts linked')).toBeInTheDocument();
     });
@@ -535,14 +636,16 @@ describe('SSO UI Components E2E Tests', () => {
       const onLink = jest.fn();
       const onUnlink = jest.fn();
 
-      render(React.createElement(AccountLinkingPage, {
-        user: mockUser,
-        availableProviders: mockProviders,
-        linkedProviders,
-        onLink,
-        onUnlink,
-        loading: true
-      }));
+      render(
+        React.createElement(AccountLinkingPage, {
+          user: mockUser,
+          availableProviders: mockProviders,
+          linkedProviders,
+          onLink,
+          onUnlink,
+          loading: true,
+        })
+      );
 
       expect(screen.getByTestId('unlink-google')).toBeDisabled();
       expect(screen.getByTestId('link-microsoft')).toBeDisabled();
@@ -555,16 +658,16 @@ describe('SSO UI Components E2E Tests', () => {
       const user = userEvent.setup();
 
       // Mock OAuth callback simulation
-      mockAuthService.initiateOAuth.mockImplementation(async (provider) => {
+      mockAuthService.initiateOAuth.mockImplementation(async provider => {
         // Simulate redirect and callback
         return {
           user: {
             id: 'user-123',
             name: 'John Doe',
             email: 'john@example.com',
-            provider
+            provider,
           },
-          token: 'mock-jwt-token'
+          token: 'mock-jwt-token',
         };
       });
 
@@ -575,7 +678,7 @@ describe('SSO UI Components E2E Tests', () => {
       const TestApp = () => {
         const [state, setState] = React.useState({ currentUser, loading, error });
 
-        const handleLogin = async (provider) => {
+        const handleLogin = async provider => {
           setState(prev => ({ ...prev, loading: true, error: null }));
 
           try {
@@ -594,7 +697,7 @@ describe('SSO UI Components E2E Tests', () => {
         if (state.currentUser) {
           return React.createElement(Dashboard, {
             user: state.currentUser,
-            onLogout: handleLogout
+            onLogout: handleLogout,
           });
         }
 
@@ -602,7 +705,7 @@ describe('SSO UI Components E2E Tests', () => {
           providers: mockProviders,
           onLogin: handleLogin,
           loading: state.loading,
-          error: state.error
+          error: state.error,
         });
       };
 
@@ -632,9 +735,7 @@ describe('SSO UI Components E2E Tests', () => {
     it('should handle OAuth errors gracefully', async () => {
       const user = userEvent.setup();
 
-      mockAuthService.initiateOAuth.mockRejectedValue(
-        new Error('OAuth provider unavailable')
-      );
+      mockAuthService.initiateOAuth.mockRejectedValue(new Error('OAuth provider unavailable'));
 
       let error = null;
       let loading = false;
@@ -642,7 +743,7 @@ describe('SSO UI Components E2E Tests', () => {
       const TestApp = () => {
         const [state, setState] = React.useState({ error, loading });
 
-        const handleLogin = async (provider) => {
+        const handleLogin = async provider => {
           setState(prev => ({ ...prev, loading: true, error: null }));
 
           try {
@@ -656,7 +757,7 @@ describe('SSO UI Components E2E Tests', () => {
           providers: mockProviders,
           onLogin: handleLogin,
           loading: state.loading,
-          error: state.error
+          error: state.error,
         });
       };
 
@@ -680,12 +781,12 @@ describe('SSO UI Components E2E Tests', () => {
         id: 'user-123',
         firstName: 'John',
         lastName: 'Doe',
-        email: 'john@example.com'
+        email: 'john@example.com',
       };
 
       mockAuthService.updateProfile.mockResolvedValue({
         ...mockUser,
-        firstName: 'Jane'
+        firstName: 'Jane',
       });
 
       let updating = false;
@@ -693,7 +794,7 @@ describe('SSO UI Components E2E Tests', () => {
       const TestApp = () => {
         const [state, setState] = React.useState({ updating });
 
-        const handleUpdate = async (formData) => {
+        const handleUpdate = async formData => {
           setState(prev => ({ ...prev, updating: true }));
 
           try {
@@ -708,7 +809,7 @@ describe('SSO UI Components E2E Tests', () => {
           user: mockUser,
           onUpdate: handleUpdate,
           updating: state.updating,
-          errors: null
+          errors: null,
         });
       };
 
@@ -738,7 +839,7 @@ describe('SSO UI Components E2E Tests', () => {
       expect(mockAuthService.updateProfile).toHaveBeenCalledWith({
         firstName: 'Jane',
         lastName: 'Doe',
-        email: 'john@example.com'
+        email: 'john@example.com',
       });
     });
   });
@@ -747,12 +848,14 @@ describe('SSO UI Components E2E Tests', () => {
     it('should support screen readers', () => {
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: 'Login failed'
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: 'Login failed',
+        })
+      );
 
       // Error should be announced to screen readers
       const error = screen.getByTestId('error-message');
@@ -771,17 +874,19 @@ describe('SSO UI Components E2E Tests', () => {
         id: 'user-123',
         firstName: 'John',
         lastName: 'Doe',
-        email: 'john@example.com'
+        email: 'john@example.com',
       };
 
       const onUpdate = jest.fn();
 
-      render(React.createElement(ProfilePage, {
-        user: mockUser,
-        onUpdate,
-        updating: false,
-        errors: null
-      }));
+      render(
+        React.createElement(ProfilePage, {
+          user: mockUser,
+          onUpdate,
+          updating: false,
+          errors: null,
+        })
+      );
 
       // Tab through form fields
       await user.tab();
@@ -814,17 +919,19 @@ describe('SSO UI Components E2E Tests', () => {
           addEventListener: jest.fn(),
           removeEventListener: jest.fn(),
           dispatchEvent: jest.fn(),
-        }))
+        })),
       });
 
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: null
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: null,
+        })
+      );
 
       // Components should render without issues in high contrast mode
       expect(screen.getByTestId('login-page')).toBeInTheDocument();
@@ -854,17 +961,19 @@ describe('SSO UI Components E2E Tests', () => {
           addEventListener: jest.fn(),
           removeEventListener: jest.fn(),
           dispatchEvent: jest.fn(),
-        }))
+        })),
       });
 
       const onLogin = jest.fn();
 
-      render(React.createElement(LoginPage, {
-        providers: mockProviders,
-        onLogin,
-        loading: false,
-        error: null
-      }));
+      render(
+        React.createElement(LoginPage, {
+          providers: mockProviders,
+          onLogin,
+          loading: false,
+          error: null,
+        })
+      );
 
       // Should render mobile-friendly layout
       expect(screen.getByTestId('login-page')).toBeInTheDocument();

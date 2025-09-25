@@ -9,7 +9,7 @@ class MockOAuthProvider {
       clientSecret: 'mock-client-secret',
       redirectUri: 'http://localhost:3000/auth/callback',
       scope: ['profile', 'email'],
-      ...config
+      ...config,
     };
     this.responses = new Map();
   }
@@ -27,7 +27,7 @@ class MockOAuthProvider {
       access_token: 'mock-access-token',
       token_type: 'Bearer',
       expires_in: 3600,
-      refresh_token: 'mock-refresh-token'
+      refresh_token: 'mock-refresh-token',
     };
 
     if (code === 'invalid-code') {
@@ -43,7 +43,7 @@ class MockOAuthProvider {
       email: 'test@example.com',
       name: 'Test User',
       picture: 'https://mock-provider.com/avatar/123.jpg',
-      verified_email: true
+      verified_email: true,
     };
 
     if (accessToken === 'invalid-token') {
@@ -57,7 +57,7 @@ class MockOAuthProvider {
     const mockResponse = this.responses.get('refreshToken') || {
       access_token: 'new-mock-access-token',
       token_type: 'Bearer',
-      expires_in: 3600
+      expires_in: 3600,
     };
 
     if (refreshToken === 'invalid-refresh-token') {
@@ -83,7 +83,7 @@ class MockGoogleProvider extends MockOAuthProvider {
       authUrl: 'https://accounts.google.com/oauth2/auth',
       tokenUrl: 'https://oauth2.googleapis.com/token',
       userInfoUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
-      scope: ['profile', 'email', 'openid']
+      scope: ['profile', 'email', 'openid'],
     });
   }
 }
@@ -95,7 +95,7 @@ class MockMicrosoftProvider extends MockOAuthProvider {
       authUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
       tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
       userInfoUrl: 'https://graph.microsoft.com/v1.0/me',
-      scope: ['User.Read', 'profile', 'email']
+      scope: ['User.Read', 'profile', 'email'],
     });
   }
 }
@@ -107,7 +107,7 @@ class MockOktaProvider extends MockOAuthProvider {
       authUrl: 'https://dev-123456.okta.com/oauth2/v1/authorize',
       tokenUrl: 'https://dev-123456.okta.com/oauth2/v1/token',
       userInfoUrl: 'https://dev-123456.okta.com/oauth2/v1/userinfo',
-      scope: ['openid', 'profile', 'email']
+      scope: ['openid', 'profile', 'email'],
     });
   }
 }
@@ -119,7 +119,7 @@ class MockSAMLProvider {
       entryPoint: 'https://mock-saml-provider.com/sso',
       issuer: 'mock-saml-provider',
       cert: 'mock-certificate',
-      ...config
+      ...config,
     };
   }
 
@@ -127,7 +127,7 @@ class MockSAMLProvider {
     return {
       id: 'mock-saml-request-id',
       xml: '<samlp:AuthnRequest>Mock SAML Request</samlp:AuthnRequest>',
-      url: `${this.config.entryPoint}?SAMLRequest=encodedRequest`
+      url: `${this.config.entryPoint}?SAMLRequest=encodedRequest`,
     };
   }
 
@@ -142,8 +142,8 @@ class MockSAMLProvider {
         email: 'saml.user@example.com',
         firstName: 'SAML',
         lastName: 'User',
-        groups: ['users', 'developers']
-      }
+        groups: ['users', 'developers'],
+      },
     };
   }
 }
@@ -188,7 +188,7 @@ class MockJWTProvider {
     return {
       accessToken: this.generateToken({ userId: 'user-123' }),
       refreshToken: 'new-refresh-token',
-      expiresIn: 3600
+      expiresIn: 3600,
     };
   }
 }
@@ -199,5 +199,5 @@ module.exports = {
   MockMicrosoftProvider,
   MockOktaProvider,
   MockSAMLProvider,
-  MockJWTProvider
+  MockJWTProvider,
 };

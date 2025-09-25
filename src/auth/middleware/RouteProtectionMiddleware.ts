@@ -31,7 +31,7 @@ export class RouteProtectionMiddleware {
    */
   requireRole(roles: UserRole | UserRole[]) {
     return this.protect({
-      roles: Array.isArray(roles) ? roles : [roles]
+      roles: Array.isArray(roles) ? roles : [roles],
     });
   }
 
@@ -40,7 +40,7 @@ export class RouteProtectionMiddleware {
    */
   requirePermission(permissions: string | string[] | RoutePermission | RoutePermission[]) {
     return this.protect({
-      permissions: Array.isArray(permissions) ? permissions : [permissions]
+      permissions: Array.isArray(permissions) ? permissions : [permissions],
     });
   }
 
@@ -51,7 +51,7 @@ export class RouteProtectionMiddleware {
     return this.protect({
       roles,
       permissions,
-      requireAll: true
+      requireAll: true,
     });
   }
 
@@ -61,7 +61,7 @@ export class RouteProtectionMiddleware {
   requireOwnership(ownerField: string = 'userId') {
     return this.protect({
       allowOwner: true,
-      ownerField
+      ownerField,
     });
   }
 
@@ -70,7 +70,7 @@ export class RouteProtectionMiddleware {
    */
   requireAdmin() {
     return this.protect({
-      roles: ['admin', 'super_admin']
+      roles: ['admin', 'super_admin'],
     });
   }
 
@@ -79,7 +79,7 @@ export class RouteProtectionMiddleware {
    */
   requireSuperAdmin() {
     return this.protect({
-      roles: ['super_admin']
+      roles: ['super_admin'],
     });
   }
 
@@ -95,7 +95,7 @@ export class RouteProtectionMiddleware {
         }
 
         const user = req.user;
-        
+
         // Check if user account is active
         if (!user.isActive) {
           return this.sendForbidden(res, 'ACCOUNT_INACTIVE', 'Conta inativa');
@@ -104,7 +104,7 @@ export class RouteProtectionMiddleware {
         if (user.isSuspended) {
           return this.sendForbidden(res, 'ACCOUNT_SUSPENDED', 'Conta suspensa', {
             reason: user.suspendedReason,
-            until: user.suspendedUntil
+            until: user.suspendedUntil,
           });
         }
 
@@ -112,7 +112,11 @@ export class RouteProtectionMiddleware {
         if (options.customValidator) {
           const customResult = await options.customValidator(req, user);
           if (!customResult) {
-            return this.sendForbidden(res, 'CUSTOM_VALIDATION_FAILED', 'Acesso negado pela validação customizada');
+            return this.sendForbidden(
+              res,
+              'CUSTOM_VALIDATION_FAILED',
+              'Acesso negado pela validação customizada'
+            );
           }
         }
 
@@ -127,26 +131,31 @@ export class RouteProtectionMiddleware {
 
         // Check roles and permissions
         const hasAccess = await this.validateAccess(user, options);
-        
+
         if (!hasAccess.allowed) {
-          return this.sendForbidden(res, 'INSUFFICIENT_PRIVILEGES', hasAccess.reason || 'Privilégios insuficientes', {
-            requiredRoles: options.roles,
-            requiredPermissions: options.permissions,
-            userRole: user.role,
-            userPermissions: user.permissions
-          });
+          return this.sendForbidden(
+            res,
+            'INSUFFICIENT_PRIVILEGES',
+            hasAccess.reason || 'Privilégios insuficientes',
+            {
+              requiredRoles: options.roles,
+              requiredPermissions: options.permissions,
+              userRole: user.role,
+              userPermissions: user.permissions,
+            }
+          );
         }
 
         // Log successful access
         await this.logAccess(req, user, hasAccess.accessType || 'permission');
-        
+
         next();
       } catch (error) {
         console.error('Route protection error:', error);
         return res.status(500).json({
           success: false,
           error: 'PROTECTION_ERROR',
-          message: 'Erro interno na proteção da rota'
+          message: 'Erro interno na proteção da rota',
         });
       }
     };
@@ -155,7 +164,12 @@ export class RouteProtectionMiddleware {
   /**
    * Dynamic permission checker - evaluates permissions at runtime
    */
-  dynamicPermission(permissionResolver: (req: AuthenticatedRequest, user: User) => Promise<string[] | RoutePermission[]>) {
+  dynamicPermission(
+    permissionResolver: (
+      req: AuthenticatedRequest,
+      user: User
+    ) => Promise<string[] | RoutePermission[]>
+  ) {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       try {
         if (!req.user) {
@@ -163,13 +177,17 @@ export class RouteProtectionMiddleware {
         }
 
         const dynamicPermissions = await permissionResolver(req, req.user);
-        
+
         const hasAccess = await this.validateAccess(req.user, {
-          permissions: dynamicPermissions
+          permissions: dynamicPermissions,
         });
 
         if (!hasAccess.allowed) {
-          return this.sendForbidden(res, 'DYNAMIC_PERMISSION_DENIED', hasAccess.reason || 'Permissão dinâmica negada');
+          return this.sendForbidden(
+            res,
+            'DYNAMIC_PERMISSION_DENIED',
+            hasAccess.reason || 'Permissão dinâmica negada'
+          );
         }
 
         await this.logAccess(req, req.user, 'dynamic_permission');
@@ -179,7 +197,7 @@ export class RouteProtectionMiddleware {
         return res.status(500).json({
           success: false,
           error: 'DYNAMIC_PERMISSION_ERROR',
-          message: 'Erro na validação de permissão dinâmica'
+          message: 'Erro na validação de permissão dinâmica',
         });
       }
     };
@@ -192,9 +210,9 @@ export class RouteProtectionMiddleware {
     return this.protect({
       permissions: actions.map(action => ({
         resource: resourceType,
-        action
+        action,
       })),
-      requireAll: false // OR logic - user needs at least one of the permissions
+      requireAll: false, // OR logic - user needs at least one of the permissions
     });
   }
 
@@ -205,14 +223,19 @@ export class RouteProtectionMiddleware {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       const now = new Date();
       const currentHour = now.getHours();
-      
+
       if (currentHour < startHour || currentHour > endHour) {
-        return this.sendForbidden(res, 'TIME_RESTRICTION', `Acesso permitido apenas entre ${startHour}h e ${endHour}h`, {
-          currentTime: now.toLocaleTimeString(),
-          allowedWindow: `${startHour}:00 - ${endHour}:00`
-        });
+        return this.sendForbidden(
+          res,
+          'TIME_RESTRICTION',
+          `Acesso permitido apenas entre ${startHour}h e ${endHour}h`,
+          {
+            currentTime: now.toLocaleTimeString(),
+            allowedWindow: `${startHour}:00 - ${endHour}:00`,
+          }
+        );
       }
-      
+
       next();
     };
   }
@@ -223,14 +246,14 @@ export class RouteProtectionMiddleware {
   requireIPWhitelist(allowedIPs: string[]) {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       const clientIP = this.getClientIP(req);
-      
+
       if (!allowedIPs.includes(clientIP)) {
         return this.sendForbidden(res, 'IP_NOT_ALLOWED', 'IP não autorizado', {
           clientIP,
-          allowedIPs: allowedIPs.map(ip => ip.replace(/\d{1,3}$/, 'xxx')) // Mask IPs for security
+          allowedIPs: allowedIPs.map(ip => ip.replace(/\d{1,3}$/, 'xxx')), // Mask IPs for security
         });
       }
-      
+
       next();
     };
   }
@@ -241,14 +264,14 @@ export class RouteProtectionMiddleware {
   requireTrustedDevice() {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       const deviceInfo = req.deviceInfo;
-      
+
       if (!deviceInfo?.trusted) {
         return this.sendForbidden(res, 'DEVICE_NOT_TRUSTED', 'Dispositivo não confiável', {
           deviceId: deviceInfo?.id,
-          deviceName: deviceInfo?.name
+          deviceName: deviceInfo?.name,
         });
       }
-      
+
       next();
     };
   }
@@ -260,15 +283,23 @@ export class RouteProtectionMiddleware {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
       const user = req.user;
       const token = req.token;
-      
+
       if (!user?.mfaEnabled) {
-        return this.sendForbidden(res, 'MFA_NOT_ENABLED', 'MFA deve estar habilitado para esta operação');
+        return this.sendForbidden(
+          res,
+          'MFA_NOT_ENABLED',
+          'MFA deve estar habilitado para esta operação'
+        );
       }
-      
+
       if (!token?.mfaVerified) {
-        return this.sendForbidden(res, 'MFA_NOT_VERIFIED', 'MFA deve ser verificado para esta sessão');
+        return this.sendForbidden(
+          res,
+          'MFA_NOT_VERIFIED',
+          'MFA deve ser verificado para esta sessão'
+        );
       }
-      
+
       next();
     };
   }
@@ -276,7 +307,10 @@ export class RouteProtectionMiddleware {
   /**
    * Private helper methods
    */
-  private async validateAccess(user: User, options: ProtectionOptions): Promise<{
+  private async validateAccess(
+    user: User,
+    options: ProtectionOptions
+  ): Promise<{
     allowed: boolean;
     reason?: string;
     accessType?: string;
@@ -289,11 +323,11 @@ export class RouteProtectionMiddleware {
       const hasRole = options.roles.includes(user.role) || user.role === 'super_admin';
       checks.push(hasRole);
       accessType += hasRole ? 'role,' : '';
-      
+
       if (!hasRole && options.requireAll) {
         return {
           allowed: false,
-          reason: `Papel necessário: ${options.roles.join(' ou ')}. Usuário tem: ${user.role}`
+          reason: `Papel necessário: ${options.roles.join(' ou ')}. Usuário tem: ${user.role}`,
         };
       }
     }
@@ -303,11 +337,11 @@ export class RouteProtectionMiddleware {
       const hasPermission = await this.checkPermissions(user, options.permissions);
       checks.push(hasPermission.allowed);
       accessType += hasPermission.allowed ? 'permission,' : '';
-      
+
       if (!hasPermission.allowed && options.requireAll) {
         return {
           allowed: false,
-          reason: hasPermission.reason
+          reason: hasPermission.reason,
         };
       }
     }
@@ -319,20 +353,23 @@ export class RouteProtectionMiddleware {
 
     // Apply logic (AND vs OR)
     const allowed = options.requireAll ? checks.every(Boolean) : checks.some(Boolean);
-    
+
     return {
       allowed,
       reason: allowed ? undefined : 'Critérios de acesso não atendidos',
-      accessType: accessType.slice(0, -1) // Remove trailing comma
+      accessType: accessType.slice(0, -1), // Remove trailing comma
     };
   }
 
-  private async checkPermissions(user: User, permissions: string[] | RoutePermission[]): Promise<{
+  private async checkPermissions(
+    user: User,
+    permissions: string[] | RoutePermission[]
+  ): Promise<{
     allowed: boolean;
     reason?: string;
   }> {
     const userPermissions = user.permissions || [];
-    
+
     // If user is super admin, grant all permissions
     if (user.role === 'super_admin') {
       return { allowed: true };
@@ -349,8 +386,11 @@ export class RouteProtectionMiddleware {
         // Complex permission with resource and action
         const resourcePermission = `${permission.resource}:${permission.action}`;
         const wildcardPermission = `${permission.resource}:*`;
-        
-        if (userPermissions.includes(resourcePermission) || userPermissions.includes(wildcardPermission)) {
+
+        if (
+          userPermissions.includes(resourcePermission) ||
+          userPermissions.includes(wildcardPermission)
+        ) {
           return { allowed: true };
         }
       }
@@ -358,24 +398,29 @@ export class RouteProtectionMiddleware {
 
     return {
       allowed: false,
-      reason: `Permissões necessárias: ${permissions.map(p => 
-        typeof p === 'string' ? p : `${p.resource}:${p.action}`
-      ).join(', ')}`
+      reason: `Permissões necessárias: ${permissions
+        .map(p => (typeof p === 'string' ? p : `${p.resource}:${p.action}`))
+        .join(', ')}`,
     };
   }
 
-  private async checkOwnership(req: AuthenticatedRequest, user: User, ownerField: string = 'userId'): Promise<boolean> {
+  private async checkOwnership(
+    req: AuthenticatedRequest,
+    user: User,
+    ownerField: string = 'userId'
+  ): Promise<boolean> {
     try {
       // Check params, body, and query for owner field
-      const resourceUserId = req.params[ownerField] || req.body[ownerField] || req.query[ownerField];
-      
+      const resourceUserId =
+        req.params[ownerField] || req.body[ownerField] || req.query[ownerField];
+
       if (resourceUserId && resourceUserId === user.id) {
         return true;
       }
 
       // For dynamic ownership checking, could also query database
       // This would depend on the specific resource being accessed
-      
+
       return false;
     } catch (error) {
       console.error('Ownership check error:', error);
@@ -383,22 +428,29 @@ export class RouteProtectionMiddleware {
     }
   }
 
-  private async logAccess(req: AuthenticatedRequest, user: User, accessType: string): Promise<void> {
+  private async logAccess(
+    req: AuthenticatedRequest,
+    user: User,
+    accessType: string
+  ): Promise<void> {
     try {
-      await this.db.run(`
+      await this.db.run(
+        `
         INSERT INTO access_log (id, user_id, session_id, resource, action, access_type, ip_address, user_agent, timestamp)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        crypto.randomUUID(),
-        user.id,
-        req.sessionId,
-        req.path,
-        req.method,
-        accessType,
-        this.getClientIP(req),
-        req.headers['user-agent'] || 'unknown',
-        new Date().toISOString()
-      ]);
+      `,
+        [
+          crypto.randomUUID(),
+          user.id,
+          req.sessionId,
+          req.path,
+          req.method,
+          accessType,
+          this.getClientIP(req),
+          req.headers['user-agent'] || 'unknown',
+          new Date().toISOString(),
+        ]
+      );
     } catch (error) {
       console.error('Access logging error:', error);
     }
@@ -407,7 +459,7 @@ export class RouteProtectionMiddleware {
   private getClientIP(req: Request): string {
     return (
       (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-      req.headers['x-real-ip'] as string ||
+      (req.headers['x-real-ip'] as string) ||
       req.connection.remoteAddress ||
       req.socket.remoteAddress ||
       (req as any).ip ||
@@ -421,7 +473,7 @@ export class RouteProtectionMiddleware {
       error: code,
       message,
       timestamp: new Date().toISOString(),
-      ...additional
+      ...additional,
     });
   }
 }

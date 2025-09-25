@@ -40,7 +40,7 @@ export enum ComplianceCategory {
   AUDIT_LOGGING = 'AUDIT_LOGGING',
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
   PRIVACY = 'PRIVACY',
-  BUSINESS_CONTINUITY = 'BUSINESS_CONTINUITY'
+  BUSINESS_CONTINUITY = 'BUSINESS_CONTINUITY',
 }
 
 export interface ComplianceControl {
@@ -240,8 +240,8 @@ export class ComplianceReporter extends EventEmitter {
       attachments: [],
       metadata: {
         framework: framework.name,
-        version: framework.version
-      }
+        version: framework.version,
+      },
     };
 
     // Generate attachments
@@ -263,8 +263,8 @@ export class ComplianceReporter extends EventEmitter {
         reportType,
         period,
         findingsCount: findings.length,
-        complianceScore: summary.complianceScore
-      }
+        complianceScore: summary.complianceScore,
+      },
     });
 
     this.emit('reportGenerated', report);
@@ -275,9 +275,9 @@ export class ComplianceReporter extends EventEmitter {
    * Run automated compliance checks
    */
   async runAutomatedChecks(frameworkId?: string): Promise<Map<string, AutomatedCheck>> {
-    const checksToRun = frameworkId ?
-      this.getFrameworkChecks(frameworkId) :
-      Array.from(this.checks.values());
+    const checksToRun = frameworkId
+      ? this.getFrameworkChecks(frameworkId)
+      : Array.from(this.checks.values());
 
     const results = new Map<string, AutomatedCheck>();
 
@@ -317,7 +317,7 @@ export class ComplianceReporter extends EventEmitter {
       discoveredAt: new Date(),
       discoveredBy: 'manual',
       ...findingData,
-      requirementId
+      requirementId,
     };
 
     this.findings.set(findingId, finding);
@@ -335,8 +335,8 @@ export class ComplianceReporter extends EventEmitter {
         frameworkId,
         requirementId,
         severity: finding.severity,
-        title: finding.title
-      }
+        title: finding.title,
+      },
     });
 
     this.emit('findingAdded', finding);
@@ -371,8 +371,8 @@ export class ComplianceReporter extends EventEmitter {
       details: {
         findingId,
         resolution,
-        resolvedBy
-      }
+        resolvedBy,
+      },
     });
 
     this.emit('findingResolved', finding);
@@ -384,8 +384,9 @@ export class ComplianceReporter extends EventEmitter {
    */
   getComplianceDashboard(): ComplianceDashboard {
     const frameworks = Array.from(this.frameworks.values());
-    const activeFindings = Array.from(this.findings.values())
-      .filter(f => f.status === 'OPEN' || f.status === 'IN_PROGRESS');
+    const activeFindings = Array.from(this.findings.values()).filter(
+      f => f.status === 'OPEN' || f.status === 'IN_PROGRESS'
+    );
 
     const overallScore = this.calculateOverallComplianceScore();
 
@@ -404,8 +405,8 @@ export class ComplianceReporter extends EventEmitter {
         name: f.name,
         score: this.calculateFrameworkScore(f.id),
         status: f.enabled ? 'ACTIVE' : 'INACTIVE',
-        lastAssessed: this.getLastAssessmentDate(f.id)
-      }))
+        lastAssessed: this.getLastAssessmentDate(f.id),
+      })),
     };
   }
 
@@ -457,7 +458,7 @@ export class ComplianceReporter extends EventEmitter {
             impact: `Requirement ${requirement.name} may not be satisfied`,
             evidence: [`Check result: ${JSON.stringify(result.result)}`],
             discoveredAt: new Date(),
-            discoveredBy: 'automated_check'
+            discoveredBy: 'automated_check',
           };
 
           findings.push(finding);
@@ -469,7 +470,7 @@ export class ComplianceReporter extends EventEmitter {
     const auditEvents = await this.auditService.queryEvents({
       startDate: period.start,
       endDate: period.end,
-      limit: 10000
+      limit: 10000,
     });
 
     // Analyze events for compliance violations
@@ -491,11 +492,17 @@ export class ComplianceReporter extends EventEmitter {
     const requirementCompliance = this.assessRequirementCompliance(framework, findings);
 
     const compliantCount = requirementCompliance.filter(r => r.status === 'COMPLIANT').length;
-    const nonCompliantCount = requirementCompliance.filter(r => r.status === 'NON_COMPLIANT').length;
-    const partiallyCompliantCount = requirementCompliance.filter(r => r.status === 'PARTIAL').length;
+    const nonCompliantCount = requirementCompliance.filter(
+      r => r.status === 'NON_COMPLIANT'
+    ).length;
+    const partiallyCompliantCount = requirementCompliance.filter(
+      r => r.status === 'PARTIAL'
+    ).length;
 
-    const complianceScore = totalRequirements > 0 ?
-      (compliantCount + (partiallyCompliantCount * 0.5)) / totalRequirements * 100 : 100;
+    const complianceScore =
+      totalRequirements > 0
+        ? ((compliantCount + partiallyCompliantCount * 0.5) / totalRequirements) * 100
+        : 100;
 
     const riskLevel = this.calculateRiskLevel(findings);
 
@@ -513,7 +520,7 @@ export class ComplianceReporter extends EventEmitter {
       complianceScore,
       riskLevel,
       keyMetrics,
-      trendAnalysis
+      trendAnalysis,
     };
   }
 
@@ -541,7 +548,7 @@ export class ComplianceReporter extends EventEmitter {
           estimatedEffort: 'High',
           timeline: 'Immediate (1-2 weeks)',
           benefits: ['Reduce compliance risk', 'Avoid regulatory penalties'],
-          risks: ['Regulatory action', 'Reputation damage']
+          risks: ['Regulatory action', 'Reputation damage'],
         });
       }
 
@@ -556,7 +563,7 @@ export class ComplianceReporter extends EventEmitter {
           estimatedEffort: 'Medium',
           timeline: '1-2 months',
           benefits: ['Improved security posture', 'Better compliance score'],
-          risks: ['Continued exposure', 'Audit findings']
+          risks: ['Continued exposure', 'Audit findings'],
         });
       }
     }
@@ -576,7 +583,7 @@ export class ComplianceReporter extends EventEmitter {
       const events = await this.auditService.queryEvents({
         // Parse check.query and convert to filter parameters
         limit: 1000,
-        startDate: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+        startDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
       });
 
       // Apply check logic
@@ -607,7 +614,7 @@ export class ComplianceReporter extends EventEmitter {
     return {
       count,
       events: events.slice(0, 10), // Sample events
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -618,12 +625,18 @@ export class ComplianceReporter extends EventEmitter {
     const value = result.count || 0;
 
     switch (check.operator) {
-      case 'GT': return value > check.threshold;
-      case 'LT': return value < check.threshold;
-      case 'EQ': return value === check.threshold;
-      case 'NE': return value !== check.threshold;
-      case 'CONTAINS': return String(value).includes(String(check.threshold));
-      default: return false;
+      case 'GT':
+        return value > check.threshold;
+      case 'LT':
+        return value < check.threshold;
+      case 'EQ':
+        return value === check.threshold;
+      case 'NE':
+        return value !== check.threshold;
+      case 'CONTAINS':
+        return String(value).includes(String(check.threshold));
+      default:
+        return false;
     }
   }
 
@@ -641,7 +654,7 @@ export class ComplianceReporter extends EventEmitter {
       impact: 'Compliance requirement may not be satisfied',
       evidence: [JSON.stringify(check.result)],
       discoveredAt: new Date(),
-      discoveredBy: 'automated_system'
+      discoveredBy: 'automated_system',
     };
 
     this.findings.set(finding.id, finding);
@@ -651,7 +664,9 @@ export class ComplianceReporter extends EventEmitter {
   /**
    * Helper methods
    */
-  private groupFindingsByCategory(findings: ComplianceFinding[]): Map<ComplianceCategory, ComplianceFinding[]> {
+  private groupFindingsByCategory(
+    findings: ComplianceFinding[]
+  ): Map<ComplianceCategory, ComplianceFinding[]> {
     const grouped = new Map<ComplianceCategory, ComplianceFinding[]>();
 
     for (const finding of findings) {
@@ -670,19 +685,22 @@ export class ComplianceReporter extends EventEmitter {
   private getImplementationGuidance(category: ComplianceCategory, severity: string): string {
     const guidance = {
       [ComplianceCategory.ACCESS_CONTROL]: {
-        CRITICAL: 'Immediately review and update access control policies, revoke unnecessary permissions',
-        HIGH: 'Implement role-based access control, regular access reviews'
+        CRITICAL:
+          'Immediately review and update access control policies, revoke unnecessary permissions',
+        HIGH: 'Implement role-based access control, regular access reviews',
       },
       [ComplianceCategory.AUDIT_LOGGING]: {
         CRITICAL: 'Enable comprehensive audit logging, secure log storage',
-        HIGH: 'Enhance log monitoring, implement log analysis'
-      }
+        HIGH: 'Enhance log monitoring, implement log analysis',
+      },
     };
 
     return guidance[category]?.[severity] || 'Review and implement appropriate controls';
   }
 
-  private calculateRiskLevel(findings: ComplianceFinding[]): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+  private calculateRiskLevel(
+    findings: ComplianceFinding[]
+  ): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
     const criticalCount = findings.filter(f => f.severity === 'CRITICAL').length;
     const highCount = findings.filter(f => f.severity === 'HIGH').length;
 
@@ -758,7 +776,7 @@ export class ComplianceReporter extends EventEmitter {
       securityIncidents: 5,
       accessViolations: 12,
       dataBreaches: 0,
-      systemUptime: 99.9
+      systemUptime: 99.9,
     };
   }
 
@@ -777,7 +795,7 @@ export class ComplianceReporter extends EventEmitter {
         complianceScore: Math.random() * 20 + 80, // Mock data
         totalFindings: Math.floor(Math.random() * 10),
         resolvedFindings: Math.floor(Math.random() * 5),
-        newFindings: Math.floor(Math.random() * 3)
+        newFindings: Math.floor(Math.random() * 3),
       });
     }
 
@@ -808,14 +826,22 @@ export class ComplianceReporter extends EventEmitter {
       description: 'Detailed compliance findings',
       size: csvData.length,
       location: `/reports/attachments/findings-${report.id}.csv`,
-      checksum: crypto.createHash('md5').update(csvData).digest('hex')
+      checksum: crypto.createHash('md5').update(csvData).digest('hex'),
     });
 
     return attachments;
   }
 
   private generateFindingsCSV(findings: ComplianceFinding[]): string {
-    const headers = ['ID', 'Requirement', 'Severity', 'Status', 'Title', 'Description', 'Discovered'];
+    const headers = [
+      'ID',
+      'Requirement',
+      'Severity',
+      'Status',
+      'Title',
+      'Description',
+      'Discovered',
+    ];
     const rows = findings.map(f => [
       f.id,
       f.requirementId,
@@ -823,12 +849,10 @@ export class ComplianceReporter extends EventEmitter {
       f.status,
       f.title,
       f.description,
-      f.discoveredAt.toISOString()
+      f.discoveredAt.toISOString(),
     ]);
 
-    return [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
+    return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
   }
 
   private exportToCSV(report: ComplianceReport): Buffer {
@@ -853,9 +877,12 @@ export class ComplianceReporter extends EventEmitter {
 
   private setupAutomatedChecks(): void {
     // Setup periodic automated checks
-    setInterval(async () => {
-      await this.runAutomatedChecks();
-    }, 60 * 60 * 1000); // Every hour
+    setInterval(
+      async () => {
+        await this.runAutomatedChecks();
+      },
+      60 * 60 * 1000
+    ); // Every hour
   }
 
   private setupReportSchedules(): void {
@@ -888,7 +915,7 @@ export class ComplianceReporter extends EventEmitter {
       WEEKLY: 7 * 24 * 60 * 60 * 1000,
       MONTHLY: 30 * 24 * 60 * 60 * 1000,
       QUARTERLY: 90 * 24 * 60 * 60 * 1000,
-      ANNUALLY: 365 * 24 * 60 * 60 * 1000
+      ANNUALLY: 365 * 24 * 60 * 60 * 1000,
     };
 
     return intervals[frequency];

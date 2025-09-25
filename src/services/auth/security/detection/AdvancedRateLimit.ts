@@ -119,7 +119,7 @@ export class AdvancedRateLimit extends EventEmitter {
     const ruleId = crypto.randomUUID();
     const completeRule: RateLimitRule = {
       id: ruleId,
-      ...rule
+      ...rule,
     };
 
     this.rules.set(ruleId, completeRule);
@@ -153,7 +153,7 @@ export class AdvancedRateLimit extends EventEmitter {
         allowed: true,
         remainingRequests: Infinity,
         resetTime: new Date(Date.now() + 3600000),
-        riskScore: request.riskScore || 0
+        riskScore: request.riskScore || 0,
       };
     }
 
@@ -180,7 +180,7 @@ export class AdvancedRateLimit extends EventEmitter {
       allowed: true,
       remainingRequests: this.calculateRemainingRequests(applicableRules, request),
       resetTime: this.calculateResetTime(applicableRules),
-      riskScore: request.riskScore || 0
+      riskScore: request.riskScore || 0,
     };
   }
 
@@ -200,7 +200,7 @@ export class AdvancedRateLimit extends EventEmitter {
       .map(([key, bucket]) => ({
         key,
         riskScore: bucket.riskScore,
-        violations: bucket.violations.length
+        violations: bucket.violations.length,
       }))
       .sort((a, b) => b.riskScore - a.riskScore);
   }
@@ -229,8 +229,8 @@ export class AdvancedRateLimit extends EventEmitter {
       details: {
         bucketKey: key,
         resetBy,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     });
 
     this.emit('rateLimitReset', { key, resetBy });
@@ -251,7 +251,7 @@ export class AdvancedRateLimit extends EventEmitter {
       violationType: 'SUSPICIOUS_PATTERN',
       severity: 'HIGH',
       details: { reason, blockedBy, duration },
-      action: 'BLOCKED'
+      action: 'BLOCKED',
     };
 
     bucket.violations.push(violation);
@@ -267,7 +267,7 @@ export class AdvancedRateLimit extends EventEmitter {
         bucketKey: key,
         duration,
         reason,
-        blockedBy
+        blockedBy,
       }
     );
 
@@ -283,7 +283,7 @@ export class AdvancedRateLimit extends EventEmitter {
         allowed: true,
         remainingRequests: Infinity,
         resetTime: new Date(),
-        riskScore: 0
+        riskScore: 0,
       };
     }
 
@@ -300,7 +300,7 @@ export class AdvancedRateLimit extends EventEmitter {
         retryAfter: Math.ceil((bucket.lockExpiry.getTime() - Date.now()) / 1000),
         reason: 'Temporarily blocked',
         ruleId: rule.id,
-        riskScore: bucket.riskScore
+        riskScore: bucket.riskScore,
       };
     }
 
@@ -322,7 +322,7 @@ export class AdvancedRateLimit extends EventEmitter {
         return {
           ...result,
           ruleId: rule.id,
-          riskScore: bucket.riskScore
+          riskScore: bucket.riskScore,
         };
       }
     }
@@ -335,7 +335,7 @@ export class AdvancedRateLimit extends EventEmitter {
       allowed: true,
       remainingRequests: bucket.tokens,
       resetTime: new Date(bucket.lastRefill.getTime() + (rule.limits[0]?.window || 3600) * 1000),
-      riskScore: bucket.riskScore
+      riskScore: bucket.riskScore,
     };
   }
 
@@ -361,7 +361,7 @@ export class AdvancedRateLimit extends EventEmitter {
         resetTime: new Date(now.getTime() + limit.window * 1000),
         retryAfter: this.calculateRetryAfter(limit, threatContext),
         reason: 'Burst limit exceeded',
-        riskScore: bucket.riskScore + 20
+        riskScore: bucket.riskScore + 20,
       };
     }
 
@@ -373,7 +373,7 @@ export class AdvancedRateLimit extends EventEmitter {
         resetTime: new Date(now.getTime() + limit.window * 1000),
         retryAfter: this.calculateRetryAfter(limit, threatContext),
         reason: 'Rate limit exceeded',
-        riskScore: bucket.riskScore + 15
+        riskScore: bucket.riskScore + 15,
       };
     }
 
@@ -381,7 +381,7 @@ export class AdvancedRateLimit extends EventEmitter {
       allowed: true,
       remainingRequests: bucket.tokens,
       resetTime: new Date(now.getTime() + limit.window * 1000),
-      riskScore: bucket.riskScore
+      riskScore: bucket.riskScore,
     };
   }
 
@@ -417,8 +417,10 @@ export class AdvancedRateLimit extends EventEmitter {
 
       case 'fixed':
         // Reset at fixed intervals
-        const windowBoundary = Math.floor(now.getTime() / (limit.window * 1000)) * limit.window * 1000;
-        const bucketWindow = Math.floor(bucket.lastRefill.getTime() / (limit.window * 1000)) * limit.window * 1000;
+        const windowBoundary =
+          Math.floor(now.getTime() / (limit.window * 1000)) * limit.window * 1000;
+        const bucketWindow =
+          Math.floor(bucket.lastRefill.getTime() / (limit.window * 1000)) * limit.window * 1000;
 
         if (windowBoundary > bucketWindow) {
           bucket.tokens = limit.maxRequests;
@@ -565,7 +567,7 @@ export class AdvancedRateLimit extends EventEmitter {
       firstRequest: now,
       lastRequest: now,
       violations: [],
-      riskScore: 0
+      riskScore: 0,
     };
   }
 
@@ -578,7 +580,7 @@ export class AdvancedRateLimit extends EventEmitter {
       userRiskScore: 0, // Would be calculated from user behavior
       recentViolations: this.getRecentViolations(request.ipAddress),
       behaviorScore: 0, // Would be calculated from request patterns
-      geographicRisk: 0 // Would be calculated from geolocation
+      geographicRisk: 0, // Would be calculated from geolocation
     };
   }
 
@@ -609,15 +611,20 @@ export class AdvancedRateLimit extends EventEmitter {
     const violation: ViolationRecord = {
       timestamp: new Date(),
       violationType: result.reason?.includes('burst') ? 'BURST_EXCEEDED' : 'RATE_EXCEEDED',
-      severity: result.riskScore > 80 ? 'CRITICAL' :
-                result.riskScore > 60 ? 'HIGH' :
-                result.riskScore > 30 ? 'MEDIUM' : 'LOW',
+      severity:
+        result.riskScore > 80
+          ? 'CRITICAL'
+          : result.riskScore > 60
+            ? 'HIGH'
+            : result.riskScore > 30
+              ? 'MEDIUM'
+              : 'LOW',
       details: {
         reason: result.reason,
         remainingRequests: result.remainingRequests,
-        ruleId: rule.id
+        ruleId: rule.id,
       },
-      action: rule.actions[0]?.type || 'BLOCK'
+      action: rule.actions[0]?.type || 'BLOCK',
     };
 
     bucket.violations.push(violation);
@@ -687,7 +694,7 @@ export class AdvancedRateLimit extends EventEmitter {
           rule,
           request,
           result,
-          action
+          action,
         });
         break;
 
@@ -725,7 +732,7 @@ export class AdvancedRateLimit extends EventEmitter {
         method: request.method,
         userId: request.userId,
         remainingRequests: result.remainingRequests,
-        retryAfter: result.retryAfter
+        retryAfter: result.retryAfter,
       }
     );
   }
@@ -812,7 +819,7 @@ export class AdvancedRateLimit extends EventEmitter {
     if (highRiskBuckets.length > 0) {
       this.emit('highRiskDetected', {
         buckets: highRiskBuckets,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -824,7 +831,7 @@ export class AdvancedRateLimit extends EventEmitter {
     if (suspiciousPatterns.length > 0) {
       this.emit('coordinatedAttackDetected', {
         patterns: suspiciousPatterns,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
   }
@@ -846,17 +853,17 @@ export class AdvancedRateLimit extends EventEmitter {
           maxRequests: 1000,
           burstLimit: 100,
           type: 'sliding',
-          resetBehavior: 'gradual'
-        }
+          resetBehavior: 'gradual',
+        },
       ],
       actions: [
         {
           type: 'throttle',
-          config: { delay: 1000 }
-        }
+          config: { delay: 1000 },
+        },
       ],
       exemptions: [],
-      metadata: { default: true }
+      metadata: { default: true },
     });
 
     // Login endpoint protection
@@ -870,8 +877,8 @@ export class AdvancedRateLimit extends EventEmitter {
           field: 'endpoint',
           operator: 'contains',
           value: '/login',
-          weight: 1
-        }
+          weight: 1,
+        },
       ],
       limits: [
         {
@@ -879,22 +886,22 @@ export class AdvancedRateLimit extends EventEmitter {
           maxRequests: 10,
           burstLimit: 5,
           type: 'sliding',
-          resetBehavior: 'exponential'
-        }
+          resetBehavior: 'exponential',
+        },
       ],
       actions: [
         {
           type: 'block',
           duration: 900, // 15 minutes
-          config: {}
+          config: {},
         },
         {
           type: 'alert',
-          config: { severity: 'HIGH' }
-        }
+          config: { severity: 'HIGH' },
+        },
       ],
       exemptions: [],
-      metadata: { critical: true }
+      metadata: { critical: true },
     });
 
     // API endpoint protection
@@ -908,8 +915,8 @@ export class AdvancedRateLimit extends EventEmitter {
           field: 'endpoint',
           operator: 'startsWith',
           value: '/api/',
-          weight: 1
-        }
+          weight: 1,
+        },
       ],
       limits: [
         {
@@ -917,17 +924,17 @@ export class AdvancedRateLimit extends EventEmitter {
           maxRequests: 5000,
           burstLimit: 100,
           type: 'token-bucket',
-          resetBehavior: 'immediate'
-        }
+          resetBehavior: 'immediate',
+        },
       ],
       actions: [
         {
           type: 'throttle',
-          config: { delay: 2000 }
-        }
+          config: { delay: 2000 },
+        },
       ],
       exemptions: [],
-      metadata: { api: true }
+      metadata: { api: true },
     });
   }
 }
@@ -938,8 +945,10 @@ class PatternAnalyzer {
     const patterns: string[] = [];
 
     // Rapid succession pattern
-    if (bucket.requestCount > 50 &&
-        (request.timestamp.getTime() - bucket.firstRequest.getTime()) < 60000) {
+    if (
+      bucket.requestCount > 50 &&
+      request.timestamp.getTime() - bucket.firstRequest.getTime() < 60000
+    ) {
       patterns.push('rapid_succession');
     }
 
@@ -965,8 +974,8 @@ class PatternAnalyzer {
         bucketCount: highRiskBuckets.length,
         timestamp: new Date(),
         evidence: {
-          affectedBuckets: highRiskBuckets.map(b => b.key)
-        }
+          affectedBuckets: highRiskBuckets.map(b => b.key),
+        },
       });
     }
 
@@ -981,7 +990,7 @@ class ThreatAdjuster {
     return limits.map(limit => ({
       ...limit,
       maxRequests: this.adjustMaxRequests(limit.maxRequests, threatContext),
-      burstLimit: this.adjustBurstLimit(limit.burstLimit, threatContext)
+      burstLimit: this.adjustBurstLimit(limit.burstLimit, threatContext),
     }));
   }
 
