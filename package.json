@@ -10,7 +10,12 @@
     "build": "electron-builder",
     "clean": "rm -rf dist",
     "docker:postgres": "docker compose up -d postgres",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "commit": "bash scripts/auto-fix-commit.sh",
+    "commit:win": "scripts\\auto-fix-commit.bat",
+    "fix": "npm run lint:fix && npm run format",
+    "lint:fix": "eslint src/**/*.{js,jsx,ts,tsx} --fix || true",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md} || true"
   },
   "devDependencies": {
     "electron": "38.1.2",
