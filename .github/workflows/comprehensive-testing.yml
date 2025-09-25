@@ -37,7 +37,7 @@ jobs:
           npm audit --json > security-audit.json
 
       - name: Upload security audit results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-audit-results
           path: security-audit.json
@@ -80,7 +80,7 @@ jobs:
           name: unit-tests-${{ matrix.node-version }}
 
       - name: Upload unit test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-results-${{ matrix.node-version }}
@@ -150,7 +150,7 @@ jobs:
           name: integration-tests
 
       - name: Upload integration test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-results
@@ -202,7 +202,7 @@ jobs:
           npm run report:generate
 
       - name: Upload performance test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: performance-test-results
           path: |
@@ -266,7 +266,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload security test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-test-results
           path: |
@@ -319,7 +319,7 @@ jobs:
           npm run report:compliance
 
       - name: Upload compliance test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compliance-test-results
           path: |
@@ -378,7 +378,7 @@ jobs:
           npm run report:models
 
       - name: Upload AI test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ai-model-test-results
           path: |
@@ -425,7 +425,7 @@ jobs:
           BASE_URL: http://localhost:3000
 
       - name: Upload E2E test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-test-results
@@ -449,7 +449,7 @@ jobs:
           node-version: '20.x'
 
       - name: Download all test artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Install report generator dependencies
         run: |
@@ -465,7 +465,7 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
 
       - name: Upload comprehensive test report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: comprehensive-test-report
           path: |
@@ -502,7 +502,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download test results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Quality gate evaluation
         run: |
