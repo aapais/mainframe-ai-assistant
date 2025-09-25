@@ -1,8 +1,19 @@
 # Claude Code Configuration - Mainframe AI Assistant
-## Spec-Driven Development with Advanced MCP Integration
+## Multi-Tool Orchestration for Maximum Efficiency
 
 ### 🎯 **Core Philosophy**
-This project follows **Spec-Driven Development** using GitHub Spec Kit, enhanced with **Claude Flow 2.0 Alpha** orchestration and **MCP Puppeteer** for web automation. Focus on architecture and strategy while AI handles implementation through coordinated multi-agent workflows.
+This project **REQUIRES** comprehensive utilization of ALL available tools for optimal performance, efficiency, and effectiveness. **Spec-Driven Development** using GitHub Spec Kit, **Claude Flow 2.0 Alpha** orchestration, **MCP ecosystem** (Puppeteer, Flow Nexus, Sublinear Solver), and **parallel tool execution** are MANDATORY for all complex tasks.
+
+### ⚡ **CRITICAL: Tool Usage Mandate**
+**ALWAYS use ALL relevant tools in parallel when solving problems:**
+- **Claude Flow**: Multi-agent swarm orchestration for complex tasks
+- **Flow Nexus**: Sandbox environments, workflow automation, neural networks
+- **MCP Puppeteer**: Browser automation, E2E testing, visual documentation
+- **Sublinear Solver**: Mathematical optimizations, performance algorithms
+- **Task Tool**: Specialized agents for research and implementation
+- **Parallel Execution**: Multiple tool calls in single message for speed
+
+**NEVER resort to manual debugging when orchestration tools are available!**
 
 ---
 
@@ -150,54 +161,74 @@ npx claude-flow@alpha optimize --remove-duplicates
 
 ---
 
-## 🏗️ **Development Workflow**
+## 🏗️ **Development Workflow - MANDATORY TOOL ORCHESTRATION**
+
+### **🔴 CRITICAL: Problem-Solving Approach**
+**For ANY problem (debugging, implementation, analysis), ALWAYS:**
+1. **Deploy multiple tools in parallel** - Never work sequentially
+2. **Use specialized agents** - Each agent handles specific aspects
+3. **Leverage MCP ecosystem** - All available servers must be utilized
+4. **Store learnings** - Every solution goes to persistent memory
+
+### **Example: Settings Persistence Fix (What Should Have Been Done)**
+```bash
+# PARALLEL EXECUTION - All at once!
+1. npx claude-flow@alpha swarm "Analyze settings persistence issue" --mode hierarchical
+2. mcp__flow-nexus__workflow_create (debugging workflow)
+3. Task tool with researcher agent for codebase analysis
+4. mcp__puppeteer__puppeteer_navigate (test UI interactions)
+5. mcp__sublinear-solver__psycho_symbolic_reason (root cause analysis)
+
+# Result: 5x faster resolution with comprehensive understanding
+```
 
 ### **1. Feature Specification (Human-Led)**
 ```bash
 # Start with business requirement
 /specify "Implement advanced mainframe log analysis with AI-powered pattern detection, real-time alerts, and customizable dashboards for operations teams"
 
-# Refine specification iteratively
-/clarify "What specific log formats should be supported?"
-/clarify "Define SLA requirements for real-time processing"
+# PARALLEL: Initialize ALL relevant tools immediately
+npx claude-flow@alpha hive-mind spawn "Feature planning" --claude &
+mcp__flow-nexus__workflow_create "Feature specification workflow" &
+mcp__sublinear-solver__knowledge_graph_query "mainframe log analysis patterns"
 ```
 
-### **2. Technical Planning (AI-Augmented)**
+### **2. Technical Planning (AI-Augmented + Tool Orchestration)**
 ```bash
-# Define technical approach
-/plan "Use Node.js with Stream processing, TensorFlow.js for pattern detection, Socket.io for real-time updates, React dashboard with Chart.js visualizations, PostgreSQL for metadata storage"
+# MANDATORY: Use ALL planning tools in parallel
+/plan "Technical stack definition"
 
-# Initialize swarm for complex planning
-npx claude-flow@alpha hive-mind spawn "Technical Architecture: Log Analysis System" --claude
+# Simultaneous execution:
+npx claude-flow@alpha sparc run architect "System design" &
+npx claude-flow@alpha sparc run analyst "Requirements analysis" &
+mcp__flow-nexus__neural_train (pattern detection model) &
+mcp__flow-nexus__sandbox_create (development environment) &
+Task tool "Research log parsing libraries and patterns"
 ```
 
-### **3. Multi-Agent Implementation (AI-Led)**
+### **3. Multi-Agent Implementation (FULL ORCHESTRATION)**
 ```bash
-# Generate tasks with TDD approach
+# NEVER implement manually - Use full swarm deployment
 /tasks
 
-# Execute with swarm coordination
-npx claude-flow@alpha swarm "Implement log parsing engine with TensorFlow.js integration" --mode hierarchical
+# Parallel swarm + MCP coordination:
+npx claude-flow@alpha swarm "Backend implementation" --mode hierarchical &
+npx claude-flow@alpha swarm "Frontend implementation" --mode parallel &
+mcp__flow-nexus__daa_agent_create (autonomous debugging) &
+mcp__puppeteer (automated UI testing) &
+mcp__sublinear-solver__emergence_matrix_process (optimization)
 
-# Parallel agent deployment:
-# - Agent 1: Backend API development
-# - Agent 2: Frontend React components  
-# - Agent 3: Test suite creation
-# - Agent 4: Documentation generation
-# - Agent 5: Security validation
+# Each swarm spawns 5+ specialized agents working simultaneously
 ```
 
-### **4. Quality Assurance (Automated)**
+### **4. Quality Assurance (Multi-Tool Validation)**
 ```bash
-# Comprehensive testing with Puppeteer
-npx claude-flow@alpha test e2e --with-puppeteer
-
-# Security audit
-npx claude-flow@alpha sparc run security "Audit log analysis system"
-
-# Performance validation
-npx claude-flow@alpha benchmark --target-response-time 2s
-```
+# Comprehensive parallel testing
+npx claude-flow@alpha test e2e --with-puppeteer &
+npx claude-flow@alpha sparc run security "Full audit" &
+npx claude-flow@alpha sparc run performance "Benchmark all endpoints" &
+mcp__flow-nexus__neural_validation_workflow &
+mcp__puppeteer__puppeteer_screenshot (visual regression testing)
 
 ---
 
@@ -301,21 +332,29 @@ npx claude-flow@alpha memory health --detailed
 
 ## 🚨 **Important Guidelines**
 
-### **DO:**
-- ✅ Always load memory context before starting work
-- ✅ Use swarm mode for complex, multi-component features  
-- ✅ Follow TDD: Tests → Fail → Implement → Pass
-- ✅ Store architectural decisions in persistent memory
-- ✅ Use Puppeteer for E2E testing and documentation screenshots
-- ✅ Maintain single source of truth in `.swarm/memory.db`
+### **✅ MANDATORY DO's:**
+- ✅ **ALWAYS use parallel tool execution** - Multiple tools in single message
+- ✅ **Deploy swarms for ANY complex task** - No manual implementation
+- ✅ **Use Task tool for research** - Never manually search files
+- ✅ **Leverage ALL MCP servers** - Puppeteer, Flow Nexus, Sublinear Solver
+- ✅ **Store every learning** - Claude Flow memory for all solutions
+- ✅ **Test with automation** - Puppeteer for UI, swarms for unit tests
+- ✅ **Optimize with algorithms** - Sublinear solver for performance
+- ✅ **Create workflows** - Flow Nexus for repeatable processes
+- ✅ **Use specialized agents** - SPARC modes for specific tasks
+- ✅ **Monitor with metrics** - Continuous performance tracking
 
-### **DON'T:**
-- ❌ Create duplicate servers or conflicting processes
-- ❌ Skip constitution compliance checks
-- ❌ Leave obsolete files in project directories
-- ❌ Implement without specifications
-- ❌ Bypass security validation for auth flows
-- ❌ Mix development environments (use containers)
+### **❌ ABSOLUTELY DON'T:**
+- ❌ **Manual debugging** - ALWAYS use swarm analysis first
+- ❌ **Sequential tool usage** - ALWAYS parallel execution
+- ❌ **Direct file editing without analysis** - Use agents to understand first
+- ❌ **Skip orchestration for "simple" tasks** - No task is too simple
+- ❌ **Implement without swarm coordination** - Even small features
+- ❌ **Test manually** - Automation is mandatory
+- ❌ **Forget to store learnings** - Every session adds to memory
+- ❌ **Use single agent when swarm available** - Always multi-agent
+- ❌ **Ignore available MCP tools** - All servers must be utilized
+- ❌ **Work without TodoWrite tracking** - Task management is critical
 
 ---
 
@@ -326,10 +365,25 @@ npx claude-flow@alpha memory health --detailed
 - **MCP Puppeteer**: @modelcontextprotocol/server-puppeteer v2025.5.12
 - **Constitution**: v1.0.0 (see `/memory/constitution.md`)
 
-**Last Updated**: 2025-09-25  
+**Last Updated**: 2025-09-25
 **Next Review**: Monitor Claude Flow Alpha releases weekly
 
 ---
 
-*🌊 Powered by GitHub Spec Kit + Claude Flow 2.0 Alpha + MCP Puppeteer*  
-*Orchestrating the future of AI-powered development*
+## 🎓 **Learning from Mistakes**
+
+### **Case Study: Settings Persistence Issue**
+**What Happened**: Manual debugging approach took excessive time
+**What Should Have Happened**: Parallel swarm deployment with:
+- Claude Flow swarm for code analysis
+- Flow Nexus workflow for systematic debugging
+- Puppeteer for UI testing
+- Task tool for research
+- Sublinear solver for optimization
+
+**Lesson**: EVERY problem deserves full tool orchestration, regardless of perceived simplicity.
+
+---
+
+*🌊 Powered by GitHub Spec Kit + Claude Flow 2.0 Alpha + Full MCP Ecosystem*
+*Maximum efficiency through comprehensive tool orchestration*
