@@ -22,7 +22,7 @@ import {
   UsageActivity,
   TrendData,
   MetricsConfig,
-  DatabaseError
+  DatabaseError,
 } from '../types/services';
 
 interface MetricSnapshot {
@@ -108,8 +108,8 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         metadata: JSON.stringify({
           options: query.options,
           topScore: results.length > 0 ? results[0].score : 0,
-          hasAIResults: results.some(r => r.matchType === 'ai' || r.matchType === 'semantic')
-        })
+          hasAIResults: results.some(r => r.matchType === 'ai' || r.matchType === 'semantic'),
+        }),
       };
 
       this.statements.insertSearch.run(
@@ -142,14 +142,19 @@ export class MetricsService extends EventEmitter implements IMetricsService {
   /**
    * Record usage action
    */
-  async recordUsage(entryId: string, action: UsageAction, userId?: string, metadata?: any): Promise<void> {
+  async recordUsage(
+    entryId: string,
+    action: UsageAction,
+    userId?: string,
+    metadata?: any
+  ): Promise<void> {
     try {
       const usageRecord: UsageRecord = {
         entry_id: entryId,
         action,
         timestamp: new Date().toISOString(),
         user_id: userId,
-        metadata: metadata ? JSON.stringify(metadata) : undefined
+        metadata: metadata ? JSON.stringify(metadata) : undefined,
       };
 
       this.statements.insertUsage.run(
@@ -168,7 +173,11 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       this.emit('usage:recorded', entryId, action, userId, metadata);
     } catch (error) {
       console.error('Failed to record usage:', error);
-      throw new DatabaseError('Failed to record usage metrics', 'recordUsage', { entryId, action, error });
+      throw new DatabaseError('Failed to record usage metrics', 'recordUsage', {
+        entryId,
+        action,
+        error,
+      });
     }
   }
 
@@ -187,9 +196,9 @@ export class MetricsService extends EventEmitter implements IMetricsService {
           message: error.message,
           statusCode: error.statusCode,
           recoverable: error.recoverable,
-          details: error.details
+          details: error.details,
         }),
-        value: error.statusCode
+        value: error.statusCode,
       };
 
       this.statements.insertUsage.run(
@@ -216,7 +225,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
           value: error.statusCode,
           threshold: 500,
           timestamp: new Date(),
-          acknowledged: false
+          acknowledged: false,
         });
       }
 
@@ -236,7 +245,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         metric_type: 'performance',
         metric_name: operation,
         value: duration,
-        metadata: metadata ? JSON.stringify(metadata) : undefined
+        metadata: metadata ? JSON.stringify(metadata) : undefined,
       };
 
       this.statements.insertSnapshot.run(
@@ -262,14 +271,14 @@ export class MetricsService extends EventEmitter implements IMetricsService {
   async getMetrics(period: string = '24h'): Promise<KBMetrics> {
     try {
       const timeRange = this.getPeriodTimeRange(period);
-      
+
       const [overview, categories, searches, usage, performance, trends] = await Promise.all([
         this.getOverviewMetrics(timeRange),
         this.getCategoryMetrics(timeRange),
         this.getSearchMetrics(timeRange),
         this.getUsageMetrics(timeRange),
         this.getPerformanceMetrics(timeRange),
-        this.getTrends(period)
+        this.getTrends(period),
       ]);
 
       const alerts = Array.from(this.alerts.values())
@@ -284,7 +293,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         usage,
         performance,
         trends,
-        alerts
+        alerts,
       };
     } catch (error) {
       throw new DatabaseError('Failed to get metrics', 'getMetrics', { period, error });
@@ -305,7 +314,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         this.getTrendData('success_rate', 'search', timeRange, intervalSize),
         this.getTrendData('performance', 'performance', timeRange, intervalSize),
         this.getTrendData('users', 'usage', timeRange, intervalSize),
-        this.getTrendData('errors', 'error', timeRange, intervalSize)
+        this.getTrendData('errors', 'error', timeRange, intervalSize),
       ]);
 
       return {
@@ -315,7 +324,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         successRate: trends[2],
         performance: trends[3],
         users: trends[4],
-        errors: trends[5]
+        errors: trends[5],
       };
     } catch (error) {
       throw new DatabaseError('Failed to get trends', 'getTrends', { period, error });
@@ -326,13 +335,12 @@ export class MetricsService extends EventEmitter implements IMetricsService {
    * Get active alerts
    */
   async getAlerts(): Promise<MetricAlert[]> {
-    return Array.from(this.alerts.values())
-      .sort((a, b) => {
-        if (a.acknowledged !== b.acknowledged) {
-          return a.acknowledged ? 1 : -1;
-        }
-        return b.timestamp.getTime() - a.timestamp.getTime();
-      });
+    return Array.from(this.alerts.values()).sort((a, b) => {
+      if (a.acknowledged !== b.acknowledged) {
+        return a.acknowledged ? 1 : -1;
+      }
+      return b.timestamp.getTime() - a.timestamp.getTime();
+    });
   }
 
   /**
@@ -365,13 +373,13 @@ export class MetricsService extends EventEmitter implements IMetricsService {
     switch (format) {
       case 'json':
         return JSON.stringify(metrics, null, 2);
-      
+
       case 'csv':
         return this.exportToCSV(metrics);
-      
+
       case 'prometheus':
         return this.exportToPrometheus(metrics);
-      
+
       default:
         throw new ServiceError(`Unsupported export format: ${format}`, 'INVALID_FORMAT');
     }
@@ -501,15 +509,19 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         SELECT * FROM metric_snapshots 
         WHERE timestamp >= ? AND metric_type = ? 
         ORDER BY timestamp DESC
-      `)
+      `),
     };
   }
 
   private loadExistingAlerts(): void {
     try {
-      const alertRows = this.db.prepare(`
+      const alertRows = this.db
+        .prepare(
+          `
         SELECT * FROM alerts WHERE acknowledged = 0 ORDER BY timestamp DESC
-      `).all() as any[];
+      `
+        )
+        .all() as any[];
 
       alertRows.forEach(row => {
         const alert: MetricAlert = {
@@ -522,7 +534,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
           threshold: row.threshold,
           timestamp: new Date(row.timestamp),
           acknowledged: Boolean(row.acknowledged),
-          metadata: row.metadata ? JSON.parse(row.metadata) : undefined
+          metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
         };
 
         this.alerts.set(alert.id, alert);
@@ -541,10 +553,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
     }
 
     // Alert checking every 5 minutes
-    this.alertCheckInterval = setInterval(
-      () => this.checkSystemAlerts(),
-      5 * 60 * 1000
-    );
+    this.alertCheckInterval = setInterval(() => this.checkSystemAlerts(), 5 * 60 * 1000);
   }
 
   private async performAggregation(): Promise<void> {
@@ -553,7 +562,9 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
       // Aggregate search metrics
-      const searchStats = this.db.prepare(`
+      const searchStats = this.db
+        .prepare(
+          `
         SELECT 
           COUNT(*) as total_searches,
           AVG(results_count) as avg_results,
@@ -561,7 +572,9 @@ export class MetricsService extends EventEmitter implements IMetricsService {
           SUM(CASE WHEN success THEN 1 ELSE 0 END) * 1.0 / COUNT(*) as success_rate
         FROM search_history 
         WHERE timestamp >= ?
-      `).get(hourAgo.toISOString()) as any;
+      `
+        )
+        .get(hourAgo.toISOString()) as any;
 
       if (searchStats && searchStats.total_searches > 0) {
         await this.recordPerformance('hourly_searches', searchStats.total_searches);
@@ -570,14 +583,18 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       }
 
       // Aggregate usage metrics
-      const usageStats = this.db.prepare(`
+      const usageStats = this.db
+        .prepare(
+          `
         SELECT 
           COUNT(*) as total_actions,
           COUNT(DISTINCT user_id) as unique_users,
           COUNT(DISTINCT entry_id) as unique_entries
         FROM usage_metrics 
         WHERE timestamp >= ?
-      `).get(hourAgo.toISOString()) as any;
+      `
+        )
+        .get(hourAgo.toISOString()) as any;
 
       if (usageStats && usageStats.total_actions > 0) {
         await this.recordPerformance('hourly_usage', usageStats.total_actions);
@@ -596,10 +613,14 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
       // Check error rate
-      const errorCount = this.db.prepare(`
+      const errorCount = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM usage_metrics 
         WHERE action = 'error' AND timestamp >= ?
-      `).get(fiveMinAgo.toISOString()) as any;
+      `
+        )
+        .get(fiveMinAgo.toISOString()) as any;
 
       if (errorCount.count > 10) {
         await this.createAlert({
@@ -611,15 +632,19 @@ export class MetricsService extends EventEmitter implements IMetricsService {
           value: errorCount.count,
           threshold: 10,
           timestamp: now,
-          acknowledged: false
+          acknowledged: false,
         });
       }
 
       // Check response time
-      const avgResponseTime = this.db.prepare(`
+      const avgResponseTime = this.db
+        .prepare(
+          `
         SELECT AVG(response_time) as avg_time FROM search_history 
         WHERE timestamp >= ?
-      `).get(fiveMinAgo.toISOString()) as any;
+      `
+        )
+        .get(fiveMinAgo.toISOString()) as any;
 
       if (avgResponseTime.avg_time > 2000) {
         await this.createAlert({
@@ -631,10 +656,9 @@ export class MetricsService extends EventEmitter implements IMetricsService {
           value: avgResponseTime.avg_time,
           threshold: 2000,
           timestamp: now,
-          acknowledged: false
+          acknowledged: false,
         });
       }
-
     } catch (error) {
       console.error('Failed to check system alerts:', error);
     }
@@ -665,10 +689,10 @@ export class MetricsService extends EventEmitter implements IMetricsService {
 
   private determineSearchType(results: SearchResult[]): string {
     if (results.length === 0) return 'no_results';
-    
+
     const hasAI = results.some(r => r.matchType === 'ai' || r.matchType === 'semantic');
     const hasExact = results.some(r => r.matchType === 'exact');
-    
+
     if (hasAI) return 'ai_enhanced';
     if (hasExact) return 'exact_match';
     return 'fuzzy_match';
@@ -676,11 +700,9 @@ export class MetricsService extends EventEmitter implements IMetricsService {
 
   private calculateAverageResponseTime(results: SearchResult[]): number {
     if (results.length === 0) return 0;
-    
-    const times = results
-      .map(r => r.metadata?.processingTime || 0)
-      .filter(t => t > 0);
-    
+
+    const times = results.map(r => r.metadata?.processingTime || 0).filter(t => t > 0);
+
     return times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
   }
 
@@ -701,7 +723,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         value: search.response_time,
         threshold: 3000,
         timestamp: new Date(),
-        acknowledged: false
+        acknowledged: false,
       });
     }
   }
@@ -709,7 +731,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
   private async checkPerformanceAlerts(operation: string, value: number): Promise<void> {
     const thresholds = this.config.alerts?.thresholds || {};
     const threshold = thresholds[operation];
-    
+
     if (!threshold || value <= threshold) return;
 
     await this.createAlert({
@@ -721,7 +743,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       value,
       threshold,
       timestamp: new Date(),
-      acknowledged: false
+      acknowledged: false,
     });
   }
 
@@ -751,29 +773,46 @@ export class MetricsService extends EventEmitter implements IMetricsService {
 
   private getIntervalSize(period: string): number {
     switch (period) {
-      case '1h': return 5 * 60 * 1000; // 5 minutes
-      case '24h': return 60 * 60 * 1000; // 1 hour
-      case '7d': return 24 * 60 * 60 * 1000; // 1 day
-      case '30d': return 24 * 60 * 60 * 1000; // 1 day
-      default: return 60 * 60 * 1000; // 1 hour
+      case '1h':
+        return 5 * 60 * 1000; // 5 minutes
+      case '24h':
+        return 60 * 60 * 1000; // 1 hour
+      case '7d':
+        return 24 * 60 * 60 * 1000; // 1 day
+      case '30d':
+        return 24 * 60 * 60 * 1000; // 1 day
+      default:
+        return 60 * 60 * 1000; // 1 hour
     }
   }
 
   private async getOverviewMetrics(timeRange: { start: Date; end: Date }): Promise<any> {
-    const searches = this.db.prepare(`
+    const searches = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const usage = this.db.prepare(`
+    const usage = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count, COUNT(DISTINCT user_id) as users FROM usage_metrics 
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const successRate = this.db.prepare(`
+    const successRate = this.db
+      .prepare(
+        `
       SELECT AVG(CASE WHEN success THEN 1.0 ELSE 0.0 END) as rate FROM search_history
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
     return {
       totalEntries: 0, // Would need access to main KB
@@ -781,50 +820,73 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       averageSuccessRate: successRate.rate || 0,
       totalUsage: usage.count || 0,
       activeUsers: usage.users || 0,
-      uptime: Date.now() - this.config.aggregation.interval
+      uptime: Date.now() - this.config.aggregation.interval,
     };
   }
 
-  private async getCategoryMetrics(timeRange: { start: Date; end: Date }): Promise<CategoryMetrics[]> {
+  private async getCategoryMetrics(timeRange: {
+    start: Date;
+    end: Date;
+  }): Promise<CategoryMetrics[]> {
     // This would require access to the main KB entries
     // For now return empty array
     return [];
   }
 
   private async getSearchMetrics(timeRange: { start: Date; end: Date }): Promise<SearchMetrics> {
-    const totalSearches = this.db.prepare(`
+    const totalSearches = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const avgResults = this.db.prepare(`
+    const avgResults = this.db
+      .prepare(
+        `
       SELECT AVG(results_count) as avg FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const avgResponseTime = this.db.prepare(`
+    const avgResponseTime = this.db
+      .prepare(
+        `
       SELECT AVG(response_time) as avg FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ? AND response_time > 0
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const noResultQueries = this.db.prepare(`
+    const noResultQueries = this.db
+      .prepare(
+        `
       SELECT query FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ? AND results_count = 0
       GROUP BY query 
       ORDER BY COUNT(*) DESC 
       LIMIT 10
-    `).all(timeRange.start.toISOString(), timeRange.end.toISOString()) as any[];
+    `
+      )
+      .all(timeRange.start.toISOString(), timeRange.end.toISOString()) as any[];
 
     const popularQueries = this.statements.selectPopularSearches.all(
       timeRange.start.toISOString(),
       20
     ) as any[];
 
-    const searchTypes = this.db.prepare(`
+    const searchTypes = this.db
+      .prepare(
+        `
       SELECT search_type, COUNT(*) as count FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ?
       GROUP BY search_type
-    `).all(timeRange.start.toISOString(), timeRange.end.toISOString()) as any[];
+    `
+      )
+      .all(timeRange.start.toISOString(), timeRange.end.toISOString()) as any[];
 
     const searchTypesMap: Record<string, number> = {
       exact: 0,
@@ -832,7 +894,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       semantic: 0,
       category: 0,
       tag: 0,
-      ai: 0
+      ai: 0,
     };
 
     searchTypes.forEach(st => {
@@ -852,28 +914,36 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         count: pq.count,
         averageResults: pq.avg_results,
         successRate: pq.success_rate,
-        lastUsed: new Date(pq.last_used)
+        lastUsed: new Date(pq.last_used),
       })),
       searchTypes: searchTypesMap,
       aiUsage: {
         totalRequests: searchTypesMap.ai || 0,
         successRate: 0,
         averageLatency: 0,
-        fallbackRate: 0
-      }
+        fallbackRate: 0,
+      },
     };
   }
 
   private async getUsageMetrics(timeRange: { start: Date; end: Date }): Promise<UsageMetrics> {
-    const totalActivity = this.db.prepare(`
+    const totalActivity = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM usage_metrics 
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const uniqueUsers = this.db.prepare(`
+    const uniqueUsers = this.db
+      .prepare(
+        `
       SELECT COUNT(DISTINCT user_id) as count FROM usage_metrics 
       WHERE timestamp >= ? AND timestamp <= ? AND user_id IS NOT NULL
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
     const recentActivity = this.statements.selectUsageActivity.all(
       timeRange.start.toISOString(),
@@ -891,32 +961,47 @@ export class MetricsService extends EventEmitter implements IMetricsService {
         timestamp: new Date(ra.timestamp),
         entryId: ra.entry_id,
         action: ra.action as UsageAction,
-        userId: ra.user_id
+        userId: ra.user_id,
       })),
       userEngagement: {
         dailyActive: 0,
         weeklyActive: 0,
         monthlyActive: 0,
-        retention: 0
-      }
+        retention: 0,
+      },
     };
   }
 
-  private async getPerformanceMetrics(timeRange: { start: Date; end: Date }): Promise<PerformanceMetrics> {
-    const searchTimes = this.db.prepare(`
+  private async getPerformanceMetrics(timeRange: {
+    start: Date;
+    end: Date;
+  }): Promise<PerformanceMetrics> {
+    const searchTimes = this.db
+      .prepare(
+        `
       SELECT AVG(response_time) as avg FROM search_history 
       WHERE timestamp >= ? AND timestamp <= ? AND response_time > 0
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const errorRate = this.db.prepare(`
+    const errorRate = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as errors FROM usage_metrics 
       WHERE timestamp >= ? AND timestamp <= ? AND action = 'error'
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
-    const totalActions = this.db.prepare(`
+    const totalActions = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM usage_metrics 
       WHERE timestamp >= ? AND timestamp <= ?
-    `).get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
+    `
+      )
+      .get(timeRange.start.toISOString(), timeRange.end.toISOString()) as any;
 
     return {
       averageSearchTime: searchTimes.avg || 0,
@@ -930,8 +1015,8 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       throughput: {
         searches: 0,
         creates: 0,
-        updates: 0
-      }
+        updates: 0,
+      },
     };
   }
 
@@ -946,31 +1031,43 @@ export class MetricsService extends EventEmitter implements IMetricsService {
 
     while (current < timeRange.end) {
       const intervalEnd = new Date(current.getTime() + intervalSize);
-      
+
       let value = 0;
-      
+
       switch (type) {
         case 'searches':
-          const searchCount = this.db.prepare(`
+          const searchCount = this.db
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM search_history 
             WHERE timestamp >= ? AND timestamp < ?
-          `).get(current.toISOString(), intervalEnd.toISOString()) as any;
+          `
+            )
+            .get(current.toISOString(), intervalEnd.toISOString()) as any;
           value = searchCount.count;
           break;
-          
+
         case 'usage':
-          const usageCount = this.db.prepare(`
+          const usageCount = this.db
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM usage_metrics 
             WHERE timestamp >= ? AND timestamp < ?
-          `).get(current.toISOString(), intervalEnd.toISOString()) as any;
+          `
+            )
+            .get(current.toISOString(), intervalEnd.toISOString()) as any;
           value = usageCount.count;
           break;
-          
+
         case 'errors':
-          const errorCount = this.db.prepare(`
+          const errorCount = this.db
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM usage_metrics 
             WHERE timestamp >= ? AND timestamp < ? AND action = 'error'
-          `).get(current.toISOString(), intervalEnd.toISOString()) as any;
+          `
+            )
+            .get(current.toISOString(), intervalEnd.toISOString()) as any;
           value = errorCount.count;
           break;
       }
@@ -978,7 +1075,14 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       trends.push({
         timestamp: new Date(current),
         value,
-        trend: trends.length > 0 ? (value > trends[trends.length - 1].value ? 'up' : value < trends[trends.length - 1].value ? 'down' : 'stable') : 'stable'
+        trend:
+          trends.length > 0
+            ? value > trends[trends.length - 1].value
+              ? 'up'
+              : value < trends[trends.length - 1].value
+                ? 'down'
+                : 'stable'
+            : 'stable',
       });
 
       current.setTime(current.getTime() + intervalSize);
@@ -994,7 +1098,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       `Total Searches,${metrics.overview.totalSearches},${new Date().toISOString()}`,
       `Average Success Rate,${metrics.overview.averageSuccessRate},${new Date().toISOString()}`,
       `Total Usage,${metrics.overview.totalUsage},${new Date().toISOString()}`,
-      `Active Users,${metrics.overview.activeUsers},${new Date().toISOString()}`
+      `Active Users,${metrics.overview.activeUsers},${new Date().toISOString()}`,
     ];
 
     return lines.join('\n');
@@ -1002,7 +1106,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
 
   private exportToPrometheus(metrics: KBMetrics): string {
     const timestamp = Date.now();
-    
+
     return [
       `# HELP kb_total_entries Total number of knowledge base entries`,
       `# TYPE kb_total_entries gauge`,
@@ -1015,7 +1119,7 @@ export class MetricsService extends EventEmitter implements IMetricsService {
       `# HELP kb_average_success_rate Average success rate of searches`,
       `# TYPE kb_average_success_rate gauge`,
       `kb_average_success_rate ${metrics.overview.averageSuccessRate} ${timestamp}`,
-      ''
+      '',
     ].join('\n');
   }
 

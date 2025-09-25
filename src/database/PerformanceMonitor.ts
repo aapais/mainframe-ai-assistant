@@ -1,6 +1,6 @@
 /**
  * Advanced Performance Monitoring for Database Operations
- * 
+ *
  * Real-time monitoring, alerting, and optimization suggestions
  * to maintain sub-1s search performance.
  */
@@ -94,12 +94,12 @@ export class PerformanceMonitor extends EventEmitter {
     CRITICAL_QUERY_MS: 5000,
     HIGH_MEMORY_MB: 500,
     LOW_CACHE_HIT_RATE: 0.8,
-    HIGH_ERROR_RATE: 0.05
+    HIGH_ERROR_RATE: 0.05,
   };
 
   constructor(db: Database.Database, config?: Partial<MonitorConfig>) {
     super();
-    
+
     this.db = db;
     this.config = {
       slowQueryThreshold: 1000,
@@ -109,7 +109,7 @@ export class PerformanceMonitor extends EventEmitter {
       retentionDays: 7,
       enableRealTimeAlerts: true,
       enableQueryPlanCapture: true,
-      ...config
+      ...config,
     };
 
     this.initializeMonitoring();
@@ -120,13 +120,13 @@ export class PerformanceMonitor extends EventEmitter {
    */
   private initializeMonitoring(): void {
     console.log('📊 Initializing performance monitoring...');
-    
+
     // Create monitoring tables if they don't exist
     this.createMonitoringTables();
-    
+
     // Start background monitoring
     this.startMonitoring();
-    
+
     console.log('✅ Performance monitoring initialized');
   }
 
@@ -181,9 +181,9 @@ export class PerformanceMonitor extends EventEmitter {
    */
   startMonitoring(): void {
     if (this.isMonitoring) return;
-    
+
     this.isMonitoring = true;
-    
+
     // Monitor system resources every 30 seconds
     this.monitoringInterval = setInterval(() => {
       this.collectSystemMetrics();
@@ -199,9 +199,9 @@ export class PerformanceMonitor extends EventEmitter {
    */
   stopMonitoring(): void {
     if (!this.isMonitoring) return;
-    
+
     this.isMonitoring = false;
-    
+
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = undefined;
@@ -232,7 +232,7 @@ export class PerformanceMonitor extends EventEmitter {
       indexesUsed: options?.indexesUsed || [],
       queryPlan: options?.queryPlan,
       memoryUsage: this.getCurrentMemoryUsage(),
-      cpuUsage: this.getCurrentCPUUsage()
+      cpuUsage: this.getCurrentCPUUsage(),
     };
 
     // Store in memory (with limit)
@@ -266,27 +266,26 @@ export class PerformanceMonitor extends EventEmitter {
   ): Promise<T> {
     const startTime = Date.now();
     const startMemory = this.getCurrentMemoryUsage();
-    
+
     try {
       const result = await fn();
       const duration = Date.now() - startTime;
-      
+
       // Determine if result came from cache (heuristic)
       const cacheHit = options?.expectedCacheHit || duration < 10;
-      
+
       this.recordMetric(operation, duration, {
         recordsProcessed: options?.recordsProcessed,
-        cacheHit
+        cacheHit,
       });
 
       return result;
-      
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // Record error metric
       this.recordMetric(`${operation}_error`, duration);
-      
+
       throw error;
     }
   }
@@ -294,25 +293,22 @@ export class PerformanceMonitor extends EventEmitter {
   /**
    * Generate comprehensive performance report
    */
-  generateReport(
-    startTime?: number,
-    endTime?: number
-  ): PerformanceReport {
-    const start = startTime || (Date.now() - 24 * 60 * 60 * 1000); // Last 24 hours
+  generateReport(startTime?: number, endTime?: number): PerformanceReport {
+    const start = startTime || Date.now() - 24 * 60 * 60 * 1000; // Last 24 hours
     const end = endTime || Date.now();
-    
+
     // Get metrics from database for the period
     const periodMetrics = this.getMetricsForPeriod(start, end);
-    
+
     // Calculate summary statistics
     const summary = this.calculateSummaryStats(periodMetrics);
-    
+
     // Break down by operation and time
     const breakdown = this.calculateBreakdownStats(periodMetrics);
-    
+
     // Generate recommendations
     const recommendations = this.generateRecommendations(summary, breakdown);
-    
+
     // Get alerts for the period
     const periodAlerts = this.getAlertsForPeriod(start, end);
 
@@ -320,12 +316,12 @@ export class PerformanceMonitor extends EventEmitter {
       period: {
         start,
         end,
-        duration: end - start
+        duration: end - start,
       },
       summary,
       breakdown,
       recommendations,
-      alerts: periodAlerts
+      alerts: periodAlerts,
     };
   }
 
@@ -340,23 +336,26 @@ export class PerformanceMonitor extends EventEmitter {
     cacheHitRate: number;
     memoryUsage: number;
   } {
-    const recentMetrics = this.metrics.filter(m => 
-      m.timestamp > Date.now() - 5 * 60 * 1000 // Last 5 minutes
+    const recentMetrics = this.metrics.filter(
+      m => m.timestamp > Date.now() - 5 * 60 * 1000 // Last 5 minutes
     );
 
-    const avgResponseTime = recentMetrics.length > 0 ?
-      recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length : 0;
-    
+    const avgResponseTime =
+      recentMetrics.length > 0
+        ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length
+        : 0;
+
     const cacheHits = recentMetrics.filter(m => m.cacheHit).length;
     const cacheHitRate = recentMetrics.length > 0 ? cacheHits / recentMetrics.length : 0;
-    
-    const activeAlerts = this.alerts.filter(a => 
-      a.timestamp > Date.now() - 60 * 60 * 1000 // Last hour
+
+    const activeAlerts = this.alerts.filter(
+      a => a.timestamp > Date.now() - 60 * 60 * 1000 // Last hour
     ).length;
 
-    const isHealthy = avgResponseTime < this.THRESHOLDS.SLOW_QUERY_MS && 
-                     cacheHitRate > this.THRESHOLDS.LOW_CACHE_HIT_RATE &&
-                     activeAlerts === 0;
+    const isHealthy =
+      avgResponseTime < this.THRESHOLDS.SLOW_QUERY_MS &&
+      cacheHitRate > this.THRESHOLDS.LOW_CACHE_HIT_RATE &&
+      activeAlerts === 0;
 
     return {
       isHealthy,
@@ -364,7 +363,7 @@ export class PerformanceMonitor extends EventEmitter {
       averageResponseTime: Math.round(avgResponseTime),
       activeAlerts,
       cacheHitRate: Math.round(cacheHitRate * 100) / 100,
-      memoryUsage: this.getCurrentMemoryUsage()
+      memoryUsage: this.getCurrentMemoryUsage(),
     };
   }
 
@@ -377,33 +376,34 @@ export class PerformanceMonitor extends EventEmitter {
     errorRate: Array<{ time: number; value: number }>;
     cacheHitRate: Array<{ time: number; value: number }>;
   } {
-    const startTime = Date.now() - (hours * 60 * 60 * 1000);
+    const startTime = Date.now() - hours * 60 * 60 * 1000;
     const bucketSize = (hours * 60 * 60 * 1000) / 48; // 48 data points
-    
+
     const trends = {
       responseTime: [] as Array<{ time: number; value: number }>,
       throughput: [] as Array<{ time: number; value: number }>,
       errorRate: [] as Array<{ time: number; value: number }>,
-      cacheHitRate: [] as Array<{ time: number; value: number }>
+      cacheHitRate: [] as Array<{ time: number; value: number }>,
     };
 
     // Get metrics from database
     const metrics = this.getMetricsForPeriod(startTime, Date.now());
-    
+
     // Group into time buckets
     for (let time = startTime; time < Date.now(); time += bucketSize) {
-      const bucketMetrics = metrics.filter(m => 
-        m.timestamp >= time && m.timestamp < time + bucketSize
+      const bucketMetrics = metrics.filter(
+        m => m.timestamp >= time && m.timestamp < time + bucketSize
       );
-      
+
       if (bucketMetrics.length > 0) {
-        const avgResponseTime = bucketMetrics.reduce((sum, m) => sum + m.duration, 0) / bucketMetrics.length;
+        const avgResponseTime =
+          bucketMetrics.reduce((sum, m) => sum + m.duration, 0) / bucketMetrics.length;
         const throughput = bucketMetrics.length;
         const errors = bucketMetrics.filter(m => m.operation.includes('_error')).length;
         const errorRate = errors / bucketMetrics.length;
         const cacheHits = bucketMetrics.filter(m => m.cacheHit).length;
         const cacheHitRate = cacheHits / bucketMetrics.length;
-        
+
         trends.responseTime.push({ time, value: avgResponseTime });
         trends.throughput.push({ time, value: throughput });
         trends.errorRate.push({ time, value: errorRate });
@@ -436,7 +436,7 @@ export class PerformanceMonitor extends EventEmitter {
       frequency: this.getOperationFrequency(metric.operation),
       timestamp: metric.timestamp,
       queryPlan: metric.queryPlan,
-      recommendations: this.getQueryRecommendations(metric)
+      recommendations: this.getQueryRecommendations(metric),
     }));
   }
 
@@ -446,22 +446,26 @@ export class PerformanceMonitor extends EventEmitter {
 
   private persistMetric(metric: PerformanceMetrics): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO performance_metrics (
           timestamp, operation, duration, records_processed,
           cache_hit, indexes_used, query_plan, memory_usage, cpu_usage
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        metric.timestamp,
-        metric.operation,
-        metric.duration,
-        metric.recordsProcessed,
-        metric.cacheHit,
-        JSON.stringify(metric.indexesUsed),
-        metric.queryPlan,
-        metric.memoryUsage,
-        metric.cpuUsage
-      );
+      `
+        )
+        .run(
+          metric.timestamp,
+          metric.operation,
+          metric.duration,
+          metric.recordsProcessed,
+          metric.cacheHit,
+          JSON.stringify(metric.indexesUsed),
+          metric.queryPlan,
+          metric.memoryUsage,
+          metric.cpuUsage
+        );
     } catch (error) {
       console.error('Failed to persist metric:', error);
     }
@@ -480,7 +484,7 @@ export class PerformanceMonitor extends EventEmitter {
         threshold: this.config.slowQueryThreshold,
         actual: metric.duration,
         timestamp: metric.timestamp,
-        suggestions: this.getQueryRecommendations(metric)
+        suggestions: this.getQueryRecommendations(metric),
       });
     }
 
@@ -496,8 +500,8 @@ export class PerformanceMonitor extends EventEmitter {
         suggestions: [
           'Consider reducing cache size',
           'Check for memory leaks',
-          'Monitor long-running operations'
-        ]
+          'Monitor long-running operations',
+        ],
       });
     }
 
@@ -505,7 +509,7 @@ export class PerformanceMonitor extends EventEmitter {
     alerts.forEach(alert => {
       this.alerts.push(alert);
       this.persistAlert(alert);
-      
+
       if (this.config.enableRealTimeAlerts) {
         this.emit('alert', alert);
       }
@@ -514,19 +518,23 @@ export class PerformanceMonitor extends EventEmitter {
 
   private persistAlert(alert: PerformanceAlert): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO performance_alerts (
           level, message, metric, threshold, actual, timestamp, suggestions
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        alert.level,
-        alert.message,
-        alert.metric,
-        alert.threshold,
-        alert.actual,
-        alert.timestamp,
-        JSON.stringify(alert.suggestions)
-      );
+      `
+        )
+        .run(
+          alert.level,
+          alert.message,
+          alert.metric,
+          alert.threshold,
+          alert.actual,
+          alert.timestamp,
+          JSON.stringify(alert.suggestions)
+        );
     } catch (error) {
       console.error('Failed to persist alert:', error);
     }
@@ -535,15 +543,15 @@ export class PerformanceMonitor extends EventEmitter {
   private collectSystemMetrics(): void {
     const memoryUsage = this.getCurrentMemoryUsage();
     const cpuUsage = this.getCurrentCPUUsage();
-    
+
     this.recordMetric('system_monitoring', 0, {
-      recordsProcessed: 0
+      recordsProcessed: 0,
     });
   }
 
   private checkPerformanceThresholds(): void {
-    const recentMetrics = this.metrics.filter(m => 
-      m.timestamp > Date.now() - 5 * 60 * 1000 // Last 5 minutes
+    const recentMetrics = this.metrics.filter(
+      m => m.timestamp > Date.now() - 5 * 60 * 1000 // Last 5 minutes
     );
 
     if (recentMetrics.length === 0) return;
@@ -551,7 +559,7 @@ export class PerformanceMonitor extends EventEmitter {
     // Check cache hit rate
     const cacheHits = recentMetrics.filter(m => m.cacheHit).length;
     const cacheHitRate = cacheHits / recentMetrics.length;
-    
+
     if (cacheHitRate < this.THRESHOLDS.LOW_CACHE_HIT_RATE) {
       this.emit('alert', {
         level: 'warning',
@@ -563,15 +571,15 @@ export class PerformanceMonitor extends EventEmitter {
         suggestions: [
           'Increase cache size',
           'Review cache expiration policies',
-          'Optimize query patterns'
-        ]
+          'Optimize query patterns',
+        ],
       });
     }
 
     // Check error rate
     const errors = recentMetrics.filter(m => m.operation.includes('_error')).length;
     const errorRate = errors / recentMetrics.length;
-    
+
     if (errorRate > this.THRESHOLDS.HIGH_ERROR_RATE) {
       this.emit('alert', {
         level: 'critical',
@@ -583,24 +591,23 @@ export class PerformanceMonitor extends EventEmitter {
         suggestions: [
           'Check database connectivity',
           'Review error logs',
-          'Validate data integrity'
-        ]
+          'Validate data integrity',
+        ],
       });
     }
   }
 
   private cleanupOldMetrics(): void {
-    const cutoff = Date.now() - (this.config.retentionDays * 24 * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000;
+
     try {
       // Clean database
       this.db.prepare('DELETE FROM performance_metrics WHERE timestamp < ?').run(cutoff);
       this.db.prepare('DELETE FROM performance_alerts WHERE timestamp < ?').run(cutoff);
-      
+
       // Clean memory
       this.metrics = this.metrics.filter(m => m.timestamp >= cutoff);
       this.alerts = this.alerts.filter(a => a.timestamp >= cutoff);
-      
     } catch (error) {
       console.error('Failed to cleanup old metrics:', error);
     }
@@ -608,11 +615,15 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getMetricsForPeriod(start: number, end: number): PerformanceMetrics[] {
     try {
-      const rows = this.db.prepare(`
+      const rows = this.db
+        .prepare(
+          `
         SELECT * FROM performance_metrics 
         WHERE timestamp BETWEEN ? AND ?
         ORDER BY timestamp
-      `).all(start, end);
+      `
+        )
+        .all(start, end);
 
       return rows.map((row: any) => ({
         timestamp: row.timestamp,
@@ -623,7 +634,7 @@ export class PerformanceMonitor extends EventEmitter {
         indexesUsed: row.indexes_used ? JSON.parse(row.indexes_used) : [],
         queryPlan: row.query_plan,
         memoryUsage: row.memory_usage,
-        cpuUsage: row.cpu_usage
+        cpuUsage: row.cpu_usage,
       }));
     } catch (error) {
       console.error('Failed to get metrics for period:', error);
@@ -633,11 +644,15 @@ export class PerformanceMonitor extends EventEmitter {
 
   private getAlertsForPeriod(start: number, end: number): PerformanceAlert[] {
     try {
-      const rows = this.db.prepare(`
+      const rows = this.db
+        .prepare(
+          `
         SELECT * FROM performance_alerts 
         WHERE timestamp BETWEEN ? AND ?
         ORDER BY timestamp DESC
-      `).all(start, end);
+      `
+        )
+        .all(start, end);
 
       return rows.map((row: any) => ({
         level: row.level,
@@ -646,7 +661,7 @@ export class PerformanceMonitor extends EventEmitter {
         threshold: row.threshold,
         actual: row.actual,
         timestamp: row.timestamp,
-        suggestions: row.suggestions ? JSON.parse(row.suggestions) : []
+        suggestions: row.suggestions ? JSON.parse(row.suggestions) : [],
       }));
     } catch (error) {
       console.error('Failed to get alerts for period:', error);
@@ -661,7 +676,7 @@ export class PerformanceMonitor extends EventEmitter {
         averageResponseTime: 0,
         slowOperations: 0,
         cacheHitRate: 0,
-        errorRate: 0
+        errorRate: 0,
       };
     }
 
@@ -678,7 +693,7 @@ export class PerformanceMonitor extends EventEmitter {
       averageResponseTime: Math.round(averageResponseTime),
       slowOperations,
       cacheHitRate: Math.round(cacheHitRate * 100) / 100,
-      errorRate: Math.round(errorRate * 100) / 100
+      errorRate: Math.round(errorRate * 100) / 100,
     };
   }
 
@@ -697,7 +712,7 @@ export class PerformanceMonitor extends EventEmitter {
           minTime: Infinity,
           maxTime: 0,
           errorCount: 0,
-          cacheHits: 0
+          cacheHits: 0,
         });
       }
 
@@ -706,11 +721,11 @@ export class PerformanceMonitor extends EventEmitter {
       opStats.totalTime += metric.duration;
       opStats.minTime = Math.min(opStats.minTime, metric.duration);
       opStats.maxTime = Math.max(opStats.maxTime, metric.duration);
-      
+
       if (metric.operation.includes('_error')) {
         opStats.errorCount++;
       }
-      
+
       if (metric.cacheHit) {
         opStats.cacheHits++;
       }
@@ -722,14 +737,16 @@ export class PerformanceMonitor extends EventEmitter {
           hour,
           operations: 0,
           averageTime: 0,
-          errorCount: 0
+          errorCount: 0,
         });
       }
 
       const hourStats = byHour.get(hour)!;
       hourStats.operations++;
-      hourStats.averageTime = (hourStats.averageTime * (hourStats.operations - 1) + metric.duration) / hourStats.operations;
-      
+      hourStats.averageTime =
+        (hourStats.averageTime * (hourStats.operations - 1) + metric.duration) /
+        hourStats.operations;
+
       if (metric.operation.includes('_error')) {
         hourStats.errorCount++;
       }
@@ -748,7 +765,7 @@ export class PerformanceMonitor extends EventEmitter {
     return {
       byOperation,
       byHour,
-      slowestQueries
+      slowestQueries,
     };
   }
 

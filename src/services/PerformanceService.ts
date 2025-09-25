@@ -53,13 +53,13 @@ export class PerformanceService extends EventEmitter {
       autoOptimization: true,
       alertThresholds: {
         responseTime: 1000, // ms
-        memoryUsage: 400,   // MB
-        errorRate: 0.05,    // 5%
-        cacheHitRate: 0.7   // 70%
+        memoryUsage: 400, // MB
+        errorRate: 0.05, // 5%
+        cacheHitRate: 0.7, // 70%
       },
       monitoringInterval: 15000, // 15 seconds
       optimizationCooldown: 300000, // 5 minutes
-      ...config
+      ...config,
     };
 
     this.initializeServices();
@@ -97,7 +97,6 @@ export class PerformanceService extends EventEmitter {
       console.log('✅ Performance Service initialized successfully');
 
       this.emit('service-initialized');
-
     } catch (error) {
       console.error('❌ Failed to initialize Performance Service:', error);
       throw error;
@@ -126,7 +125,7 @@ export class PerformanceService extends EventEmitter {
       alerts: dashboardData.activeAlerts,
       recommendations: optimizerAnalysis.recommendations.map(r => r.name),
       slaStatus: dashboardData.slaStatus,
-      trends: dashboardData.recentTrends
+      trends: dashboardData.recentTrends,
     };
   }
 
@@ -143,14 +142,7 @@ export class PerformanceService extends EventEmitter {
   ): void {
     if (!this.isInitialized) return;
 
-    this.searchMonitor.recordSearch(
-      query,
-      duration,
-      resultCount,
-      cacheHit,
-      strategy,
-      indexesUsed
-    );
+    this.searchMonitor.recordSearch(query, duration, resultCount, cacheHit, strategy, indexesUsed);
 
     // Check for immediate optimization needs
     if (this.config.autoOptimization && duration > this.config.alertThresholds.responseTime) {
@@ -176,22 +168,21 @@ export class PerformanceService extends EventEmitter {
 
       this.emit('optimization-executed', {
         strategy: strategyName,
-        result
+        result,
       });
 
       return {
         success: result.success,
         improvement: result.improvement,
         error: result.error,
-        recommendations: result.recommendations
+        recommendations: result.recommendations,
       };
-
     } catch (error) {
       console.error(`Failed to execute optimization ${strategyName}:`, error);
       return {
         success: false,
         improvement: 0,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -218,9 +209,8 @@ export class PerformanceService extends EventEmitter {
 
       return {
         summary: testResults.summary,
-        results: testResults.results
+        results: testResults.results,
       };
-
     } catch (error) {
       console.error('Performance tests failed:', error);
       throw error;
@@ -245,7 +235,7 @@ export class PerformanceService extends EventEmitter {
     return {
       strategies,
       quickWins: analysis.quickWins,
-      analysis: analysis.currentMetrics
+      analysis: analysis.currentMetrics,
     };
   }
 
@@ -286,7 +276,7 @@ export class PerformanceService extends EventEmitter {
     return {
       optimizations: optimizationHistory,
       trends,
-      slaCompliance: [slaStatus]
+      slaCompliance: [slaStatus],
     };
   }
 
@@ -307,7 +297,7 @@ export class PerformanceService extends EventEmitter {
     return {
       usage: memoryProfile.heapUsage,
       leaks: memoryProfile.leaks,
-      recommendations: memoryProfile.recommendations
+      recommendations: memoryProfile.recommendations,
     };
   }
 
@@ -328,7 +318,7 @@ export class PerformanceService extends EventEmitter {
     return {
       totalSize: bundleAnalysis.totalSize,
       chunks: Object.fromEntries(bundleAnalysis.chunkSizes),
-      optimizations: bundleAnalysis.treeshakingOpportunities
+      optimizations: bundleAnalysis.treeshakingOpportunities,
     };
   }
 
@@ -346,11 +336,7 @@ export class PerformanceService extends EventEmitter {
       }
 
       // Check for potential WASM optimization opportunities
-      const wasmModules = [
-        'search-algorithms',
-        'text-processing',
-        'mathematical-operations'
-      ];
+      const wasmModules = ['search-algorithms', 'text-processing', 'mathematical-operations'];
 
       // Simulate WASM performance test
       const performance = 1.5; // 50% improvement
@@ -358,9 +344,8 @@ export class PerformanceService extends EventEmitter {
       return {
         available: true,
         modules: wasmModules,
-        performance
+        performance,
       };
-
     } catch (error) {
       return { available: false, modules: [] };
     }
@@ -370,7 +355,7 @@ export class PerformanceService extends EventEmitter {
 
   private setupEventListeners(): void {
     // Search monitor alerts
-    this.searchMonitor.on('search-alert', (alert) => {
+    this.searchMonitor.on('search-alert', alert => {
       this.emit('performance-alert', alert);
 
       if (this.config.autoOptimization && alert.level === 'critical') {
@@ -379,11 +364,11 @@ export class PerformanceService extends EventEmitter {
     });
 
     // Optimizer events
-    this.optimizer.on('optimization-started', (data) => {
+    this.optimizer.on('optimization-started', data => {
       this.emit('optimization-started', data);
     });
 
-    this.optimizer.on('optimization-completed', (data) => {
+    this.optimizer.on('optimization-completed', data => {
       this.emit('optimization-completed', data);
       this.lastOptimization = new Date();
     });
@@ -405,7 +390,6 @@ export class PerformanceService extends EventEmitter {
         if ('caches' in window) {
           this.cache = await caches.open('performance-cache-v1');
         }
-
       } catch (error) {
         console.warn('Service Worker registration failed:', error);
       }
@@ -431,7 +415,7 @@ export class PerformanceService extends EventEmitter {
         metric: 'memory_usage',
         currentValue: memMB,
         threshold: this.config.alertThresholds.memoryUsage,
-        message: `High memory usage: ${memMB.toFixed(1)}MB`
+        message: `High memory usage: ${memMB.toFixed(1)}MB`,
       });
     }
   }
@@ -440,8 +424,9 @@ export class PerformanceService extends EventEmitter {
     if (!this.config.autoOptimization) return;
 
     const now = new Date();
-    const cooldownPassed = !this.lastOptimization ||
-      (now.getTime() - this.lastOptimization.getTime()) > this.config.optimizationCooldown;
+    const cooldownPassed =
+      !this.lastOptimization ||
+      now.getTime() - this.lastOptimization.getTime() > this.config.optimizationCooldown;
 
     if (cooldownPassed) {
       // Run conservative auto-optimization
@@ -461,7 +446,7 @@ export class PerformanceService extends EventEmitter {
     const now = Date.now();
 
     for (let i = 0; i < points; i++) {
-      const timestamp = new Date(now - ((points - i) * interval));
+      const timestamp = new Date(now - (points - i) * interval);
 
       // Simulate realistic performance metrics with some variation
       const baseResponseTime = 400 + Math.random() * 200;
@@ -477,7 +462,7 @@ export class PerformanceService extends EventEmitter {
         slaCompliance: baseResponseTime <= 1000 ? 1 : Math.random() * 0.8,
         errorRate: Math.random() * 0.03,
         memoryUsage: baseMemoryUsage,
-        cpuUsage: 40 + Math.random() * 30
+        cpuUsage: 40 + Math.random() * 30,
       });
     }
 

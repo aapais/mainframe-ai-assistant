@@ -13,10 +13,7 @@ import { CategoryNode } from '../../services/CategoryHierarchyService';
 // MOCK DATA GENERATORS
 // ===========================
 
-export const createMockKBEntry = (
-  id: string,
-  overrides: Partial<KBEntry> = {}
-): KBEntry => ({
+export const createMockKBEntry = (id: string, overrides: Partial<KBEntry> = {}): KBEntry => ({
   id,
   title: `Test Entry ${id}`,
   problem: `This is a test problem description for entry ${id}`,
@@ -32,14 +29,10 @@ export const createMockKBEntry = (
   success_rate: Math.random(),
   trending_score: Math.random() * 100,
   last_used: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-  ...overrides
+  ...overrides,
 });
 
-export const createMockTag = (
-  id: string,
-  name: string,
-  overrides: Partial<Tag> = {}
-): Tag => ({
+export const createMockTag = (id: string, name: string, overrides: Partial<Tag> = {}): Tag => ({
   id,
   name,
   description: `Description for ${name}`,
@@ -52,7 +45,7 @@ export const createMockTag = (
   auto_suggest: Math.random() > 0.5,
   related_tags: [],
   synonyms: [],
-  ...overrides
+  ...overrides,
 });
 
 export const createMockCategory = (
@@ -73,7 +66,7 @@ export const createMockCategory = (
   sort_order: Math.floor(Math.random() * 100),
   tags: [],
   trending_score: Math.random() * 100,
-  ...overrides
+  ...overrides,
 });
 
 // ===========================
@@ -85,58 +78,72 @@ export const createRealisticKBEntry = (category: string, tagNames: string[]): KB
     JCL: [
       'Job fails with JCL error {code}',
       'Dataset allocation fails with {error}',
-      'Step abends with condition code {code}'
+      'Step abends with condition code {code}',
     ],
     VSAM: [
       'VSAM file returns status {code}',
       'VSAM catalog issues with {dataset}',
-      'VSAM access method error {error}'
+      'VSAM access method error {error}',
     ],
     DB2: [
       'SQL query returns SQLCODE {code}',
       'Database connection timeout',
-      'Query performance issues with {table}'
+      'Query performance issues with {table}',
     ],
     Batch: [
       'Program abends with S0C{code}',
       'Memory allocation failure',
-      'Processing timeout in {module}'
-    ]
+      'Processing timeout in {module}',
+    ],
   };
 
   const solutionTemplates = {
     JCL: [
       '1. Check DD statement syntax\n2. Verify dataset exists\n3. Review JCL parameters',
       '1. Increase region size\n2. Check space parameters\n3. Verify catalog entries',
-      '1. Review step dependencies\n2. Check condition codes\n3. Verify input datasets'
+      '1. Review step dependencies\n2. Check condition codes\n3. Verify input datasets',
     ],
     VSAM: [
       '1. Run VSAM verify\n2. Check file status\n3. Review access method',
       '1. Check catalog definition\n2. Verify IDCAMS commands\n3. Review space allocation',
-      '1. Analyze VSAM parameters\n2. Check record structure\n3. Verify index integrity'
+      '1. Analyze VSAM parameters\n2. Check record structure\n3. Verify index integrity',
     ],
     DB2: [
       '1. Check SQL syntax\n2. Review table structure\n3. Verify permissions',
       '1. Analyze explain plan\n2. Add indexes if needed\n3. Update statistics',
-      '1. Check connection parameters\n2. Review timeout settings\n3. Monitor database load'
+      '1. Check connection parameters\n2. Review timeout settings\n3. Monitor database load',
     ],
     Batch: [
       '1. Check variable initialization\n2. Review arithmetic operations\n3. Add data validation',
       '1. Increase memory allocation\n2. Check working storage\n3. Review data structures',
-      '1. Add timeout handling\n2. Implement checkpoints\n3. Optimize processing logic'
-    ]
+      '1. Add timeout handling\n2. Implement checkpoints\n3. Optimize processing logic',
+    ],
   };
 
-  const templates = problemTemplates[category as keyof typeof problemTemplates] || problemTemplates.JCL;
-  const solutions = solutionTemplates[category as keyof typeof solutionTemplates] || solutionTemplates.JCL;
+  const templates =
+    problemTemplates[category as keyof typeof problemTemplates] || problemTemplates.JCL;
+  const solutions =
+    solutionTemplates[category as keyof typeof solutionTemplates] || solutionTemplates.JCL;
 
   const problemTemplate = templates[Math.floor(Math.random() * templates.length)];
   const solutionTemplate = solutions[Math.floor(Math.random() * solutions.length)];
 
   // Replace placeholders with realistic values
   const problem = problemTemplate
-    .replace('{code}', Math.floor(Math.random() * 999).toString().padStart(3, '0'))
-    .replace('{error}', 'IEF' + Math.floor(Math.random() * 999).toString().padStart(3, '0') + 'I')
+    .replace(
+      '{code}',
+      Math.floor(Math.random() * 999)
+        .toString()
+        .padStart(3, '0')
+    )
+    .replace(
+      '{error}',
+      'IEF' +
+        Math.floor(Math.random() * 999)
+          .toString()
+          .padStart(3, '0') +
+        'I'
+    )
     .replace('{dataset}', 'PROD.DATA.FILE')
     .replace('{table}', 'USER_TABLE')
     .replace('{module}', 'MODULE' + Math.floor(Math.random() * 100));
@@ -151,7 +158,7 @@ export const createRealisticKBEntry = (category: string, tagNames: string[]): KB
       tags: tagNames,
       success_rate: 0.6 + Math.random() * 0.4, // 60-100% success rate
       usage_count: Math.floor(Math.random() * 100),
-      trending_score: Math.random() * 50 + (category === 'DB2' ? 50 : 0) // DB2 trending higher
+      trending_score: Math.random() * 50 + (category === 'DB2' ? 50 : 0), // DB2 trending higher
     }
   );
 };
@@ -162,7 +169,7 @@ export const createRealisticTagSet = (): Tag[] => {
     VSAM: ['file-access', 'catalog', 'record-management', 'index-processing'],
     DB2: ['sql', 'performance', 'connection', 'transaction', 'query-optimization'],
     Batch: ['abend', 'memory', 'processing', 'error-handling', 'data-validation'],
-    General: ['troubleshooting', 'monitoring', 'debugging', 'optimization']
+    General: ['troubleshooting', 'monitoring', 'debugging', 'optimization'],
   };
 
   const tags: Tag[] = [];
@@ -170,17 +177,15 @@ export const createRealisticTagSet = (): Tag[] => {
 
   Object.entries(tagCategories).forEach(([category, tagNames]) => {
     tagNames.forEach(tagName => {
-      tags.push(createMockTag(
-        `tag-${tagCounter++}`,
-        tagName,
-        {
+      tags.push(
+        createMockTag(`tag-${tagCounter++}`, tagName, {
           category: category === 'General' ? null : category,
           is_system: category !== 'General',
           usage_count: Math.floor(Math.random() * 200),
           auto_suggest: true,
-          related_tags: tagNames.filter(t => t !== tagName).slice(0, 2)
-        }
-      ));
+          related_tags: tagNames.filter(t => t !== tagName).slice(0, 2),
+        })
+      );
     });
   });
 
@@ -194,36 +199,32 @@ export const createRealisticCategorySet = (): CategoryNode[] => {
     { name: 'DB2', icon: '🗃️', description: 'Database management and SQL issues' },
     { name: 'Batch', icon: '⚙️', description: 'Batch processing and program errors' },
     { name: 'CICS', icon: '🖥️', description: 'Customer Information Control System' },
-    { name: 'IMS', icon: '💾', description: 'Information Management System' }
+    { name: 'IMS', icon: '💾', description: 'Information Management System' },
   ];
 
   const userCategories = [
     { name: 'Performance', icon: '🚀', description: 'Performance tuning and optimization' },
     { name: 'Security', icon: '🔒', description: 'Security-related issues and configurations' },
-    { name: 'Monitoring', icon: '📊', description: 'System monitoring and alerting' }
+    { name: 'Monitoring', icon: '📊', description: 'System monitoring and alerting' },
   ];
 
   return [
-    ...systemCategories.map((cat, index) => createMockCategory(
-      `sys-cat-${index + 1}`,
-      cat.name,
-      {
+    ...systemCategories.map((cat, index) =>
+      createMockCategory(`sys-cat-${index + 1}`, cat.name, {
         ...cat,
         is_system: true,
         entry_count: Math.floor(Math.random() * 50) + 10,
-        trending_score: Math.random() * 100
-      }
-    )),
-    ...userCategories.map((cat, index) => createMockCategory(
-      `user-cat-${index + 1}`,
-      cat.name,
-      {
+        trending_score: Math.random() * 100,
+      })
+    ),
+    ...userCategories.map((cat, index) =>
+      createMockCategory(`user-cat-${index + 1}`, cat.name, {
         ...cat,
         is_system: false,
         entry_count: Math.floor(Math.random() * 20) + 5,
-        trending_score: Math.random() * 30
-      }
-    ))
+        trending_score: Math.random() * 30,
+      })
+    ),
   ];
 };
 
@@ -231,14 +232,11 @@ export const createRealisticCategorySet = (): CategoryNode[] => {
 // RELATIONSHIP BUILDERS
 // ===========================
 
-export const buildEntryTagRelationships = (
-  entries: KBEntry[],
-  tags: Tag[]
-): KBEntry[] => {
+export const buildEntryTagRelationships = (entries: KBEntry[], tags: Tag[]): KBEntry[] => {
   return entries.map(entry => {
     // Get category-specific tags
-    const categoryTags = tags.filter(tag =>
-      tag.category === entry.category || tag.category === null
+    const categoryTags = tags.filter(
+      tag => tag.category === entry.category || tag.category === null
     );
 
     // Randomly assign 1-4 relevant tags
@@ -250,7 +248,7 @@ export const buildEntryTagRelationships = (
 
     return {
       ...entry,
-      tags: assignedTags
+      tags: assignedTags,
     };
   });
 };
@@ -290,27 +288,23 @@ export const createLargeDataset = (config: LargeDatasetConfig) => {
 
   // Generate categories
   for (let i = 0; i < config.categoryCount; i++) {
-    categories.push(createMockCategory(
-      `bulk-cat-${i}`,
-      `Category ${i}`,
-      {
+    categories.push(
+      createMockCategory(`bulk-cat-${i}`, `Category ${i}`, {
         is_system: i < config.categoryCount * 0.3, // 30% system categories
-        entry_count: Math.floor(Math.random() * 50)
-      }
-    ));
+        entry_count: Math.floor(Math.random() * 50),
+      })
+    );
   }
 
   // Generate tags
   for (let i = 0; i < config.tagCount; i++) {
     const category = categories[Math.floor(Math.random() * categories.length)];
-    tags.push(createMockTag(
-      `bulk-tag-${i}`,
-      `tag-${i}`,
-      {
+    tags.push(
+      createMockTag(`bulk-tag-${i}`, `tag-${i}`, {
         category: Math.random() > 0.7 ? category.name : null, // 30% have categories
-        usage_count: Math.floor(Math.random() * 1000)
-      }
-    ));
+        usage_count: Math.floor(Math.random() * 1000),
+      })
+    );
   }
 
   // Generate entries
@@ -341,9 +335,8 @@ export const createErrorScenarios = () => ({
 
   permissionError: () => Promise.reject(new Error('Insufficient permissions')),
 
-  timeoutError: () => new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Operation timeout')), 100)
-  ),
+  timeoutError: () =>
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Operation timeout')), 100)),
 
   intermittentFailure: (() => {
     let callCount = 0;
@@ -354,7 +347,7 @@ export const createErrorScenarios = () => ({
       }
       return Promise.resolve({ success: true });
     };
-  })()
+  })(),
 });
 
 // ===========================
@@ -366,7 +359,7 @@ export const createPerformanceTestData = () => {
     entryCount: 1000,
     tagCount: 200,
     categoryCount: 50,
-    maxTagsPerEntry: 8
+    maxTagsPerEntry: 8,
   });
 
   // Add performance-specific properties

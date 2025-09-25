@@ -1,7 +1,7 @@
 /**
  * Storage Service Interface
  * Defines the core interface for the extensible storage service that supports MVP1-5 progression
- * 
+ *
  * This interface provides a unified abstraction layer over different storage backends
  * and supports progressive enhancement through plugins and adapters.
  */
@@ -25,7 +25,7 @@ export interface StorageConfig {
     pool?: PoolConfig;
     pragmas?: Record<string, string | number>;
   };
-  
+
   // Backup Configuration
   backup: {
     enabled: boolean;
@@ -35,7 +35,7 @@ export interface StorageConfig {
     encryption?: EncryptionConfig;
     destinations: BackupDestination[];
   };
-  
+
   // Performance Configuration
   performance: {
     caching: CacheConfig;
@@ -43,14 +43,14 @@ export interface StorageConfig {
     maintenance: MaintenanceConfig;
     monitoring: MonitoringConfig;
   };
-  
+
   // MVP-specific Configuration
   mvp: {
     version: '1' | '2' | '3' | '4' | '5';
     features: MVPFeatureConfig;
     extensions: ExtensionConfig[];
   };
-  
+
   // Integration Configuration
   integrations: {
     ai: AIIntegrationConfig;
@@ -160,81 +160,81 @@ export interface IStorageService extends EventEmitter {
   // Lifecycle Management
   initialize(config: StorageConfig): Promise<void>;
   close(): Promise<void>;
-  
+
   // Core Knowledge Base Operations (MVP1)
   createEntry(entry: KBEntryInput): Promise<string>;
   readEntry(id: string): Promise<KBEntry | null>;
   updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean>;
   deleteEntry(id: string): Promise<boolean>;
   searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]>;
-  
+
   // Batch Operations
   createEntries(entries: KBEntryInput[]): Promise<string[]>;
   readEntries(ids: string[]): Promise<KBEntry[]>;
   updateEntries(updates: Array<{ id: string; updates: KBEntryUpdate }>): Promise<boolean[]>;
   deleteEntries(ids: string[]): Promise<boolean[]>;
-  
+
   // Pattern Storage (MVP2)
   createPattern(pattern: PatternData): Promise<string>;
   getPatterns(criteria: PatternCriteria): Promise<Pattern[]>;
   updatePattern(id: string, updates: PatternUpdate): Promise<boolean>;
   deletePattern(id: string): Promise<boolean>;
-  
+
   // Incident Storage (MVP2)
   createIncident(incident: IncidentData): Promise<string>;
   getIncidents(criteria: IncidentCriteria): Promise<Incident[]>;
   updateIncident(id: string, updates: IncidentUpdate): Promise<boolean>;
   linkIncidentToPattern(incidentId: string, patternId: string): Promise<void>;
-  
+
   // Code Storage (MVP3)
   storeCodeAnalysis(analysis: CodeAnalysis): Promise<string>;
   getCodeAnalysis(criteria: CodeCriteria): Promise<CodeAnalysis[]>;
   linkCodeToKB(codeId: string, kbId: string, linkType: LinkType): Promise<void>;
   updateCodeAnalysis(id: string, updates: CodeAnalysisUpdate): Promise<boolean>;
-  
+
   // Code Repository Management (MVP3)
   createRepository(repo: RepositoryData): Promise<string>;
   getRepositories(): Promise<Repository[]>;
   scanRepository(repoId: string): Promise<ScanResult>;
-  
+
   // Template Storage (MVP4)
   storeTemplate(template: CodeTemplate): Promise<string>;
   getTemplates(criteria: TemplateCriteria): Promise<CodeTemplate[]>;
   updateTemplate(id: string, updates: TemplateUpdate): Promise<boolean>;
   generateTemplate(sourceCode: string, metadata: TemplateMetadata): Promise<string>;
-  
+
   // Project Management (MVP4)
   createProject(project: ProjectData): Promise<string>;
   getProjects(criteria: ProjectCriteria): Promise<Project[]>;
   updateProject(id: string, updates: ProjectUpdate): Promise<boolean>;
-  
+
   // Analytics Storage (MVP5)
   storePrediction(prediction: PredictionData): Promise<string>;
   getPredictions(criteria: PredictionCriteria): Promise<Prediction[]>;
   getAnalytics(timeRange: TimeRange, metrics: string[]): Promise<AnalyticsData>;
-  
+
   // ML Model Storage (MVP5)
   storeModel(model: MLModelData): Promise<string>;
   getModel(id: string): Promise<MLModel | null>;
   updateModelMetrics(id: string, metrics: ModelMetrics): Promise<boolean>;
-  
+
   // Cross-MVP Operations
   backup(options?: BackupOptions): Promise<BackupResult>;
   restore(backupPath: string, options?: RestoreOptions): Promise<RestoreResult>;
   export(format: ExportFormat, options?: ExportOptions): Promise<string>;
   import(data: string, format: ImportFormat, options?: ImportOptions): Promise<ImportResult>;
   migrate(targetVersion: string): Promise<MigrationResult[]>;
-  
+
   // Performance & Monitoring
   getMetrics(): Promise<StorageMetrics>;
   optimize(): Promise<OptimizationResult>;
   healthCheck(): Promise<HealthStatus>;
-  
+
   // Plugin Management
   loadPlugin(plugin: IStoragePlugin): Promise<void>;
   unloadPlugin(pluginName: string): Promise<void>;
   getLoadedPlugins(): string[];
-  
+
   // Event Management
   subscribe(event: string, handler: Function): void;
   unsubscribe(event: string, handler: Function): void;
@@ -817,20 +817,20 @@ export interface IStoragePlugin {
   version: string;
   mvp: number;
   dependencies: string[];
-  
+
   // Plugin Lifecycle
   initialize(storage: IStorageService, config: any): Promise<void>;
   start(): Promise<void>;
   stop(): Promise<void>;
-  
+
   // Schema Extensions
   getSchemaExtensions(): SchemaExtension[];
   getMigrations(): Migration[];
-  
+
   // Data Operations
   getDataOperations(): DataOperation[];
   getQueryExtensions(): QueryExtension[];
-  
+
   // Event Handlers
   getEventHandlers(): EventHandler[];
 }
@@ -875,32 +875,32 @@ export interface StorageEvents {
   // Lifecycle Events
   'storage:initialized': (config: StorageConfig) => void;
   'storage:closed': () => void;
-  
+
   // Data Events
   'entry:created': (entry: KBEntry) => void;
   'entry:updated': (id: string, updates: KBEntryUpdate) => void;
   'entry:deleted': (id: string) => void;
   'search:performed': (query: string, results: SearchResult[]) => void;
-  
+
   // MVP2+ Events
   'pattern:detected': (pattern: Pattern) => void;
   'incident:created': (incident: Incident) => void;
   'code:analyzed': (analysis: CodeAnalysis) => void;
   'template:generated': (template: CodeTemplate) => void;
   'prediction:made': (prediction: Prediction) => void;
-  
+
   // System Events
   'backup:completed': (result: BackupResult) => void;
   'migration:completed': (results: MigrationResult[]) => void;
   'optimization:completed': (result: OptimizationResult) => void;
   'health:warning': (issue: HealthIssue) => void;
   'health:critical': (issue: HealthIssue) => void;
-  
+
   // Plugin Events
   'plugin:loaded': (plugin: string) => void;
   'plugin:unloaded': (plugin: string) => void;
   'plugin:error': (plugin: string, error: Error) => void;
-  
+
   // Performance Events
   'performance:degraded': (metric: string, value: number) => void;
   'cache:miss': (key: string) => void;

@@ -24,7 +24,7 @@ import {
   ImportWarning,
   RestoreError,
   ServiceError,
-  ValidationError
+  ValidationError,
 } from '../types/services';
 
 interface ExportData {
@@ -68,7 +68,7 @@ export class ImportExportService implements IImportExportService {
   async exportToJSON(options: ExportOptions = {}): Promise<string> {
     try {
       const entries = await this.fetchEntriesForExport(options);
-      
+
       const exportData: ExportData = {
         version: '1.0',
         metadata: {
@@ -76,9 +76,9 @@ export class ImportExportService implements IImportExportService {
           exported_by: 'KB Assistant',
           total_entries: entries.length,
           format: 'json',
-          source_system: 'Mainframe KB Assistant'
+          source_system: 'Mainframe KB Assistant',
         },
-        entries: this.prepareEntriesForExport(entries, options)
+        entries: this.prepareEntriesForExport(entries, options),
       };
 
       // Add statistics if requested
@@ -88,12 +88,10 @@ export class ImportExportService implements IImportExportService {
 
       return JSON.stringify(exportData, null, options.format === 'compact' ? 0 : 2);
     } catch (error) {
-      throw new ServiceError(
-        `JSON export failed: ${error.message}`,
-        'EXPORT_FAILED',
-        500,
-        { options, originalError: error }
-      );
+      throw new ServiceError(`JSON export failed: ${error.message}`, 'EXPORT_FAILED', 500, {
+        options,
+        originalError: error,
+      });
     }
   }
 
@@ -112,8 +110,8 @@ export class ImportExportService implements IImportExportService {
         totalProcessed: 0,
         processingTime: 0,
         validationErrors: 0,
-        duplicates: 0
-      }
+        duplicates: 0,
+      },
     };
 
     const startTime = Date.now();
@@ -126,20 +124,20 @@ export class ImportExportService implements IImportExportService {
           line: 0,
           field: 'format',
           message: 'Invalid JSON format',
-          code: 'INVALID_FORMAT'
+          code: 'INVALID_FORMAT',
         });
         return result;
       }
 
       const importData: ImportData = JSON.parse(data);
-      
+
       // Validate import structure
       if (!importData.entries || !Array.isArray(importData.entries)) {
         result.errors.push({
           line: 0,
           field: 'entries',
           message: 'Missing or invalid entries array',
-          code: 'INVALID_STRUCTURE'
+          code: 'INVALID_STRUCTURE',
         });
         return result;
       }
@@ -153,18 +151,18 @@ export class ImportExportService implements IImportExportService {
           field: 'version',
           message: `Unsupported version: ${importData.version}`,
           code: 'VERSION_MISMATCH',
-          suggestion: 'Data may not import correctly'
+          suggestion: 'Data may not import correctly',
         });
       }
 
       // Process entries in batches
       const batchSize = options.batchSize || 100;
       const entries = importData.entries;
-      
+
       for (let i = 0; i < entries.length; i += batchSize) {
         const batch = entries.slice(i, i + batchSize);
         const batchResult = await this.processBatch(batch, i, options);
-        
+
         result.imported += batchResult.imported;
         result.updated += batchResult.updated;
         result.skipped += batchResult.skipped;
@@ -183,7 +181,7 @@ export class ImportExportService implements IImportExportService {
         line: 0,
         field: 'general',
         message: `Import failed: ${error.message}`,
-        code: 'IMPORT_FAILED'
+        code: 'IMPORT_FAILED',
       });
       result.summary.processingTime = Date.now() - startTime;
       return result;
@@ -197,19 +195,17 @@ export class ImportExportService implements IImportExportService {
     try {
       const entries = await this.fetchEntriesForExport(options);
       const csvData = this.convertEntriesToCSV(entries, options);
-      
+
       return stringifyCSV(csvData, {
         header: true,
         columns: this.getCSVColumns(options),
-        quoted: true
+        quoted: true,
       });
     } catch (error) {
-      throw new ServiceError(
-        `CSV export failed: ${error.message}`,
-        'EXPORT_FAILED',
-        500,
-        { options, originalError: error }
-      );
+      throw new ServiceError(`CSV export failed: ${error.message}`, 'EXPORT_FAILED', 500, {
+        options,
+        originalError: error,
+      });
     }
   }
 
@@ -228,8 +224,8 @@ export class ImportExportService implements IImportExportService {
         totalProcessed: 0,
         processingTime: 0,
         validationErrors: 0,
-        duplicates: 0
-      }
+        duplicates: 0,
+      },
     };
 
     const startTime = Date.now();
@@ -242,33 +238,35 @@ export class ImportExportService implements IImportExportService {
         trim: true,
         delimiter: ',',
         quote: '"',
-        escape: '"'
+        escape: '"',
       });
 
       result.summary.totalProcessed = records.length;
 
       // Convert CSV records to KB entries
-      const entries = records.map((record, index) => {
-        try {
-          return this.convertCSVRecordToEntry(record, index);
-        } catch (error) {
-          result.errors.push({
-            line: index + 2, // +2 for header and 0-based index
-            field: 'conversion',
-            message: `Failed to convert record: ${error.message}`,
-            code: 'CONVERSION_FAILED'
-          });
-          return null;
-        }
-      }).filter(Boolean) as KBEntryInput[];
+      const entries = records
+        .map((record, index) => {
+          try {
+            return this.convertCSVRecordToEntry(record, index);
+          } catch (error) {
+            result.errors.push({
+              line: index + 2, // +2 for header and 0-based index
+              field: 'conversion',
+              message: `Failed to convert record: ${error.message}`,
+              code: 'CONVERSION_FAILED',
+            });
+            return null;
+          }
+        })
+        .filter(Boolean) as KBEntryInput[];
 
       // Process entries in batches
       const batchSize = options.batchSize || 100;
-      
+
       for (let i = 0; i < entries.length; i += batchSize) {
         const batch = entries.slice(i, i + batchSize);
         const batchResult = await this.processBatch(batch, i, options);
-        
+
         result.imported += batchResult.imported;
         result.updated += batchResult.updated;
         result.skipped += batchResult.skipped;
@@ -287,7 +285,7 @@ export class ImportExportService implements IImportExportService {
         line: 0,
         field: 'parsing',
         message: `CSV parsing failed: ${error.message}`,
-        code: 'PARSE_FAILED'
+        code: 'PARSE_FAILED',
       });
       result.summary.processingTime = Date.now() - startTime;
       return result;
@@ -300,17 +298,17 @@ export class ImportExportService implements IImportExportService {
   async exportToXML(options: ExportOptions = {}): Promise<string> {
     try {
       const entries = await this.fetchEntriesForExport(options);
-      
+
       const xmlData = {
         knowledgebase: {
           $: {
             version: '1.0',
-            exported_at: new Date().toISOString()
+            exported_at: new Date().toISOString(),
           },
           metadata: {
             total_entries: entries.length,
             format: 'xml',
-            source_system: 'Mainframe KB Assistant'
+            source_system: 'Mainframe KB Assistant',
           },
           entries: {
             entry: entries.map(entry => ({
@@ -327,26 +325,24 @@ export class ImportExportService implements IImportExportService {
                 usage_count: entry.usage_count,
                 success_count: entry.success_count,
                 failure_count: entry.failure_count,
-                version: entry.version
-              }
-            }))
-          }
-        }
+                version: entry.version,
+              },
+            })),
+          },
+        },
       };
 
       const builder = new XMLBuilder({
         xmldec: { version: '1.0', encoding: 'UTF-8' },
-        renderOpts: { pretty: options.format !== 'compact' }
+        renderOpts: { pretty: options.format !== 'compact' },
       });
 
       return builder.buildObject(xmlData);
     } catch (error) {
-      throw new ServiceError(
-        `XML export failed: ${error.message}`,
-        'EXPORT_FAILED',
-        500,
-        { options, originalError: error }
-      );
+      throw new ServiceError(`XML export failed: ${error.message}`, 'EXPORT_FAILED', 500, {
+        options,
+        originalError: error,
+      });
     }
   }
 
@@ -365,8 +361,8 @@ export class ImportExportService implements IImportExportService {
         totalProcessed: 0,
         processingTime: 0,
         validationErrors: 0,
-        duplicates: 0
-      }
+        duplicates: 0,
+      },
     };
 
     const startTime = Date.now();
@@ -385,7 +381,7 @@ export class ImportExportService implements IImportExportService {
           line: 0,
           field: 'structure',
           message: 'Invalid XML structure: missing knowledgebase/entries/entry',
-          code: 'INVALID_STRUCTURE'
+          code: 'INVALID_STRUCTURE',
         });
         return result;
       }
@@ -398,27 +394,29 @@ export class ImportExportService implements IImportExportService {
       result.summary.totalProcessed = xmlEntries.length;
 
       // Convert XML entries to KB entries
-      const entries = xmlEntries.map((xmlEntry, index) => {
-        try {
-          return this.convertXMLEntryToEntry(xmlEntry, index);
-        } catch (error) {
-          result.errors.push({
-            line: index + 1,
-            field: 'conversion',
-            message: `Failed to convert XML entry: ${error.message}`,
-            code: 'CONVERSION_FAILED'
-          });
-          return null;
-        }
-      }).filter(Boolean) as KBEntryInput[];
+      const entries = xmlEntries
+        .map((xmlEntry, index) => {
+          try {
+            return this.convertXMLEntryToEntry(xmlEntry, index);
+          } catch (error) {
+            result.errors.push({
+              line: index + 1,
+              field: 'conversion',
+              message: `Failed to convert XML entry: ${error.message}`,
+              code: 'CONVERSION_FAILED',
+            });
+            return null;
+          }
+        })
+        .filter(Boolean) as KBEntryInput[];
 
       // Process entries in batches
       const batchSize = options.batchSize || 100;
-      
+
       for (let i = 0; i < entries.length; i += batchSize) {
         const batch = entries.slice(i, i + batchSize);
         const batchResult = await this.processBatch(batch, i, options);
-        
+
         result.imported += batchResult.imported;
         result.updated += batchResult.updated;
         result.skipped += batchResult.skipped;
@@ -437,7 +435,7 @@ export class ImportExportService implements IImportExportService {
         line: 0,
         field: 'parsing',
         message: `XML parsing failed: ${error.message}`,
-        code: 'PARSE_FAILED'
+        code: 'PARSE_FAILED',
       });
       result.summary.processingTime = Date.now() - startTime;
       return result;
@@ -457,7 +455,7 @@ export class ImportExportService implements IImportExportService {
       const exportOptions: ExportOptions = {
         includeMetrics: true,
         includeHistory: true,
-        format: 'full'
+        format: 'full',
       };
 
       const backupData = await this.exportToJSON(exportOptions);
@@ -468,9 +466,9 @@ export class ImportExportService implements IImportExportService {
           created_at: new Date().toISOString(),
           backup_type: 'full',
           version: '1.0',
-          source: 'Mainframe KB Assistant'
+          source: 'Mainframe KB Assistant',
         },
-        data: JSON.parse(backupData)
+        data: JSON.parse(backupData),
       };
 
       // Write backup file
@@ -478,12 +476,10 @@ export class ImportExportService implements IImportExportService {
 
       console.info(`Backup created successfully: ${backupPath}`);
     } catch (error) {
-      throw new ServiceError(
-        `Backup failed: ${error.message}`,
-        'BACKUP_FAILED',
-        500,
-        { backupPath, originalError: error }
-      );
+      throw new ServiceError(`Backup failed: ${error.message}`, 'BACKUP_FAILED', 500, {
+        backupPath,
+        originalError: error,
+      });
     }
   }
 
@@ -498,8 +494,8 @@ export class ImportExportService implements IImportExportService {
       metadata: {
         backupVersion: 'unknown',
         restoreTime: new Date(),
-        dataIntegrity: false
-      }
+        dataIntegrity: false,
+      },
     };
 
     try {
@@ -512,7 +508,7 @@ export class ImportExportService implements IImportExportService {
         result.errors.push({
           table: 'backup',
           message: 'Invalid backup format',
-          recoverable: false
+          recoverable: false,
         });
         return result;
       }
@@ -522,13 +518,10 @@ export class ImportExportService implements IImportExportService {
       // Import the backup data
       const importOptions: ImportOptions = {
         overwrite: true,
-        batchSize: 50
+        batchSize: 50,
       };
 
-      const importResult = await this.importFromJSON(
-        JSON.stringify(backup.data),
-        importOptions
-      );
+      const importResult = await this.importFromJSON(JSON.stringify(backup.data), importOptions);
 
       result.success = importResult.success;
       result.restored = importResult.imported + importResult.updated;
@@ -540,7 +533,7 @@ export class ImportExportService implements IImportExportService {
           table: 'kb_entries',
           message: importError.message,
           details: { line: importError.line, field: importError.field },
-          recoverable: true
+          recoverable: true,
         });
       });
 
@@ -551,7 +544,7 @@ export class ImportExportService implements IImportExportService {
         table: 'system',
         message: `Restore failed: ${error.message}`,
         details: { backupPath },
-        recoverable: false
+        recoverable: false,
       });
       return result;
     }
@@ -569,18 +562,18 @@ export class ImportExportService implements IImportExportService {
         case 'json':
           JSON.parse(data);
           break;
-          
+
         case 'csv':
           parseCSV(data, { columns: true, skip_empty_lines: true });
           break;
-          
+
         case 'xml':
           // Basic XML validation (synchronous)
           if (!data.trim().startsWith('<?xml') && !data.trim().startsWith('<')) {
             throw new Error('Invalid XML format');
           }
           break;
-          
+
         default:
           throw new Error(`Unsupported format: ${format}`);
       }
@@ -589,14 +582,14 @@ export class ImportExportService implements IImportExportService {
         field: 'format',
         code: 'INVALID_FORMAT',
         message: error.message,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -613,7 +606,7 @@ export class ImportExportService implements IImportExportService {
 
   private async fetchEntriesForExport(options: ExportOptions): Promise<KBEntry[]> {
     const listOptions: any = {
-      limit: 10000 // Large limit for export
+      limit: 10000, // Large limit for export
     };
 
     // Apply filters
@@ -641,19 +634,22 @@ export class ImportExportService implements IImportExportService {
     // Apply format-specific transformations
     switch (options.format) {
       case 'minimal':
-        exportEntries = exportEntries.map(entry => ({
-          ...entry,
-          usage_count: undefined,
-          success_count: undefined,
-          failure_count: undefined,
-          version: undefined
-        } as any));
+        exportEntries = exportEntries.map(
+          entry =>
+            ({
+              ...entry,
+              usage_count: undefined,
+              success_count: undefined,
+              failure_count: undefined,
+              version: undefined,
+            }) as any
+        );
         break;
-        
+
       case 'compact':
         // No changes for compact (just affects JSON formatting)
         break;
-        
+
       case 'full':
       default:
         // Include all fields
@@ -692,8 +688,9 @@ export class ImportExportService implements IImportExportService {
         total_usage: totalUsage,
         total_success: totalSuccess,
         total_failure: totalFailure,
-        success_rate: totalSuccess + totalFailure > 0 ? totalSuccess / (totalSuccess + totalFailure) : 0
-      }
+        success_rate:
+          totalSuccess + totalFailure > 0 ? totalSuccess / (totalSuccess + totalFailure) : 0,
+      },
     };
   }
 
@@ -708,7 +705,7 @@ export class ImportExportService implements IImportExportService {
         tags: entry.tags.join(';'),
         created_at: entry.created_at.toISOString(),
         updated_at: entry.updated_at.toISOString(),
-        created_by: entry.created_by
+        created_by: entry.created_by,
       };
 
       if (options.includeMetrics) {
@@ -724,8 +721,15 @@ export class ImportExportService implements IImportExportService {
 
   private getCSVColumns(options: ExportOptions): string[] {
     const baseColumns = [
-      'id', 'title', 'problem', 'solution', 'category', 'tags',
-      'created_at', 'updated_at', 'created_by'
+      'id',
+      'title',
+      'problem',
+      'solution',
+      'category',
+      'tags',
+      'created_at',
+      'updated_at',
+      'created_by',
     ];
 
     if (options.includeMetrics) {
@@ -746,8 +750,13 @@ export class ImportExportService implements IImportExportService {
       problem: String(record.problem).trim(),
       solution: String(record.solution).trim(),
       category: String(record.category).trim() as any,
-      tags: record.tags ? String(record.tags).split(';').map(tag => tag.trim()).filter(Boolean) : [],
-      created_by: record.created_by ? String(record.created_by).trim() : 'imported'
+      tags: record.tags
+        ? String(record.tags)
+            .split(';')
+            .map(tag => tag.trim())
+            .filter(Boolean)
+        : [],
+      created_by: record.created_by ? String(record.created_by).trim() : 'imported',
     };
 
     return entry;
@@ -764,7 +773,9 @@ export class ImportExportService implements IImportExportService {
       solution: String(xmlEntry.solution).trim(),
       category: String(xmlEntry.category).trim() as any,
       tags: [],
-      created_by: xmlEntry.metadata?.created_by ? String(xmlEntry.metadata.created_by).trim() : 'imported'
+      created_by: xmlEntry.metadata?.created_by
+        ? String(xmlEntry.metadata.created_by).trim()
+        : 'imported',
     };
 
     // Handle tags
@@ -799,7 +810,7 @@ export class ImportExportService implements IImportExportService {
       errors: [] as ImportError[],
       warnings: [] as ImportWarning[],
       validationErrors: 0,
-      duplicates: 0
+      duplicates: 0,
     };
 
     for (let i = 0; i < entries.length; i++) {
@@ -810,20 +821,20 @@ export class ImportExportService implements IImportExportService {
         // Validate entry
         if (this.validationService) {
           const validation = this.validationService.validateEntry(entry);
-          
+
           if (!validation.valid) {
             batchResult.validationErrors++;
-            
+
             validation.errors.forEach(error => {
               batchResult.errors.push({
                 line: lineNumber,
                 field: error.field,
                 message: error.message,
                 value: error.value,
-                code: error.code
+                code: error.code,
               });
             });
-            
+
             if (options.validateOnly || validation.errors.some(e => e.severity === 'error')) {
               batchResult.skipped++;
               continue;
@@ -836,7 +847,7 @@ export class ImportExportService implements IImportExportService {
               field: warning.field,
               message: warning.message,
               suggestion: warning.suggestion,
-              code: warning.code
+              code: warning.code,
             });
           });
         }
@@ -847,10 +858,10 @@ export class ImportExportService implements IImportExportService {
 
         // Check for duplicates (simplified check by title)
         const existing = await this.findExistingEntry(entry);
-        
+
         if (existing) {
           batchResult.duplicates++;
-          
+
           if (options.skipDuplicates) {
             batchResult.skipped++;
             continue;
@@ -864,7 +875,7 @@ export class ImportExportService implements IImportExportService {
               solution: entry.solution,
               category: entry.category,
               tags: entry.tags,
-              updated_by: 'import'
+              updated_by: 'import',
             });
 
             if (success) {
@@ -874,7 +885,7 @@ export class ImportExportService implements IImportExportService {
                 line: lineNumber,
                 field: 'update',
                 message: 'Failed to update existing entry',
-                code: 'UPDATE_FAILED'
+                code: 'UPDATE_FAILED',
               });
             }
             continue;
@@ -888,7 +899,7 @@ export class ImportExportService implements IImportExportService {
               line: lineNumber,
               field: 'duplicate',
               message: `Duplicate entry found: ${entry.title}`,
-              code: 'DUPLICATE_ENTRY'
+              code: 'DUPLICATE_ENTRY',
             });
             continue;
           }
@@ -903,7 +914,7 @@ export class ImportExportService implements IImportExportService {
             line: lineNumber,
             field: 'create',
             message: 'Failed to create entry',
-            code: 'CREATE_FAILED'
+            code: 'CREATE_FAILED',
           });
         }
       } catch (error) {
@@ -911,7 +922,7 @@ export class ImportExportService implements IImportExportService {
           line: lineNumber,
           field: 'processing',
           message: `Processing failed: ${error.message}`,
-          code: 'PROCESSING_FAILED'
+          code: 'PROCESSING_FAILED',
         });
       }
     }
@@ -924,12 +935,12 @@ export class ImportExportService implements IImportExportService {
       // Simple duplicate detection by title
       const results = await this.kbService.search(entry.title, {
         limit: 5,
-        threshold: 0.9
+        threshold: 0.9,
       });
 
       // Look for exact title match
-      const exactMatch = results.find(result => 
-        result.entry.title.toLowerCase() === entry.title.toLowerCase()
+      const exactMatch = results.find(
+        result => result.entry.title.toLowerCase() === entry.title.toLowerCase()
       );
 
       return exactMatch?.entry || null;

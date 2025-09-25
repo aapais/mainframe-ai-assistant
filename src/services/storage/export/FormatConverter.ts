@@ -47,39 +47,39 @@ export class FormatConverter {
       supportsStreaming: true,
       supportsCompression: true,
       supportsSchema: true,
-      binaryFormat: false
+      binaryFormat: false,
     },
     csv: {
       supportsStreaming: true,
       supportsCompression: true,
       supportsSchema: false,
-      binaryFormat: false
+      binaryFormat: false,
     },
     xml: {
       supportsStreaming: false,
       supportsCompression: true,
       supportsSchema: true,
-      binaryFormat: false
+      binaryFormat: false,
     },
     parquet: {
       supportsStreaming: true,
       supportsCompression: true,
       supportsSchema: true,
       maxFileSize: 2 * 1024 * 1024 * 1024, // 2GB
-      binaryFormat: true
+      binaryFormat: true,
     },
     avro: {
       supportsStreaming: true,
       supportsCompression: true,
       supportsSchema: true,
-      binaryFormat: true
+      binaryFormat: true,
     },
     orc: {
       supportsStreaming: true,
       supportsCompression: true,
       supportsSchema: true,
-      binaryFormat: true
-    }
+      binaryFormat: true,
+    },
   };
 
   /**
@@ -130,7 +130,6 @@ export class FormatConverter {
       progressCallback?.(100); // Complete
 
       return result;
-
     } catch (error) {
       throw new Error(`Format conversion failed: ${error.message}`);
     }
@@ -166,7 +165,6 @@ export class FormatConverter {
         default:
           throw new Error(`Unsupported source format: ${sourceFormat}`);
       }
-
     } catch (error) {
       throw new Error(`Format parsing failed: ${error.message}`);
     }
@@ -175,10 +173,7 @@ export class FormatConverter {
   /**
    * Parse chunk for streaming operations
    */
-  async parseChunk(
-    chunk: any,
-    format: SupportedFormat
-  ): Promise<any[]> {
+  async parseChunk(chunk: any, format: SupportedFormat): Promise<any[]> {
     if (!this.capabilities[format].supportsStreaming) {
       throw new Error(`Format ${format} does not support streaming`);
     }
@@ -187,21 +182,24 @@ export class FormatConverter {
     switch (format) {
       case 'json':
         // Handle JSONL (JSON Lines) format
-        const lines = chunk.toString().split('\n').filter(line => line.trim());
+        const lines = chunk
+          .toString()
+          .split('\n')
+          .filter(line => line.trim());
         return lines.map(line => JSON.parse(line));
-        
+
       case 'csv':
         return this.parseCSV(chunk.toString(), { delimiter: ',' });
-        
+
       case 'parquet':
         return await this.parseParquetChunk(chunk);
-        
+
       case 'avro':
         return await this.parseAvroChunk(chunk);
-        
+
       case 'orc':
         return await this.parseORCChunk(chunk);
-        
+
       default:
         throw new Error(`Streaming not supported for ${format}`);
     }
@@ -263,7 +261,7 @@ export class FormatConverter {
     return {
       compatible: true, // Most conversions are possible with some limitations
       warnings,
-      limitations
+      limitations,
     };
   }
 
@@ -278,10 +276,10 @@ export class FormatConverter {
         version: '2.0',
         exported_at: new Date().toISOString(),
         total_records: data.length,
-        ...options.customHeaders
+        ...options.customHeaders,
       },
       data: data,
-      schema: options.schema
+      schema: options.schema,
     };
 
     return JSON.stringify(jsonData, null, options.streaming ? 0 : 2);
@@ -294,7 +292,7 @@ export class FormatConverter {
 
     // Extract headers from first record
     const headers = Object.keys(data[0]);
-    
+
     // Flatten nested objects for CSV compatibility
     const flattenedData = data.map(record => this.flattenObject(record));
 
@@ -303,7 +301,7 @@ export class FormatConverter {
       columns: headers,
       quoted: true,
       delimiter: ',',
-      record_delimiter: '\n'
+      record_delimiter: '\n',
     });
   }
 
@@ -313,28 +311,28 @@ export class FormatConverter {
         $: {
           version: '2.0',
           xmlns: 'http://mainframe-kb.com/schema/v2',
-          exported_at: new Date().toISOString()
+          exported_at: new Date().toISOString(),
         },
         metadata: {
           total_records: data.length,
           format: 'xml',
-          ...options.customHeaders
+          ...options.customHeaders,
         },
         schema: options.schema ? { schema: options.schema } : undefined,
         records: {
           record: data.map((item, index) => ({
             $: { id: index },
-            ...this.sanitizeForXML(item)
-          }))
-        }
-      }
+            ...this.sanitizeForXML(item),
+          })),
+        },
+      },
     };
 
     const builder = new XMLBuilder({
       xmldec: { version: '1.0', encoding: 'UTF-8' },
       renderOpts: { pretty: !options.streaming },
       attrkey: '$',
-      charkey: '_'
+      charkey: '_',
     });
 
     return builder.buildObject(xmlData);
@@ -345,16 +343,15 @@ export class FormatConverter {
       // Use parquetjs library (would need to be installed)
       // This is a placeholder implementation
       console.warn('Parquet conversion requires parquetjs library installation');
-      
+
       // For now, return JSON as Buffer with a warning
       const jsonData = JSON.stringify({
         format: 'parquet_fallback',
         note: 'Parquet library not available, returning JSON format',
-        data: data
+        data: data,
       });
-      
+
       return Buffer.from(jsonData, 'utf8');
-      
     } catch (error) {
       throw new Error(`Parquet conversion failed: ${error.message}`);
     }
@@ -365,19 +362,18 @@ export class FormatConverter {
       // Use avsc library (would need to be installed)
       // This is a placeholder implementation
       console.warn('Avro conversion requires avsc library installation');
-      
+
       if (!options.schema) {
         throw new Error('Avro format requires schema definition');
       }
-      
+
       // For now, return JSON as Buffer with schema
       const avroData = {
         schema: options.schema,
-        records: data
+        records: data,
       };
-      
+
       return Buffer.from(JSON.stringify(avroData), 'utf8');
-      
     } catch (error) {
       throw new Error(`Avro conversion failed: ${error.message}`);
     }
@@ -388,16 +384,15 @@ export class FormatConverter {
       // ORC format conversion (would need appropriate library)
       // This is a placeholder implementation
       console.warn('ORC conversion requires specialized library installation');
-      
+
       const orcData = {
         format: 'orc_fallback',
         note: 'ORC library not available, returning structured format',
         schema: options.schema,
-        data: data
+        data: data,
       };
-      
+
       return Buffer.from(JSON.stringify(orcData), 'utf8');
-      
     } catch (error) {
       throw new Error(`ORC conversion failed: ${error.message}`);
     }
@@ -410,23 +405,22 @@ export class FormatConverter {
   private parseJSON(data: string, options: ParseOptions): any[] {
     try {
       const parsed = JSON.parse(data);
-      
+
       // Handle different JSON structures
       if (Array.isArray(parsed)) {
         return parsed;
       }
-      
+
       if (parsed.data && Array.isArray(parsed.data)) {
         return parsed.data;
       }
-      
+
       if (parsed.entries && Array.isArray(parsed.entries)) {
         return parsed.entries;
       }
-      
+
       // Single object
       return [parsed];
-      
     } catch (error) {
       throw new Error(`JSON parsing failed: ${error.message}`);
     }
@@ -441,7 +435,7 @@ export class FormatConverter {
         delimiter: options.delimiter || ',',
         quote: options.quote || '"',
         escape: options.escape || '"',
-        relax_column_count: !options.strictMode
+        relax_column_count: !options.strictMode,
       });
     } catch (error) {
       throw new Error(`CSV parsing failed: ${error.message}`);
@@ -455,7 +449,7 @@ export class FormatConverter {
         explicitArray: false,
         explicitCharkey: false,
         trim: true,
-        normalize: true
+        normalize: true,
       });
 
       // Handle different XML structures
@@ -472,7 +466,6 @@ export class FormatConverter {
 
       // Generic XML structure
       return [parsed];
-
     } catch (error) {
       throw new Error(`XML parsing failed: ${error.message}`);
     }
@@ -482,13 +475,12 @@ export class FormatConverter {
     try {
       // Placeholder for parquet parsing
       console.warn('Parquet parsing requires specialized library');
-      
+
       // Try to parse as JSON fallback
       const text = data.toString('utf8');
       const parsed = JSON.parse(text);
-      
+
       return parsed.data || parsed.records || [parsed];
-      
     } catch (error) {
       throw new Error(`Parquet parsing failed: ${error.message}`);
     }
@@ -498,13 +490,12 @@ export class FormatConverter {
     try {
       // Placeholder for Avro parsing
       console.warn('Avro parsing requires avsc library');
-      
+
       // Try to parse as JSON fallback
       const text = data.toString('utf8');
       const parsed = JSON.parse(text);
-      
+
       return parsed.records || parsed.data || [parsed];
-      
     } catch (error) {
       throw new Error(`Avro parsing failed: ${error.message}`);
     }
@@ -514,13 +505,12 @@ export class FormatConverter {
     try {
       // Placeholder for ORC parsing
       console.warn('ORC parsing requires specialized library');
-      
+
       // Try to parse as JSON fallback
       const text = data.toString('utf8');
       const parsed = JSON.parse(text);
-      
+
       return parsed.data || parsed.records || [parsed];
-      
     } catch (error) {
       throw new Error(`ORC parsing failed: ${error.message}`);
     }
@@ -551,12 +541,12 @@ export class FormatConverter {
 
   private flattenObject(obj: any, prefix = ''): any {
     const flattened: any = {};
-    
+
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         const value = obj[key];
         const newKey = prefix ? `${prefix}.${key}` : key;
-        
+
         if (value && typeof value === 'object' && !Array.isArray(value)) {
           Object.assign(flattened, this.flattenObject(value, newKey));
         } else if (Array.isArray(value)) {
@@ -566,18 +556,18 @@ export class FormatConverter {
         }
       }
     }
-    
+
     return flattened;
   }
 
   private sanitizeForXML(obj: any): any {
     const sanitized: any = {};
-    
+
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         const sanitizedKey = key.replace(/[^a-zA-Z0-9_-]/g, '_');
         const value = obj[key];
-        
+
         if (value && typeof value === 'object' && !Array.isArray(value)) {
           sanitized[sanitizedKey] = this.sanitizeForXML(value);
         } else if (Array.isArray(value)) {
@@ -587,7 +577,7 @@ export class FormatConverter {
         }
       }
     }
-    
+
     return sanitized;
   }
 
@@ -596,7 +586,7 @@ export class FormatConverter {
     compression: 'gzip' | 'brotli'
   ): Promise<Buffer> {
     const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, 'utf8');
-    
+
     switch (compression) {
       case 'gzip':
         return await promisify(zlib.gzip)(buffer);
@@ -623,10 +613,10 @@ export class FormatConverter {
   private isCompressed(data: Buffer): boolean {
     // Check for compression magic numbers
     if (data.length < 2) return false;
-    
+
     // Gzip magic number
     if (data[0] === 0x1f && data[1] === 0x8b) return true;
-    
+
     // Brotli doesn't have a standard magic number, so this is simplified
     return false;
   }

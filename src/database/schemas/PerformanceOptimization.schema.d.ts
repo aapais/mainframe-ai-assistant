@@ -22,52 +22,55 @@ export type OptimizationRecommendation = z.infer<typeof OptimizationRecommendati
 export declare const BenchmarkResultSchema: any;
 export type BenchmarkResult = z.infer<typeof BenchmarkResultSchema>;
 export declare class PerformanceSchemaValidator {
-    static validateSearchOptions(data: unknown): SearchOptions;
-    static validateQueryMetrics(data: unknown): QueryPerformanceMetrics;
-    static validateCacheStats(data: unknown): CacheStats;
-    static validateOptimizationRecommendation(data: unknown): OptimizationRecommendation;
-    static safeParse<T>(schema: z.ZodType<T>, data: unknown): {
-        success: boolean;
-        data?: T;
-        error?: string;
-    };
+  static validateSearchOptions(data: unknown): SearchOptions;
+  static validateQueryMetrics(data: unknown): QueryPerformanceMetrics;
+  static validateCacheStats(data: unknown): CacheStats;
+  static validateOptimizationRecommendation(data: unknown): OptimizationRecommendation;
+  static safeParse<T>(
+    schema: z.ZodType<T>,
+    data: unknown
+  ): {
+    success: boolean;
+    data?: T;
+    error?: string;
+  };
 }
 export declare const PerformanceSchemas: {
-    readonly SearchOptions: any;
-    readonly QueryPerformanceMetrics: any;
-    readonly CacheEntry: any;
-    readonly CacheStats: any;
-    readonly IndexAnalysis: any;
-    readonly QueryExecutionPlan: any;
-    readonly DatabasePerformance: any;
-    readonly PerformanceAlert: any;
-    readonly OptimizationRecommendation: any;
-    readonly BenchmarkResult: any;
+  readonly SearchOptions: any;
+  readonly QueryPerformanceMetrics: any;
+  readonly CacheEntry: any;
+  readonly CacheStats: any;
+  readonly IndexAnalysis: any;
+  readonly QueryExecutionPlan: any;
+  readonly DatabasePerformance: any;
+  readonly PerformanceAlert: any;
+  readonly OptimizationRecommendation: any;
+  readonly BenchmarkResult: any;
 };
 export type PerformanceSchemaTypes = {
-    SearchOptions: SearchOptions;
-    QueryPerformanceMetrics: QueryPerformanceMetrics;
-    CacheEntry: CacheEntry;
-    CacheStats: CacheStats;
-    IndexAnalysis: IndexAnalysis;
-    QueryExecutionPlan: QueryExecutionPlan;
-    DatabasePerformance: DatabasePerformance;
-    PerformanceAlert: PerformanceAlert;
-    OptimizationRecommendation: OptimizationRecommendation;
-    BenchmarkResult: BenchmarkResult;
+  SearchOptions: SearchOptions;
+  QueryPerformanceMetrics: QueryPerformanceMetrics;
+  CacheEntry: CacheEntry;
+  CacheStats: CacheStats;
+  IndexAnalysis: IndexAnalysis;
+  QueryExecutionPlan: QueryExecutionPlan;
+  DatabasePerformance: DatabasePerformance;
+  PerformanceAlert: PerformanceAlert;
+  OptimizationRecommendation: OptimizationRecommendation;
+  BenchmarkResult: BenchmarkResult;
 };
 declare const _default: {
-    PerformanceSchemaValidator: typeof PerformanceSchemaValidator;
-    SearchOptions: any;
-    QueryPerformanceMetrics: any;
-    CacheEntry: any;
-    CacheStats: any;
-    IndexAnalysis: any;
-    QueryExecutionPlan: any;
-    DatabasePerformance: any;
-    PerformanceAlert: any;
-    OptimizationRecommendation: any;
-    BenchmarkResult: any;
+  PerformanceSchemaValidator: typeof PerformanceSchemaValidator;
+  SearchOptions: any;
+  QueryPerformanceMetrics: any;
+  CacheEntry: any;
+  CacheStats: any;
+  IndexAnalysis: any;
+  QueryExecutionPlan: any;
+  DatabasePerformance: any;
+  PerformanceAlert: any;
+  OptimizationRecommendation: any;
+  BenchmarkResult: any;
 };
 export default _default;
 //# sourceMappingURL=PerformanceOptimization.schema.d.ts.map

@@ -89,8 +89,8 @@ export class CacheStrategyOptimizer extends EventEmitter {
       distribution: {
         enabled: false,
         nodes: 1,
-        consistentHashing: false
-      }
+        consistentHashing: false,
+      },
     };
   }
 
@@ -112,7 +112,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
   recordCacheMetrics(metrics: CacheMetrics): void {
     this.metrics.push({
       ...metrics,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep only last 100,000 metrics for memory efficiency
@@ -149,7 +149,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
       coldKeys: this.identifyColdKeys(recentMetrics),
       accessPatterns: this.analyzeAccessPatterns(recentMetrics),
       temporalPatterns: this.analyzeTemporalPatterns(recentMetrics),
-      sizeDistribution: this.analyzeSizeDistribution(recentMetrics)
+      sizeDistribution: this.analyzeSizeDistribution(recentMetrics),
     };
 
     // Store analysis for optimization recommendations
@@ -209,7 +209,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
         if (testResults.success) {
           this.emit('cache-optimization-applied', {
             recommendation,
-            results: testResults
+            results: testResults,
           });
           return true;
         } else {
@@ -221,7 +221,6 @@ export class CacheStrategyOptimizer extends EventEmitter {
       }
 
       return false;
-
     } catch (error) {
       console.error('Error applying cache optimization:', error);
       return false;
@@ -243,23 +242,25 @@ export class CacheStrategyOptimizer extends EventEmitter {
           timestamp: Date.now(),
           category: 'strategy',
           title: 'Switch to LFU (Least Frequently Used) Strategy',
-          description: 'High frequency access patterns suggest LFU would be more effective than LRU',
+          description:
+            'High frequency access patterns suggest LFU would be more effective than LRU',
           currentValue: this.config.strategy,
           recommendedValue: 'lfu',
-          reason: 'Access patterns show 30%+ high-frequency keys that would benefit from frequency-based eviction',
+          reason:
+            'Access patterns show 30%+ high-frequency keys that would benefit from frequency-based eviction',
           impact: 'high',
           effort: 'medium',
           expectedImprovement: {
             hitRatio: 15,
             responseTime: 10,
-            memoryEfficiency: 5
+            memoryEfficiency: 5,
           },
           metrics: {
             currentHitRatio: analysis.hitRatio,
             targetHitRatio: analysis.hitRatio + 0.15,
             affectedKeys: analysis.hotKeys,
-            estimatedSavings: 25
-          }
+            estimatedSavings: 25,
+          },
         });
       }
     }
@@ -274,20 +275,21 @@ export class CacheStrategyOptimizer extends EventEmitter {
         description: 'Mixed access patterns with high variability suggest ARC would adapt better',
         currentValue: this.config.strategy,
         recommendedValue: 'arc',
-        reason: 'Workload shows mixed temporal and frequency patterns that ARC can handle adaptively',
+        reason:
+          'Workload shows mixed temporal and frequency patterns that ARC can handle adaptively',
         impact: 'high',
         effort: 'high',
         expectedImprovement: {
           hitRatio: 20,
           responseTime: 15,
-          memoryEfficiency: 10
+          memoryEfficiency: 10,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
-          targetHitRatio: analysis.hitRatio + 0.20,
+          targetHitRatio: analysis.hitRatio + 0.2,
           affectedKeys: [...analysis.hotKeys, ...analysis.coldKeys],
-          estimatedSavings: 40
-        }
+          estimatedSavings: 40,
+        },
       });
     }
 
@@ -316,14 +318,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 12,
           responseTime: 8,
-          memoryEfficiency: -10 // Uses more memory
+          memoryEfficiency: -10, // Uses more memory
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio + 0.12,
           affectedKeys: this.getFrequentlyEvictedKeys(),
-          estimatedSavings: 30
-        }
+          estimatedSavings: 30,
+        },
       });
     }
 
@@ -343,14 +345,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 5,
           responseTime: 3,
-          memoryEfficiency: 20
+          memoryEfficiency: 20,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio + 0.05,
           affectedKeys: analysis.coldKeys,
-          estimatedSavings: 10
-        }
+          estimatedSavings: 10,
+        },
       });
     }
 
@@ -381,14 +383,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 10,
           responseTime: 5,
-          memoryEfficiency: 0
+          memoryEfficiency: 0,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
-          targetHitRatio: analysis.hitRatio + 0.10,
+          targetHitRatio: analysis.hitRatio + 0.1,
           affectedKeys: keyLifespans.stableKeys,
-          estimatedSavings: 20
-        }
+          estimatedSavings: 20,
+        },
       });
     }
 
@@ -408,14 +410,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 18,
           responseTime: 12,
-          memoryEfficiency: 15
+          memoryEfficiency: 15,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio + 0.18,
           affectedKeys: Object.keys(analysis.accessPatterns.keys()),
-          estimatedSavings: 35
-        }
+          estimatedSavings: 35,
+        },
       });
     }
 
@@ -425,11 +427,17 @@ export class CacheStrategyOptimizer extends EventEmitter {
   /**
    * Analyze distribution optimization opportunities
    */
-  private analyzeDistributionOptimization(analysis: CacheAnalysis): CacheOptimizationRecommendation[] {
+  private analyzeDistributionOptimization(
+    analysis: CacheAnalysis
+  ): CacheOptimizationRecommendation[] {
     const recommendations: CacheOptimizationRecommendation[] = [];
 
     // High load suggests distribution benefits
-    if (!this.config.distribution.enabled && analysis.avgResponseTime > 100 && this.metrics.length > 1000) {
+    if (
+      !this.config.distribution.enabled &&
+      analysis.avgResponseTime > 100 &&
+      this.metrics.length > 1000
+    ) {
       recommendations.push({
         id: `distribution-enable-${Date.now()}`,
         timestamp: Date.now(),
@@ -444,14 +452,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 5,
           responseTime: 30,
-          memoryEfficiency: 25
+          memoryEfficiency: 25,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio + 0.05,
           affectedKeys: analysis.hotKeys,
-          estimatedSavings: 50
-        }
+          estimatedSavings: 50,
+        },
       });
     }
 
@@ -471,14 +479,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 8,
           responseTime: 5,
-          memoryEfficiency: 10
+          memoryEfficiency: 10,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio + 0.08,
           affectedKeys: this.getDistributedKeys(),
-          estimatedSavings: 15
-        }
+          estimatedSavings: 15,
+        },
       });
     }
 
@@ -492,7 +500,8 @@ export class CacheStrategyOptimizer extends EventEmitter {
     const recommendations: CacheOptimizationRecommendation[] = [];
 
     // Cleanup interval optimization
-    if (analysis.evictionRate > 10 && this.config.cleanupInterval > 60) { // >10 evictions/min
+    if (analysis.evictionRate > 10 && this.config.cleanupInterval > 60) {
+      // >10 evictions/min
       recommendations.push({
         id: `cleanup-interval-${Date.now()}`,
         timestamp: Date.now(),
@@ -507,19 +516,20 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 5,
           responseTime: 8,
-          memoryEfficiency: 10
+          memoryEfficiency: 10,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio + 0.05,
           affectedKeys: this.getExpiredKeys(),
-          estimatedSavings: 15
-        }
+          estimatedSavings: 15,
+        },
       });
     }
 
     // Compression for large entries
-    if (!this.config.compressionEnabled && analysis.sizeDistribution.avgSize > 10240) { // >10KB avg
+    if (!this.config.compressionEnabled && analysis.sizeDistribution.avgSize > 10240) {
+      // >10KB avg
       recommendations.push({
         id: `compression-enable-${Date.now()}`,
         timestamp: Date.now(),
@@ -534,14 +544,14 @@ export class CacheStrategyOptimizer extends EventEmitter {
         expectedImprovement: {
           hitRatio: 0,
           responseTime: -5, // Slight increase due to compression overhead
-          memoryEfficiency: 40
+          memoryEfficiency: 40,
         },
         metrics: {
           currentHitRatio: analysis.hitRatio,
           targetHitRatio: analysis.hitRatio,
           affectedKeys: this.getLargeKeys(),
-          estimatedSavings: 0 // Memory savings, not time
-        }
+          estimatedSavings: 0, // Memory savings, not time
+        },
       });
     }
 
@@ -551,7 +561,9 @@ export class CacheStrategyOptimizer extends EventEmitter {
   /**
    * Apply specific cache optimization
    */
-  private async applyCacheOptimization(recommendation: CacheOptimizationRecommendation): Promise<boolean> {
+  private async applyCacheOptimization(
+    recommendation: CacheOptimizationRecommendation
+  ): Promise<boolean> {
     try {
       switch (recommendation.category) {
         case 'strategy':
@@ -593,7 +605,6 @@ export class CacheStrategyOptimizer extends EventEmitter {
       }
 
       return true;
-
     } catch (error) {
       console.error('Error applying cache optimization:', error);
       return false;
@@ -603,7 +614,9 @@ export class CacheStrategyOptimizer extends EventEmitter {
   /**
    * Test cache optimization effectiveness
    */
-  private async testCacheOptimization(recommendation: CacheOptimizationRecommendation): Promise<any> {
+  private async testCacheOptimization(
+    recommendation: CacheOptimizationRecommendation
+  ): Promise<any> {
     // Simulate testing with current configuration
     const testMetrics = this.getRecentMetrics(60000); // Last minute
 
@@ -613,13 +626,13 @@ export class CacheStrategyOptimizer extends EventEmitter {
 
     // Calculate theoretical improvement
     const currentHitRatio = this.calculateHitRatio(testMetrics);
-    const theoreticalHitRatio = currentHitRatio + (recommendation.expectedImprovement.hitRatio / 100);
+    const theoreticalHitRatio = currentHitRatio + recommendation.expectedImprovement.hitRatio / 100;
 
     return {
       success: theoreticalHitRatio > currentHitRatio,
       improvement: recommendation.expectedImprovement.hitRatio,
       hitRatioImprovement: theoreticalHitRatio - currentHitRatio,
-      responseTimeImprovement: recommendation.expectedImprovement.responseTime
+      responseTimeImprovement: recommendation.expectedImprovement.responseTime,
     };
   }
 
@@ -656,8 +669,12 @@ export class CacheStrategyOptimizer extends EventEmitter {
 
   private calculateEvictionRate(metrics: CacheMetrics[]): number {
     const evictions = metrics.filter(m => m.operation === 'evict');
-    const timeSpan = metrics.length > 0 ?
-      (Math.max(...metrics.map(m => m.timestamp)) - Math.min(...metrics.map(m => m.timestamp))) / 60000 : 1;
+    const timeSpan =
+      metrics.length > 0
+        ? (Math.max(...metrics.map(m => m.timestamp)) -
+            Math.min(...metrics.map(m => m.timestamp))) /
+          60000
+        : 1;
     return evictions.length / timeSpan; // evictions per minute
   }
 
@@ -704,7 +721,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
         accessCount: keyMetrics.length,
         avgResponseTime: keyMetrics.reduce((sum, m) => sum + m.responseTime, 0) / keyMetrics.length,
         pattern: this.determineAccessPattern(keyMetrics),
-        lastAccess: Math.max(...keyMetrics.map(m => m.timestamp))
+        lastAccess: Math.max(...keyMetrics.map(m => m.timestamp)),
       });
     });
 
@@ -722,14 +739,12 @@ export class CacheStrategyOptimizer extends EventEmitter {
     return {
       peakHours: this.findPeakHours(hourlyDistribution),
       distribution: hourlyDistribution,
-      variance: this.calculateTemporalVariance(hourlyDistribution)
+      variance: this.calculateTemporalVariance(hourlyDistribution),
     };
   }
 
   private analyzeSizeDistribution(metrics: CacheMetrics[]): any {
-    const sizes = metrics
-      .filter(m => m.operation === 'set')
-      .map(m => m.dataSize);
+    const sizes = metrics.filter(m => m.operation === 'set').map(m => m.dataSize);
 
     if (sizes.length === 0) {
       return { avgSize: 0, maxSize: 0, minSize: 0, totalSize: 0 };
@@ -739,7 +754,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
       avgSize: sizes.reduce((sum, size) => sum + size, 0) / sizes.length,
       maxSize: Math.max(...sizes),
       minSize: Math.min(...sizes),
-      totalSize: sizes.reduce((sum, size) => sum + size, 0)
+      totalSize: sizes.reduce((sum, size) => sum + size, 0),
     };
   }
 
@@ -749,7 +764,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
         accessCount: 0,
         operations: [],
         firstSeen: metrics.timestamp,
-        lastSeen: metrics.timestamp
+        lastSeen: metrics.timestamp,
       });
     }
 
@@ -766,12 +781,13 @@ export class CacheStrategyOptimizer extends EventEmitter {
 
   private checkCriticalIssues(metrics: CacheMetrics): void {
     // Check for immediate critical issues
-    if (metrics.responseTime > 1000) { // >1 second response time
+    if (metrics.responseTime > 1000) {
+      // >1 second response time
       this.emit('critical-cache-performance', {
         key: metrics.cacheKey,
         responseTime: metrics.responseTime,
         operation: metrics.operation,
-        recommendation: 'Investigate cache key or consider preloading'
+        recommendation: 'Investigate cache key or consider preloading',
       });
     }
   }
@@ -791,7 +807,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
       totalKeys: keyFrequencies.size,
       highFrequencyKeys,
       avgFrequency,
-      maxFrequency: Math.max(...frequencies)
+      maxFrequency: Math.max(...frequencies),
     };
   }
 
@@ -818,7 +834,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
       avgLifespan,
       maxLifespan: Math.max(...lifespans),
       minLifespan: Math.min(...lifespans),
-      stableKeys
+      stableKeys,
     };
   }
 
@@ -853,7 +869,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
   private getExpiredKeys(): string[] {
     const now = Date.now();
     return Array.from(this.keyPatterns.entries())
-      .filter(([, pattern]) => (now - pattern.lastSeen) > this.config.defaultTTL * 1000)
+      .filter(([, pattern]) => now - pattern.lastSeen > this.config.defaultTTL * 1000)
       .map(([key]) => key)
       .slice(0, 20);
   }
@@ -880,8 +896,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
   }
 
   private findPeakHours(hourlyDistribution: Map<number, number>): number[] {
-    const entries = Array.from(hourlyDistribution.entries())
-      .sort((a, b) => b[1] - a[1]);
+    const entries = Array.from(hourlyDistribution.entries()).sort((a, b) => b[1] - a[1]);
     return entries.slice(0, 3).map(([hour]) => hour);
   }
 
@@ -890,23 +905,24 @@ export class CacheStrategyOptimizer extends EventEmitter {
     if (counts.length === 0) return 0;
 
     const mean = counts.reduce((sum, count) => sum + count, 0) / counts.length;
-    const variance = counts.reduce((sum, count) => sum + Math.pow(count - mean, 2), 0) / counts.length;
+    const variance =
+      counts.reduce((sum, count) => sum + Math.pow(count - mean, 2), 0) / counts.length;
 
     return mean > 0 ? Math.sqrt(variance) / mean : 0;
   }
 
-  private prioritizeRecommendations(recommendations: CacheOptimizationRecommendation[]): CacheOptimizationRecommendation[] {
+  private prioritizeRecommendations(
+    recommendations: CacheOptimizationRecommendation[]
+  ): CacheOptimizationRecommendation[] {
     return recommendations.sort((a, b) => {
       // Priority: impact > expected improvement > effort (inverse)
       const impactScore = { critical: 4, high: 3, medium: 2, low: 1 };
       const effortScore = { low: 3, medium: 2, high: 1 };
 
-      const scoreA = impactScore[a.impact] +
-                    (a.expectedImprovement.hitRatio / 10) +
-                    effortScore[a.effort];
-      const scoreB = impactScore[b.impact] +
-                    (b.expectedImprovement.hitRatio / 10) +
-                    effortScore[b.effort];
+      const scoreA =
+        impactScore[a.impact] + a.expectedImprovement.hitRatio / 10 + effortScore[a.effort];
+      const scoreB =
+        impactScore[b.impact] + b.expectedImprovement.hitRatio / 10 + effortScore[b.effort];
 
       return scoreB - scoreA;
     });
@@ -920,7 +936,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
       value: analysis.hitRatio,
       unit: 'ratio',
       trend: this.determineCacheTrend(analysis),
-      severity: this.determineCacheSeverity(analysis)
+      severity: this.determineCacheSeverity(analysis),
     };
   }
 
@@ -944,7 +960,7 @@ export class CacheStrategyOptimizer extends EventEmitter {
       this.emit('optimization-opportunity', {
         type: 'cache-monitoring',
         timestamp: Date.now(),
-        metrics: this.getRecentMetrics(300000) // Last 5 minutes
+        metrics: this.getRecentMetrics(300000), // Last 5 minutes
       });
     }, 300000); // Every 5 minutes
   }

@@ -98,7 +98,12 @@ export class MetricsCollector {
   /**
    * Record query performance
    */
-  recordQuery(query: string, duration: number, success: boolean, metadata: Record<string, any> = {}): void {
+  recordQuery(
+    query: string,
+    duration: number,
+    success: boolean,
+    metadata: Record<string, any> = {}
+  ): void {
     this.recordMetric({
       id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
@@ -107,9 +112,9 @@ export class MetricsCollector {
       metadata: {
         query: query.substring(0, 100), // Truncate for storage
         success,
-        ...metadata
+        ...metadata,
       },
-      tags: ['database', success ? 'success' : 'error']
+      tags: ['database', success ? 'success' : 'error'],
     });
   }
 
@@ -124,9 +129,9 @@ export class MetricsCollector {
       value: retrievalTime || 0,
       metadata: {
         key: key.substring(0, 50), // Truncate for storage
-        hit
+        hit,
       },
-      tags: ['cache', hit ? 'hit' : 'miss']
+      tags: ['cache', hit ? 'hit' : 'miss'],
     });
   }
 
@@ -142,9 +147,9 @@ export class MetricsCollector {
       metadata: {
         endpoint,
         method,
-        statusCode
+        statusCode,
       },
-      tags: ['http', method.toLowerCase(), statusCode >= 400 ? 'error' : 'success']
+      tags: ['http', method.toLowerCase(), statusCode >= 400 ? 'error' : 'success'],
     });
   }
 
@@ -154,8 +159,15 @@ export class MetricsCollector {
   private calculatePercentiles(values: number[]): PercentileMetrics {
     if (values.length === 0) {
       return {
-        p50: 0, p75: 0, p90: 0, p95: 0, p99: 0,
-        mean: 0, min: 0, max: 0, count: 0
+        p50: 0,
+        p75: 0,
+        p90: 0,
+        p95: 0,
+        p99: 0,
+        mean: 0,
+        min: 0,
+        max: 0,
+        count: 0,
       };
     }
 
@@ -178,7 +190,7 @@ export class MetricsCollector {
       mean: sum / len,
       min: sorted[0],
       max: sorted[len - 1],
-      count: len
+      count: len,
     };
   }
 
@@ -197,7 +209,7 @@ export class MetricsCollector {
       .map(m => ({
         query: m.metadata.query,
         duration: m.value,
-        timestamp: m.timestamp
+        timestamp: m.timestamp,
       }));
 
     return {
@@ -205,7 +217,7 @@ export class MetricsCollector {
       slowQueries,
       queryCount: queryMetrics.length,
       errorRate: queryMetrics.length > 0 ? errors.length / queryMetrics.length : 0,
-      percentiles: this.calculatePercentiles(values)
+      percentiles: this.calculatePercentiles(values),
     };
   }
 
@@ -229,7 +241,7 @@ export class MetricsCollector {
       misses: missCount,
       evictions: 0, // Would need to be tracked separately
       size: 0, // Would need to be tracked separately
-      maxSize: 0 // Would need to be tracked separately
+      maxSize: 0, // Would need to be tracked separately
     };
   }
 
@@ -257,7 +269,7 @@ export class MetricsCollector {
 
     return {
       ...this.calculatePercentiles(values),
-      byEndpoint: endpointMetrics
+      byEndpoint: endpointMetrics,
     };
   }
 
@@ -286,7 +298,7 @@ export class MetricsCollector {
         type: 'response_time',
         timestamp: now,
         severity: responseMetrics.p95 > targets.responseTime * 2 ? 'critical' : 'warning',
-        message: `P95 response time (${responseMetrics.p95.toFixed(2)}ms) exceeds target (${targets.responseTime}ms)`
+        message: `P95 response time (${responseMetrics.p95.toFixed(2)}ms) exceeds target (${targets.responseTime}ms)`,
       });
     }
 
@@ -296,7 +308,7 @@ export class MetricsCollector {
         type: 'error_rate',
         timestamp: now,
         severity: queryMetrics.errorRate > targets.errorRate * 2 ? 'critical' : 'warning',
-        message: `Error rate (${(queryMetrics.errorRate * 100).toFixed(2)}%) exceeds target (${(targets.errorRate * 100).toFixed(2)}%)`
+        message: `Error rate (${(queryMetrics.errorRate * 100).toFixed(2)}%) exceeds target (${(targets.errorRate * 100).toFixed(2)}%)`,
       });
     }
 
@@ -309,7 +321,7 @@ export class MetricsCollector {
         type: 'throughput',
         timestamp: now,
         severity: throughputActual < targets.throughput * 0.5 ? 'critical' : 'warning',
-        message: `Throughput (${throughputActual.toFixed(2)} req/min) below target (${targets.throughput} req/min)`
+        message: `Throughput (${throughputActual.toFixed(2)} req/min) below target (${targets.throughput} req/min)`,
       });
     }
 
@@ -321,7 +333,7 @@ export class MetricsCollector {
       errorRateActual: queryMetrics.errorRate,
       throughputTarget: targets.throughput,
       throughputActual,
-      violations
+      violations,
     };
   }
 
@@ -374,9 +386,9 @@ export class MetricsCollector {
       responseTime: this.getResponseTimeMetrics(),
       sla: this.getSLAMetrics({
         responseTime: 500, // 500ms target
-        errorRate: 0.01,   // 1% error rate target
-        throughput: 100    // 100 requests per minute target
-      })
+        errorRate: 0.01, // 1% error rate target
+        throughput: 100, // 100 requests per minute target
+      }),
     };
 
     this.subscribers.forEach(callback => {
@@ -417,8 +429,8 @@ export class MetricsCollector {
       sla: this.getSLAMetrics({
         responseTime: 500,
         errorRate: 0.01,
-        throughput: 100
-      })
+        throughput: 100,
+      }),
     };
   }
 

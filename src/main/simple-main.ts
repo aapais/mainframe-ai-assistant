@@ -43,18 +43,20 @@ class SimpleMainframeApp {
         preload: path.join(__dirname, 'preload.js'),
         nodeIntegration: false,
         contextIsolation: true,
-        enableRemoteModule: false
+        enableRemoteModule: false,
       },
       icon: path.join(__dirname, '../../assets/icon.png'), // Add app icon if available
       title: 'Mainframe AI Assistant',
-      show: false // Don't show until ready
+      show: false, // Don't show until ready
     });
 
     // Load the app
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       this.mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-      this.mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+      this.mainWindow.loadFile(
+        path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      );
     }
 
     // Show window when ready to prevent visual flash
@@ -94,20 +96,20 @@ class SimpleMainframeApp {
             accelerator: 'CmdOrCtrl+N',
             click: () => {
               this.mainWindow?.webContents.send('menu-new-entry');
-            }
+            },
           },
           { type: 'separator' },
           {
             label: 'Import Knowledge Base',
             click: () => {
               this.mainWindow?.webContents.send('menu-import-kb');
-            }
+            },
           },
           {
             label: 'Export Knowledge Base',
             click: () => {
               this.mainWindow?.webContents.send('menu-export-kb');
-            }
+            },
           },
           { type: 'separator' },
           {
@@ -115,9 +117,9 @@ class SimpleMainframeApp {
             accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
             click: () => {
               app.quit();
-            }
-          }
-        ]
+            },
+          },
+        ],
       },
       {
         label: 'Edit',
@@ -128,8 +130,8 @@ class SimpleMainframeApp {
           { role: 'cut' },
           { role: 'copy' },
           { role: 'paste' },
-          { role: 'selectall' }
-        ]
+          { role: 'selectall' },
+        ],
       },
       {
         label: 'View',
@@ -142,8 +144,8 @@ class SimpleMainframeApp {
           { role: 'zoomIn' },
           { role: 'zoomOut' },
           { type: 'separator' },
-          { role: 'togglefullscreen' }
-        ]
+          { role: 'togglefullscreen' },
+        ],
       },
       {
         label: 'Tools',
@@ -153,22 +155,22 @@ class SimpleMainframeApp {
             accelerator: 'CmdOrCtrl+F',
             click: () => {
               this.mainWindow?.webContents.send('menu-focus-search');
-            }
+            },
           },
           { type: 'separator' },
           {
             label: 'Database Statistics',
             click: () => {
               this.mainWindow?.webContents.send('menu-show-stats');
-            }
+            },
           },
           {
             label: 'Performance Monitor',
             click: () => {
               this.mainWindow?.webContents.send('menu-show-performance');
-            }
-          }
-        ]
+            },
+          },
+        ],
       },
       {
         label: 'Help',
@@ -177,17 +179,17 @@ class SimpleMainframeApp {
             label: 'About',
             click: () => {
               this.mainWindow?.webContents.send('menu-show-about');
-            }
+            },
           },
           {
             label: 'Keyboard Shortcuts',
             accelerator: 'CmdOrCtrl+?',
             click: () => {
               this.mainWindow?.webContents.send('menu-show-shortcuts');
-            }
-          }
-        ]
-      }
+            },
+          },
+        ],
+      },
     ];
 
     // macOS specific menu adjustments
@@ -203,17 +205,14 @@ class SimpleMainframeApp {
           { role: 'hideOthers' },
           { role: 'unhide' },
           { type: 'separator' },
-          { role: 'quit' }
-        ]
+          { role: 'quit' },
+        ],
       });
 
       // Window menu
       template.push({
         label: 'Window',
-        submenu: [
-          { role: 'minimize' },
-          { role: 'close' }
-        ]
+        submenu: [{ role: 'minimize' }, { role: 'close' }],
       });
     }
 

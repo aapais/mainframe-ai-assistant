@@ -15,7 +15,7 @@ class MaskingService extends EventEmitter {
       defaultPolicy: options.defaultPolicy || 'strict',
       encryptionKey: options.encryptionKey || process.env.MASKING_ENCRYPTION_KEY,
       tokenSalt: options.tokenSalt || process.env.MASKING_TOKEN_SALT,
-      ...options
+      ...options,
     };
 
     this.tokenMap = new Map(); // For reversible masking
@@ -25,7 +25,7 @@ class MaskingService extends EventEmitter {
       sensitiveDataFound: 0,
       maskingOperations: 0,
       reversibleMasks: 0,
-      irreversibleMasks: 0
+      irreversibleMasks: 0,
     };
 
     if (!this.config.encryptionKey) {
@@ -50,7 +50,11 @@ class MaskingService extends EventEmitter {
 
         for (const match of matches) {
           const maskingStrategy = policy.strategies[dataType] || policy.defaultStrategy;
-          const maskedValue = await this.applyMaskingStrategy(match.value, maskingStrategy, dataType);
+          const maskedValue = await this.applyMaskingStrategy(
+            match.value,
+            maskingStrategy,
+            dataType
+          );
 
           maskedText = maskedText.replace(match.value, maskedValue);
 
@@ -60,7 +64,7 @@ class MaskingService extends EventEmitter {
             masked: maskedValue,
             position: match.index,
             strategy: maskingStrategy,
-            reversible: maskingStrategy.reversible || false
+            reversible: maskingStrategy.reversible || false,
           });
 
           this.maskingStats.sensitiveDataFound++;
@@ -82,7 +86,7 @@ class MaskingService extends EventEmitter {
           detectedCount: detectedData.length,
           context,
           timestamp: new Date().toISOString(),
-          policy: policy.name
+          policy: policy.name,
         });
       }
 
@@ -94,9 +98,8 @@ class MaskingService extends EventEmitter {
         detectedData,
         policy: policy.name,
         reversible: detectedData.some(d => d.reversible),
-        stats: this.maskingStats
+        stats: this.maskingStats,
       };
-
     } catch (error) {
       this.emit('maskingError', { error, context, text: text.substring(0, 100) });
       throw new Error(`Masking failed: ${error.message}`);
@@ -252,9 +255,10 @@ class MaskingService extends EventEmitter {
       if (/\d/.test(char)) {
         masked += Math.floor(Math.random() * 10);
       } else if (/[A-Za-z]/.test(char)) {
-        masked += char.toUpperCase() === char ?
-          String.fromCharCode(65 + Math.floor(Math.random() * 26)) :
-          String.fromCharCode(97 + Math.floor(Math.random() * 26));
+        masked +=
+          char.toUpperCase() === char
+            ? String.fromCharCode(65 + Math.floor(Math.random() * 26))
+            : String.fromCharCode(97 + Math.floor(Math.random() * 26));
       } else {
         masked += char; // Keep special characters
       }
@@ -275,7 +279,7 @@ class MaskingService extends EventEmitter {
       name: () => 'João da Silva',
       email: () => 'usuario@exemplo.com.br',
       phone: () => '(11) 99999-9999',
-      amount: () => 'R$ XXX,XX'
+      amount: () => 'R$ XXX,XX',
     };
 
     return substitutions[dataType] ? substitutions[dataType]() : '[SUBSTITUÍDO]';
@@ -285,21 +289,27 @@ class MaskingService extends EventEmitter {
    * Generate fake but valid-format CPF
    */
   generateFakeCPF() {
-    const digits = Array.from({length: 9}, () => Math.floor(Math.random() * 10));
+    const digits = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));
     // Generate check digits (simplified)
     const d1 = (digits.reduce((sum, digit, i) => sum + digit * (10 - i), 0) * 10) % 11;
     const d2 = (digits.concat(d1).reduce((sum, digit, i) => sum + digit * (11 - i), 0) * 10) % 11;
 
-    return digits.concat(d1, d2).join('').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    return digits
+      .concat(d1, d2)
+      .join('')
+      .replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
   /**
    * Generate fake but valid-format CNPJ
    */
   generateFakeCNPJ() {
-    const digits = Array.from({length: 12}, () => Math.floor(Math.random() * 10));
+    const digits = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10));
     // Simplified check digit generation
-    return digits.concat(0, 1).join('').replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    return digits
+      .concat(0, 1)
+      .join('')
+      .replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   }
 
   /**
@@ -315,7 +325,7 @@ class MaskingService extends EventEmitter {
       matches.push({
         value: match[0],
         index: match.index,
-        groups: match.slice(1)
+        groups: match.slice(1),
       });
     }
 
@@ -351,7 +361,7 @@ class MaskingService extends EventEmitter {
       id: crypto.randomUUID(),
       ...operation,
       user: process.env.USER || 'system',
-      session: this.config.sessionId || 'default'
+      session: this.config.sessionId || 'default',
     });
 
     // Keep only last 1000 entries
@@ -389,7 +399,7 @@ class MaskingService extends EventEmitter {
       ...this.maskingStats,
       auditLogEntries: this.auditLog.length,
       tokenMapSize: this.tokenMap.size,
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
   }
 
@@ -414,7 +424,7 @@ class MaskingService extends EventEmitter {
         type: dataType,
         detected: matches.length > 0,
         expected: expectedTypes.includes(dataType),
-        matches: matches.length
+        matches: matches.length,
       });
     }
 

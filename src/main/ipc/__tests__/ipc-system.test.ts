@@ -11,11 +11,11 @@ import { EventEmitter } from 'events';
 // Mock Electron IPC
 const mockIpcMain = {
   handle: jest.fn(),
-  removeHandler: jest.fn()
+  removeHandler: jest.fn(),
 };
 
 const mockEvent = {
-  sender: new EventEmitter()
+  sender: new EventEmitter(),
 } as any;
 
 // Mock cache manager
@@ -24,11 +24,11 @@ const mockCacheManager = {
   set: jest.fn(),
   delete: jest.fn(),
   clear: jest.fn(),
-  close: jest.fn()
+  close: jest.fn(),
 } as any;
 
 jest.mock('electron', () => ({
-  ipcMain: mockIpcMain
+  ipcMain: mockIpcMain,
 }));
 
 describe('Enhanced IPC System', () => {
@@ -46,12 +46,12 @@ describe('Enhanced IPC System', () => {
 
     test('should register handler with configuration', () => {
       const handler = jest.fn().mockResolvedValue('test result');
-      
+
       ipcManager.registerHandler('test:handler', handler, {
         cacheable: true,
         cacheTTL: 60000,
         batchable: true,
-        batchSize: 10
+        batchSize: 10,
       });
 
       expect(mockIpcMain.handle).toHaveBeenCalledWith('test:handler', expect.any(Function));
@@ -59,17 +59,17 @@ describe('Enhanced IPC System', () => {
 
     test('should handle validation errors', async () => {
       const handler = jest.fn();
-      
+
       ipcManager.registerHandler('test:validated', handler, {
-        validation: (args) => args[0] ? true : 'Argument required'
+        validation: args => (args[0] ? true : 'Argument required'),
       });
 
       // Get the wrapped handler
       const wrappedHandler = mockIpcMain.handle.mock.calls[0][1];
-      
+
       // Call with invalid args
       const response = await wrappedHandler(mockEvent);
-      
+
       expect(response.success).toBe(false);
       expect(response.error.code).toBe('IPC_VALIDATION_FAILED');
       expect(handler).not.toHaveBeenCalled();
@@ -78,10 +78,10 @@ describe('Enhanced IPC System', () => {
     test('should cache responses when enabled', async () => {
       const handler = jest.fn().mockResolvedValue('cached result');
       mockCacheManager.get.mockResolvedValue(null);
-      
+
       ipcManager.registerHandler('test:cached', handler, {
         cacheable: true,
-        cacheTTL: 60000
+        cacheTTL: 60000,
       });
 
       const wrappedHandler = mockIpcMain.handle.mock.calls[0][1];
@@ -95,9 +95,9 @@ describe('Enhanced IPC System', () => {
     test('should return cached responses', async () => {
       const handler = jest.fn();
       mockCacheManager.get.mockResolvedValue('cached data');
-      
+
       ipcManager.registerHandler('test:cached', handler, {
-        cacheable: true
+        cacheable: true,
       });
 
       const wrappedHandler = mockIpcMain.handle.mock.calls[0][1];
@@ -111,17 +111,17 @@ describe('Enhanced IPC System', () => {
 
     test('should enforce rate limits', async () => {
       const handler = jest.fn().mockResolvedValue('result');
-      
+
       ipcManager.registerHandler('test:ratelimited', handler, {
-        rateLimit: { requests: 1, window: 1000 }
+        rateLimit: { requests: 1, window: 1000 },
       });
 
       const wrappedHandler = mockIpcMain.handle.mock.calls[0][1];
-      
+
       // First request should succeed
       const response1 = await wrappedHandler(mockEvent);
       expect(response1.success).toBe(true);
-      
+
       // Second request should be rate limited
       const response2 = await wrappedHandler(mockEvent);
       expect(response2.success).toBe(false);
@@ -130,12 +130,12 @@ describe('Enhanced IPC System', () => {
 
     test('should collect metrics', async () => {
       const handler = jest.fn().mockResolvedValue('result');
-      
+
       ipcManager.registerHandler('test:metrics', handler);
-      
+
       const wrappedHandler = mockIpcMain.handle.mock.calls[0][1];
       await wrappedHandler(mockEvent);
-      
+
       const metrics = ipcManager.getMetrics();
       expect(metrics.totalRequests).toBe(1);
       expect(metrics.totalResponses).toBe(1);
@@ -157,28 +157,34 @@ describe('Enhanced IPC System', () => {
     });
 
     test('should batch similar requests', async () => {
-      const handler = jest.fn()
-        .mockResolvedValueOnce('result1')
-        .mockResolvedValueOnce('result2');
+      const handler = jest.fn().mockResolvedValueOnce('result1').mockResolvedValueOnce('result2');
 
       // Add multiple requests quickly
       const promises = [
-        requestBatcher.addRequest({
-          id: 'req1',
-          channel: 'db:search',
-          data: ['query1'],
-          timestamp: Date.now()
-        }, handler, mockEvent),
-        requestBatcher.addRequest({
-          id: 'req2', 
-          channel: 'db:search',
-          data: ['query1'], // Same query
-          timestamp: Date.now()
-        }, handler, mockEvent)
+        requestBatcher.addRequest(
+          {
+            id: 'req1',
+            channel: 'db:search',
+            data: ['query1'],
+            timestamp: Date.now(),
+          },
+          handler,
+          mockEvent
+        ),
+        requestBatcher.addRequest(
+          {
+            id: 'req2',
+            channel: 'db:search',
+            data: ['query1'], // Same query
+            timestamp: Date.now(),
+          },
+          handler,
+          mockEvent
+        ),
       ];
 
       const results = await Promise.all(promises);
-      
+
       expect(results).toHaveLength(2);
       // Both should get the same result since they have the same query
       expect(handler).toHaveBeenCalledTimes(1);
@@ -186,22 +192,26 @@ describe('Enhanced IPC System', () => {
 
     test('should process batch when size limit reached', async () => {
       const handler = jest.fn().mockResolvedValue('result');
-      
+
       // Configure small batch size for testing
       requestBatcher = new RequestBatcher(mockIpcManager, { maxBatchSize: 2 });
 
       // Add requests to reach batch size
-      const promises = Array.from({ length: 3 }, (_, i) => 
-        requestBatcher.addRequest({
-          id: `req${i}`,
-          channel: 'db:getEntry',
-          data: [`id${i}`],
-          timestamp: Date.now()
-        }, handler, mockEvent)
+      const promises = Array.from({ length: 3 }, (_, i) =>
+        requestBatcher.addRequest(
+          {
+            id: `req${i}`,
+            channel: 'db:getEntry',
+            data: [`id${i}`],
+            timestamp: Date.now(),
+          },
+          handler,
+          mockEvent
+        )
       );
 
       await Promise.all(promises);
-      
+
       const metrics = requestBatcher.getMetrics();
       expect(metrics.totalBatches).toBeGreaterThan(0);
     });
@@ -221,17 +231,13 @@ describe('Enhanced IPC System', () => {
     test('should handle array data streaming', async () => {
       const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       const handler = jest.fn().mockResolvedValue(data);
-      
+
       const chunks: any[] = [];
       mockEvent.sender.send = jest.fn((channel, chunk) => {
         chunks.push(chunk);
       });
 
-      const streamId = await streamingHandler.handleStream(
-        handler,
-        mockEvent,
-        ['test-query']
-      );
+      const streamId = await streamingHandler.handleStream(handler, mockEvent, ['test-query']);
 
       // Wait for streaming to complete
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -249,17 +255,13 @@ describe('Enhanced IPC System', () => {
       }
 
       const handler = jest.fn().mockResolvedValue(generateData());
-      
+
       const chunks: any[] = [];
       mockEvent.sender.send = jest.fn((channel, chunk) => {
         chunks.push(chunk);
       });
 
-      const streamId = await streamingHandler.handleStream(
-        handler,
-        mockEvent,
-        ['test-query']
-      );
+      const streamId = await streamingHandler.handleStream(handler, mockEvent, ['test-query']);
 
       // Wait for streaming to complete
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -271,11 +273,11 @@ describe('Enhanced IPC System', () => {
     test('should track streaming metrics', async () => {
       const data = [1, 2, 3];
       const handler = jest.fn().mockResolvedValue(data);
-      
+
       mockEvent.sender.send = jest.fn();
 
       await streamingHandler.handleStream(handler, mockEvent, ['test']);
-      
+
       // Wait for completion
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -303,7 +305,7 @@ describe('Enhanced IPC System', () => {
         return Array.from({ length: 1000 }, (_, i) => ({
           id: i,
           title: `Entry ${i}`,
-          query
+          query,
         }));
       });
 
@@ -314,13 +316,13 @@ describe('Enhanced IPC System', () => {
         streamChunkSize: 100,
         cacheable: true,
         cacheTTL: 60000,
-        validation: (args) => args[0] ? true : 'Query required',
-        rateLimit: { requests: 10, window: 60000 }
+        validation: args => (args[0] ? true : 'Query required'),
+        rateLimit: { requests: 10, window: 60000 },
       });
 
       // Verify handler registration
       expect(mockIpcMain.handle).toHaveBeenCalledWith('test:complex', expect.any(Function));
-      
+
       const handlerInfo = ipcManager.getHandlersInfo();
       expect(handlerInfo).toHaveLength(1);
       expect(handlerInfo[0].channel).toBe('test:complex');
@@ -331,10 +333,10 @@ describe('Enhanced IPC System', () => {
 
     test('should provide comprehensive metrics', async () => {
       const handler = jest.fn().mockResolvedValue('result');
-      
+
       ipcManager.registerHandler('test:metrics', handler, {
         batchable: true,
-        cacheable: true
+        cacheable: true,
       });
 
       // Simulate some requests
@@ -350,7 +352,7 @@ describe('Enhanced IPC System', () => {
         averageResponseTime: expect.any(Number),
         cacheHitRate: expect.any(Number),
         batchedRequests: expect.any(Number),
-        streamedRequests: expect.any(Number)
+        streamedRequests: expect.any(Number),
       });
     });
   });

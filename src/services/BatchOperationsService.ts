@@ -164,8 +164,8 @@ export class BatchOperationsService extends EventEmitter {
       // If operation failed, restore from backup
       if (!result.success && backupPath) {
         await this.restoreFromBackup(backupPath, entryIds);
-        result.rolledBack = entryIds.filter(id =>
-          !result.results.find(r => r.id === id && r.success)
+        result.rolledBack = entryIds.filter(
+          id => !result.results.find(r => r.id === id && r.success)
         );
       }
 
@@ -202,7 +202,7 @@ export class BatchOperationsService extends EventEmitter {
             usage_count: 0,
             success_count: 0,
             failure_count: 0,
-            last_used: undefined
+            last_used: undefined,
           };
 
           const newId = await this.db.addEntry(duplicatedEntry);
@@ -251,11 +251,13 @@ export class BatchOperationsService extends EventEmitter {
         // Return combined result
         return {
           ...result,
-          results: [{
-            id: 'combined',
-            success: true,
-            data: exportData
-          }]
+          results: [
+            {
+              id: 'combined',
+              success: true,
+              data: exportData,
+            },
+          ],
         };
       }
 
@@ -289,7 +291,9 @@ export class BatchOperationsService extends EventEmitter {
       if (!options.skipValidation) {
         const validationResult = await this.validateBatch(entries);
         if (!validationResult.isValid) {
-          throw new Error(`Import validation failed: ${validationResult.validationErrors.length} errors found`);
+          throw new Error(
+            `Import validation failed: ${validationResult.validationErrors.length} errors found`
+          );
         }
       }
 
@@ -303,8 +307,8 @@ export class BatchOperationsService extends EventEmitter {
           // Check for duplicates if merge option is enabled
           if (options.mergeDuplicates) {
             const existingEntries = await this.db.search(importEntry.title, { limit: 5 });
-            const duplicate = existingEntries.find(result =>
-              this.calculateSimilarity(result.entry, importEntry) > 0.85
+            const duplicate = existingEntries.find(
+              result => this.calculateSimilarity(result.entry, importEntry) > 0.85
             );
 
             if (duplicate) {
@@ -370,7 +374,7 @@ export class BatchOperationsService extends EventEmitter {
       if (errors.length > 0) {
         validationErrors.push({
           id: entry.id || 'unknown',
-          errors
+          errors,
         });
       }
     }
@@ -383,7 +387,7 @@ export class BatchOperationsService extends EventEmitter {
           duplicates.push({
             id: entries[j].id || `entry-${j}`,
             duplicateOf: entries[i].id || `entry-${i}`,
-            similarity
+            similarity,
           });
         }
       }
@@ -401,7 +405,7 @@ export class BatchOperationsService extends EventEmitter {
             conflicts.push({
               id: entry.id,
               conflictType: 'outdated',
-              details: 'Entry has been modified by another user'
+              details: 'Entry has been modified by another user',
             });
           }
         }
@@ -412,7 +416,7 @@ export class BatchOperationsService extends EventEmitter {
       isValid: validationErrors.length === 0,
       validationErrors,
       duplicates,
-      conflicts
+      conflicts,
     };
   }
 
@@ -456,7 +460,7 @@ export class BatchOperationsService extends EventEmitter {
       batchSize = 10,
       continueOnError = true,
       timeout = 300000, // 5 minutes
-      validateBeforeProcessing = true
+      validateBeforeProcessing = true,
     } = options;
 
     const progress: BatchOperationProgress = {
@@ -464,7 +468,7 @@ export class BatchOperationsService extends EventEmitter {
       processed: 0,
       successful: 0,
       failed: 0,
-      percentComplete: 0
+      percentComplete: 0,
     };
 
     const results: Array<{
@@ -483,7 +487,7 @@ export class BatchOperationsService extends EventEmitter {
           results.push({
             id,
             success: false,
-            error: 'Entry not found'
+            error: 'Entry not found',
           });
           progress.failed++;
         } else {
@@ -495,7 +499,9 @@ export class BatchOperationsService extends EventEmitter {
       if (validateBeforeProcessing && entries.length > 0) {
         const validationResult = await this.validateBatch(entries);
         if (!validationResult.isValid) {
-          throw new Error(`Validation failed: ${validationResult.validationErrors.length} errors found`);
+          throw new Error(
+            `Validation failed: ${validationResult.validationErrors.length} errors found`
+          );
         }
       }
 
@@ -513,7 +519,7 @@ export class BatchOperationsService extends EventEmitter {
 
             const result = await Promise.race([
               operation(entry, globalIndex),
-              this.createTimeoutPromise(timeout)
+              this.createTimeoutPromise(timeout),
             ]);
 
             progress.successful++;
@@ -523,12 +529,14 @@ export class BatchOperationsService extends EventEmitter {
             // Estimate remaining time
             const elapsed = Date.now() - startTime;
             const rate = progress.processed / elapsed;
-            progress.estimatedTimeRemaining = Math.round((progress.total - progress.processed) / rate);
+            progress.estimatedTimeRemaining = Math.round(
+              (progress.total - progress.processed) / rate
+            );
 
             return {
               id: entry.id!,
               success: true,
-              data: result
+              data: result,
             };
           } catch (error) {
             progress.failed++;
@@ -544,7 +552,7 @@ export class BatchOperationsService extends EventEmitter {
             return {
               id: entry.id!,
               success: false,
-              error: errorMessage
+              error: errorMessage,
             };
           }
         });
@@ -570,14 +578,14 @@ export class BatchOperationsService extends EventEmitter {
         operationType,
         success,
         duration,
-        progress
+        progress,
       });
 
       return {
         success,
         progress,
         results,
-        duration
+        duration,
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -588,7 +596,7 @@ export class BatchOperationsService extends EventEmitter {
         operationType,
         error: errorMessage,
         duration,
-        progress
+        progress,
       });
 
       return {
@@ -596,7 +604,7 @@ export class BatchOperationsService extends EventEmitter {
         progress,
         results,
         error: errorMessage,
-        duration
+        duration,
       };
     }
   }
@@ -665,7 +673,7 @@ export class BatchOperationsService extends EventEmitter {
           entry.created_at?.toISOString(),
           entry.usage_count || 0,
           entry.success_count || 0,
-          entry.failure_count || 0
+          entry.failure_count || 0,
         ].join(',');
 
       case 'markdown':
@@ -706,7 +714,8 @@ ${entry.solution}
         return `[\n${exportedItems.join(',\n')}\n]`;
 
       case 'csv':
-        const header = 'id,title,problem,solution,category,tags,created,usage_count,success_count,failure_count';
+        const header =
+          'id,title,problem,solution,category,tags,created,usage_count,success_count,failure_count';
         return `${header}\n${exportedItems.join('\n')}`;
 
       case 'markdown':

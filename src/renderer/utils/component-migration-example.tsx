@@ -46,11 +46,13 @@ const UnoptimizedSearchComponent: React.FC = () => {
         ipcBridge.searchLocal(query),
         ipcBridge.searchWithAI(query), // Even when not needed
         ipcBridge.getMetrics(), // Unnecessary frequent calls
-      ]).then(([localResults, aiResults, metricsData]) => {
-        setResults([...localResults, ...aiResults]);
-        setMetrics(metricsData);
-        setIsLoading(false);
-      }).catch(console.error);
+      ])
+        .then(([localResults, aiResults, metricsData]) => {
+          setResults([...localResults, ...aiResults]);
+          setMetrics(metricsData);
+          setIsLoading(false);
+        })
+        .catch(console.error);
     }
   }, [query]); // ❌ This dependency causes excessive calls
 
@@ -77,19 +79,15 @@ const UnoptimizedSearchComponent: React.FC = () => {
     <div>
       <h3>❌ Unoptimized Search (High IPC Load)</h3>
       <input
-        type="text"
+        type='text'
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Type to search... (generates excessive IPC calls)"
+        onChange={e => setQuery(e.target.value)}
+        placeholder='Type to search... (generates excessive IPC calls)'
       />
       {isLoading && <div>Loading...</div>}
       <div>Results: {results.length}</div>
       <div>Metrics updated: {metrics?.lastUpdate || 'Never'}</div>
-      {suggestions.length > 0 && (
-        <div>
-          Suggestions: {suggestions.slice(0, 3).join(', ')}
-        </div>
-      )}
+      {suggestions.length > 0 && <div>Suggestions: {suggestions.slice(0, 3).join(', ')}</div>}
     </div>
   );
 };
@@ -120,44 +118,44 @@ const OptimizedSearchComponent: React.FC = () => {
   } = useDebounceIPC({
     operation: 'search',
     delay: 300, // 300ms debounce for search
-    key: 'search-component'
+    key: 'search-component',
   });
 
   // ✅ Create debounced suggestion function
-  const debouncedGetSuggestions = createDebouncedOperation(
-    async (searchQuery: string) => {
-      if (searchQuery.length < 2) return [];
-      const results = await ipcBridge.searchLocal(searchQuery, { limit: 5 });
-      return results.map(r => r.entry.title);
-    },
-    'suggestions'
-  );
+  const debouncedGetSuggestions = createDebouncedOperation(async (searchQuery: string) => {
+    if (searchQuery.length < 2) return [];
+    const results = await ipcBridge.searchLocal(searchQuery, { limit: 5 });
+    return results.map(r => r.entry.title);
+  }, 'suggestions');
 
   // ✅ SOLUTION: Debounced search with proper loading states
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < 2) {
-      setResults([]);
-      setSuggestions([]);
-      return;
-    }
+  const handleSearch = useCallback(
+    async (searchQuery: string) => {
+      if (searchQuery.length < 2) {
+        setResults([]);
+        setSuggestions([]);
+        return;
+      }
 
-    setIsLoading(true);
+      setIsLoading(true);
 
-    try {
-      // Only make necessary calls - debouncing prevents spam
-      const [searchResults, suggestionResults] = await Promise.all([
-        debouncedSearchLocal(searchQuery),
-        debouncedGetSuggestions(searchQuery),
-      ]);
+      try {
+        // Only make necessary calls - debouncing prevents spam
+        const [searchResults, suggestionResults] = await Promise.all([
+          debouncedSearchLocal(searchQuery),
+          debouncedGetSuggestions(searchQuery),
+        ]);
 
-      setResults(searchResults);
-      setSuggestions(suggestionResults);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [debouncedSearchLocal, debouncedGetSuggestions]);
+        setResults(searchResults);
+        setSuggestions(suggestionResults);
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [debouncedSearchLocal, debouncedGetSuggestions]
+  );
 
   // ✅ SOLUTION: Debounced query change handler
   useEffect(() => {
@@ -189,10 +187,10 @@ const OptimizedSearchComponent: React.FC = () => {
     <div>
       <h3>✅ Optimized Search (70% Fewer IPC Calls)</h3>
       <input
-        type="text"
+        type='text'
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Type to search... (debounced IPC calls)"
+        onChange={e => setQuery(e.target.value)}
+        placeholder='Type to search... (debounced IPC calls)'
       />
 
       {/* Enhanced loading states */}
@@ -207,11 +205,7 @@ const OptimizedSearchComponent: React.FC = () => {
       <div>Results: {results.length}</div>
       <div>Metrics updated: {metrics?.lastUpdate || 'Never'}</div>
 
-      {suggestions.length > 0 && (
-        <div>
-          Suggestions: {suggestions.slice(0, 3).join(', ')}
-        </div>
-      )}
+      {suggestions.length > 0 && <div>Suggestions: {suggestions.slice(0, 3).join(', ')}</div>}
 
       {/* Performance stats */}
       <details style={{ marginTop: '1rem', fontSize: '0.75rem' }}>
@@ -286,10 +280,13 @@ class OptimizedSearchService {
     const wrapperStats = debouncedIPC.getPerformanceStats();
     return {
       service: this.performanceMetrics,
-      wrapper: Array.from(wrapperStats.entries()).reduce((acc, [key, metrics]) => {
-        acc[key] = metrics;
-        return acc;
-      }, {} as Record<string, any>)
+      wrapper: Array.from(wrapperStats.entries()).reduce(
+        (acc, [key, metrics]) => {
+          acc[key] = metrics;
+          return acc;
+        },
+        {} as Record<string, any>
+      ),
     };
   }
 
@@ -318,26 +315,29 @@ const ServiceBasedComponent: React.FC = () => {
   const searchService = OptimizedSearchService.getInstance();
 
   // ✅ Clean, service-based approach
-  const handleSearch = useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < 2) {
-      setResults([]);
-      return;
-    }
+  const handleSearch = useCallback(
+    async (searchQuery: string) => {
+      if (searchQuery.length < 2) {
+        setResults([]);
+        return;
+      }
 
-    setIsLoading(true);
-    try {
-      // Service handles all optimization internally
-      const searchResults = await searchService.search(searchQuery);
-      setResults(searchResults);
+      setIsLoading(true);
+      try {
+        // Service handles all optimization internally
+        const searchResults = await searchService.search(searchQuery);
+        setResults(searchResults);
 
-      // Update performance stats
-      setPerfStats(searchService.getPerformanceStats());
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchService]);
+        // Update performance stats
+        setPerfStats(searchService.getPerformanceStats());
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [searchService]
+  );
 
   // Debounce the search calls
   const timeoutRef = useRef<NodeJS.Timeout>();
@@ -370,10 +370,10 @@ const ServiceBasedComponent: React.FC = () => {
     <div>
       <h3>🚀 Service-Based Optimization</h3>
       <input
-        type="text"
+        type='text'
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Service-optimized search..."
+        onChange={e => setQuery(e.target.value)}
+        placeholder='Service-optimized search...'
       />
 
       {isLoading && <div>Loading...</div>}
@@ -381,13 +381,15 @@ const ServiceBasedComponent: React.FC = () => {
       <div>Service calls: {perfStats.service?.totalCalls || 0}</div>
 
       {/* Performance summary */}
-      <div style={{
-        marginTop: '1rem',
-        padding: '0.5rem',
-        backgroundColor: '#f0f9ff',
-        borderRadius: '4px',
-        fontSize: '0.875rem'
-      }}>
+      <div
+        style={{
+          marginTop: '1rem',
+          padding: '0.5rem',
+          backgroundColor: '#f0f9ff',
+          borderRadius: '4px',
+          fontSize: '0.875rem',
+        }}
+      >
         <strong>Performance Summary:</strong>
         {Object.entries(perfStats.wrapper || {}).map(([key, stats]: [string, any]) => (
           <div key={key}>
@@ -413,49 +415,57 @@ export const MigrationGuideExample: React.FC = () => {
       <div style={{ marginBottom: '2rem' }}>
         <label style={{ display: 'flex', alignItems: 'center', fontSize: '1rem' }}>
           <input
-            type="checkbox"
+            type='checkbox'
             checked={showOptimized}
-            onChange={(e) => setShowOptimized(e.target.checked)}
+            onChange={e => setShowOptimized(e.target.checked)}
             style={{ marginRight: '0.5rem' }}
           />
           Show optimized components
         </label>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: showOptimized ? '1fr 1fr' : '1fr',
-        gap: '2rem',
-        marginBottom: '2rem'
-      }}>
-        <div style={{
-          padding: '1rem',
-          border: '2px solid #ef4444',
-          borderRadius: '8px',
-          backgroundColor: '#fef2f2'
-        }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: showOptimized ? '1fr 1fr' : '1fr',
+          gap: '2rem',
+          marginBottom: '2rem',
+        }}
+      >
+        <div
+          style={{
+            padding: '1rem',
+            border: '2px solid #ef4444',
+            borderRadius: '8px',
+            backgroundColor: '#fef2f2',
+          }}
+        >
           <UnoptimizedSearchComponent />
         </div>
 
         {showOptimized && (
-          <div style={{
-            padding: '1rem',
-            border: '2px solid #10b981',
-            borderRadius: '8px',
-            backgroundColor: '#f0fdf4'
-          }}>
+          <div
+            style={{
+              padding: '1rem',
+              border: '2px solid #10b981',
+              borderRadius: '8px',
+              backgroundColor: '#f0fdf4',
+            }}
+          >
             <OptimizedSearchComponent />
           </div>
         )}
       </div>
 
       {showOptimized && (
-        <div style={{
-          padding: '1rem',
-          border: '2px solid #3b82f6',
-          borderRadius: '8px',
-          backgroundColor: '#eff6ff'
-        }}>
+        <div
+          style={{
+            padding: '1rem',
+            border: '2px solid #3b82f6',
+            borderRadius: '8px',
+            backgroundColor: '#eff6ff',
+          }}
+        >
           <ServiceBasedComponent />
         </div>
       )}
@@ -464,38 +474,61 @@ export const MigrationGuideExample: React.FC = () => {
       <div style={{ marginTop: '2rem' }}>
         <h3>Migration Steps:</h3>
         <ol style={{ paddingLeft: '1.5rem' }}>
-          <li><strong>Install debounced IPC hook:</strong> Import <code>useDebounceIPC</code></li>
-          <li><strong>Replace direct IPC calls:</strong> Use debounced versions from the hook</li>
-          <li><strong>Configure delays:</strong> Set appropriate delays for different operations</li>
-          <li><strong>Add performance monitoring:</strong> Use built-in stats to track improvements</li>
-          <li><strong>Consider service pattern:</strong> For complex components, use DebouncedIPCWrapper</li>
+          <li>
+            <strong>Install debounced IPC hook:</strong> Import <code>useDebounceIPC</code>
+          </li>
+          <li>
+            <strong>Replace direct IPC calls:</strong> Use debounced versions from the hook
+          </li>
+          <li>
+            <strong>Configure delays:</strong> Set appropriate delays for different operations
+          </li>
+          <li>
+            <strong>Add performance monitoring:</strong> Use built-in stats to track improvements
+          </li>
+          <li>
+            <strong>Consider service pattern:</strong> For complex components, use
+            DebouncedIPCWrapper
+          </li>
         </ol>
       </div>
 
       {/* Performance comparison */}
-      <div style={{
-        marginTop: '2rem',
-        padding: '1rem',
-        backgroundColor: '#f9fafb',
-        borderRadius: '8px',
-        border: '1px solid #e5e7eb'
-      }}>
+      <div
+        style={{
+          marginTop: '2rem',
+          padding: '1rem',
+          backgroundColor: '#f9fafb',
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb',
+        }}
+      >
         <h3>Expected Performance Improvements:</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '1rem',
+          }}
+        >
           <div>
-            <strong>IPC Call Reduction:</strong><br />
+            <strong>IPC Call Reduction:</strong>
+            <br />
             <span style={{ color: '#059669', fontSize: '1.5em' }}>-70%</span>
           </div>
           <div>
-            <strong>Response Time:</strong><br />
+            <strong>Response Time:</strong>
+            <br />
             <span style={{ color: '#059669', fontSize: '1.5em' }}>+40% faster</span>
           </div>
           <div>
-            <strong>Memory Usage:</strong><br />
+            <strong>Memory Usage:</strong>
+            <br />
             <span style={{ color: '#059669', fontSize: '1.5em' }}>-30%</span>
           </div>
           <div>
-            <strong>CPU Usage:</strong><br />
+            <strong>CPU Usage:</strong>
+            <br />
             <span style={{ color: '#059669', fontSize: '1.5em' }}>-50%</span>
           </div>
         </div>

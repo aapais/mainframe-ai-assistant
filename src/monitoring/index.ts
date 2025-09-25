@@ -25,22 +25,26 @@ export type { ProfileSession, QueryProfile, Bottleneck } from './PerformanceProf
 /**
  * Quick start function for monitoring
  */
-export async function startMonitoring(config?: Partial<MonitoringConfig>): Promise<MonitoredSearchService> {
-  const { MonitoredSearchService, DEFAULT_MONITORING_CONFIG } = await import('./SearchServiceIntegration');
-  
+export async function startMonitoring(
+  config?: Partial<MonitoringConfig>
+): Promise<MonitoredSearchService> {
+  const { MonitoredSearchService, DEFAULT_MONITORING_CONFIG } = await import(
+    './SearchServiceIntegration'
+  );
+
   const finalConfig = {
     ...DEFAULT_MONITORING_CONFIG,
-    ...config
+    ...config,
   };
 
   const service = new MonitoredSearchService('./knowledge.db', finalConfig);
   await service.initialize();
-  
+
   console.log('🔍 Search monitoring started successfully');
   console.log('📊 Dashboard: Call service.getDashboard() for real-time data');
   console.log('🚨 SLA monitoring: <1s response time threshold active');
   console.log('📈 Profiling: Call service.startProfiling() to begin detailed analysis');
-  
+
   return service;
 }
 
@@ -49,32 +53,32 @@ export async function startMonitoring(config?: Partial<MonitoringConfig>): Promi
  */
 export const DEV_MONITORING_CONFIG: MonitoringConfig = {
   database: {
-    path: './monitoring_dev.db'
+    path: './monitoring_dev.db',
   },
   sla: {
     responseTimeThreshold: 1000, // 1 second
     errorRateThreshold: 10, // 10% (more lenient for dev)
-    cacheHitRateThreshold: 70 // 70% (more lenient for dev)
+    cacheHitRateThreshold: 70, // 70% (more lenient for dev)
   },
   alerting: {
     enabled: true,
     channels: ['console'],
-    escalationDelay: 5 // 5 minutes
+    escalationDelay: 5, // 5 minutes
   },
   logging: {
     level: 'debug',
     destinations: ['console'],
-    enableTrace: true
+    enableTrace: true,
   },
   profiling: {
     enabled: true,
     autoProfile: true,
-    sessionDuration: 5 // 5 minutes
+    sessionDuration: 5, // 5 minutes
   },
   dashboard: {
     refreshInterval: 10, // 10 seconds
-    autoStart: true
-  }
+    autoStart: true,
+  },
 };
 
 /**
@@ -82,32 +86,32 @@ export const DEV_MONITORING_CONFIG: MonitoringConfig = {
  */
 export const PROD_MONITORING_CONFIG: MonitoringConfig = {
   database: {
-    path: './monitoring_prod.db'
+    path: './monitoring_prod.db',
   },
   sla: {
     responseTimeThreshold: 1000, // 1 second
     errorRateThreshold: 2, // 2%
-    cacheHitRateThreshold: 85 // 85%
+    cacheHitRateThreshold: 85, // 85%
   },
   alerting: {
     enabled: true,
     channels: ['console', 'file', 'webhook'],
-    escalationDelay: 15 // 15 minutes
+    escalationDelay: 15, // 15 minutes
   },
   logging: {
     level: 'info',
     destinations: ['file', 'webhook'],
-    enableTrace: false
+    enableTrace: false,
   },
   profiling: {
     enabled: true,
     autoProfile: false, // Manual profiling in production
-    sessionDuration: 15 // 15 minutes
+    sessionDuration: 15, // 15 minutes
   },
   dashboard: {
     refreshInterval: 60, // 1 minute
-    autoStart: true
-  }
+    autoStart: true,
+  },
 };
 
 /**
@@ -127,15 +131,15 @@ export async function healthCheck(): Promise<{ status: string; components: any }
         alerting: 'configured',
         logging: 'enabled',
         profiling: 'available',
-        sla_monitoring: metrics.slaCompliance > 95 ? 'compliant' : 'at_risk'
-      }
+        sla_monitoring: metrics.slaCompliance > 95 ? 'compliant' : 'at_risk',
+      },
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       components: {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
     };
   }
 }

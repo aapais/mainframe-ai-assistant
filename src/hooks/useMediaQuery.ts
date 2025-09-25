@@ -92,15 +92,8 @@ const getMediaQueryList = (query: string): MediaQueryList | null => {
  * });
  * ```
  */
-export const useMediaQuery = (
-  query: string,
-  options: MediaQueryOptions = {}
-): MediaQueryResult => {
-  const {
-    defaultValue = false,
-    initializeOnMount = true,
-    debug = false,
-  } = options;
+export const useMediaQuery = (query: string, options: MediaQueryOptions = {}): MediaQueryResult => {
+  const { defaultValue = false, initializeOnMount = true, debug = false } = options;
 
   // Refs for cleanup
   const mediaQueryListRef = useRef<MediaQueryList | null>(null);
@@ -121,17 +114,20 @@ export const useMediaQuery = (
   });
 
   // Memoized listener function
-  const handleChange = useCallback((event: MediaQueryListEvent) => {
-    if (debug) {
-      console.log(`Media query "${query}" changed:`, {
-        matches: event.matches,
-        query: query,
-        timestamp: new Date().toISOString(),
-      });
-    }
+  const handleChange = useCallback(
+    (event: MediaQueryListEvent) => {
+      if (debug) {
+        console.log(`Media query "${query}" changed:`, {
+          matches: event.matches,
+          query: query,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
-    setMatches(event.matches);
-  }, [query, debug]);
+      setMatches(event.matches);
+    },
+    [query, debug]
+  );
 
   // Manual refetch function
   const refetch = useCallback(() => {

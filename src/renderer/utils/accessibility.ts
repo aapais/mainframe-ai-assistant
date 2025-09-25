@@ -37,20 +37,20 @@ export class AriaUtils {
   static createDescription(element: HTMLElement, description: string): string {
     const descriptionId = this.generateId('desc');
     const descriptionElement = document.createElement('div');
-    
+
     descriptionElement.id = descriptionId;
     descriptionElement.className = 'sr-only';
     descriptionElement.textContent = description;
-    
+
     element.appendChild(descriptionElement);
-    
+
     const existingDescribedBy = element.getAttribute('aria-describedby');
-    const newDescribedBy = existingDescribedBy 
+    const newDescribedBy = existingDescribedBy
       ? `${existingDescribedBy} ${descriptionId}`
       : descriptionId;
-    
+
     element.setAttribute('aria-describedby', newDescribedBy);
-    
+
     return descriptionId;
   }
 
@@ -69,14 +69,14 @@ export class AriaUtils {
       'input[type="radio"]:not([disabled])',
       'input[type="checkbox"]:not([disabled])',
       'select:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])'
+      '[tabindex]:not([tabindex="-1"])',
     ].join(', ');
 
     let previouslyFocused: HTMLElement | null = null;
 
     const activate = () => {
       previouslyFocused = document.activeElement as HTMLElement;
-      
+
       const focusableElements = container.querySelectorAll<HTMLElement>(focusableSelectors);
       const firstFocusable = focusableElements[0];
       const lastFocusable = focusableElements[focusableElements.length - 1];
@@ -102,7 +102,7 @@ export class AriaUtils {
       };
 
       container.addEventListener('keydown', handleTabKey);
-      
+
       return () => {
         container.removeEventListener('keydown', handleTabKey);
       };
@@ -122,7 +122,7 @@ export class AriaUtils {
    */
   static isAccessible(element: HTMLElement): boolean {
     const style = window.getComputedStyle(element);
-    
+
     return !(
       style.display === 'none' ||
       style.visibility === 'hidden' ||
@@ -168,20 +168,46 @@ export class AriaUtils {
     const warnings: string[] = [];
 
     // Check for invalid ARIA attributes
-    const ariaAttributes = Array.from(element.attributes)
-      .filter(attr => attr.name.startsWith('aria-'));
+    const ariaAttributes = Array.from(element.attributes).filter(attr =>
+      attr.name.startsWith('aria-')
+    );
 
     ariaAttributes.forEach(attr => {
       // Check if it's a valid ARIA attribute
       const validAriaAttributes = [
-        'aria-label', 'aria-labelledby', 'aria-describedby', 'aria-hidden',
-        'aria-expanded', 'aria-selected', 'aria-checked', 'aria-disabled',
-        'aria-required', 'aria-invalid', 'aria-busy', 'aria-live',
-        'aria-atomic', 'aria-relevant', 'aria-current', 'aria-level',
-        'aria-setsize', 'aria-posinset', 'aria-owns', 'aria-controls',
-        'aria-haspopup', 'aria-orientation', 'aria-valuemin', 'aria-valuemax',
-        'aria-valuenow', 'aria-valuetext', 'aria-multiline', 'aria-readonly',
-        'aria-sort', 'aria-rowcount', 'aria-rowindex', 'aria-colcount', 'aria-colindex'
+        'aria-label',
+        'aria-labelledby',
+        'aria-describedby',
+        'aria-hidden',
+        'aria-expanded',
+        'aria-selected',
+        'aria-checked',
+        'aria-disabled',
+        'aria-required',
+        'aria-invalid',
+        'aria-busy',
+        'aria-live',
+        'aria-atomic',
+        'aria-relevant',
+        'aria-current',
+        'aria-level',
+        'aria-setsize',
+        'aria-posinset',
+        'aria-owns',
+        'aria-controls',
+        'aria-haspopup',
+        'aria-orientation',
+        'aria-valuemin',
+        'aria-valuemax',
+        'aria-valuenow',
+        'aria-valuetext',
+        'aria-multiline',
+        'aria-readonly',
+        'aria-sort',
+        'aria-rowcount',
+        'aria-rowindex',
+        'aria-colcount',
+        'aria-colindex',
       ];
 
       if (!validAriaAttributes.includes(attr.name)) {
@@ -215,7 +241,7 @@ export class AriaUtils {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }
@@ -224,7 +250,7 @@ export class AriaUtils {
  * Announce messages to screen readers
  */
 export function announceToScreenReader(
-  message: string, 
+  message: string,
   priority: 'polite' | 'assertive' = 'polite'
 ): void {
   const announcement = document.createElement('div');
@@ -249,16 +275,12 @@ export function announceToScreenReader(
 export function isKeyboardNavigable(element: HTMLElement): boolean {
   const tabIndex = element.tabIndex;
   const tagName = element.tagName.toLowerCase();
-  
+
   // Elements that are naturally focusable
-  const naturallyFocusable = [
-    'a', 'button', 'input', 'select', 'textarea'
-  ];
-  
+  const naturallyFocusable = ['a', 'button', 'input', 'select', 'textarea'];
+
   return (
-    tabIndex >= 0 || 
-    naturallyFocusable.includes(tagName) ||
-    element.hasAttribute('contenteditable')
+    tabIndex >= 0 || naturallyFocusable.includes(tagName) || element.hasAttribute('contenteditable')
   );
 }
 
@@ -266,7 +288,7 @@ export function isKeyboardNavigable(element: HTMLElement): boolean {
  * Add keyboard navigation support to elements
  */
 export function makeKeyboardNavigable(
-  element: HTMLElement, 
+  element: HTMLElement,
   options: {
     onClick?: () => void;
     onEnter?: () => void;
@@ -285,7 +307,7 @@ export function makeKeyboardNavigable(
   }
 
   // Add keyboard event handlers
-  element.addEventListener('keydown', (event) => {
+  element.addEventListener('keydown', event => {
     switch (event.key) {
       case 'Enter':
         event.preventDefault();
@@ -316,7 +338,7 @@ export function makeKeyboardNavigable(
  * Color contrast checker
  */
 export function checkColorContrast(
-  foregroundColor: string, 
+  foregroundColor: string,
   backgroundColor: string,
   level: 'AA' | 'AAA' = 'AA'
 ): {
@@ -343,19 +365,19 @@ export function checkColorContrast(
 
   const fg = getRgbValues(foregroundColor);
   const bg = getRgbValues(backgroundColor);
-  
+
   const fgLuminance = getLuminance(fg[0], fg[1], fg[2]);
   const bgLuminance = getLuminance(bg[0], bg[1], bg[2]);
-  
-  const ratio = (Math.max(fgLuminance, bgLuminance) + 0.05) / 
-                (Math.min(fgLuminance, bgLuminance) + 0.05);
+
+  const ratio =
+    (Math.max(fgLuminance, bgLuminance) + 0.05) / (Math.min(fgLuminance, bgLuminance) + 0.05);
 
   const minRatio = level === 'AAA' ? 7 : 4.5;
-  
+
   return {
     ratio,
     passes: ratio >= minRatio,
-    level
+    level,
   };
 }
 
@@ -383,7 +405,7 @@ export class AccessibilityTester {
         errors.push({
           type: 'missing-alt',
           message: 'Image missing alt text',
-          element: el
+          element: el,
         });
       }
 
@@ -394,7 +416,7 @@ export class AccessibilityTester {
           errors.push({
             type: 'missing-label',
             message: 'Form control missing accessible name',
-            element: el
+            element: el,
           });
         }
       }
@@ -404,7 +426,7 @@ export class AccessibilityTester {
         errors.push({
           type: 'missing-button-name',
           message: 'Button missing accessible name',
-          element: el
+          element: el,
         });
       }
 
@@ -414,14 +436,14 @@ export class AccessibilityTester {
         errors.push({
           type: 'aria-error',
           message: error,
-          element: el
+          element: el,
         });
       });
       ariaValidation.warnings.forEach(warning => {
         warnings.push({
           type: 'aria-warning',
           message: warning,
-          element: el
+          element: el,
         });
       });
 
@@ -430,7 +452,7 @@ export class AccessibilityTester {
         warnings.push({
           type: 'keyboard-navigation',
           message: 'Interactive element not keyboard navigable',
-          element: el
+          element: el,
         });
       }
     });
@@ -448,10 +470,10 @@ export class AccessibilityTester {
    */
   static generateReport(element: HTMLElement): string {
     const audit = this.audit(element);
-    
+
     let report = '# Accessibility Report\n\n';
     report += `## Overall Score: ${audit.score.toFixed(1)}/100\n\n`;
-    
+
     if (audit.errors.length > 0) {
       report += '## Errors\n\n';
       audit.errors.forEach((error, index) => {
@@ -462,7 +484,7 @@ export class AccessibilityTester {
         report += '\n\n';
       });
     }
-    
+
     if (audit.warnings.length > 0) {
       report += '## Warnings\n\n';
       audit.warnings.forEach((warning, index) => {
@@ -473,7 +495,7 @@ export class AccessibilityTester {
         report += '\n\n';
       });
     }
-    
+
     return report;
   }
 }
@@ -514,9 +536,9 @@ export class LiveRegionManager {
 
   announce(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
     const region = priority === 'polite' ? this.politeRegion : this.assertiveRegion;
-    
+
     region.textContent = message;
-    
+
     // Clear the message after announcement
     setTimeout(() => {
       region.textContent = '';
@@ -538,7 +560,7 @@ export class FocusManager {
     if (currentFocus) {
       this.focusStack.push(currentFocus);
     }
-    
+
     if (newFocus) {
       newFocus.focus();
     }

@@ -10,7 +10,7 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian CPF (Individual Taxpayer Registry)',
     sensitivity: 'high',
-    validator: (value) => {
+    validator: value => {
       const cpf = value.replace(/[^\d]/g, '');
       if (cpf.length !== 11) return false;
 
@@ -33,7 +33,7 @@ const patterns = {
       if (digit2 > 9) digit2 = 0;
 
       return digit1 === parseInt(cpf[9]) && digit2 === parseInt(cpf[10]);
-    }
+    },
   },
 
   // Brazilian CNPJ - 00.000.000/0000-00 or 00000000000000
@@ -42,7 +42,7 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian CNPJ (Corporate Taxpayer Registry)',
     sensitivity: 'high',
-    validator: (value) => {
+    validator: value => {
       const cnpj = value.replace(/[^\d]/g, '');
       if (cnpj.length !== 14) return false;
 
@@ -51,7 +51,7 @@ const patterns = {
 
       // Validate check digits (simplified validation)
       return true; // Full CNPJ validation can be added here
-    }
+    },
   },
 
   // Bank account numbers - various formats
@@ -60,7 +60,7 @@ const patterns = {
     flags: 'gi',
     description: 'Bank account numbers',
     sensitivity: 'high',
-    contextWords: ['conta', 'account', 'c/c', 'agencia']
+    contextWords: ['conta', 'account', 'c/c', 'agencia'],
   },
 
   // Credit/Debit card numbers - 16 digits with optional formatting
@@ -69,7 +69,7 @@ const patterns = {
     flags: 'g',
     description: 'Credit/Debit card numbers',
     sensitivity: 'critical',
-    validator: (value) => {
+    validator: value => {
       const card = value.replace(/[^\d]/g, '');
       if (card.length !== 16) return false;
 
@@ -92,7 +92,7 @@ const patterns = {
       }
 
       return sum % 10 === 0;
-    }
+    },
   },
 
   // CVV/CVC codes
@@ -101,16 +101,17 @@ const patterns = {
     flags: 'gi',
     description: 'CVV/CVC security codes',
     sensitivity: 'critical',
-    contextWords: ['cvv', 'cvc', 'codigo', 'seguranca']
+    contextWords: ['cvv', 'cvc', 'codigo', 'seguranca'],
   },
 
   // PIX keys - various formats
   pixKey: {
-    regex: '(?:pix[:\\s]*)?(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|\\+55\\d{10,11}|\\d{11}|\\d{14}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})',
+    regex:
+      '(?:pix[:\\s]*)?(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|\\+55\\d{10,11}|\\d{11}|\\d{14}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})',
     flags: 'gi',
     description: 'PIX payment keys (email, phone, CPF, CNPJ, random)',
     sensitivity: 'high',
-    contextWords: ['pix', 'chave']
+    contextWords: ['pix', 'chave'],
   },
 
   // Passwords and tokens
@@ -119,7 +120,7 @@ const patterns = {
     flags: 'gi',
     description: 'Passwords and authentication tokens',
     sensitivity: 'critical',
-    contextWords: ['senha', 'password', 'pass', 'pwd', 'token']
+    contextWords: ['senha', 'password', 'pass', 'pwd', 'token'],
   },
 
   // API Keys and tokens
@@ -128,7 +129,7 @@ const patterns = {
     flags: 'gi',
     description: 'API keys and bearer tokens',
     sensitivity: 'critical',
-    contextWords: ['api', 'key', 'token', 'bearer', 'authorization']
+    contextWords: ['api', 'key', 'token', 'bearer', 'authorization'],
   },
 
   // Brazilian mobile phone numbers
@@ -137,7 +138,7 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian mobile phone numbers',
     sensitivity: 'medium',
-    contextWords: ['telefone', 'celular', 'phone', 'mobile']
+    contextWords: ['telefone', 'celular', 'phone', 'mobile'],
   },
 
   // Brazilian landline phone numbers
@@ -146,7 +147,7 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian landline phone numbers',
     sensitivity: 'medium',
-    contextWords: ['telefone', 'phone', 'fone']
+    contextWords: ['telefone', 'phone', 'fone'],
   },
 
   // Email addresses
@@ -155,7 +156,7 @@ const patterns = {
     flags: 'g',
     description: 'Email addresses',
     sensitivity: 'medium',
-    contextWords: ['email', 'e-mail', 'correio']
+    contextWords: ['email', 'e-mail', 'correio'],
   },
 
   // Full names (Brazilian patterns)
@@ -165,19 +166,20 @@ const patterns = {
     description: 'Full names with Brazilian characters',
     sensitivity: 'high',
     contextWords: ['nome', 'name', 'cliente', 'titular'],
-    validator: (value) => {
+    validator: value => {
       const name = value.trim();
       return name.split(' ').length >= 2 && name.length >= 5;
-    }
+    },
   },
 
   // Brazilian addresses
   address: {
-    regex: '(?:endereco[:\\s]*|address[:\\s]*)?(?:rua|av|avenida|travessa|praca)\\s+[^,\\n]{10,}(?:,\\s*\\d+)?',
+    regex:
+      '(?:endereco[:\\s]*|address[:\\s]*)?(?:rua|av|avenida|travessa|praca)\\s+[^,\\n]{10,}(?:,\\s*\\d+)?',
     flags: 'gi',
     description: 'Brazilian street addresses',
     sensitivity: 'medium',
-    contextWords: ['endereco', 'address', 'rua', 'avenida', 'praca']
+    contextWords: ['endereco', 'address', 'rua', 'avenida', 'praca'],
   },
 
   // Brazilian ZIP codes (CEP)
@@ -186,16 +188,17 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian ZIP codes (CEP)',
     sensitivity: 'low',
-    contextWords: ['cep', 'zip', 'codigo']
+    contextWords: ['cep', 'zip', 'codigo'],
   },
 
   // Monetary values in Brazilian Real
   monetaryAmount: {
-    regex: 'R\\$\\s*\\d{1,3}(?:\\.\\d{3})*(?:,\\d{2})?|\\d{1,3}(?:\\.\\d{3})*(?:,\\d{2})?\\s*reais?',
+    regex:
+      'R\\$\\s*\\d{1,3}(?:\\.\\d{3})*(?:,\\d{2})?|\\d{1,3}(?:\\.\\d{3})*(?:,\\d{2})?\\s*reais?',
     flags: 'gi',
     description: 'Brazilian Real monetary amounts',
     sensitivity: 'medium',
-    contextWords: ['valor', 'preco', 'real', 'reais', 'dinheiro']
+    contextWords: ['valor', 'preco', 'real', 'reais', 'dinheiro'],
   },
 
   // Social Security numbers (for international context)
@@ -204,16 +207,17 @@ const patterns = {
     flags: 'g',
     description: 'US Social Security Numbers',
     sensitivity: 'critical',
-    contextWords: ['ssn', 'social', 'security']
+    contextWords: ['ssn', 'social', 'security'],
   },
 
   // IP Addresses
   ipAddress: {
-    regex: '(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)',
+    regex:
+      '(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)',
     flags: 'g',
     description: 'IP addresses',
     sensitivity: 'low',
-    contextWords: ['ip', 'address', 'servidor']
+    contextWords: ['ip', 'address', 'servidor'],
   },
 
   // URLs with sensitive parameters
@@ -222,7 +226,7 @@ const patterns = {
     flags: 'gi',
     description: 'URLs containing sensitive parameters',
     sensitivity: 'high',
-    contextWords: ['url', 'link', 'endpoint']
+    contextWords: ['url', 'link', 'endpoint'],
   },
 
   // Database connection strings
@@ -231,7 +235,7 @@ const patterns = {
     flags: 'gi',
     description: 'Database connection strings with credentials',
     sensitivity: 'critical',
-    contextWords: ['connection', 'database', 'db', 'mongo', 'mysql']
+    contextWords: ['connection', 'database', 'db', 'mongo', 'mysql'],
   },
 
   // Brazilian RG (Identity Document)
@@ -240,7 +244,7 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian RG (Identity Document)',
     sensitivity: 'high',
-    contextWords: ['rg', 'identidade', 'identity']
+    contextWords: ['rg', 'identidade', 'identity'],
   },
 
   // Brazilian passport
@@ -249,7 +253,7 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian passport numbers',
     sensitivity: 'high',
-    contextWords: ['passaporte', 'passport']
+    contextWords: ['passaporte', 'passport'],
   },
 
   // Vehicle license plates (Brazilian format)
@@ -258,14 +262,14 @@ const patterns = {
     flags: 'g',
     description: 'Brazilian vehicle license plates',
     sensitivity: 'medium',
-    contextWords: ['placa', 'veiculo', 'carro']
-  }
+    contextWords: ['placa', 'veiculo', 'carro'],
+  },
 };
 
 /**
  * Get patterns by sensitivity level
  */
-const getPatternsBySensitivity = (level) => {
+const getPatternsBySensitivity = level => {
   return Object.entries(patterns)
     .filter(([_, pattern]) => pattern.sensitivity === level)
     .reduce((acc, [key, pattern]) => {
@@ -277,15 +281,13 @@ const getPatternsBySensitivity = (level) => {
 /**
  * Get patterns by context words
  */
-const getPatternsWithContext = (text) => {
+const getPatternsWithContext = text => {
   const relevantPatterns = {};
   const lowerText = text.toLowerCase();
 
   for (const [key, pattern] of Object.entries(patterns)) {
     if (pattern.contextWords) {
-      const hasContext = pattern.contextWords.some(word =>
-        lowerText.includes(word.toLowerCase())
-      );
+      const hasContext = pattern.contextWords.some(word => lowerText.includes(word.toLowerCase()));
 
       if (hasContext) {
         relevantPatterns[key] = pattern;
@@ -324,13 +326,12 @@ const getPatternStats = () => {
     total: Object.keys(patterns).length,
     bySensitivity: {},
     withValidators: 0,
-    withContext: 0
+    withContext: 0,
   };
 
   for (const pattern of Object.values(patterns)) {
     // Count by sensitivity
-    stats.bySensitivity[pattern.sensitivity] =
-      (stats.bySensitivity[pattern.sensitivity] || 0) + 1;
+    stats.bySensitivity[pattern.sensitivity] = (stats.bySensitivity[pattern.sensitivity] || 0) + 1;
 
     // Count validators
     if (pattern.validator) {
@@ -351,5 +352,5 @@ module.exports = {
   getPatternsBySensitivity,
   getPatternsWithContext,
   validateDetection,
-  getPatternStats
+  getPatternStats,
 };

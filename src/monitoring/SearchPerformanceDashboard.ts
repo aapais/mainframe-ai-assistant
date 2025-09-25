@@ -82,10 +82,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
   private monitoringInterval?: NodeJS.Timer;
   private alertThresholds = {
     responseTime: { warning: 800, critical: 1200 },
-    errorRate: { warning: 0.05, critical: 0.10 },
-    cacheHitRate: { warning: 0.80, critical: 0.70 },
+    errorRate: { warning: 0.05, critical: 0.1 },
+    cacheHitRate: { warning: 0.8, critical: 0.7 },
     memoryUsage: { warning: 200 * 1024 * 1024, critical: 256 * 1024 * 1024 },
-    uiRenderTime: { warning: 150, critical: 200 }
+    uiRenderTime: { warning: 150, critical: 200 },
   };
 
   constructor(
@@ -162,7 +162,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
       resultCount,
       cacheHit,
       error,
-      timestamp: now
+      timestamp: now,
     });
   }
 
@@ -209,7 +209,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
       overall: this.calculateOverallHealth(),
       components: this.getComponentMetrics(),
       alerts: Array.from(this.alerts.values()).filter(alert => !alert.resolved),
-      trends: this.getTrends()
+      trends: this.getTrends(),
     };
   }
 
@@ -228,7 +228,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
     return window.timestamps
       .map((timestamp, index) => ({
         timestamp,
-        value: window.values[index]
+        value: window.values[index],
       }))
       .filter(point => point.timestamp >= cutoffTime);
   }
@@ -255,8 +255,8 @@ export class SearchPerformanceDashboard extends EventEmitter {
         recommendation: 'Optimize FTS queries, increase cache TTL, or scale database',
         metrics: {
           p95ResponseTime: snapshot.components.search.p95ResponseTime,
-          avgResponseTime: snapshot.components.search.avgResponseTime
-        }
+          avgResponseTime: snapshot.components.search.avgResponseTime,
+        },
       });
     }
 
@@ -269,8 +269,8 @@ export class SearchPerformanceDashboard extends EventEmitter {
         recommendation: 'Increase cache size, optimize cache keys, or improve TTL strategy',
         metrics: {
           hitRate: snapshot.components.cache.hitRate,
-          size: snapshot.components.cache.size
-        }
+          size: snapshot.components.cache.size,
+        },
       });
     }
 
@@ -280,10 +280,11 @@ export class SearchPerformanceDashboard extends EventEmitter {
         component: 'ui',
         issue: 'High memory usage',
         severity: snapshot.components.ui.memoryUsage > 256 * 1024 * 1024 ? 'high' : 'medium',
-        recommendation: 'Implement virtual scrolling, optimize React re-renders, or fix memory leaks',
+        recommendation:
+          'Implement virtual scrolling, optimize React re-renders, or fix memory leaks',
         metrics: {
-          memoryUsage: snapshot.components.ui.memoryUsage
-        }
+          memoryUsage: snapshot.components.ui.memoryUsage,
+        },
       });
     }
 
@@ -292,11 +293,12 @@ export class SearchPerformanceDashboard extends EventEmitter {
       bottlenecks.push({
         component: 'search',
         issue: 'High error rate',
-        severity: snapshot.components.search.errorRate > 0.10 ? 'high' : 'medium',
-        recommendation: 'Check AI API connectivity, validate input handling, or improve error recovery',
+        severity: snapshot.components.search.errorRate > 0.1 ? 'high' : 'medium',
+        recommendation:
+          'Check AI API connectivity, validate input handling, or improve error recovery',
         metrics: {
-          errorRate: snapshot.components.search.errorRate
-        }
+          errorRate: snapshot.components.search.errorRate,
+        },
       });
     }
 
@@ -323,9 +325,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
         priority: 'high' as const,
         category: 'performance' as const,
         title: 'Optimize Search Response Time',
-        description: 'Search P95 response time exceeds 1s target. Consider FTS query optimization, better indexing, or cache improvements.',
+        description:
+          'Search P95 response time exceeds 1s target. Consider FTS query optimization, better indexing, or cache improvements.',
         impact: 'Directly improves user experience and meets performance SLA',
-        effort: 'medium' as const
+        effort: 'medium' as const,
       });
     }
 
@@ -334,9 +337,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
         priority: 'high' as const,
         category: 'performance' as const,
         title: 'Improve Cache Hit Rate',
-        description: 'Cache hit rate is below optimal. Review cache strategy, increase size, or optimize cache keys.',
+        description:
+          'Cache hit rate is below optimal. Review cache strategy, increase size, or optimize cache keys.',
         impact: 'Significant reduction in search response time',
-        effort: 'low' as const
+        effort: 'low' as const,
       });
     }
 
@@ -346,9 +350,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
         priority: 'medium' as const,
         category: 'performance' as const,
         title: 'Optimize UI Rendering',
-        description: 'UI render time is above target. Consider React.memo, virtualization, or component optimization.',
+        description:
+          'UI render time is above target. Consider React.memo, virtualization, or component optimization.',
         impact: 'Improves perceived performance and responsiveness',
-        effort: 'medium' as const
+        effort: 'medium' as const,
       });
     }
 
@@ -357,9 +362,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
         priority: 'medium' as const,
         category: 'reliability' as const,
         title: 'Reduce Error Rate',
-        description: 'Search error rate is elevated. Implement better error handling and fallback mechanisms.',
+        description:
+          'Search error rate is elevated. Implement better error handling and fallback mechanisms.',
         impact: 'Improves system reliability and user experience',
-        effort: 'medium' as const
+        effort: 'medium' as const,
       });
     }
 
@@ -369,9 +375,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
         priority: 'low' as const,
         category: 'performance' as const,
         title: 'Optimize AI API Usage',
-        description: 'AI API latency is high. Consider request optimization, timeout tuning, or fallback improvements.',
+        description:
+          'AI API latency is high. Consider request optimization, timeout tuning, or fallback improvements.',
         impact: 'Reduces AI search response time',
-        effort: 'low' as const
+        effort: 'low' as const,
       });
     }
 
@@ -399,28 +406,28 @@ export class SearchPerformanceDashboard extends EventEmitter {
         overallHealth: snapshot.overall.health,
         uptime: snapshot.overall.uptime,
         totalRequests: snapshot.overall.totalRequests,
-        activeUsers: snapshot.overall.activeUsers
+        activeUsers: snapshot.overall.activeUsers,
       },
       metrics: {
         search: {
           avgResponseTime: snapshot.components.search.avgResponseTime,
           p95ResponseTime: snapshot.components.search.p95ResponseTime,
           errorRate: snapshot.components.search.errorRate * 100,
-          throughput: snapshot.components.search.throughput
+          throughput: snapshot.components.search.throughput,
         },
         cache: {
           hitRate: snapshot.components.cache.hitRate * 100,
-          avgHitTime: snapshot.components.cache.avgHitTime
+          avgHitTime: snapshot.components.cache.avgHitTime,
         },
         ui: {
           renderTime: snapshot.components.ui.renderTime,
-          memoryUsage: Math.round(snapshot.components.ui.memoryUsage / 1024 / 1024 * 100) / 100
-        }
+          memoryUsage: Math.round((snapshot.components.ui.memoryUsage / 1024 / 1024) * 100) / 100,
+        },
       },
       alerts: snapshot.alerts,
       bottlenecks: this.identifyBottlenecks(),
       recommendations: this.getOptimizationRecommendations(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -438,14 +445,14 @@ export class SearchPerformanceDashboard extends EventEmitter {
       'memory.usage',
       'network.ai-api.latency',
       'network.ai-api.errors',
-      'network.database.latency'
+      'network.database.latency',
     ];
 
     metricNames.forEach(name => {
       this.metrics.set(name, {
         values: [],
         timestamps: [],
-        maxSize: 1000 // Keep last 1000 data points
+        maxSize: 1000, // Keep last 1000 data points
       });
     });
   }
@@ -529,7 +536,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
       health,
       uptime: this.getUptime(),
       totalRequests: this.getTotalRequests(),
-      activeUsers: this.getActiveUsers()
+      activeUsers: this.getActiveUsers(),
     };
   }
 
@@ -540,31 +547,31 @@ export class SearchPerformanceDashboard extends EventEmitter {
         p95ResponseTime: this.getMetricP95('search.responseTime', 300000),
         errorRate: this.getMetricRate('search.errors', 300000),
         throughput: this.getMetricThroughput('search.responseTime', 300000),
-        slowestQueries: [] // TODO: Implement slow query tracking
+        slowestQueries: [], // TODO: Implement slow query tracking
       },
       cache: {
         hitRate: this.getMetricAverage('cache.hits', 300000),
         missRate: 1 - this.getMetricAverage('cache.hits', 300000),
         size: this.getLatestMetric('cache.size'),
         evictions: 0, // TODO: Implement eviction tracking
-        avgHitTime: this.getMetricAverage('cache.hits', 300000) * 10 // Estimate
+        avgHitTime: this.getMetricAverage('cache.hits', 300000) * 10, // Estimate
       },
       ui: {
         renderTime: this.getMetricAverage('ui.renderTime', 300000),
         interactionLatency: this.getMetricAverage('ui.interactionTime', 300000),
         memoryUsage: this.getLatestMetric('memory.usage'),
-        scrollPerformance: 0 // TODO: Implement scroll performance tracking
+        scrollPerformance: 0, // TODO: Implement scroll performance tracking
       },
       database: {
         queryTime: this.getMetricAverage('network.database.latency', 300000),
         connectionPool: 0, // TODO: Implement connection pool monitoring
-        slowQueries: [] // TODO: Implement slow query tracking
+        slowQueries: [], // TODO: Implement slow query tracking
       },
       network: {
         aiApiLatency: this.getMetricAverage('network.ai-api.latency', 300000),
         aiApiErrorRate: this.getMetricRate('network.ai-api.errors', 300000),
-        bandwidth: 0 // TODO: Implement bandwidth monitoring
-      }
+        bandwidth: 0, // TODO: Implement bandwidth monitoring
+      },
     };
   }
 
@@ -578,7 +585,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
       responseTimetrend: this.getMetricTrend('search.responseTime', 60),
       errorRateTrend: this.getMetricTrend('search.errors', 60),
       cacheHitTrend: this.getMetricTrend('cache.hits', 60),
-      memoryTrend: this.getMetricTrend('memory.usage', 60)
+      memoryTrend: this.getMetricTrend('memory.usage', 60),
     };
   }
 
@@ -699,7 +706,10 @@ export class SearchPerformanceDashboard extends EventEmitter {
       'cache',
       'Low cache hit rate detected',
       1 - cacheHitRate, // Invert for alerting (high miss rate)
-      { warning: 1 - this.alertThresholds.cacheHitRate.warning, critical: 1 - this.alertThresholds.cacheHitRate.critical }
+      {
+        warning: 1 - this.alertThresholds.cacheHitRate.warning,
+        critical: 1 - this.alertThresholds.cacheHitRate.critical,
+      }
     );
 
     // Check memory usage alert
@@ -732,7 +742,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
           value,
           threshold: thresholds.critical,
           timestamp: new Date(),
-          resolved: false
+          resolved: false,
         };
 
         this.alerts.set(alertId, alert);
@@ -748,7 +758,7 @@ export class SearchPerformanceDashboard extends EventEmitter {
           value,
           threshold: thresholds.warning,
           timestamp: new Date(),
-          resolved: false
+          resolved: false,
         };
 
         this.alerts.set(alertId, alert);

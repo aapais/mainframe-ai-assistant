@@ -59,25 +59,27 @@ export class MemoryService {
     if (!this.memoryManager) return;
 
     // Setup event listeners for memory events
-    this.memoryManager.on('memory:warning', (report) => {
+    this.memoryManager.on('memory:warning', report => {
       console.warn(`Memory warning: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB used`);
-      
+
       if (this.serviceManager) {
         this.serviceManager.emit('system:memory-warning', report);
       }
     });
 
-    this.memoryManager.on('memory:critical', (report) => {
-      console.error(`Critical memory usage: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB used`);
-      
+    this.memoryManager.on('memory:critical', report => {
+      console.error(
+        `Critical memory usage: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB used`
+      );
+
       if (this.serviceManager) {
         this.serviceManager.emit('system:memory-critical', report);
       }
     });
 
-    this.memoryManager.on('memory:leaks-detected', (leaks) => {
+    this.memoryManager.on('memory:leaks-detected', leaks => {
       console.warn(`Memory leaks detected: ${leaks.length} potential leaks`);
-      
+
       if (this.serviceManager) {
         this.serviceManager.emit('system:memory-leaks', leaks);
       }
@@ -96,8 +98,8 @@ export class MemoryService {
    * Execute a database query using the connection pool
    */
   async executeQuery<T = any>(
-    query: string, 
-    params: any[] = [], 
+    query: string,
+    params: any[] = [],
     config?: import('./ConnectionPool').ConnectionConfig
   ): Promise<T> {
     const pool = this.memoryManager.getConnectionPool();
@@ -146,7 +148,7 @@ export class MemoryService {
       overall: memoryHealth.healthy && poolHealth.healthy && cacheHealth.healthy,
       memory: memoryHealth,
       connectionPool: poolHealth,
-      cache: cacheHealth
+      cache: cacheHealth,
     };
   }
 }
@@ -162,7 +164,7 @@ export function createMemoryService(config: MemoryServiceConfig = {}): MemorySer
  * Utility to register memory service with an existing ServiceManager
  */
 export function registerMemoryService(
-  serviceManager: ServiceManager, 
+  serviceManager: ServiceManager,
   config: MemoryServiceConfig = {}
 ): MemoryService {
   const memoryService = createMemoryService(config);

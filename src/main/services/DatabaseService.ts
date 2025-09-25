@@ -18,14 +18,14 @@ export class DatabaseService implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
   private startTime?: Date;
 
   async initialize(context: ServiceContext): Promise<void> {
     context.logger.info('Initializing Database Service...');
     this.startTime = new Date();
-    
+
     try {
       // Get app data directory
       const appDataPath = context.dataPath;
@@ -37,14 +37,14 @@ export class DatabaseService implements Service {
         backupDir,
         maxBackups: 10,
         autoBackup: true,
-        backupInterval: 24 // hours
+        backupInterval: 24, // hours
       });
 
       this.status = {
         status: 'running',
         startTime: this.startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('Database Service initialized successfully');
@@ -54,9 +54,9 @@ export class DatabaseService implements Service {
         status: 'error',
         lastError: error,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
-      
+
       context.logger.error('Database Service initialization failed', error);
       context.metrics.increment('service.database.initialization_failed');
       throw error;
@@ -71,7 +71,7 @@ export class DatabaseService implements Service {
 
     this.status = {
       ...this.status,
-      status: 'stopped'
+      status: 'stopped',
     };
   }
 
@@ -84,36 +84,36 @@ export class DatabaseService implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.knowledgeDB) {
         return {
           healthy: false,
           error: 'Database instance not available',
           lastCheck: new Date(),
-          responseTime: Date.now() - startTime
+          responseTime: Date.now() - startTime,
         };
       }
 
       // Perform a simple health check
       const healthResult = await this.knowledgeDB.healthCheck();
-      
+
       return {
         healthy: healthResult.healthy,
         error: healthResult.error,
         details: {
           database: healthResult,
-          connections: this.knowledgeDB.getConnectionCount?.() || 'N/A'
+          connections: this.knowledgeDB.getConnectionCount?.() || 'N/A',
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }

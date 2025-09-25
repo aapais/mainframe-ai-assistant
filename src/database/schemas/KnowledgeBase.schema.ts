@@ -14,14 +14,14 @@ import { z } from 'zod';
  */
 export const KBCategorySchema = z.enum([
   'JCL',
-  'VSAM', 
+  'VSAM',
   'DB2',
   'Batch',
   'Functional',
   'IMS',
   'CICS',
   'System',
-  'Other'
+  'Other',
 ]);
 
 export type KBCategory = z.infer<typeof KBCategorySchema>;
@@ -29,12 +29,7 @@ export type KBCategory = z.infer<typeof KBCategorySchema>;
 /**
  * Severity levels for incidents and solutions
  */
-export const SeverityLevelSchema = z.enum([
-  'critical',
-  'high', 
-  'medium',
-  'low'
-]);
+export const SeverityLevelSchema = z.enum(['critical', 'high', 'medium', 'low']);
 
 export type SeverityLevel = z.infer<typeof SeverityLevelSchema>;
 
@@ -43,14 +38,14 @@ export type SeverityLevel = z.infer<typeof SeverityLevelSchema>;
  */
 export const SearchMatchTypeSchema = z.enum([
   'exact',
-  'fuzzy', 
+  'fuzzy',
   'ai',
   'semantic',
   'category',
   'tag',
   'popular',
   'recent',
-  'hybrid'
+  'hybrid',
 ]);
 
 export type SearchMatchType = z.infer<typeof SearchMatchTypeSchema>;
@@ -64,23 +59,24 @@ export type SearchMatchType = z.infer<typeof SearchMatchTypeSchema>;
  */
 export const KBEntrySchema = z.object({
   id: z.string().uuid().optional(),
-  title: z.string()
+  title: z
+    .string()
     .min(3, 'Title must be at least 3 characters')
     .max(255, 'Title cannot exceed 255 characters')
     .trim(),
-  problem: z.string()
+  problem: z
+    .string()
     .min(10, 'Problem description must be at least 10 characters')
     .max(5000, 'Problem description cannot exceed 5000 characters')
     .trim(),
-  solution: z.string()
+  solution: z
+    .string()
     .min(10, 'Solution must be at least 10 characters')
     .max(10000, 'Solution cannot exceed 10000 characters')
     .trim(),
   category: KBCategorySchema,
   severity: SeverityLevelSchema.optional().default('medium'),
-  tags: z.array(z.string().trim().min(1).max(50))
-    .max(20, 'Maximum 20 tags allowed')
-    .optional(),
+  tags: z.array(z.string().trim().min(1).max(50)).max(20, 'Maximum 20 tags allowed').optional(),
   created_at: z.date().optional(),
   updated_at: z.date().optional(),
   created_by: z.string().max(100).optional(),
@@ -104,7 +100,7 @@ export const CreateKBEntrySchema = KBEntrySchema.omit({
   usage_count: true,
   success_count: true,
   failure_count: true,
-  last_used: true
+  last_used: true,
 });
 
 export type CreateKBEntry = z.infer<typeof CreateKBEntrySchema>;
@@ -115,7 +111,7 @@ export type CreateKBEntry = z.infer<typeof CreateKBEntrySchema>;
 export const UpdateKBEntrySchema = KBEntrySchema.partial().omit({
   id: true,
   created_at: true,
-  created_by: true
+  created_by: true,
 });
 
 export type UpdateKBEntry = z.infer<typeof UpdateKBEntrySchema>;
@@ -150,15 +146,19 @@ export const SearchQuerySchema = z.object({
   useAI: z.boolean().optional().default(true),
   limit: z.number().int().min(1).max(100).optional().default(10),
   offset: z.number().int().min(0).optional().default(0),
-  sortBy: z.enum(['relevance', 'usage', 'success_rate', 'created_at', 'updated_at'])
-    .optional().default('relevance'),
+  sortBy: z
+    .enum(['relevance', 'usage', 'success_rate', 'created_at', 'updated_at'])
+    .optional()
+    .default('relevance'),
   sortDirection: z.enum(['asc', 'desc']).optional().default('desc'),
   includeArchived: z.boolean().optional().default(false),
   fuzzyThreshold: z.number().min(0).max(1).optional().default(0.7),
-  dateRange: z.object({
-    from: z.date().optional(),
-    to: z.date().optional()
-  }).optional(),
+  dateRange: z
+    .object({
+      from: z.date().optional(),
+      to: z.date().optional(),
+    })
+    .optional(),
 });
 
 export type SearchQuery = z.infer<typeof SearchQuerySchema>;
@@ -169,18 +169,24 @@ export type SearchQuery = z.infer<typeof SearchQuerySchema>;
 export const SearchWithFacetsSchema = z.object({
   results: z.array(SearchResultSchema),
   facets: z.object({
-    categories: z.array(z.object({
-      name: z.string(),
-      count: z.number().int().min(0)
-    })),
-    tags: z.array(z.object({
-      name: z.string(),
-      count: z.number().int().min(0)
-    })),
-    severities: z.array(z.object({
-      name: z.string(),
-      count: z.number().int().min(0)
-    }))
+    categories: z.array(
+      z.object({
+        name: z.string(),
+        count: z.number().int().min(0),
+      })
+    ),
+    tags: z.array(
+      z.object({
+        name: z.string(),
+        count: z.number().int().min(0),
+      })
+    ),
+    severities: z.array(
+      z.object({
+        name: z.string(),
+        count: z.number().int().min(0),
+      })
+    ),
   }),
   totalCount: z.number().int().min(0),
   executionTime: z.number().min(0).optional(),
@@ -215,15 +221,7 @@ export type EntryFeedback = z.infer<typeof EntryFeedbackSchema>;
 export const UsageMetricSchema = z.object({
   id: z.number().int().optional(),
   entry_id: z.string().uuid(),
-  action: z.enum([
-    'view',
-    'copy',
-    'rate_success', 
-    'rate_failure',
-    'export',
-    'print',
-    'share'
-  ]),
+  action: z.enum(['view', 'copy', 'rate_success', 'rate_failure', 'export', 'print', 'share']),
   user_id: z.string().max(100).optional(),
   session_id: z.string().max(100).optional(),
   timestamp: z.date().optional(),
@@ -326,18 +324,20 @@ export const DatabaseStatsSchema = z.object({
   recentActivity: z.number().int().min(0),
   searchesToday: z.number().int().min(0),
   averageSuccessRate: z.number().min(0).max(100),
-  topEntries: z.array(z.object({
-    id: z.string().uuid(),
-    title: z.string(),
-    usage_count: z.number().int().min(0),
-    success_rate: z.number().min(0).max(100)
-  })),
+  topEntries: z.array(
+    z.object({
+      id: z.string().uuid(),
+      title: z.string(),
+      usage_count: z.number().int().min(0),
+      success_rate: z.number().min(0).max(100),
+    })
+  ),
   diskUsage: z.number().int().min(0),
   performance: z.object({
     avgSearchTime: z.number().min(0),
     cacheHitRate: z.number().min(0).max(100),
     slowQueries: z.number().int().min(0),
-    errorRate: z.number().min(0).max(100)
+    errorRate: z.number().min(0).max(100),
   }),
   healthStatus: z.object({
     overall: z.enum(['healthy', 'warning', 'critical']),
@@ -345,7 +345,7 @@ export const DatabaseStatsSchema = z.object({
     cache: z.boolean(),
     indexes: z.boolean(),
     backup: z.boolean(),
-    issues: z.array(z.string())
+    issues: z.array(z.string()),
   }),
   timestamp: z.date().optional(),
 });
@@ -414,7 +414,10 @@ export class SchemaValidator {
   /**
    * Safe parse with error handling
    */
-  static safeParse<T>(schema: z.ZodType<T>, data: unknown): {
+  static safeParse<T>(
+    schema: z.ZodType<T>,
+    data: unknown
+  ): {
     success: boolean;
     data?: T;
     error?: string;
@@ -426,12 +429,12 @@ export class SchemaValidator {
       if (error instanceof z.ZodError) {
         return {
           success: false,
-          error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+          error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
         };
       }
       return {
         success: false,
-        error: 'Unknown validation error'
+        error: 'Unknown validation error',
       };
     }
   }

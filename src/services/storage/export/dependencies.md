@@ -3,6 +3,7 @@
 ## Required Dependencies
 
 ### Core Dependencies (Already Available)
+
 ```bash
 # These are already in the project
 npm install csv-parse csv-stringify xml2js
@@ -11,16 +12,18 @@ npm install csv-parse csv-stringify xml2js
 ### Additional Dependencies for Advanced Formats
 
 #### Zod for Enhanced Validation
+
 ```bash
 npm install zod
 ```
 
 #### Advanced Format Support (Optional)
+
 ```bash
 # For Parquet support
 npm install parquetjs
 
-# For Avro support  
+# For Avro support
 npm install avsc
 
 # For ORC support (requires native compilation)
@@ -32,6 +35,7 @@ npm install brotli
 ```
 
 ### Development Dependencies
+
 ```bash
 # For testing the new services
 npm install --save-dev @types/xml2js
@@ -143,24 +147,28 @@ try {
 ## Environment-Specific Notes
 
 ### Windows
+
 - ORC format may require Visual Studio Build Tools
 - Recommend using Windows Subsystem for Linux (WSL) for better compatibility
 
 ### Linux
+
 - All formats should work with standard build tools (gcc, make)
 - May need python3-dev for some native modules
 
 ### macOS
+
 - Xcode command line tools required for native modules
 - All formats generally work well
 
 ### Docker
+
 ```dockerfile
 # For full format support in Docker
 FROM node:18-alpine
 
 # Install build dependencies for native modules
-RUN apk add --no-cache python3 make gcc g++ 
+RUN apk add --no-cache python3 make gcc g++
 
 # Copy and install Node.js dependencies
 COPY package*.json ./
@@ -171,11 +179,13 @@ RUN npm ci --only=production
 
 ## Graceful Degradation
 
-The export/import services are designed to work even if advanced format libraries are not available:
+The export/import services are designed to work even if advanced format
+libraries are not available:
 
 1. **Parquet** → Falls back to JSON with metadata indicating original intent
 2. **Avro** → Falls back to JSON with schema information preserved
 3. **ORC** → Falls back to JSON with structured format
 4. **Advanced compression** → Falls back to Node.js built-in zlib
 
-This ensures the core functionality works in any environment while providing enhanced capabilities when possible.
+This ensures the core functionality works in any environment while providing
+enhanced capabilities when possible.

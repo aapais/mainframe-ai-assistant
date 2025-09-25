@@ -12,7 +12,13 @@ export interface FuzzyMatch {
   transformations: string[];
 }
 
-export type FuzzyAlgorithm = 'levenshtein' | 'damerau' | 'jaro' | 'jaro_winkler' | 'soundex' | 'metaphone';
+export type FuzzyAlgorithm =
+  | 'levenshtein'
+  | 'damerau'
+  | 'jaro'
+  | 'jaro_winkler'
+  | 'soundex'
+  | 'metaphone';
 
 export interface FuzzyOptions {
   maxDistance: number;
@@ -47,7 +53,7 @@ export class FuzzyMatcher {
   private cache = new Map<string, Map<string, FuzzyMatch>>();
   private soundexCache = new Map<string, string>();
   private metaphoneCache = new Map<string, string>();
-  
+
   // Mainframe-specific similar terms
   private similarTerms = new Map<string, string[]>([
     ['dataset', ['data', 'file', 'dsn']],
@@ -82,7 +88,7 @@ export class FuzzyMatcher {
     ['alloc', ['allocate', 'assign']],
     ['dealloc', ['deallocate', 'free']],
     ['mount', ['attach', 'connect']],
-    ['dismount', ['detach', 'disconnect']]
+    ['dismount', ['detach', 'disconnect']],
   ]);
 
   private defaultOptions: FuzzyOptions = {
@@ -95,11 +101,11 @@ export class FuzzyMatcher {
       jaro: 0.2,
       jaro_winkler: 0.3,
       soundex: 0.2,
-      metaphone: 0.2
+      metaphone: 0.2,
     },
     caseInsensitive: true,
     skipShortTerms: true,
-    mainframeSpecific: true
+    mainframeSpecific: true,
   };
 
   constructor() {}
@@ -107,13 +113,9 @@ export class FuzzyMatcher {
   /**
    * Find fuzzy matches for a term against a vocabulary
    */
-  findMatches(
-    term: string, 
-    vocabulary: string[], 
-    options?: Partial<FuzzyOptions>
-  ): FuzzyMatch[] {
+  findMatches(term: string, vocabulary: string[], options?: Partial<FuzzyOptions>): FuzzyMatch[] {
     const opts = { ...this.defaultOptions, ...options };
-    
+
     if (!term || term.length === 0) return [];
     if (opts.skipShortTerms && term.length < 3) return [];
 
@@ -123,13 +125,13 @@ export class FuzzyMatcher {
     // Check cache first
     const cacheKey = this.getCacheKey(normalizedTerm, opts);
     const cached = this.cache.get(cacheKey);
-    
+
     for (const candidate of vocabulary) {
       const normalizedCandidate = opts.caseInsensitive ? candidate.toLowerCase() : candidate;
-      
+
       // Skip identical matches
       if (normalizedTerm === normalizedCandidate) continue;
-      
+
       // Check cached result
       if (cached && cached.has(normalizedCandidate)) {
         const cachedMatch = cached.get(normalizedCandidate)!;
@@ -141,10 +143,10 @@ export class FuzzyMatcher {
 
       // Calculate fuzzy match
       const match = this.calculateMatch(normalizedTerm, normalizedCandidate, opts);
-      
+
       // Cache the result
       this.cacheResult(cacheKey, normalizedCandidate, match);
-      
+
       // Add to results if above threshold
       if (match.similarity >= opts.minSimilarity) {
         matches.push(match);
@@ -195,12 +197,10 @@ export class FuzzyMatcher {
     const matches = this.findMatches(term, vocabulary, {
       maxDistance: 2,
       minSimilarity: 0.5,
-      algorithm: ['levenshtein', 'jaro_winkler']
+      algorithm: ['levenshtein', 'jaro_winkler'],
     });
 
-    return matches
-      .slice(0, maxSuggestions)
-      .map(match => match.term);
+    return matches.slice(0, maxSuggestions).map(match => match.term);
   }
 
   /**
@@ -210,7 +210,7 @@ export class FuzzyMatcher {
     // Check exact mainframe synonyms
     const synonyms1 = this.similarTerms.get(term1.toLowerCase()) || [];
     const synonyms2 = this.similarTerms.get(term2.toLowerCase()) || [];
-    
+
     if (synonyms1.includes(term2.toLowerCase()) || synonyms2.includes(term1.toLowerCase())) {
       return true;
     }
@@ -236,7 +236,7 @@ export class FuzzyMatcher {
     return {
       fuzzyCache: this.cache.size,
       soundexCache: this.soundexCache.size,
-      metaphoneCache: this.metaphoneCache.size
+      metaphoneCache: this.metaphoneCache.size,
     };
   }
 
@@ -244,64 +244,66 @@ export class FuzzyMatcher {
   // Private Implementation
   // =========================
 
-  private calculateMatch(
-    term1: string, 
-    term2: string, 
-    options: FuzzyOptions
-  ): FuzzyMatch {
+  private calculateMatch(term1: string, term2: string, options: FuzzyOptions): FuzzyMatch {
     const results: { algorithm: FuzzyAlgorithm; score: number; distance?: number }[] = [];
-    
+
     // Calculate scores for each requested algorithm
     for (const algorithm of options.algorithm) {
       const score = this.similarity(term1, term2, algorithm);
-      const distance = algorithm === 'levenshtein' || algorithm === 'damerau' 
-        ? this.getEditDistance(term1, term2, algorithm)
-        : undefined;
-      
+      const distance =
+        algorithm === 'levenshtein' || algorithm === 'damerau'
+          ? this.getEditDistance(term1, term2, algorithm)
+          : undefined;
+
       results.push({ algorithm, score, distance });
     }
-    
+
     // Calculate weighted average
     let weightedSum = 0;
     let totalWeight = 0;
     let bestDistance = Number.MAX_SAFE_INTEGER;
     let bestAlgorithm: FuzzyAlgorithm = 'levenshtein';
-    
+
     for (const result of results) {
       const weight = options.weights[result.algorithm];
       weightedSum += result.score * weight;
       totalWeight += weight;
-      
+
       if (result.distance !== undefined && result.distance < bestDistance) {
         bestDistance = result.distance;
         bestAlgorithm = result.algorithm;
       }
     }
-    
+
     const similarity = totalWeight > 0 ? weightedSum / totalWeight : 0;
-    
+
     // Calculate confidence based on agreement between algorithms
-    const variance = results.reduce((sum, r) => {
-      const diff = r.score - similarity;
-      return sum + (diff * diff);
-    }, 0) / results.length;
-    
+    const variance =
+      results.reduce((sum, r) => {
+        const diff = r.score - similarity;
+        return sum + diff * diff;
+      }, 0) / results.length;
+
     const confidence = Math.max(0, 1 - Math.sqrt(variance));
-    
+
     // Generate transformations (simplified)
     const transformations = this.getTransformations(term1, term2);
-    
+
     return {
       term: term2,
       distance: bestDistance === Number.MAX_SAFE_INTEGER ? 0 : bestDistance,
       similarity,
       confidence,
       algorithm: bestAlgorithm,
-      transformations
+      transformations,
     };
   }
 
-  private getEditDistance(term1: string, term2: string, algorithm: 'levenshtein' | 'damerau'): number {
+  private getEditDistance(
+    term1: string,
+    term2: string,
+    algorithm: 'levenshtein' | 'damerau'
+  ): number {
     if (algorithm === 'damerau') {
       return this.damerauLevenshteinDistance(term1, term2);
     }
@@ -326,8 +328,8 @@ export class FuzzyMatcher {
       for (let j = 1; j <= n; j++) {
         const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
         matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,      // deletion
-          matrix[i][j - 1] + 1,      // insertion
+          matrix[i - 1][j] + 1, // deletion
+          matrix[i][j - 1] + 1, // insertion
           matrix[i - 1][j - 1] + cost // substitution
         );
       }
@@ -340,52 +342,50 @@ export class FuzzyMatcher {
     const m = str1.length;
     const n = str2.length;
     const H: number[][] = [];
-    
+
     const maxdist = m + n;
     H[0] = [];
     H[0][0] = maxdist;
-    
+
     for (let i = 0; i <= m; i++) {
       H[i + 1] = [];
       H[i + 1][0] = maxdist;
       H[i + 1][1] = i;
     }
-    
+
     for (let j = 0; j <= n; j++) {
       H[0][j + 1] = maxdist;
       H[1][j + 1] = j;
     }
-    
+
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
         const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
         H[i + 1][j + 1] = Math.min(
-          H[i][j + 1] + 1,           // deletion
-          H[i + 1][j] + 1,           // insertion
-          H[i][j] + cost             // substitution
+          H[i][j + 1] + 1, // deletion
+          H[i + 1][j] + 1, // insertion
+          H[i][j] + cost // substitution
         );
-        
-        if (i > 1 && j > 1 && 
-            str1[i - 1] === str2[j - 2] && 
-            str1[i - 2] === str2[j - 1]) {
+
+        if (i > 1 && j > 1 && str1[i - 1] === str2[j - 2] && str1[i - 2] === str2[j - 1]) {
           H[i + 1][j + 1] = Math.min(H[i + 1][j + 1], H[i - 1][j - 1] + cost);
         }
       }
     }
-    
+
     return H[m + 1][n + 1];
   }
 
   private levenshteinSimilarity(str1: string, str2: string): number {
     const distance = this.levenshteinDistance(str1, str2);
     const maxLength = Math.max(str1.length, str2.length);
-    return maxLength === 0 ? 1 : 1 - (distance / maxLength);
+    return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
   private damerauSimilarity(str1: string, str2: string): number {
     const distance = this.damerauLevenshteinDistance(str1, str2);
     const maxLength = Math.max(str1.length, str2.length);
-    return maxLength === 0 ? 1 : 1 - (distance / maxLength);
+    return maxLength === 0 ? 1 : 1 - distance / maxLength;
   }
 
   private jaroSimilarity(str1: string, str2: string): number {
@@ -426,9 +426,9 @@ export class FuzzyMatcher {
       k++;
     }
 
-    return (matches / str1.length + 
-            matches / str2.length + 
-            (matches - transpositions / 2) / matches) / 3;
+    return (
+      (matches / str1.length + matches / str2.length + (matches - transpositions / 2) / matches) / 3
+    );
   }
 
   private jaroWinklerSimilarity(str1: string, str2: string): number {
@@ -437,7 +437,7 @@ export class FuzzyMatcher {
 
     let prefix = 0;
     const maxPrefix = Math.min(4, Math.min(str1.length, str2.length));
-    
+
     for (let i = 0; i < maxPrefix; i++) {
       if (str1[i] === str2[i]) {
         prefix++;
@@ -446,7 +446,7 @@ export class FuzzyMatcher {
       }
     }
 
-    return jaroSim + (0.1 * prefix * (1 - jaroSim));
+    return jaroSim + 0.1 * prefix * (1 - jaroSim);
   }
 
   private soundexSimilarity(str1: string, str2: string): number {
@@ -472,24 +472,24 @@ export class FuzzyMatcher {
 
   private calculateSoundex(word: string): string {
     if (!word) return '';
-    
+
     const normalized = word.toUpperCase().replace(/[^A-Z]/g, '');
     if (normalized.length === 0) return '';
-    
+
     let soundex = normalized[0];
-    
+
     const mapping: Record<string, string> = {
-      'BFPV': '1',
-      'CGJKQSXZ': '2',
-      'DT': '3',
-      'L': '4',
-      'MN': '5',
-      'R': '6'
+      BFPV: '1',
+      CGJKQSXZ: '2',
+      DT: '3',
+      L: '4',
+      MN: '5',
+      R: '6',
     };
-    
+
     for (let i = 1; i < normalized.length && soundex.length < 4; i++) {
       const char = normalized[i];
-      
+
       for (const [chars, code] of Object.entries(mapping)) {
         if (chars.includes(char) && soundex[soundex.length - 1] !== code) {
           soundex += code;
@@ -497,7 +497,7 @@ export class FuzzyMatcher {
         }
       }
     }
-    
+
     return soundex.padEnd(4, '0').substring(0, 4);
   }
 
@@ -513,17 +513,21 @@ export class FuzzyMatcher {
   private calculateMetaphone(word: string): string {
     // Simplified Metaphone algorithm
     if (!word) return '';
-    
+
     let metaphone = '';
     const normalized = word.toUpperCase().replace(/[^A-Z]/g, '');
-    
+
     for (let i = 0; i < normalized.length && metaphone.length < 4; i++) {
       const char = normalized[i];
       const prev = i > 0 ? normalized[i - 1] : '';
       const next = i < normalized.length - 1 ? normalized[i + 1] : '';
-      
+
       switch (char) {
-        case 'A': case 'E': case 'I': case 'O': case 'U':
+        case 'A':
+        case 'E':
+        case 'I':
+        case 'O':
+        case 'U':
           if (i === 0) metaphone += char;
           break;
         case 'B':
@@ -538,7 +542,9 @@ export class FuzzyMatcher {
           if (next === 'G') metaphone += 'J';
           else metaphone += 'T';
           break;
-        case 'F': metaphone += 'F'; break;
+        case 'F':
+          metaphone += 'F';
+          break;
         case 'G':
           if (next === 'H' || next === 'N') break;
           metaphone += 'K';
@@ -548,19 +554,31 @@ export class FuzzyMatcher {
             metaphone += 'H';
           }
           break;
-        case 'J': metaphone += 'J'; break;
+        case 'J':
+          metaphone += 'J';
+          break;
         case 'K':
           if (prev !== 'C') metaphone += 'K';
           break;
-        case 'L': metaphone += 'L'; break;
-        case 'M': metaphone += 'M'; break;
-        case 'N': metaphone += 'N'; break;
+        case 'L':
+          metaphone += 'L';
+          break;
+        case 'M':
+          metaphone += 'M';
+          break;
+        case 'N':
+          metaphone += 'N';
+          break;
         case 'P':
           if (next === 'H') metaphone += 'F';
           else metaphone += 'P';
           break;
-        case 'Q': metaphone += 'K'; break;
-        case 'R': metaphone += 'R'; break;
+        case 'Q':
+          metaphone += 'K';
+          break;
+        case 'R':
+          metaphone += 'R';
+          break;
         case 'S':
           if (next === 'H') metaphone += 'X';
           else metaphone += 'S';
@@ -569,15 +587,22 @@ export class FuzzyMatcher {
           if (next === 'H') metaphone += '0';
           else metaphone += 'T';
           break;
-        case 'V': metaphone += 'F'; break;
-        case 'W': case 'Y':
+        case 'V':
+          metaphone += 'F';
+          break;
+        case 'W':
+        case 'Y':
           if (i === 0 || this.isVowel(next)) metaphone += char;
           break;
-        case 'X': metaphone += 'KS'; break;
-        case 'Z': metaphone += 'S'; break;
+        case 'X':
+          metaphone += 'KS';
+          break;
+        case 'Z':
+          metaphone += 'S';
+          break;
       }
     }
-    
+
     return metaphone.substring(0, 4);
   }
 
@@ -588,7 +613,7 @@ export class FuzzyMatcher {
   private getTransformations(term1: string, term2: string): string[] {
     // Simplified transformation detection
     const transformations: string[] = [];
-    
+
     if (term1.length !== term2.length) {
       if (term1.length > term2.length) {
         transformations.push('deletion');
@@ -596,20 +621,20 @@ export class FuzzyMatcher {
         transformations.push('insertion');
       }
     }
-    
+
     let substitutions = 0;
     const minLength = Math.min(term1.length, term2.length);
-    
+
     for (let i = 0; i < minLength; i++) {
       if (term1[i] !== term2[i]) {
         substitutions++;
       }
     }
-    
+
     if (substitutions > 0) {
       transformations.push('substitution');
     }
-    
+
     // Check for transpositions
     for (let i = 0; i < minLength - 1; i++) {
       if (term1[i] === term2[i + 1] && term1[i + 1] === term2[i]) {
@@ -617,7 +642,7 @@ export class FuzzyMatcher {
         break;
       }
     }
-    
+
     return transformations;
   }
 
@@ -629,9 +654,10 @@ export class FuzzyMatcher {
     if (!this.cache.has(cacheKey)) {
       this.cache.set(cacheKey, new Map());
     }
-    
+
     const termCache = this.cache.get(cacheKey)!;
-    if (termCache.size < 1000) { // Limit cache size per key
+    if (termCache.size < 1000) {
+      // Limit cache size per key
       termCache.set(term, match);
     }
   }

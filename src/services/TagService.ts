@@ -4,7 +4,12 @@
  */
 
 import { EventEmitter } from 'events';
-import { TagRepository, TagQueryOptions, TagSearchOptions, TagAssociationOptions } from '../database/repositories/TagRepository';
+import {
+  TagRepository,
+  TagQueryOptions,
+  TagSearchOptions,
+  TagAssociationOptions,
+} from '../database/repositories/TagRepository';
 import { CacheService } from './CacheService';
 import {
   Tag,
@@ -14,7 +19,7 @@ import {
   BulkTagOperation,
   BulkOperationResult,
   TagAnalytics,
-  HierarchicalSchemaValidator
+  HierarchicalSchemaValidator,
 } from '../database/schemas/HierarchicalCategories.schema';
 import { AppError, ErrorCode } from '../core/errors/AppError';
 
@@ -468,7 +473,14 @@ export class TagService extends EventEmitter {
       // Emit event
       this.emit('tag:entry_tags_replaced', { entryId, tagIds, options, userId });
     } catch (error) {
-      this.emit('tag:error', { action: 'replace_entry_tags', error, entryId, tagIds, options, userId });
+      this.emit('tag:error', {
+        action: 'replace_entry_tags',
+        error,
+        entryId,
+        tagIds,
+        options,
+        userId,
+      });
       throw error;
     }
   }
@@ -673,7 +685,10 @@ export class TagService extends EventEmitter {
   /**
    * Get trending tags
    */
-  async getTrendingTags(days: number = 7, limit: number = 20): Promise<(Tag & { recent_usage: number })[]> {
+  async getTrendingTags(
+    days: number = 7,
+    limit: number = 20
+  ): Promise<(Tag & { recent_usage: number })[]> {
     const cacheKey = `tag:trending:${days}:${limit}`;
 
     try {
@@ -733,11 +748,14 @@ export class TagService extends EventEmitter {
         totalTags: allTags.length,
         systemTags: allTags.filter(t => t.is_system).length,
         suggestedTags: allTags.filter(t => t.is_suggested).length,
-        mostUsedTag: mostUsed.length > 0 ? {
-          tag: mostUsed[0],
-          usage: mostUsed[0].usage_count
-        } : null,
-        averageTagsPerEntry
+        mostUsedTag:
+          mostUsed.length > 0
+            ? {
+                tag: mostUsed[0],
+                usage: mostUsed[0].usage_count,
+              }
+            : null,
+        averageTagsPerEntry,
       };
 
       // Cache result
@@ -798,7 +816,7 @@ export class TagService extends EventEmitter {
       const result = {
         found: unusedTags.length,
         removed,
-        tags: unusedTags
+        tags: unusedTags,
       };
 
       this.emit('tag:cleanup_completed', result);
@@ -815,12 +833,7 @@ export class TagService extends EventEmitter {
   private async invalidateTagListCache(): Promise<void> {
     if (!this.cacheService) return;
 
-    const patterns = [
-      'tag:list:*',
-      'tag:most_used:*',
-      'tag:trending:*',
-      'tag:stats'
-    ];
+    const patterns = ['tag:list:*', 'tag:most_used:*', 'tag:trending:*', 'tag:stats'];
 
     for (const pattern of patterns) {
       await this.cacheService.deletePattern(pattern);

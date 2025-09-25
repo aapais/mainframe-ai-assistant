@@ -34,36 +34,36 @@ export type CategoryAnalytics = z.infer<typeof CategoryAnalyticsSchema>;
 export declare const TagAnalyticsSchema: any;
 export type TagAnalytics = z.infer<typeof TagAnalyticsSchema>;
 export declare class HierarchicalSchemaValidator {
-    static validateCreateCategory(data: unknown): CreateCategory;
-    static validateUpdateCategory(data: unknown): UpdateCategory;
-    static validateCreateTag(data: unknown): CreateTag;
-    static validateUpdateTag(data: unknown): UpdateTag;
-    static validateBulkCategoryOperation(data: unknown): BulkCategoryOperation;
-    static validateBulkTagOperation(data: unknown): BulkTagOperation;
-    static validateAutocompleteQuery(data: unknown): AutocompleteQuery;
-    static validateFacetedSearchQuery(data: unknown): FacetedSearchQuery;
-    static validateCategoryHierarchy(categories: CategoryNode[]): {
-        valid: boolean;
-        errors: string[];
-    };
+  static validateCreateCategory(data: unknown): CreateCategory;
+  static validateUpdateCategory(data: unknown): UpdateCategory;
+  static validateCreateTag(data: unknown): CreateTag;
+  static validateUpdateTag(data: unknown): UpdateTag;
+  static validateBulkCategoryOperation(data: unknown): BulkCategoryOperation;
+  static validateBulkTagOperation(data: unknown): BulkTagOperation;
+  static validateAutocompleteQuery(data: unknown): AutocompleteQuery;
+  static validateFacetedSearchQuery(data: unknown): FacetedSearchQuery;
+  static validateCategoryHierarchy(categories: CategoryNode[]): {
+    valid: boolean;
+    errors: string[];
+  };
 }
 export declare const HierarchicalSchemas: {
-    readonly CategoryNode: any;
-    readonly CategoryTree: any;
-    readonly CreateCategory: any;
-    readonly UpdateCategory: any;
-    readonly Tag: any;
-    readonly CreateTag: any;
-    readonly UpdateTag: any;
-    readonly TagAssociation: any;
-    readonly BulkCategoryOperation: any;
-    readonly BulkTagOperation: any;
-    readonly BulkOperationResult: any;
-    readonly AutocompleteSuggestion: any;
-    readonly AutocompleteQuery: any;
-    readonly SearchFacet: any;
-    readonly FacetedSearchQuery: any;
-    readonly CategoryAnalytics: any;
-    readonly TagAnalytics: any;
+  readonly CategoryNode: any;
+  readonly CategoryTree: any;
+  readonly CreateCategory: any;
+  readonly UpdateCategory: any;
+  readonly Tag: any;
+  readonly CreateTag: any;
+  readonly UpdateTag: any;
+  readonly TagAssociation: any;
+  readonly BulkCategoryOperation: any;
+  readonly BulkTagOperation: any;
+  readonly BulkOperationResult: any;
+  readonly AutocompleteSuggestion: any;
+  readonly AutocompleteQuery: any;
+  readonly SearchFacet: any;
+  readonly FacetedSearchQuery: any;
+  readonly CategoryAnalytics: any;
+  readonly TagAnalytics: any;
 };
 //# sourceMappingURL=HierarchicalCategories.schema.d.ts.map

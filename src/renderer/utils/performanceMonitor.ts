@@ -72,7 +72,7 @@ export class MemoryMonitor {
   private initMemoryObserver() {
     if ('PerformanceObserver' in window && 'memory' in (performance as any)) {
       try {
-        this.memoryObserver = new PerformanceObserver((list) => {
+        this.memoryObserver = new PerformanceObserver(list => {
           for (const entry of list.getEntries()) {
             if (entry.entryType === 'measure' && entry.name.startsWith('memory-')) {
               this.recordMeasurement(entry.duration);
@@ -172,7 +172,7 @@ export class FrameRateMonitor {
     // Calculate FPS from timestamps
     if (this.frameTimestamps.length >= 2) {
       const totalTime = now - this.frameTimestamps[0];
-      const fps = (this.frameTimestamps.length - 1) * 1000 / totalTime;
+      const fps = ((this.frameTimestamps.length - 1) * 1000) / totalTime;
 
       this.frameRateCallback?.(fps);
     }
@@ -185,7 +185,7 @@ export class FrameRateMonitor {
 
     const now = performance.now();
     const totalTime = now - this.frameTimestamps[0];
-    return (this.frameTimestamps.length - 1) * 1000 / totalTime;
+    return ((this.frameTimestamps.length - 1) * 1000) / totalTime;
   }
 }
 
@@ -377,9 +377,15 @@ export class PerformanceMonitor {
   }
 
   private startMonitoring() {
-    this.frameRateMonitor.startMonitoring((fps) => {
+    this.frameRateMonitor.startMonitoring(fps => {
       if (fps < this.thresholds.frameRate) {
-        this.addAlert('warning', 'frameRate', fps, this.thresholds.frameRate, 'Frame rate is below optimal');
+        this.addAlert(
+          'warning',
+          'frameRate',
+          fps,
+          this.thresholds.frameRate,
+          'Frame rate is below optimal'
+        );
       }
     });
 
@@ -387,11 +393,23 @@ export class PerformanceMonitor {
     setInterval(() => {
       const memoryUsage = this.memoryMonitor.getCurrentMemoryUsage();
       if (memoryUsage > this.thresholds.memoryUsage) {
-        this.addAlert('warning', 'memoryUsage', memoryUsage, this.thresholds.memoryUsage, 'Memory usage is high');
+        this.addAlert(
+          'warning',
+          'memoryUsage',
+          memoryUsage,
+          this.thresholds.memoryUsage,
+          'Memory usage is high'
+        );
       }
 
       if (this.memoryMonitor.detectMemoryLeaks()) {
-        this.addAlert('error', 'memoryUsage', memoryUsage, this.thresholds.memoryUsage, 'Potential memory leak detected');
+        this.addAlert(
+          'error',
+          'memoryUsage',
+          memoryUsage,
+          this.thresholds.memoryUsage,
+          'Potential memory leak detected'
+        );
       }
     }, 5000); // Check every 5 seconds
   }
@@ -401,7 +419,13 @@ export class PerformanceMonitor {
     this.searchTracker.recordSearchTime(searchTime);
 
     if (searchTime > this.thresholds.searchTime) {
-      this.addAlert('warning', 'searchTime', searchTime, this.thresholds.searchTime, 'Search time is slow');
+      this.addAlert(
+        'warning',
+        'searchTime',
+        searchTime,
+        this.thresholds.searchTime,
+        'Search time is slow'
+      );
     }
   }
 
@@ -409,7 +433,13 @@ export class PerformanceMonitor {
     this.searchTracker.recordRenderTime(renderTime);
 
     if (renderTime > this.thresholds.renderTime) {
-      this.addAlert('warning', 'renderTime', renderTime, this.thresholds.renderTime, 'Render time is slow');
+      this.addAlert(
+        'warning',
+        'renderTime',
+        renderTime,
+        this.thresholds.renderTime,
+        'Render time is slow'
+      );
     }
   }
 
@@ -452,7 +482,13 @@ export class PerformanceMonitor {
   }
 
   // Alert management
-  private addAlert(type: PerformanceAlert['type'], metric: keyof PerformanceMetrics, value: number, threshold: number, message: string) {
+  private addAlert(
+    type: PerformanceAlert['type'],
+    metric: keyof PerformanceMetrics,
+    value: number,
+    threshold: number,
+    message: string
+  ) {
     const alert: PerformanceAlert = {
       id: `${metric}-${Date.now()}`,
       type,
@@ -588,7 +624,8 @@ export function usePerformanceMonitor() {
   return {
     recordSearchTime: (time: number) => monitor.recordSearchTime(time),
     recordRenderTime: (time: number) => monitor.recordRenderTime(time),
-    recordComponentRender: (name: string, time?: number) => monitor.recordComponentRender(name, time),
+    recordComponentRender: (name: string, time?: number) =>
+      monitor.recordComponentRender(name, time),
     getCurrentMetrics: () => monitor.getCurrentMetrics(),
     getDetailedMetrics: () => monitor.getDetailedMetrics(),
     getAlerts: () => monitor.getAlerts(),

@@ -162,13 +162,16 @@ export function useVirtualScroll<T extends SearchResultItem>({
   const shouldVirtualize = useMemo(() => items.length >= threshold, [items.length, threshold]);
 
   // Calculate item height function
-  const calculateItemHeight = useCallback((index: number): number => {
-    const item = items[index];
-    if (getItemHeight) {
-      return getItemHeight(index, item);
-    }
-    return heightCalculator.current.getItemHeight(index, item);
-  }, [items, getItemHeight]);
+  const calculateItemHeight = useCallback(
+    (index: number): number => {
+      const item = items[index];
+      if (getItemHeight) {
+        return getItemHeight(index, item);
+      }
+      return heightCalculator.current.getItemHeight(index, item);
+    },
+    [items, getItemHeight]
+  );
 
   // Calculate visible range for virtual scrolling
   const visibleRange = useMemo(() => {
@@ -196,36 +199,46 @@ export function useVirtualScroll<T extends SearchResultItem>({
     for (let i = startIndex; i < items.length; i++) {
       const itemHeight = calculateItemHeight(i);
       visibleHeight += itemHeight;
-      if (visibleHeight >= containerHeight + (overscan * VIRTUAL_SCROLL_DEFAULTS.BASE_ITEM_HEIGHT)) {
+      if (visibleHeight >= containerHeight + overscan * VIRTUAL_SCROLL_DEFAULTS.BASE_ITEM_HEIGHT) {
         endIndex = Math.min(items.length - 1, i + overscan);
         break;
       }
     }
 
     return { start: startIndex, end: endIndex };
-  }, [shouldVirtualize, containerHeight, scrollState.scrollTop, items.length, calculateItemHeight, overscan]);
+  }, [
+    shouldVirtualize,
+    containerHeight,
+    scrollState.scrollTop,
+    items.length,
+    calculateItemHeight,
+    overscan,
+  ]);
 
   // Handle scroll events with debouncing
-  const handleScroll = useCallback((scrollTop: number) => {
-    setScrollState(prev => ({
-      ...prev,
-      scrollTop,
-      isScrolling: true,
-      visibleRange,
-    }));
-
-    // Debounce scroll end detection
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-
-    scrollTimeoutRef.current = setTimeout(() => {
+  const handleScroll = useCallback(
+    (scrollTop: number) => {
       setScrollState(prev => ({
         ...prev,
-        isScrolling: false,
+        scrollTop,
+        isScrolling: true,
+        visibleRange,
       }));
-    }, 150);
-  }, [visibleRange]);
+
+      // Debounce scroll end detection
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        setScrollState(prev => ({
+          ...prev,
+          isScrolling: false,
+        }));
+      }, 150);
+    },
+    [visibleRange]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -276,17 +289,23 @@ export function OptimizedVirtualList<T extends SearchResultItem>({
   const listRef = useRef<VariableSizeList>(null);
   const heightCalculator = useRef(new DynamicHeightCalculator());
 
-  const itemHeight = useCallback((index: number): number => {
-    const item = items[index];
-    if (getItemHeight) {
-      return getItemHeight(index, item);
-    }
-    return heightCalculator.current.getItemHeight(index, item);
-  }, [items, getItemHeight]);
+  const itemHeight = useCallback(
+    (index: number): number => {
+      const item = items[index];
+      if (getItemHeight) {
+        return getItemHeight(index, item);
+      }
+      return heightCalculator.current.getItemHeight(index, item);
+    },
+    [items, getItemHeight]
+  );
 
-  const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
-    onScroll?.(scrollTop);
-  }, [onScroll]);
+  const handleScroll = useCallback(
+    ({ scrollTop }: { scrollTop: number }) => {
+      onScroll?.(scrollTop);
+    },
+    [onScroll]
+  );
 
   // Reset cache when items change
   useEffect(() => {
@@ -295,17 +314,21 @@ export function OptimizedVirtualList<T extends SearchResultItem>({
     }
   }, [items]);
 
-  return React.createElement(VariableSizeList, {
-    ref: listRef,
-    className: `optimized-virtual-list ${className}`,
-    height: height,
-    width: width,
-    itemCount: items.length,
-    itemSize: itemHeight,
-    onScroll: handleScroll,
-    overscanCount: overscan,
-    itemData: items
-  }, itemRenderer);
+  return React.createElement(
+    VariableSizeList,
+    {
+      ref: listRef,
+      className: `optimized-virtual-list ${className}`,
+      height: height,
+      width: width,
+      itemCount: items.length,
+      itemSize: itemHeight,
+      onScroll: handleScroll,
+      overscanCount: overscan,
+      itemData: items,
+    },
+    itemRenderer
+  );
 }
 
 // ===========================================
@@ -323,7 +346,7 @@ export class VirtualScrollPerformanceMonitor {
 
   private initPerformanceObserver() {
     if ('PerformanceObserver' in window) {
-      this.performanceObserver = new PerformanceObserver((list) => {
+      this.performanceObserver = new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'measure' && entry.name.startsWith('virtual-scroll')) {
             this.recordFrameTiming(entry.duration);
@@ -348,7 +371,8 @@ export class VirtualScrollPerformanceMonitor {
   }
 
   getFrameDropCount(): number {
-    return this.frameTimings.filter(time => time > VIRTUAL_SCROLL_DEFAULTS.PERFORMANCE_BUDGET).length;
+    return this.frameTimings.filter(time => time > VIRTUAL_SCROLL_DEFAULTS.PERFORMANCE_BUDGET)
+      .length;
   }
 
   getPerformanceMetrics() {
@@ -356,7 +380,10 @@ export class VirtualScrollPerformanceMonitor {
       averageFrameTime: this.getAverageFrameTime(),
       frameDropCount: this.getFrameDropCount(),
       totalFrames: this.frameTimings.length,
-      performanceScore: Math.max(0, 100 - (this.getFrameDropCount() / this.frameTimings.length) * 100),
+      performanceScore: Math.max(
+        0,
+        100 - (this.getFrameDropCount() / this.frameTimings.length) * 100
+      ),
     };
   }
 

@@ -242,7 +242,7 @@ export class AlertManager extends EventEmitter {
       createdBy,
       createdAt: new Date(),
       triggerCount: 0,
-      metadata: {}
+      metadata: {},
     };
 
     this.alertRules.set(rule.id, rule);
@@ -416,7 +416,6 @@ export class AlertManager extends EventEmitter {
 
       // Check for alert resolution
       await this.checkAlertResolution(rule, evaluationResult, evaluationTime);
-
     } catch (error) {
       this.logger.error(`Error evaluating rule ${rule.id}`, error);
     }
@@ -430,8 +429,8 @@ export class AlertManager extends EventEmitter {
       timestamp: new Date(),
       metadata: {
         dataSource: rule.dataSource,
-        metric: rule.condition.metric
-      }
+        metric: rule.condition.metric,
+      },
     };
   }
 
@@ -461,7 +460,7 @@ export class AlertManager extends EventEmitter {
       actualValue,
       thresholdValue,
       comparison: condition.comparison,
-      metricName: condition.metric
+      metricName: condition.metric,
     };
   }
 
@@ -471,7 +470,7 @@ export class AlertManager extends EventEmitter {
       type: 'trend',
       direction: 'increasing',
       magnitude: 5.2,
-      confidence: 0.85
+      confidence: 0.85,
     };
   }
 
@@ -481,7 +480,7 @@ export class AlertManager extends EventEmitter {
       type: 'anomaly',
       anomalyScore: 0.9,
       expectedValue: 50,
-      actualValue: 85
+      actualValue: 85,
     };
   }
 
@@ -490,7 +489,7 @@ export class AlertManager extends EventEmitter {
     return {
       type: 'missing_data',
       lastDataTimestamp: new Date(Date.now() - 3600000), // 1 hour ago
-      expectedInterval: condition.timeWindow || 60
+      expectedInterval: condition.timeWindow || 60,
     };
   }
 
@@ -501,7 +500,7 @@ export class AlertManager extends EventEmitter {
       type: 'custom',
       expression: condition.customExpression,
       result: true,
-      variables: data
+      variables: data,
     };
   }
 
@@ -514,17 +513,23 @@ export class AlertManager extends EventEmitter {
 
     if (aggregation && Array.isArray(value)) {
       switch (aggregation) {
-        case 'sum': return value.reduce((a, b) => a + b, 0);
-        case 'avg': return value.reduce((a, b) => a + b, 0) / value.length;
-        case 'count': return value.length;
-        case 'min': return Math.min(...value);
-        case 'max': return Math.max(...value);
+        case 'sum':
+          return value.reduce((a, b) => a + b, 0);
+        case 'avg':
+          return value.reduce((a, b) => a + b, 0) / value.length;
+        case 'count':
+          return value.length;
+        case 'min':
+          return Math.min(...value);
+        case 'max':
+          return Math.max(...value);
         case 'median': {
           const sorted = [...value].sort((a, b) => a - b);
           const mid = Math.floor(sorted.length / 2);
           return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
         }
-        default: return value;
+        default:
+          return value;
       }
     }
 
@@ -539,17 +544,26 @@ export class AlertManager extends EventEmitter {
     const { actualValue, thresholdValue, comparison } = evaluationResult;
 
     switch (comparison) {
-      case 'gt': return actualValue > thresholdValue;
-      case 'gte': return actualValue >= thresholdValue;
-      case 'lt': return actualValue < thresholdValue;
-      case 'lte': return actualValue <= thresholdValue;
-      case 'eq': return actualValue === thresholdValue;
-      case 'ne': return actualValue !== thresholdValue;
+      case 'gt':
+        return actualValue > thresholdValue;
+      case 'gte':
+        return actualValue >= thresholdValue;
+      case 'lt':
+        return actualValue < thresholdValue;
+      case 'lte':
+        return actualValue <= thresholdValue;
+      case 'eq':
+        return actualValue === thresholdValue;
+      case 'ne':
+        return actualValue !== thresholdValue;
       case 'between':
-        return Array.isArray(thresholdValue) &&
-               actualValue >= thresholdValue[0] &&
-               actualValue <= thresholdValue[1];
-      default: return false;
+        return (
+          Array.isArray(thresholdValue) &&
+          actualValue >= thresholdValue[0] &&
+          actualValue <= thresholdValue[1]
+        );
+      default:
+        return false;
     }
   }
 
@@ -578,10 +592,10 @@ export class AlertManager extends EventEmitter {
         ruleName: rule.name,
         dataSource: rule.dataSource,
         evaluationResult,
-        threshold
+        threshold,
       },
       notifications: [],
-      actions: []
+      actions: [],
     };
 
     this.activeAlerts.set(alertEvent.id, alertEvent);
@@ -595,7 +609,7 @@ export class AlertManager extends EventEmitter {
       alertId: alertEvent.id,
       ruleId: rule.id,
       actualValue: evaluationResult.actualValue,
-      thresholdValue: evaluationResult.thresholdValue
+      thresholdValue: evaluationResult.thresholdValue,
     });
 
     this.emit('alertTriggered', alertEvent);
@@ -628,10 +642,15 @@ export class AlertManager extends EventEmitter {
       .replace('{timestamp}', new Date().toISOString());
   }
 
-  private async checkAlertResolution(rule: AlertRule, evaluationResult: any, evaluationTime: Date): Promise<void> {
+  private async checkAlertResolution(
+    rule: AlertRule,
+    evaluationResult: any,
+    evaluationTime: Date
+  ): Promise<void> {
     // Find active alerts for this rule that might be resolved
-    const activeAlertsForRule = Array.from(this.activeAlerts.values())
-      .filter(alert => alert.ruleId === rule.id && alert.status === 'triggered');
+    const activeAlertsForRule = Array.from(this.activeAlerts.values()).filter(
+      alert => alert.ruleId === rule.id && alert.status === 'triggered'
+    );
 
     for (const alert of activeAlertsForRule) {
       const threshold = rule.thresholds.find(t => t.severity === alert.severity);
@@ -647,7 +666,11 @@ export class AlertManager extends EventEmitter {
     }
   }
 
-  private async resolveAlert(alert: AlertEvent, resolvedAt: Date, reason: string = 'manual'): Promise<void> {
+  private async resolveAlert(
+    alert: AlertEvent,
+    resolvedAt: Date,
+    reason: string = 'manual'
+  ): Promise<void> {
     alert.status = 'resolved';
     alert.resolvedAt = resolvedAt;
     alert.context.resolutionReason = reason;
@@ -677,7 +700,6 @@ export class AlertManager extends EventEmitter {
 
         // Update throttling state
         this.updateNotificationThrottleState(rule.id, notification);
-
       } catch (error) {
         this.logger.error(`Failed to send alert notification`, error);
 
@@ -687,7 +709,7 @@ export class AlertManager extends EventEmitter {
           recipients: notification.recipients,
           sentAt: new Date(),
           status: 'failed',
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         };
         alert.notifications.push(failedHistory);
       }
@@ -770,11 +792,15 @@ export class AlertManager extends EventEmitter {
       recipients: notification.recipients,
       sentAt: new Date(),
       status: 'sent',
-      deliveryTime
+      deliveryTime,
     };
   }
 
-  private async sendEmailAlert(recipients: string[], alert: AlertEvent, rule: AlertRule): Promise<void> {
+  private async sendEmailAlert(
+    recipients: string[],
+    alert: AlertEvent,
+    rule: AlertRule
+  ): Promise<void> {
     // Placeholder for email implementation
     this.logger.info(`Email alert sent to: ${recipients.join(', ')}`);
   }
@@ -801,7 +827,7 @@ export class AlertManager extends EventEmitter {
           executedAt: new Date(),
           status: 'failed',
           error: error instanceof Error ? error.message : String(error),
-          retryCount: 0
+          retryCount: 0,
         };
         alert.actions.push(failedHistory);
       }
@@ -814,7 +840,7 @@ export class AlertManager extends EventEmitter {
       type: action.type,
       executedAt: new Date(),
       status: 'success',
-      retryCount: 0
+      retryCount: 0,
     };
 
     switch (action.type) {
@@ -843,8 +869,9 @@ export class AlertManager extends EventEmitter {
   }
 
   private resolveActiveAlertsForRule(ruleId: string): void {
-    const activeAlertsForRule = Array.from(this.activeAlerts.values())
-      .filter(alert => alert.ruleId === ruleId);
+    const activeAlertsForRule = Array.from(this.activeAlerts.values()).filter(
+      alert => alert.ruleId === ruleId
+    );
 
     for (const alert of activeAlertsForRule) {
       this.resolveAlert(alert, new Date(), 'rule-deleted');
@@ -918,21 +945,31 @@ export class AlertManager extends EventEmitter {
     const resolvedAlertsLast24h = recentAlerts.filter(a => a.status === 'resolved').length;
 
     const resolvedAlerts = recentAlerts.filter(a => a.status === 'resolved' && a.resolvedAt);
-    const averageResolutionTime = resolvedAlerts.length > 0
-      ? resolvedAlerts.reduce((sum, a) => sum + (a.resolvedAt!.getTime() - a.triggeredAt.getTime()), 0) / resolvedAlerts.length
-      : 0;
+    const averageResolutionTime =
+      resolvedAlerts.length > 0
+        ? resolvedAlerts.reduce(
+            (sum, a) => sum + (a.resolvedAt!.getTime() - a.triggeredAt.getTime()),
+            0
+          ) / resolvedAlerts.length
+        : 0;
 
     const topTriggeredRules = this.getTopTriggeredRules(10);
 
-    const alertsBySevertiy = recentAlerts.reduce((acc, alert) => {
-      acc[alert.severity] = (acc[alert.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const alertsBySevertiy = recentAlerts.reduce(
+      (acc, alert) => {
+        acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const totalNotifications = recentAlerts.reduce((sum, a) => sum + a.notifications.length, 0);
-    const successfulNotifications = recentAlerts.reduce((sum, a) =>
-      sum + a.notifications.filter(n => n.status === 'sent').length, 0);
-    const notificationSuccessRate = totalNotifications > 0 ? successfulNotifications / totalNotifications : 1;
+    const successfulNotifications = recentAlerts.reduce(
+      (sum, a) => sum + a.notifications.filter(n => n.status === 'sent').length,
+      0
+    );
+    const notificationSuccessRate =
+      totalNotifications > 0 ? successfulNotifications / totalNotifications : 1;
 
     return {
       totalRules: allRules.length,
@@ -942,16 +979,18 @@ export class AlertManager extends EventEmitter {
       averageResolutionTime,
       topTriggeredRules,
       alertsBySeverity: alertsBySevertiy,
-      notificationSuccessRate
+      notificationSuccessRate,
     };
   }
 
-  private getTopTriggeredRules(limit: number): Array<{ ruleId: string; name: string; count: number }> {
+  private getTopTriggeredRules(
+    limit: number
+  ): Array<{ ruleId: string; name: string; count: number }> {
     const ruleCounts = Array.from(this.alertRules.values())
       .map(rule => ({
         ruleId: rule.id,
         name: rule.name,
-        count: rule.triggerCount
+        count: rule.triggerCount,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, limit);

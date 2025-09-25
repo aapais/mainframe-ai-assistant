@@ -131,7 +131,6 @@ export class CacheMiddleware {
 
         // Intercept response to cache it
         this.interceptResponse(req, res, cacheKey, startTime, next);
-
       } catch (error) {
         console.error('Cache middleware error:', error);
         next();
@@ -148,7 +147,7 @@ export class CacheMiddleware {
         // Continue with the request
         const originalSend = res.send;
 
-        res.send = function(data) {
+        res.send = function (data) {
           // Invalidate related cache entries after successful mutations
           if (res.statusCode >= 200 && res.statusCode < 300) {
             setImmediate(async () => {
@@ -164,7 +163,6 @@ export class CacheMiddleware {
         }.bind(this);
 
         next();
-
       } catch (error) {
         console.error('Cache invalidation middleware error:', error);
         next();
@@ -197,7 +195,9 @@ export class CacheMiddleware {
   /**
    * Pre-warm cache with common requests
    */
-  async warmCache(requests: Array<{ path: string; query?: Record<string, string> }>): Promise<void> {
+  async warmCache(
+    requests: Array<{ path: string; query?: Record<string, string> }>
+  ): Promise<void> {
     console.log(`🔥 Warming HTTP cache with ${requests.length} requests...`);
 
     for (const request of requests) {
@@ -226,25 +226,25 @@ export class CacheMiddleware {
         methods: ['POST', 'PUT', 'DELETE', 'PATCH'],
         paths: ['/api/admin', '/api/auth'],
         queryParams: ['no-cache', 'force-refresh'],
-        userAgents: ['Googlebot', 'Bingbot']
+        userAgents: ['Googlebot', 'Bingbot'],
       },
       compression: {
         enabled: true,
         threshold: 1024, // 1KB
-        algorithm: 'gzip'
+        algorithm: 'gzip',
       },
       conditionalRequests: {
         etag: true,
         lastModified: true,
-        ifNoneMatch: true
+        ifNoneMatch: true,
       },
       monitoring: {
         enabled: true,
         logHits: false, // Set to true for debugging
         logMisses: false,
-        trackPerformance: true
+        trackPerformance: true,
       },
-      ...config
+      ...config,
     };
   }
 
@@ -255,19 +255,19 @@ export class CacheMiddleware {
         hits: 0,
         misses: 0,
         stale: 0,
-        bypassed: 0
+        bypassed: 0,
       },
       performance: {
         avgHitTime: 0,
         avgMissTime: 0,
         avgCompressionRatio: 0,
-        bandwidthSaved: 0
+        bandwidthSaved: 0,
       },
       storage: {
         entries: 0,
         totalSize: 0,
-        compressionRatio: 0
-      }
+        compressionRatio: 0,
+      },
     };
   }
 
@@ -308,7 +308,7 @@ export class CacheMiddleware {
       req.path,
       JSON.stringify(req.query),
       req.get('Accept') || '',
-      req.get('Accept-Encoding') || ''
+      req.get('Accept-Encoding') || '',
     ];
 
     // Add user context if available
@@ -320,13 +320,16 @@ export class CacheMiddleware {
     return `http_cache:${createHash('md5').update(keyString).digest('hex')}`;
   }
 
-  private generateCacheKeyFromRequest(request: { path: string; query?: Record<string, string> }): string {
+  private generateCacheKeyFromRequest(request: {
+    path: string;
+    query?: Record<string, string>;
+  }): string {
     const keyParts = [
       'GET',
       request.path,
       JSON.stringify(request.query || {}),
       'application/json',
-      'gzip'
+      'gzip',
     ];
 
     const keyString = keyParts.join('|');
@@ -375,7 +378,7 @@ export class CacheMiddleware {
 
   private isEntryStale(entry: CacheEntry): boolean {
     const age = Date.now() - entry.lastModified.getTime();
-    const staleThreshold = this.config.defaultTTL + (this.config.staleWhileRevalidate * 1000);
+    const staleThreshold = this.config.defaultTTL + this.config.staleWhileRevalidate * 1000;
     return age > this.config.defaultTTL && age < staleThreshold;
   }
 
@@ -415,11 +418,14 @@ export class CacheMiddleware {
     const age = Math.floor((Date.now() - entry.lastModified.getTime()) / 1000);
     const maxAge = Math.max(0, this.config.maxAge - age);
 
-    res.set('Cache-Control', [
-      `max-age=${maxAge}`,
-      `stale-while-revalidate=${this.config.staleWhileRevalidate}`,
-      'public'
-    ].join(', '));
+    res.set(
+      'Cache-Control',
+      [
+        `max-age=${maxAge}`,
+        `stale-while-revalidate=${this.config.staleWhileRevalidate}`,
+        'public',
+      ].join(', ')
+    );
 
     res.set('Age', age.toString());
     res.set('X-Cache', 'HIT');
@@ -451,7 +457,7 @@ export class CacheMiddleware {
     let responseSent = false;
 
     // Override json method
-    res.json = function(data: any) {
+    res.json = function (data: any) {
       if (!responseSent) {
         responseData = data;
         responseSent = true;
@@ -470,7 +476,7 @@ export class CacheMiddleware {
     }.bind(this);
 
     // Override send method as fallback
-    res.send = function(data: any) {
+    res.send = function (data: any) {
       if (!responseSent) {
         responseData = data;
         responseSent = true;
@@ -525,11 +531,14 @@ export class CacheMiddleware {
           statusCode: res.statusCode,
           etag,
           lastModified,
-          originalSize: JSON.stringify(data).length
+          originalSize: JSON.stringify(data).length,
         };
 
         // Compress data if enabled and above threshold
-        if (this.config.compression.enabled && entry.originalSize > this.config.compression.threshold) {
+        if (
+          this.config.compression.enabled &&
+          entry.originalSize > this.config.compression.threshold
+        ) {
           entry.compressedData = await this.compressData(data);
           entry.compressedSize = entry.compressedData.length;
         }
@@ -541,7 +550,9 @@ export class CacheMiddleware {
         this.updateStorageMetrics(entry);
 
         if (this.config.monitoring.logMisses) {
-          console.log(`📦 Cached response for ${req.method} ${req.path} (${entry.originalSize} bytes)`);
+          console.log(
+            `📦 Cached response for ${req.method} ${req.path} (${entry.originalSize} bytes)`
+          );
         }
       }
     } catch (error) {
@@ -556,7 +567,7 @@ export class CacheMiddleware {
       'Content-Type',
       'Content-Language',
       'X-API-Version',
-      'X-Rate-Limit-Remaining'
+      'X-Rate-Limit-Remaining',
     ];
 
     headersToCache.forEach(headerName => {
@@ -638,7 +649,7 @@ export class CacheMiddleware {
     // Update average hit time
     const hitCount = this.metrics.requests.hits;
     this.metrics.performance.avgHitTime =
-      ((this.metrics.performance.avgHitTime * (hitCount - 1)) + duration) / hitCount;
+      (this.metrics.performance.avgHitTime * (hitCount - 1) + duration) / hitCount;
 
     if (this.config.monitoring.logHits) {
       console.log(`⚡ Cache HIT in ${duration}ms`);
@@ -654,7 +665,7 @@ export class CacheMiddleware {
     // Update average miss time
     const missCount = this.metrics.requests.misses;
     this.metrics.performance.avgMissTime =
-      ((this.metrics.performance.avgMissTime * (missCount - 1)) + duration) / missCount;
+      (this.metrics.performance.avgMissTime * (missCount - 1) + duration) / missCount;
 
     if (this.config.monitoring.logMisses) {
       console.log(`❄️ Cache MISS in ${duration}ms`);
@@ -679,10 +690,11 @@ export class CacheMiddleware {
     if (entry.compressedSize) {
       const compressionRatio = entry.compressedSize / entry.originalSize;
       this.metrics.performance.avgCompressionRatio =
-        ((this.metrics.performance.avgCompressionRatio * (this.metrics.storage.entries - 1)) + compressionRatio) /
+        (this.metrics.performance.avgCompressionRatio * (this.metrics.storage.entries - 1) +
+          compressionRatio) /
         this.metrics.storage.entries;
 
-      this.metrics.performance.bandwidthSaved += (entry.originalSize - entry.compressedSize);
+      this.metrics.performance.bandwidthSaved += entry.originalSize - entry.compressedSize;
     }
   }
 }
@@ -700,10 +712,7 @@ export function createCacheMiddleware(
 /**
  * Express middleware factory for easy integration
  */
-export function cacheMiddleware(
-  cache: CacheService,
-  config?: Partial<CacheMiddlewareConfig>
-) {
+export function cacheMiddleware(cache: CacheService, config?: Partial<CacheMiddlewareConfig>) {
   const middleware = new CacheMiddleware(cache, config);
   return middleware.middleware();
 }

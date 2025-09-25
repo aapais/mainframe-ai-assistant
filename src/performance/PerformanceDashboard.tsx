@@ -16,7 +16,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 } from 'chart.js';
 
 // Register Chart.js components
@@ -67,7 +67,9 @@ export function PerformanceDashboard() {
   const [currentMetrics, setCurrentMetrics] = useState<PerformanceMetrics | null>(null);
   const [alerts, setAlerts] = useState<AlertData[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'render' | 'search' | 'memory' | 'ipc' | 'window'>('overview');
+  const [selectedTab, setSelectedTab] = useState<
+    'overview' | 'render' | 'search' | 'memory' | 'ipc' | 'window'
+  >('overview');
 
   const metricsRef = useRef<PerformanceMetrics[]>([]);
   const maxDataPoints = 50;
@@ -117,7 +119,7 @@ export function PerformanceDashboard() {
         type: 'render-performance',
         message: `Render time ${metrics.renderTime.toFixed(2)}ms exceeds 16ms target`,
         timestamp: Date.now(),
-        severity: metrics.renderTime > 32 ? 'high' : 'medium'
+        severity: metrics.renderTime > 32 ? 'high' : 'medium',
       });
     }
 
@@ -126,7 +128,7 @@ export function PerformanceDashboard() {
         type: 'search-performance',
         message: `Search response ${metrics.searchResponseTime.toFixed(2)}ms exceeds 1000ms target`,
         timestamp: Date.now(),
-        severity: metrics.searchResponseTime > 2000 ? 'high' : 'medium'
+        severity: metrics.searchResponseTime > 2000 ? 'high' : 'medium',
       });
     }
 
@@ -135,7 +137,7 @@ export function PerformanceDashboard() {
         type: 'memory-growth',
         message: `Memory growth ${metrics.memoryUsage.growthRate.toFixed(2)}MB/h exceeds 10MB/h target`,
         timestamp: Date.now(),
-        severity: metrics.memoryUsage.growthRate > 50 ? 'critical' : 'high'
+        severity: metrics.memoryUsage.growthRate > 50 ? 'critical' : 'high',
       });
     }
 
@@ -144,7 +146,7 @@ export function PerformanceDashboard() {
         type: 'ipc-latency',
         message: `IPC latency ${metrics.ipcLatency.toFixed(2)}ms exceeds 5ms target`,
         timestamp: Date.now(),
-        severity: metrics.ipcLatency > 20 ? 'high' : 'medium'
+        severity: metrics.ipcLatency > 20 ? 'high' : 'medium',
       });
     }
 
@@ -153,7 +155,7 @@ export function PerformanceDashboard() {
         type: 'window-operation',
         message: `Window operation ${metrics.windowOperationTime.toFixed(2)}ms exceeds 100ms target`,
         timestamp: Date.now(),
-        severity: metrics.windowOperationTime > 500 ? 'high' : 'medium'
+        severity: metrics.windowOperationTime > 500 ? 'high' : 'medium',
       });
     }
 
@@ -171,22 +173,22 @@ export function PerformanceDashboard() {
   };
 
   const renderOverviewTab = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
       {/* Render Performance */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Render Performance</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Render Performance</h3>
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
             <span>Render Time:</span>
             <span className={getStatusColor(currentMetrics?.renderTargetMet || false)}>
               {currentMetrics?.renderTime.toFixed(2) || 0}ms
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Frame Rate:</span>
             <span>{currentMetrics?.frameRate.toFixed(1) || 0} FPS</span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Target:</span>
             <span className={getStatusColor(currentMetrics?.renderTargetMet || false)}>
               {currentMetrics?.renderTargetMet ? '✅ Met' : '❌ Failed'}
@@ -196,16 +198,16 @@ export function PerformanceDashboard() {
       </div>
 
       {/* Search Performance */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Search Performance</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Search Performance</h3>
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
             <span>Response Time:</span>
             <span className={getStatusColor(currentMetrics?.searchTargetMet || false)}>
               {currentMetrics?.searchResponseTime.toFixed(2) || 0}ms
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Target:</span>
             <span className={getStatusColor(currentMetrics?.searchTargetMet || false)}>
               {currentMetrics?.searchTargetMet ? '✅ Met' : '❌ Failed'}
@@ -215,20 +217,20 @@ export function PerformanceDashboard() {
       </div>
 
       {/* Memory Usage */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Memory Usage</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Memory Usage</h3>
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
             <span>Heap Used:</span>
             <span>{formatMemoryMB(currentMetrics?.memoryUsage.heapUsed || 0)}MB</span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Growth Rate:</span>
             <span className={getStatusColor(currentMetrics?.memoryTargetMet || false)}>
               {currentMetrics?.memoryUsage.growthRate.toFixed(2) || 0}MB/h
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Target:</span>
             <span className={getStatusColor(currentMetrics?.memoryTargetMet || false)}>
               {currentMetrics?.memoryTargetMet ? '✅ Met' : '❌ Failed'}
@@ -238,16 +240,16 @@ export function PerformanceDashboard() {
       </div>
 
       {/* IPC Performance */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">IPC Performance</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>IPC Performance</h3>
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
             <span>Latency:</span>
             <span className={getStatusColor(currentMetrics?.ipcTargetMet || false)}>
               {currentMetrics?.ipcLatency.toFixed(2) || 0}ms
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Target:</span>
             <span className={getStatusColor(currentMetrics?.ipcTargetMet || false)}>
               {currentMetrics?.ipcTargetMet ? '✅ Met' : '❌ Failed'}
@@ -257,16 +259,16 @@ export function PerformanceDashboard() {
       </div>
 
       {/* Window Operations */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Window Operations</h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Window Operations</h3>
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
             <span>Operation Time:</span>
             <span className={getStatusColor(currentMetrics?.windowTargetMet || false)}>
               {currentMetrics?.windowOperationTime.toFixed(2) || 0}ms
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className='flex justify-between'>
             <span>Target:</span>
             <span className={getStatusColor(currentMetrics?.windowTargetMet || false)}>
               {currentMetrics?.windowTargetMet ? '✅ Met' : '❌ Failed'}
@@ -276,23 +278,27 @@ export function PerformanceDashboard() {
       </div>
 
       {/* Recent Alerts */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Recent Alerts</h3>
-        <div className="space-y-2 max-h-32 overflow-y-auto">
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Recent Alerts</h3>
+        <div className='space-y-2 max-h-32 overflow-y-auto'>
           {alerts.slice(-5).map((alert, index) => (
-            <div key={index} className={`text-sm p-2 rounded ${
-              alert.severity === 'critical' ? 'bg-red-100 text-red-800' :
-              alert.severity === 'high' ? 'bg-orange-100 text-orange-800' :
-              alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-blue-100 text-blue-800'
-            }`}>
-              <div className="font-medium">{alert.type}</div>
-              <div className="text-xs">{alert.message}</div>
+            <div
+              key={index}
+              className={`text-sm p-2 rounded ${
+                alert.severity === 'critical'
+                  ? 'bg-red-100 text-red-800'
+                  : alert.severity === 'high'
+                    ? 'bg-orange-100 text-orange-800'
+                    : alert.severity === 'medium'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-blue-100 text-blue-800'
+              }`}
+            >
+              <div className='font-medium'>{alert.type}</div>
+              <div className='text-xs'>{alert.message}</div>
             </div>
           ))}
-          {alerts.length === 0 && (
-            <div className="text-gray-500 text-sm">No alerts</div>
-          )}
+          {alerts.length === 0 && <div className='text-gray-500 text-sm'>No alerts</div>}
         </div>
       </div>
     </div>
@@ -311,39 +317,43 @@ export function PerformanceDashboard() {
           borderColor: 'rgb(59, 130, 246)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           fill: true,
-          tension: 0.4
+          tension: 0.4,
         },
-        ...(target ? [{
-          label: 'Target',
-          data: new Array(metrics.length).fill(target),
-          borderColor: 'rgb(239, 68, 68)',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          borderDash: [5, 5],
-          fill: false
-        }] : [])
-      ]
+        ...(target
+          ? [
+              {
+                label: 'Target',
+                data: new Array(metrics.length).fill(target),
+                borderColor: 'rgb(239, 68, 68)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderDash: [5, 5],
+                fill: false,
+              },
+            ]
+          : []),
+      ],
     };
 
     const chartOptions = {
       responsive: true,
       plugins: {
         legend: {
-          position: 'top' as const
+          position: 'top' as const,
         },
         title: {
           display: true,
-          text: title
-        }
+          text: title,
+        },
       },
       scales: {
         y: {
-          beginAtZero: true
-        }
-      }
+          beginAtZero: true,
+        },
+      },
     };
 
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className='bg-white rounded-lg shadow p-6'>
         <Line data={chartData} options={chartOptions} />
       </div>
     );
@@ -360,35 +370,35 @@ export function PerformanceDashboard() {
             currentMetrics?.searchTargetMet ? 1 : 0,
             currentMetrics?.memoryTargetMet ? 1 : 0,
             currentMetrics?.ipcTargetMet ? 1 : 0,
-            currentMetrics?.windowTargetMet ? 1 : 0
+            currentMetrics?.windowTargetMet ? 1 : 0,
           ],
           backgroundColor: [
             currentMetrics?.renderTargetMet ? '#10B981' : '#EF4444',
             currentMetrics?.searchTargetMet ? '#10B981' : '#EF4444',
             currentMetrics?.memoryTargetMet ? '#10B981' : '#EF4444',
             currentMetrics?.ipcTargetMet ? '#10B981' : '#EF4444',
-            currentMetrics?.windowTargetMet ? '#10B981' : '#EF4444'
-          ]
-        }
-      ]
+            currentMetrics?.windowTargetMet ? '#10B981' : '#EF4444',
+          ],
+        },
+      ],
     };
 
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Performance Targets</h3>
+      <div className='bg-white rounded-lg shadow p-6'>
+        <h3 className='text-lg font-semibold mb-4'>Performance Targets</h3>
         <Doughnut data={targetData} />
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className='min-h-screen bg-gray-100 p-6'>
+      <div className='max-w-7xl mx-auto'>
         {/* Header */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Performance Dashboard</h1>
-            <div className="flex items-center space-x-4">
+        <div className='bg-white rounded-lg shadow p-6 mb-6'>
+          <div className='flex justify-between items-center'>
+            <h1 className='text-2xl font-bold text-gray-900'>Performance Dashboard</h1>
+            <div className='flex items-center space-x-4'>
               <button
                 onClick={() => setIsMonitoring(!isMonitoring)}
                 className={`px-4 py-2 rounded-md font-medium ${
@@ -404,16 +414,16 @@ export function PerformanceDashboard() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
+        <div className='bg-white rounded-lg shadow mb-6'>
+          <div className='border-b border-gray-200'>
+            <nav className='-mb-px flex space-x-8 px-6'>
               {[
                 { key: 'overview', label: 'Overview' },
                 { key: 'render', label: 'Render' },
                 { key: 'search', label: 'Search' },
                 { key: 'memory', label: 'Memory' },
                 { key: 'ipc', label: 'IPC' },
-                { key: 'window', label: 'Window' }
+                { key: 'window', label: 'Window' },
               ].map(tab => (
                 <button
                   key={tab.key}
@@ -432,18 +442,19 @@ export function PerformanceDashboard() {
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className='space-y-6'>
           {selectedTab === 'overview' && renderOverviewTab()}
           {selectedTab === 'render' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
               {renderChartTab('renderTime', 'Render Time (ms)', 16)}
               {renderChartTab('frameRate', 'Frame Rate (FPS)')}
             </div>
           )}
-          {selectedTab === 'search' && renderChartTab('searchResponseTime', 'Search Response Time (ms)', 1000)}
+          {selectedTab === 'search' &&
+            renderChartTab('searchResponseTime', 'Search Response Time (ms)', 1000)}
           {selectedTab === 'memory' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+              <div className='bg-white rounded-lg shadow p-6'>
                 <Line
                   data={{
                     labels: metrics.map((_, index) => `${index + 1}`),
@@ -453,26 +464,26 @@ export function PerformanceDashboard() {
                         data: metrics.map(m => formatMemoryMB(m.memoryUsage?.heapUsed || 0)),
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true
+                        fill: true,
                       },
                       {
                         label: 'Heap Total (MB)',
                         data: metrics.map(m => formatMemoryMB(m.memoryUsage?.heapTotal || 0)),
                         borderColor: 'rgb(16, 185, 129)',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: false
-                      }
-                    ]
+                        fill: false,
+                      },
+                    ],
                   }}
                   options={{
                     responsive: true,
                     plugins: {
-                      title: { display: true, text: 'Memory Usage' }
-                    }
+                      title: { display: true, text: 'Memory Usage' },
+                    },
                   }}
                 />
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className='bg-white rounded-lg shadow p-6'>
                 <Line
                   data={{
                     labels: metrics.map((_, index) => `${index + 1}`),
@@ -482,58 +493,61 @@ export function PerformanceDashboard() {
                         data: metrics.map(m => m.memoryUsage?.growthRate || 0),
                         borderColor: 'rgb(239, 68, 68)',
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        fill: true
+                        fill: true,
                       },
                       {
                         label: 'Target (10 MB/h)',
                         data: new Array(metrics.length).fill(10),
                         borderColor: 'rgb(107, 114, 128)',
                         borderDash: [5, 5],
-                        fill: false
-                      }
-                    ]
+                        fill: false,
+                      },
+                    ],
                   }}
                   options={{
                     responsive: true,
                     plugins: {
-                      title: { display: true, text: 'Memory Growth Rate' }
-                    }
+                      title: { display: true, text: 'Memory Growth Rate' },
+                    },
                   }}
                 />
               </div>
             </div>
           )}
           {selectedTab === 'ipc' && renderChartTab('ipcLatency', 'IPC Latency (ms)', 5)}
-          {selectedTab === 'window' && renderChartTab('windowOperationTime', 'Window Operation Time (ms)', 100)}
+          {selectedTab === 'window' &&
+            renderChartTab('windowOperationTime', 'Window Operation Time (ms)', 100)}
         </div>
 
         {/* Target Overview */}
         {selectedTab === 'overview' && (
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className='mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6'>
             {renderTargetMetChart()}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Performance Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
+            <div className='bg-white rounded-lg shadow p-6'>
+              <h3 className='text-lg font-semibold mb-4'>Performance Summary</h3>
+              <div className='space-y-3'>
+                <div className='flex justify-between'>
                   <span>Total Alerts:</span>
                   <span className={alerts.length > 0 ? 'text-red-600' : 'text-green-600'}>
                     {alerts.length}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className='flex justify-between'>
                   <span>Monitoring Status:</span>
                   <span className={isMonitoring ? 'text-green-600' : 'text-gray-600'}>
                     {isMonitoring ? '✅ Active' : '⏸️ Paused'}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className='flex justify-between'>
                   <span>Data Points:</span>
                   <span>{metrics.length}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className='flex justify-between'>
                   <span>Last Update:</span>
-                  <span className="text-sm text-gray-600">
-                    {currentMetrics ? new Date(currentMetrics.timestamp).toLocaleTimeString() : 'Never'}
+                  <span className='text-sm text-gray-600'>
+                    {currentMetrics
+                      ? new Date(currentMetrics.timestamp).toLocaleTimeString()
+                      : 'Never'}
                   </span>
                 </div>
               </div>

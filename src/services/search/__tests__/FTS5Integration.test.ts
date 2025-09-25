@@ -30,7 +30,7 @@ describe('FTS5Integration', () => {
         problem: 'Mock problem 1',
         solution: 'Mock solution 1',
         category: 'JCL',
-        tags: ['mock', 'test']
+        tags: ['mock', 'test'],
       },
       score: 85,
       matchType: 'fuzzy' as any,
@@ -39,9 +39,9 @@ describe('FTS5Integration', () => {
         processingTime: 100,
         source: 'legacy',
         confidence: 0.85,
-        fallback: false
-      }
-    }
+        fallback: false,
+      },
+    },
   ];
 
   beforeAll(async () => {
@@ -82,7 +82,7 @@ describe('FTS5Integration', () => {
         problem: 'Program abends with S0C7',
         solution: 'Check COMP-3 fields',
         category: 'Batch',
-        tags: ['s0c7', 'abend']
+        tags: ['s0c7', 'abend'],
       },
       {
         id: 'test-2',
@@ -90,8 +90,8 @@ describe('FTS5Integration', () => {
         problem: 'File not found error',
         solution: 'Check catalog',
         category: 'VSAM',
-        tags: ['vsam', 'status-35']
-      }
+        tags: ['vsam', 'status-35'],
+      },
     ];
 
     // Insert test data
@@ -119,8 +119,8 @@ describe('FTS5Integration', () => {
       suggest: jest.fn().mockResolvedValue(['suggestion1', 'suggestion2']),
       initialize: jest.fn().mockResolvedValue(undefined),
       getStats: jest.fn().mockReturnValue({
-        engine: { totalSearches: 100, averageResponseTime: 150 }
-      })
+        engine: { totalSearches: 100, averageResponseTime: 150 },
+      }),
     } as any;
 
     // Create integration with default config
@@ -140,7 +140,7 @@ describe('FTS5Integration', () => {
 
     test('should initialize with FTS5 disabled and use legacy only', async () => {
       const config: Partial<FTS5IntegrationConfig> = {
-        enabled: false
+        enabled: false,
       };
 
       const disabledIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -157,7 +157,7 @@ describe('FTS5Integration', () => {
       invalidDb.close(); // Close immediately to cause errors
 
       const config: Partial<FTS5IntegrationConfig> = {
-        fallbackEnabled: true
+        fallbackEnabled: true,
       };
 
       const faultyIntegration = new FTS5Integration(invalidDb, mockLegacyEngine, {}, config);
@@ -173,9 +173,9 @@ describe('FTS5Integration', () => {
         performance: {
           maxInitTime: 1, // Very short timeout
           maxSearchTime: 1000,
-          enableMonitoring: false
+          enableMonitoring: false,
         },
-        fallbackEnabled: true
+        fallbackEnabled: true,
       };
 
       const timeoutIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -193,10 +193,7 @@ describe('FTS5Integration', () => {
 
       for (const errorCode of errorCodes) {
         await integration.search(errorCode);
-        expect(mockLegacyEngine.search).toHaveBeenCalledWith(
-          errorCode,
-          expect.any(Object)
-        );
+        expect(mockLegacyEngine.search).toHaveBeenCalledWith(errorCode, expect.any(Object));
       }
     });
 
@@ -218,7 +215,7 @@ describe('FTS5Integration', () => {
       const naturalQueries = [
         'program failure with arithmetic error',
         'database connection timeout issue',
-        'file processing performance problem'
+        'file processing performance problem',
       ];
 
       for (const query of naturalQueries) {
@@ -259,7 +256,7 @@ describe('FTS5Integration', () => {
         limit: 5,
         offset: 0,
         category: 'JCL',
-        sortBy: 'relevance'
+        sortBy: 'relevance',
       };
 
       await integration.search('test query', options);
@@ -272,9 +269,9 @@ describe('FTS5Integration', () => {
         performance: {
           maxSearchTime: 1, // Very short timeout
           maxInitTime: 5000,
-          enableMonitoring: false
+          enableMonitoring: false,
         },
-        fallbackEnabled: true
+        fallbackEnabled: true,
       };
 
       const fallbackIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -290,15 +287,17 @@ describe('FTS5Integration', () => {
         performance: {
           maxSearchTime: 1,
           maxInitTime: 5000,
-          enableMonitoring: false
+          enableMonitoring: false,
         },
-        fallbackEnabled: true
+        fallbackEnabled: true,
       };
 
       const timeoutIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
       await timeoutIntegration.initialize();
 
-      await expect(timeoutIntegration.search('complex query with many terms')).resolves.not.toThrow();
+      await expect(
+        timeoutIntegration.search('complex query with many terms')
+      ).resolves.not.toThrow();
     });
   });
 
@@ -309,8 +308,8 @@ describe('FTS5Integration', () => {
           hybridSearch: true,
           autoComplete: true,
           snippets: true,
-          queryExpansion: false
-        }
+          queryExpansion: false,
+        },
       };
 
       integration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -329,11 +328,18 @@ describe('FTS5Integration', () => {
       // Mock different results from legacy engine
       const legacyResults = [
         {
-          entry: { id: 'legacy-1', title: 'Legacy Result', problem: '', solution: '', category: 'Other', tags: [] },
+          entry: {
+            id: 'legacy-1',
+            title: 'Legacy Result',
+            problem: '',
+            solution: '',
+            category: 'Other',
+            tags: [],
+          },
           score: 70,
           matchType: 'legacy' as any,
-          metadata: { processingTime: 0, source: 'legacy', confidence: 0.7, fallback: false }
-        }
+          metadata: { processingTime: 0, source: 'legacy', confidence: 0.7, fallback: false },
+        },
       ];
 
       mockLegacyEngine.search.mockResolvedValue(legacyResults);
@@ -374,8 +380,8 @@ describe('FTS5Integration', () => {
           hybridSearch: true,
           autoComplete: true,
           snippets: true,
-          queryExpansion: false
-        }
+          queryExpansion: false,
+        },
       };
 
       const hybridIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -392,8 +398,8 @@ describe('FTS5Integration', () => {
         cache: {
           enabled: true,
           ttl: 300000,
-          maxSize: 100
-        }
+          maxSize: 100,
+        },
       };
 
       integration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -420,8 +426,8 @@ describe('FTS5Integration', () => {
         cache: {
           enabled: true,
           ttl: 1, // Very short TTL
-          maxSize: 100
-        }
+          maxSize: 100,
+        },
       };
 
       const shortCacheIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -441,8 +447,8 @@ describe('FTS5Integration', () => {
         cache: {
           enabled: true,
           ttl: 300000,
-          maxSize: 2 // Very small cache
-        }
+          maxSize: 2, // Very small cache
+        },
       };
 
       const smallCacheIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -459,8 +465,8 @@ describe('FTS5Integration', () => {
         cache: {
           enabled: false,
           ttl: 300000,
-          maxSize: 100
-        }
+          maxSize: 100,
+        },
       };
 
       const noCacheIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -480,8 +486,8 @@ describe('FTS5Integration', () => {
         performance: {
           maxSearchTime: 1000,
           maxInitTime: 5000,
-          enableMonitoring: true
-        }
+          enableMonitoring: true,
+        },
       };
 
       integration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -510,7 +516,7 @@ describe('FTS5Integration', () => {
       // Enable caching
       const config: Partial<FTS5IntegrationConfig> = {
         cache: { enabled: true, ttl: 300000, maxSize: 100 },
-        performance: { enableMonitoring: true, maxSearchTime: 1000, maxInitTime: 5000 }
+        performance: { enableMonitoring: true, maxSearchTime: 1000, maxInitTime: 5000 },
       };
 
       const cachedIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -567,7 +573,7 @@ describe('FTS5Integration', () => {
 
     test('should clean expired cache during optimization', async () => {
       const config: Partial<FTS5IntegrationConfig> = {
-        cache: { enabled: true, ttl: 1, maxSize: 100 } // Very short TTL
+        cache: { enabled: true, ttl: 1, maxSize: 100 }, // Very short TTL
       };
 
       const optimizableIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -594,7 +600,7 @@ describe('FTS5Integration', () => {
     test('should handle legacy engine errors with no fallback', async () => {
       const config: Partial<FTS5IntegrationConfig> = {
         enabled: false,
-        fallbackEnabled: false
+        fallbackEnabled: false,
       };
 
       const noFallbackIntegration = new FTS5Integration(db, mockLegacyEngine, {}, config);
@@ -614,7 +620,7 @@ describe('FTS5Integration', () => {
         '',
         '   ',
         '"unclosed quote',
-        'AND OR NOT'
+        'AND OR NOT',
       ];
 
       for (const query of malformedQueries) {
@@ -628,7 +634,7 @@ describe('FTS5Integration', () => {
       connectionErrorDb.close();
 
       const config: Partial<FTS5IntegrationConfig> = {
-        fallbackEnabled: true
+        fallbackEnabled: true,
       };
 
       const errorIntegration = new FTS5Integration(connectionErrorDb, mockLegacyEngine, {}, config);
@@ -645,19 +651,19 @@ describe('FTS5Integration', () => {
         performance: {
           maxSearchTime: 2000,
           maxInitTime: 10000,
-          enableMonitoring: false
+          enableMonitoring: false,
         },
         cache: {
           enabled: true,
           ttl: 600000,
-          maxSize: 500
+          maxSize: 500,
         },
         features: {
           hybridSearch: false,
           autoComplete: false,
           snippets: false,
-          queryExpansion: true
-        }
+          queryExpansion: true,
+        },
       };
 
       const customIntegration = new FTS5Integration(db, mockLegacyEngine, {}, customConfig);
@@ -671,8 +677,8 @@ describe('FTS5Integration', () => {
     test('should merge partial configuration with defaults', async () => {
       const partialConfig: Partial<FTS5IntegrationConfig> = {
         cache: {
-          enabled: false
-        }
+          enabled: false,
+        },
       };
 
       const partialIntegration = new FTS5Integration(db, mockLegacyEngine, {}, partialConfig);

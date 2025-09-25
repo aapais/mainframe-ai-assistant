@@ -15,7 +15,7 @@ import {
   initializeMainPerformanceMonitoring,
   quickSetupMainProcess,
   quickSetupRendererProcess,
-  useComponentPerformance
+  useComponentPerformance,
 } from './index';
 
 /**
@@ -28,7 +28,7 @@ export function exampleMainProcessSetup() {
   const performance = quickSetupMainProcess();
 
   // Listen for performance violations
-  performance.on('alert-added', (alert) => {
+  performance.on('alert-added', alert => {
     console.log(`Alert: ${alert.message}`);
 
     if (alert.severity === 'critical') {
@@ -43,7 +43,7 @@ export function exampleMainProcessSetup() {
     console.log('Current Performance Status:', {
       overallHealth: status?.overallHealth,
       alertCount: status?.alertCount,
-      timestamp: status?.timestamp
+      timestamp: status?.timestamp,
     });
   }, 5000);
 
@@ -81,7 +81,7 @@ export async function exampleSearchMonitoring() {
 
   // Track individual search
   const searchId = searchMonitor.startSearch('mainframe cobol', 'advanced', {
-    filters: { category: 'programming' }
+    filters: { category: 'programming' },
   });
 
   // Simulate search operation
@@ -92,7 +92,7 @@ export async function exampleSearchMonitoring() {
     query: metrics?.query,
     responseTime: metrics?.responseTime,
     isTargetMet: metrics?.isTargetMet,
-    resultCount: metrics?.resultCount
+    resultCount: metrics?.resultCount,
   });
 
   // Track search with wrapper
@@ -121,22 +121,22 @@ export function exampleMemoryMonitoring() {
   const memoryDetector = new MemoryLeakDetector({
     targetGrowthRate: 5, // 5MB/hour instead of default 10MB/hour
     snapshotInterval: 10000, // 10 seconds for demo
-    leakDetectionThreshold: 2
+    leakDetectionThreshold: 2,
   });
 
   // Listen for leak detection
-  memoryDetector.on('leak-detected', (leak) => {
+  memoryDetector.on('leak-detected', leak => {
     console.log('Memory Leak Detected:', {
       type: leak.type,
       severity: leak.severity,
       description: leak.description,
       growthRate: leak.growthRate,
-      possibleCauses: leak.possibleCauses.slice(0, 2) // Show first 2 causes
+      possibleCauses: leak.possibleCauses.slice(0, 2), // Show first 2 causes
     });
   });
 
   // Listen for threshold violations
-  memoryDetector.on('threshold-violation', (violation) => {
+  memoryDetector.on('threshold-violation', violation => {
     console.log('Memory Threshold Violation:', violation.message);
   });
 
@@ -150,7 +150,7 @@ export function exampleMemoryMonitoring() {
       leakyObjects.push({
         id: i,
         data: new Array(1000).fill(Math.random()),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   }, 5000);
@@ -173,7 +173,7 @@ export function exampleIPCMonitoring() {
   const ipcTracker = new IPCPerformanceTracker(3); // 3ms target instead of 5ms
 
   // Listen for performance violations
-  ipcTracker.on('performance-violation', (violation) => {
+  ipcTracker.on('performance-violation', violation => {
     console.log('IPC Performance Issue:', violation.message);
   });
 
@@ -206,7 +206,7 @@ export function exampleWindowMonitoring() {
   const windowTracker = new WindowOperationTracker(50); // 50ms target instead of 100ms
 
   // Listen for slow operations
-  windowTracker.on('performance-violation', (violation) => {
+  windowTracker.on('performance-violation', violation => {
     console.log('Slow Window Operation:', violation.message);
   });
 
@@ -219,9 +219,12 @@ export function exampleWindowMonitoring() {
         const operationId = windowTracker.startOperation(operation, 1); // Window ID 1
 
         // Simulate operation processing time
-        setTimeout(() => {
-          windowTracker.endOperation(operationId);
-        }, Math.random() * 100 + 20); // 20-120ms
+        setTimeout(
+          () => {
+            windowTracker.endOperation(operationId);
+          },
+          Math.random() * 100 + 20
+        ); // 20-120ms
       }, index * 1000);
     });
   }
@@ -245,16 +248,16 @@ export function exampleIntegratedMonitoring() {
   const integration = new PerformanceIntegration();
 
   // Listen for overall health changes
-  integration.on('data-collected', (data) => {
+  integration.on('data-collected', data => {
     console.log('Performance Update:', {
       overallHealth: data.overallHealth,
       alertCount: data.alertCount,
-      timestamp: new Date(data.timestamp).toLocaleTimeString()
+      timestamp: new Date(data.timestamp).toLocaleTimeString(),
     });
   });
 
   // Listen for critical alerts
-  integration.on('critical-alert', (alert) => {
+  integration.on('critical-alert', alert => {
     console.error('CRITICAL ALERT:', alert);
     // Send notification, log to monitoring system, etc.
   });
@@ -267,7 +270,7 @@ export function exampleIntegratedMonitoring() {
     console.log('Comprehensive Performance Report:', {
       summary: report.summary,
       alertCount: report.alerts.length,
-      recommendations: report.recommendations.slice(0, 3) // Show first 3 recommendations
+      recommendations: report.recommendations.slice(0, 3), // Show first 3 recommendations
     });
   }, 30000);
 
@@ -285,16 +288,16 @@ export function exampleSimpleMonitor() {
       renderTime: 8, // Stricter 8ms target
       searchResponse: 500, // 500ms instead of 1000ms
       ipcLatency: 3, // 3ms instead of 5ms
-      memoryGrowthRate: 5 // 5MB/hour instead of 10MB/hour
-    }
+      memoryGrowthRate: 5, // 5MB/hour instead of 10MB/hour
+    },
   });
 
   // Subscribe to updates
-  const unsubscribeUpdate = monitor.onUpdate((data) => {
+  const unsubscribeUpdate = monitor.onUpdate(data => {
     console.log('Simple Monitor Update:', data.overallHealth);
   });
 
-  const unsubscribeAlert = monitor.onAlert((alert) => {
+  const unsubscribeAlert = monitor.onAlert(alert => {
     console.log('Simple Monitor Alert:', alert.message);
   });
 
@@ -349,7 +352,7 @@ export function ExampleReactComponent() {
         console.log('Component Performance Summary:', {
           totalRenders: summary.totalRenders,
           averageRenderTime: summary.averageRenderTime.toFixed(2),
-          violationRate: (summary.violationRate * 100).toFixed(1) + '%'
+          violationRate: (summary.violationRate * 100).toFixed(1) + '%',
         });
       }
     }, 10000);
@@ -357,9 +360,13 @@ export function ExampleReactComponent() {
     return () => clearInterval(interval);
   }, [tracker]);
 
-  return React.createElement('div', {
-    style: { padding: '20px', border: '1px solid #ccc' }
-  }, 'Example React Component with Performance Tracking');
+  return React.createElement(
+    'div',
+    {
+      style: { padding: '20px', border: '1px solid #ccc' },
+    },
+    'Example React Component with Performance Tracking'
+  );
 }
 
 /**
@@ -383,8 +390,10 @@ export async function exampleCustomTracking() {
       const result = await operation();
       const duration = performance.now() - startTime;
 
-      console.log(`Operation "${operationName}": ${duration.toFixed(2)}ms`,
-        duration > targetMs ? '❌ SLOW' : '✅ FAST');
+      console.log(
+        `Operation "${operationName}": ${duration.toFixed(2)}ms`,
+        duration > targetMs ? '❌ SLOW' : '✅ FAST'
+      );
 
       return result;
     } catch (error) {
@@ -395,20 +404,32 @@ export async function exampleCustomTracking() {
   }
 
   // Track various operations
-  await trackOperation('Database Query', async () => {
-    await new Promise(resolve => setTimeout(resolve, 150));
-    return 'query results';
-  }, 100);
+  await trackOperation(
+    'Database Query',
+    async () => {
+      await new Promise(resolve => setTimeout(resolve, 150));
+      return 'query results';
+    },
+    100
+  );
 
-  await trackOperation('File System Operation', async () => {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    return 'file data';
-  }, 100);
+  await trackOperation(
+    'File System Operation',
+    async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      return 'file data';
+    },
+    100
+  );
 
-  await trackOperation('Network Request', async () => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return 'network response';
-  }, 1000);
+  await trackOperation(
+    'Network Request',
+    async () => {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      return 'network response';
+    },
+    1000
+  );
 
   // Export performance data
   setTimeout(() => {
@@ -462,7 +483,7 @@ export async function examplePerformanceBenchmarking() {
           return [`result-${i}`];
         });
       }
-    }
+    },
   };
 
   // Run benchmarks
@@ -482,13 +503,13 @@ export async function examplePerformanceBenchmarking() {
       render: {
         totalRenders: renderSummary.totalRenders,
         averageTime: renderSummary.averageRenderTime.toFixed(2),
-        violationRate: (renderSummary.violationRate * 100).toFixed(1) + '%'
+        violationRate: (renderSummary.violationRate * 100).toFixed(1) + '%',
       },
       search: {
         totalSearches: searchSummary.totalSearches,
         averageTime: searchSummary.averageResponseTime.toFixed(2),
-        targetMeetRate: (searchSummary.targetMeetRate * 100).toFixed(1) + '%'
-      }
+        targetMeetRate: (searchSummary.targetMeetRate * 100).toFixed(1) + '%',
+      },
     });
   }, 1000);
 
@@ -519,7 +540,6 @@ export async function runAllExamples() {
     console.log('  • Memory Growth: < 10MB/hour');
     console.log('  • IPC Latency: < 5ms');
     console.log('  • Window Operations: < 100ms');
-
   } catch (error) {
     console.error('❌ Error running examples:', error);
   }
@@ -538,7 +558,7 @@ export default {
   ExampleReactComponent,
   exampleCustomTracking,
   examplePerformanceBenchmarking,
-  runAllExamples
+  runAllExamples,
 };
 
 /**

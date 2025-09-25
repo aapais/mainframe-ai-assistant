@@ -1,6 +1,6 @@
 /**
  * IPC Handlers Index
- * 
+ *
  * Central export for all IPC handlers and related utilities.
  */
 
@@ -28,7 +28,7 @@ export type {
   BaseIPCResponse,
   IPCChannel,
   IPCError,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 
 /**
@@ -54,19 +54,14 @@ export const HandlerUtils = {
       message,
       details,
       severity: 'medium' as const,
-      retryable: false
-    }
+      retryable: false,
+    },
   }),
 
   /**
    * Create a success response
    */
-  createSuccessResponse: <T>(
-    requestId: string,
-    startTime: number,
-    data: T,
-    metadata?: any
-  ) => ({
+  createSuccessResponse: <T>(requestId: string, startTime: number, data: T, metadata?: any) => ({
     success: true,
     requestId,
     timestamp: Date.now(),
@@ -76,8 +71,8 @@ export const HandlerUtils = {
       cached: false,
       batched: false,
       streamed: false,
-      ...metadata
-    }
+      ...metadata,
+    },
   }),
 
   /**
@@ -105,7 +100,7 @@ export const HandlerUtils = {
       .substring(0, maxLength)
       .replace(/[<>]/g, '') // Remove potential HTML
       .replace(/['"]/g, ''); // Remove quotes
-  }
+  },
 };
 
 /**
@@ -119,7 +114,7 @@ export const HandlerConfigs = {
     rateLimitConfig: { requests: 200, windowMs: 60000 },
     trackMetrics: true,
     validateInput: true,
-    sanitizeInput: true
+    sanitizeInput: true,
   },
 
   // Write operations with validation
@@ -129,7 +124,7 @@ export const HandlerConfigs = {
     trackMetrics: true,
     validateInput: true,
     sanitizeInput: true,
-    alertOnErrors: true
+    alertOnErrors: true,
   },
 
   // Search operations with AI
@@ -139,7 +134,7 @@ export const HandlerConfigs = {
     rateLimitConfig: { requests: 50, windowMs: 60000 },
     trackMetrics: true,
     validateInput: true,
-    logRequests: false
+    logRequests: false,
   },
 
   // System operations
@@ -148,7 +143,7 @@ export const HandlerConfigs = {
     cacheTTL: 30000, // 30 seconds
     rateLimitConfig: { requests: 60, windowMs: 60000 },
     trackMetrics: true,
-    requireAuth: false
+    requireAuth: false,
   },
 
   // Critical operations
@@ -159,6 +154,6 @@ export const HandlerConfigs = {
     validateInput: true,
     sanitizeInput: true,
     requireAuth: true,
-    alertOnErrors: true
-  }
+    alertOnErrors: true,
+  },
 } as const;

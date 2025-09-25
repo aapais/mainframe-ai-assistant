@@ -28,14 +28,14 @@ export class IPCIntegration {
       enableMemoryCache: true,
       memoryCacheOptions: {
         maxSize: 1000,
-        ttl: 300000 // 5 minutes default
+        ttl: 300000, // 5 minutes default
       },
       enableDiskCache: true,
       diskCacheOptions: {
         maxSize: '100MB',
-        ttl: 1800000 // 30 minutes
+        ttl: 1800000, // 30 minutes
       },
-      enableCompression: true
+      enableCompression: true,
     });
 
     // Initialize IPC Manager with cache
@@ -58,28 +58,28 @@ export class IPCIntegration {
    */
   private setupEventListeners(): void {
     // Listen to IPC errors
-    this.ipcManager.on('error', (error) => {
+    this.ipcManager.on('error', error => {
       console.error('IPC Manager Error:', error);
       // Could send to monitoring service
     });
 
     // Listen to cache invalidation events
-    this.ipcManager.on('cache:invalidate', (pattern) => {
+    this.ipcManager.on('cache:invalidate', pattern => {
       console.log('Cache invalidation requested:', pattern);
       // Implement specific cache invalidation logic
     });
 
     // Listen to batch processing events
-    this.ipcManager.on('batchError', (event) => {
+    this.ipcManager.on('batchError', event => {
       console.error('Batch processing error:', event);
     });
 
     // Listen to streaming events
-    this.ipcManager.on('streamComplete', (event) => {
+    this.ipcManager.on('streamComplete', event => {
       console.log('Stream completed:', event);
     });
 
-    this.ipcManager.on('streamCancelled', (event) => {
+    this.ipcManager.on('streamCancelled', event => {
       console.log('Stream cancelled:', event);
     });
   }
@@ -96,7 +96,7 @@ export class IPCIntegration {
       ipc: ipcMetrics,
       batching: batchMetrics,
       streaming: streamMetrics,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -126,7 +126,7 @@ export class IPCIntegration {
    */
   async warmupCache(): Promise<void> {
     console.log('🔥 Warming up IPC cache...');
-    
+
     try {
       // Pre-populate cache with popular entries
       await this.cacheManager.warmup([
@@ -136,15 +136,15 @@ export class IPCIntegration {
             // This would typically call the actual service
             return { mockData: 'popular entries' };
           },
-          ttl: 300000
+          ttl: 300000,
         },
         {
           key: 'ipc:db:getStats:[]',
           generator: async () => {
             return { mockData: 'database stats' };
           },
-          ttl: 60000
-        }
+          ttl: 60000,
+        },
       ]);
 
       console.log('✅ IPC cache warmup completed');
@@ -162,16 +162,16 @@ export class IPCIntegration {
     try {
       // Flush any pending batches
       await this.ipcManager['requestBatcher']?.flushAll();
-      
+
       // Cancel any active streams
       this.ipcManager['streamingHandler']?.cancelAllStreams();
-      
+
       // Clean up handlers
       this.ipcHandlers.destroy();
-      
+
       // Clean up manager
       this.ipcManager.destroy();
-      
+
       // Clean up cache
       await this.cacheManager.close();
 
@@ -190,12 +190,7 @@ export function initializeEnhancedIPC(
   aiService: AIService,
   monitoringService: MonitoringService
 ): IPCIntegration {
-  
-  const ipcIntegration = new IPCIntegration(
-    databaseService,
-    aiService,
-    monitoringService
-  );
+  const ipcIntegration = new IPCIntegration(databaseService, aiService, monitoringService);
 
   // Set up graceful shutdown
   process.on('SIGINT', async () => {
@@ -234,10 +229,10 @@ export function registerCustomHandler(ipcManager: IPCManager) {
       batchDelay: 100,
       cacheable: true,
       cacheTTL: 120000,
-      validation: (args) => {
+      validation: args => {
         return args[0] && typeof args[0] === 'object' ? true : 'Data must be an object';
       },
-      rateLimit: { requests: 50, window: 60000 }
+      rateLimit: { requests: 50, window: 60000 },
     }
   );
 
@@ -259,9 +254,9 @@ export function registerCustomHandler(ipcManager: IPCManager) {
     {
       streamable: true,
       streamChunkSize: 50,
-      validation: (args) => {
+      validation: args => {
         return args[0] && typeof args[0] === 'string' ? true : 'Query must be a string';
-      }
+      },
     }
   );
 }

@@ -170,7 +170,7 @@ export class DataExporter extends EventEmitter {
       config,
       data,
       startTime: new Date(),
-      progress: 0
+      progress: 0,
     };
 
     this.jobs.set(jobId, job);
@@ -228,7 +228,6 @@ export class DataExporter extends EventEmitter {
 
       this.logger.info(`Export job completed: ${jobId}`);
       this.emit('jobCompleted', job);
-
     } catch (error) {
       job.status = 'failed';
       job.endTime = new Date();
@@ -236,7 +235,6 @@ export class DataExporter extends EventEmitter {
 
       this.logger.error(`Export job failed: ${jobId}`, error);
       this.emit('jobFailed', job);
-
     } finally {
       this.activeJobs--;
     }
@@ -317,8 +315,11 @@ export class DataExporter extends EventEmitter {
       const transformedRow = { ...row };
 
       for (const [key, value] of Object.entries(transformedRow)) {
-        if (typeof value === 'number' && key.toLowerCase().includes('price') ||
-            key.toLowerCase().includes('cost') || key.toLowerCase().includes('amount')) {
+        if (
+          (typeof value === 'number' && key.toLowerCase().includes('price')) ||
+          key.toLowerCase().includes('cost') ||
+          key.toLowerCase().includes('amount')
+        ) {
           transformedRow[key] = this.formatCurrency(value, format);
         }
       }
@@ -333,10 +334,7 @@ export class DataExporter extends EventEmitter {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
 
-    return format
-      .replace('YYYY', year.toString())
-      .replace('MM', month)
-      .replace('DD', day);
+    return format.replace('YYYY', year.toString()).replace('MM', month).replace('DD', day);
   }
 
   private formatNumber(num: number, format: NumberFormat): string {
@@ -346,25 +344,29 @@ export class DataExporter extends EventEmitter {
     // Add thousands separator
     const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, format.thousandsSeparator);
 
-    return decimal ?
-      `${formattedInteger}${format.decimalSeparator}${decimal}` :
-      formattedInteger;
+    return decimal ? `${formattedInteger}${format.decimalSeparator}${decimal}` : formattedInteger;
   }
 
   private formatCurrency(amount: number, format: CurrencyFormat): string {
     const formatted = amount.toFixed(format.decimals);
-    return format.position === 'before' ?
-      `${format.symbol}${formatted}` :
-      `${formatted}${format.symbol}`;
+    return format.position === 'before'
+      ? `${format.symbol}${formatted}`
+      : `${formatted}${format.symbol}`;
   }
 
   private isDateString(value: string): boolean {
-    return /^\d{4}-\d{2}-\d{2}/.test(value) ||
-           /^\d{2}\/\d{2}\/\d{4}/.test(value) ||
-           !isNaN(Date.parse(value));
+    return (
+      /^\d{4}-\d{2}-\d{2}/.test(value) ||
+      /^\d{2}\/\d{2}\/\d{4}/.test(value) ||
+      !isNaN(Date.parse(value))
+    );
   }
 
-  private async performExport(data: any[], config: ExportConfig, filePath: string): Promise<ExportResult> {
+  private async performExport(
+    data: any[],
+    config: ExportConfig,
+    filePath: string
+  ): Promise<ExportResult> {
     const handler = this.formatHandlers.get(config.format);
     if (!handler) {
       throw new Error(`No handler found for format: ${config.format}`);
@@ -377,7 +379,7 @@ export class DataExporter extends EventEmitter {
     return {
       ...result,
       duration,
-      recordCount: data.length
+      recordCount: data.length,
     };
   }
 
@@ -386,20 +388,20 @@ export class DataExporter extends EventEmitter {
       return config.filePath;
     }
 
-    const fileName = config.fileName ||
-      `export_${Date.now()}.${this.getFileExtension(config.format)}`;
+    const fileName =
+      config.fileName || `export_${Date.now()}.${this.getFileExtension(config.format)}`;
 
     return path.join(this.outputDirectory, fileName);
   }
 
   private getFileExtension(format: string): string {
     const extensions: Record<string, string> = {
-      'csv': 'csv',
-      'json': 'json',
-      'xml': 'xml',
-      'html': 'html',
-      'excel': 'xlsx',
-      'pdf': 'pdf'
+      csv: 'csv',
+      json: 'json',
+      xml: 'xml',
+      html: 'html',
+      excel: 'xlsx',
+      pdf: 'pdf',
     };
 
     return extensions[format] || format;
@@ -473,7 +475,8 @@ class CSVFormatHandler implements FormatHandler {
         // Headers
         if (options.includeHeaders !== false) {
           const headers = Object.keys(data[0]);
-          csvContent += headers.map(h => `${quoteChar}${h}${quoteChar}`).join(delimiter) + lineEnding;
+          csvContent +=
+            headers.map(h => `${quoteChar}${h}${quoteChar}`).join(delimiter) + lineEnding;
         }
 
         // Data rows
@@ -486,7 +489,9 @@ class CSVFormatHandler implements FormatHandler {
         }
       }
 
-      await fs.writeFile(filePath, csvContent, { encoding: options.encoding as BufferEncoding || 'utf8' });
+      await fs.writeFile(filePath, csvContent, {
+        encoding: (options.encoding as BufferEncoding) || 'utf8',
+      });
       const stats = await fs.stat(filePath);
 
       return {
@@ -495,16 +500,15 @@ class CSVFormatHandler implements FormatHandler {
         fileSize: stats.size,
         recordCount: data.length,
         duration: 0,
-        format: this.format
+        format: this.format,
       };
-
     } catch (error) {
       return {
         success: false,
         recordCount: data.length,
         duration: 0,
         format: this.format,
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
     }
   }
@@ -523,7 +527,9 @@ class JSONFormatHandler implements FormatHandler {
         ? JSON.stringify(data, null, 2)
         : JSON.stringify(data);
 
-      await fs.writeFile(filePath, jsonContent, { encoding: config.options.encoding as BufferEncoding || 'utf8' });
+      await fs.writeFile(filePath, jsonContent, {
+        encoding: (config.options.encoding as BufferEncoding) || 'utf8',
+      });
       const stats = await fs.stat(filePath);
 
       return {
@@ -532,16 +538,15 @@ class JSONFormatHandler implements FormatHandler {
         fileSize: stats.size,
         recordCount: data.length,
         duration: 0,
-        format: this.format
+        format: this.format,
       };
-
     } catch (error) {
       return {
         success: false,
         recordCount: data.length,
         duration: 0,
         format: this.format,
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
     }
   }
@@ -561,13 +566,13 @@ class XMLFormatHandler implements FormatHandler {
       for (const row of data) {
         xmlContent += '  <record>\n';
         for (const [key, value] of Object.entries(row)) {
-          const escapedValue = String(value || '').replace(/[<>&'"]/g, (char) => {
+          const escapedValue = String(value || '').replace(/[<>&'"]/g, char => {
             const entities: Record<string, string> = {
               '<': '&lt;',
               '>': '&gt;',
               '&': '&amp;',
               "'": '&apos;',
-              '"': '&quot;'
+              '"': '&quot;',
             };
             return entities[char];
           });
@@ -578,7 +583,9 @@ class XMLFormatHandler implements FormatHandler {
 
       xmlContent += '</root>';
 
-      await fs.writeFile(filePath, xmlContent, { encoding: config.options.encoding as BufferEncoding || 'utf8' });
+      await fs.writeFile(filePath, xmlContent, {
+        encoding: (config.options.encoding as BufferEncoding) || 'utf8',
+      });
       const stats = await fs.stat(filePath);
 
       return {
@@ -587,16 +594,15 @@ class XMLFormatHandler implements FormatHandler {
         fileSize: stats.size,
         recordCount: data.length,
         duration: 0,
-        format: this.format
+        format: this.format,
       };
-
     } catch (error) {
       return {
         success: false,
         recordCount: data.length,
         duration: 0,
         format: this.format,
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
     }
   }
@@ -645,7 +651,9 @@ class HTMLFormatHandler implements FormatHandler {
 
       htmlContent += '\n</table>\n</body>\n</html>';
 
-      await fs.writeFile(filePath, htmlContent, { encoding: config.options.encoding as BufferEncoding || 'utf8' });
+      await fs.writeFile(filePath, htmlContent, {
+        encoding: (config.options.encoding as BufferEncoding) || 'utf8',
+      });
       const stats = await fs.stat(filePath);
 
       return {
@@ -654,16 +662,15 @@ class HTMLFormatHandler implements FormatHandler {
         fileSize: stats.size,
         recordCount: data.length,
         duration: 0,
-        format: this.format
+        format: this.format,
       };
-
     } catch (error) {
       return {
         success: false,
         recordCount: data.length,
         duration: 0,
         format: this.format,
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
     }
   }
@@ -691,13 +698,13 @@ class HTMLFormatHandler implements FormatHandler {
   }
 
   private escapeHtml(text: string): string {
-    return text.replace(/[<>&'"]/g, (char) => {
+    return text.replace(/[<>&'"]/g, char => {
       const entities: Record<string, string> = {
         '<': '&lt;',
         '>': '&gt;',
         '&': '&amp;',
         "'": '&#39;',
-        '"': '&quot;'
+        '"': '&quot;',
       };
       return entities[char];
     });

@@ -6,7 +6,11 @@
  */
 
 import { RenderMetrics, PerformanceStore } from '../hooks/useReactProfiler';
-import { PerformanceBatch, ComponentHealthScore, MemoryMetric } from '../hooks/usePerformanceMonitoring';
+import {
+  PerformanceBatch,
+  ComponentHealthScore,
+  MemoryMetric,
+} from '../hooks/usePerformanceMonitoring';
 
 // =========================
 // TYPES AND INTERFACES
@@ -43,7 +47,13 @@ export interface Evidence {
 }
 
 export interface RootCause {
-  category: 'component-design' | 'state-management' | 'rendering' | 'memory' | 'data-flow' | 'external';
+  category:
+    | 'component-design'
+    | 'state-management'
+    | 'rendering'
+    | 'memory'
+    | 'data-flow'
+    | 'external';
   primary: string;
   contributing: string[];
   likelihood: number; // 0-100
@@ -93,7 +103,7 @@ export class PerformanceBottleneckAnalyzer {
       confidenceThreshold: 70,
       enableMemoryAnalysis: true,
       enableInteractionAnalysis: true,
-      ...config
+      ...config,
     };
   }
 
@@ -124,7 +134,9 @@ export class PerformanceBottleneckAnalyzer {
     this.storeBottlenecks(bottlenecks);
 
     // Filter by confidence threshold
-    const filteredBottlenecks = bottlenecks.filter(b => b.confidence >= this.config.confidenceThreshold);
+    const filteredBottlenecks = bottlenecks.filter(
+      b => b.confidence >= this.config.confidenceThreshold
+    );
 
     // Sort by impact score
     return filteredBottlenecks.sort((a, b) => b.impactScore - a.impactScore);
@@ -161,13 +173,17 @@ export class PerformanceBottleneckAnalyzer {
   // RENDER ANALYSIS METHODS
   // =========================
 
-  private analyzeRenderBottlenecks(componentName: string, metrics: RenderMetrics[]): BottleneckIdentification[] {
+  private analyzeRenderBottlenecks(
+    componentName: string,
+    metrics: RenderMetrics[]
+  ): BottleneckIdentification[] {
     const bottlenecks: BottleneckIdentification[] = [];
     const slowRenders = metrics.filter(m => m.actualDuration > this.config.minRenderTime);
 
     if (slowRenders.length < this.config.minOccurrences) return bottlenecks;
 
-    const avgRenderTime = slowRenders.reduce((sum, m) => sum + m.actualDuration, 0) / slowRenders.length;
+    const avgRenderTime =
+      slowRenders.reduce((sum, m) => sum + m.actualDuration, 0) / slowRenders.length;
     const maxRenderTime = Math.max(...slowRenders.map(m => m.actualDuration));
     const renderTimeVariance = this.calculateVariance(slowRenders.map(m => m.actualDuration));
 
@@ -187,22 +203,22 @@ export class PerformanceBottleneckAnalyzer {
             description: 'High render time variance',
             value: renderTimeVariance.toFixed(2),
             severity: 'warning',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'metric',
             description: 'Average render time',
             value: avgRenderTime.toFixed(2),
             severity: avgRenderTime > 32 ? 'critical' : 'warning',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: this.identifyRenderRootCause(metrics, 'inconsistent'),
         recommendations: this.generateRenderRecommendations('inconsistent', avgRenderTime),
         affectedMetrics: ['actualDuration', 'baseDuration'],
         detectedAt: Date.now(),
         occurrenceCount: slowRenders.length,
-        trends: this.analyzeTrends(metrics)
+        trends: this.analyzeTrends(metrics),
       });
     }
 
@@ -222,29 +238,32 @@ export class PerformanceBottleneckAnalyzer {
             description: 'Average render time exceeds threshold',
             value: avgRenderTime.toFixed(2),
             severity: avgRenderTime > 50 ? 'critical' : 'warning',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'threshold',
             description: 'Slow render occurrence rate',
             value: `${((slowRenders.length / metrics.length) * 100).toFixed(1)}%`,
             severity: 'warning',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: this.identifyRenderRootCause(metrics, 'slow'),
         recommendations: this.generateRenderRecommendations('slow', avgRenderTime),
         affectedMetrics: ['actualDuration'],
         detectedAt: Date.now(),
         occurrenceCount: slowRenders.length,
-        trends: this.analyzeTrends(metrics)
+        trends: this.analyzeTrends(metrics),
       });
     }
 
     return bottlenecks;
   }
 
-  private analyzeReRenderPatterns(componentName: string, metrics: RenderMetrics[]): BottleneckIdentification[] {
+  private analyzeReRenderPatterns(
+    componentName: string,
+    metrics: RenderMetrics[]
+  ): BottleneckIdentification[] {
     const bottlenecks: BottleneckIdentification[] = [];
     const timeWindow = 5000; // 5 seconds
     const now = Date.now();
@@ -280,31 +299,34 @@ export class PerformanceBottleneckAnalyzer {
           {
             type: 'pattern',
             description: 'High frequency re-renders',
-            value: `${worstWindow.length} renders in ${timeWindow/1000}s`,
+            value: `${worstWindow.length} renders in ${timeWindow / 1000}s`,
             severity: 'critical',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'correlation',
             description: 'Mount vs Update ratio',
             value: this.calculateMountUpdateRatio(worstWindow),
             severity: 'warning',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: this.identifyRenderRootCause(worstWindow, 'excessive'),
         recommendations: this.generateRenderRecommendations('excessive', worstWindow.length),
         affectedMetrics: ['renderCount', 'phase'],
         detectedAt: Date.now(),
         occurrenceCount: worstWindow.length,
-        trends: this.analyzeTrends(metrics)
+        trends: this.analyzeTrends(metrics),
       });
     }
 
     return bottlenecks;
   }
 
-  private analyzeMountUpdateImbalance(componentName: string, metrics: RenderMetrics[]): BottleneckIdentification[] {
+  private analyzeMountUpdateImbalance(
+    componentName: string,
+    metrics: RenderMetrics[]
+  ): BottleneckIdentification[] {
     const bottlenecks: BottleneckIdentification[] = [];
 
     const mountMetrics = metrics.filter(m => m.phase === 'mount');
@@ -312,8 +334,10 @@ export class PerformanceBottleneckAnalyzer {
 
     if (mountMetrics.length === 0 || updateMetrics.length === 0) return bottlenecks;
 
-    const avgMountTime = mountMetrics.reduce((sum, m) => sum + m.actualDuration, 0) / mountMetrics.length;
-    const avgUpdateTime = updateMetrics.reduce((sum, m) => sum + m.actualDuration, 0) / updateMetrics.length;
+    const avgMountTime =
+      mountMetrics.reduce((sum, m) => sum + m.actualDuration, 0) / mountMetrics.length;
+    const avgUpdateTime =
+      updateMetrics.reduce((sum, m) => sum + m.actualDuration, 0) / updateMetrics.length;
 
     // Detect if updates are significantly slower than mounts
     if (avgUpdateTime > avgMountTime * 2 && avgUpdateTime > this.config.minRenderTime) {
@@ -331,22 +355,22 @@ export class PerformanceBottleneckAnalyzer {
             description: 'Average update time',
             value: avgUpdateTime.toFixed(2),
             severity: 'warning',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'metric',
             description: 'Average mount time',
             value: avgMountTime.toFixed(2),
             severity: 'info',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'correlation',
             description: 'Update/Mount ratio',
             value: (avgUpdateTime / avgMountTime).toFixed(2),
             severity: 'warning',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: {
           category: 'rendering',
@@ -355,20 +379,23 @@ export class PerformanceBottleneckAnalyzer {
             'Missing memoization',
             'Unnecessary prop changes',
             'Expensive calculations in render',
-            'Poor state structure'
+            'Poor state structure',
           ],
           likelihood: 85,
-          technicalExplanation: 'Component updates are taking significantly longer than initial mounts, suggesting inefficient re-rendering logic or missing optimizations.',
-          businessImpact: 'User interactions feel sluggish, reducing perceived application performance and user satisfaction.'
+          technicalExplanation:
+            'Component updates are taking significantly longer than initial mounts, suggesting inefficient re-rendering logic or missing optimizations.',
+          businessImpact:
+            'User interactions feel sluggish, reducing perceived application performance and user satisfaction.',
         },
         recommendations: [
           {
             priority: 'high',
             action: 'Implement React.memo for component memoization',
-            implementation: 'Wrap component with React.memo and provide custom comparison function if needed',
+            implementation:
+              'Wrap component with React.memo and provide custom comparison function if needed',
             difficulty: 'easy',
             estimatedImpact: 60,
-            codeExample: `const ${componentName} = React.memo(({ prop1, prop2 }) => {\n  // Component logic\n});`
+            codeExample: `const ${componentName} = React.memo(({ prop1, prop2 }) => {\n  // Component logic\n});`,
           },
           {
             priority: 'high',
@@ -376,13 +403,14 @@ export class PerformanceBottleneckAnalyzer {
             implementation: 'Wrap expensive operations in useMemo with proper dependencies',
             difficulty: 'medium',
             estimatedImpact: 70,
-            codeExample: 'const expensiveValue = useMemo(() => expensiveCalculation(data), [data]);'
-          }
+            codeExample:
+              'const expensiveValue = useMemo(() => expensiveCalculation(data), [data]);',
+          },
         ],
         affectedMetrics: ['actualDuration', 'phase'],
         detectedAt: Date.now(),
         occurrenceCount: updateMetrics.length,
-        trends: this.analyzeTrends(metrics)
+        trends: this.analyzeTrends(metrics),
       });
     }
 
@@ -416,15 +444,15 @@ export class PerformanceBottleneckAnalyzer {
             description: 'Consistent memory increase',
             value: `${(memoryLeak.avgIncrease / 1024 / 1024).toFixed(2)}MB per measurement`,
             severity: 'critical',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'metric',
             description: 'Total memory increase',
             value: `${(memoryLeak.totalIncrease / 1024 / 1024).toFixed(2)}MB`,
             severity: 'critical',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: {
           category: 'memory',
@@ -434,11 +462,13 @@ export class PerformanceBottleneckAnalyzer {
             'Uncleared timers/intervals',
             'Retained closures',
             'Circular references',
-            'Large object retention'
+            'Large object retention',
           ],
           likelihood: 90,
-          technicalExplanation: 'Component is consistently increasing memory usage without corresponding decreases, indicating objects are not being properly garbage collected.',
-          businessImpact: 'Application performance will degrade over time, potentially causing crashes or requiring page refreshes.'
+          technicalExplanation:
+            'Component is consistently increasing memory usage without corresponding decreases, indicating objects are not being properly garbage collected.',
+          businessImpact:
+            'Application performance will degrade over time, potentially causing crashes or requiring page refreshes.',
         },
         recommendations: [
           {
@@ -447,15 +477,16 @@ export class PerformanceBottleneckAnalyzer {
             implementation: 'Ensure all useEffect hooks return cleanup functions',
             difficulty: 'medium',
             estimatedImpact: 80,
-            codeExample: 'useEffect(() => {\n  const handler = () => {};\n  element.addEventListener("event", handler);\n  return () => element.removeEventListener("event", handler);\n}, []);'
+            codeExample:
+              'useEffect(() => {\n  const handler = () => {};\n  element.addEventListener("event", handler);\n  return () => element.removeEventListener("event", handler);\n}, []);',
           },
           {
             priority: 'high',
             action: 'Clear timers and intervals',
             implementation: 'Clear all setTimeout and setInterval in cleanup',
             difficulty: 'easy',
-            estimatedImpact: 70
-          }
+            estimatedImpact: 70,
+          },
         ],
         affectedMetrics: ['usedJSMemory', 'jsMemoryDelta'],
         detectedAt: Date.now(),
@@ -463,8 +494,8 @@ export class PerformanceBottleneckAnalyzer {
         trends: {
           isGettingWorse: true,
           frequency: 'increasing',
-          averageImpact: memoryLeak.avgIncrease
-        }
+          averageImpact: memoryLeak.avgIncrease,
+        },
       });
     }
 
@@ -481,9 +512,11 @@ export class PerformanceBottleneckAnalyzer {
 
     if (slowInteractions.length === 0) return bottlenecks;
 
-    const avgInteractionTime = slowInteractions.reduce((sum, i) => sum + i.duration, 0) / slowInteractions.length;
+    const avgInteractionTime =
+      slowInteractions.reduce((sum, i) => sum + i.duration, 0) / slowInteractions.length;
 
-    if (avgInteractionTime > 100) { // 100ms threshold for interactions
+    if (avgInteractionTime > 100) {
+      // 100ms threshold for interactions
       bottlenecks.push({
         id: `slow-interactions-${batch.componentName}-${Date.now()}`,
         type: 'interaction',
@@ -498,15 +531,15 @@ export class PerformanceBottleneckAnalyzer {
             description: 'Average interaction time',
             value: avgInteractionTime.toFixed(2),
             severity: 'critical',
-            timestamp: Date.now()
+            timestamp: Date.now(),
           },
           {
             type: 'pattern',
             description: 'Blocking interactions count',
             value: slowInteractions.length.toString(),
             severity: 'warning',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: {
           category: 'rendering',
@@ -515,11 +548,13 @@ export class PerformanceBottleneckAnalyzer {
             'Synchronous heavy computations',
             'Large DOM updates',
             'Unoptimized event handlers',
-            'Inefficient state updates'
+            'Inefficient state updates',
           ],
           likelihood: 80,
-          technicalExplanation: 'User interactions are causing main thread blocking, resulting in poor perceived performance.',
-          businessImpact: 'Users experience lag and unresponsiveness, leading to poor user experience and potential abandonment.'
+          technicalExplanation:
+            'User interactions are causing main thread blocking, resulting in poor perceived performance.',
+          businessImpact:
+            'Users experience lag and unresponsiveness, leading to poor user experience and potential abandonment.',
         },
         recommendations: [
           {
@@ -527,7 +562,7 @@ export class PerformanceBottleneckAnalyzer {
             action: 'Debounce or throttle event handlers',
             implementation: 'Use debounce/throttle for expensive operations in event handlers',
             difficulty: 'easy',
-            estimatedImpact: 60
+            estimatedImpact: 60,
           },
           {
             priority: 'high',
@@ -535,8 +570,8 @@ export class PerformanceBottleneckAnalyzer {
             implementation: 'Wrap state updates in startTransition',
             difficulty: 'medium',
             estimatedImpact: 70,
-            codeExample: 'startTransition(() => {\n  setNonUrgentState(newValue);\n});'
-          }
+            codeExample: 'startTransition(() => {\n  setNonUrgentState(newValue);\n});',
+          },
         ],
         affectedMetrics: ['duration', 'blocking'],
         detectedAt: Date.now(),
@@ -544,8 +579,8 @@ export class PerformanceBottleneckAnalyzer {
         trends: {
           isGettingWorse: false,
           frequency: 'stable',
-          averageImpact: avgInteractionTime
-        }
+          averageImpact: avgInteractionTime,
+        },
       });
     }
 
@@ -603,7 +638,7 @@ export class PerformanceBottleneckAnalyzer {
       return {
         isGettingWorse: false,
         frequency: 'stable',
-        averageImpact: 0
+        averageImpact: 0,
       };
     }
 
@@ -612,9 +647,13 @@ export class PerformanceBottleneckAnalyzer {
 
     return {
       isGettingWorse: recentAvg > olderAvg * 1.1,
-      frequency: recentAvg > olderAvg * 1.1 ? 'increasing' :
-                 recentAvg < olderAvg * 0.9 ? 'decreasing' : 'stable',
-      averageImpact: recentAvg
+      frequency:
+        recentAvg > olderAvg * 1.1
+          ? 'increasing'
+          : recentAvg < olderAvg * 0.9
+            ? 'decreasing'
+            : 'stable',
+      averageImpact: recentAvg,
     };
   }
 
@@ -627,8 +666,8 @@ export class PerformanceBottleneckAnalyzer {
           'Variable data sizes',
           'Conditional rendering logic',
           'External dependencies',
-          'Race conditions'
-        ]
+          'Race conditions',
+        ],
       },
       slow: {
         category: 'component-design' as const,
@@ -637,8 +676,8 @@ export class PerformanceBottleneckAnalyzer {
           'Missing memoization',
           'Expensive calculations',
           'Large DOM trees',
-          'Poor algorithm choice'
-        ]
+          'Poor algorithm choice',
+        ],
       },
       excessive: {
         category: 'state-management' as const,
@@ -647,9 +686,9 @@ export class PerformanceBottleneckAnalyzer {
           'Unstable dependencies',
           'Incorrect state structure',
           'Missing memoization',
-          'Event handler recreation'
-        ]
-      }
+          'Event handler recreation',
+        ],
+      },
     };
 
     const base = baseCauses[problemType] || baseCauses.slow;
@@ -658,7 +697,8 @@ export class PerformanceBottleneckAnalyzer {
       ...base,
       likelihood: 80,
       technicalExplanation: `Component exhibits ${problemType} render behavior patterns indicating ${base.primary.toLowerCase()}.`,
-      businessImpact: 'Degraded user experience leading to reduced engagement and potential user churn.'
+      businessImpact:
+        'Degraded user experience leading to reduced engagement and potential user churn.',
     };
   }
 
@@ -670,15 +710,15 @@ export class PerformanceBottleneckAnalyzer {
           action: 'Implement consistent data handling',
           implementation: 'Normalize data structures and implement loading states',
           difficulty: 'medium' as const,
-          estimatedImpact: 70
+          estimatedImpact: 70,
         },
         {
           priority: 'medium' as const,
           action: 'Add error boundaries',
           implementation: 'Wrap component in error boundary to handle edge cases',
           difficulty: 'easy' as const,
-          estimatedImpact: 40
-        }
+          estimatedImpact: 40,
+        },
       ],
       slow: [
         {
@@ -686,15 +726,15 @@ export class PerformanceBottleneckAnalyzer {
           action: 'Optimize render logic',
           implementation: 'Profile and optimize expensive operations in render',
           difficulty: 'hard' as const,
-          estimatedImpact: 80
+          estimatedImpact: 80,
         },
         {
           priority: 'high' as const,
           action: 'Implement virtualization',
           implementation: 'Use react-window or similar for large lists',
           difficulty: 'medium' as const,
-          estimatedImpact: 90
-        }
+          estimatedImpact: 90,
+        },
       ],
       excessive: [
         {
@@ -702,16 +742,16 @@ export class PerformanceBottleneckAnalyzer {
           action: 'Reduce re-render frequency',
           implementation: 'Use React.memo, useMemo, and useCallback appropriately',
           difficulty: 'medium' as const,
-          estimatedImpact: 85
+          estimatedImpact: 85,
         },
         {
           priority: 'high' as const,
           action: 'Optimize state structure',
           implementation: 'Break down state to minimize update scope',
           difficulty: 'medium' as const,
-          estimatedImpact: 70
-        }
-      ]
+          estimatedImpact: 70,
+        },
+      ],
     };
 
     return baseRecommendations[problemType] || baseRecommendations.slow;
@@ -735,13 +775,16 @@ export class PerformanceBottleneckAnalyzer {
     // and average increase is more than 1MB per measurement
     const increaseRatio = increases.length / (memoryMetrics.length - 1);
     const detected = increaseRatio > 0.7 && avgIncrease > 1024 * 1024;
-    const confidence = Math.min(100, increaseRatio * 100 + (avgIncrease / (10 * 1024 * 1024)) * 100);
+    const confidence = Math.min(
+      100,
+      increaseRatio * 100 + (avgIncrease / (10 * 1024 * 1024)) * 100
+    );
 
     return {
       detected,
       confidence: Math.round(confidence),
       avgIncrease,
-      totalIncrease
+      totalIncrease,
     };
   }
 
@@ -764,16 +807,17 @@ export class PerformanceBottleneckAnalyzer {
             description: 'Max vs Average render time ratio',
             value: (batch.maxRenderTime / batch.avgRenderTime).toFixed(2),
             severity: 'warning',
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         ],
         rootCause: {
           category: 'rendering',
           primary: 'Intermittent performance spikes',
           contributing: ['Resource contention', 'Garbage collection', 'External API delays'],
           likelihood: 70,
-          technicalExplanation: 'Component shows occasional significant performance spikes beyond normal variation.',
-          businessImpact: 'Unpredictable user experience with occasional freezing or lag.'
+          technicalExplanation:
+            'Component shows occasional significant performance spikes beyond normal variation.',
+          businessImpact: 'Unpredictable user experience with occasional freezing or lag.',
         },
         recommendations: [
           {
@@ -781,8 +825,8 @@ export class PerformanceBottleneckAnalyzer {
             action: 'Investigate performance spikes',
             implementation: 'Add detailed profiling during slow renders',
             difficulty: 'medium',
-            estimatedImpact: 60
-          }
+            estimatedImpact: 60,
+          },
         ],
         affectedMetrics: ['maxRenderTime', 'avgRenderTime'],
         detectedAt: Date.now(),
@@ -790,8 +834,8 @@ export class PerformanceBottleneckAnalyzer {
         trends: {
           isGettingWorse: false,
           frequency: 'stable',
-          averageImpact: batch.avgRenderTime
-        }
+          averageImpact: batch.avgRenderTime,
+        },
       });
     }
 
@@ -850,5 +894,5 @@ export type {
   Evidence,
   RootCause,
   Recommendation,
-  BottleneckAnalysisConfig
+  BottleneckAnalysisConfig,
 };

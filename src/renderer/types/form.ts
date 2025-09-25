@@ -60,7 +60,18 @@ export interface IncidentFormData {
   title: string;
   description: string;
   impact: string;
-  category: 'System Outage' | 'Performance' | 'Database' | 'Application' | 'Security' | 'Network' | 'Hardware' | 'Capacity' | 'Data' | 'Configuration' | 'Other';
+  category:
+    | 'System Outage'
+    | 'Performance'
+    | 'Database'
+    | 'Application'
+    | 'Security'
+    | 'Network'
+    | 'Hardware'
+    | 'Capacity'
+    | 'Data'
+    | 'Configuration'
+    | 'Other';
   priority: 'P1' | 'P2' | 'P3' | 'P4';
   status: 'Open' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed';
   assignee?: string;
@@ -103,19 +114,19 @@ export interface BaseFieldProps {
   inputClassName?: string;
   errorClassName?: string;
   hintClassName?: string;
-  
+
   // Accessibility
   'aria-label'?: string;
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
   'aria-invalid'?: boolean;
-  
+
   // Visual indicators
   showRequiredIndicator?: boolean;
   showOptionalIndicator?: boolean;
   showCharacterCount?: boolean;
   maxLength?: number;
-  
+
   // Help and tooltips
   helpText?: string;
   tooltip?: string;
@@ -190,7 +201,7 @@ export interface UseFormReturn<T extends Record<string, any>> {
   isDirty: boolean;
   isValid: boolean;
   isAutoSaving: boolean;
-  
+
   // Actions
   setFieldValue: (field: keyof T, value: any) => void;
   setFieldError: (field: keyof T, error: string | undefined) => void;
@@ -199,13 +210,13 @@ export interface UseFormReturn<T extends Record<string, any>> {
   validateForm: () => Promise<boolean>;
   validateField: (field: keyof T) => Promise<string | null>;
   handleSubmit: (e?: React.FormEvent) => Promise<void>;
-  
+
   // Field helpers
   getFieldProps: (name: keyof T) => FieldProps;
   getFieldError: (name: keyof T) => string | undefined;
   isFieldTouched: (name: keyof T) => boolean;
   isFieldInvalid: (name: keyof T) => boolean;
-  
+
   // Draft management
   saveDraft: () => void;
   loadDraft: () => boolean;
@@ -286,7 +297,14 @@ export interface ValidationError {
 }
 
 // Export utility types
-export type FormFieldType = 'text' | 'email' | 'password' | 'textarea' | 'select' | 'checkbox' | 'radio';
+export type FormFieldType =
+  | 'text'
+  | 'email'
+  | 'password'
+  | 'textarea'
+  | 'select'
+  | 'checkbox'
+  | 'radio';
 
 export type FormValidationMode = 'onChange' | 'onBlur' | 'onSubmit' | 'manual';
 

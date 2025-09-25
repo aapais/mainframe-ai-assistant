@@ -30,13 +30,13 @@ async function basicSearchExample() {
         journal_mode: 'WAL',
         synchronous: 'NORMAL',
         cache_size: -64000,
-        foreign_keys: 'ON'
-      }
+        foreign_keys: 'ON',
+      },
     },
     fts: {
       tokenizer: 'porter',
       removeStopwords: true,
-      enableSynonyms: true
+      enableSynonyms: true,
     },
     ranking: {
       algorithm: 'hybrid',
@@ -44,13 +44,13 @@ async function basicSearchExample() {
         title: 2.0,
         content: 1.5,
         recency: 0.1,
-        usage: 0.2
-      }
+        usage: 0.2,
+      },
     },
     pagination: {
       maxPageSize: 100,
-      defaultPageSize: 20
-    }
+      defaultPageSize: 20,
+    },
   };
 
   // Create search service
@@ -61,7 +61,7 @@ async function basicSearchExample() {
     console.log('Performing basic search...');
     const basicResult = await searchService.search('JCL error', {
       limit: 10,
-      offset: 0
+      offset: 0,
     });
 
     console.log(`Found ${basicResult.results.length} results`);
@@ -76,7 +76,7 @@ async function basicSearchExample() {
         query_type: 'boolean',
         include_snippets: true,
         include_facets: true,
-        limit: 20
+        limit: 20,
       }
     );
 
@@ -90,10 +90,10 @@ async function basicSearchExample() {
       boost_fields: {
         title: 3.0,
         problem: 2.0,
-        solution: 1.5
+        solution: 1.5,
       },
       sort_by: 'relevance',
-      min_score: 0.5
+      min_score: 0.5,
     });
 
     console.log(`Field search found ${fieldResult.results.length} results`);
@@ -103,10 +103,10 @@ async function basicSearchExample() {
     const dateResult = await searchService.search('error', {
       date_range: {
         from: new Date('2023-01-01'),
-        to: new Date('2023-12-31')
+        to: new Date('2023-12-31'),
       },
       sort_by: 'date',
-      sort_order: 'desc'
+      sort_order: 'desc',
     });
 
     console.log(`Date filtered search found ${dateResult.results.length} results`);
@@ -122,7 +122,6 @@ async function basicSearchExample() {
     console.log(`Total searches: ${stats.total_searches}`);
     console.log(`Cache hit rate: ${stats.cache_hit_rate}%`);
     console.log(`Average response time: ${stats.avg_response_time}ms`);
-
   } catch (error) {
     console.error('Search error:', error);
   } finally {
@@ -142,13 +141,13 @@ async function integrationExample() {
       enableWAL: true,
       pragmas: {
         journal_mode: 'WAL',
-        synchronous: 'NORMAL'
-      }
+        synchronous: 'NORMAL',
+      },
     },
     fts: {
       tokenizer: 'porter',
       removeStopwords: true,
-      enableSynonyms: true
+      enableSynonyms: true,
     },
     ranking: {
       algorithm: 'hybrid',
@@ -156,13 +155,13 @@ async function integrationExample() {
         title: 2.0,
         content: 1.5,
         recency: 0.1,
-        usage: 0.2
-      }
+        usage: 0.2,
+      },
     },
     pagination: {
       maxPageSize: 50,
-      defaultPageSize: 10
-    }
+      defaultPageSize: 10,
+    },
   };
 
   // Create knowledge base service (simplified)
@@ -170,16 +169,12 @@ async function integrationExample() {
   await kbService.initialize();
 
   // Create integrated search service
-  const integrationService = new SearchIntegrationService(
-    config,
-    kbService,
-    {
-      syncInterval: 30000, // 30 seconds
-      enableRealTimeSync: true,
-      enableSearchAnalytics: true,
-      autoRebuildThreshold: 100
-    }
-  );
+  const integrationService = new SearchIntegrationService(config, kbService, {
+    syncInterval: 30000, // 30 seconds
+    enableRealTimeSync: true,
+    enableSearchAnalytics: true,
+    autoRebuildThreshold: 100,
+  });
 
   try {
     // Initialize integration
@@ -190,7 +185,7 @@ async function integrationExample() {
     const result = await integrationService.search('VSAM error handling', {
       limit: 15,
       include_facets: true,
-      category: 'VSAM'
+      category: 'VSAM',
     });
 
     console.log(`Integrated search results: ${result.results.length}`);
@@ -216,7 +211,6 @@ async function integrationExample() {
     const syncStatus = await integrationService.syncWithKnowledgeBase();
     console.log(`Sync completed. Total entries: ${syncStatus.totalEntries}`);
     console.log(`Index health: ${syncStatus.indexHealth}`);
-
   } catch (error) {
     console.error('Integration error:', error);
   } finally {
@@ -239,30 +233,30 @@ async function rankingAndFilteringExample() {
       popularity: 0.25,
       freshness: 0.15,
       userContext: 0.15,
-      qualityScore: 0.05
+      qualityScore: 0.05,
     },
     boosts: {
       exactMatch: 1.8,
       titleMatch: 1.5,
       categoryMatch: 1.3,
       tagMatch: 1.2,
-      userPreference: 1.6
-    }
+      userPreference: 1.6,
+    },
   });
 
   // Simulate user interactions for personalized ranking
   console.log('Recording user interactions...');
   rankingEngine.updateUserInteraction('user123', 'entry1', 'view', {
     category: 'JCL',
-    tags: ['error', 'batch']
+    tags: ['error', 'batch'],
   });
   rankingEngine.updateUserInteraction('user123', 'entry2', 'rate', {
     category: 'JCL',
-    rating: 5
+    rating: 5,
   });
   rankingEngine.updateUserInteraction('user123', 'entry3', 'bookmark', {
     category: 'VSAM',
-    tags: ['configuration']
+    tags: ['configuration'],
   });
 
   // Update content quality scores
@@ -271,7 +265,7 @@ async function rankingAndFilteringExample() {
     helpful: true,
     accurate: true,
     upToDate: true,
-    wellWritten: true
+    wellWritten: true,
   });
 
   // Get user preferences
@@ -287,7 +281,7 @@ async function rankingAndFilteringExample() {
     database: { path: './examples/ranking-search.db', enableWAL: true, pragmas: {} },
     fts: { tokenizer: 'porter', removeStopwords: true, enableSynonyms: true },
     ranking: { algorithm: 'hybrid', boosts: { title: 2, content: 1.5, recency: 0.1, usage: 0.2 } },
-    pagination: { maxPageSize: 100, defaultPageSize: 20 }
+    pagination: { maxPageSize: 100, defaultPageSize: 20 },
   };
 
   const searchService = new FTS5SearchService(config);
@@ -304,15 +298,15 @@ async function rankingAndFilteringExample() {
           name: 'complexity',
           type: 'range',
           source: 'computed',
-          options: { min: 0, max: 10 }
+          options: { min: 0, max: 10 },
         },
         {
           name: 'quality_rating',
           type: 'range',
           source: 'computed',
-          options: { min: 0, max: 5 }
-        }
-      ]
+          options: { min: 0, max: 5 },
+        },
+      ],
     }
   );
 
@@ -321,7 +315,7 @@ async function rankingAndFilteringExample() {
     console.log('\nGenerating search facets...');
     const facets = await filterEngine.generateFacets('database error', {
       limit: 20,
-      include_facets: true
+      include_facets: true,
     });
 
     console.log(`Generated ${facets.length} facets:`);
@@ -333,15 +327,13 @@ async function rankingAndFilteringExample() {
     const filters = new Map([
       ['category', 'DB2'],
       ['usage_range', { min: 5, max: 50 }],
-      ['date_range', { from: new Date('2023-01-01') }]
+      ['date_range', { from: new Date('2023-01-01') }],
     ]);
 
     console.log('\nApplying filters...');
-    const filterResult = filterEngine.applyFilters(
-      'database connection error',
-      filters,
-      { limit: 20 }
-    );
+    const filterResult = filterEngine.applyFilters('database connection error', filters, {
+      limit: 20,
+    });
 
     console.log('Modified query:', filterResult.modifiedQuery);
     console.log('Additional WHERE clause:', filterResult.additionalWhereClause);
@@ -361,7 +353,6 @@ async function rankingAndFilteringExample() {
     // Get filter analytics
     const filterAnalytics = filterEngine.getFilterAnalytics();
     console.log('\nFilter analytics:', filterAnalytics);
-
   } catch (error) {
     console.error('Ranking/filtering error:', error);
   } finally {
@@ -390,13 +381,13 @@ async function apiServerExample() {
       pragmas: {
         journal_mode: 'WAL',
         synchronous: 'NORMAL',
-        cache_size: -64000
-      }
+        cache_size: -64000,
+      },
     },
     fts: {
       tokenizer: 'porter',
       removeStopwords: true,
-      enableSynonyms: true
+      enableSynonyms: true,
     },
     ranking: {
       algorithm: 'hybrid',
@@ -404,13 +395,13 @@ async function apiServerExample() {
         title: 2.0,
         content: 1.5,
         recency: 0.1,
-        usage: 0.2
-      }
+        usage: 0.2,
+      },
     },
     pagination: {
       maxPageSize: 100,
-      defaultPageSize: 20
-    }
+      defaultPageSize: 20,
+    },
   };
 
   // Create search service
@@ -426,7 +417,7 @@ async function apiServerExample() {
       status: 'healthy',
       service: 'FTS5 Search API',
       timestamp: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.0.0',
     });
   });
 
@@ -437,8 +428,8 @@ async function apiServerExample() {
       success: false,
       error: {
         message: error.message,
-        code: error.code || 'INTERNAL_ERROR'
-      }
+        code: error.code || 'INTERNAL_ERROR',
+      },
     });
   });
 
@@ -460,7 +451,9 @@ async function apiServerExample() {
   console.log('\n2. Advanced search with filters:');
   console.log(`curl -X POST http://localhost:${PORT}/api/search/v2/search \\`);
   console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"query": "database error", "options": {"category": "DB2", "include_facets": true, "boost_fields": {"title": 2.0}}}'`);
+  console.log(
+    `  -d '{"query": "database error", "options": {"category": "DB2", "include_facets": true, "boost_fields": {"title": 2.0}}}'`
+  );
 
   console.log('\n3. Get suggestions:');
   console.log(`curl "http://localhost:${PORT}/api/search/v2/suggestions?q=jcl&limit=10"`);
@@ -498,13 +491,13 @@ async function comprehensiveExample() {
         journal_mode: 'WAL',
         synchronous: 'NORMAL',
         cache_size: -128000,
-        temp_store: 'MEMORY'
-      }
+        temp_store: 'MEMORY',
+      },
     },
     fts: {
       tokenizer: 'porter',
       removeStopwords: true,
-      enableSynonyms: true
+      enableSynonyms: true,
     },
     ranking: {
       algorithm: 'hybrid',
@@ -512,13 +505,13 @@ async function comprehensiveExample() {
         title: 2.5,
         content: 1.8,
         recency: 0.15,
-        usage: 0.25
-      }
+        usage: 0.25,
+      },
     },
     pagination: {
       maxPageSize: 200,
-      defaultPageSize: 25
-    }
+      defaultPageSize: 25,
+    },
   };
 
   const searchService = new FTS5SearchService(config);
@@ -528,10 +521,26 @@ async function comprehensiveExample() {
 
     const queries = [
       { query: 'JCL ABEND S0C7', type: 'simple', description: 'Simple keyword search' },
-      { query: 'title:"JCL Error" AND category:batch', type: 'boolean', description: 'Boolean search with field restrictions' },
-      { query: '"database connection timeout"', type: 'phrase', description: 'Exact phrase search' },
-      { query: 'VSAM AND (error OR problem)', type: 'boolean', description: 'Complex boolean with parentheses' },
-      { query: 'problem:performance AND solution:optimization', type: 'field', description: 'Multi-field search' }
+      {
+        query: 'title:"JCL Error" AND category:batch',
+        type: 'boolean',
+        description: 'Boolean search with field restrictions',
+      },
+      {
+        query: '"database connection timeout"',
+        type: 'phrase',
+        description: 'Exact phrase search',
+      },
+      {
+        query: 'VSAM AND (error OR problem)',
+        type: 'boolean',
+        description: 'Complex boolean with parentheses',
+      },
+      {
+        query: 'problem:performance AND solution:optimization',
+        type: 'field',
+        description: 'Multi-field search',
+      },
     ];
 
     const results = [];
@@ -544,7 +553,7 @@ async function comprehensiveExample() {
         query_type: type as any,
         limit: 20,
         include_snippets: true,
-        include_facets: true
+        include_facets: true,
       });
       const endTime = Date.now();
 
@@ -557,7 +566,7 @@ async function comprehensiveExample() {
         type,
         resultCount: result.results.length,
         responseTime: endTime - startTime,
-        facetCount: result.facets.length
+        facetCount: result.facets.length,
       });
     }
 
@@ -566,7 +575,7 @@ async function comprehensiveExample() {
       { offset: 0, limit: 10 },
       { offset: 10, limit: 10 },
       { offset: 50, limit: 25 },
-      { offset: 100, limit: 50 }
+      { offset: 100, limit: 50 },
     ];
 
     for (const { offset, limit } of paginationTests) {
@@ -574,7 +583,9 @@ async function comprehensiveExample() {
       const result = await searchService.search('error', { offset, limit });
       const endTime = Date.now();
 
-      console.log(`  Page ${Math.floor(offset/limit) + 1} (${limit} items): ${endTime - startTime}ms`);
+      console.log(
+        `  Page ${Math.floor(offset / limit) + 1} (${limit} items): ${endTime - startTime}ms`
+      );
     }
 
     console.log('\n3. Testing search suggestions performance...');
@@ -585,7 +596,9 @@ async function comprehensiveExample() {
       const suggestions = await searchService.getSuggestions(partialQuery, 10);
       const endTime = Date.now();
 
-      console.log(`  "${partialQuery}": ${suggestions.length} suggestions in ${endTime - startTime}ms`);
+      console.log(
+        `  "${partialQuery}": ${suggestions.length} suggestions in ${endTime - startTime}ms`
+      );
     }
 
     console.log('\n4. Performance summary:');
@@ -603,7 +616,6 @@ async function comprehensiveExample() {
     await searchService.rebuildIndex();
     const rebuildEnd = Date.now();
     console.log(`  Index rebuild completed in ${rebuildEnd - rebuildStart}ms`);
-
   } catch (error) {
     console.error('Comprehensive example error:', error);
   } finally {
@@ -616,7 +628,9 @@ async function comprehensiveExample() {
  */
 async function main() {
   console.log('FTS5 Search Backend Usage Examples\n');
-  console.log('This example demonstrates the full capabilities of the FTS5 search backend implementation.');
+  console.log(
+    'This example demonstrates the full capabilities of the FTS5 search backend implementation.'
+  );
 
   try {
     // Run examples sequentially
@@ -642,7 +656,7 @@ export {
   integrationExample,
   rankingAndFilteringExample,
   apiServerExample,
-  comprehensiveExample
+  comprehensiveExample,
 };
 
 // Run if this file is executed directly

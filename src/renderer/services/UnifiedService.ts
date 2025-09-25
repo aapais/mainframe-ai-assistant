@@ -11,7 +11,7 @@ import {
   SearchQuery,
   SearchResult,
   EntryFeedback,
-  KBCategory
+  KBCategory,
 } from '../../types';
 
 import {
@@ -24,7 +24,7 @@ import {
   IncidentMetrics,
   IncidentListResponse,
   IncidentStatus,
-  IncidentPriority
+  IncidentPriority,
 } from '../../types/incident';
 
 // ===========================
@@ -107,7 +107,10 @@ export interface IncidentEntryAccessor {
   isIncidentEntry(): boolean;
 }
 
-export interface UnifiedEntryWithAccessors extends UnifiedEntry, KBEntryAccessor, IncidentEntryAccessor {}
+export interface UnifiedEntryWithAccessors
+  extends UnifiedEntry,
+    KBEntryAccessor,
+    IncidentEntryAccessor {}
 
 // ===========================
 // IPC RESPONSE TYPES
@@ -157,7 +160,10 @@ class UnifiedService {
 
   constructor() {
     // Access the Electron IPC renderer
-    this.ipcRenderer = (window as any).electronAPI || (window as any).api || (window as any).require?.('electron')?.ipcRenderer;
+    this.ipcRenderer =
+      (window as any).electronAPI ||
+      (window as any).api ||
+      (window as any).require?.('electron')?.ipcRenderer;
 
     if (!this.ipcRenderer) {
       console.warn('IPC Renderer not available - running in web mode');
@@ -177,29 +183,43 @@ class UnifiedService {
   private addAccessors(entry: UnifiedEntry): UnifiedEntryWithAccessors {
     const entryWithAccessors = entry as UnifiedEntryWithAccessors;
 
-    entryWithAccessors.asKBEntry = function(): KBEntry {
+    entryWithAccessors.asKBEntry = function (): KBEntry {
       if (this.entry_type !== 'knowledge_base') {
         throw new Error('Entry is not a knowledge base entry');
       }
-      const { entry_type, status, priority, assigned_to, escalation_level,
-             resolution_time, sla_deadline, last_status_change, affected_systems,
-             business_impact, customer_impact, reporter, resolver, incident_number,
-             external_ticket_id, ...kbEntry } = this;
+      const {
+        entry_type,
+        status,
+        priority,
+        assigned_to,
+        escalation_level,
+        resolution_time,
+        sla_deadline,
+        last_status_change,
+        affected_systems,
+        business_impact,
+        customer_impact,
+        reporter,
+        resolver,
+        incident_number,
+        external_ticket_id,
+        ...kbEntry
+      } = this;
       return kbEntry as KBEntry;
     };
 
-    entryWithAccessors.isKBEntry = function(): boolean {
+    entryWithAccessors.isKBEntry = function (): boolean {
       return this.entry_type === 'knowledge_base';
     };
 
-    entryWithAccessors.asIncidentEntry = function(): IncidentKBEntry {
+    entryWithAccessors.asIncidentEntry = function (): IncidentKBEntry {
       if (this.entry_type !== 'incident') {
         throw new Error('Entry is not an incident entry');
       }
       return this as IncidentKBEntry;
     };
 
-    entryWithAccessors.isIncidentEntry = function(): boolean {
+    entryWithAccessors.isIncidentEntry = function (): boolean {
       return this.entry_type === 'incident';
     };
 
@@ -219,7 +239,10 @@ class UnifiedService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke('unified:create-entry', entryData);
+      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke(
+        'unified:create-entry',
+        entryData
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create entry');
@@ -241,13 +264,19 @@ class UnifiedService {
   /**
    * Update an existing entry
    */
-  async updateEntry(id: string, updateData: UpdateUnifiedEntry): Promise<UnifiedEntryWithAccessors> {
+  async updateEntry(
+    id: string,
+    updateData: UpdateUnifiedEntry
+  ): Promise<UnifiedEntryWithAccessors> {
     try {
       if (!this.ipcRenderer) {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke('unified:update-entry', { id, data: updateData });
+      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke(
+        'unified:update-entry',
+        { id, data: updateData }
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update entry');
@@ -275,7 +304,10 @@ class UnifiedService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke('unified:get-entry', { id });
+      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke(
+        'unified:get-entry',
+        { id }
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get entry');
@@ -295,13 +327,16 @@ class UnifiedService {
   /**
    * Get all entries with optional filtering by type
    */
-  async getEntries(options: SearchOptions = {}): Promise<{ entries: UnifiedEntryWithAccessors[]; total: number }> {
+  async getEntries(
+    options: SearchOptions = {}
+  ): Promise<{ entries: UnifiedEntryWithAccessors[]; total: number }> {
     try {
       if (!this.ipcRenderer) {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<{ entries: UnifiedEntry[]; total: number }> = await this.ipcRenderer.invoke('unified:get-entries', options);
+      const response: IPCResponse<{ entries: UnifiedEntry[]; total: number }> =
+        await this.ipcRenderer.invoke('unified:get-entries', options);
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get entries');
@@ -310,7 +345,7 @@ class UnifiedService {
       const result = response.data || { entries: [], total: 0 };
       return {
         entries: result.entries.map(entry => this.addAccessors(entry)),
-        total: result.total
+        total: result.total,
       };
     } catch (error) {
       console.error('Error getting unified entries:', error);
@@ -321,13 +356,17 @@ class UnifiedService {
   /**
    * Search entries across both KB and incidents
    */
-  async searchEntries(query: string, options: SearchOptions = {}): Promise<{ entries: UnifiedEntryWithAccessors[]; total: number }> {
+  async searchEntries(
+    query: string,
+    options: SearchOptions = {}
+  ): Promise<{ entries: UnifiedEntryWithAccessors[]; total: number }> {
     try {
       if (!this.ipcRenderer) {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<{ entries: UnifiedEntry[]; total: number }> = await this.ipcRenderer.invoke('unified:search-entries', { query, options });
+      const response: IPCResponse<{ entries: UnifiedEntry[]; total: number }> =
+        await this.ipcRenderer.invoke('unified:search-entries', { query, options });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to search entries');
@@ -336,7 +375,7 @@ class UnifiedService {
       const result = response.data || { entries: [], total: 0 };
       return {
         entries: result.entries.map(entry => this.addAccessors(entry)),
-        total: result.total
+        total: result.total,
       };
     } catch (error) {
       console.error('Error searching unified entries:', error);
@@ -376,7 +415,10 @@ class UnifiedService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke('unified:archive-entry', { id });
+      const response: IPCResponse<UnifiedEntry> = await this.ipcRenderer.invoke(
+        'unified:archive-entry',
+        { id }
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to archive entry');
@@ -405,7 +447,7 @@ class UnifiedService {
   async createKBEntry(entryData: CreateKBEntry): Promise<KBEntry> {
     const unifiedData: CreateUnifiedEntry = {
       ...entryData,
-      entry_type: 'knowledge_base'
+      entry_type: 'knowledge_base',
     };
     const result = await this.createEntry(unifiedData);
     return result.asKBEntry();
@@ -419,19 +461,22 @@ class UnifiedService {
     const result = await this.getEntries(optionsWithFilter);
     return {
       entries: result.entries.filter(entry => entry.isKBEntry()).map(entry => entry.asKBEntry()),
-      total: result.total
+      total: result.total,
     };
   }
 
   /**
    * Search KB entries only (backward compatible)
    */
-  async searchKBEntries(query: string, options: SearchOptions = {}): Promise<{ entries: KBEntry[]; total: number }> {
+  async searchKBEntries(
+    query: string,
+    options: SearchOptions = {}
+  ): Promise<{ entries: KBEntry[]; total: number }> {
     const optionsWithFilter = { ...options, entry_type: 'knowledge_base' as EntryType };
     const result = await this.searchEntries(query, optionsWithFilter);
     return {
       entries: result.entries.filter(entry => entry.isKBEntry()).map(entry => entry.asKBEntry()),
-      total: result.total
+      total: result.total,
     };
   }
 
@@ -446,7 +491,7 @@ class UnifiedService {
       category: entry.category,
       tags: [...(entry.tags || [])],
       created_by: 'current-user',
-      entry_type: 'knowledge_base'
+      entry_type: 'knowledge_base',
     };
 
     const result = await this.createEntry(duplicateData);
@@ -472,7 +517,7 @@ class UnifiedService {
       status: 'aberto' as IncidentStatus,
       priority: priority as IncidentPriority,
       assigned_to: assignedTo,
-      reporter
+      reporter,
     };
 
     const result = await this.createEntry(incidentData);
@@ -497,7 +542,7 @@ class UnifiedService {
         filters,
         sort,
         page,
-        pageSize
+        pageSize,
       });
       return result;
     } catch (error) {
@@ -535,7 +580,7 @@ class UnifiedService {
         incidentId,
         newStatus,
         reason,
-        changedBy
+        changedBy,
       });
     } catch (error) {
       console.error('Error updating incident status:', error);
@@ -546,11 +591,7 @@ class UnifiedService {
   /**
    * Assign incident to user (backward compatible)
    */
-  async assignIncident(
-    incidentId: string,
-    assignedTo: string,
-    assignedBy?: string
-  ): Promise<void> {
+  async assignIncident(incidentId: string, assignedTo: string, assignedBy?: string): Promise<void> {
     try {
       if (!this.ipcRenderer) {
         throw new Error('IPC not available');
@@ -559,7 +600,7 @@ class UnifiedService {
       await this.ipcRenderer.invoke('incident:assign', {
         incidentId,
         assignedTo,
-        assignedBy
+        assignedBy,
       });
     } catch (error) {
       console.error('Error assigning incident:', error);
@@ -583,7 +624,7 @@ class UnifiedService {
       const result = await this.ipcRenderer.invoke('incident:search', {
         query,
         filters,
-        sort
+        sort,
       });
       return result;
     } catch (error) {
@@ -605,22 +646,25 @@ class UnifiedService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<UnifiedStatistics> = await this.ipcRenderer.invoke('unified:get-statistics');
+      const response: IPCResponse<UnifiedStatistics> =
+        await this.ipcRenderer.invoke('unified:get-statistics');
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get statistics');
       }
 
-      return response.data || {
-        totalEntries: 0,
-        kbEntries: 0,
-        incidentEntries: 0,
-        categoryCounts: {},
-        recentActivity: 0,
-        searchesToday: 0,
-        averageSuccessRate: 0,
-        topEntries: []
-      };
+      return (
+        response.data || {
+          totalEntries: 0,
+          kbEntries: 0,
+          incidentEntries: 0,
+          categoryCounts: {},
+          recentActivity: 0,
+          searchesToday: 0,
+          averageSuccessRate: 0,
+          topEntries: [],
+        }
+      );
     } catch (error) {
       console.error('Error getting unified statistics:', error);
       throw error;
@@ -641,11 +685,12 @@ class UnifiedService {
           { name: 'VSAM', count: 23 },
           { name: 'CICS', count: 31 },
           { name: 'IMS', count: 19 },
-          { name: 'Other', count: 27 }
+          { name: 'Other', count: 27 },
         ];
       }
 
-      const response: IPCResponse<Array<{ name: string; count: number }>> = await this.ipcRenderer.invoke('unified:get-categories');
+      const response: IPCResponse<Array<{ name: string; count: number }>> =
+        await this.ipcRenderer.invoke('unified:get-categories');
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get categories');
@@ -670,11 +715,12 @@ class UnifiedService {
           { name: 'error-code', count: 12 },
           { name: 'batch-job', count: 8 },
           { name: 'sql-error', count: 10 },
-          { name: 'performance', count: 6 }
+          { name: 'performance', count: 6 },
         ];
       }
 
-      const response: IPCResponse<Array<{ name: string; count: number }>> = await this.ipcRenderer.invoke('unified:get-tags', { limit });
+      const response: IPCResponse<Array<{ name: string; count: number }>> =
+        await this.ipcRenderer.invoke('unified:get-tags', { limit });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get tags');
@@ -690,13 +736,19 @@ class UnifiedService {
   /**
    * Record feedback for an entry
    */
-  async recordFeedback(entryId: string, feedback: { rating: number; successful: boolean; comment?: string }): Promise<void> {
+  async recordFeedback(
+    entryId: string,
+    feedback: { rating: number; successful: boolean; comment?: string }
+  ): Promise<void> {
     try {
       if (!this.ipcRenderer) {
         return; // Silently fail in web mode
       }
 
-      const response: IPCResponse = await this.ipcRenderer.invoke('unified:record-feedback', { entryId, feedback });
+      const response: IPCResponse = await this.ipcRenderer.invoke('unified:record-feedback', {
+        entryId,
+        feedback,
+      });
 
       if (!response.success) {
         console.warn('Failed to record feedback:', response.error?.message);
@@ -715,7 +767,11 @@ class UnifiedService {
         return; // Silently fail in web mode
       }
 
-      const response: IPCResponse = await this.ipcRenderer.invoke('unified:record-usage', { entryId, action, metadata });
+      const response: IPCResponse = await this.ipcRenderer.invoke('unified:record-usage', {
+        entryId,
+        action,
+        metadata,
+      });
 
       if (!response.success) {
         console.warn('Failed to record usage:', response.error?.message);
@@ -765,7 +821,7 @@ class UnifiedService {
         content,
         author,
         isInternal,
-        attachments
+        attachments,
       });
       return result.id;
     } catch (error) {
@@ -784,7 +840,7 @@ class UnifiedService {
       }
 
       const result = await this.ipcRenderer.invoke('incident:getComments', {
-        incidentId
+        incidentId,
       });
       return result;
     } catch (error) {
@@ -803,7 +859,7 @@ class UnifiedService {
       }
 
       const result = await this.ipcRenderer.invoke('incident:getStatusHistory', {
-        incidentId
+        incidentId,
       });
       return result;
     } catch (error) {
@@ -822,7 +878,7 @@ class UnifiedService {
       }
 
       const result = await this.ipcRenderer.invoke('incident:getMetrics', {
-        timeframe
+        timeframe,
       });
       return result;
     } catch (error) {
@@ -840,12 +896,12 @@ class UnifiedService {
    */
   isValidStatusTransition(fromStatus: string, toStatus: string): boolean {
     const validTransitions: Record<string, string[]> = {
-      'aberto': ['em_tratamento', 'resolvido', 'fechado'],
-      'em_tratamento': ['em_revisao', 'resolvido', 'aberto'],
-      'em_revisao': ['resolvido', 'em_tratamento'],
-      'resolvido': ['fechado', 'reaberto'],
-      'fechado': ['reaberto'],
-      'reaberto': ['em_tratamento', 'resolvido']
+      aberto: ['em_tratamento', 'resolvido', 'fechado'],
+      em_tratamento: ['em_revisao', 'resolvido', 'aberto'],
+      em_revisao: ['resolvido', 'em_tratamento'],
+      resolvido: ['fechado', 'reaberto'],
+      fechado: ['reaberto'],
+      reaberto: ['em_tratamento', 'resolvido'],
     };
 
     return validTransitions[fromStatus]?.includes(toStatus) || false;
@@ -856,14 +912,14 @@ class UnifiedService {
    */
   calculateSLADeadline(priority: string, createdAt: Date): Date {
     const slaMinutes = {
-      'P1': 60,     // 1 hour
-      'P2': 240,    // 4 hours
-      'P3': 480,    // 8 hours
-      'P4': 1440    // 24 hours
+      P1: 60, // 1 hour
+      P2: 240, // 4 hours
+      P3: 480, // 8 hours
+      P4: 1440, // 24 hours
     };
 
     const minutes = slaMinutes[priority as keyof typeof slaMinutes] || 480;
-    return new Date(createdAt.getTime() + (minutes * 60 * 1000));
+    return new Date(createdAt.getTime() + minutes * 60 * 1000);
   }
 
   /**
@@ -871,10 +927,10 @@ class UnifiedService {
    */
   getPriorityInfo(priority: string) {
     const priorityMap = {
-      'P1': { label: 'Critical', color: '#ef4444' },
-      'P2': { label: 'High', color: '#f97316' },
-      'P3': { label: 'Medium', color: '#eab308' },
-      'P4': { label: 'Low', color: '#22c55e' }
+      P1: { label: 'Critical', color: '#ef4444' },
+      P2: { label: 'High', color: '#f97316' },
+      P3: { label: 'Medium', color: '#eab308' },
+      P4: { label: 'Low', color: '#22c55e' },
     };
 
     return priorityMap[priority as keyof typeof priorityMap] || priorityMap['P3'];
@@ -885,12 +941,12 @@ class UnifiedService {
    */
   getStatusInfo(status: string) {
     const statusMap = {
-      'aberto': { label: 'Aberto', color: '#6b7280' },
-      'em_tratamento': { label: 'Em Tratamento', color: '#f59e0b' },
-      'em_revisao': { label: 'Em Revisão', color: '#8b5cf6' },
-      'resolvido': { label: 'Resolvido', color: '#10b981' },
-      'fechado': { label: 'Fechado', color: '#6b7280' },
-      'reaberto': { label: 'Reaberto', color: '#ef4444' }
+      aberto: { label: 'Aberto', color: '#6b7280' },
+      em_tratamento: { label: 'Em Tratamento', color: '#f59e0b' },
+      em_revisao: { label: 'Em Revisão', color: '#8b5cf6' },
+      resolvido: { label: 'Resolvido', color: '#10b981' },
+      fechado: { label: 'Fechado', color: '#6b7280' },
+      reaberto: { label: 'Reaberto', color: '#ef4444' },
     };
 
     return statusMap[status as keyof typeof statusMap] || statusMap['aberto'];
@@ -909,7 +965,7 @@ class UnifiedService {
         this.ipcRenderer.invoke('analytics:track-operation', {
           operation: `unified:${operation}`,
           executionTime,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -928,9 +984,9 @@ class UnifiedService {
           error: {
             message: error.message,
             stack: error.stack,
-            name: error.name
+            name: error.name,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (err) {
@@ -946,18 +1002,22 @@ export const unifiedService = UnifiedService.getInstance();
 export const knowledgeBaseService = {
   getInstance: () => unifiedService,
   createEntry: (entryData: CreateKBEntry) => unifiedService.createKBEntry(entryData),
-  updateEntry: (id: string, updateData: UpdateKBEntry) => unifiedService.updateEntry(id, updateData),
+  updateEntry: (id: string, updateData: UpdateKBEntry) =>
+    unifiedService.updateEntry(id, updateData),
   deleteEntry: (id: string) => unifiedService.deleteEntry(id),
   archiveEntry: (id: string) => unifiedService.archiveEntry(id),
   duplicateEntry: (entry: KBEntry) => unifiedService.duplicateKBEntry(entry),
   getEntry: (id: string) => unifiedService.getEntry(id).then(e => e.asKBEntry()),
   getEntries: (options?: SearchOptions) => unifiedService.getKBEntries(options),
-  searchEntries: (query: string, options?: SearchOptions) => unifiedService.searchKBEntries(query, options),
+  searchEntries: (query: string, options?: SearchOptions) =>
+    unifiedService.searchKBEntries(query, options),
   getStatistics: () => unifiedService.getStatistics(),
   getCategories: () => unifiedService.getCategories(),
   getTags: (limit?: number) => unifiedService.getTags(limit),
-  recordFeedback: (entryId: string, feedback: any) => unifiedService.recordFeedback(entryId, feedback),
-  recordUsage: (entryId: string, action: string, metadata?: any) => unifiedService.recordUsage(entryId, action, metadata)
+  recordFeedback: (entryId: string, feedback: any) =>
+    unifiedService.recordFeedback(entryId, feedback),
+  recordUsage: (entryId: string, action: string, metadata?: any) =>
+    unifiedService.recordUsage(entryId, action, metadata),
 };
 
 export const incidentService = {
@@ -974,8 +1034,13 @@ export const incidentService = {
   createIncident: (kbEntryData: any, priority: string, assignedTo?: string, reporter?: string) =>
     unifiedService.createIncident(kbEntryData, priority, assignedTo, reporter),
   bulkOperation: (operation: BulkOperation) => unifiedService.bulkOperation(operation),
-  addComment: (incidentId: string, content: string, author: string, isInternal?: boolean, attachments?: string[]) =>
-    unifiedService.addComment(incidentId, content, author, isInternal, attachments),
+  addComment: (
+    incidentId: string,
+    content: string,
+    author: string,
+    isInternal?: boolean,
+    attachments?: string[]
+  ) => unifiedService.addComment(incidentId, content, author, isInternal, attachments),
   getComments: (incidentId: string) => unifiedService.getComments(incidentId),
   getStatusHistory: (incidentId: string) => unifiedService.getStatusHistory(incidentId),
   getMetrics: (timeframe?: string) => unifiedService.getMetrics(timeframe),
@@ -984,7 +1049,7 @@ export const incidentService = {
   calculateSLADeadline: (priority: string, createdAt: Date) =>
     unifiedService.calculateSLADeadline(priority, createdAt),
   getPriorityInfo: (priority: string) => unifiedService.getPriorityInfo(priority),
-  getStatusInfo: (status: string) => unifiedService.getStatusInfo(status)
+  getStatusInfo: (status: string) => unifiedService.getStatusInfo(status),
 };
 
 // Export types
@@ -994,7 +1059,7 @@ export type {
   UpdateUnifiedEntry,
   UnifiedEntryWithAccessors,
   EntryType,
-  UnifiedStatistics
+  UnifiedStatistics,
 };
 
 export default unifiedService;

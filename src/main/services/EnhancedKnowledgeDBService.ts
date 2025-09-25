@@ -1,6 +1,11 @@
 import { EventEmitter } from 'events';
 import { KnowledgeDB, KBEntry, SearchResult, SearchOptions } from '../../database/KnowledgeDB';
-import { BatchOperationsService, BatchOperationType, BatchOperation, BatchExecutionResult } from './BatchOperationsService';
+import {
+  BatchOperationsService,
+  BatchOperationType,
+  BatchOperation,
+  BatchExecutionResult,
+} from './BatchOperationsService';
 import { VersionControlService, ChangeType, VersionDiff } from './VersionControlService';
 import { SmartSearchService, SearchSuggestion } from './SmartSearchService';
 import { DuplicateDetectionService, DuplicateMatch } from './DuplicateDetectionService';
@@ -175,7 +180,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   private performanceMetrics = {
     operationCounts: new Map<string, number>(),
     executionTimes: new Map<string, number[]>(),
-    errorCounts: new Map<string, number>()
+    errorCounts: new Map<string, number>(),
   };
 
   // Configuration
@@ -183,13 +188,16 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   private readonly QUALITY_SCORE_THRESHOLD = 70;
   private readonly AUTO_OPTIMIZE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 
-  constructor(dbPath?: string, options?: {
-    enableVersionControl?: boolean;
-    enableDuplicateDetection?: boolean;
-    enableSmartSearch?: boolean;
-    enableBatchOperations?: boolean;
-    autoOptimizeEnabled?: boolean;
-  }) {
+  constructor(
+    dbPath?: string,
+    options?: {
+      enableVersionControl?: boolean;
+      enableDuplicateDetection?: boolean;
+      enableSmartSearch?: boolean;
+      enableBatchOperations?: boolean;
+      autoOptimizeEnabled?: boolean;
+    }
+  ) {
     super();
 
     // Initialize core KnowledgeDB
@@ -204,7 +212,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       enableDuplicateDetection = true,
       enableSmartSearch = true,
       enableBatchOperations = true,
-      autoOptimizeEnabled = true
+      autoOptimizeEnabled = true,
     } = options || {};
 
     if (enableBatchOperations) {
@@ -257,7 +265,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         virtualScroll = { startIndex: 0, itemCount: 50 },
         cacheResults = true,
         includeSimilar = false,
-        includeRelated = false
+        includeRelated = false,
       } = options;
 
       // Use smart search service if available, otherwise fallback to basic search
@@ -266,8 +274,9 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       if (this.searchService) {
         const smartResult = await this.searchService.search(query, {
           ...options,
-          maxResults: virtualScroll.itemCount + (virtualScroll.bufferSize || this.VIRTUAL_SCROLL_BUFFER_SIZE),
-          enableCaching: cacheResults
+          maxResults:
+            virtualScroll.itemCount + (virtualScroll.bufferSize || this.VIRTUAL_SCROLL_BUFFER_SIZE),
+          enableCaching: cacheResults,
         });
         searchResults = smartResult.results;
       } else {
@@ -285,7 +294,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         await this.enhanceResultsWithRelationships(items, {
           includeSimilar,
           includeRelated,
-          maxSimilar: options.maxSimilar || 3
+          maxSimilar: options.maxSimilar || 3,
         });
       }
 
@@ -298,18 +307,17 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         startIndex,
         endIndex: endIndex - 1,
         hasMore: endIndex < totalCount,
-        loadTime
+        loadTime,
       };
 
       this.emit('search_completed', {
         query,
         resultCount: totalCount,
         loadTime,
-        cached: false // TODO: Determine if result was cached
+        cached: false, // TODO: Determine if result was cached
       });
 
       return result;
-
     } catch (error) {
       this.recordPerformanceError('search', error.message);
       throw error;
@@ -343,20 +351,24 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       validateQuality = true,
       checkDuplicates = true,
       autoVersion = true,
-      comment
+      comment,
     } = options;
 
     // Validate entry quality
-    const validation = validateQuality ? await this.validateEntry(entry) : {
-      isValid: true,
-      errors: [],
-      warnings: [],
-      suggestions: [],
-      score: 100
-    };
+    const validation = validateQuality
+      ? await this.validateEntry(entry)
+      : {
+          isValid: true,
+          errors: [],
+          warnings: [],
+          suggestions: [],
+          score: 100,
+        };
 
     if (!validation.isValid && validation.errors.some(e => e.severity === 'error')) {
-      throw new Error(`Entry validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(
+        `Entry validation failed: ${validation.errors.map(e => e.message).join(', ')}`
+      );
     }
 
     // Check for duplicates
@@ -370,7 +382,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       if (duplicates.some(d => d.confidence > 90)) {
         this.emit('duplicate_detected', {
           entryId: tempId,
-          duplicates: duplicates.filter(d => d.confidence > 90)
+          duplicates: duplicates.filter(d => d.confidence > 90),
         });
       }
 
@@ -379,13 +391,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
 
       // Record version if enabled
       if (autoVersion && this.versionService) {
-        await this.versionService.recordChange(
-          entryId,
-          'create',
-          null,
-          userId,
-          comment
-        );
+        await this.versionService.recordChange(entryId, 'create', null, userId, comment);
       }
 
       this.emit('entry_created', { entryId, userId, validation, duplicates });
@@ -394,7 +400,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         entryId,
         validation,
         duplicates,
-        qualityScore: validation.score
+        qualityScore: validation.score,
       };
     } else {
       // Standard creation
@@ -402,13 +408,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
 
       // Record version if enabled
       if (autoVersion && this.versionService) {
-        await this.versionService.recordChange(
-          entryId,
-          'create',
-          null,
-          userId,
-          comment
-        );
+        await this.versionService.recordChange(entryId, 'create', null, userId, comment);
       }
 
       this.emit('entry_created', { entryId, userId, validation, duplicates });
@@ -417,7 +417,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         entryId,
         validation,
         duplicates,
-        qualityScore: validation.score
+        qualityScore: validation.score,
       };
     }
   }
@@ -445,12 +445,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     versionCreated: boolean;
     conflicts: string[];
   }> {
-    const {
-      userId = 'system',
-      comment,
-      validateChanges = true,
-      trackVersion = true
-    } = options;
+    const { userId = 'system', comment, validateChanges = true, trackVersion = true } = options;
 
     const conflicts: string[] = [];
 
@@ -463,26 +458,30 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
 
       // Validate changes
       const mergedEntry = { ...currentEntry, ...updates };
-      const validation = validateChanges ? await this.validateEntry(mergedEntry) : {
-        isValid: true,
-        errors: [],
-        warnings: [],
-        suggestions: [],
-        score: 100
-      };
+      const validation = validateChanges
+        ? await this.validateEntry(mergedEntry)
+        : {
+            isValid: true,
+            errors: [],
+            warnings: [],
+            suggestions: [],
+            score: 100,
+          };
 
       if (validation.errors.some(e => e.severity === 'error')) {
         return {
           success: false,
           validation,
           versionCreated: false,
-          conflicts: validation.errors.map(e => e.message)
+          conflicts: validation.errors.map(e => e.message),
         };
       }
 
       // Calculate field changes for version control
-      const fieldChanges = trackVersion && this.versionService ?
-        this.calculateFieldChanges(currentEntry, updates) : null;
+      const fieldChanges =
+        trackVersion && this.versionService
+          ? this.calculateFieldChanges(currentEntry, updates)
+          : null;
 
       // Apply updates
       await this.knowledgeDB.updateEntry(entryId, updates, userId);
@@ -490,13 +489,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       // Record version if enabled
       let versionCreated = false;
       if (trackVersion && this.versionService && fieldChanges) {
-        await this.versionService.recordChange(
-          entryId,
-          'update',
-          fieldChanges,
-          userId,
-          comment
-        );
+        await this.versionService.recordChange(entryId, 'update', fieldChanges, userId, comment);
         versionCreated = true;
       }
 
@@ -505,23 +498,22 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         updates,
         userId,
         validation,
-        versionCreated
+        versionCreated,
       });
 
       return {
         success: true,
         validation,
         versionCreated,
-        conflicts
+        conflicts,
       };
-
     } catch (error) {
       conflicts.push(error.message);
       return {
         success: false,
         validation: { isValid: false, errors: [], warnings: [], suggestions: [], score: 0 },
         versionCreated: false,
-        conflicts
+        conflicts,
       };
     }
   }
@@ -550,7 +542,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       userId = 'system',
       validateAll = true,
       skipDuplicates = true,
-      batchSize = 100
+      batchSize = 100,
     } = options;
 
     // Validate entries if requested
@@ -560,7 +552,10 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
 
       const invalidEntries = validations
         .map((v, i) => ({ validation: v, index: i }))
-        .filter(({ validation }) => !validation.isValid || validation.errors.some(e => e.severity === 'error'));
+        .filter(
+          ({ validation }) =>
+            !validation.isValid || validation.errors.some(e => e.severity === 'error')
+        );
 
       if (invalidEntries.length > 0) {
         throw new Error(`${invalidEntries.length} entries failed validation`);
@@ -571,7 +566,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     return await this.batchService.bulkCreate(entries, {
       validateBeforeInsert: validateAll,
       skipDuplicates,
-      batchSize
+      batchSize,
     });
   }
 
@@ -581,11 +576,13 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
    * @param options - Duplicate detection options
    * @returns Promise resolving to duplicate detection results
    */
-  async detectDuplicates(options: {
-    algorithm?: 'hybrid' | 'fuzzy_text' | 'semantic_similarity';
-    threshold?: number;
-    categories?: string[];
-  } = {}): Promise<{
+  async detectDuplicates(
+    options: {
+      algorithm?: 'hybrid' | 'fuzzy_text' | 'semantic_similarity';
+      threshold?: number;
+      categories?: string[];
+    } = {}
+  ): Promise<{
     totalDuplicates: number;
     highConfidenceDuplicates: DuplicateMatch[];
     allDuplicates: DuplicateMatch[];
@@ -595,35 +592,31 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       throw new Error('Duplicate detection not enabled');
     }
 
-    const {
-      algorithm = 'hybrid',
-      threshold = 0.8,
-      categories
-    } = options;
+    const { algorithm = 'hybrid', threshold = 0.8, categories } = options;
 
     const result = await this.duplicateService.scanForDuplicates({
       algorithm,
       similarityThreshold: threshold,
       categories,
-      excludeArchived: true
+      excludeArchived: true,
     });
 
     const highConfidenceDuplicates = result.matches.filter(match => match.confidence >= 90);
-    const autoMergeableDuplicates = result.matches.filter(match =>
-      match.confidence >= 95 && match.similarityScore >= 0.95
+    const autoMergeableDuplicates = result.matches.filter(
+      match => match.confidence >= 95 && match.similarityScore >= 0.95
     );
 
     this.emit('duplicates_detected', {
       total: result.duplicatesFound,
       highConfidence: highConfidenceDuplicates.length,
-      autoMergeable: autoMergeableDuplicates.length
+      autoMergeable: autoMergeableDuplicates.length,
     });
 
     return {
       totalDuplicates: result.duplicatesFound,
       highConfidenceDuplicates,
       allDuplicates: result.matches,
-      autoMergeableDuplicates
+      autoMergeableDuplicates,
     };
   }
 
@@ -650,8 +643,8 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     let skippedCount = 0;
     const errors: string[] = [];
 
-    const autoMergeableDuplicates = duplicates.filter(d =>
-      d.confidence >= confidenceThreshold * 100 && d.similarityScore >= confidenceThreshold
+    const autoMergeableDuplicates = duplicates.filter(
+      d => d.confidence >= confidenceThreshold * 100 && d.similarityScore >= confidenceThreshold
     );
 
     for (const duplicate of autoMergeableDuplicates) {
@@ -659,7 +652,11 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         const suggestions = await this.duplicateService.getMergeSuggestions([duplicate]);
         const suggestion = suggestions[0];
 
-        if (suggestion && suggestion.automatedResolution && suggestion.confidenceScore >= confidenceThreshold * 100) {
+        if (
+          suggestion &&
+          suggestion.automatedResolution &&
+          suggestion.confidenceScore >= confidenceThreshold * 100
+        ) {
           await this.duplicateService.mergeDuplicates(
             duplicate.id,
             suggestion.mergedEntry,
@@ -678,13 +675,13 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     this.emit('auto_merge_complete', {
       mergedCount,
       skippedCount,
-      errors
+      errors,
     });
 
     return {
       mergedCount,
       skippedCount,
-      errors
+      errors,
     };
   }
 
@@ -702,29 +699,36 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     const performanceData = this.getPerformanceAnalytics();
 
     // Search analytics from smart search service
-    const searchAnalytics = this.searchService ?
-      this.searchService.getAnalytics(timeRange) : {
-        totalSearches: 0,
-        avgResponseTime: 0,
-        cacheHitRate: 0,
-        topQueries: [],
-        failedQueries: [],
-        strategiesUsed: {},
-        timeDistribution: { under50ms: 0, under100ms: 0, under500ms: 0, over500ms: 0 }
-      };
+    const searchAnalytics = this.searchService
+      ? this.searchService.getAnalytics(timeRange)
+      : {
+          totalSearches: 0,
+          avgResponseTime: 0,
+          cacheHitRate: 0,
+          topQueries: [],
+          failedQueries: [],
+          strategiesUsed: {},
+          timeDistribution: { under50ms: 0, under100ms: 0, under500ms: 0, over500ms: 0 },
+        };
 
     // Duplicate analytics
-    const duplicateAnalytics = this.duplicateService ?
-      this.duplicateService.getDuplicateAnalytics(timeRange) : {
-        totalDuplicatesFound: 0,
-        duplicatesByAlgorithm: { exact_match: 0, fuzzy_text: 0, semantic_similarity: 0, hybrid: 0 },
-        duplicatesByStatus: {},
-        averageSimilarityScore: 0,
-        falsePositiveRate: 0,
-        mergeSuccessRate: 0,
-        topDuplicateCategories: [],
-        performanceMetrics: { avgDetectionTime: 0, avgMergeTime: 0, cacheHitRate: 0 }
-      };
+    const duplicateAnalytics = this.duplicateService
+      ? this.duplicateService.getDuplicateAnalytics(timeRange)
+      : {
+          totalDuplicatesFound: 0,
+          duplicatesByAlgorithm: {
+            exact_match: 0,
+            fuzzy_text: 0,
+            semantic_similarity: 0,
+            hybrid: 0,
+          },
+          duplicatesByStatus: {},
+          averageSimilarityScore: 0,
+          falsePositiveRate: 0,
+          mergeSuccessRate: 0,
+          topDuplicateCategories: [],
+          performanceMetrics: { avgDetectionTime: 0, avgMergeTime: 0, cacheHitRate: 0 },
+        };
 
     return {
       overview: {
@@ -732,33 +736,33 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         activeEntries: stats.totalEntries - (duplicateAnalytics.duplicatesByStatus['merged'] || 0),
         archivedEntries: duplicateAnalytics.duplicatesByStatus['merged'] || 0,
         averageQuality: qualityAnalysis.averageScore,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       },
       usage: {
         totalSearches: searchAnalytics.totalSearches,
         popularEntries: stats.topEntries.map(entry => ({
           entryId: '', // Would need to get ID from title
           title: entry.title,
-          usage: entry.usage_count
+          usage: entry.usage_count,
         })),
         searchTrends: searchAnalytics.topQueries.map(query => ({
           query: query.query,
-          frequency: query.count
+          frequency: query.count,
         })),
-        userActivity: [] // Would need user activity tracking
+        userActivity: [], // Would need user activity tracking
       },
       quality: {
         averageSuccessRate: stats.averageSuccessRate,
         entriesNeedingUpdate: qualityAnalysis.lowQualityCount,
         duplicatesDetected: duplicateAnalytics.totalDuplicatesFound,
-        lowQualityEntries: qualityAnalysis.lowQualityEntries
+        lowQualityEntries: qualityAnalysis.lowQualityEntries,
       },
       performance: {
         averageSearchTime: searchAnalytics.avgResponseTime,
         cacheHitRate: searchAnalytics.cacheHitRate,
         indexEfficiency: performanceData.indexEfficiency,
-        recommendedOptimizations: this.generateOptimizationRecommendations(stats, searchAnalytics)
-      }
+        recommendedOptimizations: this.generateOptimizationRecommendations(stats, searchAnalytics),
+      },
     };
   }
 
@@ -769,10 +773,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
    * @param limit - Maximum suggestions to return
    * @returns Promise resolving to search suggestions
    */
-  async getSearchSuggestions(
-    partialQuery: string,
-    limit: number = 8
-  ): Promise<SearchSuggestion[]> {
+  async getSearchSuggestions(partialQuery: string, limit: number = 8): Promise<SearchSuggestion[]> {
     if (this.searchService) {
       return await this.searchService.getSuggestions(partialQuery, limit);
     }
@@ -791,13 +792,15 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   async getEntryVersionHistory(
     entryId: string,
     limit: number = 20
-  ): Promise<Array<{
-    version: number;
-    timestamp: Date;
-    userId: string;
-    changeType: string;
-    comment?: string;
-  }>> {
+  ): Promise<
+    Array<{
+      version: number;
+      timestamp: Date;
+      userId: string;
+      changeType: string;
+      comment?: string;
+    }>
+  > {
     if (!this.versionService) {
       throw new Error('Version control not enabled');
     }
@@ -809,7 +812,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       timestamp: version.timestamp,
       userId: version.userId,
       changeType: version.changeType,
-      comment: version.comment
+      comment: version.comment,
     }));
   }
 
@@ -877,7 +880,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       optimizationTime,
       duplicatesRemoved,
       oldVersionsCleaned,
-      performanceImprovement
+      performanceImprovement,
     });
 
     return {
@@ -885,7 +888,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       duplicatesRemoved,
       indexesOptimized: true,
       oldVersionsCleaned,
-      performanceImprovement
+      performanceImprovement,
     };
   }
 
@@ -907,7 +910,11 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     }
 
     if (!entry.problem || entry.problem.trim().length === 0) {
-      errors.push({ field: 'problem', message: 'Problem description is required', severity: 'error' });
+      errors.push({
+        field: 'problem',
+        message: 'Problem description is required',
+        severity: 'error',
+      });
       score -= 25;
     } else if (entry.problem.length < 20) {
       warnings.push('Problem description should be more detailed (at least 20 characters)');
@@ -933,8 +940,14 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       score -= 5;
     }
 
-    if (entry.title && entry.problem && entry.title.toLowerCase() === entry.problem.toLowerCase().substring(0, entry.title.length)) {
-      suggestions.push('Title and problem description are very similar - consider making them more distinct');
+    if (
+      entry.title &&
+      entry.problem &&
+      entry.title.toLowerCase() === entry.problem.toLowerCase().substring(0, entry.title.length)
+    ) {
+      suggestions.push(
+        'Title and problem description are very similar - consider making them more distinct'
+      );
       score -= 10;
     }
 
@@ -949,7 +962,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       errors,
       warnings,
       suggestions,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     };
   }
 
@@ -983,7 +996,10 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     for (const result of results) {
       if (options.includeSimilar) {
         // Add similar entries (simplified - would use actual similarity calculation)
-        (result as any).similar = await this.findSimilarEntries(result.entry.id!, options.maxSimilar);
+        (result as any).similar = await this.findSimilarEntries(
+          result.entry.id!,
+          options.maxSimilar
+        );
       }
 
       if (options.includeRelated) {
@@ -1004,13 +1020,17 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
 
   private async findRelatedEntries(entryId: string): Promise<SearchResult[]> {
     // Get relationships from database
-    const relationships = this.db.prepare(`
+    const relationships = this.db
+      .prepare(
+        `
       SELECT related_entry_id, relationship_type, strength
       FROM entry_relationships
       WHERE entry_id = ?
       ORDER BY strength DESC
       LIMIT 5
-    `).all(entryId);
+    `
+      )
+      .all(entryId);
 
     const relatedEntries: SearchResult[] = [];
 
@@ -1020,7 +1040,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
         relatedEntries.push({
           entry,
           score: rel.strength * 100,
-          matchType: 'related'
+          matchType: 'related',
         });
       }
     }
@@ -1034,12 +1054,16 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     lowQualityEntries: Array<{ entryId: string; score: number }>;
   }> {
     // Get all entries for quality analysis
-    const entries = this.db.prepare(`
+    const entries = this.db
+      .prepare(
+        `
       SELECT id, title, problem, solution, category,
              usage_count, success_count, failure_count
       FROM kb_entries
       WHERE archived = FALSE
-    `).all();
+    `
+      )
+      .all();
 
     let totalScore = 0;
     const lowQualityEntries: Array<{ entryId: string; score: number }> = [];
@@ -1051,7 +1075,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
       if (validation.score < this.QUALITY_SCORE_THRESHOLD) {
         lowQualityEntries.push({
           entryId: entry.id,
-          score: validation.score
+          score: validation.score,
         });
       }
     }
@@ -1059,7 +1083,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     return {
       averageScore: entries.length > 0 ? totalScore / entries.length : 0,
       lowQualityCount: lowQualityEntries.length,
-      lowQualityEntries: lowQualityEntries.sort((a, b) => a.score - b.score)
+      lowQualityEntries: lowQualityEntries.sort((a, b) => a.score - b.score),
     };
   }
 
@@ -1068,27 +1092,28 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     avgOperationTime: number;
     errorRate: number;
   } {
-    const totalOperations = Array.from(this.performanceMetrics.operationCounts.values())
-      .reduce((sum, count) => sum + count, 0);
+    const totalOperations = Array.from(this.performanceMetrics.operationCounts.values()).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
     const totalExecutionTime = Array.from(this.performanceMetrics.executionTimes.values())
       .flat()
       .reduce((sum, time) => sum + time, 0);
 
-    const totalErrors = Array.from(this.performanceMetrics.errorCounts.values())
-      .reduce((sum, count) => sum + count, 0);
+    const totalErrors = Array.from(this.performanceMetrics.errorCounts.values()).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
     return {
       indexEfficiency: 85, // Placeholder - would calculate based on actual index performance
       avgOperationTime: totalOperations > 0 ? totalExecutionTime / totalOperations : 0,
-      errorRate: totalOperations > 0 ? (totalErrors / totalOperations) * 100 : 0
+      errorRate: totalOperations > 0 ? (totalErrors / totalOperations) * 100 : 0,
     };
   }
 
-  private generateOptimizationRecommendations(
-    stats: any,
-    searchAnalytics: any
-  ): string[] {
+  private generateOptimizationRecommendations(stats: any, searchAnalytics: any): string[] {
     const recommendations: string[] = [];
 
     if (searchAnalytics.avgResponseTime > 200) {
@@ -1110,23 +1135,30 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     return recommendations;
   }
 
-  private async getBasicSuggestions(partialQuery: string, limit: number): Promise<SearchSuggestion[]> {
+  private async getBasicSuggestions(
+    partialQuery: string,
+    limit: number
+  ): Promise<SearchSuggestion[]> {
     // Fallback suggestions from search history
-    const suggestions = this.db.prepare(`
+    const suggestions = this.db
+      .prepare(
+        `
       SELECT query, COUNT(*) as frequency, MAX(timestamp) as last_used
       FROM search_history
       WHERE LOWER(query) LIKE ? || '%'
       GROUP BY LOWER(query)
       ORDER BY frequency DESC, last_used DESC
       LIMIT ?
-    `).all(partialQuery.toLowerCase(), limit);
+    `
+      )
+      .all(partialQuery.toLowerCase(), limit);
 
     return suggestions.map((row: any) => ({
       suggestion: row.query,
       type: 'query' as const,
       frequency: row.frequency,
       lastUsed: new Date(row.last_used),
-      score: row.frequency
+      score: row.frequency,
     }));
   }
 
@@ -1154,7 +1186,7 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
     this.emit('performance_warning', {
       operation,
       error,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -1190,15 +1222,15 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   private setupBatchEventHandlers(): void {
     if (!this.batchService) return;
 
-    this.batchService.on('progress', (progress) => {
+    this.batchService.on('progress', progress => {
       this.emit('batch_progress', progress);
     });
 
-    this.batchService.on('complete', (result) => {
+    this.batchService.on('complete', result => {
       this.emit('batch_complete', result);
     });
 
-    this.batchService.on('error', (error) => {
+    this.batchService.on('error', error => {
       this.emit('batch_error', error);
     });
   }
@@ -1206,11 +1238,11 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   private setupVersionEventHandlers(): void {
     if (!this.versionService) return;
 
-    this.versionService.on('change', (change) => {
+    this.versionService.on('change', change => {
       this.emit('version_created', change);
     });
 
-    this.versionService.on('rollback', (rollback) => {
+    this.versionService.on('rollback', rollback => {
       this.emit('version_rollback', rollback);
     });
   }
@@ -1218,14 +1250,14 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   private setupSearchEventHandlers(): void {
     if (!this.searchService) return;
 
-    this.searchService.on('slow-query', (query) => {
+    this.searchService.on('slow-query', query => {
       this.emit('performance_warning', {
         type: 'slow_search',
-        ...query
+        ...query,
       });
     });
 
-    this.searchService.on('error', (error) => {
+    this.searchService.on('error', error => {
       this.emit('search_error', error);
     });
   }
@@ -1233,11 +1265,11 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
   private setupDuplicateEventHandlers(): void {
     if (!this.duplicateService) return;
 
-    this.duplicateService.on('duplicate_found', (duplicate) => {
+    this.duplicateService.on('duplicate_found', duplicate => {
       this.emit('duplicate_detected', duplicate);
     });
 
-    this.duplicateService.on('scan_complete', (result) => {
+    this.duplicateService.on('scan_complete', result => {
       this.emit('duplicate_scan_complete', result);
     });
   }
@@ -1254,12 +1286,15 @@ export class EnhancedKnowledgeDBService extends EventEmitter {
 
   private setupPerformanceMonitoring(): void {
     // Reset performance metrics every hour
-    setInterval(() => {
-      // Keep some historical data, but reset counters
-      this.performanceMetrics.operationCounts.clear();
-      this.performanceMetrics.errorCounts.clear();
-      // Keep execution times for trend analysis
-    }, 60 * 60 * 1000); // 1 hour
+    setInterval(
+      () => {
+        // Keep some historical data, but reset counters
+        this.performanceMetrics.operationCounts.clear();
+        this.performanceMetrics.errorCounts.clear();
+        // Keep execution times for trend analysis
+      },
+      60 * 60 * 1000
+    ); // 1 hour
   }
 
   // Expose base KnowledgeDB methods for compatibility

@@ -24,21 +24,21 @@ import type { KBEntryInput, SearchQuery, DatabaseMetrics } from '../../types';
 // =====================
 
 const PERFORMANCE_TARGETS = {
-  dashboardLoad: 1000,        // <1s from 6-12s baseline
-  search: 1000,               // <1s from 2-5s baseline
-  entryCreate: 2000,          // <2s from 3-6s baseline
-  entryUpdate: 1000,          // <1s
-  entryDelete: 1000,          // <1s
-  metricsRefresh: 500,        // <500ms
-  batchProcess: 200,          // <200ms for batch itself
-  systemHealth: 300           // <300ms
+  dashboardLoad: 1000, // <1s from 6-12s baseline
+  search: 1000, // <1s from 2-5s baseline
+  entryCreate: 2000, // <2s from 3-6s baseline
+  entryUpdate: 1000, // <1s
+  entryDelete: 1000, // <1s
+  metricsRefresh: 500, // <500ms
+  batchProcess: 200, // <200ms for batch itself
+  systemHealth: 300, // <300ms
 };
 
 const OPTIMIZATION_TARGETS = {
-  batchingReduction: 83,      // 83% reduction in IPC calls
-  debouncingReduction: 70,    // 70% reduction in IPC calls
-  differentialReduction: 60,  // 60% reduction in data transfer
-  overallReduction: 75        // 75% overall improvement
+  batchingReduction: 83, // 83% reduction in IPC calls
+  debouncingReduction: 70, // 70% reduction in IPC calls
+  differentialReduction: 60, // 60% reduction in data transfer
+  overallReduction: 75, // 75% overall improvement
 };
 
 // =====================
@@ -51,7 +51,7 @@ class MockDatabaseManager {
     await this.simulateDelay(50 + Math.random() * 100);
     return [
       { id: '1', title: `Result for ${query}`, content: 'Mock content' },
-      { id: '2', title: `Another result for ${query}`, content: 'More mock content' }
+      { id: '2', title: `Another result for ${query}`, content: 'More mock content' },
     ];
   }
 
@@ -80,7 +80,7 @@ class MockDatabaseManager {
       searchesToday: 45,
       averageResponseTime: 250,
       cacheHitRate: 75,
-      storageUsedMB: 25
+      storageUsedMB: 25,
     };
   }
 
@@ -89,7 +89,7 @@ class MockDatabaseManager {
     return Array.from({ length: limit }, (_, i) => ({
       id: `recent-${i}`,
       title: `Recent Entry ${i}`,
-      created_at: new Date(Date.now() - i * 3600000)
+      created_at: new Date(Date.now() - i * 3600000),
     }));
   }
 
@@ -98,7 +98,7 @@ class MockDatabaseManager {
     return Array.from({ length: limit }, (_, i) => ({
       id: `popular-${i}`,
       title: `Popular Entry ${i}`,
-      usage_count: 100 - i * 5
+      usage_count: 100 - i * 5,
     }));
   }
 
@@ -190,7 +190,7 @@ class PerformanceMeasurer {
       min: Math.min(...measurements),
       max: Math.max(...measurements),
       count: measurements.length,
-      measurements: [...measurements]
+      measurements: [...measurements],
     };
   }
 
@@ -235,8 +235,8 @@ describe('IPC Optimization Performance Tests', () => {
       performance: {
         targetResponseTime: 1000,
         alertThreshold: 1500,
-        slowQueryThreshold: 800
-      }
+        slowQueryThreshold: 800,
+      },
     });
 
     // Initialize optimized IPC service (renderer side)
@@ -245,25 +245,31 @@ describe('IPC Optimization Performance Tests', () => {
         enabled: true,
         maxBatchSize: 6,
         maxWaitTime: 100,
-        batchableOperations: ['getMetrics', 'getKBStats', 'getSystemInfo', 'getRecentEntries', 'getPopularEntries']
+        batchableOperations: [
+          'getMetrics',
+          'getKBStats',
+          'getSystemInfo',
+          'getRecentEntries',
+          'getPopularEntries',
+        ],
       },
       debouncing: {
         enabled: true,
         searchDelay: 200,
         metricsDelay: 500,
-        formDelay: 300
+        formDelay: 300,
       },
       differential: {
         enabled: true,
         maxDiffSize: 50 * 1024,
         compressionThreshold: 1024,
-        stateKeys: ['dashboard', 'metrics', 'entries', 'searchResults']
+        stateKeys: ['dashboard', 'metrics', 'entries', 'searchResults'],
       },
       performance: {
         targetResponseTime: 1000,
         enableMonitoring: true,
-        alertThreshold: 1500
-      }
+        alertThreshold: 1500,
+      },
     });
 
     // Wait for initialization
@@ -287,9 +293,7 @@ describe('IPC Optimization Performance Tests', () => {
 
   describe('Dashboard Load Performance', () => {
     it('should load dashboard in <1s (target: 1000ms, baseline: 6-12s)', async () => {
-      const results = await measurer.measure('dashboardLoad', () =>
-        optimizedIPC.loadDashboard()
-      );
+      const results = await measurer.measure('dashboardLoad', () => optimizedIPC.loadDashboard());
 
       const stats = measurer.getStats('dashboardLoad');
 
@@ -301,7 +305,9 @@ describe('IPC Optimization Performance Tests', () => {
       // Performance assertion
       expect(stats.average).toBeLessThan(PERFORMANCE_TARGETS.dashboardLoad);
 
-      console.log(`📊 Dashboard load: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.dashboardLoad}ms)`);
+      console.log(
+        `📊 Dashboard load: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.dashboardLoad}ms)`
+      );
     });
 
     it('should demonstrate significant improvement over baseline', async () => {
@@ -324,10 +330,13 @@ describe('IPC Optimization Performance Tests', () => {
       const baselineStats = measurer.getStats('dashboardBaseline');
       const optimizedStats = measurer.getStats('dashboardOptimized');
 
-      const improvement = ((baselineStats.average - optimizedStats.average) / baselineStats.average) * 100;
+      const improvement =
+        ((baselineStats.average - optimizedStats.average) / baselineStats.average) * 100;
 
       expect(improvement).toBeGreaterThan(50); // At least 50% improvement
-      console.log(`🚀 Dashboard improvement: ${improvement.toFixed(1)}% faster (${baselineStats.average.toFixed(0)}ms → ${optimizedStats.average.toFixed(0)}ms)`);
+      console.log(
+        `🚀 Dashboard improvement: ${improvement.toFixed(1)}% faster (${baselineStats.average.toFixed(0)}ms → ${optimizedStats.average.toFixed(0)}ms)`
+      );
     });
   });
 
@@ -344,7 +353,9 @@ describe('IPC Optimization Performance Tests', () => {
       expect(Array.isArray(results)).toBe(true);
       expect(stats.average).toBeLessThan(PERFORMANCE_TARGETS.search);
 
-      console.log(`🔍 Search execution: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.search}ms)`);
+      console.log(
+        `🔍 Search execution: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.search}ms)`
+      );
     });
 
     it('should demonstrate debouncing effectiveness', async () => {
@@ -360,9 +371,7 @@ describe('IPC Optimization Performance Tests', () => {
       };
 
       // Execute rapid searches
-      const promises = searchQueries.map(query =>
-        optimizedIPC.executeSearch(query)
-      );
+      const promises = searchQueries.map(query => optimizedIPC.executeSearch(query));
 
       await Promise.all(promises);
 
@@ -371,7 +380,9 @@ describe('IPC Optimization Performance Tests', () => {
 
       // With proper debouncing, we should have significantly fewer actual calls
       expect(callCount).toBeLessThan(searchQueries.length);
-      console.log(`⚡ Debouncing reduced calls from ${searchQueries.length} to ${callCount} (${Math.round((1 - callCount / searchQueries.length) * 100)}% reduction)`);
+      console.log(
+        `⚡ Debouncing reduced calls from ${searchQueries.length} to ${callCount} (${Math.round((1 - callCount / searchQueries.length) * 100)}% reduction)`
+      );
 
       // Restore original method
       mockDatabase.searchEntries = originalSearch;
@@ -385,12 +396,10 @@ describe('IPC Optimization Performance Tests', () => {
         problem: 'Test problem description',
         solution: 'Test solution steps',
         category: 'VSAM',
-        tags: ['test', 'performance']
+        tags: ['test', 'performance'],
       };
 
-      const entryId = await measurer.measure('entryCreate', () =>
-        optimizedIPC.createEntry(entry)
-      );
+      const entryId = await measurer.measure('entryCreate', () => optimizedIPC.createEntry(entry));
 
       const stats = measurer.getStats('entryCreate');
 
@@ -398,15 +407,15 @@ describe('IPC Optimization Performance Tests', () => {
       expect(typeof entryId).toBe('string');
       expect(stats.average).toBeLessThan(PERFORMANCE_TARGETS.entryCreate);
 
-      console.log(`📝 Entry creation: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.entryCreate}ms)`);
+      console.log(
+        `📝 Entry creation: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.entryCreate}ms)`
+      );
     });
   });
 
   describe('Metrics Refresh Performance', () => {
     it('should refresh metrics in <500ms (target: 500ms)', async () => {
-      const metrics = await measurer.measure('metricsRefresh', () =>
-        optimizedIPC.refreshMetrics()
-      );
+      const metrics = await measurer.measure('metricsRefresh', () => optimizedIPC.refreshMetrics());
 
       const stats = measurer.getStats('metricsRefresh');
 
@@ -414,7 +423,9 @@ describe('IPC Optimization Performance Tests', () => {
       expect(metrics).toHaveProperty('totalEntries');
       expect(stats.average).toBeLessThan(PERFORMANCE_TARGETS.metricsRefresh);
 
-      console.log(`📊 Metrics refresh: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.metricsRefresh}ms)`);
+      console.log(
+        `📊 Metrics refresh: ${stats.average.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.metricsRefresh}ms)`
+      );
     });
   });
 
@@ -430,12 +441,30 @@ describe('IPC Optimization Performance Tests', () => {
       // Test individual calls
       const startIndividual = performance.now();
       await Promise.all([
-        measurer.measure('individual1', () => { individualCallCount++; return mockDatabase.getMetrics(); }),
-        measurer.measure('individual2', () => { individualCallCount++; return mockDatabase.getRecentEntries(10); }),
-        measurer.measure('individual3', () => { individualCallCount++; return mockDatabase.getPopularEntries(10); }),
-        measurer.measure('individual4', () => { individualCallCount++; return mockDatabase.searchEntries('test'); }),
-        measurer.measure('individual5', () => { individualCallCount++; return mockDatabase.getMetrics(); }),
-        measurer.measure('individual6', () => { individualCallCount++; return mockDatabase.getRecentEntries(5); })
+        measurer.measure('individual1', () => {
+          individualCallCount++;
+          return mockDatabase.getMetrics();
+        }),
+        measurer.measure('individual2', () => {
+          individualCallCount++;
+          return mockDatabase.getRecentEntries(10);
+        }),
+        measurer.measure('individual3', () => {
+          individualCallCount++;
+          return mockDatabase.getPopularEntries(10);
+        }),
+        measurer.measure('individual4', () => {
+          individualCallCount++;
+          return mockDatabase.searchEntries('test');
+        }),
+        measurer.measure('individual5', () => {
+          individualCallCount++;
+          return mockDatabase.getMetrics();
+        }),
+        measurer.measure('individual6', () => {
+          individualCallCount++;
+          return mockDatabase.getRecentEntries(5);
+        }),
       ]);
       const individualTime = performance.now() - startIndividual;
 
@@ -449,7 +478,9 @@ describe('IPC Optimization Performance Tests', () => {
       const timeReduction = ((individualTime - batchTime) / individualTime) * 100;
 
       expect(callReduction).toBeGreaterThan(50); // At least 50% call reduction
-      console.log(`📦 Batching system: ${callReduction.toFixed(1)}% call reduction, ${timeReduction.toFixed(1)}% time improvement`);
+      console.log(
+        `📦 Batching system: ${callReduction.toFixed(1)}% call reduction, ${timeReduction.toFixed(1)}% time improvement`
+      );
     });
   });
 
@@ -460,8 +491,8 @@ describe('IPC Optimization Performance Tests', () => {
         entries: Array.from({ length: 100 }, (_, i) => ({
           id: i,
           title: `Entry ${i}`,
-          content: 'Large content block '.repeat(50) // ~1KB per entry
-        }))
+          content: 'Large content block '.repeat(50), // ~1KB per entry
+        })),
       };
 
       await differentialStateManager.setState('testState', initialState);
@@ -474,10 +505,10 @@ describe('IPC Optimization Performance Tests', () => {
           {
             id: 50,
             title: 'Updated Entry 50',
-            content: 'Large content block '.repeat(50)
+            content: 'Large content block '.repeat(50),
           },
-          ...initialState.entries.slice(51)
-        ]
+          ...initialState.entries.slice(51),
+        ],
       };
 
       // Measure differential update
@@ -485,7 +516,9 @@ describe('IPC Optimization Performance Tests', () => {
 
       if (change) {
         expect(change.compressionRatio).toBeGreaterThan(0.5); // At least 50% compression
-        console.log(`📈 Differential update achieved ${Math.round(change.compressionRatio * 100)}% compression`);
+        console.log(
+          `📈 Differential update achieved ${Math.round(change.compressionRatio * 100)}% compression`
+        );
       }
     });
   });
@@ -517,9 +550,7 @@ describe('IPC Optimization Performance Tests', () => {
 
       // Metrics refreshes
       for (let i = 0; i < operationsPerType; i++) {
-        operations.push(
-          measurer.measure(`stressMetrics${i}`, () => optimizedIPC.refreshMetrics())
-        );
+        operations.push(measurer.measure(`stressMetrics${i}`, () => optimizedIPC.refreshMetrics()));
       }
 
       const startTime = performance.now();
@@ -536,7 +567,9 @@ describe('IPC Optimization Performance Tests', () => {
       expect(dashboardStats.average).toBeLessThan(PERFORMANCE_TARGETS.dashboardLoad * 1.5); // Allow 50% degradation under load
       expect(searchStats.average).toBeLessThan(PERFORMANCE_TARGETS.search * 1.5);
 
-      console.log(`🔥 Stress test completed: ${operations.length} operations in ${totalTime.toFixed(2)}ms`);
+      console.log(
+        `🔥 Stress test completed: ${operations.length} operations in ${totalTime.toFixed(2)}ms`
+      );
     });
   });
 
@@ -551,13 +584,17 @@ describe('IPC Optimization Performance Tests', () => {
         { name: 'dashboardLoad', fn: () => optimizedIPC.loadDashboard() },
         { name: 'search', fn: () => optimizedIPC.executeSearch('integration test') },
         { name: 'metricsRefresh', fn: () => optimizedIPC.refreshMetrics() },
-        { name: 'entryCreate', fn: () => optimizedIPC.createEntry({
-          title: 'Integration Test Entry',
-          problem: 'Test problem',
-          solution: 'Test solution',
-          category: 'Test',
-          tags: ['integration']
-        })}
+        {
+          name: 'entryCreate',
+          fn: () =>
+            optimizedIPC.createEntry({
+              title: 'Integration Test Entry',
+              problem: 'Test problem',
+              solution: 'Test solution',
+              category: 'Test',
+              tags: ['integration'],
+            }),
+        },
       ];
 
       for (const operation of operations) {
@@ -570,7 +607,7 @@ describe('IPC Optimization Performance Tests', () => {
         dashboardLoad: stats.dashboardLoad?.average || 0,
         search: stats.search?.average || 0,
         metricsRefresh: stats.metricsRefresh?.average || 0,
-        entryCreate: stats.entryCreate?.average || 0
+        entryCreate: stats.entryCreate?.average || 0,
       };
 
       // Assert all targets met
@@ -580,10 +617,18 @@ describe('IPC Optimization Performance Tests', () => {
       expect(results.entryCreate).toBeLessThan(PERFORMANCE_TARGETS.entryCreate);
 
       console.log('🎯 Performance Targets Validation:');
-      console.log(`  Dashboard Load: ${results.dashboardLoad.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.dashboardLoad}ms) ✅`);
-      console.log(`  Search: ${results.search.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.search}ms) ✅`);
-      console.log(`  Metrics Refresh: ${results.metricsRefresh.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.metricsRefresh}ms) ✅`);
-      console.log(`  Entry Create: ${results.entryCreate.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.entryCreate}ms) ✅`);
+      console.log(
+        `  Dashboard Load: ${results.dashboardLoad.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.dashboardLoad}ms) ✅`
+      );
+      console.log(
+        `  Search: ${results.search.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.search}ms) ✅`
+      );
+      console.log(
+        `  Metrics Refresh: ${results.metricsRefresh.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.metricsRefresh}ms) ✅`
+      );
+      console.log(
+        `  Entry Create: ${results.entryCreate.toFixed(2)}ms (target: ${PERFORMANCE_TARGETS.entryCreate}ms) ✅`
+      );
     });
 
     it('should provide comprehensive performance report', async () => {
@@ -605,7 +650,7 @@ describe('IPC Optimization Performance Tests', () => {
         optimizationsActive: report.overall.optimizationsActive,
         targetResponseTime: report.overall.targetResponseTime,
         operationCount: Object.keys(report.operations).length,
-        recommendationCount: report.recommendations.length
+        recommendationCount: report.recommendations.length,
       });
     });
   });
@@ -632,7 +677,7 @@ describe('IPC Optimization Performance Tests', () => {
         ipcResponsive: health.ipc.responsive,
         avgLatency: health.ipc.averageLatency.toFixed(2) + 'ms',
         errorRate: health.ipc.errorRate.toFixed(2) + '%',
-        cacheHitRate: (health.cache.hitRate * 100).toFixed(1) + '%'
+        cacheHitRate: (health.cache.hitRate * 100).toFixed(1) + '%',
       });
     });
   });
@@ -661,7 +706,7 @@ describe('Performance Benchmarks', () => {
         operation: async () => {
           // Simulate optimized dashboard load
           return new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 400));
-        }
+        },
       },
       {
         name: 'Search Operation',
@@ -669,7 +714,7 @@ describe('Performance Benchmarks', () => {
         target: PERFORMANCE_TARGETS.search,
         operation: async () => {
           return new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 300));
-        }
+        },
       },
       {
         name: 'Metrics Refresh',
@@ -677,8 +722,8 @@ describe('Performance Benchmarks', () => {
         target: PERFORMANCE_TARGETS.metricsRefresh,
         operation: async () => {
           return new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 200));
-        }
-      }
+        },
+      },
     ];
 
     for (const benchmark of benchmarks) {
@@ -706,10 +751,16 @@ describe('Performance Benchmarks', () => {
     }
 
     console.log('\n🎯 OPTIMIZATION SUMMARY:');
-    console.log(`   Batching System: ${OPTIMIZATION_TARGETS.batchingReduction}% IPC call reduction`);
+    console.log(
+      `   Batching System: ${OPTIMIZATION_TARGETS.batchingReduction}% IPC call reduction`
+    );
     console.log(`   Debouncing: ${OPTIMIZATION_TARGETS.debouncingReduction}% call reduction`);
-    console.log(`   Differential Updates: ${OPTIMIZATION_TARGETS.differentialReduction}% data reduction`);
-    console.log(`   Overall Target: ${OPTIMIZATION_TARGETS.overallReduction}% performance improvement`);
+    console.log(
+      `   Differential Updates: ${OPTIMIZATION_TARGETS.differentialReduction}% data reduction`
+    );
+    console.log(
+      `   Overall Target: ${OPTIMIZATION_TARGETS.overallReduction}% performance improvement`
+    );
     console.log('\n✅ All performance targets achieved!');
   });
 });

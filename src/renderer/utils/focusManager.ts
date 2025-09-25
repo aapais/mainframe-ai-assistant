@@ -65,12 +65,12 @@ export class FocusManager {
     });
 
     // Global keyboard shortcuts
-    document.addEventListener('keydown', (event) => {
+    document.addEventListener('keydown', event => {
       this.handleGlobalKeydown(event);
     });
 
     // Apply visual focus styles based on interaction type
-    document.addEventListener('focusin', (event) => {
+    document.addEventListener('focusin', event => {
       const target = event.target as HTMLElement;
       if (this.keyboardOnlyMode) {
         target.classList.add('keyboard-focused');
@@ -79,7 +79,7 @@ export class FocusManager {
       }
     });
 
-    document.addEventListener('focusout', (event) => {
+    document.addEventListener('focusout', event => {
       const target = event.target as HTMLElement;
       target.classList.remove('keyboard-focused');
     });
@@ -96,7 +96,7 @@ export class FocusManager {
     const checkMode = () => {
       const total = keyboardEvents + mouseEvents + touchEvents;
       if (total > 10) {
-        this.keyboardOnlyMode = keyboardEvents > (mouseEvents + touchEvents);
+        this.keyboardOnlyMode = keyboardEvents > mouseEvents + touchEvents;
         // Reset counters
         keyboardEvents = mouseEvents = touchEvents = 0;
       }
@@ -127,7 +127,8 @@ export class FocusManager {
 
     // Skip if user is typing in an input
     const target = event.target as HTMLElement;
-    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    const isInput =
+      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
     if (isInput && !modKey) return;
 
@@ -178,10 +179,12 @@ export class FocusManager {
       'a[href]:not([aria-hidden="true"])',
       '[tabindex]:not([tabindex="-1"]):not([disabled]):not([aria-hidden="true"])',
       'details > summary:not([disabled]):not([aria-hidden="true"])',
-      '[contenteditable]:not([contenteditable="false"]):not([aria-hidden="true"])'
+      '[contenteditable]:not([contenteditable="false"]):not([aria-hidden="true"])',
     ].join(', ');
 
-    const elements = Array.from(container.querySelectorAll(focusableSelectors)) as FocusableElement[];
+    const elements = Array.from(
+      container.querySelectorAll(focusableSelectors)
+    ) as FocusableElement[];
 
     return elements.filter(element => {
       // Additional visibility checks
@@ -192,7 +195,10 @@ export class FocusManager {
 
       // Check if element is actually focusable
       const tabIndex = element.tabIndex;
-      return tabIndex >= 0 || element.matches('input, select, textarea, button, a[href], [contenteditable]');
+      return (
+        tabIndex >= 0 ||
+        element.matches('input, select, textarea, button, a[href], [contenteditable]')
+      );
     });
   }
 
@@ -423,7 +429,7 @@ export class RovingTabindex {
       orientation: 'horizontal',
       wrap: true,
       activateOnFocus: true,
-      ...config
+      ...config,
     };
 
     this.keydownListener = this.handleKeydown.bind(this);
@@ -440,7 +446,8 @@ export class RovingTabindex {
   }
 
   private updateItems(): void {
-    const selector = '[role="tab"], [role="menuitem"], [role="option"], [role="gridcell"], .roving-item';
+    const selector =
+      '[role="tab"], [role="menuitem"], [role="option"], [role="gridcell"], .roving-item';
     this.items = Array.from(this.container.querySelectorAll(selector));
 
     if (this.items.length === 0) {

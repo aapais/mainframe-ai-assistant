@@ -89,18 +89,16 @@ export class PerformanceOptimizer extends EventEmitter {
     const allStrategies = Array.from(this.strategies.values());
     const recommendations = allStrategies
       .filter(s => s.enabled && this.isStrategyApplicable(s, currentMetrics))
-      .sort((a, b) => (b.impact / b.effort) - (a.impact / a.effort)); // ROI sorting
+      .sort((a, b) => b.impact / b.effort - a.impact / a.effort); // ROI sorting
 
     // Quick wins: high impact, low effort, low risk
-    const quickWins = recommendations.filter(s =>
-      s.impact > 0.3 && s.effort < 0.3 && s.risk < 0.2
-    );
+    const quickWins = recommendations.filter(s => s.impact > 0.3 && s.effort < 0.3 && s.risk < 0.2);
 
     return {
       currentMetrics,
       bottlenecks,
       recommendations: recommendations.slice(0, 10),
-      quickWins
+      quickWins,
     };
   }
 
@@ -126,7 +124,7 @@ export class PerformanceOptimizer extends EventEmitter {
       this.emit('optimization-started', {
         strategy: strategy.name,
         category: strategy.category,
-        beforeMetrics
+        beforeMetrics,
       });
 
       const result = await strategy.execute();
@@ -139,37 +137,35 @@ export class PerformanceOptimizer extends EventEmitter {
         improvement,
         metrics: {
           beforeMetrics,
-          afterMetrics
-        }
+          afterMetrics,
+        },
       };
 
       this.optimizationHistory.push(finalResult);
 
       this.emit('optimization-completed', {
         strategy: strategy.name,
-        result: finalResult
+        result: finalResult,
       });
 
       console.log(`✅ Optimization completed: ${improvement.toFixed(1)}% improvement`);
 
       return finalResult;
-
     } catch (error) {
       const errorResult: OptimizationResult = {
         success: false,
         improvement: 0,
         metrics: {
           beforeMetrics: await this.capturePerformanceSnapshot(),
-          afterMetrics: await this.capturePerformanceSnapshot()
+          afterMetrics: await this.capturePerformanceSnapshot(),
         },
-        error: error.message
+        error: error.message,
       };
 
       this.optimizationHistory.push(errorResult);
       this.emit('optimization-failed', { strategy: strategy.name, error: error.message });
 
       return errorResult;
-
     } finally {
       this.isOptimizing = false;
     }
@@ -178,7 +174,9 @@ export class PerformanceOptimizer extends EventEmitter {
   /**
    * Auto-optimize based on current performance metrics
    */
-  async autoOptimize(aggressiveness: 'conservative' | 'moderate' | 'aggressive' = 'moderate'): Promise<OptimizationResult[]> {
+  async autoOptimize(
+    aggressiveness: 'conservative' | 'moderate' | 'aggressive' = 'moderate'
+  ): Promise<OptimizationResult[]> {
     console.log(`🤖 Starting auto-optimization (${aggressiveness} mode)...`);
 
     const analysis = await this.analyzePerformance();
@@ -188,7 +186,7 @@ export class PerformanceOptimizer extends EventEmitter {
     const config = {
       conservative: { maxStrategies: 2, maxRisk: 0.1, minImpact: 0.4 },
       moderate: { maxStrategies: 4, maxRisk: 0.3, minImpact: 0.2 },
-      aggressive: { maxStrategies: 8, maxRisk: 0.5, minImpact: 0.1 }
+      aggressive: { maxStrategies: 8, maxRisk: 0.5, minImpact: 0.1 },
     }[aggressiveness];
 
     // Filter strategies based on configuration
@@ -209,7 +207,6 @@ export class PerformanceOptimizer extends EventEmitter {
 
         // Add delay between optimizations
         await new Promise(resolve => setTimeout(resolve, 1000));
-
       } catch (error) {
         console.error(`Failed to execute strategy ${strategy.name}:`, error);
         if (aggressiveness === 'conservative') {
@@ -222,7 +219,9 @@ export class PerformanceOptimizer extends EventEmitter {
       .filter(r => r.success)
       .reduce((sum, r) => sum + r.improvement, 0);
 
-    console.log(`🎯 Auto-optimization completed: ${totalImprovement.toFixed(1)}% total improvement`);
+    console.log(
+      `🎯 Auto-optimization completed: ${totalImprovement.toFixed(1)}% total improvement`
+    );
 
     return results;
   }
@@ -233,18 +232,18 @@ export class PerformanceOptimizer extends EventEmitter {
   getRecommendationsForMetric(metric: string): OptimizationStrategy[] {
     const categoryMap: Record<string, string[]> = {
       'response-time': ['query', 'cache', 'index'],
-      'throughput': ['query', 'cache', 'bundle'],
-      'memory': ['memory', 'cache'],
-      'cache': ['cache'],
-      'bundle': ['bundle'],
-      'database': ['query', 'index']
+      throughput: ['query', 'cache', 'bundle'],
+      memory: ['memory', 'cache'],
+      cache: ['cache'],
+      bundle: ['bundle'],
+      database: ['query', 'index'],
     };
 
     const relevantCategories = categoryMap[metric] || [];
 
     return Array.from(this.strategies.values())
       .filter(s => relevantCategories.includes(s.category) && s.enabled)
-      .sort((a, b) => (b.impact / b.effort) - (a.impact / a.effort));
+      .sort((a, b) => b.impact / b.effort - a.impact / a.effort);
   }
 
   /**
@@ -276,22 +275,19 @@ export class PerformanceOptimizer extends EventEmitter {
       chunkSizes: new Map([
         ['main', 1.2 * 1024 * 1024],
         ['vendor', 800 * 1024],
-        ['search', 400 * 1024]
+        ['search', 400 * 1024],
       ]),
       unusedCode: [
         'lodash/merge (unused)',
         'moment/locale/* (partially unused)',
-        'chart.js/animations (unused features)'
+        'chart.js/animations (unused features)',
       ],
-      duplicateModules: [
-        'react (bundled twice)',
-        'sqlite3/lib/sqlite3 (in main and worker)'
-      ],
+      duplicateModules: ['react (bundled twice)', 'sqlite3/lib/sqlite3 (in main and worker)'],
       treeshakingOpportunities: [
         'Use specific lodash imports',
         'Replace moment with date-fns',
-        'Dynamic import for chart.js'
-      ]
+        'Dynamic import for chart.js',
+      ],
     };
   }
 
@@ -311,14 +307,14 @@ export class PerformanceOptimizer extends EventEmitter {
     const leaks = [
       { type: 'Event listeners', count: 15, size: 1024 * 50 },
       { type: 'Cached search results', count: 250, size: 1024 * 200 },
-      { type: 'Unclosed database connections', count: 3, size: 1024 * 10 }
+      { type: 'Unclosed database connections', count: 3, size: 1024 * 10 },
     ];
 
     const recommendations = [
       'Implement proper event listener cleanup',
       'Add TTL to search result cache',
       'Use connection pooling for database access',
-      'Consider implementing WeakMap for temporary caches'
+      'Consider implementing WeakMap for temporary caches',
     ];
 
     return { heapUsage, leaks, recommendations };
@@ -362,7 +358,7 @@ export class PerformanceOptimizer extends EventEmitter {
       .map(([name, stats]) => ({
         name,
         avgImprovement: stats.totalImprovement / stats.count,
-        count: stats.count
+        count: stats.count,
       }))
       .sort((a, b) => b.avgImprovement - a.avgImprovement)
       .slice(0, 5);
@@ -373,8 +369,8 @@ export class PerformanceOptimizer extends EventEmitter {
         totalImprovements,
         averageImprovement,
         successRate,
-        topStrategies
-      }
+        topStrategies,
+      },
     };
   }
 
@@ -390,7 +386,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.1,
       effort: 0.3,
       enabled: true,
-      execute: () => this.optimizeIndexes()
+      execute: () => this.optimizeIndexes(),
     });
 
     this.strategies.set('query-rewriting', {
@@ -401,7 +397,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.2,
       effort: 0.4,
       enabled: true,
-      execute: () => this.optimizeQueryRewriting()
+      execute: () => this.optimizeQueryRewriting(),
     });
 
     // Cache optimization strategies
@@ -413,7 +409,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.1,
       effort: 0.2,
       enabled: true,
-      execute: () => this.optimizeCacheStrategy()
+      execute: () => this.optimizeCacheStrategy(),
     });
 
     this.strategies.set('cache-preloading', {
@@ -424,7 +420,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.15,
       effort: 0.35,
       enabled: true,
-      execute: () => this.implementCachePreloading()
+      execute: () => this.implementCachePreloading(),
     });
 
     // Memory optimization strategies
@@ -436,7 +432,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.25,
       effort: 0.5,
       enabled: true,
-      execute: () => this.optimizeMemoryPools()
+      execute: () => this.optimizeMemoryPools(),
     });
 
     this.strategies.set('garbage-collection', {
@@ -447,7 +443,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.3,
       effort: 0.4,
       enabled: false, // Disabled by default due to risk
-      execute: () => this.tuneGarbageCollection()
+      execute: () => this.tuneGarbageCollection(),
     });
 
     // Bundle optimization strategies
@@ -459,7 +455,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.2,
       effort: 0.6,
       enabled: true,
-      execute: () => this.implementCodeSplitting()
+      execute: () => this.implementCodeSplitting(),
     });
 
     this.strategies.set('tree-shaking', {
@@ -470,7 +466,7 @@ export class PerformanceOptimizer extends EventEmitter {
       risk: 0.1,
       effort: 0.3,
       enabled: true,
-      execute: () => this.optimizeTreeShaking()
+      execute: () => this.optimizeTreeShaking(),
     });
 
     console.log(`✅ Initialized ${this.strategies.size} optimization strategies`);
@@ -487,7 +483,7 @@ export class PerformanceOptimizer extends EventEmitter {
       cacheHitRate: await this.measureCacheHitRate(),
       errorRate: await this.measureErrorRate(),
       cpuUsage: await this.measureCPUUsage(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -521,7 +517,10 @@ export class PerformanceOptimizer extends EventEmitter {
     return bottlenecks;
   }
 
-  private isStrategyApplicable(strategy: OptimizationStrategy, metrics: PerformanceSnapshot): boolean {
+  private isStrategyApplicable(
+    strategy: OptimizationStrategy,
+    metrics: PerformanceSnapshot
+  ): boolean {
     switch (strategy.category) {
       case 'query':
       case 'index':
@@ -539,17 +538,30 @@ export class PerformanceOptimizer extends EventEmitter {
 
   private calculateImprovement(before: PerformanceSnapshot, after: PerformanceSnapshot): number {
     // Weighted improvement calculation
-    const responseTimeImprovement = Math.max(0, (before.responseTime - after.responseTime) / before.responseTime);
-    const throughputImprovement = Math.max(0, (after.throughput - before.throughput) / before.throughput);
-    const memoryImprovement = Math.max(0, (before.memoryUsage - after.memoryUsage) / before.memoryUsage);
-    const cacheImprovement = Math.max(0, (after.cacheHitRate - before.cacheHitRate) / Math.max(before.cacheHitRate, 0.1));
+    const responseTimeImprovement = Math.max(
+      0,
+      (before.responseTime - after.responseTime) / before.responseTime
+    );
+    const throughputImprovement = Math.max(
+      0,
+      (after.throughput - before.throughput) / before.throughput
+    );
+    const memoryImprovement = Math.max(
+      0,
+      (before.memoryUsage - after.memoryUsage) / before.memoryUsage
+    );
+    const cacheImprovement = Math.max(
+      0,
+      (after.cacheHitRate - before.cacheHitRate) / Math.max(before.cacheHitRate, 0.1)
+    );
 
     return (
-      responseTimeImprovement * 0.4 +
-      throughputImprovement * 0.3 +
-      memoryImprovement * 0.2 +
-      cacheImprovement * 0.1
-    ) * 100;
+      (responseTimeImprovement * 0.4 +
+        throughputImprovement * 0.3 +
+        memoryImprovement * 0.2 +
+        cacheImprovement * 0.1) *
+      100
+    );
   }
 
   // Optimization strategy implementations
@@ -578,12 +590,12 @@ export class PerformanceOptimizer extends EventEmitter {
         improvement: 15, // Estimated improvement
         metrics: {
           beforeMetrics: this.currentSnapshot!,
-          afterMetrics: await this.capturePerformanceSnapshot()
+          afterMetrics: await this.capturePerformanceSnapshot(),
         },
         recommendations: [
           'Monitor query execution plans for further optimization',
-          'Consider partitioning large tables by date'
-        ]
+          'Consider partitioning large tables by date',
+        ],
       };
     } catch (error) {
       return {
@@ -591,9 +603,9 @@ export class PerformanceOptimizer extends EventEmitter {
         improvement: 0,
         metrics: {
           beforeMetrics: this.currentSnapshot!,
-          afterMetrics: this.currentSnapshot!
+          afterMetrics: this.currentSnapshot!,
         },
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -607,12 +619,12 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 12,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
+        afterMetrics: await this.capturePerformanceSnapshot(),
       },
       recommendations: [
         'Use prepared statements for repeated queries',
-        'Implement query result streaming for large datasets'
-      ]
+        'Implement query result streaming for large datasets',
+      ],
     };
   }
 
@@ -625,12 +637,9 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 8,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
+        afterMetrics: await this.capturePerformanceSnapshot(),
       },
-      recommendations: [
-        'Implement LRU eviction policy',
-        'Add cache warming for popular queries'
-      ]
+      recommendations: ['Implement LRU eviction policy', 'Add cache warming for popular queries'],
     };
   }
 
@@ -642,8 +651,8 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 6,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
-      }
+        afterMetrics: await this.capturePerformanceSnapshot(),
+      },
     };
   }
 
@@ -655,8 +664,8 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 10,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
-      }
+        afterMetrics: await this.capturePerformanceSnapshot(),
+      },
     };
   }
 
@@ -668,8 +677,8 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 5,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
-      }
+        afterMetrics: await this.capturePerformanceSnapshot(),
+      },
     };
   }
 
@@ -681,12 +690,12 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 20,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
+        afterMetrics: await this.capturePerformanceSnapshot(),
       },
       recommendations: [
         'Implement route-based code splitting',
-        'Use dynamic imports for heavy dependencies'
-      ]
+        'Use dynamic imports for heavy dependencies',
+      ],
     };
   }
 
@@ -698,8 +707,8 @@ export class PerformanceOptimizer extends EventEmitter {
       improvement: 8,
       metrics: {
         beforeMetrics: this.currentSnapshot!,
-        afterMetrics: await this.capturePerformanceSnapshot()
-      }
+        afterMetrics: await this.capturePerformanceSnapshot(),
+      },
     };
   }
 
@@ -707,11 +716,15 @@ export class PerformanceOptimizer extends EventEmitter {
 
   private async measureAverageResponseTime(): Promise<number> {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT AVG(duration_ms) as avg_time
         FROM search_operation_metrics
         WHERE timestamp > datetime('now', '-1 hour')
-      `).get() as { avg_time: number };
+      `
+        )
+        .get() as { avg_time: number };
 
       return result.avg_time || 500;
     } catch {
@@ -721,11 +734,15 @@ export class PerformanceOptimizer extends EventEmitter {
 
   private async measureThroughput(): Promise<number> {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as query_count
         FROM search_operation_metrics
         WHERE timestamp > datetime('now', '-1 minute')
-      `).get() as { query_count: number };
+      `
+        )
+        .get() as { query_count: number };
 
       return result.query_count || 5;
     } catch {
@@ -735,12 +752,16 @@ export class PerformanceOptimizer extends EventEmitter {
 
   private async measureCacheHitRate(): Promise<number> {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT
           AVG(CASE WHEN cache_hit = 1 THEN 1.0 ELSE 0.0 END) as hit_rate
         FROM search_operation_metrics
         WHERE timestamp > datetime('now', '-1 hour')
-      `).get() as { hit_rate: number };
+      `
+        )
+        .get() as { hit_rate: number };
 
       return result.hit_rate || 0.7;
     } catch {
@@ -760,14 +781,18 @@ export class PerformanceOptimizer extends EventEmitter {
 
   private async getSlowQueries(): Promise<string[]> {
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT DISTINCT query
         FROM search_operation_metrics
         WHERE duration_ms > 1000
         AND timestamp > datetime('now', '-24 hours')
         ORDER BY duration_ms DESC
         LIMIT 10
-      `).all() as Array<{ query: string }>;
+      `
+        )
+        .all() as Array<{ query: string }>;
 
       return results.map(r => r.query);
     } catch {
@@ -782,7 +807,7 @@ export class PerformanceOptimizer extends EventEmitter {
       currentPlan: 'Sequential scan on kb_entries',
       suggestedIndexes: ['idx_kb_entries_title', 'idx_kb_entries_category_tags'],
       estimatedImprovement: 40,
-      rewriteSuggestion: 'Use FTS5 index for text searches'
+      rewriteSuggestion: 'Use FTS5 index for text searches',
     };
   }
 

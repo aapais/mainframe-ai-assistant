@@ -55,14 +55,14 @@ export interface ValidationEvent {
 
 /**
  * Real-time validator with live feedback and suggestions
- * 
+ *
  * Provides immediate validation feedback as users type, with:
  * - Debounced validation to avoid excessive API calls
  * - Progressive validation (basic -> advanced -> async)
  * - Smart suggestions and auto-completion
  * - Live error/warning display
  * - Form-level validation state management
- * 
+ *
  * @example
  * ```typescript
  * const validator = new RealTimeValidator({
@@ -70,18 +70,18 @@ export interface ValidationEvent {
  *   validateOnChange: true,
  *   autoSuggest: true
  * });
- * 
+ *
  * // Setup field validation
  * validator.setupField('title', {
  *   rules: [StringValidators.required(), StringValidators.length(10, 200)],
  *   suggestions: true
  * });
- * 
+ *
  * // Listen for validation events
  * validator.on('validation', (event) => {
  *   updateUI(event.field, event.state);
  * });
- * 
+ *
  * // Validate as user types
  * validator.validateField('title', inputValue);
  * ```
@@ -95,12 +95,9 @@ export class RealTimeValidator extends EventEmitter {
   private fieldConfigs: Map<string, FieldConfig> = new Map();
   private validationCache: Map<string, CachedValidation> = new Map();
 
-  constructor(
-    config: RealTimeValidationConfig = {},
-    engine?: ValidationEngine
-  ) {
+  constructor(config: RealTimeValidationConfig = {}, engine?: ValidationEngine) {
     super();
-    
+
     this.config = {
       debounceMs: 300,
       validateOnChange: true,
@@ -109,12 +106,12 @@ export class RealTimeValidator extends EventEmitter {
       enableAsyncValidation: true,
       autoSuggest: true,
       maxSuggestions: 5,
-      ...config
+      ...config,
     };
 
     this.engine = engine || new ValidationEngine();
     this.schemaValidator = new SchemaValidator(this.engine);
-    
+
     this.formState = {
       isValid: true,
       isValidating: false,
@@ -122,7 +119,7 @@ export class RealTimeValidator extends EventEmitter {
       globalErrors: [],
       globalWarnings: [],
       lastValidated: new Date(),
-      validationCount: 0
+      validationCount: 0,
     };
   }
 
@@ -131,7 +128,7 @@ export class RealTimeValidator extends EventEmitter {
    */
   setupField(fieldName: string, config: FieldConfig): void {
     this.fieldConfigs.set(fieldName, config);
-    
+
     // Initialize field state
     this.formState.fields.set(fieldName, {
       field: fieldName,
@@ -141,15 +138,15 @@ export class RealTimeValidator extends EventEmitter {
       warnings: [],
       suggestions: [],
       lastValidated: new Date(),
-      validationCount: 0
+      validationCount: 0,
     });
 
     // Create debounced validator for this field
     const debouncedValidator = debounceValidation(
-      (value) => this.performFieldValidation(fieldName, value),
+      value => this.performFieldValidation(fieldName, value),
       this.config.debounceMs
     );
-    
+
     this.debouncedValidators.set(fieldName, debouncedValidator);
   }
 
@@ -157,8 +154,8 @@ export class RealTimeValidator extends EventEmitter {
    * Validate field value with real-time feedback
    */
   async validateField(
-    fieldName: string, 
-    value: any, 
+    fieldName: string,
+    value: any,
     trigger: 'change' | 'blur' | 'submit' = 'change'
   ): Promise<FieldValidationState> {
     const fieldConfig = this.fieldConfigs.get(fieldName);
@@ -189,7 +186,7 @@ export class RealTimeValidator extends EventEmitter {
 
       // Update field state with results
       this.updateFieldState(fieldName, validationResult, value);
-      
+
       // Generate suggestions if enabled
       if (this.config.autoSuggest && fieldConfig.suggestions) {
         await this.generateSuggestions(fieldName, value, validationResult);
@@ -213,13 +210,16 @@ export class RealTimeValidator extends EventEmitter {
   /**
    * Validate entire form
    */
-  async validateForm(data: Record<string, any>, context?: ValidationContext): Promise<FormValidationState> {
+  async validateForm(
+    data: Record<string, any>,
+    context?: ValidationContext
+  ): Promise<FormValidationState> {
     this.formState.isValidating = true;
     this.formState.validationCount++;
 
     try {
       // Validate each configured field
-      const fieldPromises = Array.from(this.fieldConfigs.keys()).map(async (fieldName) => {
+      const fieldPromises = Array.from(this.fieldConfigs.keys()).map(async fieldName => {
         const fieldValue = data[fieldName];
         return this.validateField(fieldName, fieldValue, 'submit');
       });
@@ -228,21 +228,21 @@ export class RealTimeValidator extends EventEmitter {
 
       // Run form-level validation
       const formResult = await this.engine.validateEntry(data, context);
-      
+
       // Update global errors/warnings
       this.formState.globalErrors = formResult.errors
         .filter(error => !this.fieldConfigs.has(error.field))
         .map(error => error.message);
-      
+
       this.formState.globalWarnings = formResult.warnings
         .filter(warning => !this.fieldConfigs.has(warning.field))
         .map(warning => warning.message);
 
       // Update form validation state
       this.updateFormState();
-      
+
       this.emitValidationEvent('form', this.formState);
-      
+
       return this.formState;
     } catch (error) {
       this.formState.isValidating = false;
@@ -256,16 +256,18 @@ export class RealTimeValidator extends EventEmitter {
    * Get current field validation state
    */
   getFieldState(fieldName: string): FieldValidationState {
-    return this.formState.fields.get(fieldName) || {
-      field: fieldName,
-      isValid: true,
-      isValidating: false,
-      errors: [],
-      warnings: [],
-      suggestions: [],
-      lastValidated: new Date(),
-      validationCount: 0
-    };
+    return (
+      this.formState.fields.get(fieldName) || {
+        field: fieldName,
+        isValid: true,
+        isValidating: false,
+        errors: [],
+        warnings: [],
+        suggestions: [],
+        lastValidated: new Date(),
+        validationCount: 0,
+      }
+    );
   }
 
   /**
@@ -285,7 +287,7 @@ export class RealTimeValidator extends EventEmitter {
     fieldState.suggestions = [];
     fieldState.isValid = true;
     fieldState.isValidating = false;
-    
+
     this.updateFormState();
     this.emitValidationEvent('field', fieldState, fieldName);
   }
@@ -297,7 +299,7 @@ export class RealTimeValidator extends EventEmitter {
     this.formState.fields.forEach((_, fieldName) => {
       this.clearFieldValidation(fieldName);
     });
-    
+
     this.formState.globalErrors = [];
     this.formState.globalWarnings = [];
     this.updateFormState();
@@ -328,17 +330,19 @@ export class RealTimeValidator extends EventEmitter {
    * Performance monitoring - get validation metrics
    */
   getValidationMetrics(): ValidationMetrics {
-    const totalValidations = Array.from(this.formState.fields.values())
-      .reduce((sum, field) => sum + field.validationCount, 0);
-    
+    const totalValidations = Array.from(this.formState.fields.values()).reduce(
+      (sum, field) => sum + field.validationCount,
+      0
+    );
+
     const averageValidationsPerField = totalValidations / this.formState.fields.size || 0;
-    
+
     return {
       totalValidations,
       fieldsConfigured: this.formState.fields.size,
       averageValidationsPerField,
       cacheHitRate: this.calculateCacheHitRate(),
-      lastValidated: this.formState.lastValidated
+      lastValidated: this.formState.lastValidated,
     };
   }
 
@@ -375,11 +379,11 @@ export class RealTimeValidator extends EventEmitter {
     // Perform validation
     const context: ValidationContext = {
       operation: 'update', // Assume update for real-time validation
-      entry: this.getCurrentFormData()
+      entry: this.getCurrentFormData(),
     };
 
     let result: ValidationResult;
-    
+
     if (fieldConfig.schema) {
       // Use schema validation
       result = await this.schemaValidator.validateAgainstSchema(
@@ -397,7 +401,7 @@ export class RealTimeValidator extends EventEmitter {
       result,
       timestamp: Date.now(),
       fieldName,
-      value
+      value,
     });
 
     return result;
@@ -405,50 +409,48 @@ export class RealTimeValidator extends EventEmitter {
 
   private updateFieldState(fieldName: string, result: ValidationResult, value: any): void {
     const fieldState = this.getFieldState(fieldName);
-    
+
     fieldState.isValid = result.isValid;
     fieldState.isValidating = false;
     fieldState.errors = result.errors.map(error => this.formatErrorMessage(error));
-    fieldState.warnings = this.config.showWarningsAsErrors 
-      ? [] 
+    fieldState.warnings = this.config.showWarningsAsErrors
+      ? []
       : result.warnings.map(warning => this.formatWarningMessage(warning));
-    
+
     // Add warnings as errors if configured
     if (this.config.showWarningsAsErrors) {
-      fieldState.errors.push(
-        ...result.warnings.map(warning => this.formatWarningMessage(warning))
-      );
+      fieldState.errors.push(...result.warnings.map(warning => this.formatWarningMessage(warning)));
       fieldState.isValid = fieldState.isValid && result.warnings.length === 0;
     }
-    
+
     fieldState.lastValidated = new Date();
     fieldState.validationCount++;
-    
+
     this.formState.fields.set(fieldName, fieldState);
   }
 
   private updateFormState(): void {
     const fields = Array.from(this.formState.fields.values());
-    
-    this.formState.isValid = fields.every(field => field.isValid) && 
-                            this.formState.globalErrors.length === 0;
-    
+
+    this.formState.isValid =
+      fields.every(field => field.isValid) && this.formState.globalErrors.length === 0;
+
     this.formState.isValidating = fields.some(field => field.isValidating);
     this.formState.lastValidated = new Date();
     this.formState.validationCount++;
   }
 
   private async generateSuggestions(
-    fieldName: string, 
-    value: any, 
+    fieldName: string,
+    value: any,
     validationResult: ValidationResult
   ): Promise<void> {
     const fieldState = this.getFieldState(fieldName);
-    
+
     try {
       const suggestions = await this.generateFieldSuggestions(fieldName, value, validationResult);
       fieldState.suggestions = suggestions.slice(0, this.config.maxSuggestions);
-      
+
       if (suggestions.length > 0) {
         this.emitValidationEvent('suggestion', fieldState, fieldName);
       }
@@ -458,13 +460,13 @@ export class RealTimeValidator extends EventEmitter {
   }
 
   private async generateFieldSuggestions(
-    fieldName: string, 
-    value: any, 
+    fieldName: string,
+    value: any,
     validationResult?: ValidationResult
   ): Promise<string[]> {
     const suggestions: string[] = [];
     const fieldConfig = this.fieldConfigs.get(fieldName);
-    
+
     if (!fieldConfig || !value) return suggestions;
 
     // Generate suggestions based on field type and validation errors
@@ -514,9 +516,22 @@ export class RealTimeValidator extends EventEmitter {
   }
 
   private generateCategorySuggestions(category: string): string[] {
-    const validCategories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'TSO/ISPF', 'RACF', 'System', 'Network', 'Other'];
+    const validCategories = [
+      'JCL',
+      'VSAM',
+      'DB2',
+      'Batch',
+      'Functional',
+      'CICS',
+      'IMS',
+      'TSO/ISPF',
+      'RACF',
+      'System',
+      'Network',
+      'Other',
+    ];
     const suggestions: string[] = [];
-    
+
     if (category && !validCategories.includes(category)) {
       // Find closest match
       const closest = this.findClosestString(category, validCategories);
@@ -530,19 +545,31 @@ export class RealTimeValidator extends EventEmitter {
 
   private generateTagSuggestions(tags: string[]): string[] {
     const suggestions: string[] = [];
-    
+
     // Common mainframe tags
     const commonTags = [
-      'abend', 'error-code', 'jcl', 'vsam', 'db2', 'cics', 'ims', 'cobol',
-      'dataset', 'file-error', 'compilation', 'runtime', 'sql', 'status-code'
+      'abend',
+      'error-code',
+      'jcl',
+      'vsam',
+      'db2',
+      'cics',
+      'ims',
+      'cobol',
+      'dataset',
+      'file-error',
+      'compilation',
+      'runtime',
+      'sql',
+      'status-code',
     ];
-    
+
     // Suggest commonly used tags that aren't present
     const currentTagsLower = tags.map(tag => tag.toLowerCase());
-    const missingCommonTags = commonTags.filter(commonTag => 
-      !currentTagsLower.some(currentTag => currentTag.includes(commonTag))
+    const missingCommonTags = commonTags.filter(
+      commonTag => !currentTagsLower.some(currentTag => currentTag.includes(commonTag))
     );
-    
+
     if (missingCommonTags.length > 0) {
       suggestions.push(`Consider adding: ${missingCommonTags.slice(0, 3).join(', ')}`);
     }
@@ -550,9 +577,12 @@ export class RealTimeValidator extends EventEmitter {
     return suggestions;
   }
 
-  private generateContentSuggestions(content: string, validationResult?: ValidationResult): string[] {
+  private generateContentSuggestions(
+    content: string,
+    validationResult?: ValidationResult
+  ): string[] {
     const suggestions: string[] = [];
-    
+
     // Check for structured format
     const hasSteps = /^\s*\d+\.|\n\s*\d+\.|\*|\-|•/.test(content);
     if (!hasSteps && content.length > 100) {
@@ -574,7 +604,7 @@ export class RealTimeValidator extends EventEmitter {
     fieldState.errors = [`Validation failed: ${error.message}`];
     fieldState.warnings = [];
     fieldState.lastValidated = new Date();
-    
+
     return fieldState;
   }
 
@@ -592,15 +622,15 @@ export class RealTimeValidator extends EventEmitter {
   }
 
   private emitValidationEvent(
-    type: 'field' | 'form' | 'suggestion', 
-    state: FieldValidationState | FormValidationState, 
+    type: 'field' | 'form' | 'suggestion',
+    state: FieldValidationState | FormValidationState,
     field?: string
   ): void {
     this.emit('validation', {
       type,
       field,
       state,
-      timestamp: new Date()
+      timestamp: new Date(),
     } as ValidationEvent);
   }
 
@@ -625,12 +655,12 @@ export class RealTimeValidator extends EventEmitter {
 
     for (const candidate of candidates) {
       const candidateLower = candidate.toLowerCase();
-      
+
       // Simple similarity check
       if (candidateLower.startsWith(inputLower) || inputLower.startsWith(candidateLower)) {
         return candidate;
       }
-      
+
       // Character overlap similarity
       const score = this.calculateStringSimilarity(inputLower, candidateLower);
       if (score > bestScore && score > 0.3) {
@@ -647,7 +677,7 @@ export class RealTimeValidator extends EventEmitter {
     const setB = new Set(b);
     const intersection = new Set([...setA].filter(char => setB.has(char)));
     const union = new Set([...setA, ...setB]);
-    
+
     return intersection.size / union.size;
   }
 }
@@ -696,6 +726,6 @@ export function useRealTimeValidation(config: RealTimeValidationConfig = {}) {
     validateField: () => {},
     validateForm: () => {},
     getFieldState: () => {},
-    clearValidation: () => {}
+    clearValidation: () => {},
   };
 }

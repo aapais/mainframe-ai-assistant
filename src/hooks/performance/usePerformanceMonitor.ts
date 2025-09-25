@@ -86,7 +86,11 @@ export interface PerformanceHookReturn {
 /**
  * Calculates performance score based on metrics
  */
-const calculatePerformanceScore = (renderTime: number, renderCount: number, memoryUsage?: number): number => {
+const calculatePerformanceScore = (
+  renderTime: number,
+  renderCount: number,
+  memoryUsage?: number
+): number => {
   let score = 100;
 
   // Penalize slow renders (exponential penalty after 16ms)
@@ -123,48 +127,57 @@ const detectPerformanceIssues = (
   // Slow render detection
   if (renderTime > thresholds.slowRender) {
     const severity: PerformanceIssue['severity'] =
-      renderTime > 100 ? 'critical' :
-      renderTime > 50 ? 'high' :
-      renderTime > 25 ? 'medium' : 'low';
+      renderTime > 100 ? 'critical' : renderTime > 50 ? 'high' : renderTime > 25 ? 'medium' : 'low';
 
     issues.push({
       type: 'slow-render',
       severity,
       message: `${componentName} render took ${renderTime.toFixed(2)}ms`,
-      suggestion: 'Consider memoizing expensive calculations, using React.memo, or implementing virtual scrolling',
-      detectedAt: now
+      suggestion:
+        'Consider memoizing expensive calculations, using React.memo, or implementing virtual scrolling',
+      detectedAt: now,
     });
   }
 
   // Excessive re-renders detection
   if (renderCount > thresholds.excessiveRerender) {
     const severity: PerformanceIssue['severity'] =
-      renderCount > 100 ? 'critical' :
-      renderCount > 50 ? 'high' :
-      renderCount > 25 ? 'medium' : 'low';
+      renderCount > 100
+        ? 'critical'
+        : renderCount > 50
+          ? 'high'
+          : renderCount > 25
+            ? 'medium'
+            : 'low';
 
     issues.push({
       type: 'excessive-rerenders',
       severity,
       message: `${componentName} has re-rendered ${renderCount} times`,
-      suggestion: 'Check for unnecessary state updates, use useCallback for event handlers, and memoize complex calculations',
-      detectedAt: now
+      suggestion:
+        'Check for unnecessary state updates, use useCallback for event handlers, and memoize complex calculations',
+      detectedAt: now,
     });
   }
 
   // Memory usage detection (if available)
   if (memoryUsage && memoryUsage > 100) {
     const severity: PerformanceIssue['severity'] =
-      memoryUsage > 500 ? 'critical' :
-      memoryUsage > 250 ? 'high' :
-      memoryUsage > 150 ? 'medium' : 'low';
+      memoryUsage > 500
+        ? 'critical'
+        : memoryUsage > 250
+          ? 'high'
+          : memoryUsage > 150
+            ? 'medium'
+            : 'low';
 
     issues.push({
       type: 'memory-leak',
       severity,
       message: `High memory usage detected: ${memoryUsage.toFixed(2)}MB`,
-      suggestion: 'Check for memory leaks, cleanup event listeners, and consider implementing data virtualization',
-      detectedAt: now
+      suggestion:
+        'Check for memory leaks, cleanup event listeners, and consider implementing data virtualization',
+      detectedAt: now,
     });
   }
 
@@ -211,7 +224,7 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
     slowRenderThreshold = 16,
     excessiveRerenderThreshold = 20,
     enableMemoryMonitoring = true,
-    samplingRate = 1.0
+    samplingRate = 1.0,
   } = options;
 
   // Performance tracking state
@@ -222,7 +235,7 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
     memoryUsage: undefined,
     lastMeasurement: Date.now(),
     performanceScore: 100,
-    issues: []
+    issues: [],
   });
 
   // Refs for performance tracking
@@ -237,9 +250,13 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
 
   // Initialize performance observer for advanced metrics
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'PerformanceObserver' in window && Math.random() < samplingRate) {
+    if (
+      typeof window !== 'undefined' &&
+      'PerformanceObserver' in window &&
+      Math.random() < samplingRate
+    ) {
       try {
-        const observer = new PerformanceObserver((list) => {
+        const observer = new PerformanceObserver(list => {
           const entries = list.getEntries();
           for (const entry of entries) {
             if (entry.name.includes(componentName)) {
@@ -276,13 +293,10 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
 
     const memoryUsage = enableMemoryMonitoring ? getMemoryUsage() : undefined;
     const performanceScore = calculatePerformanceScore(renderTime, renderCount, memoryUsage);
-    const issues = detectPerformanceIssues(
-      renderTime,
-      renderCount,
-      memoryUsage,
-      componentName,
-      { slowRender: slowRenderThreshold, excessiveRerender: excessiveRerenderThreshold }
-    );
+    const issues = detectPerformanceIssues(renderTime, renderCount, memoryUsage, componentName, {
+      slowRender: slowRenderThreshold,
+      excessiveRerender: excessiveRerenderThreshold,
+    });
 
     // Update metrics
     setMetrics({
@@ -291,7 +305,7 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
       memoryUsage,
       lastMeasurement: Date.now(),
       performanceScore,
-      issues
+      issues,
     });
 
     // Emit warnings for performance issues
@@ -319,7 +333,7 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
     enableMemoryMonitoring,
     slowRenderThreshold,
     excessiveRerenderThreshold,
-    samplingRate
+    samplingRate,
   ]);
 
   // Reset performance metrics
@@ -331,15 +345,18 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
       memoryUsage: undefined,
       lastMeasurement: Date.now(),
       performanceScore: 100,
-      issues: []
+      issues: [],
     });
     warningsRef.current.clear();
   }, []);
 
   // Calculate if performance is acceptable
   const isPerformanceAcceptable = useMemo(() => {
-    return metrics.performanceScore > 70 &&
-           metrics.issues.filter(issue => issue.severity === 'critical' || issue.severity === 'high').length === 0;
+    return (
+      metrics.performanceScore > 70 &&
+      metrics.issues.filter(issue => issue.severity === 'critical' || issue.severity === 'high')
+        .length === 0
+    );
   }, [metrics.performanceScore, metrics.issues]);
 
   // Generate performance recommendations
@@ -370,7 +387,13 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
     }
 
     return recommendations;
-  }, [metrics.renderTime, metrics.renderCount, metrics.memoryUsage, slowRenderThreshold, excessiveRerenderThreshold]);
+  }, [
+    metrics.renderTime,
+    metrics.renderCount,
+    metrics.memoryUsage,
+    slowRenderThreshold,
+    excessiveRerenderThreshold,
+  ]);
 
   return {
     metrics,
@@ -378,7 +401,7 @@ export const usePerformanceMonitor = (options: PerformanceOptions = {}): Perform
     endMeasurement,
     resetMetrics,
     isPerformanceAcceptable,
-    getRecommendations
+    getRecommendations,
   };
 };
 

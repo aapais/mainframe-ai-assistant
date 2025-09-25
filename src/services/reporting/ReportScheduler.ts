@@ -169,7 +169,7 @@ export class ReportScheduler extends EventEmitter {
       nextRun: this.calculateNextRun(schedule),
       runCount: 0,
       successCount: 0,
-      failureCount: 0
+      failureCount: 0,
     };
 
     this.scheduledReports.set(scheduledReport.id, scheduledReport);
@@ -190,7 +190,10 @@ export class ReportScheduler extends EventEmitter {
     return activeOnly ? reports.filter(r => r.isActive) : reports;
   }
 
-  public updateScheduledReport(id: string, updates: Partial<ScheduledReport>): ScheduledReport | null {
+  public updateScheduledReport(
+    id: string,
+    updates: Partial<ScheduledReport>
+  ): ScheduledReport | null {
     const report = this.scheduledReports.get(id);
     if (!report) {
       return null;
@@ -272,8 +275,8 @@ export class ReportScheduler extends EventEmitter {
       retryCount: 0,
       metadata: {
         scheduledTime: scheduledReport.nextRun,
-        actualExecutionTime: new Date()
-      }
+        actualExecutionTime: new Date(),
+      },
     };
 
     this.activeExecutions.set(executionId, execution);
@@ -282,7 +285,10 @@ export class ReportScheduler extends EventEmitter {
     // Update scheduled report
     scheduledReport.lastRun = new Date();
     scheduledReport.runCount++;
-    scheduledReport.nextRun = this.calculateNextRun(scheduledReport.schedule, scheduledReport.lastRun);
+    scheduledReport.nextRun = this.calculateNextRun(
+      scheduledReport.schedule,
+      scheduledReport.lastRun
+    );
 
     this.logger.info(`Executing scheduled report: ${scheduledReport.name} (${executionId})`);
     this.emit('executionStarted', execution);
@@ -294,7 +300,10 @@ export class ReportScheduler extends EventEmitter {
 
       // Export if configured
       if (scheduledReport.exportConfig && reportResult.status === 'success') {
-        const exportJobId = await this.dataExporter.exportData(reportResult.data, scheduledReport.exportConfig);
+        const exportJobId = await this.dataExporter.exportData(
+          reportResult.data,
+          scheduledReport.exportConfig
+        );
         execution.exportResult = { jobId: exportJobId };
       }
 
@@ -310,7 +319,6 @@ export class ReportScheduler extends EventEmitter {
 
       // Send success notifications
       await this.sendNotifications(scheduledReport, execution, 'success');
-
     } catch (error) {
       execution.status = 'failed';
       execution.endTime = new Date();
@@ -323,35 +331,43 @@ export class ReportScheduler extends EventEmitter {
       this.emit('executionFailed', execution);
 
       // Handle retries
-      if (scheduledReport.schedule.retryPolicy && execution.retryCount < scheduledReport.schedule.retryPolicy.maxRetries) {
+      if (
+        scheduledReport.schedule.retryPolicy &&
+        execution.retryCount < scheduledReport.schedule.retryPolicy.maxRetries
+      ) {
         await this.scheduleRetry(scheduledReport, execution);
       } else {
         // Send failure notifications
         await this.sendNotifications(scheduledReport, execution, 'failure');
       }
-
     } finally {
       this.activeExecutions.delete(executionId);
     }
   }
 
-  private async scheduleRetry(scheduledReport: ScheduledReport, execution: ScheduledReportResult): Promise<void> {
+  private async scheduleRetry(
+    scheduledReport: ScheduledReport,
+    execution: ScheduledReportResult
+  ): Promise<void> {
     const retryPolicy = scheduledReport.schedule.retryPolicy!;
     const retryDelay = this.calculateRetryDelay(execution.retryCount, retryPolicy);
 
     this.logger.info(`Scheduling retry for ${scheduledReport.id} in ${retryDelay} minutes`);
 
-    setTimeout(async () => {
-      try {
-        execution.retryCount++;
-        execution.status = 'retrying';
-        this.emit('executionRetrying', execution);
+    setTimeout(
+      async () => {
+        try {
+          execution.retryCount++;
+          execution.status = 'retrying';
+          this.emit('executionRetrying', execution);
 
-        await this.executeScheduledReport(scheduledReport);
-      } catch (error) {
-        this.logger.error(`Retry failed for scheduled report: ${scheduledReport.id}`, error);
-      }
-    }, retryDelay * 60 * 1000);
+          await this.executeScheduledReport(scheduledReport);
+        } catch (error) {
+          this.logger.error(`Retry failed for scheduled report: ${scheduledReport.id}`, error);
+        }
+      },
+      retryDelay * 60 * 1000
+    );
 
     // Send retry notifications
     await this.sendNotifications(scheduledReport, execution, 'retry');
@@ -414,13 +430,18 @@ export class ReportScheduler extends EventEmitter {
       duration: execution.duration,
       error: execution.error,
       retryCount: execution.retryCount,
-      type
+      type,
     };
 
     // In a real implementation, integrate with notification services
     switch (config.type) {
       case 'email':
-        await this.sendEmailNotification(config.recipients, notificationData, scheduledReport, execution);
+        await this.sendEmailNotification(
+          config.recipients,
+          notificationData,
+          scheduledReport,
+          execution
+        );
         break;
       case 'webhook':
         await this.sendWebhookNotification(config.recipients[0], notificationData);
@@ -434,7 +455,12 @@ export class ReportScheduler extends EventEmitter {
     this.logger.info(`${type} notification sent via ${config.type} for ${scheduledReport.id}`);
   }
 
-  private async sendEmailNotification(recipients: string[], data: any, scheduledReport: ScheduledReport, execution: ScheduledReportResult): Promise<void> {
+  private async sendEmailNotification(
+    recipients: string[],
+    data: any,
+    scheduledReport: ScheduledReport,
+    execution: ScheduledReportResult
+  ): Promise<void> {
     // Placeholder for email notification implementation
     this.logger.info(`Email notification would be sent to: ${recipients.join(', ')}`);
   }
@@ -472,11 +498,19 @@ export class ReportScheduler extends EventEmitter {
         break;
 
       case 'weekly':
-        nextRun = this.calculateWeeklyNextRun(baseDate, schedule.dayOfWeek || 1, schedule.time || '09:00');
+        nextRun = this.calculateWeeklyNextRun(
+          baseDate,
+          schedule.dayOfWeek || 1,
+          schedule.time || '09:00'
+        );
         break;
 
       case 'monthly':
-        nextRun = this.calculateMonthlyNextRun(baseDate, schedule.dayOfMonth || 1, schedule.time || '09:00');
+        nextRun = this.calculateMonthlyNextRun(
+          baseDate,
+          schedule.dayOfMonth || 1,
+          schedule.time || '09:00'
+        );
         break;
 
       case 'cron':
@@ -616,9 +650,10 @@ export class ReportScheduler extends EventEmitter {
       .filter(e => e.duration !== undefined)
       .slice(0, 100);
 
-    const averageExecutionTime = recentExecutions.length > 0
-      ? recentExecutions.reduce((sum, e) => sum + (e.duration || 0), 0) / recentExecutions.length
-      : 0;
+    const averageExecutionTime =
+      recentExecutions.length > 0
+        ? recentExecutions.reduce((sum, e) => sum + (e.duration || 0), 0) / recentExecutions.length
+        : 0;
 
     const nextExecutions = activeReports
       .map(r => r.nextRun)
@@ -633,7 +668,7 @@ export class ReportScheduler extends EventEmitter {
       failedExecutions,
       averageExecutionTime,
       nextExecutionTime: nextExecutions[0],
-      queuedExecutions: this.activeExecutions.size
+      queuedExecutions: this.activeExecutions.size,
     };
   }
 }

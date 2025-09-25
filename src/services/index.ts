@@ -19,15 +19,15 @@ export {
   DataTransformer,
   ValidationService as EnhancedValidationService,
   BatchProcessor,
-  ExportImportServiceFactory
+  ExportImportServiceFactory,
 } from './storage/export';
 
 // Service Factory and Management
-export { 
+export {
   default as ServiceFactory,
   getGlobalServiceFactory,
   setGlobalServiceFactory,
-  resetGlobalServiceFactory 
+  resetGlobalServiceFactory,
 } from './ServiceFactory';
 
 // Re-export all service interfaces and types
@@ -80,7 +80,7 @@ export async function initializeTestServices(
  */
 export async function createMinimalKBService(dbPath?: string) {
   const { KnowledgeBaseService, ValidationService, SearchService } = await import('./');
-  
+
   const config = {
     database: {
       path: dbPath || './minimal-kb.db',
@@ -88,10 +88,10 @@ export async function createMinimalKBService(dbPath?: string) {
         journal_mode: 'WAL',
         synchronous: 'NORMAL',
         cache_size: -8000,
-        foreign_keys: 'ON'
+        foreign_keys: 'ON',
       },
       backup: { enabled: false, interval: 0, retention: 0, path: '' },
-      performance: { connectionPool: 1, busyTimeout: 5000, cacheSize: 8000 }
+      performance: { connectionPool: 1, busyTimeout: 5000, cacheSize: 8000 },
     },
     validation: {
       strict: false,
@@ -100,47 +100,49 @@ export async function createMinimalKBService(dbPath?: string) {
       minLength: { title: 5, problem: 10, solution: 10 },
       patterns: {
         tag: /^[a-zA-Z0-9-_]+$/,
-        category: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other']
-      }
+        category: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'],
+      },
     },
     search: {
       fts: { tokenize: 'porter', remove_diacritics: 1, categories: 'simple' },
       ai: { enabled: false, fallback: true, timeout: 5000, retries: 2, batchSize: 10 },
-      cache: { enabled: false, ttl: 0, maxSize: 0 }
+      cache: { enabled: false, ttl: 0, maxSize: 0 },
     },
-    cache: { maxSize: 100, ttl: 300000, checkPeriod: 600000, strategy: 'lru' as const, persistent: false },
-    metrics: { 
-      enabled: false, 
+    cache: {
+      maxSize: 100,
+      ttl: 300000,
+      checkPeriod: 600000,
+      strategy: 'lru' as const,
+      persistent: false,
+    },
+    metrics: {
+      enabled: false,
       retention: 0,
       aggregation: { enabled: false, interval: 0, batch: 0 },
-      alerts: { enabled: false, thresholds: {} }
+      alerts: { enabled: false, thresholds: {} },
     },
     logging: {
       level: 'info' as const,
       file: { enabled: false, path: '', maxSize: 0, maxFiles: 0 },
       console: true,
-      structured: false
-    }
+      structured: false,
+    },
   };
 
   const validationService = new ValidationService(config.validation);
   const searchService = new SearchService();
-  
-  const kbService = new KnowledgeBaseService(
-    config,
-    validationService,
-    searchService
-  );
-  
+
+  const kbService = new KnowledgeBaseService(config, validationService, searchService);
+
   await kbService.initialize();
-  
+
   return {
     kbService,
     validationService,
     searchService,
     async close() {
       await kbService.close();
-    }
+    },
   };
 }
 
@@ -150,12 +152,15 @@ export async function createMinimalKBService(dbPath?: string) {
  */
 export async function performHealthCheck(factory: ServiceFactory): Promise<{
   overall: 'healthy' | 'degraded' | 'unhealthy';
-  services: Record<string, {
-    status: 'healthy' | 'unhealthy';
-    responseTime?: number;
-    error?: string;
-    details?: any;
-  }>;
+  services: Record<
+    string,
+    {
+      status: 'healthy' | 'unhealthy';
+      responseTime?: number;
+      error?: string;
+      details?: any;
+    }
+  >;
   summary: {
     healthy: number;
     unhealthy: number;
@@ -166,33 +171,33 @@ export async function performHealthCheck(factory: ServiceFactory): Promise<{
   const startTime = Date.now();
   const result = await factory.healthCheck();
   const endTime = Date.now();
-  
+
   const serviceDetails: Record<string, any> = {};
   let healthyCount = 0;
   let unhealthyCount = 0;
-  
+
   Object.entries(result.services).forEach(([name, health]) => {
     if (health.healthy) {
       healthyCount++;
       serviceDetails[name] = {
         status: 'healthy',
-        responseTime: endTime - startTime
+        responseTime: endTime - startTime,
       };
     } else {
       unhealthyCount++;
       serviceDetails[name] = {
         status: 'unhealthy',
         error: health.error,
-        responseTime: endTime - startTime
+        responseTime: endTime - startTime,
       };
     }
   });
-  
+
   let overall: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
   if (unhealthyCount > 0) {
     overall = unhealthyCount >= healthyCount ? 'unhealthy' : 'degraded';
   }
-  
+
   return {
     overall,
     services: serviceDetails,
@@ -200,8 +205,8 @@ export async function performHealthCheck(factory: ServiceFactory): Promise<{
       healthy: healthyCount,
       unhealthy: unhealthyCount,
       total: healthyCount + unhealthyCount,
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   };
 }
 
@@ -209,40 +214,41 @@ export async function performHealthCheck(factory: ServiceFactory): Promise<{
  * Service Benchmarking Utility
  * Performance testing for service operations
  */
-export async function benchmarkServices(factory: ServiceFactory, options: {
-  iterations?: number;
-  includeSearch?: boolean;
-  includeCRUD?: boolean;
-  sampleSize?: number;
-} = {}): Promise<{
-  results: Record<string, {
-    operation: string;
-    averageTime: number;
-    minTime: number;
-    maxTime: number;
-    iterations: number;
-    throughput: number; // ops/second
-  }>;
+export async function benchmarkServices(
+  factory: ServiceFactory,
+  options: {
+    iterations?: number;
+    includeSearch?: boolean;
+    includeCRUD?: boolean;
+    sampleSize?: number;
+  } = {}
+): Promise<{
+  results: Record<
+    string,
+    {
+      operation: string;
+      averageTime: number;
+      minTime: number;
+      maxTime: number;
+      iterations: number;
+      throughput: number; // ops/second
+    }
+  >;
   summary: {
     totalTime: number;
     totalOperations: number;
     overallThroughput: number;
   };
 }> {
-  const {
-    iterations = 100,
-    includeSearch = true,
-    includeCRUD = true,
-    sampleSize = 10
-  } = options;
-  
+  const { iterations = 100, includeSearch = true, includeCRUD = true, sampleSize = 10 } = options;
+
   const results: Record<string, any> = {};
   const kbService = factory.getKnowledgeBaseService();
   const cacheService = factory.getCacheService();
-  
+
   let totalOperations = 0;
   let totalTime = 0;
-  
+
   // Benchmark KB operations
   if (includeCRUD) {
     // Create operation
@@ -254,80 +260,80 @@ export async function benchmarkServices(factory: ServiceFactory, options: {
         problem: `Test problem ${i} for benchmarking performance`,
         solution: `Test solution ${i} for benchmarking performance measurement`,
         category: 'Other',
-        tags: [`benchmark-${i}`, 'performance-test']
+        tags: [`benchmark-${i}`, 'performance-test'],
       });
       createTimes.push(Date.now() - start);
     }
-    
+
     results['kb_create'] = {
       operation: 'Knowledge Base Create',
       averageTime: createTimes.reduce((a, b) => a + b, 0) / createTimes.length,
       minTime: Math.min(...createTimes),
       maxTime: Math.max(...createTimes),
       iterations: sampleSize,
-      throughput: 1000 / (createTimes.reduce((a, b) => a + b, 0) / createTimes.length)
+      throughput: 1000 / (createTimes.reduce((a, b) => a + b, 0) / createTimes.length),
     };
-    
+
     totalOperations += sampleSize;
     totalTime += createTimes.reduce((a, b) => a + b, 0);
   }
-  
+
   if (includeSearch) {
     // Search operation
     const searchTimes = [];
     const searchQueries = ['test', 'error', 'problem', 'solution', 'benchmark'];
-    
+
     for (let i = 0; i < iterations; i++) {
       const query = searchQueries[i % searchQueries.length];
       const start = Date.now();
       await kbService.search(query, { limit: 10 });
       searchTimes.push(Date.now() - start);
     }
-    
+
     results['kb_search'] = {
       operation: 'Knowledge Base Search',
       averageTime: searchTimes.reduce((a, b) => a + b, 0) / searchTimes.length,
       minTime: Math.min(...searchTimes),
       maxTime: Math.max(...searchTimes),
       iterations,
-      throughput: 1000 / (searchTimes.reduce((a, b) => a + b, 0) / searchTimes.length)
+      throughput: 1000 / (searchTimes.reduce((a, b) => a + b, 0) / searchTimes.length),
     };
-    
+
     totalOperations += iterations;
     totalTime += searchTimes.reduce((a, b) => a + b, 0);
   }
-  
+
   // Cache operations
   const cacheTimes = [];
   for (let i = 0; i < iterations; i++) {
     const key = `benchmark-key-${i}`;
     const value = `benchmark-value-${i}`;
-    
+
     const start = Date.now();
     await cacheService.set(key, value);
     await cacheService.get(key);
     cacheTimes.push(Date.now() - start);
   }
-  
+
   results['cache_set_get'] = {
     operation: 'Cache Set+Get',
     averageTime: cacheTimes.reduce((a, b) => a + b, 0) / cacheTimes.length,
     minTime: Math.min(...cacheTimes),
     maxTime: Math.max(...cacheTimes),
     iterations,
-    throughput: 1000 / (cacheTimes.reduce((a, b) => a + b, 0) / cacheTimes.length)
+    throughput: 1000 / (cacheTimes.reduce((a, b) => a + b, 0) / cacheTimes.length),
   };
-  
+
   totalOperations += iterations;
   totalTime += cacheTimes.reduce((a, b) => a + b, 0);
-  
+
   return {
     results,
     summary: {
       totalTime,
       totalOperations,
-      overallThroughput: totalOperations / (totalTime / 1000)
-    }
+      overallThroughput: totalOperations / (totalTime / 1000),
+    },
   };
 }
 
@@ -350,7 +356,7 @@ export const ServiceUtils = {
     solution: input.solution.trim(),
     category: input.category as any,
     tags: (input.tags || []).map(tag => tag.trim().toLowerCase()),
-    created_by: 'user'
+    created_by: 'user',
   }),
 
   /**
@@ -376,7 +382,7 @@ export const ServiceUtils = {
 
     return {
       query: cleanQuery,
-      operators
+      operators,
     };
   },
 
@@ -390,10 +396,11 @@ export const ServiceUtils = {
     tags: entry.tags,
     summary: `${entry.problem.substring(0, 100)}...`,
     usage: entry.usage_count || 0,
-    successRate: entry.success_count + entry.failure_count > 0 
-      ? Math.round((entry.success_count / (entry.success_count + entry.failure_count)) * 100)
-      : 0,
-    lastUpdated: entry.updated_at
+    successRate:
+      entry.success_count + entry.failure_count > 0
+        ? Math.round((entry.success_count / (entry.success_count + entry.failure_count)) * 100)
+        : 0,
+    lastUpdated: entry.updated_at,
   }),
 
   /**
@@ -408,11 +415,11 @@ export const ServiceUtils = {
 
     entries.forEach(entry => {
       categoryCount[entry.category] = (categoryCount[entry.category] || 0) + 1;
-      
+
       entry.tags?.forEach((tag: string) => {
         tagCount[tag] = (tagCount[tag] || 0) + 1;
       });
-      
+
       totalUsage += entry.usage_count || 0;
       totalSuccess += entry.success_count || 0;
       totalFailure += entry.failure_count || 0;
@@ -422,15 +429,14 @@ export const ServiceUtils = {
       totalEntries: entries.length,
       categories: categoryCount,
       topTags: Object.entries(tagCount)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 10),
       usage: {
         total: totalUsage,
         average: totalUsage / entries.length,
-        successRate: totalSuccess + totalFailure > 0 
-          ? totalSuccess / (totalSuccess + totalFailure) 
-          : 0
-      }
+        successRate:
+          totalSuccess + totalFailure > 0 ? totalSuccess / (totalSuccess + totalFailure) : 0,
+      },
     };
-  }
+  },
 };

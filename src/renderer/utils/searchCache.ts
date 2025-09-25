@@ -62,10 +62,43 @@ const DEFAULT_CACHE_CONFIG: SearchCacheConfig = {
 
 export class SearchQueryNormalizer {
   private static readonly STOP_WORDS = new Set([
-    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
-    'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
-    'to', 'was', 'will', 'with', 'the', 'this', 'but', 'they', 'have',
-    'had', 'what', 'said', 'each', 'which', 'their', 'time', 'will'
+    'a',
+    'an',
+    'and',
+    'are',
+    'as',
+    'at',
+    'be',
+    'by',
+    'for',
+    'from',
+    'has',
+    'he',
+    'in',
+    'is',
+    'it',
+    'its',
+    'of',
+    'on',
+    'that',
+    'the',
+    'to',
+    'was',
+    'will',
+    'with',
+    'the',
+    'this',
+    'but',
+    'they',
+    'have',
+    'had',
+    'what',
+    'said',
+    'each',
+    'which',
+    'their',
+    'time',
+    'will',
   ]);
 
   static normalize(query: string): string {
@@ -185,7 +218,8 @@ export class LRUCache<T> {
   private updateStats() {
     this.stats.totalEntries = this.cache.size;
     this.stats.memoryUsage = this.currentMemoryUsage;
-    this.stats.hitRate = this.stats.totalHits / (this.stats.totalHits + this.stats.totalMisses) * 100;
+    this.stats.hitRate =
+      (this.stats.totalHits / (this.stats.totalHits + this.stats.totalMisses)) * 100;
   }
 
   set(key: string, data: T, ttl: number = this.config.defaultTTL): void {
@@ -193,8 +227,8 @@ export class LRUCache<T> {
 
     // Check if we need to evict entries
     while (
-      (this.currentMemoryUsage + size > this.config.maxSize) ||
-      (this.cache.size >= this.config.maxEntries)
+      this.currentMemoryUsage + size > this.config.maxSize ||
+      this.cache.size >= this.config.maxEntries
     ) {
       this.evictLRU();
     }
@@ -372,10 +406,7 @@ export class SearchResultsCache extends LRUCache<SearchCacheEntry> {
     }
   }
 
-  getCachedResults(
-    query: string,
-    options: Partial<SearchOptions>
-  ): SearchCacheEntry | null {
+  getCachedResults(query: string, options: Partial<SearchOptions>): SearchCacheEntry | null {
     const key = SearchQueryNormalizer.createCacheKey(query, options);
     const entry = this.get(key);
 
@@ -392,7 +423,10 @@ export class SearchResultsCache extends LRUCache<SearchCacheEntry> {
 
   getAverageResponseTime(): number {
     if (this.responseTimeTracker.length === 0) return 0;
-    return this.responseTimeTracker.reduce((sum, time) => sum + time, 0) / this.responseTimeTracker.length;
+    return (
+      this.responseTimeTracker.reduce((sum, time) => sum + time, 0) /
+      this.responseTimeTracker.length
+    );
   }
 
   getCacheEfficiency(): {

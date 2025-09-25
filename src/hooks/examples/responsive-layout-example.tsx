@@ -59,12 +59,7 @@ export const ResponsiveDashboard: React.FC = () => {
   });
 
   // Layout persistence
-  const {
-    layout,
-    saveLayout,
-    loadLayout,
-    savedLayouts,
-  } = useLayoutState({
+  const { layout, saveLayout, loadLayout, savedLayouts } = useLayoutState({
     autoSave: true,
     defaultLayout: {
       name: 'KB Assistant Dashboard',
@@ -115,54 +110,58 @@ export const ResponsiveDashboard: React.FC = () => {
     setMode(nextMode);
   }, [density.mode, setMode]);
 
-  const handlePanelToggle = useCallback((panelId: string) => {
-    const panel = layout?.panels.find(p => p.id === panelId);
-    if (panel) {
-      // Update panel visibility in layout
-      // This would connect to your actual panel management system
-      setActivePanel(activePanel === panelId ? '' : panelId);
-    }
-  }, [layout, activePanel]);
+  const handlePanelToggle = useCallback(
+    (panelId: string) => {
+      const panel = layout?.panels.find(p => p.id === panelId);
+      if (panel) {
+        // Update panel visibility in layout
+        // This would connect to your actual panel management system
+        setActivePanel(activePanel === panelId ? '' : panelId);
+      }
+    },
+    [layout, activePanel]
+  );
 
   // Render responsive panel based on breakpoint
-  const renderPanel = useCallback((panelId: string) => {
-    const panel = layout?.panels.find(p => p.id === panelId);
-    if (!panel) return null;
+  const renderPanel = useCallback(
+    (panelId: string) => {
+      const panel = layout?.panels.find(p => p.id === panelId);
+      if (!panel) return null;
 
-    // Check responsive visibility
-    if (panel.responsive && panel.responsive[breakpoint] === false) {
-      return null;
-    }
+      // Check responsive visibility
+      if (panel.responsive && panel.responsive[breakpoint] === false) {
+        return null;
+      }
 
-    const isActive = activePanel === panelId;
-    const panelStyle = {
-      ...cssVars,
-      width: above.md ? scale(panel.bounds.width, 'component') : '100%',
-      height: scale(panel.bounds.height, 'component'),
-      padding: scale(16, 'spacing'),
-      border: `1px solid ${isDarkMode ? '#333' : '#e0e0e0'}`,
-      borderRadius: scale(8, 'component'),
-      backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-      opacity: isActive ? 1 : 0.7,
-      transition: 'all 0.2s ease',
-    };
+      const isActive = activePanel === panelId;
+      const panelStyle = {
+        ...cssVars,
+        width: above.md ? scale(panel.bounds.width, 'component') : '100%',
+        height: scale(panel.bounds.height, 'component'),
+        padding: scale(16, 'spacing'),
+        border: `1px solid ${isDarkMode ? '#333' : '#e0e0e0'}`,
+        borderRadius: scale(8, 'component'),
+        backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+        opacity: isActive ? 1 : 0.7,
+        transition: 'all 0.2s ease',
+      };
 
-    return (
-      <div
-        key={panelId}
-        style={panelStyle}
-        className={`panel ${panel.type} ${isActive ? 'active' : ''}`}
-        onClick={() => handlePanelToggle(panelId)}
-      >
-        <h3 style={{ fontSize: scale(18, 'font'), margin: `0 0 ${scale(12, 'spacing')}px 0` }}>
-          {panel.title}
-        </h3>
-        <div className="panel-content">
-          {getPanelContent(panel.type)}
+      return (
+        <div
+          key={panelId}
+          style={panelStyle}
+          className={`panel ${panel.type} ${isActive ? 'active' : ''}`}
+          onClick={() => handlePanelToggle(panelId)}
+        >
+          <h3 style={{ fontSize: scale(18, 'font'), margin: `0 0 ${scale(12, 'spacing')}px 0` }}>
+            {panel.title}
+          </h3>
+          <div className='panel-content'>{getPanelContent(panel.type)}</div>
         </div>
-      </div>
-    );
-  }, [layout, breakpoint, activePanel, above.md, scale, cssVars, isDarkMode, handlePanelToggle]);
+      );
+    },
+    [layout, breakpoint, activePanel, above.md, scale, cssVars, isDarkMode, handlePanelToggle]
+  );
 
   // Panel content based on type
   const getPanelContent = (type: string) => {
@@ -171,8 +170,8 @@ export const ResponsiveDashboard: React.FC = () => {
         return (
           <div>
             <input
-              type="text"
-              placeholder="Search knowledge base..."
+              type='text'
+              placeholder='Search knowledge base...'
               style={{
                 width: '100%',
                 padding: scale(8, 'spacing'),
@@ -205,8 +204,8 @@ export const ResponsiveDashboard: React.FC = () => {
         return (
           <div>
             <div style={{ fontSize: scale(12, 'font'), color: isDarkMode ? '#aaa' : '#666' }}>
-              Usage metrics and analytics would be displayed here.
-              Only visible on {breakpoint}+ screens.
+              Usage metrics and analytics would be displayed here. Only visible on {breakpoint}+
+              screens.
             </div>
           </div>
         );
@@ -237,11 +236,16 @@ export const ResponsiveDashboard: React.FC = () => {
           gap: scale(12, 'spacing'),
         }}
       >
-        <h1 style={{ fontSize: scale(24, 'font'), margin: 0 }}>
-          Mainframe KB Assistant
-        </h1>
+        <h1 style={{ fontSize: scale(24, 'font'), margin: 0 }}>Mainframe KB Assistant</h1>
 
-        <div style={{ display: 'flex', gap: scale(12, 'spacing'), alignItems: 'center', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: scale(12, 'spacing'),
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           {/* Responsive info */}
           <div style={{ fontSize: scale(12, 'font'), color: isDarkMode ? '#aaa' : '#666' }}>
             {breakpoint} ({device.width}×{device.height})
@@ -268,7 +272,7 @@ export const ResponsiveDashboard: React.FC = () => {
           {/* Layout controls */}
           {savedLayouts.length > 0 && (
             <select
-              onChange={(e) => loadLayout(e.target.value)}
+              onChange={e => loadLayout(e.target.value)}
               style={{
                 padding: scale(6, 'spacing'),
                 fontSize: scale(12, 'font'),
@@ -278,7 +282,7 @@ export const ResponsiveDashboard: React.FC = () => {
                 color: isDarkMode ? '#ffffff' : '#000000',
               }}
             >
-              <option value="">Select Layout</option>
+              <option value=''>Select Layout</option>
               {savedLayouts.map(l => (
                 <option key={l.id} value={l.id}>
                   {l.name}
@@ -299,8 +303,8 @@ export const ResponsiveDashboard: React.FC = () => {
           gridTemplateColumns: above.lg
             ? 'repeat(auto-fit, minmax(300px, 1fr))'
             : above.md
-            ? 'repeat(2, 1fr)'
-            : '1fr',
+              ? 'repeat(2, 1fr)'
+              : '1fr',
         }}
       >
         {layout?.panels.map(panel => renderPanel(panel.id))}
@@ -320,28 +324,32 @@ export const ResponsiveDashboard: React.FC = () => {
         >
           <summary>Debug Information</summary>
           <pre style={{ margin: scale(8, 'spacing'), fontSize: scale(10, 'font') }}>
-            {JSON.stringify({
-              breakpoint,
-              device: {
-                width: device.width,
-                height: device.height,
-                isMobile: device.isMobile,
-                isTablet: device.isTablet,
-                isDesktop: device.isDesktop,
-                isTouchDevice: device.isTouchDevice,
+            {JSON.stringify(
+              {
+                breakpoint,
+                device: {
+                  width: device.width,
+                  height: device.height,
+                  isMobile: device.isMobile,
+                  isTablet: device.isTablet,
+                  isDesktop: device.isDesktop,
+                  isTouchDevice: device.isTouchDevice,
+                },
+                density: {
+                  mode: density.mode,
+                  spacingScale: density.spacingScale,
+                  fontScale: density.fontScale,
+                  isTouchFriendly,
+                },
+                grid: {
+                  columns: gridState.columns,
+                  containerWidth: gridState.containerWidth,
+                },
+                container: containerSize,
               },
-              density: {
-                mode: density.mode,
-                spacingScale: density.spacingScale,
-                fontScale: density.fontScale,
-                isTouchFriendly,
-              },
-              grid: {
-                columns: gridState.columns,
-                containerWidth: gridState.containerWidth,
-              },
-              container: containerSize,
-            }, null, 2)}
+              null,
+              2
+            )}
           </pre>
         </details>
       )}
@@ -384,8 +392,12 @@ const ResponsiveExample: React.FC = () => {
 
   return (
     <div style={{ border: '1px solid #ccc', padding: '12px', margin: '8px 0' }}>
-      <p>Current breakpoint: <strong>{breakpoint}</strong></p>
-      <p>Screen size: {device.width} × {device.height}</p>
+      <p>
+        Current breakpoint: <strong>{breakpoint}</strong>
+      </p>
+      <p>
+        Screen size: {device.width} × {device.height}
+      </p>
       <p>Device type: {device.isMobile ? 'Mobile' : device.isTablet ? 'Tablet' : 'Desktop'}</p>
 
       {above.md && <p>✅ Showing desktop features</p>}
@@ -411,7 +423,9 @@ const GridLayoutExample: React.FC = () => {
 
   return (
     <div style={{ border: '1px solid #ccc', padding: '12px', margin: '8px 0' }}>
-      <p>Grid: {state.columns} columns, {state.rows} rows</p>
+      <p>
+        Grid: {state.columns} columns, {state.rows} rows
+      </p>
       <p>Container: {state.containerWidth}px wide</p>
 
       <div
@@ -452,7 +466,9 @@ const DensityExample: React.FC = () => {
 
   return (
     <div style={{ border: '1px solid #ccc', padding: scale(12, 'spacing'), margin: '8px 0' }}>
-      <p>Current density: <strong>{density.mode}</strong></p>
+      <p>
+        Current density: <strong>{density.mode}</strong>
+      </p>
       <p>Spacing scale: {density.spacingScale}</p>
       <p>Touch-friendly: {isTouchFriendly ? 'Yes' : 'No'}</p>
 

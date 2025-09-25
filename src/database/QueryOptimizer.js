@@ -1,16 +1,18 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.QueryOptimizer = void 0;
 class QueryOptimizer {
-    db;
-    preparedQueries;
-    constructor(db) {
-        this.db = db;
-        this.preparedQueries = new Map();
-        this.initializePreparedStatements();
-    }
-    initializePreparedStatements() {
-        this.preparedQueries.set('searchFTS', this.db.prepare(`
+  db;
+  preparedQueries;
+  constructor(db) {
+    this.db = db;
+    this.preparedQueries = new Map();
+    this.initializePreparedStatements();
+  }
+  initializePreparedStatements() {
+    this.preparedQueries.set(
+      'searchFTS',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -42,8 +44,11 @@ class QueryOptimizer {
           ELSE relevance_score
         END DESC
       LIMIT ? OFFSET ?
-    `));
-        this.preparedQueries.set('searchByCategory', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'searchByCategory',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -66,8 +71,11 @@ class QueryOptimizer {
       GROUP BY e.id
       ORDER BY e.usage_count DESC, e.success_count DESC
       LIMIT ? OFFSET ?
-    `));
-        this.preparedQueries.set('searchByTags', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'searchByTags',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -91,8 +99,11 @@ class QueryOptimizer {
       HAVING tag_matches > 0
       ORDER BY tag_matches DESC, e.usage_count DESC
       LIMIT ? OFFSET ?
-    `));
-        this.preparedQueries.set('findSimilar', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'findSimilar',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -111,8 +122,11 @@ class QueryOptimizer {
       GROUP BY e.id
       ORDER BY similarity_score DESC
       LIMIT ?
-    `));
-        this.preparedQueries.set('getPopular', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'getPopular',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -132,8 +146,11 @@ class QueryOptimizer {
       GROUP BY e.id
       ORDER BY e.usage_count DESC, success_rate DESC
       LIMIT ?
-    `));
-        this.preparedQueries.set('getRecent', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'getRecent',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -147,8 +164,11 @@ class QueryOptimizer {
       GROUP BY e.id
       ORDER BY e.created_at DESC
       LIMIT ?
-    `));
-        this.preparedQueries.set('getById', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'getById',
+      this.db.prepare(`
       SELECT 
         e.*,
         GROUP_CONCAT(t.tag, ', ') as tags,
@@ -159,8 +179,11 @@ class QueryOptimizer {
       LEFT JOIN kb_tags t ON e.id = t.entry_id
       WHERE e.id = ?
       GROUP BY e.id
-    `));
-        this.preparedQueries.set('getSearchStats', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'getSearchStats',
+      this.db.prepare(`
       SELECT 
         query,
         COUNT(*) as frequency,
@@ -172,8 +195,11 @@ class QueryOptimizer {
       HAVING frequency > 1
       ORDER BY frequency DESC
       LIMIT ?
-    `));
-        this.preparedQueries.set('getCategoryStats', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'getCategoryStats',
+      this.db.prepare(`
       SELECT 
         category,
         COUNT(*) as total_entries,
@@ -186,8 +212,11 @@ class QueryOptimizer {
       WHERE archived = FALSE
       GROUP BY category
       ORDER BY total_usage DESC
-    `));
-        this.preparedQueries.set('getUsageTrends', this.db.prepare(`
+    `)
+    );
+    this.preparedQueries.set(
+      'getUsageTrends',
+      this.db.prepare(`
       SELECT 
         date(timestamp) as usage_date,
         COUNT(*) as total_actions,
@@ -198,199 +227,216 @@ class QueryOptimizer {
       WHERE timestamp > datetime('now', '-30 days')
       GROUP BY date(timestamp)
       ORDER BY usage_date DESC
-    `));
-    }
-    async search(options) {
-        const startTime = Date.now();
-        const limit = options.limit || 10;
-        const offset = options.offset || 0;
-        let results = [];
-        let strategy = '';
-        try {
-            if (options.query && !options.category && (!options.tags || options.tags.length === 0)) {
-                const ftsQuery = this.prepareFTSQuery(options.query);
-                const stmt = this.preparedQueries.get('searchFTS');
-                results = stmt.all(ftsQuery, options.includeArchived || false, options.category || null, options.category || null, options.sortBy || 'relevance', limit, offset);
-                strategy = 'fts';
-            }
-            else if (options.category && options.query) {
-                const stmt = this.preparedQueries.get('searchByCategory');
-                results = stmt.all(options.category, options.query, options.query, options.query, limit, offset);
-                strategy = 'category';
-            }
-            else if (options.tags && options.tags.length > 0) {
-                const stmt = this.preparedQueries.get('searchByTags');
-                const tags = options.tags.slice(0, 10);
-                const params = [
-                    ...tags.concat(Array(10 - tags.length).fill(null)),
-                    ...tags.concat(Array(10 - tags.length).fill(null)),
-                    limit,
-                    offset
-                ];
-                results = stmt.all(...params);
-                strategy = 'tags';
-            }
-            else if (options.category) {
-                const stmt = this.preparedQueries.get('searchByCategory');
-                results = stmt.all(options.category, null, null, null, limit, offset);
-                strategy = 'category_only';
-            }
-            else {
-                const stmt = this.preparedQueries.get('getPopular');
-                results = stmt.all(limit + offset).slice(offset);
-                strategy = 'popular';
-            }
-            const totalCount = this.getTotalCount(options);
-            const executionTime = Date.now() - startTime;
-            if (executionTime > 500) {
-                console.warn(`Slow query (${executionTime}ms): ${strategy}`, options);
-            }
-            return {
-                results,
-                totalCount,
-                executionTime,
-                strategy
-            };
-        }
-        catch (error) {
-            console.error('Search error:', error);
-            const stmt = this.preparedQueries.get('getPopular');
-            results = stmt.all(limit);
-            return {
-                results,
-                totalCount: results.length,
-                executionTime: Date.now() - startTime,
-                strategy: 'fallback'
-            };
-        }
-    }
-    findSimilar(entryId, content, limit = 5) {
-        const ftsQuery = this.prepareFTSQuery(content);
-        const stmt = this.preparedQueries.get('findSimilar');
-        return stmt.all(ftsQuery, entryId, limit);
-    }
-    getById(id) {
-        const stmt = this.preparedQueries.get('getById');
-        return stmt.get(id) || null;
-    }
-    getPopular(limit = 10) {
+    `)
+    );
+  }
+  async search(options) {
+    const startTime = Date.now();
+    const limit = options.limit || 10;
+    const offset = options.offset || 0;
+    let results = [];
+    let strategy = '';
+    try {
+      if (options.query && !options.category && (!options.tags || options.tags.length === 0)) {
+        const ftsQuery = this.prepareFTSQuery(options.query);
+        const stmt = this.preparedQueries.get('searchFTS');
+        results = stmt.all(
+          ftsQuery,
+          options.includeArchived || false,
+          options.category || null,
+          options.category || null,
+          options.sortBy || 'relevance',
+          limit,
+          offset
+        );
+        strategy = 'fts';
+      } else if (options.category && options.query) {
+        const stmt = this.preparedQueries.get('searchByCategory');
+        results = stmt.all(
+          options.category,
+          options.query,
+          options.query,
+          options.query,
+          limit,
+          offset
+        );
+        strategy = 'category';
+      } else if (options.tags && options.tags.length > 0) {
+        const stmt = this.preparedQueries.get('searchByTags');
+        const tags = options.tags.slice(0, 10);
+        const params = [
+          ...tags.concat(Array(10 - tags.length).fill(null)),
+          ...tags.concat(Array(10 - tags.length).fill(null)),
+          limit,
+          offset,
+        ];
+        results = stmt.all(...params);
+        strategy = 'tags';
+      } else if (options.category) {
+        const stmt = this.preparedQueries.get('searchByCategory');
+        results = stmt.all(options.category, null, null, null, limit, offset);
+        strategy = 'category_only';
+      } else {
         const stmt = this.preparedQueries.get('getPopular');
-        return stmt.all(limit);
+        results = stmt.all(limit + offset).slice(offset);
+        strategy = 'popular';
+      }
+      const totalCount = this.getTotalCount(options);
+      const executionTime = Date.now() - startTime;
+      if (executionTime > 500) {
+        console.warn(`Slow query (${executionTime}ms): ${strategy}`, options);
+      }
+      return {
+        results,
+        totalCount,
+        executionTime,
+        strategy,
+      };
+    } catch (error) {
+      console.error('Search error:', error);
+      const stmt = this.preparedQueries.get('getPopular');
+      results = stmt.all(limit);
+      return {
+        results,
+        totalCount: results.length,
+        executionTime: Date.now() - startTime,
+        strategy: 'fallback',
+      };
     }
-    getRecent(limit = 10) {
-        const stmt = this.preparedQueries.get('getRecent');
-        return stmt.all(limit);
+  }
+  findSimilar(entryId, content, limit = 5) {
+    const ftsQuery = this.prepareFTSQuery(content);
+    const stmt = this.preparedQueries.get('findSimilar');
+    return stmt.all(ftsQuery, entryId, limit);
+  }
+  getById(id) {
+    const stmt = this.preparedQueries.get('getById');
+    return stmt.get(id) || null;
+  }
+  getPopular(limit = 10) {
+    const stmt = this.preparedQueries.get('getPopular');
+    return stmt.all(limit);
+  }
+  getRecent(limit = 10) {
+    const stmt = this.preparedQueries.get('getRecent');
+    return stmt.all(limit);
+  }
+  analyzeQuery(sql) {
+    const startTime = Date.now();
+    const plan = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all();
+    const stmt = this.db.prepare(sql);
+    const result = stmt.all();
+    const executionTime = Date.now() - startTime;
+    return {
+      query: sql,
+      executionTimeMs: executionTime,
+      rowsExamined: this.extractRowsExamined(plan),
+      rowsReturned: result.length,
+      planSteps: plan.map(step => step.detail),
+    };
+  }
+  optimize() {
+    const startTime = Date.now();
+    console.log('🔧 Starting database optimization...');
+    this.db.exec('ANALYZE');
+    console.log('✅ Updated table statistics');
+    try {
+      this.db.exec('INSERT INTO kb_fts(kb_fts) VALUES("rebuild")');
+      console.log('✅ Rebuilt FTS index');
+    } catch (error) {
+      console.log('ℹ️ FTS index rebuild not needed');
     }
-    analyzeQuery(sql) {
-        const startTime = Date.now();
-        const plan = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all();
-        const stmt = this.db.prepare(sql);
-        const result = stmt.all();
-        const executionTime = Date.now() - startTime;
-        return {
-            query: sql,
-            executionTimeMs: executionTime,
-            rowsExamined: this.extractRowsExamined(plan),
-            rowsReturned: result.length,
-            planSteps: plan.map((step) => step.detail)
-        };
+    this.checkIndexUsage();
+    const duration = Date.now() - startTime;
+    console.log(`✅ Database optimization completed in ${duration}ms`);
+  }
+  prepareFTSQuery(query) {
+    let ftsQuery = query.trim();
+    if (ftsQuery.startsWith('category:')) {
+      const category = ftsQuery.substring(9);
+      return `category:${category}`;
     }
-    optimize() {
-        const startTime = Date.now();
-        console.log('🔧 Starting database optimization...');
-        this.db.exec('ANALYZE');
-        console.log('✅ Updated table statistics');
-        try {
-            this.db.exec('INSERT INTO kb_fts(kb_fts) VALUES("rebuild")');
-            console.log('✅ Rebuilt FTS index');
-        }
-        catch (error) {
-            console.log('ℹ️ FTS index rebuild not needed');
-        }
-        this.checkIndexUsage();
-        const duration = Date.now() - startTime;
-        console.log(`✅ Database optimization completed in ${duration}ms`);
+    if (ftsQuery.startsWith('tag:')) {
+      const tag = ftsQuery.substring(4);
+      return `tags:${tag}`;
     }
-    prepareFTSQuery(query) {
-        let ftsQuery = query.trim();
-        if (ftsQuery.startsWith('category:')) {
-            const category = ftsQuery.substring(9);
-            return `category:${category}`;
-        }
-        if (ftsQuery.startsWith('tag:')) {
-            const tag = ftsQuery.substring(4);
-            return `tags:${tag}`;
-        }
-        ftsQuery = ftsQuery.replace(/['"]/g, '');
-        const terms = ftsQuery.split(/\s+/).filter(term => term.length > 2);
-        if (terms.length === 0)
-            return ftsQuery;
-        if (terms.length > 1) {
-            return `"${terms.join(' ')}"`;
-        }
-        return `${terms[0]}*`;
+    ftsQuery = ftsQuery.replace(/['"]/g, '');
+    const terms = ftsQuery.split(/\s+/).filter(term => term.length > 2);
+    if (terms.length === 0) return ftsQuery;
+    if (terms.length > 1) {
+      return `"${terms.join(' ')}"`;
     }
-    getTotalCount(options) {
-        try {
-            let countQuery = '';
-            let params = [];
-            if (options.query && !options.category) {
-                countQuery = `
+    return `${terms[0]}*`;
+  }
+  getTotalCount(options) {
+    try {
+      let countQuery = '';
+      let params = [];
+      if (options.query && !options.category) {
+        countQuery = `
           SELECT COUNT(DISTINCT e.id) as total
           FROM kb_fts f
           JOIN kb_entries e ON f.id = e.id
           WHERE kb_fts MATCH ?
             AND e.archived = ?
         `;
-                params = [this.prepareFTSQuery(options.query), options.includeArchived || false];
-            }
-            else {
-                countQuery = `
+        params = [this.prepareFTSQuery(options.query), options.includeArchived || false];
+      } else {
+        countQuery = `
           SELECT COUNT(*) as total
           FROM kb_entries e
           WHERE e.archived = FALSE
             ${options.category ? 'AND e.category = ?' : ''}
         `;
-                params = options.category ? [options.category] : [];
-            }
-            const result = this.db.prepare(countQuery).get(...params);
-            return result.total;
-        }
-        catch (error) {
-            console.error('Error getting total count:', error);
-            return 0;
-        }
+        params = options.category ? [options.category] : [];
+      }
+      const result = this.db.prepare(countQuery).get(...params);
+      return result.total;
+    } catch (error) {
+      console.error('Error getting total count:', error);
+      return 0;
     }
-    extractRowsExamined(plan) {
-        return plan.length * 100;
-    }
-    checkIndexUsage() {
-        const indexes = this.db.prepare(`
+  }
+  extractRowsExamined(plan) {
+    return plan.length * 100;
+  }
+  checkIndexUsage() {
+    const indexes = this.db
+      .prepare(
+        `
       SELECT name, sql FROM sqlite_master 
       WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
-    `).all();
-        console.log(`ℹ️ Found ${indexes.length} custom indexes`);
-        const unusedIndexes = indexes.filter((idx) => !idx.name.includes('pk') && !idx.name.includes('fk'));
-        if (unusedIndexes.length > 0) {
-            console.log(`⚠️ Consider reviewing ${unusedIndexes.length} potentially unused indexes`);
-        }
+    `
+      )
+      .all();
+    console.log(`ℹ️ Found ${indexes.length} custom indexes`);
+    const unusedIndexes = indexes.filter(
+      idx => !idx.name.includes('pk') && !idx.name.includes('fk')
+    );
+    if (unusedIndexes.length > 0) {
+      console.log(`⚠️ Consider reviewing ${unusedIndexes.length} potentially unused indexes`);
     }
-    getPerformanceStats() {
-        const stats = this.db.prepare(`
+  }
+  getPerformanceStats() {
+    const stats = this.db
+      .prepare(
+        `
       SELECT 
         AVG(search_time_ms) as avg_time,
         COUNT(CASE WHEN search_time_ms > 1000 THEN 1 END) as slow_queries,
         COUNT(*) as total_searches
       FROM search_history
       WHERE timestamp > datetime('now', '-24 hours')
-    `).get();
-        return {
-            avgSearchTime: stats.avg_time || 0,
-            slowQueries: stats.slow_queries || 0,
-            totalSearches: stats.total_searches || 0,
-            cacheHitRate: 0.95
-        };
-    }
+    `
+      )
+      .get();
+    return {
+      avgSearchTime: stats.avg_time || 0,
+      slowQueries: stats.slow_queries || 0,
+      totalSearches: stats.total_searches || 0,
+      cacheHitRate: 0.95,
+    };
+  }
 }
 exports.QueryOptimizer = QueryOptimizer;
 //# sourceMappingURL=QueryOptimizer.js.map

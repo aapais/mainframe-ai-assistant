@@ -108,7 +108,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
   recordQuery(query: QueryAnalysis): void {
     this.queryHistory.push({
       ...query,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep only last 50,000 queries for memory efficiency
@@ -135,7 +135,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
       unusedIndexes: this.identifyUnusedIndexes(),
       duplicateIndexes: this.identifyDuplicateIndexes(),
       fragmentedIndexes: this.identifyFragmentedIndexes(),
-      oversizedIndexes: this.identifyOversizedIndexes()
+      oversizedIndexes: this.identifyOversizedIndexes(),
     };
 
     this.emit('indexes-analyzed', analysis);
@@ -154,7 +154,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
         const ruleRecommendations = rule({
           queryHistory: this.queryHistory,
           indexStats: this.indexStats,
-          tableStats: this.tableStats
+          tableStats: this.tableStats,
         });
         recommendations.push(...ruleRecommendations);
       } catch (error) {
@@ -184,14 +184,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
 
         this.emit('optimization-applied', {
           recommendation,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
 
         return true;
       }
 
       return false;
-
     } catch (error) {
       console.error('Error applying index optimization:', error);
       return false;
@@ -203,7 +202,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
    */
   private initializeOptimizationRules(): void {
     // Rule 1: Missing indexes for WHERE clauses
-    this.optimizationRules.set('missing_where_indexes', (data) => {
+    this.optimizationRules.set('missing_where_indexes', data => {
       const recommendations: IndexSuggestion[] = [];
       const frequentFilters = this.analyzeFilterPatterns(data.queryHistory);
 
@@ -217,7 +216,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
               name: `idx_${table}_${columns.join('_')}`,
               columns,
               type: 'btree',
-              unique: false
+              unique: false,
             },
             reason: `Frequent WHERE clauses on columns: ${columns.join(', ')}`,
             impact: this.calculateFilterImpact(data.queryHistory, table, columns),
@@ -227,13 +226,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
             cost: {
               diskSpace: this.estimateIndexSize(table, columns),
               maintenanceOverhead: 3,
-              creationTime: 5
+              creationTime: 5,
             },
             benefits: {
               querySpeedup: 3.5,
               concurrencyImprovement: true,
-              lockReduction: true
-            }
+              lockReduction: true,
+            },
           });
         }
       }
@@ -242,7 +241,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     });
 
     // Rule 2: Missing indexes for ORDER BY clauses
-    this.optimizationRules.set('missing_orderby_indexes', (data) => {
+    this.optimizationRules.set('missing_orderby_indexes', data => {
       const recommendations: IndexSuggestion[] = [];
       const orderByPatterns = this.analyzeOrderByPatterns(data.queryHistory);
 
@@ -256,7 +255,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
               name: `idx_${table}_sort_${columns.join('_')}`,
               columns,
               type: 'btree',
-              unique: false
+              unique: false,
             },
             reason: `Frequent ORDER BY operations on columns: ${columns.join(', ')}`,
             impact: 'medium',
@@ -266,13 +265,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
             cost: {
               diskSpace: this.estimateIndexSize(table, columns),
               maintenanceOverhead: 2,
-              creationTime: 3
+              creationTime: 3,
             },
             benefits: {
               querySpeedup: 2.8,
               concurrencyImprovement: false,
-              lockReduction: false
-            }
+              lockReduction: false,
+            },
           });
         }
       }
@@ -281,7 +280,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     });
 
     // Rule 3: Composite indexes for multi-column queries
-    this.optimizationRules.set('composite_indexes', (data) => {
+    this.optimizationRules.set('composite_indexes', data => {
       const recommendations: IndexSuggestion[] = [];
       const multiColumnPatterns = this.analyzeMultiColumnPatterns(data.queryHistory);
 
@@ -295,7 +294,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
               name: `idx_${pattern.table}_composite_${pattern.columns.join('_')}`,
               columns: pattern.columns,
               type: 'composite',
-              unique: false
+              unique: false,
             },
             reason: `Multi-column queries benefit from composite index: ${pattern.columns.join(', ')}`,
             impact: 'high',
@@ -305,13 +304,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
             cost: {
               diskSpace: this.estimateIndexSize(pattern.table, pattern.columns),
               maintenanceOverhead: 4,
-              creationTime: 8
+              creationTime: 8,
             },
             benefits: {
               querySpeedup: 4.2,
               concurrencyImprovement: true,
-              lockReduction: true
-            }
+              lockReduction: true,
+            },
           });
         }
       }
@@ -320,7 +319,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     });
 
     // Rule 4: Partial indexes for filtered queries
-    this.optimizationRules.set('partial_indexes', (data) => {
+    this.optimizationRules.set('partial_indexes', data => {
       const recommendations: IndexSuggestion[] = [];
       const partialIndexOpportunities = this.analyzePartialIndexOpportunities(data.queryHistory);
 
@@ -334,7 +333,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
             columns: opportunity.columns,
             type: 'partial',
             unique: false,
-            partial: opportunity.condition
+            partial: opportunity.condition,
           },
           reason: `Partial index for common filter: ${opportunity.condition}`,
           impact: 'medium',
@@ -344,13 +343,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
           cost: {
             diskSpace: this.estimateIndexSize(opportunity.table, opportunity.columns) * 0.3,
             maintenanceOverhead: 2,
-            creationTime: 4
+            creationTime: 4,
           },
           benefits: {
             querySpeedup: 3.0,
             concurrencyImprovement: true,
-            lockReduction: false
-          }
+            lockReduction: false,
+          },
         });
       }
 
@@ -358,7 +357,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     });
 
     // Rule 5: Remove unused indexes
-    this.optimizationRules.set('remove_unused_indexes', (data) => {
+    this.optimizationRules.set('remove_unused_indexes', data => {
       const recommendations: IndexSuggestion[] = [];
       const unusedIndexes = this.identifyUnusedIndexes();
 
@@ -373,7 +372,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
               name: indexName,
               columns: indexStat.columns,
               type: 'btree',
-              unique: false
+              unique: false,
             },
             reason: `Index is unused and consuming resources`,
             impact: 'low',
@@ -383,13 +382,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
             cost: {
               diskSpace: -indexStat.size / (1024 * 1024), // Negative = space saved
               maintenanceOverhead: -2, // Reduced overhead
-              creationTime: 1
+              creationTime: 1,
             },
             benefits: {
               querySpeedup: 1.0,
               concurrencyImprovement: false,
-              lockReduction: true
-            }
+              lockReduction: true,
+            },
           });
         }
       }
@@ -480,7 +479,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     const patterns: any[] = [];
     const multiColumnQueries = queries.filter(q => q.filterConditions.length >= 2);
 
-    const tablePatterns = new Map<string, Map<string, { count: number, queries: string[] }>>();
+    const tablePatterns = new Map<string, Map<string, { count: number; queries: string[] }>>();
 
     multiColumnQueries.forEach(query => {
       query.tablesAccessed.forEach(table => {
@@ -507,12 +506,13 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     // Extract patterns with significant usage
     for (const [table, columnPatterns] of tablePatterns) {
       for (const [columns, data] of columnPatterns) {
-        if (data.count >= 3 && columns.includes(',')) { // At least 3 uses and multi-column
+        if (data.count >= 3 && columns.includes(',')) {
+          // At least 3 uses and multi-column
           patterns.push({
             table,
             columns: columns.split(','),
             count: data.count,
-            queries: data.queries
+            queries: data.queries,
           });
         }
       }
@@ -528,7 +528,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     const opportunities: any[] = [];
 
     // Look for queries with consistent filter conditions that could benefit from partial indexes
-    const conditionPatterns = new Map<string, { count: number, queries: string[] }>();
+    const conditionPatterns = new Map<string, { count: number; queries: string[] }>();
 
     queries.forEach(query => {
       query.filterConditions.forEach(condition => {
@@ -548,7 +548,8 @@ export class IndexOptimizationAdvisor extends EventEmitter {
 
     // Extract opportunities with significant usage
     for (const [key, data] of conditionPatterns) {
-      if (data.count >= 5) { // At least 5 uses
+      if (data.count >= 5) {
+        // At least 5 uses
         const [table, condition] = key.split(':');
         const columns = this.extractColumnsFromCondition(condition);
 
@@ -557,7 +558,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
           columns,
           condition,
           count: data.count,
-          queries: data.queries
+          queries: data.queries,
         });
       }
     }
@@ -574,7 +575,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
       /status\s*=\s*['"]active['"]$/i,
       /deleted\s*=\s*false$/i,
       /published\s*=\s*true$/i,
-      /type\s*=\s*['"][^'"]+['"]$/i
+      /type\s*=\s*['"][^'"]+['"]$/i,
     ];
 
     return partialIndexPatterns.some(pattern => pattern.test(condition));
@@ -612,8 +613,10 @@ export class IndexOptimizationAdvisor extends EventEmitter {
         // Check if index exactly matches or covers the column pattern
         const indexColumnsStr = indexStat.columns.join(',');
         const requiredColumnsStr = columns.join(',');
-        if (indexColumnsStr === requiredColumnsStr ||
-            indexColumnsStr.startsWith(requiredColumnsStr)) {
+        if (
+          indexColumnsStr === requiredColumnsStr ||
+          indexColumnsStr.startsWith(requiredColumnsStr)
+        ) {
           return true;
         }
       }
@@ -624,10 +627,17 @@ export class IndexOptimizationAdvisor extends EventEmitter {
   /**
    * Calculate impact of filter optimization
    */
-  private calculateFilterImpact(queries: QueryAnalysis[], table: string, columns: string[]): 'low' | 'medium' | 'high' | 'critical' {
+  private calculateFilterImpact(
+    queries: QueryAnalysis[],
+    table: string,
+    columns: string[]
+  ): 'low' | 'medium' | 'high' | 'critical' {
     const affectedQueries = this.findQueriesUsingColumns(queries, table, columns);
-    const avgExecutionTime = affectedQueries.reduce((sum, q) =>
-      sum + (queries.find(query => query.query === q)?.executionTime || 0), 0) / affectedQueries.length;
+    const avgExecutionTime =
+      affectedQueries.reduce(
+        (sum, q) => sum + (queries.find(query => query.query === q)?.executionTime || 0),
+        0
+      ) / affectedQueries.length;
 
     if (affectedQueries.length >= 20 && avgExecutionTime > 1000) return 'critical';
     if (affectedQueries.length >= 10 && avgExecutionTime > 500) return 'high';
@@ -638,13 +648,16 @@ export class IndexOptimizationAdvisor extends EventEmitter {
   /**
    * Find queries using specific columns
    */
-  private findQueriesUsingColumns(queries: QueryAnalysis[], table: string, columns: string[]): string[] {
+  private findQueriesUsingColumns(
+    queries: QueryAnalysis[],
+    table: string,
+    columns: string[]
+  ): string[] {
     return queries
-      .filter(query =>
-        query.tablesAccessed.includes(table) &&
-        query.filterConditions.some(condition =>
-          columns.some(col => condition.includes(col))
-        )
+      .filter(
+        query =>
+          query.tablesAccessed.includes(table) &&
+          query.filterConditions.some(condition => columns.some(col => condition.includes(col)))
       )
       .map(query => query.query);
   }
@@ -652,11 +665,16 @@ export class IndexOptimizationAdvisor extends EventEmitter {
   /**
    * Find queries with ORDER BY on specific columns
    */
-  private findQueriesWithOrderBy(queries: QueryAnalysis[], table: string, columns: string[]): string[] {
+  private findQueriesWithOrderBy(
+    queries: QueryAnalysis[],
+    table: string,
+    columns: string[]
+  ): string[] {
     return queries
-      .filter(query =>
-        query.tablesAccessed.includes(table) &&
-        columns.every(col => query.orderByColumns.includes(col))
+      .filter(
+        query =>
+          query.tablesAccessed.includes(table) &&
+          columns.every(col => query.orderByColumns.includes(col))
       )
       .map(query => query.query);
   }
@@ -680,12 +698,10 @@ export class IndexOptimizationAdvisor extends EventEmitter {
    */
   private identifyUnusedIndexes(): string[] {
     const unused: string[] = [];
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
     for (const [indexName, stats] of this.indexStats) {
-      if (stats.lastUsed < thirtyDaysAgo &&
-          stats.usage.scans === 0 &&
-          stats.usage.seeks === 0) {
+      if (stats.lastUsed < thirtyDaysAgo && stats.usage.scans === 0 && stats.usage.seeks === 0) {
         unused.push(indexName);
       }
     }
@@ -726,7 +742,8 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     const fragmented: string[] = [];
 
     for (const [indexName, stats] of this.indexStats) {
-      if (stats.fragmentationLevel > 30) { // More than 30% fragmentation
+      if (stats.fragmentationLevel > 30) {
+        // More than 30% fragmentation
         fragmented.push(indexName);
       }
     }
@@ -777,7 +794,8 @@ export class IndexOptimizationAdvisor extends EventEmitter {
 
     // Analyze slow queries for missing index opportunities
     for (const query of slowQueries) {
-      if (query.rowsExamined > query.rowsReturned * 10) { // High examination ratio
+      if (query.rowsExamined > query.rowsReturned * 10) {
+        // High examination ratio
         const suggestion = `Index needed for ${query.tablesAccessed.join(', ')} on ${query.filterConditions.join(', ')}`;
         missing.push(suggestion);
       }
@@ -800,7 +818,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
           avgRowSize: 0,
           hotColumns: [],
           slowQueries: [],
-          indexUtilization: new Map()
+          indexUtilization: new Map(),
         });
       }
 
@@ -838,7 +856,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
         table: query.tablesAccessed[0],
         executionTime: query.executionTime,
         inefficiency: query.rowsExamined / query.rowsReturned,
-        suggestion: 'Consider adding index for filter conditions'
+        suggestion: 'Consider adding index for filter conditions',
       });
     }
   }
@@ -870,8 +888,8 @@ export class IndexOptimizationAdvisor extends EventEmitter {
       const impactScore = { critical: 4, high: 3, medium: 2, low: 1 };
       const effortScore = { low: 3, medium: 2, high: 1 };
 
-      const scoreA = impactScore[a.impact] + (a.estimatedImprovement / 10) + effortScore[a.effort];
-      const scoreB = impactScore[b.impact] + (b.estimatedImprovement / 10) + effortScore[b.effort];
+      const scoreA = impactScore[a.impact] + a.estimatedImprovement / 10 + effortScore[a.effort];
+      const scoreB = impactScore[b.impact] + b.estimatedImprovement / 10 + effortScore[b.effort];
 
       return scoreB - scoreA;
     });
@@ -900,7 +918,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
         usage: { scans: 0, seeks: 0, lookups: 0, updates: 0 },
         efficiency: 100, // New index starts at 100% efficiency
         lastUsed: Date.now(),
-        fragmentationLevel: 0
+        fragmentationLevel: 0,
       };
 
       this.indexStats.set(newIndex.name, newIndex);
@@ -918,7 +936,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
       value: analysis.indexUtilization.size,
       unit: 'indexes',
       trend: 'stable',
-      severity: analysis.missingIndexes.length > 5 ? 'high' : 'medium'
+      severity: analysis.missingIndexes.length > 5 ? 'high' : 'medium',
     };
   }
 
@@ -940,7 +958,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
         avgRowSize: Math.floor(Math.random() * 500) + 100,
         hotColumns: [],
         slowQueries: [],
-        indexUtilization: new Map()
+        indexUtilization: new Map(),
       });
     });
   }
@@ -953,7 +971,7 @@ export class IndexOptimizationAdvisor extends EventEmitter {
     const sampleIndexes = [
       { name: 'idx_users_email', table: 'users', columns: ['email'] },
       { name: 'idx_posts_user_id', table: 'posts', columns: ['user_id'] },
-      { name: 'idx_comments_post_id', table: 'comments', columns: ['post_id'] }
+      { name: 'idx_comments_post_id', table: 'comments', columns: ['post_id'] },
     ];
 
     sampleIndexes.forEach(index => {
@@ -964,11 +982,11 @@ export class IndexOptimizationAdvisor extends EventEmitter {
           scans: Math.floor(Math.random() * 1000),
           seeks: Math.floor(Math.random() * 5000),
           lookups: Math.floor(Math.random() * 2000),
-          updates: Math.floor(Math.random() * 500)
+          updates: Math.floor(Math.random() * 500),
         },
         efficiency: Math.floor(Math.random() * 40) + 60, // 60-100%
         lastUsed: Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000), // Last 30 days
-        fragmentationLevel: Math.floor(Math.random() * 50) // 0-50%
+        fragmentationLevel: Math.floor(Math.random() * 50), // 0-50%
       });
     });
   }

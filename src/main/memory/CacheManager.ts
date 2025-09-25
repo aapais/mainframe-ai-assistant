@@ -70,29 +70,32 @@ export interface CacheHealth {
 
 const DEFAULT_CACHE_CONFIG: CacheConfig = {
   maxMemorySize: 100 * 1024 * 1024, // 100MB
-  maxDiskSize: 500 * 1024 * 1024,   // 500MB
+  maxDiskSize: 500 * 1024 * 1024, // 500MB
   defaultTTL: 300000, // 5 minutes
   enableDiskCache: true,
   diskCachePath: './cache',
   cleanupInterval: 60000, // 1 minute
   enableMetrics: true,
   compressionThreshold: 1024, // 1KB
-  warmupStrategies: ['recent', 'frequent']
+  warmupStrategies: ['recent', 'frequent'],
 };
 
 export class CacheManager extends EventEmitter {
   private config: CacheConfig;
   private memoryCache = new Map<string, CacheEntry>();
-  private diskCacheIndex = new Map<string, { file: string; size: number; created: Date; accessed: Date }>();
-  
+  private diskCacheIndex = new Map<
+    string,
+    { file: string; size: number; created: Date; accessed: Date }
+  >();
+
   private metrics: CacheMetrics = {
     memory: { size: 0, entries: 0, hits: 0, misses: 0, hitRatio: 0 },
     disk: { size: 0, entries: 0, hits: 0, misses: 0 },
     total: { hits: 0, misses: 0, hitRatio: 0 },
     evictions: 0,
-    lastCleanup: new Date()
+    lastCleanup: new Date(),
   };
-  
+
   private cleanupInterval?: ReturnType<typeof setTimeout>;
   private accessOrder: string[] = []; // For LRU eviction
   private isInitialized = false;
@@ -114,35 +117,35 @@ export class CacheManager extends EventEmitter {
 
     // Start cleanup interval
     this.startCleanup();
-    
+
     // Perform warmup if configured
     await this.performWarmup();
-    
+
     this.isInitialized = true;
     this.emit('cache:initialized', {
       memoryEntries: this.memoryCache.size,
       diskEntries: this.diskCacheIndex.size,
-      config: this.config
+      config: this.config,
     });
   }
 
   async shutdown(): Promise<void> {
     if (this.isShuttingDown) return;
-    
+
     this.isShuttingDown = true;
-    
+
     // Stop cleanup
     this.stopCleanup();
-    
+
     // Save important cache entries to disk
     if (this.config.enableDiskCache) {
       await this.flushToDisk();
     }
-    
+
     // Clear memory cache
     this.memoryCache.clear();
     this.accessOrder.length = 0;
-    
+
     this.emit('cache:shutdown', this.metrics);
   }
 
@@ -166,10 +169,14 @@ export class CacheManager extends EventEmitter {
       const diskEntry = await this.getFromDisk<T>(key);
       if (diskEntry !== null) {
         this.recordHit('disk');
-        
+
         // Promote to memory cache
-        await this.set(key, diskEntry.value, diskEntry.ttl - (Date.now() - diskEntry.created.getTime()));
-        
+        await this.set(
+          key,
+          diskEntry.value,
+          diskEntry.ttl - (Date.now() - diskEntry.created.getTime())
+        );
+
         return diskEntry.value;
       }
     }
@@ -183,7 +190,7 @@ export class CacheManager extends EventEmitter {
 
     const actualTTL = ttl || this.config.defaultTTL;
     const size = this.calculateSize(value);
-    
+
     const entry: CacheEntry<T> = {
       key,
       value,
@@ -191,12 +198,12 @@ export class CacheManager extends EventEmitter {
       accessed: new Date(),
       ttl: actualTTL,
       size,
-      hits: 0
+      hits: 0,
     };
 
     // Store in memory cache
     await this.setInMemory(entry);
-    
+
     // Store in disk cache if enabled and entry is large enough
     if (this.config.enableDiskCache && size > (this.config.compressionThreshold || 0)) {
       await this.setOnDisk(entry);
@@ -232,8 +239,9 @@ export class CacheManager extends EventEmitter {
   }
 
   async has(key: string): Promise<boolean> {
-    return this.memoryCache.has(key) || 
-           (this.config.enableDiskCache && this.diskCacheIndex.has(key));
+    return (
+      this.memoryCache.has(key) || (this.config.enableDiskCache && this.diskCacheIndex.has(key))
+    );
   }
 
   async clear(): Promise<void> {
@@ -296,7 +304,7 @@ export class CacheManager extends EventEmitter {
 
     const keyToEvict = this.accessOrder.shift()!;
     const entry = this.memoryCache.get(keyToEvict);
-    
+
     if (entry) {
       // Try to save to disk before evicting
       if (this.config.enableDiskCache && !this.diskCacheIndex.has(keyToEvict)) {
@@ -311,7 +319,7 @@ export class CacheManager extends EventEmitter {
       this.metrics.memory.size -= entry.size;
       this.metrics.memory.entries--;
       this.metrics.evictions++;
-      
+
       this.emit('cache:evicted', { key: keyToEvict, reason: 'lru', size: entry.size });
     }
   }
@@ -360,7 +368,7 @@ export class CacheManager extends EventEmitter {
         file: fileName,
         size: entry.size,
         created: entry.created,
-        accessed: entry.accessed
+        accessed: entry.accessed,
       });
 
       this.metrics.disk.size += entry.size;
@@ -368,7 +376,6 @@ export class CacheManager extends EventEmitter {
 
       // Check disk size limits
       await this.enforceDiskSizeLimit();
-
     } catch (error) {
       throw new Error(`Failed to write cache entry to disk: ${error.message}`);
     }
@@ -394,16 +401,15 @@ export class CacheManager extends EventEmitter {
   private async clearDiskCache(): Promise<void> {
     try {
       const files = await readdir(this.config.diskCachePath);
-      
+
       const deletePromises = files
         .filter(file => file.endsWith('.json'))
         .map(file => unlink(path.join(this.config.diskCachePath, file)));
-      
+
       await Promise.allSettled(deletePromises);
-      
+
       this.diskCacheIndex.clear();
       this.metrics.disk = { size: 0, entries: 0, hits: 0, misses: 0 };
-      
     } catch (error) {
       // Directory might not exist or be empty
     }
@@ -415,12 +421,14 @@ export class CacheManager extends EventEmitter {
     }
 
     // Sort by access time (oldest first)
-    const entries = Array.from(this.diskCacheIndex.entries())
-      .sort(([, a], [, b]) => a.accessed.getTime() - b.accessed.getTime());
+    const entries = Array.from(this.diskCacheIndex.entries()).sort(
+      ([, a], [, b]) => a.accessed.getTime() - b.accessed.getTime()
+    );
 
     // Remove oldest entries until under limit
     for (const [key] of entries) {
-      if (this.metrics.disk.size <= this.config.maxDiskSize * 0.8) { // 80% of limit
+      if (this.metrics.disk.size <= this.config.maxDiskSize * 0.8) {
+        // 80% of limit
         break;
       }
       await this.deleteFromDisk(key);
@@ -431,32 +439,31 @@ export class CacheManager extends EventEmitter {
     try {
       const files = await readdir(this.config.diskCachePath);
       let totalSize = 0;
-      
+
       for (const file of files) {
         if (!file.endsWith('.json')) continue;
-        
+
         const filePath = path.join(this.config.diskCachePath, file);
-        
+
         try {
           const stats = await stat(filePath);
           const data = await readFile(filePath, 'utf8');
           const entry: CacheEntry = JSON.parse(data);
-          
+
           // Check if entry is expired
           if (this.isExpired(entry)) {
             await unlink(filePath);
             continue;
           }
-          
+
           this.diskCacheIndex.set(entry.key, {
             file,
             size: entry.size,
             created: entry.created,
-            accessed: entry.accessed
+            accessed: entry.accessed,
           });
-          
+
           totalSize += entry.size;
-          
         } catch (error) {
           // Remove corrupted files
           try {
@@ -466,10 +473,9 @@ export class CacheManager extends EventEmitter {
           }
         }
       }
-      
+
       this.metrics.disk.size = totalSize;
       this.metrics.disk.entries = this.diskCacheIndex.size;
-      
     } catch (error) {
       // Cache directory doesn't exist or is inaccessible
     }
@@ -481,7 +487,7 @@ export class CacheManager extends EventEmitter {
 
   async getByTags(tags: string[]): Promise<Array<{ key: string; value: any }>> {
     const results: Array<{ key: string; value: any }> = [];
-    
+
     for (const [key, entry] of this.memoryCache) {
       if (entry.tags && tags.some(tag => entry.tags!.includes(tag))) {
         if (!this.isExpired(entry)) {
@@ -489,26 +495,26 @@ export class CacheManager extends EventEmitter {
         }
       }
     }
-    
+
     return results;
   }
 
   async deleteByTags(tags: string[]): Promise<number> {
     let deleted = 0;
     const keysToDelete: string[] = [];
-    
+
     for (const [key, entry] of this.memoryCache) {
       if (entry.tags && tags.some(tag => entry.tags!.includes(tag))) {
         keysToDelete.push(key);
       }
     }
-    
+
     for (const key of keysToDelete) {
       if (await this.delete(key)) {
         deleted++;
       }
     }
-    
+
     return deleted;
   }
 
@@ -569,14 +575,14 @@ export class CacheManager extends EventEmitter {
     // Clean expired entries from disk
     if (this.config.enableDiskCache) {
       const expiredDiskKeys: string[] = [];
-      
+
       for (const [key, indexEntry] of this.diskCacheIndex) {
         const ageMs = Date.now() - indexEntry.created.getTime();
         if (ageMs > this.config.defaultTTL) {
           expiredDiskKeys.push(key);
         }
       }
-      
+
       for (const key of expiredDiskKeys) {
         await this.deleteFromDisk(key);
         cleaned++;
@@ -598,9 +604,12 @@ export class CacheManager extends EventEmitter {
     if (!this.config.enableDiskCache) return;
 
     const flushPromises: Promise<void>[] = [];
-    
+
     for (const entry of this.memoryCache.values()) {
-      if (!this.diskCacheIndex.has(entry.key) && entry.size > (this.config.compressionThreshold || 0)) {
+      if (
+        !this.diskCacheIndex.has(entry.key) &&
+        entry.size > (this.config.compressionThreshold || 0)
+      ) {
         flushPromises.push(this.setOnDisk(entry));
       }
     }
@@ -674,7 +683,7 @@ export class CacheManager extends EventEmitter {
     } else {
       this.metrics.disk.hits++;
     }
-    
+
     this.metrics.total.hits++;
     this.updateHitRatios();
   }
@@ -704,34 +713,37 @@ export class CacheManager extends EventEmitter {
 
   async getHealth(): Promise<CacheHealth> {
     const issues: string[] = [];
-    
+
     // Check memory usage
     const memoryUsagePercent = (this.metrics.memory.size / this.config.maxMemorySize) * 100;
-    
+
     if (memoryUsagePercent > 90) {
       issues.push('Memory cache usage above 90%');
     }
-    
+
     // Check disk usage if enabled
     let diskUsagePercent = 0;
     if (this.config.enableDiskCache && this.config.maxDiskSize) {
       diskUsagePercent = (this.metrics.disk.size / this.config.maxDiskSize) * 100;
-      
+
       if (diskUsagePercent > 90) {
         issues.push('Disk cache usage above 90%');
       }
     }
-    
+
     // Check hit ratio
-    if (this.metrics.total.hitRatio < 0.5 && this.metrics.total.hits + this.metrics.total.misses > 100) {
+    if (
+      this.metrics.total.hitRatio < 0.5 &&
+      this.metrics.total.hits + this.metrics.total.misses > 100
+    ) {
       issues.push('Low cache hit ratio (< 50%)');
     }
-    
+
     return {
       healthy: issues.length === 0,
       memoryUsage: memoryUsagePercent,
       diskUsage: this.config.enableDiskCache ? diskUsagePercent : undefined,
-      issues
+      issues,
     };
   }
 
@@ -799,7 +811,7 @@ export class CacheManager extends EventEmitter {
   async optimize(): Promise<void> {
     await this.performCleanup();
     await this.flushToDisk();
-    
+
     if (this.config.enableDiskCache) {
       await this.enforceDiskSizeLimit();
     }

@@ -1,6 +1,6 @@
 /**
  * Window Management Architecture - Knowledge-First MVP Approach
- * 
+ *
  * Comprehensive window orchestration system that evolves progressively
  * from single window (MVP1) to multi-window enterprise platform (MVP5)
  */
@@ -16,11 +16,11 @@ import { WindowType, WindowConfig, WindowInstance, WindowWorkspace } from './typ
 
 /**
  * Central Window Manager - Progressive Enhancement Architecture
- * 
+ *
  * Evolution by MVP:
  * MVP1: Single main window with KB interface
  * MVP2: + Pattern dashboard, alert windows
- * MVP3: + Code viewer, debug context windows  
+ * MVP3: + Code viewer, debug context windows
  * MVP4: + Project workspace, template editor
  * MVP5: + Analytics dashboard, AI assistant windows
  */
@@ -34,7 +34,7 @@ export class WindowManager extends EventEmitter implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
 
   // Core components
@@ -42,29 +42,29 @@ export class WindowManager extends EventEmitter implements Service {
   private registry: WindowRegistry;
   private ipcCoordinator: IPCCoordinator;
   private windowFactory: WindowFactory;
-  
+
   // Window management
   private mainWindow: BrowserWindow | null = null;
   private currentWorkspace: WindowWorkspace | null = null;
   private mvpLevel: number = 1; // Current MVP level (1-5)
-  
+
   // Configuration
   private readonly config = {
     maxWindows: 10,
     enableMultiWindow: false, // Enabled in MVP2+
-    enableWorkspaces: false,  // Enabled in MVP4+
+    enableWorkspaces: false, // Enabled in MVP4+
     persistState: true,
-    autoSave: true
+    autoSave: true,
   };
 
   constructor(private context: ServiceContext) {
     super();
-    
+
     this.stateManager = new WindowStateManager(context);
     this.registry = new WindowRegistry();
     this.ipcCoordinator = new IPCCoordinator();
     this.windowFactory = new WindowFactory(context);
-    
+
     this.setupEventHandlers();
   }
 
@@ -77,38 +77,38 @@ export class WindowManager extends EventEmitter implements Service {
       // Initialize core components
       await this.stateManager.initialize();
       await this.ipcCoordinator.initialize();
-      
+
       // Detect MVP level from configuration
       this.mvpLevel = await this.detectMVPLevel();
       this.updateConfigForMVP();
-      
+
       // Create main window
       await this.createMainWindow();
-      
+
       // Restore previous session state if enabled
       if (this.config.persistState) {
         await this.restoreWindowState();
       }
-      
+
       this.status = {
         status: 'running',
         startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info(`Window Manager initialized successfully (MVP${this.mvpLevel})`);
       context.metrics.increment('window_manager.initialized');
-      
+
       this.emit('initialized', { mvpLevel: this.mvpLevel });
     } catch (error) {
       this.status = {
         status: 'error',
         lastError: error,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
-      
+
       context.logger.error('Window Manager initialization failed', error);
       context.metrics.increment('window_manager.initialization_failed');
       throw error;
@@ -117,20 +117,20 @@ export class WindowManager extends EventEmitter implements Service {
 
   async shutdown(): Promise<void> {
     this.context.logger.info('Shutting down Window Manager...');
-    
+
     try {
       // Save current window state
       if (this.config.persistState) {
         await this.saveWindowState();
       }
-      
+
       // Close all windows gracefully
       await this.closeAllWindows();
-      
+
       // Cleanup components
       await this.stateManager.shutdown();
       await this.ipcCoordinator.shutdown();
-      
+
       this.status = { ...this.status, status: 'stopped' };
       this.context.logger.info('Window Manager shut down successfully');
     } catch (error) {
@@ -148,23 +148,23 @@ export class WindowManager extends EventEmitter implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       // Check main window health
       const mainWindowHealthy = this.mainWindow && !this.mainWindow.isDestroyed();
-      
+
       // Check all registered windows
       const allWindows = this.registry.getAllWindows();
       const healthyWindows = allWindows.filter(w => !w.window.isDestroyed()).length;
-      
+
       // Check state persistence
       const stateManagerHealthy = await this.stateManager.healthCheck();
-      
+
       // Check IPC communication
       const ipcHealthy = await this.ipcCoordinator.healthCheck();
-      
+
       const healthy = mainWindowHealthy && stateManagerHealthy && ipcHealthy;
-      
+
       return {
         healthy,
         details: {
@@ -174,28 +174,31 @@ export class WindowManager extends EventEmitter implements Service {
           mvpLevel: this.mvpLevel,
           workspace: this.currentWorkspace?.name || null,
           stateManager: stateManagerHealthy,
-          ipc: ipcHealthy
+          ipc: ipcHealthy,
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
 
   // Public Window Management Interface
-  
+
   /**
    * Create a new window of specified type
    * Available windows depend on current MVP level
    */
-  async createWindow(type: WindowType, config?: Partial<WindowConfig>): Promise<WindowInstance | null> {
+  async createWindow(
+    type: WindowType,
+    config?: Partial<WindowConfig>
+  ): Promise<WindowInstance | null> {
     if (!this.isWindowTypeAvailable(type)) {
       this.context.logger.warn(`Window type ${type} not available in MVP${this.mvpLevel}`);
       return null;
@@ -209,10 +212,10 @@ export class WindowManager extends EventEmitter implements Service {
     try {
       const windowInstance = await this.windowFactory.createWindow(type, config);
       this.registry.register(windowInstance);
-      
+
       this.context.logger.info(`Created window: ${type}`);
       this.context.metrics.increment(`window.created.${type}`);
-      
+
       this.emit('windowCreated', windowInstance);
       return windowInstance;
     } catch (error) {
@@ -246,18 +249,18 @@ export class WindowManager extends EventEmitter implements Service {
     try {
       // Save window state before closing
       await this.stateManager.saveWindowState(windowInstance);
-      
+
       // Close the window
       if (!windowInstance.window.isDestroyed()) {
         windowInstance.window.close();
       }
-      
+
       // Unregister
       this.registry.unregister(windowInstance.id);
-      
+
       this.context.logger.info(`Closed window: ${windowInstance.type}`);
       this.emit('windowClosed', windowInstance);
-      
+
       return true;
     } catch (error) {
       this.context.logger.error(`Failed to close window: ${idOrType}`, error);
@@ -300,7 +303,7 @@ export class WindowManager extends EventEmitter implements Service {
   }
 
   // Workspace Management (MVP4+)
-  
+
   async createWorkspace(name: string, config: Partial<WindowWorkspace>): Promise<boolean> {
     if (this.mvpLevel < 4) {
       this.context.logger.warn('Workspace management not available in current MVP level');
@@ -310,7 +313,7 @@ export class WindowManager extends EventEmitter implements Service {
     try {
       const workspace = await this.stateManager.createWorkspace(name, config);
       this.currentWorkspace = workspace;
-      
+
       this.emit('workspaceCreated', workspace);
       return true;
     } catch (error) {
@@ -334,7 +337,7 @@ export class WindowManager extends EventEmitter implements Service {
 
       this.currentWorkspace = workspace;
       await this.applyWorkspaceLayout(workspace);
-      
+
       this.emit('workspaceSwitched', workspace);
       return true;
     } catch (error) {
@@ -344,10 +347,10 @@ export class WindowManager extends EventEmitter implements Service {
   }
 
   // Private Implementation
-  
+
   private async createMainWindow(): Promise<void> {
     const savedState = await this.stateManager.getMainWindowState();
-    
+
     const config: WindowConfig = {
       type: 'main',
       title: 'Mainframe Knowledge Assistant',
@@ -361,12 +364,12 @@ export class WindowManager extends EventEmitter implements Service {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: this.windowFactory.getPreloadPath('main')
-      }
+        preload: this.windowFactory.getPreloadPath('main'),
+      },
     };
 
     this.mainWindow = await this.windowFactory.createBrowserWindow(config);
-    
+
     // Load the main application
     if (this.context.isDevelopment) {
       const port = process.env.RENDERER_DEV_PORT || 3000;
@@ -383,7 +386,7 @@ export class WindowManager extends EventEmitter implements Service {
       window: this.mainWindow,
       config,
       created: new Date(),
-      focused: false
+      focused: false,
     };
 
     this.registry.register(mainWindowInstance);
@@ -411,10 +414,13 @@ export class WindowManager extends EventEmitter implements Service {
     });
 
     // Handle window state requests
-    ipcMain.handle('window-manager:create-window', async (event, type: WindowType, config?: Partial<WindowConfig>) => {
-      const windowInstance = await this.createWindow(type, config);
-      return windowInstance?.id || null;
-    });
+    ipcMain.handle(
+      'window-manager:create-window',
+      async (event, type: WindowType, config?: Partial<WindowConfig>) => {
+        const windowInstance = await this.createWindow(type, config);
+        return windowInstance?.id || null;
+      }
+    );
 
     ipcMain.handle('window-manager:close-window', async (event, idOrType: string) => {
       return await this.closeWindow(idOrType);
@@ -436,7 +442,7 @@ export class WindowManager extends EventEmitter implements Service {
 
   private async detectMVPLevel(): Promise<number> {
     // Detect MVP level based on available features/services
-    const config = await this.context.config?.get('mvp.level') || 1;
+    const config = (await this.context.config?.get('mvp.level')) || 1;
     return Math.min(Math.max(config, 1), 5);
   }
 
@@ -469,8 +475,26 @@ export class WindowManager extends EventEmitter implements Service {
       1: ['main'],
       2: ['main', 'pattern-dashboard', 'alert'],
       3: ['main', 'pattern-dashboard', 'alert', 'code-viewer', 'debug-context'],
-      4: ['main', 'pattern-dashboard', 'alert', 'code-viewer', 'debug-context', 'project-workspace', 'template-editor'],
-      5: ['main', 'pattern-dashboard', 'alert', 'code-viewer', 'debug-context', 'project-workspace', 'template-editor', 'analytics-dashboard', 'ai-assistant']
+      4: [
+        'main',
+        'pattern-dashboard',
+        'alert',
+        'code-viewer',
+        'debug-context',
+        'project-workspace',
+        'template-editor',
+      ],
+      5: [
+        'main',
+        'pattern-dashboard',
+        'alert',
+        'code-viewer',
+        'debug-context',
+        'project-workspace',
+        'template-editor',
+        'analytics-dashboard',
+        'ai-assistant',
+      ],
     };
 
     const available = availableByMVP[this.mvpLevel] || [];
@@ -491,13 +515,13 @@ export class WindowManager extends EventEmitter implements Service {
 
   private async closeAllWindows(): Promise<void> {
     const allWindows = this.registry.getAllWindows();
-    
+
     for (const windowInstance of allWindows) {
       if (!windowInstance.window.isDestroyed()) {
         windowInstance.window.close();
       }
     }
-    
+
     this.registry.clear();
   }
 

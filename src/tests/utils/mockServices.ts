@@ -28,7 +28,7 @@ export class MockGeminiService {
       responseDelay: config.responseDelay ?? 100,
       errorRate: config.errorRate ?? 0.05,
       confidenceRange: config.confidenceRange ?? [0.6, 0.95],
-      enableReasoningGeneration: config.enableReasoningGeneration ?? true
+      enableReasoningGeneration: config.enableReasoningGeneration ?? true,
     };
   }
 
@@ -68,13 +68,13 @@ export class MockGeminiService {
           created_by: 'ai-assistant',
           color: this.generateTagColor(tagName),
           related_tags: [],
-          synonyms: []
+          synonyms: [],
         },
         score: confidence,
         source: 'ai',
         reasoning: this.config.enableReasoningGeneration
           ? this.generateReasoning(tagName, query, context)
-          : undefined
+          : undefined,
       });
     });
 
@@ -92,7 +92,8 @@ export class MockGeminiService {
       throw new Error('Simulated categorization error');
     }
 
-    const text = `${entry.title || ''} ${entry.problem || ''} ${entry.solution || ''}`.toLowerCase();
+    const text =
+      `${entry.title || ''} ${entry.problem || ''} ${entry.solution || ''}`.toLowerCase();
     const category = this.inferCategoryFromText(text);
     const confidence = this.randomInRange(...this.config.confidenceRange);
 
@@ -101,7 +102,7 @@ export class MockGeminiService {
       confidence,
       reasoning: this.config.enableReasoningGeneration
         ? `Based on keywords and patterns in the text, this appears to be a ${category} issue.`
-        : undefined
+        : undefined,
     };
   }
 
@@ -118,7 +119,7 @@ export class MockGeminiService {
       'This appears to be a database query operation with transaction management.',
       'This code implements file processing with error recovery mechanisms.',
       'This is a batch processing routine with checkpoint handling.',
-      'This code manages VSAM file operations with proper error checking.'
+      'This code manages VSAM file operations with proper error checking.',
     ];
 
     return explanations[Math.floor(Math.random() * explanations.length)];
@@ -132,26 +133,26 @@ export class MockGeminiService {
     }
 
     const solutions: Record<string, string[]> = {
-      'JCL': [
+      JCL: [
         '1. Check DD statement syntax and parameters\n2. Verify dataset allocation\n3. Review job step dependencies',
         '1. Validate REGION parameter\n2. Check SPACE allocation\n3. Verify catalog entries',
-        '1. Review condition codes\n2. Check step execution order\n3. Verify input datasets'
+        '1. Review condition codes\n2. Check step execution order\n3. Verify input datasets',
       ],
-      'VSAM': [
+      VSAM: [
         '1. Run VSAM VERIFY command\n2. Check file integrity\n3. Rebuild index if needed',
         '1. Review VSAM parameters\n2. Check space allocation\n3. Verify access method',
-        '1. Analyze VSAM status codes\n2. Check catalog definition\n3. Review record structure'
+        '1. Analyze VSAM status codes\n2. Check catalog definition\n3. Review record structure',
       ],
-      'DB2': [
+      DB2: [
         '1. Check SQL syntax and logic\n2. Review table structure\n3. Verify access permissions',
         '1. Analyze query execution plan\n2. Add appropriate indexes\n3. Update table statistics',
-        '1. Check connection parameters\n2. Review timeout settings\n3. Monitor database performance'
+        '1. Check connection parameters\n2. Review timeout settings\n3. Monitor database performance',
       ],
-      'default': [
+      default: [
         '1. Analyze error messages and codes\n2. Check system configuration\n3. Review recent changes',
         '1. Verify system resources\n2. Check dependencies\n3. Test in isolation',
-        '1. Review documentation\n2. Check best practices\n3. Consult with team'
-      ]
+        '1. Review documentation\n2. Check best practices\n3. Consult with team',
+      ],
     };
 
     const categorysolutions = solutions[category || 'default'] || solutions.default;
@@ -170,11 +171,11 @@ export class MockGeminiService {
 
   private generateRelevantTags(queryWords: string[], category?: string): string[] {
     const baseTags: Record<string, string[]> = {
-      'JCL': ['job-control', 'allocation', 'step-execution', 'dataset-management'],
-      'VSAM': ['file-access', 'catalog', 'record-processing', 'index-management'],
-      'DB2': ['sql', 'query', 'performance', 'connection', 'transaction'],
-      'Batch': ['processing', 'abend', 'memory', 'error-handling'],
-      'default': ['troubleshooting', 'configuration', 'monitoring', 'optimization']
+      JCL: ['job-control', 'allocation', 'step-execution', 'dataset-management'],
+      VSAM: ['file-access', 'catalog', 'record-processing', 'index-management'],
+      DB2: ['sql', 'query', 'performance', 'connection', 'transaction'],
+      Batch: ['processing', 'abend', 'memory', 'error-handling'],
+      default: ['troubleshooting', 'configuration', 'monitoring', 'optimization'],
     };
 
     const categoryTags = baseTags[category || 'default'] || baseTags.default;
@@ -195,12 +196,12 @@ export class MockGeminiService {
 
   private inferCategoryFromText(text: string): string {
     const patterns: Record<string, RegExp[]> = {
-      'JCL': [/job\s+control/i, /dd\s+statement/i, /step\s+\w+/i, /region/i],
-      'VSAM': [/vsam/i, /ksds/i, /esds/i, /catalog/i, /idcams/i],
-      'DB2': [/sql/i, /database/i, /table/i, /query/i, /sqlcode/i],
-      'Batch': [/abend/i, /s0c\d/i, /program/i, /module/i, /cobol/i],
-      'CICS': [/cics/i, /transaction/i, /terminal/i, /asra/i],
-      'IMS': [/ims/i, /database/i, /segment/i, /psb/i, /dbd/i]
+      JCL: [/job\s+control/i, /dd\s+statement/i, /step\s+\w+/i, /region/i],
+      VSAM: [/vsam/i, /ksds/i, /esds/i, /catalog/i, /idcams/i],
+      DB2: [/sql/i, /database/i, /table/i, /query/i, /sqlcode/i],
+      Batch: [/abend/i, /s0c\d/i, /program/i, /module/i, /cobol/i],
+      CICS: [/cics/i, /transaction/i, /terminal/i, /asra/i],
+      IMS: [/ims/i, /database/i, /segment/i, /psb/i, /dbd/i],
     };
 
     for (const [category, regexes] of Object.entries(patterns)) {
@@ -218,7 +219,7 @@ export class MockGeminiService {
       `Based on the query "${query}", "${tagName}" appears highly relevant`,
       `This tag has high usage in similar contexts and matches the problem domain`,
       `Pattern matching suggests "${tagName}" is appropriate for this type of entry`,
-      `Historical data shows "${tagName}" is effective for similar problems`
+      `Historical data shows "${tagName}" is effective for similar problems`,
     ];
 
     return reasons[Math.floor(Math.random() * reasons.length)];
@@ -227,8 +228,16 @@ export class MockGeminiService {
   private generateTagColor(tagName: string): string {
     // Generate consistent colors based on tag name
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+      '#FF6B6B',
+      '#4ECDC4',
+      '#45B7D1',
+      '#96CEB4',
+      '#FFEAA7',
+      '#DDA0DD',
+      '#98D8C8',
+      '#F7DC6F',
+      '#BB8FCE',
+      '#85C1E9',
     ];
 
     const hash = tagName.split('').reduce((acc, char) => {
@@ -262,13 +271,13 @@ export class MockDatabaseService {
     this.config = {
       latency: config.latency ?? 10,
       errorRate: config.errorRate ?? 0.01,
-      concurrencyLimit: config.concurrencyLimit ?? 100
+      concurrencyLimit: config.concurrencyLimit ?? 100,
     };
 
     this.data = {
       entries: new Map(),
       tags: new Map(),
-      categories: new Map()
+      categories: new Map(),
     };
   }
 
@@ -303,7 +312,7 @@ export class MockDatabaseService {
         } catch (error) {
           errors.push({
             id: entry.id,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
           failed++;
         }
@@ -315,11 +324,13 @@ export class MockDatabaseService {
     }
   }
 
-  async bulkUpdateTags(operations: Array<{
-    entryId: string;
-    operation: 'add' | 'remove';
-    tags: string[];
-  }>): Promise<{
+  async bulkUpdateTags(
+    operations: Array<{
+      entryId: string;
+      operation: 'add' | 'remove';
+      tags: string[];
+    }>
+  ): Promise<{
     successful: number;
     failed: number;
     errors: Array<{ entryId: string; error: string }>;
@@ -359,7 +370,7 @@ export class MockDatabaseService {
         } catch (error) {
           errors.push({
             entryId: op.entryId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
           failed++;
         }
@@ -371,12 +382,15 @@ export class MockDatabaseService {
     }
   }
 
-  async searchEntries(query: string, options: {
-    category?: string;
-    tags?: string[];
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<{
+  async searchEntries(
+    query: string,
+    options: {
+      category?: string;
+      tags?: string[];
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): Promise<{
     entries: KBEntry[];
     totalCount: number;
     hasMore: boolean;
@@ -395,15 +409,16 @@ export class MockDatabaseService {
       const entries = Array.from(this.data.entries.values());
 
       let filtered = entries.filter(entry => {
-        const textMatch = !query ||
+        const textMatch =
+          !query ||
           entry.title.toLowerCase().includes(queryLower) ||
           entry.problem.toLowerCase().includes(queryLower) ||
           entry.solution.toLowerCase().includes(queryLower);
 
         const categoryMatch = !options.category || entry.category === options.category;
 
-        const tagMatch = !options.tags?.length ||
-          options.tags.some(tag => entry.tags.includes(tag));
+        const tagMatch =
+          !options.tags?.length || options.tags.some(tag => entry.tags.includes(tag));
 
         return textMatch && categoryMatch && tagMatch;
       });
@@ -422,7 +437,7 @@ export class MockDatabaseService {
       return {
         entries: paged,
         totalCount: filtered.length,
-        hasMore: offset + limit < filtered.length
+        hasMore: offset + limit < filtered.length,
       };
     } finally {
       this.activeOperations--;
@@ -437,16 +452,12 @@ export class MockDatabaseService {
 
   private async simulateLatency(): Promise<void> {
     if (this.config.latency > 0) {
-      const delay = this.config.latency + (Math.random() * this.config.latency * 0.5);
+      const delay = this.config.latency + Math.random() * this.config.latency * 0.5;
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  private calculateRelevanceScore(
-    entry: KBEntry,
-    query: string,
-    options: any
-  ): number {
+  private calculateRelevanceScore(entry: KBEntry, query: string, options: any): number {
     let score = 0;
     const queryLower = query.toLowerCase();
 
@@ -483,11 +494,7 @@ export class MockDatabaseService {
   }
 
   // Utility methods for testing
-  seedData(data: {
-    entries?: KBEntry[];
-    tags?: Tag[];
-    categories?: CategoryNode[];
-  }): void {
+  seedData(data: { entries?: KBEntry[]; tags?: Tag[]; categories?: CategoryNode[] }): void {
     if (data.entries) {
       data.entries.forEach(entry => this.data.entries.set(entry.id, entry));
     }
@@ -515,7 +522,7 @@ export class MockDatabaseService {
       entries: this.data.entries.size,
       tags: this.data.tags.size,
       categories: this.data.categories.size,
-      activeOperations: this.activeOperations
+      activeOperations: this.activeOperations,
     };
   }
 }
@@ -537,7 +544,7 @@ export class MockNetworkService {
     this.config = {
       baseDelay: config.baseDelay ?? 50,
       timeoutRate: config.timeoutRate ?? 0.02,
-      networkErrorRate: config.networkErrorRate ?? 0.03
+      networkErrorRate: config.networkErrorRate ?? 0.03,
     };
   }
 
@@ -561,7 +568,7 @@ export class MockNetworkService {
     }
 
     // Simulate network delay
-    const delay = this.config.baseDelay + (Math.random() * this.config.baseDelay);
+    const delay = this.config.baseDelay + Math.random() * this.config.baseDelay;
     await new Promise(resolve => setTimeout(resolve, delay));
 
     // Return mock response based on endpoint
@@ -573,8 +580,8 @@ export class MockNetworkService {
       return {
         suggestions: [
           { name: 'mock-suggestion-1', confidence: 0.9 },
-          { name: 'mock-suggestion-2', confidence: 0.8 }
-        ]
+          { name: 'mock-suggestion-2', confidence: 0.8 },
+        ],
       };
     }
 
@@ -582,13 +589,13 @@ export class MockNetworkService {
       return {
         results: [],
         totalCount: 0,
-        hasMore: false
+        hasMore: false,
       };
     }
 
     if (endpoint.includes('/categories/')) {
       return {
-        categories: []
+        categories: [],
       };
     }
 
@@ -600,14 +607,16 @@ export class MockNetworkService {
 // FACTORY FUNCTIONS
 // ===========================
 
-export const createMockServices = (config: {
-  gemini?: MockGeminiConfig;
-  database?: MockDatabaseConfig;
-  network?: MockNetworkConfig;
-} = {}) => ({
+export const createMockServices = (
+  config: {
+    gemini?: MockGeminiConfig;
+    database?: MockDatabaseConfig;
+    network?: MockNetworkConfig;
+  } = {}
+) => ({
   gemini: new MockGeminiService(config.gemini),
   database: new MockDatabaseService(config.database),
-  network: new MockNetworkService(config.network)
+  network: new MockNetworkService(config.network),
 });
 
 export const mockGeminiService = new MockGeminiService();

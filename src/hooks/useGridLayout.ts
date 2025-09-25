@@ -115,11 +115,21 @@ export interface UseGridLayoutReturn {
   /** Recalculate layout */
   recalculateLayout: () => void;
   /** Get item position */
-  getItemPosition: (itemId: string) => { x: number; y: number; width: number; height: number } | null;
+  getItemPosition: (
+    itemId: string
+  ) => { x: number; y: number; width: number; height: number } | null;
   /** Check if position is available */
-  isPositionAvailable: (colStart: number, rowStart: number, colSpan: number, rowSpan: number) => boolean;
+  isPositionAvailable: (
+    colStart: number,
+    rowStart: number,
+    colSpan: number,
+    rowSpan: number
+  ) => boolean;
   /** Get next available position */
-  getNextAvailablePosition: (colSpan: number, rowSpan: number) => { colStart: number; rowStart: number } | null;
+  getNextAvailablePosition: (
+    colSpan: number,
+    rowSpan: number
+  ) => { colStart: number; rowStart: number } | null;
   /** Reset layout */
   resetLayout: () => void;
 }
@@ -205,11 +215,7 @@ const calculateItemPosition = (
 /**
  * Auto-place items in grid
  */
-const autoPlaceItems = (
-  items: GridItem[],
-  columns: number,
-  dense: boolean = false
-): GridItem[] => {
+const autoPlaceItems = (items: GridItem[], columns: number, dense: boolean = false): GridItem[] => {
   const grid: boolean[][] = [];
   const placedItems: GridItem[] = [];
 
@@ -352,10 +358,13 @@ export const useGridLayout = (options: UseGridLayoutOptions = {}): UseGridLayout
   } = options;
 
   // Merge config with defaults
-  const gridConfig = useMemo(() => ({
-    ...DEFAULT_CONFIG,
-    ...config,
-  }), [config]);
+  const gridConfig = useMemo(
+    () => ({
+      ...DEFAULT_CONFIG,
+      ...config,
+    }),
+    [config]
+  );
 
   // Responsive utilities
   const { device, breakpoint } = useResponsive({ debounceMs });
@@ -374,14 +383,17 @@ export const useGridLayout = (options: UseGridLayoutOptions = {}): UseGridLayout
   // Container resize observer
   const { ref: containerRef } = useResizeObserver({
     debounceMs,
-    onResize: useCallback((entry) => {
-      const { width, height } = entry.contentRect;
-      setContainerSize({ width, height });
+    onResize: useCallback(
+      entry => {
+        const { width, height } = entry.contentRect;
+        setContainerSize({ width, height });
 
-      if (monitor) {
-        console.log('Grid container resized:', { width, height, breakpoint });
-      }
-    }, [monitor, breakpoint]),
+        if (monitor) {
+          console.log('Grid container resized:', { width, height, breakpoint });
+        }
+      },
+      [monitor, breakpoint]
+    ),
   });
 
   // Calculate current layout state
@@ -447,14 +459,7 @@ export const useGridLayout = (options: UseGridLayoutOptions = {}): UseGridLayout
     }
 
     return newState;
-  }, [
-    breakpoint,
-    containerSize,
-    items,
-    gridConfig,
-    autoLayout,
-    monitor,
-  ]);
+  }, [breakpoint, containerSize, items, gridConfig, autoLayout, monitor]);
 
   // Item management functions
   const addItem = useCallback((item: GridItem) => {
@@ -466,75 +471,86 @@ export const useGridLayout = (options: UseGridLayoutOptions = {}): UseGridLayout
   }, []);
 
   const updateItem = useCallback((itemId: string, updates: Partial<GridItem>) => {
-    setItems(prev => prev.map(item =>
-      item.id === itemId ? { ...item, ...updates } : item
-    ));
+    setItems(prev => prev.map(item => (item.id === itemId ? { ...item, ...updates } : item)));
   }, []);
 
-  const moveItem = useCallback((itemId: string, position: { colStart?: number; rowStart?: number }) => {
-    updateItem(itemId, position);
-  }, [updateItem]);
+  const moveItem = useCallback(
+    (itemId: string, position: { colStart?: number; rowStart?: number }) => {
+      updateItem(itemId, position);
+    },
+    [updateItem]
+  );
 
   const recalculateLayout = useCallback(() => {
     // Force re-render by updating items state
     setItems(prev => [...prev]);
   }, []);
 
-  const getItemPosition = useCallback((itemId: string) => {
-    return state.positions[itemId] || null;
-  }, [state.positions]);
+  const getItemPosition = useCallback(
+    (itemId: string) => {
+      return state.positions[itemId] || null;
+    },
+    [state.positions]
+  );
 
-  const isPositionAvailable = useCallback((
-    colStart: number,
-    rowStart: number,
-    colSpan: number,
-    rowSpan: number
-  ): boolean => {
-    const grid: boolean[][] = [];
+  const isPositionAvailable = useCallback(
+    (colStart: number, rowStart: number, colSpan: number, rowSpan: number): boolean => {
+      const grid: boolean[][] = [];
 
-    // Mark all existing items
-    items.forEach(item => {
-      if (item.colStart && item.rowStart) {
-        markGridCells(
-          grid,
-          item.colStart - 1,
-          item.rowStart - 1,
-          item.colSpan || 1,
-          item.rowSpan || 1
-        );
+      // Mark all existing items
+      items.forEach(item => {
+        if (item.colStart && item.rowStart) {
+          markGridCells(
+            grid,
+            item.colStart - 1,
+            item.rowStart - 1,
+            item.colSpan || 1,
+            item.rowSpan || 1
+          );
+        }
+      });
+
+      return isPositionAvailable(grid, colStart - 1, rowStart - 1, colSpan, rowSpan);
+    },
+    [items]
+  );
+
+  const getNextAvailablePosition = useCallback(
+    (colSpan: number, rowSpan: number) => {
+      const grid: boolean[][] = [];
+
+      // Mark all existing items
+      items.forEach(item => {
+        if (item.colStart && item.rowStart) {
+          markGridCells(
+            grid,
+            item.colStart - 1,
+            item.rowStart - 1,
+            item.colSpan || 1,
+            item.rowSpan || 1
+          );
+        }
+      });
+
+      const position = findNextAvailablePosition(
+        grid,
+        state.columns,
+        colSpan,
+        rowSpan,
+        gridConfig.dense || false
+      );
+
+      if (position) {
+        return {
+          colStart: position.colStart + 1,
+          rowStart: position.rowStart + 1,
+        };
       }
-    });
 
-    return isPositionAvailable(grid, colStart - 1, rowStart - 1, colSpan, rowSpan);
-  }, [items]);
-
-  const getNextAvailablePosition = useCallback((colSpan: number, rowSpan: number) => {
-    const grid: boolean[][] = [];
-
-    // Mark all existing items
-    items.forEach(item => {
-      if (item.colStart && item.rowStart) {
-        markGridCells(
-          grid,
-          item.colStart - 1,
-          item.rowStart - 1,
-          item.colSpan || 1,
-          item.rowSpan || 1
-        );
-      }
-    });
-
-    const position = findNextAvailablePosition(grid, state.columns, colSpan, rowSpan, gridConfig.dense || false);
-
-    if (position) {
-      return {
-        colStart: position.colStart + 1,
-        rowStart: position.rowStart + 1,
-      };
-    }
-
-    return null;
-  }, [items, state.columns, gridConfig.dense]);
+      return null;
+    },
+    [items, state.columns, gridConfig.dense]
+  );
 
   const resetLayout = useCallback(() => {
     setItems(initialItems);

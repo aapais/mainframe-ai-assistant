@@ -1,6 +1,6 @@
 /**
  * SQLite Performance Monitoring System - Usage Examples
- * 
+ *
  * This file demonstrates how to use the comprehensive monitoring system
  * for production database monitoring, alerting, and optimization.
  */
@@ -11,10 +11,10 @@ import { MonitoringSystem, createMonitoringSystem } from './index';
 // Example 1: Basic Setup and Initialization
 async function basicUsageExample() {
   console.log('📊 Setting up SQLite Performance Monitoring...\n');
-  
+
   // Initialize database
   const db = new Database('example.db');
-  
+
   // Create monitoring system with default configuration
   const monitoring = createMonitoringSystem(db, {
     enableAllFeatures: true,
@@ -22,34 +22,34 @@ async function basicUsageExample() {
     performance: {
       enableRealTimeAlerts: true,
       slowQueryThreshold: 1000, // 1 second
-      criticalThreshold: 5000   // 5 seconds
+      criticalThreshold: 5000, // 5 seconds
     },
     health: {
       checkInterval: 300, // 5 minutes
-      enableAutoRemediation: false // Keep false for safety
+      enableAutoRemediation: false, // Keep false for safety
     },
     dashboard: {
       refreshInterval: 30, // 30 seconds
-      enableRealTime: true
-    }
+      enableRealTime: true,
+    },
   });
 
   // Set up event handlers
-  monitoring.on('performance-alert', (alert) => {
+  monitoring.on('performance-alert', alert => {
     console.log(`🚨 Performance Alert: ${alert.message}`);
   });
 
-  monitoring.on('health-status-updated', (status) => {
+  monitoring.on('health-status-updated', status => {
     console.log(`💚 Health Status: ${status.overall} (Score: ${status.score})`);
   });
 
-  monitoring.on('index-recommendation', (recommendation) => {
+  monitoring.on('index-recommendation', recommendation => {
     console.log(`💡 Index Recommendation: ${recommendation.creationSQL}`);
   });
 
   // Initialize monitoring
   await monitoring.initialize();
-  
+
   return monitoring;
 }
 
@@ -86,7 +86,7 @@ async function queryMonitoringExample() {
     () => db.prepare('SELECT * FROM test_table WHERE id = ?').get(1),
     { userId: 'user123' }
   );
-  
+
   console.log('✅ Fast query completed');
 
   // Example 2: Slow query (will trigger analysis and potentially recommendations)
@@ -94,14 +94,15 @@ async function queryMonitoringExample() {
     'slow_scan',
     'SELECT * FROM test_table WHERE name LIKE ? ORDER BY value DESC',
     'conn_002',
-    () => db.prepare('SELECT * FROM test_table WHERE name LIKE ? ORDER BY value DESC').all('%test%'),
-    { 
+    () =>
+      db.prepare('SELECT * FROM test_table WHERE name LIKE ? ORDER BY value DESC').all('%test%'),
+    {
       userId: 'user456',
       captureQueryPlan: true,
-      enableAnalysis: true
+      enableAnalysis: true,
     }
   );
-  
+
   console.log('⚠️ Slow query completed - analysis triggered');
 
   // Example 3: Error handling
@@ -132,17 +133,17 @@ async function healthMonitoringExample() {
       enableAutoRemediation: true,
       criticalThresholds: {
         memoryUsageHigh: 500, // 500MB
-        performanceDegradation: 30 // 30%
-      }
-    }
+        performanceDegradation: 30, // 30%
+      },
+    },
   });
 
   console.log('🏥 Testing health monitoring...\n');
 
   // Set up health event handlers
-  monitoring.on('health-status-updated', (status) => {
+  monitoring.on('health-status-updated', status => {
     console.log(`Health Check: ${status.overall} (${status.checks.length} checks)`);
-    
+
     status.checks.forEach(check => {
       if (check.status !== 'healthy') {
         console.log(`  ⚠️ ${check.name}: ${check.message}`);
@@ -156,7 +157,7 @@ async function healthMonitoringExample() {
   const healthStatus = await monitoring.runHealthCheck();
   console.log('\n🔍 Manual Health Check Results:');
   console.log(`Overall: ${healthStatus.overall} (Score: ${healthStatus.score})`);
-  
+
   // Get health history
   const healthHistory = monitoring.health.getHealthHistory();
   console.log(`Health history: ${healthHistory.length} previous checks`);
@@ -172,8 +173,8 @@ async function dashboardExample() {
       refreshInterval: 5, // 5 seconds for demo
       enableRealTime: true,
       enableAlerts: true,
-      enableCapacityPlanning: true
-    }
+      enableCapacityPlanning: true,
+    },
   });
 
   console.log('📊 Testing dashboard and metrics export...\n');
@@ -182,13 +183,10 @@ async function dashboardExample() {
 
   // Simulate some activity
   for (let i = 0; i < 10; i++) {
-    await monitoring.measureQuery(
-      `test_query_${i}`,
-      'SELECT 1 as test',
-      `conn_${i}`,
-      () => db.prepare('SELECT 1 as test').get()
+    await monitoring.measureQuery(`test_query_${i}`, 'SELECT 1 as test', `conn_${i}`, () =>
+      db.prepare('SELECT 1 as test').get()
     );
-    
+
     await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
   }
 
@@ -224,8 +222,8 @@ async function queryOptimizationExample() {
       analysisThreshold: 50, // Analyze queries > 50ms
       captureSlowQueries: true,
       generateRecommendations: true,
-      trackQueryPatterns: true
-    }
+      trackQueryPatterns: true,
+    },
   });
 
   console.log('🔧 Testing query analysis and optimization...\n');
@@ -279,7 +277,12 @@ async function queryOptimizationExample() {
     'user_orders_join',
     'SELECT u.name, o.amount FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = ?',
     'conn_002',
-    () => db.prepare('SELECT u.name, o.amount FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = ?').all('completed'),
+    () =>
+      db
+        .prepare(
+          'SELECT u.name, o.amount FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = ?'
+        )
+        .all('completed'),
     { enableAnalysis: true }
   );
 
@@ -297,24 +300,26 @@ async function queryOptimizationExample() {
 
   // Get optimization recommendations
   const recommendations = monitoring.getOptimizationRecommendations();
-  
+
   console.log('\n💡 Optimization Recommendations:');
   console.log(`Index Recommendations: ${recommendations.indexes.length}`);
   recommendations.indexes.forEach((rec, i) => {
-    console.log(`  ${i+1}. ${rec.rationale}`);
+    console.log(`  ${i + 1}. ${rec.rationale}`);
     console.log(`     SQL: ${rec.creationSQL}`);
     console.log(`     Expected Impact: ${rec.estimatedImpact}%\n`);
   });
 
   console.log(`Slow Queries: ${recommendations.slowQueries.length}`);
   recommendations.slowQueries.forEach((query, i) => {
-    console.log(`  ${i+1}. Avg Duration: ${query.avgDuration}ms (${query.occurrences} occurrences)`);
+    console.log(
+      `  ${i + 1}. Avg Duration: ${query.avgDuration}ms (${query.occurrences} occurrences)`
+    );
     console.log(`     Query: ${query.query.substring(0, 100)}...\n`);
   });
 
   console.log(`Query Patterns: ${recommendations.patterns.length}`);
   recommendations.patterns.slice(0, 3).forEach((pattern, i) => {
-    console.log(`  ${i+1}. ${pattern.occurrences} occurrences, avg ${pattern.avgDuration}ms`);
+    console.log(`  ${i + 1}. ${pattern.occurrences} occurrences, avg ${pattern.avgDuration}ms`);
     console.log(`     Pattern: ${pattern.pattern.substring(0, 80)}...\n`);
   });
 
@@ -322,7 +327,7 @@ async function queryOptimizationExample() {
   if (recommendations.indexes.length > 0) {
     const firstRecommendation = recommendations.indexes[0];
     console.log('🔨 Simulating index implementation...');
-    
+
     // This would execute the CREATE INDEX statement in a real scenario
     // const result = await monitoring.implementIndexRecommendation(firstRecommendation.id, true);
     console.log(`Would execute: ${firstRecommendation.creationSQL}`);
@@ -334,12 +339,12 @@ async function queryOptimizationExample() {
 // Example 6: Custom Metrics and Advanced Configuration
 async function advancedConfigurationExample() {
   const db = new Database('advanced_test.db');
-  
+
   const monitoring = createMonitoringSystem(db, {
     enableAllFeatures: true,
     enablePrometheusExport: true,
     enableGrafanaIntegration: true,
-    
+
     performance: {
       enableRealTimeAlerts: true,
       slowQueryThreshold: 500,
@@ -347,18 +352,18 @@ async function advancedConfigurationExample() {
       memoryAlertThreshold: 256 * 1024 * 1024, // 256MB
       sampleRate: 1.0, // 100% sampling
       retentionDays: 30,
-      enableQueryPlanCapture: true
+      enableQueryPlanCapture: true,
     },
-    
+
     metrics: {
       collectionInterval: 15, // 15 seconds
       aggregationInterval: 60, // 1 minute
       retentionDays: 14,
       maxDataPoints: 50000,
       enableCompression: true,
-      exportFormats: ['prometheus', 'json', 'csv']
+      exportFormats: ['prometheus', 'json', 'csv'],
     },
-    
+
     health: {
       checkInterval: 120, // 2 minutes
       enableAutoRemediation: false, // Keep disabled for safety
@@ -366,17 +371,17 @@ async function advancedConfigurationExample() {
         performanceDegradation: 40,
         memoryUsageHigh: 1024, // 1GB
         diskSpaceLow: 5000, // 5GB
-        queryFailureRate: 5 // 5%
+        queryFailureRate: 5, // 5%
       },
       remediationActions: {
         vacuum: true,
         reindex: true,
         checkpoint: true,
         connectionPoolReset: false,
-        cacheFlush: true
-      }
+        cacheFlush: true,
+      },
     },
-    
+
     analyzer: {
       analysisThreshold: 100,
       captureSlowQueries: true,
@@ -384,9 +389,9 @@ async function advancedConfigurationExample() {
       trackQueryPatterns: true,
       maxQueryHistory: 5000,
       autoIndexCreation: false, // Keep disabled for safety
-      indexCreationThreshold: 25 // 25% improvement minimum
+      indexCreationThreshold: 25, // 25% improvement minimum
     },
-    
+
     dashboard: {
       refreshInterval: 20,
       retentionPeriod: 30,
@@ -399,37 +404,41 @@ async function advancedConfigurationExample() {
         responseTime: 800,
         errorRate: 0.02, // 2%
         memoryUsage: 0.75, // 75%
-        diskUsage: 0.85 // 85%
-      }
-    }
+        diskUsage: 0.85, // 85%
+      },
+    },
   });
 
   console.log('⚙️ Testing advanced configuration...\n');
 
   // Set up comprehensive event handling
-  monitoring.on('performance-alert', (alert) => {
+  monitoring.on('performance-alert', alert => {
     console.log(`🚨 Performance: ${alert.level} - ${alert.message}`);
   });
 
-  monitoring.on('health-status-updated', (status) => {
+  monitoring.on('health-status-updated', status => {
     console.log(`🏥 Health: ${status.overall} (${status.score}/100)`);
   });
 
-  monitoring.on('query-analyzed', (analysis) => {
+  monitoring.on('query-analyzed', analysis => {
     if (analysis.performance.complexity !== 'low') {
-      console.log(`🔍 Query Analysis: ${analysis.queryType} - ${analysis.performance.complexity} complexity`);
+      console.log(
+        `🔍 Query Analysis: ${analysis.queryType} - ${analysis.performance.complexity} complexity`
+      );
     }
   });
 
-  monitoring.on('index-recommendation', (rec) => {
-    console.log(`💡 Index Rec: ${rec.priority} priority for ${rec.tableName}.${rec.columns.join(',')}`);
+  monitoring.on('index-recommendation', rec => {
+    console.log(
+      `💡 Index Rec: ${rec.priority} priority for ${rec.tableName}.${rec.columns.join(',')}`
+    );
   });
 
-  monitoring.on('dashboard-alert', (alert) => {
+  monitoring.on('dashboard-alert', alert => {
     console.log(`📊 Dashboard: ${alert.severity} - ${alert.title}`);
   });
 
-  monitoring.on('metrics-alert', (alert) => {
+  monitoring.on('metrics-alert', alert => {
     console.log(`📈 Metrics: ${alert.severity} - ${alert.description}`);
   });
 
@@ -442,7 +451,7 @@ async function advancedConfigurationExample() {
 
   // Simulate high-load scenario
   console.log('Simulating high-load scenario...');
-  
+
   const promises = [];
   for (let i = 0; i < 20; i++) {
     promises.push(
@@ -458,9 +467,9 @@ async function advancedConfigurationExample() {
       )
     );
   }
-  
+
   await Promise.all(promises);
-  
+
   // Get comprehensive stats
   const stats = monitoring.getStats();
   console.log('\n📊 Final Statistics:');
@@ -478,46 +487,45 @@ async function advancedConfigurationExample() {
 // Main execution function
 async function runExamples() {
   console.log('🚀 SQLite Performance Monitoring System Examples\n');
-  console.log('=' .repeat(60) + '\n');
+  console.log('='.repeat(60) + '\n');
 
   try {
     console.log('Example 1: Basic Usage');
-    console.log('-' .repeat(30));
+    console.log('-'.repeat(30));
     await basicUsageExample();
     await new Promise(resolve => setTimeout(resolve, 2000));
     console.log('\n');
 
     console.log('Example 2: Query Monitoring');
-    console.log('-' .repeat(30));
+    console.log('-'.repeat(30));
     await queryMonitoringExample();
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('\n');
 
     console.log('Example 3: Health Monitoring');
-    console.log('-' .repeat(30));
+    console.log('-'.repeat(30));
     await healthMonitoringExample();
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('\n');
 
     console.log('Example 4: Dashboard and Metrics');
-    console.log('-' .repeat(30));
+    console.log('-'.repeat(30));
     await dashboardExample();
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('\n');
 
     console.log('Example 5: Query Optimization');
-    console.log('-' .repeat(30));
+    console.log('-'.repeat(30));
     await queryOptimizationExample();
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log('\n');
 
     console.log('Example 6: Advanced Configuration');
-    console.log('-' .repeat(30));
+    console.log('-'.repeat(30));
     await advancedConfigurationExample();
     console.log('\n');
 
     console.log('✅ All examples completed successfully!');
-    
   } catch (error) {
     console.error('❌ Error running examples:', error);
   }
@@ -531,7 +539,7 @@ export {
   dashboardExample,
   queryOptimizationExample,
   advancedConfigurationExample,
-  runExamples
+  runExamples,
 };
 
 // Run examples if this file is executed directly

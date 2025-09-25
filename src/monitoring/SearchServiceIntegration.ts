@@ -14,7 +14,7 @@ export class MonitoredSearchService {
     this.knowledgeDB = new KnowledgeDB(dbPath);
     this.monitoring = new MonitoringOrchestrator({
       ...monitoringConfig,
-      database: { path: dbPath.replace('.db', '_monitoring.db') }
+      database: { path: dbPath.replace('.db', '_monitoring.db') },
     });
 
     this.setupMonitoringEventHandlers();
@@ -52,19 +52,18 @@ export class MonitoredSearchService {
     try {
       // Execute the actual search
       result = await this.knowledgeDB.search(query, limit);
-      
+
       // Determine strategy used (simplified)
       strategy = this.determineSearchStrategy(query, result);
-      
+
       // Check if result came from cache (simplified)
       cacheHit = this.checkCacheHit(query);
-
     } catch (err) {
       error = err as Error;
       result = [];
     } finally {
       const duration = performance.now() - startTime;
-      
+
       // Record the search operation in monitoring
       this.monitoring.recordSearch(
         query,
@@ -95,7 +94,7 @@ export class MonitoredSearchService {
       result = [];
     } finally {
       const duration = performance.now() - startTime;
-      
+
       this.monitoring.recordSearch(
         `autocomplete:${prefix}`,
         duration,
@@ -150,10 +149,10 @@ export class MonitoredSearchService {
    */
   async runBenchmarks(): Promise<any> {
     console.log('🚀 Starting search performance benchmarks...');
-    
+
     // Start profiling session
     const sessionId = await this.startProfiling('benchmark');
-    
+
     const benchmarkQueries = [
       'VSAM error',
       'S0C7 abend',
@@ -164,41 +163,41 @@ export class MonitoredSearchService {
       'tag:error',
       'status code',
       'file not found',
-      'memory allocation'
+      'memory allocation',
     ];
 
     const results = [];
-    
+
     for (const query of benchmarkQueries) {
       console.log(`  Testing query: "${query}"`);
-      
+
       // Run multiple iterations
       for (let i = 0; i < 5; i++) {
         const result = await this.search(query);
         results.push({
           query,
           iteration: i + 1,
-          resultCount: result.length
+          resultCount: result.length,
         });
       }
     }
 
     // Stop profiling and get session data
     const profilingData = await this.stopProfiling();
-    
+
     // Get final metrics
     const metrics = await this.getMetrics();
-    
+
     console.log('✅ Benchmark completed');
     console.log(`📊 Average response time: ${metrics.avgResponseTime.toFixed(2)}ms`);
     console.log(`🎯 SLA compliance: ${metrics.slaCompliance.toFixed(1)}%`);
-    
+
     return {
       queries: benchmarkQueries,
       results,
       profilingData,
       metrics,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -207,18 +206,18 @@ export class MonitoredSearchService {
    */
   async runLoadTest(duration: number = 60, concurrency: number = 10): Promise<any> {
     console.log(`🔥 Starting load test: ${concurrency} concurrent users for ${duration}s`);
-    
+
     const sessionId = await this.startProfiling('load_test');
     const startTime = Date.now();
-    const endTime = startTime + (duration * 1000);
-    
+    const endTime = startTime + duration * 1000;
+
     const testQueries = [
       'error handling',
       'VSAM problems',
       'JCL errors',
       'batch jobs',
       'DB2 issues',
-      'COBOL debugging'
+      'COBOL debugging',
     ];
 
     const workers = [];
@@ -231,15 +230,15 @@ export class MonitoredSearchService {
 
     // Wait for all workers to complete
     await Promise.all(workers);
-    
+
     const profilingData = await this.stopProfiling();
     const metrics = await this.getMetrics();
-    
+
     console.log('✅ Load test completed');
     console.log(`📊 Total queries: ${results.length}`);
     console.log(`⚡ Queries per second: ${(results.length / duration).toFixed(2)}`);
     console.log(`🎯 SLA violations: ${results.filter(r => r.duration > 1000).length}`);
-    
+
     return {
       duration,
       concurrency,
@@ -247,24 +246,29 @@ export class MonitoredSearchService {
       qps: results.length / duration,
       slaViolations: results.filter(r => r.duration > 1000).length,
       profilingData,
-      metrics
+      metrics,
     };
   }
 
-  private async loadTestWorker(workerId: number, endTime: number, queries: string[], results: any[]): Promise<void> {
+  private async loadTestWorker(
+    workerId: number,
+    endTime: number,
+    queries: string[],
+    results: any[]
+  ): Promise<void> {
     while (Date.now() < endTime) {
       const query = queries[Math.floor(Math.random() * queries.length)];
       const startTime = performance.now();
-      
+
       try {
         await this.search(query);
         const duration = performance.now() - startTime;
-        
+
         results.push({
           workerId,
           query,
           duration,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       } catch (error) {
         results.push({
@@ -272,29 +276,31 @@ export class MonitoredSearchService {
           query,
           duration: 0,
           error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
-      
+
       // Small delay to prevent overwhelming the system
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
 
   private setupMonitoringEventHandlers(): void {
-    this.monitoring.on('sla_violation', (violation) => {
-      console.warn(`⚠️  SLA Violation: ${violation.metric} = ${violation.value} (threshold: ${violation.threshold})`);
+    this.monitoring.on('sla_violation', violation => {
+      console.warn(
+        `⚠️  SLA Violation: ${violation.metric} = ${violation.value} (threshold: ${violation.threshold})`
+      );
     });
 
-    this.monitoring.on('alert_triggered', (alert) => {
+    this.monitoring.on('alert_triggered', alert => {
       console.log(`🚨 Alert: ${alert.rule.description}`);
     });
 
-    this.monitoring.on('bottleneck_detected', (bottleneck) => {
+    this.monitoring.on('bottleneck_detected', bottleneck => {
       console.log(`🐌 Bottleneck detected: ${bottleneck.operation} (${bottleneck.impact})`);
     });
 
-    this.monitoring.on('dashboard_update', (data) => {
+    this.monitoring.on('dashboard_update', data => {
       // Optional: Log dashboard updates
       // console.log('📊 Dashboard updated');
     });
@@ -318,7 +324,7 @@ export class MonitoredSearchService {
 // Example usage function
 export async function demonstrateMonitoring(): Promise<void> {
   console.log('🔍 Initializing Monitored Search Service Demo');
-  
+
   const searchService = new MonitoredSearchService();
   await searchService.initialize();
 
@@ -343,11 +349,10 @@ export async function demonstrateMonitoring(): Promise<void> {
     // Generate report
     console.log('\n📄 Generating performance report...');
     const report = await searchService.generateReport(1); // Last 1 hour
-    
+
     console.log('\n✅ Monitoring demonstration completed successfully');
     console.log('📊 All performance data has been collected and analyzed');
     console.log('🎯 Search service is meeting <1s SLA requirement');
-
   } finally {
     await searchService.shutdown();
   }

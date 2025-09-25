@@ -68,7 +68,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
     searchResponse: 1000, // 1 second
     memoryGrowthRate: 10, // 10MB per hour
     ipcLatency: 5, // 5ms
-    windowOperation: 100 // 100ms
+    windowOperation: 100, // 100ms
   };
 
   private renderTimings: number[] = [];
@@ -144,9 +144,10 @@ export class ElectronPerformanceMetrics extends EventEmitter {
     const growthRate = timeDiff > 0 ? memoryGrowth / timeDiff : 0;
 
     // Calculate average render time
-    const avgRenderTime = this.renderTimings.length > 0
-      ? this.renderTimings.reduce((a, b) => a + b, 0) / this.renderTimings.length
-      : 0;
+    const avgRenderTime =
+      this.renderTimings.length > 0
+        ? this.renderTimings.reduce((a, b) => a + b, 0) / this.renderTimings.length
+        : 0;
 
     // Calculate frame rate
     const frameRate = avgRenderTime > 0 ? 1000 / avgRenderTime : 0;
@@ -172,7 +173,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         heapTotal: memoryUsage.heapTotal,
         external: memoryUsage.external,
         rss: memoryUsage.rss,
-        growthRate
+        growthRate,
       },
       memoryTargetMet: growthRate <= this.thresholds.memoryGrowthRate,
 
@@ -187,7 +188,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
       // System Overview
       timestamp,
       processId: process.pid,
-      cpuUsage
+      cpuUsage,
     };
 
     this.metrics.push(metrics);
@@ -421,7 +422,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         type: 'render-time',
         value: metrics.renderTime,
         threshold: this.thresholds.renderTime,
-        message: `Render time ${metrics.renderTime.toFixed(2)}ms exceeds target of ${this.thresholds.renderTime}ms`
+        message: `Render time ${metrics.renderTime.toFixed(2)}ms exceeds target of ${this.thresholds.renderTime}ms`,
       });
     }
 
@@ -430,7 +431,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         type: 'search-response',
         value: metrics.searchResponseTime,
         threshold: this.thresholds.searchResponse,
-        message: `Search response time ${metrics.searchResponseTime.toFixed(2)}ms exceeds target of ${this.thresholds.searchResponse}ms`
+        message: `Search response time ${metrics.searchResponseTime.toFixed(2)}ms exceeds target of ${this.thresholds.searchResponse}ms`,
       });
     }
 
@@ -439,7 +440,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         type: 'memory-growth',
         value: metrics.memoryUsage.growthRate,
         threshold: this.thresholds.memoryGrowthRate,
-        message: `Memory growth rate ${metrics.memoryUsage.growthRate.toFixed(2)}MB/h exceeds target of ${this.thresholds.memoryGrowthRate}MB/h`
+        message: `Memory growth rate ${metrics.memoryUsage.growthRate.toFixed(2)}MB/h exceeds target of ${this.thresholds.memoryGrowthRate}MB/h`,
       });
     }
 
@@ -448,7 +449,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         type: 'ipc-latency',
         value: metrics.ipcLatency,
         threshold: this.thresholds.ipcLatency,
-        message: `IPC latency ${metrics.ipcLatency.toFixed(2)}ms exceeds target of ${this.thresholds.ipcLatency}ms`
+        message: `IPC latency ${metrics.ipcLatency.toFixed(2)}ms exceeds target of ${this.thresholds.ipcLatency}ms`,
       });
     }
 
@@ -457,7 +458,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         type: 'window-operation',
         value: metrics.windowOperationTime,
         threshold: this.thresholds.windowOperation,
-        message: `Window operation time ${metrics.windowOperationTime.toFixed(2)}ms exceeds target of ${this.thresholds.windowOperation}ms`
+        message: `Window operation time ${metrics.windowOperationTime.toFixed(2)}ms exceeds target of ${this.thresholds.windowOperation}ms`,
       });
     }
   }
@@ -533,7 +534,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         averageIPCLatency: 0,
         averageWindowOperationTime: 0,
         memoryGrowthTrend: 0,
-        thresholdViolations: 0
+        thresholdViolations: 0,
       };
     }
 
@@ -543,12 +544,18 @@ export class ElectronPerformanceMetrics extends EventEmitter {
       averageRenderTime: recent.reduce((sum, m) => sum + m.renderTime, 0) / recent.length,
       averageSearchTime: recent.reduce((sum, m) => sum + m.searchResponseTime, 0) / recent.length,
       averageIPCLatency: recent.reduce((sum, m) => sum + m.ipcLatency, 0) / recent.length,
-      averageWindowOperationTime: recent.reduce((sum, m) => sum + m.windowOperationTime, 0) / recent.length,
-      memoryGrowthTrend: recent.reduce((sum, m) => sum + m.memoryUsage.growthRate, 0) / recent.length,
-      thresholdViolations: recent.filter(m =>
-        !m.renderTargetMet || !m.searchTargetMet || !m.memoryTargetMet ||
-        !m.ipcTargetMet || !m.windowTargetMet
-      ).length
+      averageWindowOperationTime:
+        recent.reduce((sum, m) => sum + m.windowOperationTime, 0) / recent.length,
+      memoryGrowthTrend:
+        recent.reduce((sum, m) => sum + m.memoryUsage.growthRate, 0) / recent.length,
+      thresholdViolations: recent.filter(
+        m =>
+          !m.renderTargetMet ||
+          !m.searchTargetMet ||
+          !m.memoryTargetMet ||
+          !m.ipcTargetMet ||
+          !m.windowTargetMet
+      ).length,
     };
   }
 
@@ -558,8 +565,14 @@ export class ElectronPerformanceMetrics extends EventEmitter {
   public exportMetrics(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
       const headers = [
-        'timestamp', 'renderTime', 'frameRate', 'searchResponseTime',
-        'memoryHeapUsed', 'memoryGrowthRate', 'ipcLatency', 'windowOperationTime'
+        'timestamp',
+        'renderTime',
+        'frameRate',
+        'searchResponseTime',
+        'memoryHeapUsed',
+        'memoryGrowthRate',
+        'ipcLatency',
+        'windowOperationTime',
       ];
 
       const rows = this.metrics.map(m => [
@@ -570,7 +583,7 @@ export class ElectronPerformanceMetrics extends EventEmitter {
         m.memoryUsage.heapUsed,
         m.memoryUsage.growthRate,
         m.ipcLatency,
-        m.windowOperationTime
+        m.windowOperationTime,
       ]);
 
       return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');

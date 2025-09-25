@@ -93,22 +93,30 @@ class SimpleUnifiedTest {
 
     try {
       // Check if unified schema is detected correctly
-      const unifiedTableExists = this.db.prepare(`
+      const unifiedTableExists = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM sqlite_master
         WHERE type='table' AND name='entries'
-      `).get();
+      `
+        )
+        .get();
 
       if (unifiedTableExists.count === 0) {
         throw new Error('Entries table not found');
       }
 
       // Check if it has entry_type column
-      const hasEntryType = this.db.prepare(`
+      const hasEntryType = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM pragma_table_info('entries')
         WHERE name='entry_type'
-      `).get();
+      `
+        )
+        .get();
 
       if (hasEntryType.count === 0) {
         throw new Error('entry_type column not found');
@@ -144,14 +152,20 @@ class SimpleUnifiedTest {
         'JCL',
         'medium',
         'test-user',
-        0, 0, 0,
+        0,
+        0,
+        0,
         JSON.stringify(['test', 'jcl'])
       );
 
       // Verify it was inserted correctly
-      const kbEntry = this.db.prepare(`
+      const kbEntry = this.db
+        .prepare(
+          `
         SELECT * FROM entries WHERE id = ? AND entry_type = 'knowledge'
-      `).get('test-kb-1');
+      `
+        )
+        .get('test-kb-1');
 
       if (!kbEntry) {
         throw new Error('Knowledge entry not found after insertion');
@@ -170,9 +184,13 @@ class SimpleUnifiedTest {
 
       updateKB.run('test-kb-1');
 
-      const updatedKB = this.db.prepare(`
+      const updatedKB = this.db
+        .prepare(
+          `
         SELECT usage_count, success_count FROM entries WHERE id = ?
-      `).get('test-kb-1');
+      `
+        )
+        .get('test-kb-1');
 
       if (updatedKB.usage_count !== 1 || updatedKB.success_count !== 1) {
         throw new Error('KB metrics update failed');
@@ -214,9 +232,13 @@ class SimpleUnifiedTest {
       );
 
       // Verify it was inserted correctly
-      const incident = this.db.prepare(`
+      const incident = this.db
+        .prepare(
+          `
         SELECT * FROM entries WHERE id = ? AND entry_type = 'incident'
-      `).get('test-inc-1');
+      `
+        )
+        .get('test-inc-1');
 
       if (!incident) {
         throw new Error('Incident not found after insertion');
@@ -235,9 +257,13 @@ class SimpleUnifiedTest {
 
       updateStatus.run('em_tratamento', 'test-inc-1');
 
-      const updatedIncident = this.db.prepare(`
+      const updatedIncident = this.db
+        .prepare(
+          `
         SELECT status FROM entries WHERE id = ?
-      `).get('test-inc-1');
+      `
+        )
+        .get('test-inc-1');
 
       if (updatedIncident.status !== 'em_tratamento') {
         throw new Error('Status transition failed');
@@ -252,9 +278,13 @@ class SimpleUnifiedTest {
 
       assignIncident.run('test-assignee', 'test-inc-1');
 
-      const assignedIncident = this.db.prepare(`
+      const assignedIncident = this.db
+        .prepare(
+          `
         SELECT assigned_to FROM entries WHERE id = ?
-      `).get('test-inc-1');
+      `
+        )
+        .get('test-inc-1');
 
       if (assignedIncident.assigned_to !== 'test-assignee') {
         throw new Error('Incident assignment failed');
@@ -325,40 +355,56 @@ class SimpleUnifiedTest {
 
     try {
       // Test knowledge-only filter
-      const kbOnly = this.db.prepare(`
+      const kbOnly = this.db
+        .prepare(
+          `
         SELECT * FROM entries WHERE entry_type = 'knowledge'
-      `).all();
+      `
+        )
+        .all();
 
       if (kbOnly.length === 0 || kbOnly.some(e => e.entry_type !== 'knowledge')) {
         throw new Error('Knowledge-only filter failed');
       }
 
       // Test incident-only filter
-      const incidentOnly = this.db.prepare(`
+      const incidentOnly = this.db
+        .prepare(
+          `
         SELECT * FROM entries WHERE entry_type = 'incident'
-      `).all();
+      `
+        )
+        .all();
 
       if (incidentOnly.length === 0 || incidentOnly.some(e => e.entry_type !== 'incident')) {
         throw new Error('Incident-only filter failed');
       }
 
       // Test backward compatibility views (simulated)
-      const kbEntries = this.db.prepare(`
+      const kbEntries = this.db
+        .prepare(
+          `
         SELECT
           id, title, problem, solution, category, severity,
           created_at, updated_at, created_by, usage_count,
           success_count, failure_count, archived
         FROM entries
         WHERE entry_type = 'knowledge'
-      `).all();
+      `
+        )
+        .all();
 
-      const incidents = this.db.prepare(`
+      const incidents = this.db
+        .prepare(
+          `
         SELECT
           id, title, description, category, severity, status, priority,
           assigned_to, reporter, created_at, updated_at, archived
         FROM entries
         WHERE entry_type = 'incident'
-      `).all();
+      `
+        )
+        .all();
 
       if (kbEntries.length === 0 || incidents.length === 0) {
         throw new Error('Backward compatibility views failed');
@@ -381,7 +427,7 @@ class SimpleUnifiedTest {
       () => this.testKnowledgeEntryOperations(),
       () => this.testIncidentOperations(),
       () => this.testUnifiedSearch(),
-      () => this.testTypeFiltering()
+      () => this.testTypeFiltering(),
     ];
 
     let passed = 0;

@@ -48,14 +48,18 @@ class PerformanceBenchmarks {
 
     this.running.set(name, {
       startTime,
-      startMemory
+      startMemory,
     });
   }
 
   /**
    * End a benchmark measurement
    */
-  public end(name: string, operations: number = 1, metadata?: Record<string, any>): BenchmarkResult | null {
+  public end(
+    name: string,
+    operations: number = 1,
+    metadata?: Record<string, any>
+  ): BenchmarkResult | null {
     const runningBenchmark = this.running.get(name);
     if (!runningBenchmark) {
       console.warn(`Benchmark "${name}" was not started`);
@@ -72,10 +76,12 @@ class PerformanceBenchmarks {
       duration,
       operations,
       opsPerSecond,
-      memoryUsage: endMemory && runningBenchmark.startMemory ?
-        endMemory - runningBenchmark.startMemory : undefined,
+      memoryUsage:
+        endMemory && runningBenchmark.startMemory
+          ? endMemory - runningBenchmark.startMemory
+          : undefined,
       timestamp: Date.now(),
-      metadata
+      metadata,
     };
 
     // Store result
@@ -132,8 +138,8 @@ class PerformanceBenchmarks {
 
     // Calculate statistics
     const durations = results.map(r => r.duration);
-    const fastest = results.reduce((prev, curr) => prev.duration < curr.duration ? prev : curr);
-    const slowest = results.reduce((prev, curr) => prev.duration > curr.duration ? prev : curr);
+    const fastest = results.reduce((prev, curr) => (prev.duration < curr.duration ? prev : curr));
+    const slowest = results.reduce((prev, curr) => (prev.duration > curr.duration ? prev : curr));
     const average = durations.reduce((sum, d) => sum + d, 0) / durations.length;
     const sorted = [...durations].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
@@ -148,8 +154,8 @@ class PerformanceBenchmarks {
         fastest,
         slowest,
         average,
-        median
-      }
+        median,
+      },
     };
 
     return suite;
@@ -271,7 +277,7 @@ export class ReactComponentBenchmarks {
         renderCount,
         averageRenderTime: avgTime,
         maxRenderTime: maxTime,
-        recentRenders: times.slice(-10)
+        recentRenders: times.slice(-10),
       };
     }
 
@@ -303,17 +309,17 @@ export class WebPerformanceMetrics {
    * Get Core Web Vitals
    */
   static async getCoreWebVitals(): Promise<Record<string, number | null>> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const metrics = {
         FCP: null as number | null,
         LCP: null as number | null,
         FID: null as number | null,
         CLS: null as number | null,
-        TTFB: null as number | null
+        TTFB: null as number | null,
       };
 
       // Get FCP and LCP
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (entry.name === 'first-contentful-paint') {
             metrics.FCP = entry.startTime;
@@ -363,15 +369,17 @@ export class WebPerformanceMetrics {
       domProcessing: timing.domContentLoadedEventStart - timing.responseEnd,
       domContentLoaded: timing.domContentLoadedEventEnd - timing.domContentLoadedEventStart,
       loadEvent: timing.loadEventEnd - timing.loadEventStart,
-      totalTime: timing.loadEventEnd - navigationStart
+      totalTime: timing.loadEventEnd - navigationStart,
     };
   }
 
   /**
    * Monitor frame rate
    */
-  static monitorFrameRate(duration: number = 5000): Promise<{ averageFPS: number; minFPS: number; maxFPS: number }> {
-    return new Promise((resolve) => {
+  static monitorFrameRate(
+    duration: number = 5000
+  ): Promise<{ averageFPS: number; minFPS: number; maxFPS: number }> {
+    return new Promise(resolve => {
       const frames: number[] = [];
       let lastTime = performance.now();
       let animationId: number;
@@ -432,7 +440,7 @@ export class DOMPerformanceMetrics {
       depth: maxDepth,
       flexElements: flexElements.length,
       gridElements: gridElements.length,
-      uniqueTags: uniqueTags.size
+      uniqueTags: uniqueTags.size,
     };
   }
 
@@ -462,7 +470,7 @@ export class DOMPerformanceMetrics {
     droppedFrames: number;
     smoothness: number;
   }> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const frameTimes: number[] = [];
       let lastFrameTime = performance.now();
       let animationId: number;
@@ -479,7 +487,8 @@ export class DOMPerformanceMetrics {
 
         lastFrameTime = currentTime;
 
-        if (frameTimes.length < 120) { // Measure for ~2 seconds at 60fps
+        if (frameTimes.length < 120) {
+          // Measure for ~2 seconds at 60fps
           animationId = requestAnimationFrame(measureFrame);
         } else {
           cancelAnimationFrame(animationId);
@@ -490,7 +499,7 @@ export class DOMPerformanceMetrics {
           resolve({
             averageFrameTime,
             droppedFrames,
-            smoothness
+            smoothness,
           });
         }
       };
@@ -518,12 +527,17 @@ export const performanceBenchmarks = PerformanceBenchmarks.getInstance();
 // Convenience functions
 export const benchmark = {
   start: (name: string) => performanceBenchmarks.start(name),
-  end: (name: string, ops?: number, metadata?: Record<string, any>) => performanceBenchmarks.end(name, ops, metadata),
-  measure: <T>(name: string, fn: () => T | Promise<T>, ops?: number, metadata?: Record<string, any>) =>
-    performanceBenchmarks.measure(name, fn, ops, metadata),
+  end: (name: string, ops?: number, metadata?: Record<string, any>) =>
+    performanceBenchmarks.end(name, ops, metadata),
+  measure: <T>(
+    name: string,
+    fn: () => T | Promise<T>,
+    ops?: number,
+    metadata?: Record<string, any>
+  ) => performanceBenchmarks.measure(name, fn, ops, metadata),
   suite: (name: string, fn: () => any, iterations?: number, ops?: number) =>
     performanceBenchmarks.runSuite(name, fn, iterations, ops),
   results: (name?: string) => performanceBenchmarks.getResults(name),
   report: () => performanceBenchmarks.generateReport(),
-  clear: (name?: string) => performanceBenchmarks.clear(name)
+  clear: (name?: string) => performanceBenchmarks.clear(name),
 };

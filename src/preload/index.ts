@@ -24,7 +24,8 @@ const electronAPI: ElectronAPI = {
     getEntry: (id: string) => ipcRenderer.invoke('kb:getEntry', id),
     addEntry: (entry: any) => ipcRenderer.invoke('kb:addEntry', entry),
     updateEntry: (id: string, entry: any) => ipcRenderer.invoke('kb:updateEntry', id, entry),
-    rateEntry: (id: string, successful: boolean) => ipcRenderer.invoke('kb:rateEntry', id, successful),
+    rateEntry: (id: string, successful: boolean) =>
+      ipcRenderer.invoke('kb:rateEntry', id, successful),
     getMetrics: () => ipcRenderer.invoke('kb:getMetrics'),
   },
 };

@@ -63,13 +63,13 @@ export class ColorAccessibilityTester {
         rgb = {
           r: parseInt(hex[0] + hex[0], 16),
           g: parseInt(hex[1] + hex[1], 16),
-          b: parseInt(hex[2] + hex[2], 16)
+          b: parseInt(hex[2] + hex[2], 16),
         };
       } else if (hex.length === 6) {
         rgb = {
           r: parseInt(hex.slice(0, 2), 16),
           g: parseInt(hex.slice(2, 4), 16),
-          b: parseInt(hex.slice(4, 6), 16)
+          b: parseInt(hex.slice(4, 6), 16),
         };
       } else {
         return null;
@@ -83,7 +83,7 @@ export class ColorAccessibilityTester {
       rgb = {
         r: parseInt(match[1]),
         g: parseInt(match[2]),
-        b: parseInt(match[3])
+        b: parseInt(match[3]),
       };
     }
     // Handle named colors (basic set)
@@ -95,7 +95,7 @@ export class ColorAccessibilityTester {
         green: { r: 0, g: 128, b: 0 },
         blue: { r: 0, g: 0, b: 255 },
         gray: { r: 128, g: 128, b: 128 },
-        grey: { r: 128, g: 128, b: 128 }
+        grey: { r: 128, g: 128, b: 128 },
       };
 
       if (!namedColors[color]) return null;
@@ -154,10 +154,17 @@ export class ColorAccessibilityTester {
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
 
       switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-        default: h = 0;
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+        default:
+          h = 0;
       }
       h /= 6;
     }
@@ -165,7 +172,7 @@ export class ColorAccessibilityTester {
     return {
       h: Math.round(h * 360),
       s: Math.round(s * 100),
-      l: Math.round(l * 100)
+      l: Math.round(l * 100),
     };
   }
 
@@ -183,7 +190,7 @@ export class ColorAccessibilityTester {
         wcagAAA: false,
         wcagAALarge: false,
         wcagAAALarge: false,
-        recommendation: 'Invalid colors provided'
+        recommendation: 'Invalid colors provided',
       };
     }
 
@@ -216,7 +223,7 @@ export class ColorAccessibilityTester {
       wcagAAA,
       wcagAALarge,
       wcagAAALarge,
-      recommendation
+      recommendation,
     };
   }
 
@@ -243,7 +250,7 @@ export class ColorAccessibilityTester {
       const newColor = this.hslToHex({
         h: fgColor.hsl.h,
         s: fgColor.hsl.s,
-        l: adjustedL
+        l: adjustedL,
       });
 
       const contrast = this.getContrastRatio(newColor, background);
@@ -257,7 +264,7 @@ export class ColorAccessibilityTester {
       const newColor = this.hslToHex({
         h: fgColor.hsl.h,
         s: saturation,
-        l: fgColor.hsl.l
+        l: fgColor.hsl.l,
       });
 
       const contrast = this.getContrastRatio(newColor, background);
@@ -281,9 +288,9 @@ export class ColorAccessibilityTester {
     const hueToRgb = (p: number, q: number, t: number): number => {
       if (t < 0) t += 1;
       if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
       return p;
     };
 
@@ -294,9 +301,9 @@ export class ColorAccessibilityTester {
     } else {
       const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       const p = 2 * l - q;
-      r = hueToRgb(p, q, h + 1/3);
+      r = hueToRgb(p, q, h + 1 / 3);
       g = hueToRgb(p, q, h);
-      b = hueToRgb(p, q, h - 1/3);
+      b = hueToRgb(p, q, h - 1 / 3);
     }
 
     const toHex = (c: number): string => {
@@ -310,7 +317,10 @@ export class ColorAccessibilityTester {
   /**
    * Test color blindness accessibility
    */
-  static testColorBlindness(color1: string, color2: string): {
+  static testColorBlindness(
+    color1: string,
+    color2: string
+  ): {
     deuteranopia: ContrastResult;
     protanopia: ContrastResult;
     tritanopia: ContrastResult;
@@ -319,7 +329,10 @@ export class ColorAccessibilityTester {
     const issues: string[] = [];
 
     // Simulate color blindness (simplified simulation)
-    const simulateColorBlindness = (color: string, type: 'deuteranopia' | 'protanopia' | 'tritanopia'): string => {
+    const simulateColorBlindness = (
+      color: string,
+      type: 'deuteranopia' | 'protanopia' | 'tritanopia'
+    ): string => {
       const colorInfo = this.parseColor(color);
       if (!colorInfo) return color;
 
@@ -353,22 +366,28 @@ export class ColorAccessibilityTester {
     );
 
     if (!deuteranopia.wcagAA) {
-      issues.push('Color combination may not be accessible for users with deuteranopia (green blindness)');
+      issues.push(
+        'Color combination may not be accessible for users with deuteranopia (green blindness)'
+      );
     }
 
     if (!protanopia.wcagAA) {
-      issues.push('Color combination may not be accessible for users with protanopia (red blindness)');
+      issues.push(
+        'Color combination may not be accessible for users with protanopia (red blindness)'
+      );
     }
 
     if (!tritanopia.wcagAA) {
-      issues.push('Color combination may not be accessible for users with tritanopia (blue blindness)');
+      issues.push(
+        'Color combination may not be accessible for users with tritanopia (blue blindness)'
+      );
     }
 
     return {
       deuteranopia,
       protanopia,
       tritanopia,
-      issues
+      issues,
     };
   }
 
@@ -405,7 +424,7 @@ export class ColorAccessibilityTester {
           description: 'Text contrast does not meet WCAG AA requirements',
           currentValue: contrast.ratio,
           requiredValue: 4.5,
-          suggestion: contrast.recommendation
+          suggestion: contrast.recommendation,
         });
       }
     }
@@ -413,9 +432,10 @@ export class ColorAccessibilityTester {
     // Test focus indicators
     element.focus();
     const focusStyle = window.getComputedStyle(element);
-    const hasVisibleFocus = focusStyle.outline !== 'none' ||
-                           focusStyle.boxShadow !== 'none' ||
-                           focusStyle.backgroundColor !== computedStyle.backgroundColor;
+    const hasVisibleFocus =
+      focusStyle.outline !== 'none' ||
+      focusStyle.boxShadow !== 'none' ||
+      focusStyle.backgroundColor !== computedStyle.backgroundColor;
 
     maxScore += 15;
     if (hasVisibleFocus) {
@@ -428,7 +448,7 @@ export class ColorAccessibilityTester {
         description: 'No visible focus indicator',
         currentValue: 0,
         requiredValue: 1,
-        suggestion: 'Add visible focus indicators with adequate contrast'
+        suggestion: 'Add visible focus indicators with adequate contrast',
       });
     }
 
@@ -450,7 +470,7 @@ export class ColorAccessibilityTester {
           description: 'Color combination may not be accessible for color blind users',
           currentValue: colorBlindTest.issues.length,
           requiredValue: 0,
-          suggestion: 'Use patterns or textures in addition to color'
+          suggestion: 'Use patterns or textures in addition to color',
         });
       }
     }
@@ -469,7 +489,7 @@ export class ColorAccessibilityTester {
       issues,
       suggestions,
       overallScore,
-      wcagLevel
+      wcagLevel,
     };
   }
 
@@ -493,20 +513,29 @@ export class ColorAccessibilityTester {
   } {
     const details = elements.map(element => ({
       element,
-      report: this.auditAccessibility(element)
+      report: this.auditAccessibility(element),
     }));
 
     const compliantElements = details.filter(d => d.report.compliant).length;
-    const criticalIssues = details.reduce((sum, d) => sum + d.report.issues.filter(i => i.severity === 'critical').length, 0);
-    const majorIssues = details.reduce((sum, d) => sum + d.report.issues.filter(i => i.severity === 'major').length, 0);
-    const minorIssues = details.reduce((sum, d) => sum + d.report.issues.filter(i => i.severity === 'minor').length, 0);
+    const criticalIssues = details.reduce(
+      (sum, d) => sum + d.report.issues.filter(i => i.severity === 'critical').length,
+      0
+    );
+    const majorIssues = details.reduce(
+      (sum, d) => sum + d.report.issues.filter(i => i.severity === 'major').length,
+      0
+    );
+    const minorIssues = details.reduce(
+      (sum, d) => sum + d.report.issues.filter(i => i.severity === 'minor').length,
+      0
+    );
 
     const recommendations: string[] = [
       'Ensure all interactive elements have visible focus indicators',
       'Maintain contrast ratios of at least 4.5:1 for normal text and 3:1 for large text',
       'Test color combinations with color blindness simulators',
       'Use semantic HTML elements for better accessibility',
-      'Provide alternative text for images and icons'
+      'Provide alternative text for images and icons',
     ];
 
     if (criticalIssues > 0) {
@@ -520,10 +549,10 @@ export class ColorAccessibilityTester {
         compliancePercentage: Math.round((compliantElements / elements.length) * 100),
         criticalIssues,
         majorIssues,
-        minorIssues
+        minorIssues,
       },
       details,
-      recommendations
+      recommendations,
     };
   }
 }
@@ -549,7 +578,8 @@ export class HighContrastTester {
     const borderColor = computedStyle.borderColor;
 
     // Check if colors would be forced in high contrast mode
-    const hasVisibleBorder = borderColor && borderColor !== 'rgba(0, 0, 0, 0)' && computedStyle.borderWidth !== '0px';
+    const hasVisibleBorder =
+      borderColor && borderColor !== 'rgba(0, 0, 0, 0)' && computedStyle.borderWidth !== '0px';
     const hasVisibleBackground = backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)';
 
     if (!hasVisibleBorder && !hasVisibleBackground) {
@@ -566,7 +596,7 @@ export class HighContrastTester {
     return {
       isVisible: issues.length === 0,
       issues,
-      suggestions
+      suggestions,
     };
   }
 

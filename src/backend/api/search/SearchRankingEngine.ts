@@ -76,24 +76,24 @@ export class SearchRankingEngine {
         popularity: 0.2,
         freshness: 0.1,
         userContext: 0.2,
-        qualityScore: 0.1
+        qualityScore: 0.1,
       },
       boosts: {
         exactMatch: 1.5,
         titleMatch: 1.3,
         categoryMatch: 1.2,
         tagMatch: 1.1,
-        userPreference: 1.4
+        userPreference: 1.4,
       },
       penalties: {
         duplicateContent: 0.8,
         lowQuality: 0.7,
-        deprecatedContent: 0.6
+        deprecatedContent: 0.6,
       },
       ...config,
       weights: { ...this.getDefaultWeights(), ...config.weights },
       boosts: { ...this.getDefaultBoosts(), ...config.boosts },
-      penalties: { ...this.getDefaultPenalties(), ...config.penalties }
+      penalties: { ...this.getDefaultPenalties(), ...config.penalties },
     };
   }
 
@@ -118,11 +118,14 @@ export class SearchRankingEngine {
         ...result,
         score: finalScore,
         ranking_features: features,
-        debug_ranking: process.env.NODE_ENV === 'development' ? {
-          original_score: result.score,
-          features,
-          algorithm: this.config.algorithm
-        } : undefined
+        debug_ranking:
+          process.env.NODE_ENV === 'development'
+            ? {
+                original_score: result.score,
+                features,
+                algorithm: this.config.algorithm,
+              }
+            : undefined,
       };
     });
 
@@ -145,9 +148,9 @@ export class SearchRankingEngine {
         preferences: {
           categories: new Map<string, number>(),
           tags: new Map<string, number>(),
-          contentTypes: new Map<string, number>()
+          contentTypes: new Map<string, number>(),
         },
-        totalInteractions: 0
+        totalInteractions: 0,
       });
     }
 
@@ -156,7 +159,7 @@ export class SearchRankingEngine {
       entryId,
       action,
       timestamp: new Date(),
-      metadata
+      metadata,
     });
     userData.totalInteractions++;
 
@@ -182,11 +185,11 @@ export class SearchRankingEngine {
     if (!userData) return null;
 
     // Analyze user interactions to determine preferences
-    const categoryScores = Array.from(userData.preferences.categories.entries())
-      .sort(([, a], [, b]) => b - a);
+    const categoryScores = Array.from(userData.preferences.categories.entries()).sort(
+      ([, a], [, b]) => b - a
+    );
 
-    const tagScores = Array.from(userData.preferences.tags.entries())
-      .sort(([, a], [, b]) => b - a);
+    const tagScores = Array.from(userData.preferences.tags.entries()).sort(([, a], [, b]) => b - a);
 
     // Determine expertise level based on interaction patterns
     const expertiseLevel = this.determineExpertiseLevel(userData);
@@ -195,7 +198,7 @@ export class SearchRankingEngine {
       preferredCategories: categoryScores.slice(0, 5).map(([cat]) => cat),
       preferredTags: tagScores.slice(0, 10).map(([tag]) => tag),
       expertiseLevel,
-      interactionScore: Math.min(userData.totalInteractions / 100, 1.0)
+      interactionScore: Math.min(userData.totalInteractions / 100, 1.0),
     };
   }
 
@@ -215,7 +218,7 @@ export class SearchRankingEngine {
     const currentScore = this.contentQualityScores.get(entryId) || 0.5;
 
     // Weighted average with new rating
-    const newScore = (currentScore * 0.8) + (rating * 0.2);
+    const newScore = currentScore * 0.8 + rating * 0.2;
 
     // Apply feedback adjustments
     let adjustedScore = newScore;
@@ -247,8 +250,10 @@ export class SearchRankingEngine {
     };
   } {
     const qualityScores = Array.from(this.contentQualityScores.values());
-    const totalInteractions = Array.from(this.userInteractionData.values())
-      .reduce((sum, user) => sum + user.totalInteractions, 0);
+    const totalInteractions = Array.from(this.userInteractionData.values()).reduce(
+      (sum, user) => sum + user.totalInteractions,
+      0
+    );
 
     return {
       algorithm: this.config.algorithm,
@@ -257,14 +262,13 @@ export class SearchRankingEngine {
         excellent: qualityScores.filter(s => s >= 0.8).length,
         good: qualityScores.filter(s => s >= 0.6 && s < 0.8).length,
         average: qualityScores.filter(s => s >= 0.4 && s < 0.6).length,
-        poor: qualityScores.filter(s => s < 0.4).length
+        poor: qualityScores.filter(s => s < 0.4).length,
       },
       userEngagement: {
         activeUsers: this.userInteractionData.size,
-        avgInteractionsPerUser: this.userInteractionData.size > 0
-          ? totalInteractions / this.userInteractionData.size
-          : 0
-      }
+        avgInteractionsPerUser:
+          this.userInteractionData.size > 0 ? totalInteractions / this.userInteractionData.size : 0,
+      },
     };
   }
 
@@ -280,19 +284,24 @@ export class SearchRankingEngine {
       result.entry.title,
       result.entry.problem,
       result.entry.solution,
-      result.entry.tags.join(' ')
-    ].join(' ').toLowerCase();
+      result.entry.tags.join(' '),
+    ]
+      .join(' ')
+      .toLowerCase();
 
     return {
       bm25Score: result.bm25_score || 0,
       tfIdfScore: this.calculateTfIdfScore(entryText, queryTerms),
       popularityScore: this.calculatePopularityScore(result.entry),
-      freshnessScore: this.calculateFreshnessScore(result.entry.created_at, result.entry.updated_at),
+      freshnessScore: this.calculateFreshnessScore(
+        result.entry.created_at,
+        result.entry.updated_at
+      ),
       qualityScore: this.contentQualityScores.get(result.entry.id) || 0.5,
       userContextScore: this.calculateUserContextScore(result, userContext),
       semanticSimilarity: this.calculateSemanticSimilarity(entryText, query),
       queryTermMatches: this.countQueryTermMatches(entryText, queryTerms),
-      fieldMatchBonus: this.calculateFieldMatchBonus(result, queryTerms)
+      fieldMatchBonus: this.calculateFieldMatchBonus(result, queryTerms),
     };
   }
 
@@ -324,13 +333,13 @@ export class SearchRankingEngine {
     }
 
     // Apply weights
-    const weightedScore = (
-      features.bm25Score * this.config.weights.textRelevance +
-      features.popularityScore * this.config.weights.popularity +
-      features.freshnessScore * this.config.weights.freshness +
-      features.userContextScore * this.config.weights.userContext +
-      features.qualityScore * this.config.weights.qualityScore
-    ) * 100;
+    const weightedScore =
+      (features.bm25Score * this.config.weights.textRelevance +
+        features.popularityScore * this.config.weights.popularity +
+        features.freshnessScore * this.config.weights.freshness +
+        features.userContextScore * this.config.weights.userContext +
+        features.qualityScore * this.config.weights.qualityScore) *
+      100;
 
     // Use weighted score as base
     score = Math.max(score, weightedScore);
@@ -398,10 +407,7 @@ export class SearchRankingEngine {
     return Math.exp(-daysSinceUpdate / 365);
   }
 
-  private calculateUserContextScore(
-    result: FTS5SearchResult,
-    userContext?: UserContext
-  ): number {
+  private calculateUserContextScore(result: FTS5SearchResult, userContext?: UserContext): number {
     if (!userContext || !userContext.userId) {
       return 0.5; // Neutral score for non-personalized
     }
@@ -419,9 +425,7 @@ export class SearchRankingEngine {
     }
 
     // Tag preference
-    const matchingTags = result.entry.tags.filter(tag =>
-      preferences.preferredTags.includes(tag)
-    );
+    const matchingTags = result.entry.tags.filter(tag => preferences.preferredTags.includes(tag));
     score += (matchingTags.length / Math.max(result.entry.tags.length, 1)) * 0.3;
 
     // Expertise level matching
@@ -445,9 +449,7 @@ export class SearchRankingEngine {
   }
 
   private countQueryTermMatches(text: string, queryTerms: string[]): number {
-    return queryTerms.filter(term =>
-      text.includes(term.toLowerCase())
-    ).length / queryTerms.length;
+    return queryTerms.filter(term => text.includes(term.toLowerCase())).length / queryTerms.length;
   }
 
   private calculateFieldMatchBonus(result: FTS5SearchResult, queryTerms: string[]): number {
@@ -484,7 +486,7 @@ export class SearchRankingEngine {
       features.qualityScore,
       features.userContextScore,
       features.semanticSimilarity,
-      features.queryTermMatches
+      features.queryTermMatches,
     ];
 
     // Weighted sum with sigmoid activation
@@ -500,8 +502,9 @@ export class SearchRankingEngine {
     const popularityComponent = features.popularityScore * 15;
     const qualityComponent = features.qualityScore * 10;
 
-    return bm25Component + tfIdfComponent + neuralComponent +
-           popularityComponent + qualityComponent;
+    return (
+      bm25Component + tfIdfComponent + neuralComponent + popularityComponent + qualityComponent
+    );
   }
 
   private applyBoosts(
@@ -540,8 +543,10 @@ export class SearchRankingEngine {
     }
 
     // Freshness penalty for very old content
-    const daysSinceUpdate = (Date.now() - new Date(result.entry.updated_at).getTime()) / (1000 * 60 * 60 * 24);
-    if (daysSinceUpdate > 730) { // 2 years
+    const daysSinceUpdate =
+      (Date.now() - new Date(result.entry.updated_at).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceUpdate > 730) {
+      // 2 years
       penalizedScore *= this.config.penalties.deprecatedContent;
     }
 
@@ -582,7 +587,7 @@ export class SearchRankingEngine {
       view: 0.1,
       click: 0.2,
       rate: 0.5,
-      bookmark: 0.7
+      bookmark: 0.7,
     };
     return weights[action] || 0.1;
   }
@@ -596,10 +601,7 @@ export class SearchRankingEngine {
     return 'expert';
   }
 
-  private calculateExpertiseMatch(
-    result: FTS5SearchResult,
-    expertiseLevel: string
-  ): number {
+  private calculateExpertiseMatch(result: FTS5SearchResult, expertiseLevel: string): number {
     // This would analyze content complexity and match to user expertise
     // Simplified implementation
     const contentComplexity = this.estimateContentComplexity(result);
@@ -620,7 +622,7 @@ export class SearchRankingEngine {
 
     // Normalize to 0-1 scale
     const lengthScore = Math.min(avgWordLength / 10, 1);
-    const techScore = Math.min(technicalTerms / words.length * 10, 1);
+    const techScore = Math.min((technicalTerms / words.length) * 10, 1);
 
     return (lengthScore + techScore) / 2;
   }
@@ -631,7 +633,7 @@ export class SearchRankingEngine {
       popularity: 0.2,
       freshness: 0.1,
       userContext: 0.2,
-      qualityScore: 0.1
+      qualityScore: 0.1,
     };
   }
 
@@ -641,7 +643,7 @@ export class SearchRankingEngine {
       titleMatch: 1.3,
       categoryMatch: 1.2,
       tagMatch: 1.1,
-      userPreference: 1.4
+      userPreference: 1.4,
     };
   }
 
@@ -649,7 +651,7 @@ export class SearchRankingEngine {
     return {
       duplicateContent: 0.8,
       lowQuality: 0.7,
-      deprecatedContent: 0.6
+      deprecatedContent: 0.6,
     };
   }
 }

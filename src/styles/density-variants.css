@@ -21,7 +21,7 @@
    COMPACT DENSITY MODE
    =============================================== */
 
-[data-density="compact"],
+[data-density='compact'],
 .density-compact {
   /* Scale factors for compact mode */
   --density-scale: 0.75;
@@ -56,11 +56,11 @@
   --container-padding-lg: 18px;
 
   /* Typography adjustments */
-  --font-size-xs: clamp(0.6875rem, 0.625rem + 0.25vw, 0.75rem);  /* 11px → 12px */
-  --font-size-sm: clamp(0.75rem, 0.6875rem + 0.25vw, 0.875rem);  /* 12px → 14px */
-  --font-size-base: clamp(0.875rem, 0.8125rem + 0.25vw, 1rem);   /* 14px → 16px */
-  --font-size-lg: clamp(1rem, 0.9375rem + 0.25vw, 1.125rem);     /* 16px → 18px */
-  --font-size-xl: clamp(1.125rem, 1.0625rem + 0.25vw, 1.25rem);  /* 18px → 20px */
+  --font-size-xs: clamp(0.6875rem, 0.625rem + 0.25vw, 0.75rem); /* 11px → 12px */
+  --font-size-sm: clamp(0.75rem, 0.6875rem + 0.25vw, 0.875rem); /* 12px → 14px */
+  --font-size-base: clamp(0.875rem, 0.8125rem + 0.25vw, 1rem); /* 14px → 16px */
+  --font-size-lg: clamp(1rem, 0.9375rem + 0.25vw, 1.125rem); /* 16px → 18px */
+  --font-size-xl: clamp(1.125rem, 1.0625rem + 0.25vw, 1.25rem); /* 18px → 20px */
 
   /* Line height adjustments for better text density */
   --line-height-tight: 1.2;
@@ -70,7 +70,7 @@
 }
 
 /* Compact mode specific adjustments */
-[data-density="compact"] .btn,
+[data-density='compact'] .btn,
 .density-compact .btn {
   padding: calc(var(--component-padding-sm) * 1.5) calc(var(--component-padding-md) * 2);
   font-size: var(--font-size-sm);
@@ -78,12 +78,12 @@
   min-height: 28px;
 }
 
-[data-density="compact"] .form-field,
+[data-density='compact'] .form-field,
 .density-compact .form-field {
   margin-bottom: var(--spacing-sm);
 }
 
-[data-density="compact"] .form-input,
+[data-density='compact'] .form-input,
 .density-compact .form-input {
   padding: var(--component-padding-sm) var(--component-padding-md);
   font-size: var(--font-size-sm);
@@ -91,19 +91,19 @@
   min-height: 32px;
 }
 
-[data-density="compact"] .card,
+[data-density='compact'] .card,
 .density-compact .card {
   padding: var(--component-padding-md);
 }
 
-[data-density="compact"] .list-item,
+[data-density='compact'] .list-item,
 .density-compact .list-item {
   padding: var(--component-padding-sm) var(--component-padding-md);
   min-height: 36px;
 }
 
-[data-density="compact"] .table td,
-[data-density="compact"] .table th,
+[data-density='compact'] .table td,
+[data-density='compact'] .table th,
 .density-compact .table td,
 .density-compact .table th {
   padding: var(--component-padding-sm) var(--component-padding-md);
@@ -114,7 +114,7 @@
    COMFORTABLE DENSITY MODE (DEFAULT)
    =============================================== */
 
-[data-density="comfortable"],
+[data-density='comfortable'],
 .density-comfortable {
   /* Use root values - already optimal */
   --density-scale: 1;
@@ -128,7 +128,7 @@
    SPACIOUS DENSITY MODE
    =============================================== */
 
-[data-density="spacious"],
+[data-density='spacious'],
 .density-spacious {
   /* Scale factors for spacious mode */
   --density-scale: 1.25;
@@ -163,11 +163,11 @@
   --container-padding-lg: 36px;
 
   /* Typography adjustments */
-  --font-size-xs: clamp(0.8125rem, 0.75rem + 0.31vw, 0.9375rem);  /* 13px → 15px */
+  --font-size-xs: clamp(0.8125rem, 0.75rem + 0.31vw, 0.9375rem); /* 13px → 15px */
   --font-size-sm: clamp(0.9375rem, 0.875rem + 0.31vw, 1.0625rem); /* 15px → 17px */
-  --font-size-base: clamp(1.0625rem, 1rem + 0.31vw, 1.1875rem);   /* 17px → 19px */
+  --font-size-base: clamp(1.0625rem, 1rem + 0.31vw, 1.1875rem); /* 17px → 19px */
   --font-size-lg: clamp(1.1875rem, 1.125rem + 0.31vw, 1.3125rem); /* 19px → 21px */
-  --font-size-xl: clamp(1.3125rem, 1.25rem + 0.31vw, 1.4375rem);  /* 21px → 23px */
+  --font-size-xl: clamp(1.3125rem, 1.25rem + 0.31vw, 1.4375rem); /* 21px → 23px */
 
   /* Generous line heights for accessibility */
   --line-height-tight: 1.3;
@@ -177,7 +177,7 @@
 }
 
 /* Spacious mode specific adjustments */
-[data-density="spacious"] .btn,
+[data-density='spacious'] .btn,
 .density-spacious .btn {
   padding: calc(var(--component-padding-md) * 1.2) calc(var(--component-padding-lg) * 1.5);
   font-size: var(--font-size-base);
@@ -185,12 +185,12 @@
   min-height: 44px;
 }
 
-[data-density="spacious"] .form-field,
+[data-density='spacious'] .form-field,
 .density-spacious .form-field {
   margin-bottom: var(--spacing-md);
 }
 
-[data-density="spacious"] .form-input,
+[data-density='spacious'] .form-input,
 .density-spacious .form-input {
   padding: var(--component-padding-md) var(--component-padding-lg);
   font-size: var(--font-size-base);
@@ -198,19 +198,19 @@
   min-height: 44px;
 }
 
-[data-density="spacious"] .card,
+[data-density='spacious'] .card,
 .density-spacious .card {
   padding: var(--component-padding-lg);
 }
 
-[data-density="spacious"] .list-item,
+[data-density='spacious'] .list-item,
 .density-spacious .list-item {
   padding: var(--component-padding-md) var(--component-padding-lg);
   min-height: 52px;
 }
 
-[data-density="spacious"] .table td,
-[data-density="spacious"] .table th,
+[data-density='spacious'] .table td,
+[data-density='spacious'] .table th,
 .density-spacious .table td,
 .density-spacious .table th {
   padding: var(--component-padding-md) var(--component-padding-lg);
@@ -222,27 +222,27 @@
    =============================================== */
 
 /* Navigation density adjustments */
-[data-density="compact"] .nav-item,
+[data-density='compact'] .nav-item,
 .density-compact .nav-item {
   padding: 6px 12px;
   font-size: var(--font-size-sm);
 }
 
-[data-density="spacious"] .nav-item,
+[data-density='spacious'] .nav-item,
 .density-spacious .nav-item {
   padding: 12px 20px;
   font-size: var(--font-size-base);
 }
 
 /* Search bar density adjustments */
-[data-density="compact"] .search-bar,
+[data-density='compact'] .search-bar,
 .density-compact .search-bar {
   height: 32px;
   padding: 0 8px;
   font-size: var(--font-size-sm);
 }
 
-[data-density="spacious"] .search-bar,
+[data-density='spacious'] .search-bar,
 .density-spacious .search-bar {
   height: 48px;
   padding: 0 16px;
@@ -250,26 +250,26 @@
 }
 
 /* Modal density adjustments */
-[data-density="compact"] .modal-content,
+[data-density='compact'] .modal-content,
 .density-compact .modal-content {
   padding: var(--spacing-md);
   max-width: 90vw;
 }
 
-[data-density="spacious"] .modal-content,
+[data-density='spacious'] .modal-content,
 .density-spacious .modal-content {
   padding: var(--spacing-xl);
   max-width: 95vw;
 }
 
 /* Tooltip density adjustments */
-[data-density="compact"] .tooltip,
+[data-density='compact'] .tooltip,
 .density-compact .tooltip {
   padding: 4px 8px;
   font-size: var(--font-size-xs);
 }
 
-[data-density="spacious"] .tooltip,
+[data-density='spacious'] .tooltip,
 .density-spacious .tooltip {
   padding: 8px 16px;
   font-size: var(--font-size-sm);
@@ -302,7 +302,7 @@
   color: var(--text-primary);
 }
 
-.density-option[aria-pressed="true"] {
+.density-option[aria-pressed='true'] {
   background: var(--text-accent);
   color: var(--text-inverse);
 }
@@ -353,7 +353,7 @@
 
 /* Prefer spacious for accessibility when requested */
 @media (prefers-reduced-motion: reduce) {
-  [data-density="spacious"],
+  [data-density='spacious'],
   .density-spacious {
     /* Enhance spacing for better accessibility */
     --spacing-md: 24px;
@@ -370,13 +370,13 @@
     --min-touch-target: 44px;
   }
 
-  [data-density="compact"] .btn,
+  [data-density='compact'] .btn,
   .density-compact .btn {
     min-height: var(--min-touch-target);
     min-width: var(--min-touch-target);
   }
 
-  [data-density="compact"] .form-input,
+  [data-density='compact'] .form-input,
   .density-compact .form-input {
     min-height: var(--min-touch-target);
   }

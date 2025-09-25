@@ -2,10 +2,13 @@
 
 ## Overview
 
-This enhanced IPC system provides optimized communication between Electron's main and renderer processes with advanced features including:
+This enhanced IPC system provides optimized communication between Electron's
+main and renderer processes with advanced features including:
 
-- **Request Batching**: Automatic aggregation of similar operations for improved performance
-- **Response Streaming**: Efficient handling of large datasets with progress tracking
+- **Request Batching**: Automatic aggregation of similar operations for improved
+  performance
+- **Response Streaming**: Efficient handling of large datasets with progress
+  tracking
 - **Response Caching**: TTL-based caching with automatic invalidation
 - **Type Safety**: Full TypeScript support with comprehensive validation
 - **Rate Limiting**: Configurable rate limiting per handler
@@ -32,7 +35,8 @@ This enhanced IPC system provides optimized communication between Electron's mai
 
 ### 1. IPCManager
 
-The central coordinator that manages all IPC communication with the following features:
+The central coordinator that manages all IPC communication with the following
+features:
 
 - **Handler Registration**: Type-safe handler registration with configuration
 - **Request Processing**: Automatic routing with validation and error handling
@@ -86,7 +90,7 @@ ipcManager.registerHandler(
   {
     cacheable: true,
     cacheTTL: 300000, // 5 minutes
-    validation: (args) => typeof args[0] === 'string'
+    validation: args => typeof args[0] === 'string',
   }
 );
 ```
@@ -105,7 +109,7 @@ ipcManager.registerHandler(
     batchSize: 20,
     batchDelay: 50,
     cacheable: true,
-    cacheTTL: 600000
+    cacheTTL: 600000,
   }
 );
 ```
@@ -125,7 +129,7 @@ ipcManager.registerHandler(
   {
     streamable: true,
     streamChunkSize: 100,
-    validation: (args) => typeof args[0] === 'string'
+    validation: args => typeof args[0] === 'string',
   }
 );
 ```
@@ -145,20 +149,20 @@ if (response.success) {
 const streamResponse = await window.electronAPI.db.getPopular(1000);
 if (streamResponse.success && typeof streamResponse.data === 'string') {
   const streamId = streamResponse.data;
-  
+
   // Listen for stream chunks
-  window.electronAPI.streaming.onChunk(streamId, (chunk) => {
+  window.electronAPI.streaming.onChunk(streamId, chunk => {
     console.log(`Chunk ${chunk.chunkIndex}:`, chunk.data);
     console.log(`Progress: ${chunk.progress.percentage}%`);
-    
+
     if (chunk.isLast) {
       console.log('Stream completed');
       window.electronAPI.streaming.removeStreamListeners(streamId);
     }
   });
-  
+
   // Listen for errors
-  window.electronAPI.streaming.onError(streamId, (error) => {
+  window.electronAPI.streaming.onError(streamId, error => {
     console.error('Stream error:', error);
     window.electronAPI.streaming.removeStreamListeners(streamId);
   });
@@ -172,25 +176,25 @@ if (streamResponse.success && typeof streamResponse.data === 'string') {
 ```typescript
 interface IPCHandlerConfig {
   // Batching options
-  batchable?: boolean;           // Enable request batching
-  batchSize?: number;            // Maximum batch size (default: 10)
-  batchDelay?: number;           // Batch delay in ms (default: 50)
-  
+  batchable?: boolean; // Enable request batching
+  batchSize?: number; // Maximum batch size (default: 10)
+  batchDelay?: number; // Batch delay in ms (default: 50)
+
   // Streaming options
-  streamable?: boolean;          // Enable response streaming
-  streamChunkSize?: number;      // Chunk size (default: 1000)
-  
+  streamable?: boolean; // Enable response streaming
+  streamChunkSize?: number; // Chunk size (default: 1000)
+
   // Caching options
-  cacheable?: boolean;           // Enable response caching
-  cacheTTL?: number;            // Cache TTL in ms (default: 300000)
-  
+  cacheable?: boolean; // Enable response caching
+  cacheTTL?: number; // Cache TTL in ms (default: 300000)
+
   // Validation
   validation?: (args: any[]) => boolean | string;
-  
+
   // Rate limiting
   rateLimit?: {
-    requests: number;           // Max requests per window
-    window: number;             // Window size in ms
+    requests: number; // Max requests per window
+    window: number; // Window size in ms
   };
 }
 ```
@@ -279,7 +283,7 @@ console.log({
   averageResponseTime: metrics.averageResponseTime,
   cacheHitRate: metrics.cacheHitRate,
   batchedRequests: metrics.batchedRequests,
-  streamedRequests: metrics.streamedRequests
+  streamedRequests: metrics.streamedRequests,
 });
 ```
 
@@ -292,7 +296,7 @@ console.log({
   totalRequests: batchMetrics.totalRequests,
   averageBatchSize: batchMetrics.averageBatchSize,
   averageProcessingTime: batchMetrics.averageProcessingTime,
-  failedBatches: batchMetrics.failedBatches
+  failedBatches: batchMetrics.failedBatches,
 });
 ```
 
@@ -306,7 +310,7 @@ console.log({
   totalBytes: streamMetrics.totalBytes,
   averageChunkSize: streamMetrics.averageChunkSize,
   averageStreamTime: streamMetrics.averageStreamTime,
-  failedStreams: streamMetrics.failedStreams
+  failedStreams: streamMetrics.failedStreams,
 });
 ```
 
@@ -334,10 +338,10 @@ All handlers are wrapped with comprehensive error handling:
 ### Custom Error Handling
 
 ```typescript
-ipcManager.on('error', (error) => {
+ipcManager.on('error', error => {
   // Log to monitoring service
   monitoringService.logError(error);
-  
+
   // Send to crash reporting
   crashReporter.captureException(error);
 });
@@ -367,9 +371,11 @@ ipcManager.on('error', (error) => {
 
 ### 4. Caching Strategy
 
-- **Cache expensive operations**: Cache operations that are computationally expensive
+- **Cache expensive operations**: Cache operations that are computationally
+  expensive
 - **Use appropriate TTLs**: Set cache TTLs based on data volatility
-- **Implement cache invalidation**: Invalidate cache when underlying data changes
+- **Implement cache invalidation**: Invalidate cache when underlying data
+  changes
 - **Monitor cache hit rates**: Optimize caching strategy based on hit rates
 
 ### 5. Performance Optimization
@@ -412,6 +418,7 @@ process.env.DEBUG_IPC = 'true';
 ```
 
 This will provide detailed logging for:
+
 - Request/response timing
 - Batch processing details
 - Stream chunk delivery
@@ -423,19 +430,21 @@ This will provide detailed logging for:
 ### From Basic IPC
 
 1. **Update handler registrations**:
+
    ```typescript
    // Before
    ipcMain.handle('channel', handler);
-   
+
    // After
    ipcManager.registerHandler('channel', handler, config);
    ```
 
 2. **Update renderer calls**:
+
    ```typescript
    // Before
    const result = await ipcRenderer.invoke('channel', args);
-   
+
    // After
    const response = await window.electronAPI.someMethod(args);
    const result = response.success ? response.data : null;
@@ -454,6 +463,7 @@ This will provide detailed logging for:
 ### Performance Improvements
 
 After migration, you should see:
+
 - **20-50% reduction** in IPC roundtrips (via batching)
 - **30-70% faster** responses for cached operations
 - **50-80% reduction** in memory usage for large datasets (via streaming)
@@ -472,4 +482,5 @@ When adding new handlers:
 
 ## License
 
-This enhanced IPC system is part of the Mainframe Knowledge Assistant project and follows the same license terms.
+This enhanced IPC system is part of the Mainframe Knowledge Assistant project
+and follows the same license terms.

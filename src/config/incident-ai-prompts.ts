@@ -194,7 +194,7 @@ Forneça apenas o JSON, sem explicações adicionais.`,
     TONE: 'professional',
     DOMAIN: 'mainframe systems',
     FOCUS: 'practical solutions',
-    CONTEXT: 'enterprise environment'
+    CONTEXT: 'enterprise environment',
   },
 
   /**
@@ -227,7 +227,7 @@ Forneça apenas o JSON, sem explicações adicionais.`,
 
     SYSTEM: `Contexto específico Sistema: Considere IPL, system parameters, storage
              management, e system messages. Foque em system availability,
-             performance issues, e configuration problems.`
+             performance issues, e configuration problems.`,
   },
 
   /**
@@ -244,8 +244,8 @@ Forneça apenas o JSON, sem explicações adicionais.`,
 
     DATA_INTEGRITY: `PROBLEMA DE INTEGRIDADE DE DADOS
     Priorize proteção de dados. Considere backups e procedimentos de recovery
-    antes de tentar correções que possam afetar dados.`
-  }
+    antes de tentar correções que possam afetar dados.`,
+  },
 } as const;
 
 /**
@@ -259,6 +259,8 @@ export function getCategoryPrompt(category: string): string {
 /**
  * Helper function to get emergency template
  */
-export function getEmergencyTemplate(type: keyof typeof INCIDENT_AI_PROMPTS.EMERGENCY_TEMPLATES): string {
+export function getEmergencyTemplate(
+  type: keyof typeof INCIDENT_AI_PROMPTS.EMERGENCY_TEMPLATES
+): string {
   return INCIDENT_AI_PROMPTS.EMERGENCY_TEMPLATES[type];
 }

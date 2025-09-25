@@ -76,7 +76,7 @@ const DEFAULT_MESSAGES = {
   url: 'Must be a valid URL',
   pattern: 'Invalid format',
   minItems: (min: number) => `Must have at least ${min} items`,
-  maxItems: (max: number) => `Must have no more than ${max} items`
+  maxItems: (max: number) => `Must have no more than ${max} items`,
 };
 
 // ========================
@@ -92,7 +92,7 @@ export const useFormValidation = (
     validateOnChange = true,
     validateOnBlur = true,
     debounceMs = 300,
-    showErrorsImmediately = false
+    showErrorsImmediately = false,
   } = options;
 
   // State management
@@ -105,124 +105,131 @@ export const useFormValidation = (
   const previousFormData = useRef<Record<string, any>>(formData);
 
   // Single field validation
-  const validateSingleField = useCallback((field: string, value: any): string | null => {
-    const rule = schema[field];
-    if (!rule) return null;
+  const validateSingleField = useCallback(
+    (field: string, value: any): string | null => {
+      const rule = schema[field];
+      if (!rule) return null;
 
-    // Required validation
-    if (rule.required) {
-      if (value === undefined || value === null || value === '') {
-        return DEFAULT_MESSAGES.required;
+      // Required validation
+      if (rule.required) {
+        if (value === undefined || value === null || value === '') {
+          return DEFAULT_MESSAGES.required;
+        }
+
+        // For arrays
+        if (Array.isArray(value) && value.length === 0) {
+          return DEFAULT_MESSAGES.required;
+        }
       }
 
-      // For arrays
-      if (Array.isArray(value) && value.length === 0) {
-        return DEFAULT_MESSAGES.required;
+      // Skip other validations if field is empty and not required
+      if (!rule.required && (value === undefined || value === null || value === '')) {
+        return null;
       }
-    }
 
-    // Skip other validations if field is empty and not required
-    if (!rule.required && (value === undefined || value === null || value === '')) {
+      // String validations
+      if (typeof value === 'string') {
+        if (rule.minLength && value.length < rule.minLength) {
+          return DEFAULT_MESSAGES.minLength(rule.minLength);
+        }
+
+        if (rule.maxLength && value.length > rule.maxLength) {
+          return DEFAULT_MESSAGES.maxLength(rule.maxLength);
+        }
+
+        if (rule.email && !isValidEmail(value)) {
+          return DEFAULT_MESSAGES.email;
+        }
+
+        if (rule.url && !isValidUrl(value)) {
+          return DEFAULT_MESSAGES.url;
+        }
+
+        if (rule.pattern && !rule.pattern.test(value)) {
+          return DEFAULT_MESSAGES.pattern;
+        }
+      }
+
+      // Number validations
+      if (typeof value === 'number') {
+        if (rule.min !== undefined && value < rule.min) {
+          return DEFAULT_MESSAGES.min(rule.min);
+        }
+
+        if (rule.max !== undefined && value > rule.max) {
+          return DEFAULT_MESSAGES.max(rule.max);
+        }
+      }
+
+      // Array validations
+      if (Array.isArray(value)) {
+        if (rule.minItems && value.length < rule.minItems) {
+          return DEFAULT_MESSAGES.minItems(rule.minItems);
+        }
+
+        if (rule.maxItems && value.length > rule.maxItems) {
+          return DEFAULT_MESSAGES.maxItems(rule.maxItems);
+        }
+      }
+
+      // Custom validation
+      if (rule.custom) {
+        return rule.custom(value);
+      }
+
       return null;
-    }
-
-    // String validations
-    if (typeof value === 'string') {
-      if (rule.minLength && value.length < rule.minLength) {
-        return DEFAULT_MESSAGES.minLength(rule.minLength);
-      }
-
-      if (rule.maxLength && value.length > rule.maxLength) {
-        return DEFAULT_MESSAGES.maxLength(rule.maxLength);
-      }
-
-      if (rule.email && !isValidEmail(value)) {
-        return DEFAULT_MESSAGES.email;
-      }
-
-      if (rule.url && !isValidUrl(value)) {
-        return DEFAULT_MESSAGES.url;
-      }
-
-      if (rule.pattern && !rule.pattern.test(value)) {
-        return DEFAULT_MESSAGES.pattern;
-      }
-    }
-
-    // Number validations
-    if (typeof value === 'number') {
-      if (rule.min !== undefined && value < rule.min) {
-        return DEFAULT_MESSAGES.min(rule.min);
-      }
-
-      if (rule.max !== undefined && value > rule.max) {
-        return DEFAULT_MESSAGES.max(rule.max);
-      }
-    }
-
-    // Array validations
-    if (Array.isArray(value)) {
-      if (rule.minItems && value.length < rule.minItems) {
-        return DEFAULT_MESSAGES.minItems(rule.minItems);
-      }
-
-      if (rule.maxItems && value.length > rule.maxItems) {
-        return DEFAULT_MESSAGES.maxItems(rule.maxItems);
-      }
-    }
-
-    // Custom validation
-    if (rule.custom) {
-      return rule.custom(value);
-    }
-
-    return null;
-  }, [schema]);
+    },
+    [schema]
+  );
 
   // Debounced field validation
   const debouncedValidateField = useMemo(
-    () => debounce((field: string, value: any) => {
-      const error = validateSingleField(field, value);
-      setErrors(prev => ({
-        ...prev,
-        [field]: error || undefined
-      }));
-    }, debounceMs),
+    () =>
+      debounce((field: string, value: any) => {
+        const error = validateSingleField(field, value);
+        setErrors(prev => ({
+          ...prev,
+          [field]: error || undefined,
+        }));
+      }, debounceMs),
     [validateSingleField, debounceMs]
   );
 
   // Validate field immediately or with debounce
-  const validateField = useCallback((field: string, value: any): string | null => {
-    const error = validateSingleField(field, value);
+  const validateField = useCallback(
+    (field: string, value: any): string | null => {
+      const error = validateSingleField(field, value);
 
-    if (showErrorsImmediately || touchedFields.has(field)) {
-      if (debounceMs > 0) {
-        // Clear previous timeout
-        const existingTimeout = validationTimeouts.current.get(field);
-        if (existingTimeout) {
-          clearTimeout(existingTimeout);
-        }
+      if (showErrorsImmediately || touchedFields.has(field)) {
+        if (debounceMs > 0) {
+          // Clear previous timeout
+          const existingTimeout = validationTimeouts.current.get(field);
+          if (existingTimeout) {
+            clearTimeout(existingTimeout);
+          }
 
-        // Set new timeout
-        const timeout = setTimeout(() => {
+          // Set new timeout
+          const timeout = setTimeout(() => {
+            setErrors(prev => ({
+              ...prev,
+              [field]: error || undefined,
+            }));
+            validationTimeouts.current.delete(field);
+          }, debounceMs);
+
+          validationTimeouts.current.set(field, timeout);
+        } else {
           setErrors(prev => ({
             ...prev,
-            [field]: error || undefined
+            [field]: error || undefined,
           }));
-          validationTimeouts.current.delete(field);
-        }, debounceMs);
-
-        validationTimeouts.current.set(field, timeout);
-      } else {
-        setErrors(prev => ({
-          ...prev,
-          [field]: error || undefined
-        }));
+        }
       }
-    }
 
-    return error;
-  }, [validateSingleField, debounceMs, showErrorsImmediately, touchedFields]);
+      return error;
+    },
+    [validateSingleField, debounceMs, showErrorsImmediately, touchedFields]
+  );
 
   // Validate all fields
   const validateAllFields = useCallback((): boolean => {
@@ -253,7 +260,7 @@ export const useFormValidation = (
   const setFieldError = useCallback((field: string, error: string | null) => {
     setErrors(prev => ({
       ...prev,
-      [field]: error || undefined
+      [field]: error || undefined,
     }));
   }, []);
 
@@ -328,7 +335,7 @@ export const useFormValidation = (
     setFieldError,
     clearErrors,
     clearFieldError,
-    reset
+    reset,
   };
 };
 

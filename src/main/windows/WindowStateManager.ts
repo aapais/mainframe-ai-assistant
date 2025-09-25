@@ -1,6 +1,6 @@
 /**
  * Window State Manager - Progressive Persistence System
- * 
+ *
  * Manages window state persistence, restoration, and workspace management
  * with progressive enhancement across MVP levels
  */
@@ -9,12 +9,12 @@ import { BrowserWindow, Rectangle, screen } from 'electron';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { ServiceContext } from '../services/ServiceManager';
-import { 
-  WindowState, 
-  WindowInstance, 
-  WindowWorkspace, 
+import {
+  WindowState,
+  WindowInstance,
+  WindowWorkspace,
   WorkspaceLayout,
-  WindowType 
+  WindowType,
 } from './types/WindowTypes';
 
 interface PersistedSession {
@@ -58,7 +58,7 @@ export class WindowStateManager {
     maxBackups: 5,
     compactThreshold: 100, // Compact when more than 100 windows in history
     enableMultiDisplay: true,
-    validateBeforeRestore: true
+    validateBeforeRestore: true,
   };
 
   constructor(private context: ServiceContext) {
@@ -71,10 +71,10 @@ export class WindowStateManager {
     try {
       // Ensure directories exist
       await this.ensureDirectories();
-      
+
       // Load existing session
       await this.loadSession();
-      
+
       // Start auto-save if enabled
       if (this.autoSaveEnabled) {
         this.startAutoSave();
@@ -83,7 +83,7 @@ export class WindowStateManager {
       this.context.logger.info('Window State Manager initialized');
     } catch (error) {
       this.context.logger.error('Failed to initialize Window State Manager', error);
-      
+
       // Create default session if load fails
       this.currentSession = this.createDefaultSession();
     }
@@ -107,10 +107,10 @@ export class WindowStateManager {
     try {
       // Check if state file is accessible
       await fs.access(this.stateFile);
-      
+
       // Verify workspace directory
       await fs.access(this.workspaceDir);
-      
+
       // Check current session validity
       return this.currentSession !== null;
     } catch (error) {
@@ -119,7 +119,7 @@ export class WindowStateManager {
   }
 
   // Window State Management
-  
+
   async saveWindowState(windowInstance: WindowInstance): Promise<void> {
     if (!windowInstance.window || windowInstance.window.isDestroyed()) {
       return;
@@ -128,7 +128,7 @@ export class WindowStateManager {
     try {
       const bounds = windowInstance.window.getBounds();
       const display = screen.getDisplayMatching(bounds);
-      
+
       const windowState: WindowState = {
         id: windowInstance.id,
         type: windowInstance.type,
@@ -140,11 +140,11 @@ export class WindowStateManager {
         workspace: windowInstance.config.workspace,
         displayId: display.id,
         customData: windowInstance.metadata,
-        lastSaved: new Date()
+        lastSaved: new Date(),
       };
 
       await this.updateWindowInSession(windowState);
-      
+
       this.context.logger.debug(`Saved state for window: ${windowInstance.type}`);
     } catch (error) {
       this.context.logger.error(`Failed to save window state: ${windowInstance.id}`, error);
@@ -175,10 +175,12 @@ export class WindowStateManager {
 
     try {
       const window = windowInstance.window;
-      
+
       // Validate bounds are still valid (display might have changed)
       if (this.config.enableMultiDisplay && !this.isDisplayValid(savedState.displayId)) {
-        this.context.logger.warn(`Display ${savedState.displayId} no longer available, using primary display`);
+        this.context.logger.warn(
+          `Display ${savedState.displayId} no longer available, using primary display`
+        );
         return false;
       }
 
@@ -210,7 +212,7 @@ export class WindowStateManager {
   }
 
   // Session Management
-  
+
   async restoreSession(): Promise<boolean> {
     if (!this.currentSession) {
       return false;
@@ -219,11 +221,11 @@ export class WindowStateManager {
     try {
       // Update display configuration
       await this.updateDisplayConfiguration();
-      
+
       // Session restored successfully
       // Note: Actual window restoration is handled by WindowManager
       // This just prepares the state data
-      
+
       this.context.logger.info('Session restoration prepared');
       return true;
     } catch (error) {
@@ -240,20 +242,16 @@ export class WindowStateManager {
     try {
       // Update timestamp
       this.currentSession.timestamp = new Date();
-      
+
       // Update display configuration
       await this.updateDisplayConfiguration();
-      
+
       // Create backup before saving
       await this.createBackup();
-      
+
       // Save current session
-      await fs.writeFile(
-        this.stateFile, 
-        JSON.stringify(this.currentSession, null, 2),
-        'utf8'
-      );
-      
+      await fs.writeFile(this.stateFile, JSON.stringify(this.currentSession, null, 2), 'utf8');
+
       this.context.logger.debug('Session saved successfully');
     } catch (error) {
       this.context.logger.error('Failed to save session', error);
@@ -261,7 +259,7 @@ export class WindowStateManager {
   }
 
   // Workspace Management (MVP4+)
-  
+
   async createWorkspace(name: string, config: Partial<WindowWorkspace>): Promise<WindowWorkspace> {
     const workspace: WindowWorkspace = {
       id: `workspace-${Date.now()}`,
@@ -271,7 +269,7 @@ export class WindowStateManager {
       layout: config.layout || this.createDefaultLayout(),
       created: new Date(),
       active: false,
-      mvpLevel: this.getMVPLevel()
+      mvpLevel: this.getMVPLevel(),
     };
 
     // Save workspace file
@@ -306,7 +304,7 @@ export class WindowStateManager {
           const filePath = join(this.workspaceDir, file);
           const content = await fs.readFile(filePath, 'utf8');
           const workspaceData = JSON.parse(content) as WindowWorkspace;
-          
+
           if (workspaceData.name === name) {
             return workspaceData;
           }
@@ -322,10 +320,10 @@ export class WindowStateManager {
   async saveWorkspace(workspace: WindowWorkspace): Promise<void> {
     try {
       workspace.lastUsed = new Date();
-      
+
       const workspaceFile = join(this.workspaceDir, `${workspace.id}.json`);
       await fs.writeFile(workspaceFile, JSON.stringify(workspace, null, 2), 'utf8');
-      
+
       // Update in session
       if (this.currentSession) {
         const index = this.currentSession.workspaces.findIndex(w => w.id === workspace.id);
@@ -378,10 +376,10 @@ export class WindowStateManager {
   }
 
   // Layout Management
-  
+
   async applyLayout(workspace: WindowWorkspace, windows: WindowInstance[]): Promise<void> {
     const layout = workspace.layout;
-    
+
     switch (layout.type) {
       case 'grid':
         await this.applyGridLayout(layout, windows);
@@ -399,7 +397,7 @@ export class WindowStateManager {
   }
 
   // Private Implementation
-  
+
   private async ensureDirectories(): Promise<void> {
     try {
       await fs.mkdir(this.workspaceDir, { recursive: true });
@@ -414,7 +412,7 @@ export class WindowStateManager {
     try {
       const content = await fs.readFile(this.stateFile, 'utf8');
       this.currentSession = JSON.parse(content);
-      
+
       // Validate session version
       if (!this.currentSession?.version || this.currentSession.version !== '2.0.0') {
         this.context.logger.warn('Session version mismatch, creating new session');
@@ -439,8 +437,8 @@ export class WindowStateManager {
       workspaces: [],
       displayConfiguration: {
         displays: [],
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     };
   }
 
@@ -470,12 +468,12 @@ export class WindowStateManager {
       id: display.id,
       bounds: display.bounds,
       workArea: display.workArea,
-      primary: display === screen.getPrimaryDisplay()
+      primary: display === screen.getPrimaryDisplay(),
     }));
 
     this.currentSession.displayConfiguration = {
       displays,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -486,18 +484,20 @@ export class WindowStateManager {
 
   private isBoundsValid(bounds: Rectangle): boolean {
     const displays = screen.getAllDisplays();
-    
+
     // Check if bounds intersect with any display
     for (const display of displays) {
       const workArea = display.workArea;
-      if (bounds.x < workArea.x + workArea.width && 
-          bounds.x + bounds.width > workArea.x &&
-          bounds.y < workArea.y + workArea.height &&
-          bounds.y + bounds.height > workArea.y) {
+      if (
+        bounds.x < workArea.x + workArea.width &&
+        bounds.x + bounds.width > workArea.x &&
+        bounds.y < workArea.y + workArea.height &&
+        bounds.y + bounds.height > workArea.y
+      ) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -507,72 +507,84 @@ export class WindowStateManager {
       columns: 2,
       rows: 2,
       margin: 10,
-      distribution: 'equal'
+      distribution: 'equal',
     };
   }
 
   private async applyGridLayout(layout: WorkspaceLayout, windows: WindowInstance[]): Promise<void> {
     const primaryDisplay = screen.getPrimaryDisplay();
     const workArea = primaryDisplay.workArea;
-    
+
     const cols = layout.columns || 2;
     const rows = layout.rows || 2;
     const margin = layout.margin || 10;
-    
+
     const windowWidth = Math.floor((workArea.width - margin * (cols + 1)) / cols);
     const windowHeight = Math.floor((workArea.height - margin * (rows + 1)) / rows);
-    
+
     windows.forEach((windowInstance, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
-      
+
       const x = workArea.x + margin + col * (windowWidth + margin);
       const y = workArea.y + margin + row * (windowHeight + margin);
-      
+
       windowInstance.window.setBounds({
-        x, y, width: windowWidth, height: windowHeight
+        x,
+        y,
+        width: windowWidth,
+        height: windowHeight,
       });
     });
   }
 
-  private async applyStackLayout(layout: WorkspaceLayout, windows: WindowInstance[]): Promise<void> {
+  private async applyStackLayout(
+    layout: WorkspaceLayout,
+    windows: WindowInstance[]
+  ): Promise<void> {
     // Stack windows on top of each other with slight offset
     const offset = 30;
     let baseX = 100;
     let baseY = 100;
-    
+
     windows.forEach((windowInstance, index) => {
       windowInstance.window.setBounds({
-        x: baseX + (index * offset),
-        y: baseY + (index * offset),
+        x: baseX + index * offset,
+        y: baseY + index * offset,
         width: 1000,
-        height: 700
+        height: 700,
       });
     });
   }
 
-  private async applyCascadeLayout(layout: WorkspaceLayout, windows: WindowInstance[]): Promise<void> {
+  private async applyCascadeLayout(
+    layout: WorkspaceLayout,
+    windows: WindowInstance[]
+  ): Promise<void> {
     // Similar to stack but with larger offsets
     const offsetX = 50;
     const offsetY = 40;
     let baseX = 50;
     let baseY = 50;
-    
+
     windows.forEach((windowInstance, index) => {
       windowInstance.window.setBounds({
-        x: baseX + (index * offsetX),
-        y: baseY + (index * offsetY),
+        x: baseX + index * offsetX,
+        y: baseY + index * offsetY,
         width: 1200,
-        height: 800
+        height: 800,
       });
     });
   }
 
-  private async applyCustomLayout(layout: WorkspaceLayout, windows: WindowInstance[]): Promise<void> {
+  private async applyCustomLayout(
+    layout: WorkspaceLayout,
+    windows: WindowInstance[]
+  ): Promise<void> {
     if (!layout.customPositions) {
       return;
     }
-    
+
     windows.forEach(windowInstance => {
       const position = layout.customPositions!.find(p => p.windowType === windowInstance.type);
       if (position) {
@@ -590,10 +602,10 @@ export class WindowStateManager {
   private async createBackup(): Promise<void> {
     try {
       const backupFile = `${this.stateFile}.backup.${Date.now()}`;
-      
+
       if (await this.fileExists(this.stateFile)) {
         await fs.copyFile(this.stateFile, backupFile);
-        
+
         // Clean up old backups
         await this.cleanupOldBackups();
       }
@@ -611,7 +623,7 @@ export class WindowStateManager {
         .map(file => ({
           name: file,
           path: join(dir, file),
-          timestamp: parseInt(file.split('.backup.')[1])
+          timestamp: parseInt(file.split('.backup.')[1]),
         }))
         .sort((a, b) => b.timestamp - a.timestamp);
 

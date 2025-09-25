@@ -91,7 +91,7 @@ class RedisConnectionPool extends EventEmitter {
     const connection = new RedisService(this.redisConfig);
     await connection.connect();
 
-    connection.on('error', (error) => {
+    connection.on('error', error => {
       this.logger.warn('Connection error:', error);
       this.removeConnection(connection);
     });
@@ -172,15 +172,15 @@ class RedisConnectionPool extends EventEmitter {
       }, this.config.acquireTimeoutMillis);
 
       this.pending.push({
-        resolve: (connection) => {
+        resolve: connection => {
           clearTimeout(timeout);
           resolve(connection);
         },
-        reject: (error) => {
+        reject: error => {
           clearTimeout(timeout);
           reject(error);
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
   }
@@ -213,9 +213,7 @@ class RedisConnectionPool extends EventEmitter {
 
     // Close all connections
     const closePromises = this.connections.map(connection =>
-      connection.disconnect().catch(error =>
-        this.logger.error('Error closing connection:', error)
-      )
+      connection.disconnect().catch(error => this.logger.error('Error closing connection:', error))
     );
 
     await Promise.all(closePromises);
@@ -233,7 +231,7 @@ class RedisConnectionPool extends EventEmitter {
       total: this.connections.length,
       available: this.available.length,
       pending: this.pending.length,
-      destroyed: this.destroyed
+      destroyed: this.destroyed,
     };
   }
 }
@@ -300,7 +298,7 @@ class CircuitBreaker extends EventEmitter {
     return {
       state: this.state,
       failures: this.failures,
-      lastFailureTime: this.lastFailureTime
+      lastFailureTime: this.lastFailureTime,
     };
   }
 }
@@ -456,10 +454,7 @@ export class CacheOptimizer extends EventEmitter {
   private async initialize(): Promise<void> {
     // Initialize connection pool if Redis config provided
     if (this.redisConfig) {
-      this.connectionPool = new RedisConnectionPool(
-        this.config.connectionPool,
-        this.redisConfig
-      );
+      this.connectionPool = new RedisConnectionPool(this.config.connectionPool, this.redisConfig);
       this.shutdownHandlers.push(() => this.connectionPool!.destroy());
     }
 
@@ -613,7 +608,7 @@ export class CacheOptimizer extends EventEmitter {
     return {
       connectionPool: this.connectionPool?.getStats(),
       circuitBreaker: this.circuitBreaker.getState(),
-      batching: this.batchManager ? { enabled: true } : { enabled: false }
+      batching: this.batchManager ? { enabled: true } : { enabled: false },
     };
   }
 
@@ -670,28 +665,28 @@ export function createDefaultOptimizationConfig(): OptimizationConfig {
       idleTimeoutMillis: parseInt(process.env.REDIS_POOL_IDLE_TIMEOUT || '300000'),
       reapIntervalMillis: parseInt(process.env.REDIS_POOL_REAP_INTERVAL || '60000'),
       createRetryIntervalMillis: parseInt(process.env.REDIS_POOL_RETRY_INTERVAL || '1000'),
-      propagateCreateError: process.env.REDIS_POOL_PROPAGATE_ERROR !== 'false'
+      propagateCreateError: process.env.REDIS_POOL_PROPAGATE_ERROR !== 'false',
     },
     lazyLoading: {
       enabled: process.env.CACHE_LAZY_LOADING !== 'false',
       preloadThreshold: parseInt(process.env.CACHE_PRELOAD_THRESHOLD || '10'),
-      maxPreloadSize: parseInt(process.env.CACHE_MAX_PRELOAD_SIZE || '100')
+      maxPreloadSize: parseInt(process.env.CACHE_MAX_PRELOAD_SIZE || '100'),
     },
     compression: {
       enabled: process.env.CACHE_COMPRESSION_ENABLED !== 'false',
       threshold: parseInt(process.env.CACHE_COMPRESSION_THRESHOLD || '1024'),
-      algorithm: (process.env.CACHE_COMPRESSION_ALGORITHM as any) || 'gzip'
+      algorithm: (process.env.CACHE_COMPRESSION_ALGORITHM as any) || 'gzip',
     },
     batching: {
       enabled: process.env.CACHE_BATCHING_ENABLED !== 'false',
       batchSize: parseInt(process.env.CACHE_BATCH_SIZE || '50'),
-      flushInterval: parseInt(process.env.CACHE_BATCH_FLUSH_INTERVAL || '100')
+      flushInterval: parseInt(process.env.CACHE_BATCH_FLUSH_INTERVAL || '100'),
     },
     circuitBreaker: {
       enabled: process.env.CIRCUIT_BREAKER_ENABLED !== 'false',
       failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_FAILURE_THRESHOLD || '5'),
       recoveryTime: parseInt(process.env.CIRCUIT_BREAKER_RECOVERY_TIME || '30000'),
-      monitoringPeriod: parseInt(process.env.CIRCUIT_BREAKER_MONITORING_PERIOD || '60000')
-    }
+      monitoringPeriod: parseInt(process.env.CIRCUIT_BREAKER_MONITORING_PERIOD || '60000'),
+    },
   };
 }

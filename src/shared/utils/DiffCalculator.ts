@@ -39,7 +39,7 @@ export class DiffCalculator {
       ignoreFields: [],
       customComparators: new Map(),
       enableCompression: true,
-      ...options
+      ...options,
     };
   }
 
@@ -50,7 +50,7 @@ export class DiffCalculator {
     const diff: Diff = {
       added: [],
       modified: [],
-      deleted: []
+      deleted: [],
     };
 
     await this.calculateDiffRecursive(oldData, newData, path, diff, 0);
@@ -70,7 +70,7 @@ export class DiffCalculator {
     for (const item of sortedDeleted) {
       patches.push({
         op: 'remove',
-        path: this.normalizePath(item.path)
+        path: this.normalizePath(item.path),
       });
     }
 
@@ -79,7 +79,7 @@ export class DiffCalculator {
       patches.push({
         op: 'add',
         path: this.normalizePath(item.path),
-        value: item.newValue
+        value: item.newValue,
       });
     }
 
@@ -87,7 +87,7 @@ export class DiffCalculator {
       patches.push({
         op: 'replace',
         path: this.normalizePath(item.path),
-        value: item.newValue
+        value: item.newValue,
       });
     }
 
@@ -119,8 +119,10 @@ export class DiffCalculator {
     const totalOperations = diff.added.length + diff.modified.length + diff.deleted.length;
     if (totalOperations === 0) return 0;
 
-    const sizeImpact = [...diff.added, ...diff.modified, ...diff.deleted]
-      .reduce((sum, item) => sum + item.size, 0);
+    const sizeImpact = [...diff.added, ...diff.modified, ...diff.deleted].reduce(
+      (sum, item) => sum + item.size,
+      0
+    );
 
     // Normalize score based on number of operations and size impact
     const operationScore = Math.min(1, totalOperations / 100);
@@ -136,8 +138,10 @@ export class DiffCalculator {
     const diffSize = this.estimateDiffSize(diff);
     const ratio = diffSize / originalSize;
 
-    return ratio < 0.3 && // Less than 30% of original size
-           diff.added.length + diff.modified.length + diff.deleted.length < 50; // Less than 50 operations
+    return (
+      ratio < 0.3 && // Less than 30% of original size
+      diff.added.length + diff.modified.length + diff.deleted.length < 50
+    ); // Less than 50 operations
   }
 
   // Private helper methods
@@ -165,7 +169,7 @@ export class DiffCalculator {
         path,
         newValue,
         type: valueType,
-        size: this.estimateSize(newValue)
+        size: this.estimateSize(newValue),
       });
       return;
     }
@@ -175,7 +179,7 @@ export class DiffCalculator {
         path,
         oldValue,
         type: this.getValueType(oldValue),
-        size: this.estimateSize(oldValue)
+        size: this.estimateSize(oldValue),
       });
       return;
     }
@@ -188,7 +192,7 @@ export class DiffCalculator {
           oldValue,
           newValue,
           type: 'primitive',
-          size: this.estimateSize(newValue) - this.estimateSize(oldValue)
+          size: this.estimateSize(newValue) - this.estimateSize(oldValue),
         });
       }
       return;
@@ -206,7 +210,7 @@ export class DiffCalculator {
         oldValue,
         newValue,
         type: Array.isArray(newValue) ? 'array' : 'object',
-        size: this.estimateSize(newValue) - this.estimateSize(oldValue)
+        size: this.estimateSize(newValue) - this.estimateSize(oldValue),
       });
       return;
     }
@@ -251,7 +255,7 @@ export class DiffCalculator {
           path: itemPath,
           newValue: newArray[i],
           type: this.getValueType(newArray[i]),
-          size: this.estimateSize(newArray[i])
+          size: this.estimateSize(newArray[i]),
         });
       } else if (i >= newArray.length) {
         // Item deleted
@@ -259,17 +263,11 @@ export class DiffCalculator {
           path: itemPath,
           oldValue: oldArray[i],
           type: this.getValueType(oldArray[i]),
-          size: this.estimateSize(oldArray[i])
+          size: this.estimateSize(oldArray[i]),
         });
       } else {
         // Compare existing items
-        await this.calculateDiffRecursive(
-          oldArray[i],
-          newArray[i],
-          itemPath,
-          diff,
-          depth + 1
-        );
+        await this.calculateDiffRecursive(oldArray[i], newArray[i], itemPath, diff, depth + 1);
       }
     }
   }
@@ -289,8 +287,10 @@ export class DiffCalculator {
     // First pass: find exact matches
     for (let oldIndex = 0; oldIndex < oldArray.length; oldIndex++) {
       for (let newIndex = 0; newIndex < newArray.length; newIndex++) {
-        if (!usedNewIndices.has(newIndex) &&
-            this.deepEqual(oldArray[oldIndex], newArray[newIndex])) {
+        if (
+          !usedNewIndices.has(newIndex) &&
+          this.deepEqual(oldArray[oldIndex], newArray[newIndex])
+        ) {
           usedOldIndices.add(oldIndex);
           usedNewIndices.add(newIndex);
           break;
@@ -334,7 +334,7 @@ export class DiffCalculator {
             path: itemPath,
             oldValue: oldArray[oldIndex],
             type: this.getValueType(oldArray[oldIndex]),
-            size: this.estimateSize(oldArray[oldIndex])
+            size: this.estimateSize(oldArray[oldIndex]),
           });
         }
       }
@@ -347,7 +347,7 @@ export class DiffCalculator {
           path: `${path}[${oldArray.length + newIndex}]`,
           newValue: newArray[i],
           type: this.getValueType(newArray[i]),
-          size: this.estimateSize(newArray[i])
+          size: this.estimateSize(newArray[i]),
         });
         newIndex++;
       }
@@ -381,7 +381,7 @@ export class DiffCalculator {
     const optimized: Diff = {
       added: [...diff.added],
       modified: [...diff.modified],
-      deleted: [...diff.deleted]
+      deleted: [...diff.deleted],
     };
 
     // If a parent object was replaced, remove child modifications
@@ -394,8 +394,8 @@ export class DiffCalculator {
     });
 
     // Filter out child operations when parent is modified
-    optimized.modified = optimized.modified.filter(item =>
-      !parentPaths.has(item.path.split('.').slice(0, -1).join('.'))
+    optimized.modified = optimized.modified.filter(
+      item => !parentPaths.has(item.path.split('.').slice(0, -1).join('.'))
     );
 
     return optimized;
@@ -489,8 +489,10 @@ export class DiffCalculator {
   }
 
   private estimateDiffSize(diff: Diff): number {
-    return [...diff.added, ...diff.modified, ...diff.deleted]
-      .reduce((sum, item) => sum + Math.abs(item.size), 0);
+    return [...diff.added, ...diff.modified, ...diff.deleted].reduce(
+      (sum, item) => sum + Math.abs(item.size),
+      0
+    );
   }
 
   private calculateSimilarity(a: any, b: any): number {
@@ -530,7 +532,7 @@ export class DiffCalculator {
 
   private calculateBinaryDifference(oldStr: string, newStr: string): ArrayBuffer {
     // Simplified binary diff - in production, use a proper binary diff algorithm
-    const changes: Array<{index: number, delete: number, insert: string}> = [];
+    const changes: Array<{ index: number; delete: number; insert: string }> = [];
 
     // Find differences using simple comparison
     let oldIndex = 0;
@@ -542,7 +544,7 @@ export class DiffCalculator {
         changes.push({
           index: oldIndex,
           delete: 0,
-          insert: newStr.slice(newIndex)
+          insert: newStr.slice(newIndex),
         });
         break;
       }
@@ -552,7 +554,7 @@ export class DiffCalculator {
         changes.push({
           index: oldIndex,
           delete: oldStr.length - oldIndex,
-          insert: ''
+          insert: '',
         });
         break;
       }
@@ -594,7 +596,7 @@ export class DiffCalculator {
         changes.push({
           index: oldIndex - deleteCount,
           delete: deleteCount,
-          insert: insertStr
+          insert: insertStr,
         });
       }
     }

@@ -11,7 +11,7 @@ import {
   SearchAnomaly,
   PredictiveInsight,
   TrainingData,
-  MLConfig
+  MLConfig,
 } from '../../types/ml';
 
 interface SearchRequest {
@@ -75,14 +75,20 @@ export class MLSearchService {
     this.predictiveOptimizer = new PredictiveOptimizer();
 
     const trainingConfig = {
-      models: ['query_suggestion', 'personalized_ranking', 'semantic_search', 'anomaly_detection', 'predictive_optimization'],
+      models: [
+        'query_suggestion',
+        'personalized_ranking',
+        'semantic_search',
+        'anomaly_detection',
+        'predictive_optimization',
+      ],
       dataSource: 'search_logs',
       validationSplit: config.training.validationSplit,
       crossValidationFolds: 5,
       hyperparameterTuning: true,
       earlyStoppingPatience: config.training.earlyStoppingPatience,
       maxTrainingTime: 120,
-      parallelTraining: true
+      parallelTraining: true,
     };
 
     this.trainingPipeline = new MLTrainingPipeline(trainingConfig);
@@ -99,11 +105,26 @@ export class MLSearchService {
 
       // Initialize model monitoring
       const models = this.trainingPipeline.getModelServices();
-      await this.modelMonitor.startMonitoring('query_suggestion', models.querySuggestionEngine.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('personalized_ranking', models.personalizedRanker.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('semantic_search', models.semanticSearchEnhancer.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('anomaly_detection', models.searchAnomalyDetector.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('predictive_optimization', models.predictiveOptimizer.getModelInfo()!);
+      await this.modelMonitor.startMonitoring(
+        'query_suggestion',
+        models.querySuggestionEngine.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'personalized_ranking',
+        models.personalizedRanker.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'semantic_search',
+        models.semanticSearchEnhancer.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'anomaly_detection',
+        models.searchAnomalyDetector.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'predictive_optimization',
+        models.predictiveOptimizer.getModelInfo()!
+      );
 
       this.isInitialized = true;
       console.log('ML Search Service initialized successfully');
@@ -157,11 +178,11 @@ export class MLSearchService {
           entities: semanticAnalysis.entities,
           expandedQuery: semanticAnalysis.expandedQuery,
           complexity: await this.semanticSearchEnhancer.analyzeQueryComplexity(request.query),
-          sentiment: await this.semanticSearchEnhancer.analyzeSentiment(request.query)
+          sentiment: await this.semanticSearchEnhancer.analyzeSentiment(request.query),
         },
         personalizationApplied: !!request.personalization,
         anomaliesDetected: anomalies,
-        optimizationInsights
+        optimizationInsights,
       };
     } catch (error) {
       console.error('Search failed:', error);
@@ -192,7 +213,7 @@ export class MLSearchService {
         tags: semanticAnalysis.entities.map((e: any) => e.value),
         popularity: Math.random(),
         timestamp: new Date(),
-        baseRelevanceScore: Math.random() * 0.8 + 0.2
+        baseRelevanceScore: Math.random() * 0.8 + 0.2,
       },
       {
         id: '2',
@@ -202,8 +223,8 @@ export class MLSearchService {
         tags: ['search', 'content'],
         popularity: Math.random(),
         timestamp: new Date(),
-        baseRelevanceScore: Math.random() * 0.8 + 0.2
-      }
+        baseRelevanceScore: Math.random() * 0.8 + 0.2,
+      },
     ];
 
     return mockResults;
@@ -230,8 +251,8 @@ export class MLSearchService {
       clickThroughRate: 0.75,
       bounceRate: 0.25,
       errorRate: 0.01,
-      popularityDistribution: { 'high': 0.2, 'medium': 0.5, 'low': 0.3 },
-      categoryDistribution: { 'docs': 0.4, 'articles': 0.3, 'files': 0.3 }
+      popularityDistribution: { high: 0.2, medium: 0.5, low: 0.3 },
+      categoryDistribution: { docs: 0.4, articles: 0.3, files: 0.3 },
     };
 
     return await this.searchAnomalyDetector.detectAnomalies(currentMetrics);
@@ -245,37 +266,41 @@ export class MLSearchService {
         dayOfMonth: new Date().getDate(),
         month: new Date().getMonth(),
         isWeekend: [0, 6].includes(new Date().getDay()),
-        isHoliday: false
+        isHoliday: false,
       },
       searchFeatures: {
         queryVolume: this.searchMetrics.length,
         averageQueryLength: request.query.length,
         uniqueQueriesRatio: 0.8,
-        topCategoriesDistribution: { 'docs': 0.4, 'articles': 0.6 }
+        topCategoriesDistribution: { docs: 0.4, articles: 0.6 },
       },
       userFeatures: {
         activeUsers: 100,
         newUsers: 20,
         returningUsers: 80,
-        averageSessionDuration: 300
+        averageSessionDuration: 300,
       },
       systemFeatures: {
         serverLoad: 0.6,
         responseTime: 150,
         errorRate: 0.01,
-        cacheHitRate: 0.85
+        cacheHitRate: 0.85,
       },
       externalFeatures: {
         seasonalTrend: 1.0,
         competitorActivity: 0.5,
-        marketEvents: []
-      }
+        marketEvents: [],
+      },
     };
 
     return await this.predictiveOptimizer.generatePredictions(features, 24);
   }
 
-  private async recordSearchMetrics(request: SearchRequest, processingTime: number, resultCount: number): Promise<void> {
+  private async recordSearchMetrics(
+    request: SearchRequest,
+    processingTime: number,
+    resultCount: number
+  ): Promise<void> {
     const metrics: SearchMetrics = {
       timestamp: new Date(),
       queryCount: this.searchMetrics.length + 1,
@@ -284,8 +309,8 @@ export class MLSearchService {
       clickThroughRate: 0.75, // Mock CTR
       bounceRate: 0.25, // Mock bounce rate
       errorRate: 0.01, // Mock error rate
-      popularityDistribution: { 'high': 0.2, 'medium': 0.5, 'low': 0.3 },
-      categoryDistribution: { 'docs': 0.4, 'articles': 0.3, 'files': 0.3 }
+      popularityDistribution: { high: 0.2, medium: 0.5, low: 0.3 },
+      categoryDistribution: { docs: 0.4, articles: 0.3, files: 0.3 },
     };
 
     this.searchMetrics.push(metrics);
@@ -296,13 +321,35 @@ export class MLSearchService {
     }
   }
 
-  private async monitorModelPerformance(request: SearchRequest, semanticAnalysis: any, latency: number): Promise<void> {
+  private async monitorModelPerformance(
+    request: SearchRequest,
+    semanticAnalysis: any,
+    latency: number
+  ): Promise<void> {
     // Record performance for each model
-    await this.modelMonitor.recordPrediction('query_suggestion', request.query, [], undefined, latency);
-    await this.modelMonitor.recordPrediction('semantic_search', request.query, semanticAnalysis, undefined, latency);
+    await this.modelMonitor.recordPrediction(
+      'query_suggestion',
+      request.query,
+      [],
+      undefined,
+      latency
+    );
+    await this.modelMonitor.recordPrediction(
+      'semantic_search',
+      request.query,
+      semanticAnalysis,
+      undefined,
+      latency
+    );
 
     if (request.personalization) {
-      await this.modelMonitor.recordPrediction('personalized_ranking', request, [], undefined, latency);
+      await this.modelMonitor.recordPrediction(
+        'personalized_ranking',
+        request,
+        [],
+        undefined,
+        latency
+      );
     }
   }
 
@@ -337,11 +384,26 @@ export class MLSearchService {
 
       // Update model monitoring baselines
       const models = this.trainingPipeline.getModelServices();
-      await this.modelMonitor.startMonitoring('query_suggestion', models.querySuggestionEngine.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('personalized_ranking', models.personalizedRanker.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('semantic_search', models.semanticSearchEnhancer.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('anomaly_detection', models.searchAnomalyDetector.getModelInfo()!);
-      await this.modelMonitor.startMonitoring('predictive_optimization', models.predictiveOptimizer.getModelInfo()!);
+      await this.modelMonitor.startMonitoring(
+        'query_suggestion',
+        models.querySuggestionEngine.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'personalized_ranking',
+        models.personalizedRanker.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'semantic_search',
+        models.semanticSearchEnhancer.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'anomaly_detection',
+        models.searchAnomalyDetector.getModelInfo()!
+      );
+      await this.modelMonitor.startMonitoring(
+        'predictive_optimization',
+        models.predictiveOptimizer.getModelInfo()!
+      );
 
       console.log('Models retrained and monitoring updated');
     } catch (error) {
@@ -351,7 +413,13 @@ export class MLSearchService {
   }
 
   async getModelHealth(): Promise<Record<string, any>> {
-    const modelIds = ['query_suggestion', 'personalized_ranking', 'semantic_search', 'anomaly_detection', 'predictive_optimization'];
+    const modelIds = [
+      'query_suggestion',
+      'personalized_ranking',
+      'semantic_search',
+      'anomaly_detection',
+      'predictive_optimization',
+    ];
     const healthStatus: Record<string, any> = {};
 
     for (const modelId of modelIds) {
@@ -372,7 +440,9 @@ export class MLSearchService {
 
     // Get recent anomalies
     const recentMetrics = this.searchMetrics.slice(-1)[0];
-    const anomalies = recentMetrics ? await this.searchAnomalyDetector.detectAnomalies(recentMetrics) : [];
+    const anomalies = recentMetrics
+      ? await this.searchAnomalyDetector.detectAnomalies(recentMetrics)
+      : [];
 
     // Get optimization opportunities
     const features = {
@@ -382,34 +452,37 @@ export class MLSearchService {
         dayOfMonth: new Date().getDate(),
         month: new Date().getMonth(),
         isWeekend: [0, 6].includes(new Date().getDay()),
-        isHoliday: false
+        isHoliday: false,
       },
       searchFeatures: {
         queryVolume: this.searchMetrics.length,
         averageQueryLength: 12,
         uniqueQueriesRatio: 0.8,
-        topCategoriesDistribution: { 'docs': 0.4, 'articles': 0.6 }
+        topCategoriesDistribution: { docs: 0.4, articles: 0.6 },
       },
       userFeatures: {
         activeUsers: 100,
         newUsers: 20,
         returningUsers: 80,
-        averageSessionDuration: 300
+        averageSessionDuration: 300,
       },
       systemFeatures: {
         serverLoad: 0.6,
         responseTime: 150,
         errorRate: 0.01,
-        cacheHitRate: 0.85
+        cacheHitRate: 0.85,
       },
       externalFeatures: {
         seasonalTrend: 1.0,
         competitorActivity: 0.5,
-        marketEvents: []
-      }
+        marketEvents: [],
+      },
     };
 
-    const optimizationOpportunities = await this.predictiveOptimizer.generatePredictions(features, 24);
+    const optimizationOpportunities = await this.predictiveOptimizer.generatePredictions(
+      features,
+      24
+    );
 
     // Get model alerts
     const modelAlerts = this.modelMonitor.getAlerts();
@@ -418,7 +491,7 @@ export class MLSearchService {
       trends,
       anomalies,
       optimizationOpportunities,
-      modelAlerts
+      modelAlerts,
     };
   }
 

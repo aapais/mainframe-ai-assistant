@@ -22,7 +22,7 @@ import {
   ServiceProxy,
   FallbackService,
   DependencyValidationResult,
-  DEFAULT_SERVICE_MANAGER_CONFIG
+  DEFAULT_SERVICE_MANAGER_CONFIG,
 } from './types';
 
 // ========================
@@ -52,8 +52,9 @@ class DefaultServiceRegistry implements ServiceRegistry {
   }
 
   getByDependency(dependency: string): Service[] {
-    return Array.from(this.services.values())
-      .filter(service => service.dependencies.includes(dependency));
+    return Array.from(this.services.values()).filter(service =>
+      service.dependencies.includes(dependency)
+    );
   }
 
   getDependencyOrder(): string[] {
@@ -84,8 +85,9 @@ class DefaultServiceRegistry implements ServiceRegistry {
     };
 
     // Sort services by priority first, then resolve dependencies
-    const sortedServices = Array.from(this.services.values())
-      .sort((a, b) => a.priority - b.priority);
+    const sortedServices = Array.from(this.services.values()).sort(
+      (a, b) => a.priority - b.priority
+    );
 
     for (const service of sortedServices) {
       if (!visited.has(service.name)) {
@@ -100,7 +102,7 @@ class DefaultServiceRegistry implements ServiceRegistry {
     const result: DependencyValidationResult = {
       valid: true,
       circularDependencies: [],
-      missingDependencies: []
+      missingDependencies: [],
     };
 
     // Check for missing dependencies
@@ -110,7 +112,7 @@ class DefaultServiceRegistry implements ServiceRegistry {
         result.valid = false;
         result.missingDependencies.push({
           service: service.name,
-          missing
+          missing,
         });
       }
     }
@@ -151,18 +153,18 @@ class DefaultServiceProxy<T extends Service> implements ServiceProxy<T> {
 
   async call<R>(method: keyof T, ...args: any[]): Promise<R> {
     const startTime = Date.now();
-    
+
     try {
       const result = await (this.service[method] as any)(...args);
       this.metrics.histogram('service.call.duration', Date.now() - startTime, {
         service: this.service.name,
-        method: method.toString()
+        method: method.toString(),
       });
       return result;
     } catch (error) {
       this.metrics.increment('service.call.error', {
         service: this.service.name,
-        method: method.toString()
+        method: method.toString(),
       });
       throw error;
     }
@@ -170,42 +172,42 @@ class DefaultServiceProxy<T extends Service> implements ServiceProxy<T> {
 
   async getHealth(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       const health = this.service.healthCheck
         ? await this.service.healthCheck()
         : { healthy: true, lastCheck: new Date() };
-      
+
       this._isHealthy = health.healthy;
       this.lastHealthCheck = new Date();
-      
+
       this.metrics.gauge('service.health.response_time', Date.now() - startTime, {
-        service: this.service.name
+        service: this.service.name,
       });
-      
+
       this.metrics.gauge('service.health.status', health.healthy ? 1 : 0, {
-        service: this.service.name
+        service: this.service.name,
       });
 
       return health;
     } catch (error) {
       this._isHealthy = false;
       this.lastHealthCheck = new Date();
-      
+
       this.logger.error(`Health check failed for ${this.service.name}`, error);
-      
+
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
 
   async restart(): Promise<void> {
     this.logger.info(`Restarting service: ${this.service.name}`);
-    
+
     try {
       await this.service.shutdown();
       await this.service.initialize({} as ServiceContext); // Context would be provided by ServiceManager
@@ -253,7 +255,7 @@ class DefaultServiceLogger implements ServiceLogger {
   private log(level: string, message: string, args: any[]): void {
     const timestamp = new Date().toISOString();
     const formatted = `[${timestamp}] [${level}] [${this.serviceName}] ${message}`;
-    
+
     if (this.config.console) {
       console.log(formatted, ...args);
     }
@@ -269,7 +271,7 @@ class DefaultServiceLogger implements ServiceLogger {
       if (!fs.existsSync(logDir)) {
         fs.mkdirSync(logDir, { recursive: true });
       }
-      
+
       fs.appendFileSync(this.config.file!.path, message + '\n');
     } catch (error) {
       console.error('Failed to write to log file:', error);
@@ -311,12 +313,12 @@ class DefaultServiceMetrics implements ServiceMetrics {
     if (!tags || Object.keys(tags).length === 0) {
       return metric;
     }
-    
+
     const tagString = Object.entries(tags)
       .map(([key, value]) => `${key}=${value}`)
       .sort()
       .join(',');
-    
+
     return `${metric}{${tagString}}`;
   }
 
@@ -337,20 +339,18 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
   private readonly logger: ServiceLogger;
   private readonly metrics: ServiceMetrics;
   private readonly context: ServiceContext;
-  
+
   private healthCheckInterval?: ReturnType<typeof setTimeout>;
   private isShuttingDown = false;
   private initializationPromise?: Promise<InitializationResult>;
 
-  constructor(
-    private readonly config: ServiceManagerConfig = DEFAULT_SERVICE_MANAGER_CONFIG
-  ) {
+  constructor(private readonly config: ServiceManagerConfig = DEFAULT_SERVICE_MANAGER_CONFIG) {
     super();
-    
+
     this.registry = new DefaultServiceRegistry();
     this.logger = new DefaultServiceLogger(config.logging);
     this.metrics = new DefaultServiceMetrics();
-    
+
     this.context = {
       app,
       dataPath: app.getPath('userData'),
@@ -360,8 +360,8 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
       metrics: this.metrics,
       getService: <T extends Service>(name: string): T | null => {
         const proxy = this.proxies.get(name);
-        return proxy ? proxy.service as T : null;
-      }
+        return proxy ? (proxy.service as T) : null;
+      },
     };
 
     this.setupEventHandlers();
@@ -373,35 +373,37 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
   registerService(service: Service): void {
     this.logger.info(`Registering service: ${service.name} v${service.version}`);
-    
+
     this.registry.register(service);
-    
+
     // Initialize status
     this.serviceStatuses.set(service.name, {
       status: 'stopped',
       restartCount: 0,
-      uptime: 0
+      uptime: 0,
     });
 
     // Create proxy
     const proxy = new DefaultServiceProxy(service, this.logger, this.metrics);
     this.proxies.set(service.name, proxy);
-    
+
     this.logger.info(`Successfully registered service: ${service.name}`);
   }
 
   registerFallbackService(fallbackService: FallbackService): void {
-    this.logger.info(`Registering fallback service: ${fallbackService.name} for ${fallbackService.fallbackFor}`);
-    
+    this.logger.info(
+      `Registering fallback service: ${fallbackService.name} for ${fallbackService.fallbackFor}`
+    );
+
     this.registerService(fallbackService);
     this.fallbackServices.set(fallbackService.fallbackFor, fallbackService);
-    
+
     this.logger.info(`Successfully registered fallback service: ${fallbackService.name}`);
   }
 
   unregisterService(name: string): boolean {
     this.logger.info(`Unregistering service: ${name}`);
-    
+
     // Stop service if running
     const status = this.serviceStatuses.get(name);
     if (status && status.status === 'running') {
@@ -422,13 +424,15 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
   // Service Initialization
   // ========================
 
-  async initialize(options: InitializationOptions = {
-    parallelInitialization: true,
-    failFast: false,
-    enableRetries: true,
-    retryAttempts: 3,
-    retryDelay: 2000
-  }): Promise<InitializationResult> {
+  async initialize(
+    options: InitializationOptions = {
+      parallelInitialization: true,
+      failFast: false,
+      enableRetries: true,
+      retryAttempts: 3,
+      retryDelay: 2000,
+    }
+  ): Promise<InitializationResult> {
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
@@ -456,16 +460,18 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     const failed: Array<{ name: string; error: Error }> = [];
     const fallbacks: Array<{ original: string; fallback: string }> = [];
 
-    this.logger.info(`Initializing ${services.length} services in dependency order: ${dependencyOrder.join(', ')}`);
+    this.logger.info(
+      `Initializing ${services.length} services in dependency order: ${dependencyOrder.join(', ')}`
+    );
 
     try {
       if (options.parallelInitialization) {
         // Group services by dependency level for parallel initialization
         const levels = this.groupServicesByLevel(dependencyOrder);
-        
+
         for (const level of levels) {
           await this.initializeServiceLevel(level, options, initialized, failed, fallbacks);
-          
+
           if (options.failFast && failed.length > 0) {
             break;
           }
@@ -474,7 +480,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
         // Sequential initialization
         for (const serviceName of dependencyOrder) {
           await this.initializeService(serviceName, options, initialized, failed, fallbacks);
-          
+
           if (options.failFast && failed.length > 0) {
             break;
           }
@@ -488,13 +494,19 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
       const duration = Date.now() - startTime;
       const success = failed.length === 0;
-      
+
       if (success) {
         this.emit('initialization:completed', duration, initialized);
         this.logger.info(`Service initialization completed successfully in ${duration}ms`);
       } else {
-        this.emit('initialization:failed', new Error(`${failed.length} services failed to initialize`), failed.map(f => f.name));
-        this.logger.error(`Service initialization completed with ${failed.length} failures in ${duration}ms`);
+        this.emit(
+          'initialization:failed',
+          new Error(`${failed.length} services failed to initialize`),
+          failed.map(f => f.name)
+        );
+        this.logger.error(
+          `Service initialization completed with ${failed.length} failures in ${duration}ms`
+        );
       }
 
       return {
@@ -502,19 +514,19 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
         duration,
         initialized,
         failed,
-        fallbacks
+        fallbacks,
       };
     } catch (error) {
       const duration = Date.now() - startTime;
       this.emit('initialization:failed', error, []);
       this.logger.error('Service initialization failed', error);
-      
+
       return {
         success: false,
         duration,
         initialized,
         failed: [{ name: 'ServiceManager', error }],
-        fallbacks
+        fallbacks,
       };
     }
   }
@@ -558,7 +570,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     failed: Array<{ name: string; error: Error }>,
     fallbacks: Array<{ original: string; fallback: string }>
   ): Promise<void> {
-    const promises = serviceNames.map(name => 
+    const promises = serviceNames.map(name =>
       this.initializeService(name, options, initialized, failed, fallbacks)
     );
 
@@ -584,57 +596,64 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
     while (attempts < maxAttempts) {
       try {
-        this.logger.info(`Initializing service: ${serviceName} (attempt ${attempts + 1}/${maxAttempts})`);
+        this.logger.info(
+          `Initializing service: ${serviceName} (attempt ${attempts + 1}/${maxAttempts})`
+        );
         this.emit('service:initializing', serviceName);
-        
+
         const startTime = Date.now();
-        
+
         // Update status
         this.serviceStatuses.set(serviceName, {
           status: 'initializing',
           startTime: new Date(),
           restartCount: 0,
-          uptime: 0
+          uptime: 0,
         });
 
         // Initialize service
         await service.initialize(this.context);
-        
+
         const duration = Date.now() - startTime;
-        
+
         // Update status
         this.serviceStatuses.set(serviceName, {
           status: 'running',
           startTime: new Date(),
           restartCount: 0,
-          uptime: 0
+          uptime: 0,
         });
 
         this.emit('service:initialized', serviceName, duration);
         this.logger.info(`Successfully initialized service: ${serviceName} in ${duration}ms`);
-        
+
         initialized.push(serviceName);
-        
+
         if (options.progressCallback) {
           options.progressCallback(serviceName, 100);
         }
-        
+
         return;
       } catch (error) {
         attempts++;
-        
+
         this.serviceStatuses.set(serviceName, {
           status: 'error',
           lastError: error,
           restartCount: attempts,
-          uptime: 0
+          uptime: 0,
         });
 
         this.emit('service:failed', serviceName, error);
-        this.logger.error(`Failed to initialize service: ${serviceName} (attempt ${attempts}/${maxAttempts})`, error);
+        this.logger.error(
+          `Failed to initialize service: ${serviceName} (attempt ${attempts}/${maxAttempts})`,
+          error
+        );
 
         if (attempts < maxAttempts) {
-          this.logger.info(`Retrying service initialization: ${serviceName} in ${options.retryDelay}ms`);
+          this.logger.info(
+            `Retrying service initialization: ${serviceName} in ${options.retryDelay}ms`
+          );
           await this.sleep(options.retryDelay);
         }
       }
@@ -644,15 +663,17 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     const fallbackService = this.fallbackServices.get(serviceName);
     if (fallbackService && service.critical) {
       try {
-        this.logger.info(`Initializing fallback service: ${fallbackService.name} for failed service: ${serviceName}`);
+        this.logger.info(
+          `Initializing fallback service: ${fallbackService.name} for failed service: ${serviceName}`
+        );
         await fallbackService.initialize(this.context);
         await fallbackService.activate();
-        
+
         fallbacks.push({
           original: serviceName,
-          fallback: fallbackService.name
+          fallback: fallbackService.name,
         });
-        
+
         this.logger.info(`Successfully initialized fallback service: ${fallbackService.name}`);
         return;
       } catch (fallbackError) {
@@ -661,7 +682,9 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     }
 
     // Final failure
-    const finalError = new Error(`Service ${serviceName} failed to initialize after ${maxAttempts} attempts`);
+    const finalError = new Error(
+      `Service ${serviceName} failed to initialize after ${maxAttempts} attempts`
+    );
     failed.push({ name: serviceName, error: finalError });
 
     // If critical service failed and no fallback, this is a critical error
@@ -698,7 +721,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
       try {
         const wasHealthy = proxy.isHealthy;
         const health = await proxy.getHealth();
-        
+
         if (!health.healthy && wasHealthy) {
           unhealthyServices.push(name);
           this.logger.warn(`Service became unhealthy: ${name} - ${health.error}`);
@@ -727,11 +750,11 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
   getService<T extends Service>(name: string): T | null {
     const proxy = this.proxies.get(name);
-    return proxy ? proxy.service as T : null;
+    return proxy ? (proxy.service as T) : null;
   }
 
   getServiceProxy<T extends Service>(name: string): ServiceProxy<T> | null {
-    return this.proxies.get(name) as ServiceProxy<T> || null;
+    return (this.proxies.get(name) as ServiceProxy<T>) || null;
   }
 
   getServiceStatus(name: string): ServiceStatus | null {
@@ -768,7 +791,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     if (status) {
       this.serviceStatuses.set(name, {
         ...status,
-        restartCount: status.restartCount + 1
+        restartCount: status.restartCount + 1,
       });
     }
 
@@ -788,7 +811,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
     this.isShuttingDown = true;
     const startTime = Date.now();
-    
+
     this.emit('shutdown:started');
     this.logger.info('Starting graceful shutdown...');
 
@@ -802,23 +825,24 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     const services = this.registry.getAll();
     const shutdownOrder = this.registry.getDependencyOrder().reverse();
 
-    const shutdownPromises = shutdownOrder.map(async (serviceName) => {
+    const shutdownPromises = shutdownOrder.map(async serviceName => {
       const service = this.registry.get(serviceName);
       if (!service) return;
 
       try {
         this.logger.info(`Shutting down service: ${serviceName}`);
-        
-        const shutdownTimeout = this.config.serviceTimeouts[serviceName] || this.config.gracefulShutdownTimeout;
-        
+
+        const shutdownTimeout =
+          this.config.serviceTimeouts[serviceName] || this.config.gracefulShutdownTimeout;
+
         await Promise.race([
           service.shutdown(),
-          this.createTimeoutPromise(shutdownTimeout, `Service ${serviceName} shutdown timeout`)
+          this.createTimeoutPromise(shutdownTimeout, `Service ${serviceName} shutdown timeout`),
         ]);
 
         this.serviceStatuses.set(serviceName, {
           ...this.serviceStatuses.get(serviceName)!,
-          status: 'stopped'
+          status: 'stopped',
         });
 
         this.emit('service:shutdown', serviceName);
@@ -831,7 +855,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
     try {
       await Promise.allSettled(shutdownPromises);
-      
+
       const duration = Date.now() - startTime;
       this.emit('shutdown:completed', duration);
       this.logger.info(`Graceful shutdown completed in ${duration}ms`);
@@ -857,7 +881,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
 
   private setupEventHandlers(): void {
     // Handle app shutdown
-    app.on('before-quit', async (event) => {
+    app.on('before-quit', async event => {
       if (!this.isShuttingDown) {
         event.preventDefault();
         await this.shutdown();
@@ -866,7 +890,7 @@ export class ServiceManager extends EventEmitter implements ServiceManagerEvents
     });
 
     // Handle uncaught errors
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       this.logger.error('Uncaught exception in service manager', error);
       this.emit('error:critical', 'ServiceManager', error);
     });

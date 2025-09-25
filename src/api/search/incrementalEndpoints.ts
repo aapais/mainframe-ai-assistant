@@ -61,17 +61,17 @@ export class IncrementalSearchController {
         maxParallelChunks = 3,
         filters = {},
         sortBy = 'relevance',
-        includeMetadata = false
+        includeMetadata = false,
       } = req.body;
 
-      const sessionId = req.query.sessionId as string || this.generateSessionId();
+      const sessionId = (req.query.sessionId as string) || this.generateSessionId();
       const requestId = `search-${sessionId}-${Date.now()}`;
 
       // Validate input
       if (!query || query.trim().length === 0) {
         res.status(400).json({
           error: 'Query is required',
-          code: 'INVALID_QUERY'
+          code: 'INVALID_QUERY',
         });
         return;
       }
@@ -79,7 +79,7 @@ export class IncrementalSearchController {
       if (totalSize > 10000) {
         res.status(400).json({
           error: 'Total size cannot exceed 10,000 items',
-          code: 'SIZE_LIMIT_EXCEEDED'
+          code: 'SIZE_LIMIT_EXCEEDED',
         });
         return;
       }
@@ -89,7 +89,7 @@ export class IncrementalSearchController {
         type: 'search' as const,
         id: requestId,
         params: { query, filters, sortBy },
-        userContext: req.headers['user-id'] as string
+        userContext: req.headers['user-id'] as string,
       };
 
       const cachedResult = await this.cacheService.get(cacheKey);
@@ -103,8 +103,8 @@ export class IncrementalSearchController {
             loadedChunks: Math.ceil((cachedResult as any[]).length / chunkSize),
             totalChunks: Math.ceil(totalSize / chunkSize),
             percentage: 100,
-            complete: true
-          }
+            complete: true,
+          },
         });
         return;
       }
@@ -124,23 +124,23 @@ export class IncrementalSearchController {
           this.emitProgress(sessionId, {
             type: 'chunk-loaded',
             chunk,
-            progress
+            progress,
           });
         },
         onComplete: (data, stats) => {
           this.emitProgress(sessionId, {
             type: 'complete',
             data,
-            stats
+            stats,
           });
         },
         onError: (error, chunkId) => {
           this.emitProgress(sessionId, {
             type: 'error',
             error: error.message,
-            chunkId
+            chunkId,
           });
-        }
+        },
       };
 
       // Start incremental loading in background
@@ -152,9 +152,8 @@ export class IncrementalSearchController {
         status: 'started',
         estimatedTime: this.estimateLoadTime(totalSize, chunkSize),
         streamUrl: `/api/search/incremental/stream/${sessionId}`,
-        progressUrl: `/api/search/incremental/progress/${requestId}`
+        progressUrl: `/api/search/incremental/progress/${requestId}`,
       });
-
     } catch (error) {
       console.error('Start incremental search error:', error);
       next(error);
@@ -165,11 +164,7 @@ export class IncrementalSearchController {
    * Get incremental search progress
    * GET /api/search/incremental/progress/:requestId
    */
-  async getProgress(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async getProgress(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { requestId } = req.params;
 
@@ -179,7 +174,7 @@ export class IncrementalSearchController {
       if (!progress) {
         res.status(404).json({
           error: 'Request not found',
-          code: 'REQUEST_NOT_FOUND'
+          code: 'REQUEST_NOT_FOUND',
         });
         return;
       }
@@ -187,9 +182,8 @@ export class IncrementalSearchController {
       res.json({
         requestId,
         progress,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error) {
       console.error('Get progress error:', error);
       next(error);
@@ -200,11 +194,7 @@ export class IncrementalSearchController {
    * Stream incremental search results
    * GET /api/search/incremental/stream/:sessionId
    */
-  async streamResults(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async streamResults(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sessionId } = req.params;
 
@@ -212,9 +202,9 @@ export class IncrementalSearchController {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Cache-Control'
+        'Access-Control-Allow-Headers': 'Cache-Control',
       });
 
       // Send initial connection event
@@ -228,7 +218,6 @@ export class IncrementalSearchController {
 
       // Register session for streaming
       this.registerStreamingSession(sessionId, res);
-
     } catch (error) {
       console.error('Stream results error:', error);
       next(error);
@@ -239,11 +228,7 @@ export class IncrementalSearchController {
    * Get specific chunk by ID
    * GET /api/search/incremental/chunk/:requestId/:chunkId
    */
-  async getChunk(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async getChunk(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { requestId, chunkId } = req.params;
 
@@ -251,7 +236,7 @@ export class IncrementalSearchController {
       const cacheKey = {
         type: 'data' as const,
         id: `${requestId}-chunk-${chunkId}`,
-        userContext: req.headers['user-id'] as string
+        userContext: req.headers['user-id'] as string,
       };
 
       const chunk = await this.cacheService.get(cacheKey);
@@ -259,7 +244,7 @@ export class IncrementalSearchController {
       if (!chunk) {
         res.status(404).json({
           error: 'Chunk not found',
-          code: 'CHUNK_NOT_FOUND'
+          code: 'CHUNK_NOT_FOUND',
         });
         return;
       }
@@ -269,9 +254,8 @@ export class IncrementalSearchController {
         chunkId,
         data: chunk,
         cached: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error) {
       console.error('Get chunk error:', error);
       next(error);
@@ -282,11 +266,7 @@ export class IncrementalSearchController {
    * Cancel incremental search
    * DELETE /api/search/incremental/:requestId
    */
-  async cancelSearch(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async cancelSearch(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { requestId } = req.params;
 
@@ -295,7 +275,7 @@ export class IncrementalSearchController {
       if (!cancelled) {
         res.status(404).json({
           error: 'Request not found or already completed',
-          code: 'REQUEST_NOT_FOUND'
+          code: 'REQUEST_NOT_FOUND',
         });
         return;
       }
@@ -303,9 +283,8 @@ export class IncrementalSearchController {
       res.json({
         requestId,
         status: 'cancelled',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error) {
       console.error('Cancel search error:', error);
       next(error);
@@ -316,19 +295,14 @@ export class IncrementalSearchController {
    * Get incremental search statistics
    * GET /api/search/incremental/stats
    */
-  async getStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const stats = await this.getIncrementalStats();
 
       res.json({
         stats,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error) {
       console.error('Get stats error:', error);
       next(error);
@@ -339,22 +313,14 @@ export class IncrementalSearchController {
    * Preload data for improved performance
    * POST /api/search/incremental/preload
    */
-  async preloadData(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
+  async preloadData(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const {
-        queries,
-        priority = 'low',
-        maxConcurrency = 2
-      } = req.body;
+      const { queries, priority = 'low', maxConcurrency = 2 } = req.body;
 
       if (!Array.isArray(queries) || queries.length === 0) {
         res.status(400).json({
           error: 'Queries array is required',
-          code: 'INVALID_QUERIES'
+          code: 'INVALID_QUERIES',
         });
         return;
       }
@@ -362,7 +328,7 @@ export class IncrementalSearchController {
       if (queries.length > 20) {
         res.status(400).json({
           error: 'Maximum 20 queries allowed for preloading',
-          code: 'TOO_MANY_QUERIES'
+          code: 'TOO_MANY_QUERIES',
         });
         return;
       }
@@ -375,9 +341,8 @@ export class IncrementalSearchController {
         preloadId,
         status: 'started',
         queries: queries.length,
-        estimatedTime: queries.length * 500 // Rough estimate
+        estimatedTime: queries.length * 500, // Rough estimate
       });
-
     } catch (error) {
       console.error('Preload data error:', error);
       next(error);
@@ -409,7 +374,7 @@ export class IncrementalSearchController {
           limit,
           filters,
           sortBy,
-          includeMetadata
+          includeMetadata,
         });
       };
 
@@ -417,16 +382,19 @@ export class IncrementalSearchController {
       const result = await this.cacheService.loadIncremental(loadRequest, dataSource);
 
       // Cache the complete result
-      await this.cacheService.set({
-        type: 'search',
-        id: loadRequest.id,
-        params: { query: loadRequest.query, filters, sortBy },
-        userContext: loadRequest.userContext
-      }, result, {
-        ttl: 600000, // 10 minutes
-        priority: loadRequest.priority
-      });
-
+      await this.cacheService.set(
+        {
+          type: 'search',
+          id: loadRequest.id,
+          params: { query: loadRequest.query, filters, sortBy },
+          userContext: loadRequest.userContext,
+        },
+        result,
+        {
+          ttl: 600000, // 10 minutes
+          priority: loadRequest.priority,
+        }
+      );
     } catch (error) {
       console.error('Background load error:', error);
 
@@ -434,7 +402,7 @@ export class IncrementalSearchController {
       if (loadRequest.userContext) {
         this.emitProgress(loadRequest.userContext, {
           type: 'error',
-          error: error.message
+          error: error.message,
         });
       }
     } finally {
@@ -458,14 +426,18 @@ export class IncrementalSearchController {
             try {
               const data = await this.searchService.search(query, { limit: 50 });
 
-              await this.cacheService.set({
-                type: 'search',
-                id: `preload-${query}`,
-                params: { query }
-              }, data, {
-                ttl: 1800000, // 30 minutes
-                priority: priority as any
-              });
+              await this.cacheService.set(
+                {
+                  type: 'search',
+                  id: `preload-${query}`,
+                  params: { query },
+                },
+                data,
+                {
+                  ttl: 1800000, // 30 minutes
+                  priority: priority as any,
+                }
+              );
 
               results.push({ query, success: true });
             } catch (error) {
@@ -479,8 +451,9 @@ export class IncrementalSearchController {
         });
       }
 
-      console.log(`Preload ${preloadId} completed: ${results.filter(r => r.success).length}/${results.length} successful`);
-
+      console.log(
+        `Preload ${preloadId} completed: ${results.filter(r => r.success).length}/${results.length} successful`
+      );
     } catch (error) {
       console.error('Background preload error:', error);
     }
@@ -524,7 +497,7 @@ export class IncrementalSearchController {
       loadedChunks: 5,
       totalChunks: 10,
       percentage: 50,
-      estimatedTimeRemaining: 5000
+      estimatedTimeRemaining: 5000,
     };
   }
 
@@ -544,7 +517,7 @@ export class IncrementalSearchController {
       activeLoads: this.loadRequests.size,
       activeStreams: this.activeStreams.size,
       cacheMetrics: cacheStats.incremental,
-      performance: cacheStats.overall
+      performance: cacheStats.overall,
     };
   }
 
@@ -555,10 +528,7 @@ export class IncrementalSearchController {
 }
 
 // Export route handlers
-export function createIncrementalRoutes(
-  cacheService: CacheService,
-  searchService: SearchService
-) {
+export function createIncrementalRoutes(cacheService: CacheService, searchService: SearchService) {
   const controller = new IncrementalSearchController(cacheService, searchService);
 
   return {
@@ -568,6 +538,6 @@ export function createIncrementalRoutes(
     getChunk: controller.getChunk.bind(controller),
     cancelSearch: controller.cancelSearch.bind(controller),
     getStats: controller.getStats.bind(controller),
-    preloadData: controller.preloadData.bind(controller)
+    preloadData: controller.preloadData.bind(controller),
   };
 }

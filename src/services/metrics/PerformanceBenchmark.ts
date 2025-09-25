@@ -92,7 +92,9 @@ export class PerformanceBenchmark {
       }
 
       // Main benchmark phase
-      console.log(`Running benchmark for ${config.duration}ms with ${config.concurrency} concurrent operations...`);
+      console.log(
+        `Running benchmark for ${config.duration}ms with ${config.concurrency} concurrent operations...`
+      );
       const results = await this.runMainBenchmark(testId, config, operation);
 
       // Cooldown phase
@@ -107,13 +109,14 @@ export class PerformanceBenchmark {
       const benchmarkResult = this.analyzeResults(testId, config, startTime, endTime, results);
 
       console.log(`Benchmark completed: ${config.name}`);
-      console.log(`Results: ${benchmarkResult.summary.totalRequests} requests, ` +
-                 `${benchmarkResult.summary.avgResponseTime.toFixed(2)}ms avg, ` +
-                 `${benchmarkResult.summary.throughput.toFixed(2)} req/s, ` +
-                 `${(benchmarkResult.summary.errorRate * 100).toFixed(2)}% error rate`);
+      console.log(
+        `Results: ${benchmarkResult.summary.totalRequests} requests, ` +
+          `${benchmarkResult.summary.avgResponseTime.toFixed(2)}ms avg, ` +
+          `${benchmarkResult.summary.throughput.toFixed(2)} req/s, ` +
+          `${(benchmarkResult.summary.errorRate * 100).toFixed(2)}% error rate`
+      );
 
       return benchmarkResult;
-
     } catch (error) {
       console.error(`Benchmark failed: ${config.name}`, error);
       throw error;
@@ -163,9 +166,7 @@ export class PerformanceBenchmark {
 
     // Create concurrent workers
     for (let i = 0; i < config.concurrency; i++) {
-      workers.push(
-        this.runWorker(testId, config, operation, startTime, results)
-      );
+      workers.push(this.runWorker(testId, config, operation, startTime, results));
     }
 
     // Wait for all workers to complete
@@ -197,7 +198,7 @@ export class PerformanceBenchmark {
           success: result.success,
           error: result.error,
           statusCode: result.statusCode,
-          metadata: result.metadata
+          metadata: result.metadata,
         };
 
         results.push(testResult);
@@ -209,7 +210,6 @@ export class PerformanceBenchmark {
           responseTime,
           result.statusCode || (result.success ? 200 : 500)
         );
-
       } catch (error) {
         const responseTime = Date.now() - requestStart;
 
@@ -217,7 +217,7 @@ export class PerformanceBenchmark {
           timestamp: Date.now(),
           responseTime,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
 
         metricsCollector.recordResponseTime(config.name, 'BENCHMARK', responseTime, 500);
@@ -258,7 +258,7 @@ export class PerformanceBenchmark {
       p75: this.calculatePercentile(responseTimes, 75),
       p90: this.calculatePercentile(responseTimes, 90),
       p95: this.calculatePercentile(responseTimes, 95),
-      p99: this.calculatePercentile(responseTimes, 99)
+      p99: this.calculatePercentile(responseTimes, 99),
     };
 
     // Check if benchmark passed
@@ -266,22 +266,30 @@ export class PerformanceBenchmark {
     let passed = true;
 
     if (config.targets.responseTime && avgResponseTime > config.targets.responseTime) {
-      failures.push(`Average response time ${avgResponseTime.toFixed(2)}ms exceeds target ${config.targets.responseTime}ms`);
+      failures.push(
+        `Average response time ${avgResponseTime.toFixed(2)}ms exceeds target ${config.targets.responseTime}ms`
+      );
       passed = false;
     }
 
     if (config.targets.throughput && throughput < config.targets.throughput) {
-      failures.push(`Throughput ${throughput.toFixed(2)} req/s below target ${config.targets.throughput} req/s`);
+      failures.push(
+        `Throughput ${throughput.toFixed(2)} req/s below target ${config.targets.throughput} req/s`
+      );
       passed = false;
     }
 
     if (config.targets.errorRate && errorRate > config.targets.errorRate) {
-      failures.push(`Error rate ${(errorRate * 100).toFixed(2)}% exceeds target ${(config.targets.errorRate * 100).toFixed(2)}%`);
+      failures.push(
+        `Error rate ${(errorRate * 100).toFixed(2)}% exceeds target ${(config.targets.errorRate * 100).toFixed(2)}%`
+      );
       passed = false;
     }
 
     if (config.targets.successRate && successRate < config.targets.successRate) {
-      failures.push(`Success rate ${(successRate * 100).toFixed(2)}% below target ${(config.targets.successRate * 100).toFixed(2)}%`);
+      failures.push(
+        `Success rate ${(successRate * 100).toFixed(2)}% below target ${(config.targets.successRate * 100).toFixed(2)}%`
+      );
       passed = false;
     }
 
@@ -300,12 +308,12 @@ export class PerformanceBenchmark {
         maxResponseTime,
         throughput,
         errorRate,
-        successRate
+        successRate,
       },
       percentiles,
       results,
       passed,
-      failures
+      failures,
     };
   }
 
@@ -336,7 +344,7 @@ export class PerformanceBenchmark {
       try {
         const response = await fetch(url, {
           method: 'GET',
-          ...options
+          ...options,
         });
 
         const responseTime = Date.now() - startTime;
@@ -350,10 +358,9 @@ export class PerformanceBenchmark {
           metadata: {
             url,
             method: options.method || 'GET',
-            contentLength: response.headers.get('content-length')
-          }
+            contentLength: response.headers.get('content-length'),
+          },
         };
-
       } catch (error) {
         const responseTime = Date.now() - startTime;
 
@@ -361,7 +368,7 @@ export class PerformanceBenchmark {
           success: false,
           responseTime,
           error: error instanceof Error ? error.message : 'Network error',
-          metadata: { url, method: options.method || 'GET' }
+          metadata: { url, method: options.method || 'GET' },
         };
       }
     };
@@ -384,9 +391,8 @@ export class PerformanceBenchmark {
         return {
           success: true,
           responseTime,
-          metadata: { queryName }
+          metadata: { queryName },
         };
-
       } catch (error) {
         const responseTime = Date.now() - startTime;
 
@@ -394,7 +400,7 @@ export class PerformanceBenchmark {
           success: false,
           responseTime,
           error: error instanceof Error ? error.message : 'Database error',
-          metadata: { queryName }
+          metadata: { queryName },
         };
       }
     };
@@ -424,9 +430,8 @@ export class PerformanceBenchmark {
         return {
           success: true,
           responseTime,
-          metadata: { key, hit }
+          metadata: { key, hit },
         };
-
       } catch (error) {
         const responseTime = Date.now() - startTime;
 
@@ -434,7 +439,7 @@ export class PerformanceBenchmark {
           success: false,
           responseTime,
           error: error instanceof Error ? error.message : 'Cache error',
-          metadata: { key }
+          metadata: { key },
         };
       }
     };
@@ -451,53 +456,66 @@ export class PerformanceBenchmark {
     console.log('Running comprehensive system benchmark...');
 
     // HTTP endpoint benchmark
-    const httpBenchmark = await this.runBenchmark({
-      name: 'HTTP Endpoints',
-      description: 'Test HTTP endpoint response times and throughput',
-      duration: 30000, // 30 seconds
-      concurrency: 10,
-      targets: {
-        responseTime: 500,
-        throughput: 100,
-        errorRate: 0.01
-      }
-    }, PerformanceBenchmark.createHttpBenchmark('/api/health'));
+    const httpBenchmark = await this.runBenchmark(
+      {
+        name: 'HTTP Endpoints',
+        description: 'Test HTTP endpoint response times and throughput',
+        duration: 30000, // 30 seconds
+        concurrency: 10,
+        targets: {
+          responseTime: 500,
+          throughput: 100,
+          errorRate: 0.01,
+        },
+      },
+      PerformanceBenchmark.createHttpBenchmark('/api/health')
+    );
 
     // Database benchmark (mock)
-    const databaseBenchmark = await this.runBenchmark({
-      name: 'Database Queries',
-      description: 'Test database query performance',
-      duration: 20000, // 20 seconds
-      concurrency: 5,
-      targets: {
-        responseTime: 100,
-        errorRate: 0.001
-      }
-    }, PerformanceBenchmark.createDatabaseBenchmark(
-      () => new Promise(resolve => setTimeout(resolve, Math.random() * 50)),
-      'select-benchmark'
-    ));
+    const databaseBenchmark = await this.runBenchmark(
+      {
+        name: 'Database Queries',
+        description: 'Test database query performance',
+        duration: 20000, // 20 seconds
+        concurrency: 5,
+        targets: {
+          responseTime: 100,
+          errorRate: 0.001,
+        },
+      },
+      PerformanceBenchmark.createDatabaseBenchmark(
+        () => new Promise(resolve => setTimeout(resolve, Math.random() * 50)),
+        'select-benchmark'
+      )
+    );
 
     // Cache benchmark (mock)
-    const cacheBenchmark = await this.runBenchmark({
-      name: 'Cache Operations',
-      description: 'Test cache hit rates and response times',
-      duration: 15000, // 15 seconds
-      concurrency: 20,
-      targets: {
-        responseTime: 10,
-        errorRate: 0.001
-      }
-    }, PerformanceBenchmark.createCacheBenchmark(
-      (key) => new Promise(resolve =>
-        setTimeout(() => resolve(Math.random() > 0.2 ? `value-${key}` : null), Math.random() * 5)
+    const cacheBenchmark = await this.runBenchmark(
+      {
+        name: 'Cache Operations',
+        description: 'Test cache hit rates and response times',
+        duration: 15000, // 15 seconds
+        concurrency: 20,
+        targets: {
+          responseTime: 10,
+          errorRate: 0.001,
+        },
+      },
+      PerformanceBenchmark.createCacheBenchmark(
+        key =>
+          new Promise(resolve =>
+            setTimeout(
+              () => resolve(Math.random() > 0.2 ? `value-${key}` : null),
+              Math.random() * 5
+            )
+          )
       )
-    ));
+    );
 
     return {
       http: httpBenchmark,
       database: databaseBenchmark,
-      cache: cacheBenchmark
+      cache: cacheBenchmark,
     };
   }
 }

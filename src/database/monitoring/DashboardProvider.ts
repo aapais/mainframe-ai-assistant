@@ -1,6 +1,6 @@
 /**
  * Dashboard Data Provider for SQLite Performance Monitoring
- * 
+ *
  * Provides comprehensive real-time and historical data for monitoring dashboards,
  * including Grafana integration and custom dashboard APIs.
  */
@@ -122,7 +122,7 @@ export class DashboardProvider extends EventEmitter {
   private metricsCollector: MetricsCollector;
   private healthCheck: HealthCheck;
   private queryAnalyzer: QueryAnalyzer;
-  
+
   private refreshTimer?: ReturnType<typeof setTimeout>;
   private isRunning = false;
   private lastMetrics?: DashboardMetrics;
@@ -143,7 +143,7 @@ export class DashboardProvider extends EventEmitter {
     this.healthCheck = healthCheck;
     this.queryAnalyzer = queryAnalyzer;
     this.config = this.buildConfig(config);
-    
+
     this.initializeProvider();
   }
 
@@ -160,7 +160,7 @@ export class DashboardProvider extends EventEmitter {
         responseTime: 1000, // 1 second
         errorRate: 0.05, // 5%
         memoryUsage: 0.8, // 80%
-        diskUsage: 0.9 // 90%
+        diskUsage: 0.9, // 90%
       },
       ...config,
       alertThresholds: {
@@ -168,8 +168,8 @@ export class DashboardProvider extends EventEmitter {
         errorRate: 0.05,
         memoryUsage: 0.8,
         diskUsage: 0.9,
-        ...config?.alertThresholds
-      }
+        ...config?.alertThresholds,
+      },
     };
   }
 
@@ -227,17 +227,21 @@ export class DashboardProvider extends EventEmitter {
 
   private loadMetricsHistory(): void {
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT timestamp, metrics_data 
         FROM dashboard_metrics 
         WHERE timestamp > ?
         ORDER BY timestamp DESC 
         LIMIT 100
-      `).all(Date.now() - (24 * 60 * 60 * 1000)); // Last 24 hours
+      `
+        )
+        .all(Date.now() - 24 * 60 * 60 * 1000); // Last 24 hours
 
       this.metricsHistory = results.map((row: any) => ({
         timestamp: row.timestamp,
-        ...JSON.parse(row.metrics_data)
+        ...JSON.parse(row.metrics_data),
       }));
     } catch (error) {
       console.error('Failed to load metrics history:', error);
@@ -247,7 +251,7 @@ export class DashboardProvider extends EventEmitter {
 
   public startDataCollection(): void {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
 
     // Collect initial metrics
@@ -279,21 +283,21 @@ export class DashboardProvider extends EventEmitter {
   private async collectMetrics(): Promise<void> {
     try {
       const timestamp = Date.now();
-      
+
       // Collect performance metrics
       const performanceMetrics = this.performanceMonitor.getRealtimeMetrics();
-      
+
       // Collect health metrics
       const healthStatus = this.healthCheck.getHealthStatus();
-      
+
       // Collect query metrics
       const queryStats = this.queryAnalyzer.getAnalyzerStats();
       const slowQueries = this.queryAnalyzer.getSlowQueries(5);
-      
+
       // Collect system metrics
       const memUsage = process.memoryUsage();
       const cpuUsage = process.cpuUsage();
-      
+
       const metrics: DashboardMetrics = {
         timestamp,
         performance: {
@@ -302,13 +306,13 @@ export class DashboardProvider extends EventEmitter {
           errorRate: 0, // Would calculate from error metrics
           cacheHitRate: performanceMetrics.cacheHitRate,
           activeConnections: performanceMetrics.currentConnections,
-          memoryUsage: performanceMetrics.memoryUsage
+          memoryUsage: performanceMetrics.memoryUsage,
         },
         health: {
           overall: healthStatus?.overall || 'unknown',
           score: healthStatus?.score || 0,
           activeAlerts: healthStatus?.checks.filter(c => c.status !== 'healthy').length || 0,
-          lastCheck: healthStatus?.lastCheck || timestamp
+          lastCheck: healthStatus?.lastCheck || timestamp,
         },
         queries: {
           totalQueries: queryStats.totalQueries,
@@ -316,29 +320,30 @@ export class DashboardProvider extends EventEmitter {
           topSlowQueries: slowQueries.slice(0, 5).map(q => ({
             query: q.query.substring(0, 100) + (q.query.length > 100 ? '...' : ''),
             avgDuration: q.avgDuration,
-            occurrences: q.occurrences
-          }))
+            occurrences: q.occurrences,
+          })),
         },
         system: {
           cpuUsage: (cpuUsage.user + cpuUsage.system) / 1000000, // Convert to seconds
           memoryUsage: memUsage.heapUsed,
           diskUsage: 0, // Would get from disk usage monitoring
-          uptime: process.uptime()
-        }
+          uptime: process.uptime(),
+        },
       };
 
       this.lastMetrics = metrics;
-      
+
       // Add to history
       this.metricsHistory.push(metrics);
-      
+
       // Keep only recent history in memory
       if (this.metricsHistory.length > 1000) {
         this.metricsHistory = this.metricsHistory.slice(-500);
       }
 
       // Store in database (sample rate for storage efficiency)
-      if (Math.random() < 0.1) { // Store 10% of metrics
+      if (Math.random() < 0.1) {
+        // Store 10% of metrics
         this.storeMetrics(metrics);
       }
 
@@ -353,7 +358,6 @@ export class DashboardProvider extends EventEmitter {
       }
 
       this.emit('metrics-collected', metrics);
-
     } catch (error) {
       console.error('Failed to collect dashboard metrics:', error);
     }
@@ -361,15 +365,22 @@ export class DashboardProvider extends EventEmitter {
 
   private storeMetrics(metrics: DashboardMetrics): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO dashboard_metrics (timestamp, metrics_data)
         VALUES (?, ?)
-      `).run(metrics.timestamp, JSON.stringify({
-        performance: metrics.performance,
-        health: metrics.health,
-        queries: metrics.queries,
-        system: metrics.system
-      }));
+      `
+        )
+        .run(
+          metrics.timestamp,
+          JSON.stringify({
+            performance: metrics.performance,
+            health: metrics.health,
+            queries: metrics.queries,
+            system: metrics.system,
+          })
+        );
     } catch (error) {
       console.error('Failed to store dashboard metrics:', error);
     }
@@ -387,16 +398,18 @@ export class DashboardProvider extends EventEmitter {
 
     // Check response time
     if (metrics.performance.avgResponseTime > this.config.alertThresholds.responseTime) {
-      const severity = metrics.performance.avgResponseTime > this.config.alertThresholds.responseTime * 2 
-        ? 'critical' : 'warning';
-      
+      const severity =
+        metrics.performance.avgResponseTime > this.config.alertThresholds.responseTime * 2
+          ? 'critical'
+          : 'warning';
+
       alerts.push({
         type: 'response_time',
         severity,
         title: 'High Response Time',
         message: `Average response time is ${metrics.performance.avgResponseTime}ms`,
         value: metrics.performance.avgResponseTime,
-        threshold: this.config.alertThresholds.responseTime
+        threshold: this.config.alertThresholds.responseTime,
       });
     }
 
@@ -408,7 +421,7 @@ export class DashboardProvider extends EventEmitter {
         title: 'High Error Rate',
         message: `Error rate is ${(metrics.performance.errorRate * 100).toFixed(1)}%`,
         value: metrics.performance.errorRate,
-        threshold: this.config.alertThresholds.errorRate
+        threshold: this.config.alertThresholds.errorRate,
       });
     }
 
@@ -421,7 +434,7 @@ export class DashboardProvider extends EventEmitter {
         title: 'High Memory Usage',
         message: `Memory usage is ${(memoryUtilization * 100).toFixed(1)}%`,
         value: memoryUtilization,
-        threshold: this.config.alertThresholds.memoryUsage
+        threshold: this.config.alertThresholds.memoryUsage,
       });
     }
 
@@ -441,28 +454,31 @@ export class DashboardProvider extends EventEmitter {
   }): void {
     try {
       const alertId = `${Date.now()}_${alert.type}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      this.db.prepare(`
+
+      this.db
+        .prepare(
+          `
         INSERT INTO dashboard_alerts (
           id, alert_type, severity, title, message, value, threshold, triggered_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        alertId,
-        alert.type,
-        alert.severity,
-        alert.title,
-        alert.message,
-        alert.value,
-        alert.threshold,
-        Date.now()
-      );
+      `
+        )
+        .run(
+          alertId,
+          alert.type,
+          alert.severity,
+          alert.title,
+          alert.message,
+          alert.value,
+          alert.threshold,
+          Date.now()
+        );
 
       this.emit('alert-triggered', {
         id: alertId,
         ...alert,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
-
     } catch (error) {
       console.error('Failed to create alert:', error);
     }
@@ -471,11 +487,11 @@ export class DashboardProvider extends EventEmitter {
   private updateCapacityPlanning(metrics: DashboardMetrics): void {
     // Simple linear projection based on historical data
     const now = Date.now();
-    const oneDayAgo = now - (24 * 60 * 60 * 1000);
-    
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+
     // Get historical data for trend analysis
     const historicalData = this.metricsHistory.filter(m => m.timestamp > oneDayAgo);
-    
+
     if (historicalData.length < 2) return;
 
     // Calculate growth rates for key metrics
@@ -485,37 +501,55 @@ export class DashboardProvider extends EventEmitter {
 
     if (timeDiff > 0) {
       // Memory growth rate
-      const memoryGrowthRate = (newestData.performance.memoryUsage - oldestData.performance.memoryUsage) / timeDiff;
-      
+      const memoryGrowthRate =
+        (newestData.performance.memoryUsage - oldestData.performance.memoryUsage) / timeDiff;
+
       // Query rate growth
-      const queryGrowthRate = (newestData.performance.throughput - oldestData.performance.throughput) / timeDiff;
+      const queryGrowthRate =
+        (newestData.performance.throughput - oldestData.performance.throughput) / timeDiff;
 
       // Store projections
-      this.storeCapacityProjection('memory_usage', newestData.performance.memoryUsage, memoryGrowthRate);
-      this.storeCapacityProjection('query_throughput', newestData.performance.throughput, queryGrowthRate);
+      this.storeCapacityProjection(
+        'memory_usage',
+        newestData.performance.memoryUsage,
+        memoryGrowthRate
+      );
+      this.storeCapacityProjection(
+        'query_throughput',
+        newestData.performance.throughput,
+        queryGrowthRate
+      );
     }
   }
 
-  private storeCapacityProjection(metricName: string, currentValue: number, growthRate: number): void {
+  private storeCapacityProjection(
+    metricName: string,
+    currentValue: number,
+    growthRate: number
+  ): void {
     try {
       const projectionDays = 30;
-      const projectedValue = currentValue + (growthRate * 24 * projectionDays); // 24 hours per day
+      const projectedValue = currentValue + growthRate * 24 * projectionDays; // 24 hours per day
       const confidence = Math.max(0.1, Math.min(1.0, 1.0 - Math.abs(growthRate) / currentValue));
 
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO capacity_planning (
           metric_name, current_value, projected_value, projection_days,
           confidence, growth_rate, calculation_date
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        metricName,
-        currentValue,
-        projectedValue,
-        projectionDays,
-        confidence,
-        growthRate,
-        Date.now()
-      );
+      `
+        )
+        .run(
+          metricName,
+          currentValue,
+          projectedValue,
+          projectionDays,
+          confidence,
+          growthRate,
+          Date.now()
+        );
     } catch (error) {
       console.error('Failed to store capacity projection:', error);
     }
@@ -528,7 +562,7 @@ export class DashboardProvider extends EventEmitter {
   }
 
   public getMetricsHistory(hours = 24): DashboardMetrics[] {
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
     return this.metricsHistory.filter(m => m.timestamp > cutoff);
   }
 
@@ -537,7 +571,7 @@ export class DashboardProvider extends EventEmitter {
     hours = 24
   ): TimeSeriesData {
     const history = this.getMetricsHistory(hours);
-    
+
     const data = history.map(m => {
       let value: number;
       switch (metric) {
@@ -559,19 +593,21 @@ export class DashboardProvider extends EventEmitter {
         default:
           value = 0;
       }
-      
+
       return { x: m.timestamp, y: value };
     });
 
     return {
       labels: data.map(d => new Date(d.x).toISOString()),
-      datasets: [{
-        label: metric,
-        data,
-        borderColor: this.getMetricColor(metric),
-        backgroundColor: this.getMetricColor(metric) + '20', // Add transparency
-        fill: false
-      }]
+      datasets: [
+        {
+          label: metric,
+          data,
+          borderColor: this.getMetricColor(metric),
+          backgroundColor: this.getMetricColor(metric) + '20', // Add transparency
+          fill: false,
+        },
+      ],
     };
   }
 
@@ -581,33 +617,40 @@ export class DashboardProvider extends EventEmitter {
       throughput: '#4ecdc4',
       errorRate: '#ff8e53',
       cacheHitRate: '#45b7d1',
-      memoryUsage: '#96ceb4'
+      memoryUsage: '#96ceb4',
     };
     return colors[metric as keyof typeof colors] || '#999999';
   }
 
   public getAlertSummary(hours = 24): AlertSummary {
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
     try {
-      const alerts = this.db.prepare(`
+      const alerts = this.db
+        .prepare(
+          `
         SELECT * FROM dashboard_alerts 
         WHERE triggered_at > ?
         ORDER BY triggered_at DESC
-      `).all(cutoff);
+      `
+        )
+        .all(cutoff);
 
-      const summary = alerts.reduce((acc: any, alert: any) => {
-        acc.total++;
-        acc[alert.severity]++;
-        return acc;
-      }, { total: 0, critical: 0, warning: 0, info: 0 });
+      const summary = alerts.reduce(
+        (acc: any, alert: any) => {
+          acc.total++;
+          acc[alert.severity]++;
+          return acc;
+        },
+        { total: 0, critical: 0, warning: 0, info: 0 }
+      );
 
       const recent = alerts.slice(0, 10).map((alert: any) => ({
         id: alert.id,
         severity: alert.severity,
         message: alert.message,
         timestamp: alert.triggered_at,
-        resolved: alert.resolved
+        resolved: alert.resolved,
       }));
 
       return { ...summary, recent };
@@ -619,7 +662,9 @@ export class DashboardProvider extends EventEmitter {
 
   public getCapacityPlanningData(): CapacityPlanningData {
     try {
-      const projections = this.db.prepare(`
+      const projections = this.db
+        .prepare(
+          `
         SELECT 
           metric_name,
           current_value,
@@ -630,7 +675,9 @@ export class DashboardProvider extends EventEmitter {
         FROM capacity_planning 
         WHERE calculation_date > ?
         ORDER BY calculation_date DESC
-      `).all(Date.now() - (24 * 60 * 60 * 1000)); // Last 24 hours
+      `
+        )
+        .all(Date.now() - 24 * 60 * 60 * 1000); // Last 24 hours
 
       const recommendations: Array<{
         type: 'storage' | 'performance' | 'scaling';
@@ -643,13 +690,14 @@ export class DashboardProvider extends EventEmitter {
       projections.forEach((proj: any) => {
         if (proj.growth_rate > 0) {
           const growthPercent = (proj.growth_rate / proj.current_value) * 100;
-          
-          if (growthPercent > 10) { // More than 10% growth projected
+
+          if (growthPercent > 10) {
+            // More than 10% growth projected
             recommendations.push({
               type: proj.metric_name.includes('memory') ? 'scaling' : 'performance',
               urgency: growthPercent > 50 ? 'high' : 'medium',
               description: `${proj.metric_name} is growing at ${growthPercent.toFixed(1)}% per day`,
-              timeline: proj.projection_days > 30 ? 'Long term' : 'Short term'
+              timeline: proj.projection_days > 30 ? 'Long term' : 'Short term',
             });
           }
         }
@@ -665,22 +713,22 @@ export class DashboardProvider extends EventEmitter {
             current: 0, // Would calculate actual database size
             projected30Days: 0,
             projected90Days: 0,
-            growthRate: 0
+            growthRate: 0,
           },
           connections: {
             current: this.lastMetrics?.performance.activeConnections || 0,
             peak: 0, // Would track historical peak
             projected: 0,
-            utilization: 0
+            utilization: 0,
           },
           queries: {
             currentQPS: this.lastMetrics?.performance.throughput || 0,
             peakQPS: 0, // Would track historical peak
             projectedQPS: queryProjection?.projected_value || 0,
-            growthTrend: (queryProjection?.growth_rate || 0) > 0 ? 'increasing' : 'stable'
-          }
+            growthTrend: (queryProjection?.growth_rate || 0) > 0 ? 'increasing' : 'stable',
+          },
         },
-        recommendations
+        recommendations,
       };
     } catch (error) {
       console.error('Failed to get capacity planning data:', error);
@@ -688,9 +736,9 @@ export class DashboardProvider extends EventEmitter {
         projections: {
           storage: { current: 0, projected30Days: 0, projected90Days: 0, growthRate: 0 },
           connections: { current: 0, peak: 0, projected: 0, utilization: 0 },
-          queries: { currentQPS: 0, peakQPS: 0, projectedQPS: 0, growthTrend: 'stable' }
+          queries: { currentQPS: 0, peakQPS: 0, projectedQPS: 0, growthTrend: 'stable' },
         },
-        recommendations: []
+        recommendations: [],
       };
     }
   }
@@ -726,7 +774,7 @@ export class DashboardProvider extends EventEmitter {
       ``,
       `# HELP sqlite_dashboard_slow_queries Number of slow queries`,
       `# TYPE sqlite_dashboard_slow_queries gauge`,
-      `sqlite_dashboard_slow_queries ${metrics.queries.slowQueries}`
+      `sqlite_dashboard_slow_queries ${metrics.queries.slowQueries}`,
     ];
 
     return prometheusData.join('\n');
@@ -741,8 +789,8 @@ export class DashboardProvider extends EventEmitter {
       basicAuth: false,
       jsonData: {
         timeField: 'timestamp',
-        httpMethod: 'GET'
-      }
+        httpMethod: 'GET',
+      },
     };
   }
 
@@ -751,15 +799,15 @@ export class DashboardProvider extends EventEmitter {
       const { range, targets } = query;
       const startTime = new Date(range.from).getTime();
       const endTime = new Date(range.to).getTime();
-      
+
       const results = targets.map((target: any) => {
-        const history = this.metricsHistory.filter(m => 
-          m.timestamp >= startTime && m.timestamp <= endTime
+        const history = this.metricsHistory.filter(
+          m => m.timestamp >= startTime && m.timestamp <= endTime
         );
 
         const datapoints = history.map(m => {
           let value: number;
-          
+
           switch (target.target) {
             case 'response_time':
               value = m.performance.avgResponseTime;
@@ -785,7 +833,7 @@ export class DashboardProvider extends EventEmitter {
 
         return {
           target: target.target,
-          datapoints
+          datapoints,
         };
       });
 
@@ -798,11 +846,15 @@ export class DashboardProvider extends EventEmitter {
 
   public resolveAlert(alertId: string): boolean {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         UPDATE dashboard_alerts 
         SET resolved = TRUE, resolved_at = ?
         WHERE id = ?
-      `).run(Date.now(), alertId);
+      `
+        )
+        .run(Date.now(), alertId);
 
       if (result.changes > 0) {
         this.emit('alert-resolved', { alertId });
@@ -821,7 +873,7 @@ export class DashboardProvider extends EventEmitter {
 
   public updateDashboardConfig(newConfig: Partial<DashboardConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     // Restart data collection if refresh interval changed
     if (newConfig.refreshInterval && this.isRunning) {
       this.stopDataCollection();
@@ -832,21 +884,26 @@ export class DashboardProvider extends EventEmitter {
   }
 
   private cleanupOldData(): void {
-    const retentionCutoff = Date.now() - (this.config.retentionPeriod * 24 * 60 * 60 * 1000);
-    
+    const retentionCutoff = Date.now() - this.config.retentionPeriod * 24 * 60 * 60 * 1000;
+
     try {
       // Cleanup old metrics
       this.db.prepare('DELETE FROM dashboard_metrics WHERE timestamp < ?').run(retentionCutoff);
-      
+
       // Cleanup resolved alerts older than retention period
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         DELETE FROM dashboard_alerts 
         WHERE resolved = TRUE AND resolved_at < ?
-      `).run(retentionCutoff);
+      `
+        )
+        .run(retentionCutoff);
 
       // Cleanup old capacity planning data
-      this.db.prepare('DELETE FROM capacity_planning WHERE calculation_date < ?').run(retentionCutoff);
-
+      this.db
+        .prepare('DELETE FROM capacity_planning WHERE calculation_date < ?')
+        .run(retentionCutoff);
     } catch (error) {
       console.error('Failed to cleanup old dashboard data:', error);
     }

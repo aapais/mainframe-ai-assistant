@@ -29,7 +29,7 @@ import {
   GeminiConfig,
   SearchError,
   AIServiceError,
-  ServiceError
+  ServiceError,
 } from '../types/services';
 
 /**
@@ -40,7 +40,8 @@ export class SearchService implements ISearchService {
   private searchHistory: SearchQuery[] = [];
   private popularSearches: Map<string, PopularSearch> = new Map();
   private searchIndex: Map<string, KBEntry> = new Map();
-  private instantCache: Map<string, { result: SearchResult[]; timestamp: number; ttl: number }> = new Map();
+  private instantCache: Map<string, { result: SearchResult[]; timestamp: number; ttl: number }> =
+    new Map();
   private queryOptimizationCache: Map<string, string> = new Map();
   private performanceMetrics: Map<string, number[]> = new Map();
 
@@ -57,7 +58,11 @@ export class SearchService implements ISearchService {
    * High-Performance Search Interface - <500ms backend processing
    * Features instant cache, streaming, parallel queries, and optimization
    */
-  async search(query: string, entries: KBEntry[], options: SearchOptions = {}): Promise<SearchResult[]> {
+  async search(
+    query: string,
+    entries: KBEntry[],
+    options: SearchOptions = {}
+  ): Promise<SearchResult[]> {
     const startTime = performance.now();
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -88,19 +93,19 @@ export class SearchService implements ISearchService {
       // AI search if enabled and conditions met
       if (options.useAI !== false && this.geminiConfig && entries.length <= 100) {
         searchPromises.push(
-          this.performAISearch(normalizedQuery, entries, options)
-            .catch(error => {
-              console.warn('AI search failed, continuing with local results:', error);
-              return [];
-            })
+          this.performAISearch(normalizedQuery, entries, options).catch(error => {
+            console.warn('AI search failed, continuing with local results:', error);
+            return [];
+          })
         );
       }
 
       // Execute searches in parallel
       const searchResults = await Promise.allSettled(searchPromises);
       const successfulResults = searchResults
-        .filter((result): result is PromiseFulfilledResult<SearchResult[]> =>
-          result.status === 'fulfilled' && result.value.length > 0
+        .filter(
+          (result): result is PromiseFulfilledResult<SearchResult[]> =>
+            result.status === 'fulfilled' && result.value.length > 0
         )
         .map(result => result.value);
 
@@ -131,7 +136,7 @@ export class SearchService implements ISearchService {
           confidence: result.score,
           fallback: result.metadata?.fallback || false,
           rank: index + 1,
-          optimized: true
+          optimized: true,
         };
       });
 
@@ -145,18 +150,22 @@ export class SearchService implements ISearchService {
       return results;
     } catch (error) {
       this.recordPerformanceMetric('search_error', performance.now() - startTime);
-      throw new SearchError(
-        `Enhanced search failed: ${error.message}`,
-        query,
-        { originalError: error, options, processingTime: performance.now() - startTime }
-      );
+      throw new SearchError(`Enhanced search failed: ${error.message}`, query, {
+        originalError: error,
+        options,
+        processingTime: performance.now() - startTime,
+      });
     }
   }
 
   /**
    * AI-enhanced semantic search
    */
-  async searchWithAI(query: string, entries: KBEntry[], options: SearchOptions = {}): Promise<SearchResult[]> {
+  async searchWithAI(
+    query: string,
+    entries: KBEntry[],
+    options: SearchOptions = {}
+  ): Promise<SearchResult[]> {
     if (!this.geminiConfig) {
       throw new ServiceError('AI search not configured', 'AI_NOT_CONFIGURED');
     }
@@ -169,28 +178,32 @@ export class SearchService implements ISearchService {
    */
   async suggest(query: string, limit: number = 10): Promise<string[]> {
     const normalizedQuery = query.trim().toLowerCase();
-    
+
     if (normalizedQuery.length < 2) {
       return [];
     }
 
     // Get suggestions from popular searches
     const suggestions: string[] = [];
-    
+
     // Exact prefix matches from popular searches
-    this.popularSearches.forEach((search) => {
-      if (search.query.toLowerCase().startsWith(normalizedQuery) && 
-          search.query.toLowerCase() !== normalizedQuery) {
+    this.popularSearches.forEach(search => {
+      if (
+        search.query.toLowerCase().startsWith(normalizedQuery) &&
+        search.query.toLowerCase() !== normalizedQuery
+      ) {
         suggestions.push(search.query);
       }
     });
 
     // Substring matches from popular searches
     if (suggestions.length < limit) {
-      this.popularSearches.forEach((search) => {
-        if (search.query.toLowerCase().includes(normalizedQuery) && 
-            search.query.toLowerCase() !== normalizedQuery &&
-            !suggestions.includes(search.query)) {
+      this.popularSearches.forEach(search => {
+        if (
+          search.query.toLowerCase().includes(normalizedQuery) &&
+          search.query.toLowerCase() !== normalizedQuery &&
+          !suggestions.includes(search.query)
+        ) {
           suggestions.push(search.query);
         }
       });
@@ -199,9 +212,18 @@ export class SearchService implements ISearchService {
     // Common mainframe terms
     if (suggestions.length < limit) {
       const mainframeTerms = [
-        'jcl error', 'vsam status', 'db2 sqlcode', 'cobol abend', 
-        'cics transaction', 'ims database', 'batch job', 'tso command',
-        'ispf panel', 'dataset allocation', 'catalog error', 'racf security'
+        'jcl error',
+        'vsam status',
+        'db2 sqlcode',
+        'cobol abend',
+        'cics transaction',
+        'ims database',
+        'batch job',
+        'tso command',
+        'ispf panel',
+        'dataset allocation',
+        'catalog error',
+        'racf security',
       ];
 
       mainframeTerms.forEach(term => {
@@ -241,9 +263,10 @@ export class SearchService implements ISearchService {
         explanations.push(`Matched based on category: ${result.entry.category}`);
         break;
       case 'tag':
-        const matchingTags = result.entry.tags.filter(tag => 
-          query.toLowerCase().includes(tag.toLowerCase()) ||
-          tag.toLowerCase().includes(query.toLowerCase())
+        const matchingTags = result.entry.tags.filter(
+          tag =>
+            query.toLowerCase().includes(tag.toLowerCase()) ||
+            tag.toLowerCase().includes(query.toLowerCase())
         );
         explanations.push(`Matched tags: ${matchingTags.join(', ')}`);
         break;
@@ -257,9 +280,9 @@ export class SearchService implements ISearchService {
 
     if (result.entry.usage_count > 0) {
       explanations.push(`Previously used ${result.entry.usage_count} times`);
-      
-      const successRate = result.entry.success_count / 
-        (result.entry.success_count + result.entry.failure_count);
+
+      const successRate =
+        result.entry.success_count / (result.entry.success_count + result.entry.failure_count);
       if (!isNaN(successRate)) {
         explanations.push(`Success rate: ${Math.round(successRate * 100)}%`);
       }
@@ -291,7 +314,7 @@ export class SearchService implements ISearchService {
    */
   async buildIndex(entries: KBEntry[]): Promise<void> {
     this.searchIndex.clear();
-    
+
     entries.forEach(entry => {
       this.searchIndex.set(entry.id, entry);
     });
@@ -343,7 +366,7 @@ export class SearchService implements ISearchService {
       category: options.category,
       tags: options.tags,
       limit: options.limit,
-      useAI: options.useAI
+      useAI: options.useAI,
     });
     return `l0:${query}:${btoa(optionsHash).substring(0, 16)}`;
   }
@@ -370,7 +393,7 @@ export class SearchService implements ISearchService {
     this.instantCache.set(key, {
       result: results,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
   }
 
@@ -406,8 +429,11 @@ export class SearchService implements ISearchService {
         const avg = metrics.reduce((a, b) => a + b, 0) / metrics.length;
         const p95 = metrics.sort((a, b) => a - b)[Math.floor(metrics.length * 0.95)];
 
-        if (avg > 500) { // More than 500ms average
-          console.warn(`⚠️ Performance warning: ${operation} avg: ${avg.toFixed(2)}ms, p95: ${p95.toFixed(2)}ms`);
+        if (avg > 500) {
+          // More than 500ms average
+          console.warn(
+            `⚠️ Performance warning: ${operation} avg: ${avg.toFixed(2)}ms, p95: ${p95.toFixed(2)}ms`
+          );
         }
       }
     }
@@ -418,9 +444,17 @@ export class SearchService implements ISearchService {
    */
   private preWarmOptimizationCache(): void {
     const commonQueries = [
-      'jcl error', 'vsam status', 'db2 sqlcode', 'cobol abend',
-      'cics transaction', 'batch job', 'dataset allocation',
-      's0c7', 's0c4', 'u0778', 'ief212i'
+      'jcl error',
+      'vsam status',
+      'db2 sqlcode',
+      'cobol abend',
+      'cics transaction',
+      'batch job',
+      'dataset allocation',
+      's0c7',
+      's0c4',
+      'u0778',
+      'ief212i',
     ];
 
     commonQueries.forEach(query => {
@@ -460,7 +494,10 @@ export class SearchService implements ISearchService {
         optimized = `"${query}" OR (${words.map(w => `${w}*`).join(' AND ')})`;
       } else {
         // Many words - use AND logic with partial matching
-        optimized = words.slice(0, 5).map(w => `${w}*`).join(' AND ');
+        optimized = words
+          .slice(0, 5)
+          .map(w => `${w}*`)
+          .join(' AND ');
       }
     }
 
@@ -482,32 +519,38 @@ export class SearchService implements ISearchService {
     const instantCacheHits = this.performanceMetrics.get('instant_cache_hit') || [];
     const searchCompletes = this.performanceMetrics.get('search_complete') || [];
 
-    const hitRate = instantCacheHits.length > 0 && searchCompletes.length > 0 ?
-      instantCacheHits.length / (instantCacheHits.length + searchCompletes.length) : 0;
+    const hitRate =
+      instantCacheHits.length > 0 && searchCompletes.length > 0
+        ? instantCacheHits.length / (instantCacheHits.length + searchCompletes.length)
+        : 0;
 
-    const avgSearchTime = searchCompletes.length > 0 ?
-      searchCompletes.reduce((a, b) => a + b, 0) / searchCompletes.length : 0;
+    const avgSearchTime =
+      searchCompletes.length > 0
+        ? searchCompletes.reduce((a, b) => a + b, 0) / searchCompletes.length
+        : 0;
 
     const sortedTimes = [...searchCompletes].sort((a, b) => a - b);
-    const p95SearchTime = sortedTimes.length > 0 ?
-      sortedTimes[Math.floor(sortedTimes.length * 0.95)] : 0;
+    const p95SearchTime =
+      sortedTimes.length > 0 ? sortedTimes[Math.floor(sortedTimes.length * 0.95)] : 0;
 
-    const recentPerformance = Array.from(this.performanceMetrics.entries()).map(([operation, metrics]) => {
-      if (metrics.length === 0) return { operation, avg: 0, p95: 0 };
+    const recentPerformance = Array.from(this.performanceMetrics.entries()).map(
+      ([operation, metrics]) => {
+        if (metrics.length === 0) return { operation, avg: 0, p95: 0 };
 
-      const avg = metrics.reduce((a, b) => a + b, 0) / metrics.length;
-      const sorted = [...metrics].sort((a, b) => a - b);
-      const p95 = sorted[Math.floor(sorted.length * 0.95)] || 0;
+        const avg = metrics.reduce((a, b) => a + b, 0) / metrics.length;
+        const sorted = [...metrics].sort((a, b) => a - b);
+        const p95 = sorted[Math.floor(sorted.length * 0.95)] || 0;
 
-      return { operation, avg: Math.round(avg), p95: Math.round(p95) };
-    });
+        return { operation, avg: Math.round(avg), p95: Math.round(p95) };
+      }
+    );
 
     return {
       instantCacheHitRate: Math.round(hitRate * 100) / 100,
       averageSearchTime: Math.round(avgSearchTime),
       p95SearchTime: Math.round(p95SearchTime),
       queryOptimizationCacheSize: this.queryOptimizationCache.size,
-      recentPerformance
+      recentPerformance,
     };
   }
 
@@ -583,7 +626,7 @@ export class SearchService implements ISearchService {
             updated_at: new Date(row.updated_at),
             usage_count: row.usage_count || 0,
             success_count: row.success_count || 0,
-            failure_count: row.failure_count || 0
+            failure_count: row.failure_count || 0,
           },
           score,
           matchType: 'exact' as SearchMatchType,
@@ -593,8 +636,8 @@ export class SearchService implements ISearchService {
             source: 'fts5',
             confidence: score / 100,
             fallback: false,
-            snippet: row.snippet
-          }
+            snippet: row.snippet,
+          },
         };
       });
 
@@ -619,7 +662,7 @@ export class SearchService implements ISearchService {
         start: 0,
         end: row.title.length,
         text: row.title_highlight,
-        context: row.title_highlight
+        context: row.title_highlight,
       });
     }
 
@@ -629,7 +672,7 @@ export class SearchService implements ISearchService {
         start: 0,
         end: Math.min(200, row.problem.length),
         text: row.problem_highlight.substring(0, 200),
-        context: row.problem_highlight.substring(0, 200)
+        context: row.problem_highlight.substring(0, 200),
       });
     }
 
@@ -639,7 +682,7 @@ export class SearchService implements ISearchService {
         start: 0,
         end: Math.min(200, row.solution.length),
         text: row.solution_highlight.substring(0, 200),
-        context: row.solution_highlight.substring(0, 200)
+        context: row.solution_highlight.substring(0, 200),
       });
     }
 
@@ -662,8 +705,9 @@ export class SearchService implements ISearchService {
 
         if (existing) {
           // Boost score for multi-source matches
-          const sourceWeight = sourceWeights[result.metadata?.source as keyof typeof sourceWeights] || 0.5;
-          const boostedScore = Math.min(100, existing.score + (result.score * sourceWeight * 0.3));
+          const sourceWeight =
+            sourceWeights[result.metadata?.source as keyof typeof sourceWeights] || 0.5;
+          const boostedScore = Math.min(100, existing.score + result.score * sourceWeight * 0.3);
 
           existing.score = boostedScore;
           existing.metadata!.confidence = boostedScore / 100;
@@ -693,39 +737,44 @@ export class SearchService implements ISearchService {
   ): Promise<SearchResult[]> {
     const queryWords = this.tokenizeQuery(query);
 
-    return results.map(result => {
-      let enhancedScore = result.score;
+    return results
+      .map(result => {
+        let enhancedScore = result.score;
 
-      // Boost based on query intent
-      const intent = this.detectQueryIntent(query);
-      if (intent === 'error_resolution' && result.entry.solution.toLowerCase().includes('error')) {
-        enhancedScore *= 1.15;
-      }
-
-      // Boost recent successful entries
-      const recentSuccessBoost = this.calculateRecentSuccessBoost(result.entry);
-      enhancedScore *= (1 + recentSuccessBoost);
-
-      // Context-aware boosting
-      if (options.userContext) {
-        const contextBoost = this.calculateContextBoost(result.entry, options.userContext);
-        enhancedScore *= (1 + contextBoost);
-      }
-
-      // Semantic similarity boost (if AI available)
-      const semanticBoost = this.calculateSemanticBoost(result.entry, queryWords);
-      enhancedScore *= (1 + semanticBoost);
-
-      return {
-        ...result,
-        score: Math.min(100, enhancedScore),
-        metadata: {
-          ...result.metadata,
-          confidence: Math.min(1, enhancedScore / 100),
-          boosted: enhancedScore > result.score
+        // Boost based on query intent
+        const intent = this.detectQueryIntent(query);
+        if (
+          intent === 'error_resolution' &&
+          result.entry.solution.toLowerCase().includes('error')
+        ) {
+          enhancedScore *= 1.15;
         }
-      };
-    }).sort((a, b) => b.score - a.score);
+
+        // Boost recent successful entries
+        const recentSuccessBoost = this.calculateRecentSuccessBoost(result.entry);
+        enhancedScore *= 1 + recentSuccessBoost;
+
+        // Context-aware boosting
+        if (options.userContext) {
+          const contextBoost = this.calculateContextBoost(result.entry, options.userContext);
+          enhancedScore *= 1 + contextBoost;
+        }
+
+        // Semantic similarity boost (if AI available)
+        const semanticBoost = this.calculateSemanticBoost(result.entry, queryWords);
+        enhancedScore *= 1 + semanticBoost;
+
+        return {
+          ...result,
+          score: Math.min(100, enhancedScore),
+          metadata: {
+            ...result.metadata,
+            confidence: Math.min(1, enhancedScore / 100),
+            boosted: enhancedScore > result.score,
+          },
+        };
+      })
+      .sort((a, b) => b.score - a.score);
   }
 
   /**
@@ -768,11 +817,15 @@ export class SearchService implements ISearchService {
     // Additional performance tracking
     if (this.database) {
       try {
-        this.database.prepare(`
+        this.database
+          .prepare(
+            `
           INSERT INTO search_performance (
             query, results_count, processing_time_ms, cache_hit, timestamp
           ) VALUES (?, ?, ?, ?, ?)
-        `).run(query, results.length, Math.round(processingTime), false, Date.now());
+        `
+          )
+          .run(query, results.length, Math.round(processingTime), false, Date.now());
       } catch (error) {
         // Ignore if table doesn't exist
       }
@@ -781,7 +834,9 @@ export class SearchService implements ISearchService {
 
   // Enhanced helper methods
 
-  private detectQueryIntent(query: string): 'error_resolution' | 'general_info' | 'how_to' | 'troubleshooting' {
+  private detectQueryIntent(
+    query: string
+  ): 'error_resolution' | 'general_info' | 'how_to' | 'troubleshooting' {
     const errorPatterns = /error|abend|fail|status|code|exception/i;
     const howToPatterns = /how to|how do|setup|configure|install/i;
     const troublePatterns = /debug|troubleshoot|fix|solve|resolve/i;
@@ -828,20 +883,10 @@ export class SearchService implements ISearchService {
       this.findHighlightsInText(entry.title, [word], 'title', highlights);
 
       // Find in problem (first 200 chars)
-      this.findHighlightsInText(
-        entry.problem.substring(0, 200),
-        [word],
-        'problem',
-        highlights
-      );
+      this.findHighlightsInText(entry.problem.substring(0, 200), [word], 'problem', highlights);
 
       // Find in solution (first 200 chars)
-      this.findHighlightsInText(
-        entry.solution.substring(0, 200),
-        [word],
-        'solution',
-        highlights
-      );
+      this.findHighlightsInText(entry.solution.substring(0, 200), [word], 'solution', highlights);
     });
 
     return highlights.slice(0, 10); // Limit highlights
@@ -858,13 +903,13 @@ export class SearchService implements ISearchService {
   ): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
     const queryWords = this.tokenizeQuery(query);
-    
+
     entries.forEach(entry => {
       const score = this.calculateLocalScore(entry, query, queryWords, options);
-      
+
       if (score > (options.threshold || 0.1)) {
         const matchType = this.determineMatchType(entry, query, queryWords);
-        
+
         results.push({
           entry,
           score: Math.min(100, score * 100),
@@ -873,8 +918,8 @@ export class SearchService implements ISearchService {
             processingTime: 0,
             source: 'database',
             confidence: score,
-            fallback: false
-          }
+            fallback: false,
+          },
         });
       }
     });
@@ -893,25 +938,27 @@ export class SearchService implements ISearchService {
 
     try {
       const prompt = this.buildAISearchPrompt(query, entries, options);
-      
+
       const response = await axios.post(
         `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiConfig.model}:generateContent?key=${this.geminiConfig.apiKey}`,
         {
-          contents: [{
-            parts: [{ text: prompt }]
-          }],
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
           generationConfig: {
             temperature: this.geminiConfig.temperature || 0.3,
             maxOutputTokens: this.geminiConfig.maxTokens || 1024,
             topK: 40,
-            topP: 0.95
-          }
+            topP: 0.95,
+          },
         },
         {
           timeout: this.geminiConfig.timeout || 5000,
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         }
       );
 
@@ -919,23 +966,27 @@ export class SearchService implements ISearchService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
-        throw new AIServiceError(
-          `Gemini API error: ${axiosError.message}`,
-          'gemini',
-          { status: axiosError.response?.status, data: axiosError.response?.data }
-        );
+        throw new AIServiceError(`Gemini API error: ${axiosError.message}`, 'gemini', {
+          status: axiosError.response?.status,
+          data: axiosError.response?.data,
+        });
       }
-      throw new AIServiceError(`AI search failed: ${error.message}`, 'gemini', { originalError: error });
+      throw new AIServiceError(`AI search failed: ${error.message}`, 'gemini', {
+        originalError: error,
+      });
     }
   }
 
   private buildAISearchPrompt(query: string, entries: KBEntry[], options: SearchOptions): string {
     // Limit entries for API efficiency
     const relevantEntries = entries.slice(0, 50);
-    
-    const entriesList = relevantEntries.map((entry, index) => 
-      `${index}: [${entry.category}] ${entry.title}\nProblem: ${entry.problem.substring(0, 200)}...\nSolution: ${entry.solution.substring(0, 200)}...\nTags: ${entry.tags.join(', ')}\n`
-    ).join('\n');
+
+    const entriesList = relevantEntries
+      .map(
+        (entry, index) =>
+          `${index}: [${entry.category}] ${entry.title}\nProblem: ${entry.problem.substring(0, 200)}...\nSolution: ${entry.solution.substring(0, 200)}...\nTags: ${entry.tags.join(', ')}\n`
+      )
+      .join('\n');
 
     return `You are a mainframe expert helping find relevant knowledge base entries.
 
@@ -976,13 +1027,14 @@ Return only the JSON array, nothing else.`;
       }
 
       const matches = JSON.parse(jsonMatch[0]);
-      
+
       return matches
-        .filter((match: any) => 
-          typeof match.index === 'number' && 
-          match.index >= 0 && 
-          match.index < entries.length &&
-          typeof match.confidence === 'number'
+        .filter(
+          (match: any) =>
+            typeof match.index === 'number' &&
+            match.index >= 0 &&
+            match.index < entries.length &&
+            typeof match.confidence === 'number'
         )
         .map((match: any) => ({
           entry: entries[match.index],
@@ -993,8 +1045,8 @@ Return only the JSON array, nothing else.`;
             processingTime: 0,
             source: 'ai' as const,
             confidence: match.confidence / 100,
-            fallback: false
-          }
+            fallback: false,
+          },
         }))
         .sort((a, b) => b.score - a.score);
     } catch (error) {
@@ -1011,7 +1063,7 @@ Return only the JSON array, nothing else.`;
   ): number {
     let score = 0;
     const queryLower = query.toLowerCase();
-    
+
     // Text to search in
     const title = entry.title.toLowerCase();
     const problem = entry.problem.toLowerCase();
@@ -1022,7 +1074,7 @@ Return only the JSON array, nothing else.`;
     // Exact phrase matching (highest weight)
     if (allText.includes(queryLower)) {
       score += 1.0;
-      
+
       if (title.includes(queryLower)) {
         score += 0.5; // Extra weight for title matches
       }
@@ -1033,7 +1085,7 @@ Return only the JSON array, nothing else.`;
     queryWords.forEach(word => {
       if (allText.includes(word)) {
         wordMatches++;
-        
+
         // Higher weight for title matches
         if (title.includes(word)) {
           score += 0.3;
@@ -1059,10 +1111,8 @@ Return only the JSON array, nothing else.`;
 
     // Tag matching
     if (options.tags) {
-      const matchingTags = options.tags.filter(tag => 
-        entry.tags.some(entryTag => 
-          entryTag.toLowerCase().includes(tag.toLowerCase())
-        )
+      const matchingTags = options.tags.filter(tag =>
+        entry.tags.some(entryTag => entryTag.toLowerCase().includes(tag.toLowerCase()))
       );
       score += (matchingTags.length / options.tags.length) * 0.4;
     }
@@ -1070,7 +1120,7 @@ Return only the JSON array, nothing else.`;
     // Usage and success rate boost
     if (entry.usage_count > 0) {
       score += Math.min(0.2, entry.usage_count * 0.01);
-      
+
       const totalRatings = entry.success_count + entry.failure_count;
       if (totalRatings > 0) {
         const successRate = entry.success_count / totalRatings;
@@ -1104,13 +1154,10 @@ Return only the JSON array, nothing else.`;
       .slice(0, 10); // Limit query complexity
   }
 
-  private determineMatchType(
-    entry: KBEntry,
-    query: string,
-    queryWords: string[]
-  ): SearchMatchType {
+  private determineMatchType(entry: KBEntry, query: string, queryWords: string[]): SearchMatchType {
     const queryLower = query.toLowerCase();
-    const allText = `${entry.title} ${entry.problem} ${entry.solution} ${entry.tags.join(' ')}`.toLowerCase();
+    const allText =
+      `${entry.title} ${entry.problem} ${entry.solution} ${entry.tags.join(' ')}`.toLowerCase();
 
     // Exact match
     if (allText.includes(queryLower)) {
@@ -1124,7 +1171,7 @@ Return only the JSON array, nothing else.`;
     }
 
     // Tag match
-    const hasTagMatch = entry.tags.some(tag => 
+    const hasTagMatch = entry.tags.some(tag =>
       queryWords.some(word => tag.toLowerCase().includes(word))
     );
     if (hasTagMatch) {
@@ -1141,10 +1188,10 @@ Return only the JSON array, nothing else.`;
 
   private findFuzzyMatches(word: string, text: string): number {
     if (word.length < 3) return 0;
-    
+
     let matches = 0;
     const words = text.split(/\s+/);
-    
+
     words.forEach(textWord => {
       if (textWord.length >= 3) {
         const similarity = this.calculateStringSimilarity(word, textWord);
@@ -1160,19 +1207,21 @@ Return only the JSON array, nothing else.`;
   private calculateStringSimilarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1;
-    
+
     const distance = this.levenshteinDistance(longer, shorter);
     return (longer.length - distance) / longer.length;
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
-    
+    const matrix = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
+
     for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
     for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
-    
+
     for (let j = 1; j <= str2.length; j++) {
       for (let i = 1; i <= str1.length; i++) {
         const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
@@ -1183,7 +1232,7 @@ Return only the JSON array, nothing else.`;
         );
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
@@ -1228,11 +1277,9 @@ Return only the JSON array, nothing else.`;
 
     // Apply tag filter
     if (options.tags && options.tags.length > 0) {
-      filtered = filtered.filter(result => 
-        options.tags!.some(tag => 
-          result.entry.tags.some(entryTag => 
-            entryTag.toLowerCase().includes(tag.toLowerCase())
-          )
+      filtered = filtered.filter(result =>
+        options.tags!.some(tag =>
+          result.entry.tags.some(entryTag => entryTag.toLowerCase().includes(tag.toLowerCase()))
         )
       );
     }
@@ -1241,7 +1288,7 @@ Return only the JSON array, nothing else.`;
     if (options.sortBy && options.sortBy !== 'relevance') {
       filtered.sort((a, b) => {
         let aValue: number, bValue: number;
-        
+
         switch (options.sortBy) {
           case 'usage':
             aValue = a.entry.usage_count;
@@ -1272,22 +1319,22 @@ Return only the JSON array, nothing else.`;
 
   private addHighlights(results: SearchResult[], query: string): SearchResult[] {
     const queryWords = this.tokenizeQuery(query);
-    
+
     return results.map(result => {
       const highlights: SearchHighlight[] = [];
-      
+
       // Find highlights in title
       this.findHighlightsInText(result.entry.title, queryWords, 'title', highlights);
-      
+
       // Find highlights in problem
       this.findHighlightsInText(result.entry.problem, queryWords, 'problem', highlights);
-      
+
       // Find highlights in solution
       this.findHighlightsInText(result.entry.solution, queryWords, 'solution', highlights);
 
       return {
         ...result,
-        highlights: highlights.slice(0, 10) // Limit highlights
+        highlights: highlights.slice(0, 10), // Limit highlights
       };
     });
   }
@@ -1299,23 +1346,23 @@ Return only the JSON array, nothing else.`;
     highlights: SearchHighlight[]
   ): void {
     const textLower = text.toLowerCase();
-    
+
     queryWords.forEach(word => {
       let index = 0;
       while ((index = textLower.indexOf(word, index)) !== -1) {
         const start = Math.max(0, index - 20);
         const end = Math.min(text.length, index + word.length + 20);
-        
+
         highlights.push({
           field,
           start: index,
           end: index + word.length,
           text: text.substring(index, index + word.length),
-          context: text.substring(start, end)
+          context: text.substring(start, end),
         });
-        
+
         index += word.length;
-        
+
         // Limit highlights per field
         if (highlights.filter(h => h.field === field).length >= 3) {
           break;
@@ -1334,12 +1381,12 @@ Return only the JSON array, nothing else.`;
       options,
       timestamp: new Date(),
       user_id: options.userId,
-      session_id: options.sessionId
+      session_id: options.sessionId,
     };
 
     // Add to history
     this.searchHistory.push(searchQuery);
-    
+
     // Keep only last 1000 searches
     if (this.searchHistory.length > 1000) {
       this.searchHistory = this.searchHistory.slice(-1000);
@@ -1359,7 +1406,7 @@ Return only the JSON array, nothing else.`;
           count: 1,
           averageResults: results.length,
           successRate: results.length > 0 ? 1 : 0,
-          lastUsed: new Date()
+          lastUsed: new Date(),
         });
       }
     }
@@ -1369,7 +1416,7 @@ Return only the JSON array, nothing else.`;
       const sorted = Array.from(this.popularSearches.entries())
         .sort(([, a], [, b]) => b.count - a.count)
         .slice(0, 1000);
-      
+
       this.popularSearches.clear();
       sorted.forEach(([key, value]) => {
         this.popularSearches.set(key, value);

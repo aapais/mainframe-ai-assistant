@@ -8,7 +8,8 @@ const { Client } = require('pg');
 const path = require('path');
 const fs = require('fs').promises;
 const EmbeddingService = require('../services/embedding-service');
-const documentProcessorRouter = require('./document-processor-api');
+// const documentProcessorRouter = require('./document-processor-api');
+const settingsRouter = require('../api/settings/settings-api');
 require('dotenv').config();
 
 const app = express();
@@ -87,20 +88,25 @@ const db = new PostgreSQLManager();
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('.', {
-  index: 'index.html',
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.set('Cache-Control', 'no-cache');
-    }
-  }
-}));
+app.use(
+  express.static('.', {
+    index: 'index.html',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.set('Cache-Control', 'no-cache');
+      }
+    },
+  })
+);
 
 // CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
     return;
@@ -116,7 +122,10 @@ app.use((req, res, next) => {
 });
 
 // Document processor routes
-app.use('/api/documents', documentProcessorRouter);
+// app.use('/api/documents', documentProcessorRouter);
+
+// Settings API routes
+app.use('/api/settings', settingsRouter);
 
 // API Routes
 
@@ -127,7 +136,7 @@ app.get('/api/incidents', async (req, res) => {
       SELECT id, uuid, title, description, technical_area as category,
              business_area, status, priority, severity, assigned_to,
              reporter, resolution as solution, metadata,
-             created_at, updated_at, resolved_at, tags
+             created_at, updated_at, resolved_at
       FROM incidents_enhanced
       ORDER BY created_at DESC
     `;
@@ -143,9 +152,9 @@ app.get('/api/incidents', async (req, res) => {
       priority: row.priority || 'Média',
       status: row.status || 'Aberto',
       solution: row.solution || '',
-      tags: row.tags || [],
+      tags: [],
       created_at: row.created_at,
-      updated_at: row.updated_at
+      updated_at: row.updated_at,
     }));
 
     res.json(incidents);
@@ -168,7 +177,7 @@ app.get('/api/incidents/search', async (req, res) => {
       SELECT id, uuid, title, description, technical_area as category,
              business_area, status, priority, severity, assigned_to,
              reporter, resolution as solution, metadata,
-             created_at, updated_at, resolved_at, tags
+             created_at, updated_at, resolved_at
       FROM incidents_enhanced
       WHERE search_vector @@ websearch_to_tsquery('portuguese', $1)
          OR title ILIKE $2
@@ -191,9 +200,9 @@ app.get('/api/incidents/search', async (req, res) => {
       priority: row.priority || 'Média',
       status: row.status || 'Aberto',
       solution: row.solution || '',
-      tags: row.tags || [],
+      tags: [],
       created_at: row.created_at,
-      updated_at: row.updated_at
+      updated_at: row.updated_at,
     }));
 
     res.json(incidents);
@@ -223,7 +232,7 @@ app.post('/api/incidents', async (req, res) => {
       category || 'Other',
       priority || 'Média',
       status || 'Aberto',
-      solution || ''
+      solution || '',
     ]);
 
     const incident = result.rows[0];
@@ -235,10 +244,10 @@ app.post('/api/incidents', async (req, res) => {
           `${title} ${description} ${solution || ''}`
         );
         if (embedding) {
-          await db.query(
-            'UPDATE incidents_enhanced SET embedding = $1 WHERE id = $2',
-            [`[${embedding.join(',')}]`, incident.id]
-          );
+          await db.query('UPDATE incidents_enhanced SET embedding = $1 WHERE id = $2', [
+            `[${embedding.join(',')}]`,
+            incident.id,
+          ]);
         }
       } catch (error) {
         console.warn('Failed to generate embedding:', error.message);
@@ -253,7 +262,7 @@ app.post('/api/incidents', async (req, res) => {
       priority: incident.priority,
       status: incident.status,
       solution: incident.resolution,
-      created_at: incident.created_at
+      created_at: incident.created_at,
     });
   } catch (error) {
     console.error('Error creating incident:', error);
@@ -283,7 +292,7 @@ app.put('/api/incidents/:id', async (req, res) => {
       priority || 'Média',
       status || 'Aberto',
       solution || '',
-      id
+      id,
     ]);
 
     if (result.rowCount === 0) {
@@ -299,10 +308,10 @@ app.put('/api/incidents/:id', async (req, res) => {
           `${title} ${description} ${solution || ''}`
         );
         if (embedding) {
-          await db.query(
-            'UPDATE incidents_enhanced SET embedding = $1 WHERE id = $2',
-            [`[${embedding.join(',')}]`, incident.id]
-          );
+          await db.query('UPDATE incidents_enhanced SET embedding = $1 WHERE id = $2', [
+            `[${embedding.join(',')}]`,
+            incident.id,
+          ]);
         }
       } catch (error) {
         console.warn('Failed to update embedding:', error.message);
@@ -317,7 +326,7 @@ app.put('/api/incidents/:id', async (req, res) => {
       priority: incident.priority,
       status: incident.status,
       solution: incident.resolution,
-      updated_at: incident.updated_at
+      updated_at: incident.updated_at,
     });
   } catch (error) {
     console.error('Error updating incident:', error);
@@ -330,10 +339,7 @@ app.delete('/api/incidents/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await db.query(
-      'DELETE FROM incidents_enhanced WHERE id = $1',
-      [id]
-    );
+    const result = await db.query('DELETE FROM incidents_enhanced WHERE id = $1', [id]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Incident not found' });
@@ -353,12 +359,12 @@ app.get('/api/health', async (req, res) => {
     res.json({
       status: 'healthy',
       database: 'PostgreSQL',
-      vectorSearch: embeddingService ? 'enabled' : 'disabled'
+      vectorSearch: embeddingService ? 'enabled' : 'disabled',
     });
   } catch (error) {
     res.status(500).json({
       status: 'unhealthy',
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -390,7 +396,7 @@ app.get('/api/knowledge', async (req, res) => {
     const { category, limit = 50, offset = 0 } = req.query;
 
     let query = `
-      SELECT uuid, title, content, summary, category, tags,
+      SELECT uuid, title, content, summary, category,
              confidence_score, source, metadata,
              created_by, created_at, updated_at
       FROM knowledge_base
@@ -434,7 +440,7 @@ app.get('/api/knowledge/search', async (req, res) => {
         const queryEmbedding = await embeddingService.generateEmbedding(searchQuery);
         if (queryEmbedding) {
           query = `
-            SELECT uuid, title, content, summary, category, tags,
+            SELECT uuid, title, content, summary, category,
                    confidence_score, source, metadata,
                    created_by, created_at, updated_at,
                    (embedding <=> $1::vector) as similarity
@@ -458,7 +464,7 @@ app.get('/api/knowledge/search', async (req, res) => {
     if (!query) {
       // Text search fallback
       query = `
-        SELECT uuid, title, content, summary, category, tags,
+        SELECT uuid, title, content, summary, category,
                confidence_score, source, metadata,
                created_by, created_at, updated_at
         FROM knowledge_base
@@ -474,7 +480,8 @@ app.get('/api/knowledge/search', async (req, res) => {
         params.push(category);
       }
 
-      query += ' ORDER BY ts_rank(search_vector, websearch_to_tsquery(\'portuguese\', $1)) DESC LIMIT 20';
+      query +=
+        " ORDER BY ts_rank(search_vector, websearch_to_tsquery('portuguese', $1)) DESC LIMIT 20";
     }
 
     const result = await db.query(query, params);
@@ -488,14 +495,14 @@ app.get('/api/knowledge/search', async (req, res) => {
 // Create knowledge base entry
 app.post('/api/knowledge', async (req, res) => {
   try {
-    const { title, content, summary, category, tags, source, confidence_score } = req.body;
+    const { title, content, summary, category, source, confidence_score } = req.body;
 
     const query = `
       INSERT INTO knowledge_base (
-        title, content, summary, category, tags,
+        title, content, summary, category,
         confidence_score, source, metadata, created_by, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
       RETURNING *
     `;
 
@@ -504,11 +511,10 @@ app.post('/api/knowledge', async (req, res) => {
       content,
       summary || '',
       category || 'General',
-      tags || [],
       confidence_score || 0.9,
       source || 'manual',
       JSON.stringify({}),
-      'user'
+      'user',
     ]);
 
     const entry = result.rows[0];
@@ -520,10 +526,10 @@ app.post('/api/knowledge', async (req, res) => {
           `${title} ${content} ${summary || ''}`
         );
         if (embedding) {
-          await db.query(
-            'UPDATE knowledge_base SET embedding = $1 WHERE uuid = $2',
-            [`[${embedding.join(',')}]`, entry.uuid]
-          );
+          await db.query('UPDATE knowledge_base SET embedding = $1 WHERE uuid = $2', [
+            `[${embedding.join(',')}]`,
+            entry.uuid,
+          ]);
         }
       } catch (error) {
         console.warn('Failed to generate embedding:', error.message);
@@ -541,13 +547,13 @@ app.post('/api/knowledge', async (req, res) => {
 app.put('/api/knowledge/:uuid', async (req, res) => {
   try {
     const { uuid } = req.params;
-    const { title, content, summary, category, tags, confidence_score } = req.body;
+    const { title, content, summary, category, confidence_score } = req.body;
 
     const query = `
       UPDATE knowledge_base
       SET title = $1, content = $2, summary = $3, category = $4,
-          tags = $5, confidence_score = $6, updated_at = CURRENT_TIMESTAMP
-      WHERE uuid = $7
+          confidence_score = $5, updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = $6
       RETURNING *
     `;
 
@@ -556,9 +562,8 @@ app.put('/api/knowledge/:uuid', async (req, res) => {
       content,
       summary || '',
       category || 'General',
-      tags || [],
       confidence_score || 0.9,
-      uuid
+      uuid,
     ]);
 
     if (result.rowCount === 0) {
@@ -574,10 +579,10 @@ app.put('/api/knowledge/:uuid', async (req, res) => {
           `${title} ${content} ${summary || ''}`
         );
         if (embedding) {
-          await db.query(
-            'UPDATE knowledge_base SET embedding = $1 WHERE uuid = $2',
-            [`[${embedding.join(',')}]`, entry.uuid]
-          );
+          await db.query('UPDATE knowledge_base SET embedding = $1 WHERE uuid = $2', [
+            `[${embedding.join(',')}]`,
+            entry.uuid,
+          ]);
         }
       } catch (error) {
         console.warn('Failed to update embedding:', error.message);
@@ -596,10 +601,7 @@ app.delete('/api/knowledge/:uuid', async (req, res) => {
   try {
     const { uuid } = req.params;
 
-    const result = await db.query(
-      'DELETE FROM knowledge_base WHERE uuid = $1',
-      [uuid]
-    );
+    const result = await db.query('DELETE FROM knowledge_base WHERE uuid = $1', [uuid]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Knowledge base entry not found' });
@@ -630,9 +632,9 @@ app.get('/api/knowledge/categories', async (req, res) => {
 });
 
 // Fallback for unmatched API routes
-app.all('/api/*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
+// app.all('/api/(.*)', (req, res) => {
+//   res.status(404).json({ error: 'Endpoint not found' });
+// });
 
 // Start server
 async function startServer() {

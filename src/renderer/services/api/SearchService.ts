@@ -56,7 +56,7 @@ export class SearchService extends BaseService {
   ): Promise<ServiceResponse<SearchResponse>> {
     const startTime = Date.now();
     const { query, category, tags, useAI = true } = searchQuery;
-    
+
     if (!query.trim()) {
       return {
         success: false,
@@ -70,7 +70,7 @@ export class SearchService extends BaseService {
     }
 
     const cacheKey = `search:${JSON.stringify({ query, category, tags, useAI, ...options })}`;
-    
+
     return this.executeWithRetry(
       async () => {
         let results: SearchResult[] = [];
@@ -122,7 +122,9 @@ export class SearchService extends BaseService {
               totalResults = results.length;
             }
           } catch (localError) {
-            throw new Error(`Both AI and local search failed: ${localError instanceof Error ? localError.message : localError}`);
+            throw new Error(
+              `Both AI and local search failed: ${localError instanceof Error ? localError.message : localError}`
+            );
           }
         }
 
@@ -174,7 +176,7 @@ export class SearchService extends BaseService {
     options: ServiceOptions = {}
   ): Promise<ServiceResponse<SearchSuggestion[]>> {
     const cacheKey = `suggestions:${partialQuery.toLowerCase()}`;
-    
+
     return this.executeWithRetry(
       async () => {
         const suggestions: SearchSuggestion[] = [];
@@ -211,9 +213,9 @@ export class SearchService extends BaseService {
         if (electronAPI.getSearchSuggestions) {
           try {
             const aiSuggestions = await electronAPI.getSearchSuggestions(partialQuery);
-            const mappedSuggestions = aiSuggestions.map(text => ({ 
-              text, 
-              type: 'ai' as const 
+            const mappedSuggestions = aiSuggestions.map(text => ({
+              text,
+              type: 'ai' as const,
             }));
             suggestions.push(...mappedSuggestions);
           } catch (error) {
@@ -254,7 +256,7 @@ export class SearchService extends BaseService {
     this.popularQueries.clear();
     this.saveSearchHistory();
     this.clearCache();
-    
+
     this.emit('history-cleared');
   }
 
@@ -274,19 +276,21 @@ export class SearchService extends BaseService {
   async analyzeQuery(
     query: string,
     options: ServiceOptions = {}
-  ): Promise<ServiceResponse<{
-    intent: 'problem-solving' | 'information-seeking' | 'debugging' | 'learning';
-    entities: string[];
-    keywords: string[];
-    confidence: number;
-    suggestedCategories: KBCategory[];
-  }>> {
+  ): Promise<
+    ServiceResponse<{
+      intent: 'problem-solving' | 'information-seeking' | 'debugging' | 'learning';
+      entities: string[];
+      keywords: string[];
+      confidence: number;
+      suggestedCategories: KBCategory[];
+    }>
+  > {
     const cacheKey = `analysis:${query}`;
-    
+
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.analyzeSearchQuery) {
           // Fallback to basic analysis
           return this.basicQueryAnalysis(query);
@@ -348,10 +352,9 @@ export class SearchService extends BaseService {
 
           healthStatus.healthy = healthStatus.localSearchAvailable;
           healthStatus.averageQueryTime = this.getAverageQueryTime();
-          healthStatus.message = healthStatus.healthy ? 
-            'Search service operational' : 
-            'Search service unavailable';
-
+          healthStatus.message = healthStatus.healthy
+            ? 'Search service operational'
+            : 'Search service unavailable';
         } catch (error) {
           healthStatus.message = error instanceof Error ? error.message : 'Health check failed';
         }
@@ -386,11 +389,11 @@ export class SearchService extends BaseService {
 
   private generateSuggestions(query: string, results: SearchResult[]): string[] {
     const suggestions: string[] = [];
-    
+
     // Extract common terms from successful results
     if (results.length > 0) {
       const terms = new Set<string>();
-      
+
       results.slice(0, 5).forEach(result => {
         // Extract keywords from titles and problems
         const text = `${result.entry.title} ${result.entry.problem}`.toLowerCase();
@@ -401,7 +404,7 @@ export class SearchService extends BaseService {
           }
         });
       });
-      
+
       suggestions.push(...Array.from(terms).slice(0, 3));
     }
 
@@ -426,7 +429,7 @@ export class SearchService extends BaseService {
     const entities = this.extractEntities(query);
     const keywords = this.extractKeywords(query);
     const suggestedCategories = this.suggestCategories(query);
-    
+
     return {
       intent,
       entities,
@@ -436,42 +439,47 @@ export class SearchService extends BaseService {
     };
   }
 
-  private determineIntent(query: string): 'problem-solving' | 'information-seeking' | 'debugging' | 'learning' {
+  private determineIntent(
+    query: string
+  ): 'problem-solving' | 'information-seeking' | 'debugging' | 'learning' {
     const problemWords = ['error', 'abend', 'fail', 'issue', 'problem', 'fix', 'solve'];
     const debugWords = ['debug', 'trace', 'step', 'analyze'];
     const learnWords = ['how', 'what', 'why', 'learn', 'understand'];
-    
+
     const lowerQuery = query.toLowerCase();
-    
+
     if (problemWords.some(word => lowerQuery.includes(word))) return 'problem-solving';
     if (debugWords.some(word => lowerQuery.includes(word))) return 'debugging';
     if (learnWords.some(word => lowerQuery.includes(word))) return 'learning';
-    
+
     return 'information-seeking';
   }
 
   private extractEntities(query: string): string[] {
     const errorCodes = query.match(/S0C\d|U\d{4}|IEF\d{3}[A-Z]|SQLCODE\s*-?\d+/gi) || [];
     const systems = query.match(/\b(VSAM|DB2|JCL|COBOL|CICS|IMS|TSO|ISPF)\b/gi) || [];
-    
+
     return [...errorCodes, ...systems];
   }
 
   private extractKeywords(query: string): string[] {
-    return query.toLowerCase()
+    return query
+      .toLowerCase()
       .split(/\s+/)
-      .filter(word => word.length > 2 && !['the', 'and', 'for', 'with', 'are', 'this'].includes(word))
+      .filter(
+        word => word.length > 2 && !['the', 'and', 'for', 'with', 'are', 'this'].includes(word)
+      )
       .slice(0, 10);
   }
 
   private suggestCategories(query: string): KBCategory[] {
     const categoryKeywords: Record<KBCategory, string[]> = {
-      'JCL': ['jcl', 'job', 'step', 'dd', 'dsn', 'disp'],
-      'VSAM': ['vsam', 'file', 'dataset', 'status'],
-      'DB2': ['db2', 'sql', 'table', 'cursor', 'sqlcode'],
-      'Batch': ['batch', 'abend', 'program', 'cobol'],
-      'Functional': ['functional', 'business', 'process'],
-      'Other': [],
+      JCL: ['jcl', 'job', 'step', 'dd', 'dsn', 'disp'],
+      VSAM: ['vsam', 'file', 'dataset', 'status'],
+      DB2: ['db2', 'sql', 'table', 'cursor', 'sqlcode'],
+      Batch: ['batch', 'abend', 'program', 'cobol'],
+      Functional: ['functional', 'business', 'process'],
+      Other: [],
     };
 
     const lowerQuery = query.toLowerCase();
@@ -492,7 +500,7 @@ export class SearchService extends BaseService {
       if (saved) {
         this.searchHistory = JSON.parse(saved);
       }
-      
+
       const savedPopular = localStorage.getItem('popular-queries');
       if (savedPopular) {
         const popular = JSON.parse(savedPopular);
@@ -506,7 +514,10 @@ export class SearchService extends BaseService {
   private saveSearchHistory(): void {
     try {
       localStorage.setItem('search-history', JSON.stringify(this.searchHistory));
-      localStorage.setItem('popular-queries', JSON.stringify(Array.from(this.popularQueries.entries())));
+      localStorage.setItem(
+        'popular-queries',
+        JSON.stringify(Array.from(this.popularQueries.entries()))
+      );
     } catch (error) {
       console.warn('Failed to save search history:', error);
     }

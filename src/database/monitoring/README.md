@@ -1,10 +1,13 @@
 # SQLite Performance Monitoring System
 
-A comprehensive, production-ready performance monitoring solution for SQLite databases with real-time analytics, health checks, query optimization, and dashboard integration.
+A comprehensive, production-ready performance monitoring solution for SQLite
+databases with real-time analytics, health checks, query optimization, and
+dashboard integration.
 
 ## Features
 
 ### 🎯 **Performance Monitor**
+
 - Real-time query performance tracking
 - Slow query detection and analysis
 - Resource usage monitoring (memory, CPU, I/O)
@@ -13,7 +16,8 @@ A comprehensive, production-ready performance monitoring solution for SQLite dat
 - Configurable sampling rates
 - Automatic log rotation
 
-### 📊 **Metrics Collector**  
+### 📊 **Metrics Collector**
+
 - Time-series data collection
 - Statistical aggregations (p50, p95, p99)
 - Configurable alert thresholds
@@ -22,6 +26,7 @@ A comprehensive, production-ready performance monitoring solution for SQLite dat
 - Data compression and retention management
 
 ### 🏥 **Health Check System**
+
 - Database integrity verification
 - Schema validation
 - Performance degradation detection
@@ -30,6 +35,7 @@ A comprehensive, production-ready performance monitoring solution for SQLite dat
 - Comprehensive health scoring
 
 ### 🔍 **Query Analyzer**
+
 - EXPLAIN QUERY PLAN integration
 - Index usage analysis
 - Query optimization suggestions
@@ -38,6 +44,7 @@ A comprehensive, production-ready performance monitoring solution for SQLite dat
 - Query complexity scoring
 
 ### 📈 **Dashboard Provider**
+
 - Real-time metrics API
 - Historical data queries
 - Alert management
@@ -58,16 +65,16 @@ const monitoring = createMonitoringSystem(db, {
   enablePrometheusExport: true,
   performance: {
     slowQueryThreshold: 1000, // 1 second
-    enableRealTimeAlerts: true
-  }
+    enableRealTimeAlerts: true,
+  },
 });
 
 // Set up event handlers
-monitoring.on('performance-alert', (alert) => {
+monitoring.on('performance-alert', alert => {
   console.log(`Performance Alert: ${alert.message}`);
 });
 
-monitoring.on('index-recommendation', (rec) => {
+monitoring.on('index-recommendation', rec => {
   console.log(`Index Recommendation: ${rec.creationSQL}`);
 });
 
@@ -80,10 +87,10 @@ const result = await monitoring.measureQuery(
   'SELECT * FROM users WHERE email = ?',
   'conn_001',
   () => db.prepare('SELECT * FROM users WHERE email = ?').get(email),
-  { 
+  {
     userId: 'user123',
     captureQueryPlan: true,
-    enableAnalysis: true 
+    enableAnalysis: true,
   }
 );
 
@@ -137,45 +144,45 @@ const monitoring = createMonitoringSystem(db, {
   enableAllFeatures: true,
   enablePrometheusExport: true,
   enableGrafanaIntegration: false,
-  
+
   // Performance monitoring
   performance: {
     enableRealTimeAlerts: true,
-    slowQueryThreshold: 1000,      // ms
-    criticalThreshold: 5000,       // ms
-    memoryAlertThreshold: 512,     // MB
-    sampleRate: 1.0,               // 100% sampling
-    retentionDays: 7
+    slowQueryThreshold: 1000, // ms
+    criticalThreshold: 5000, // ms
+    memoryAlertThreshold: 512, // MB
+    sampleRate: 1.0, // 100% sampling
+    retentionDays: 7,
   },
-  
+
   // Metrics collection
   metrics: {
-    collectionInterval: 30,        // seconds
-    aggregationInterval: 60,       // seconds
+    collectionInterval: 30, // seconds
+    aggregationInterval: 60, // seconds
     retentionDays: 14,
     maxDataPoints: 10000,
-    enableCompression: true
+    enableCompression: true,
   },
-  
+
   // Health checks
   health: {
-    checkInterval: 300,            // 5 minutes
-    enableAutoRemediation: false,  // Keep false for safety
+    checkInterval: 300, // 5 minutes
+    enableAutoRemediation: false, // Keep false for safety
     criticalThresholds: {
-      performanceDegradation: 50,  // 50% slower
-      memoryUsageHigh: 1024,       // 1GB
-      diskSpaceLow: 1000          // 1GB
-    }
+      performanceDegradation: 50, // 50% slower
+      memoryUsageHigh: 1024, // 1GB
+      diskSpaceLow: 1000, // 1GB
+    },
   },
-  
+
   // Query analysis
   analyzer: {
-    analysisThreshold: 100,        // Analyze queries > 100ms
+    analysisThreshold: 100, // Analyze queries > 100ms
     captureSlowQueries: true,
     generateRecommendations: true,
     trackQueryPatterns: true,
-    autoIndexCreation: false       // Keep false for safety
-  }
+    autoIndexCreation: false, // Keep false for safety
+  },
 });
 ```
 
@@ -190,7 +197,7 @@ const monitoring = createMonitoringSystem(db, {
       memoryLimitMB: 256,
       cpuLimitPercent: 80,
       cacheHitRateMin: 0.85,
-      maxConcurrentQueries: 50
+      maxConcurrentQueries: 50,
     },
     alertRules: [
       {
@@ -201,10 +208,10 @@ const monitoring = createMonitoringSystem(db, {
         threshold: 2000,
         severity: 'critical',
         enabled: true,
-        actions: ['log', 'alert', 'escalate']
-      }
-    ]
-  }
+        actions: ['log', 'alert', 'escalate'],
+      },
+    ],
+  },
 });
 ```
 
@@ -222,19 +229,13 @@ await monitoring.measureQuery(
 );
 
 // Advanced monitoring with options
-await monitoring.measureQuery(
-  'complex_search',
-  query,
-  connectionId,
-  executor,
-  {
-    userId: 'user123',
-    captureQueryPlan: true,      // Capture EXPLAIN QUERY PLAN
-    enableAnalysis: true,        // Trigger query analysis
-    recordsProcessed: 150,       // Expected result count
-    expectedCacheHit: false      // Whether result should be cached
-  }
-);
+await monitoring.measureQuery('complex_search', query, connectionId, executor, {
+  userId: 'user123',
+  captureQueryPlan: true, // Capture EXPLAIN QUERY PLAN
+  enableAnalysis: true, // Trigger query analysis
+  recordsProcessed: 150, // Expected result count
+  expectedCacheHit: false, // Whether result should be cached
+});
 
 // Record custom metrics
 monitoring.recordMetric('custom_operation', duration, {
@@ -242,7 +243,7 @@ monitoring.recordMetric('custom_operation', duration, {
   cacheHit: true,
   indexesUsed: ['idx_user_email'],
   connectionId: 'conn_001',
-  userId: 'user123'
+  userId: 'user123',
 });
 ```
 
@@ -255,7 +256,10 @@ console.log(`Overall Health: ${healthStatus.overall}`);
 console.log(`Health Score: ${healthStatus.score}/100`);
 
 // Get health history
-const healthHistory = monitoring.health.getHealthHistory('database_integrity', 50);
+const healthHistory = monitoring.health.getHealthHistory(
+  'database_integrity',
+  50
+);
 
 // Get integrity issues
 const issues = monitoring.health.getIntegrityIssues(false); // unresolved issues
@@ -279,8 +283,8 @@ recommendations.forEach(rec => {
 
 // Implement recommended index (with caution!)
 const result = await monitoring.implementIndexRecommendation(
-  recommendationId, 
-  false  // Set to true to actually execute
+  recommendationId,
+  false // Set to true to actually execute
 );
 
 // Get query patterns
@@ -300,7 +304,10 @@ console.log('Active Alerts:', dashboardData.alerts);
 console.log('Capacity Planning:', dashboardData.capacity);
 
 // Get time series data for charting
-const responseTimeData = monitoring.dashboard.getTimeSeriesData('responseTime', 24);
+const responseTimeData = monitoring.dashboard.getTimeSeriesData(
+  'responseTime',
+  24
+);
 const throughputData = monitoring.dashboard.getTimeSeriesData('throughput', 24);
 
 // Export for Prometheus
@@ -322,16 +329,16 @@ capacityData.recommendations.forEach(rec => {
 ### Performance Events
 
 ```typescript
-monitoring.on('performance-alert', (alert) => {
+monitoring.on('performance-alert', alert => {
   console.log(`🚨 ${alert.level}: ${alert.message}`);
-  
+
   if (alert.level === 'critical') {
     // Escalate to on-call engineer
     sendAlert(alert);
   }
 });
 
-monitoring.on('metric', (metric) => {
+monitoring.on('metric', metric => {
   // Log to external system
   if (metric.duration > 5000) {
     logToSplunk(metric);
@@ -342,19 +349,19 @@ monitoring.on('metric', (metric) => {
 ### Health Events
 
 ```typescript
-monitoring.on('health-status-updated', (status) => {
+monitoring.on('health-status-updated', status => {
   updateHealthDashboard(status);
-  
+
   if (status.overall === 'critical') {
     triggerIncident(status);
   }
 });
 
-monitoring.on('remediation-completed', (action) => {
+monitoring.on('remediation-completed', action => {
   console.log(`✅ Auto-remediation completed: ${action.action}`);
 });
 
-monitoring.on('remediation-failed', (error) => {
+monitoring.on('remediation-failed', error => {
   console.log(`❌ Auto-remediation failed: ${error.error}`);
   escalateToHuman(error);
 });
@@ -363,13 +370,13 @@ monitoring.on('remediation-failed', (error) => {
 ### Query Analysis Events
 
 ```typescript
-monitoring.on('query-analyzed', (analysis) => {
+monitoring.on('query-analyzed', analysis => {
   if (analysis.performance.complexity === 'very_high') {
     flagForReview(analysis);
   }
 });
 
-monitoring.on('index-recommendation', (recommendation) => {
+monitoring.on('index-recommendation', recommendation => {
   if (recommendation.priority === 'critical') {
     scheduleIndexCreation(recommendation);
   }
@@ -384,31 +391,31 @@ monitoring.on('index-recommendation', (recommendation) => {
 // Production configuration
 const monitoring = createMonitoringSystem(db, {
   performance: {
-    sampleRate: 0.1,              // 10% sampling in production
-    retentionDays: 30,            // 30-day retention
-    enableRealTimeAlerts: true
+    sampleRate: 0.1, // 10% sampling in production
+    retentionDays: 30, // 30-day retention
+    enableRealTimeAlerts: true,
   },
   metrics: {
-    collectionInterval: 60,       // 1 minute collection
-    aggregationInterval: 300,     // 5 minute aggregation
-    enableCompression: true
+    collectionInterval: 60, // 1 minute collection
+    aggregationInterval: 300, // 5 minute aggregation
+    enableCompression: true,
   },
   health: {
-    checkInterval: 900,           // 15 minute health checks
-    enableAutoRemediation: false  // Disable for safety
-  }
+    checkInterval: 900, // 15 minute health checks
+    enableAutoRemediation: false, // Disable for safety
+  },
 });
 
 // Set up production alerting
-monitoring.on('performance-alert', async (alert) => {
+monitoring.on('performance-alert', async alert => {
   await sendToSlack(alert);
   await logToPagerDuty(alert);
   await updateStatusPage(alert);
 });
 
-monitoring.on('health-status-updated', async (status) => {
+monitoring.on('health-status-updated', async status => {
   await updateMonitoringDashboard(status);
-  
+
   if (status.score < 50) {
     await triggerIncident(status);
   }
@@ -431,12 +438,12 @@ process.on('SIGINT', async () => {
 });
 
 // Memory monitoring
-monitoring.on('metrics-alert', (alert) => {
+monitoring.on('metrics-alert', alert => {
   if (alert.metricName === 'sqlite_memory_usage_bytes') {
     if (alert.severity === 'critical') {
       // Force garbage collection
       global.gc && global.gc();
-      
+
       // Consider restarting application
       scheduleGracefulRestart();
     }
@@ -465,7 +472,7 @@ monitoring.on('metrics-alert', (alert) => {
       },
       {
         "title": "Throughput",
-        "type": "graph", 
+        "type": "graph",
         "targets": [
           {
             "target": "throughput",
@@ -536,28 +543,22 @@ CMD ["node", "app.js"]
 // Production optimizations
 const monitoring = createMonitoringSystem(db, {
   performance: {
-    sampleRate: 0.05,             // 5% sampling for high-volume systems
-    batchSize: 1000,              // Larger batches for efficiency
-    retentionDays: 7              // Shorter retention for space savings
+    sampleRate: 0.05, // 5% sampling for high-volume systems
+    batchSize: 1000, // Larger batches for efficiency
+    retentionDays: 7, // Shorter retention for space savings
   },
   metrics: {
-    aggregationInterval: 300,     // 5-minute aggregation
-    enableCompression: true,      // Enable compression
-    maxDataPoints: 50000         // Limit memory usage
-  }
+    aggregationInterval: 300, // 5-minute aggregation
+    enableCompression: true, // Enable compression
+    maxDataPoints: 50000, // Limit memory usage
+  },
 });
 
 // Conditional monitoring for different query types
-await monitoring.measureQuery(
-  operation,
-  query, 
-  connectionId,
-  executor,
-  {
-    enableAnalysis: duration > 1000,  // Only analyze slow queries
-    captureQueryPlan: isComplexQuery, // Only for complex queries
-  }
-);
+await monitoring.measureQuery(operation, query, connectionId, executor, {
+  enableAnalysis: duration > 1000, // Only analyze slow queries
+  captureQueryPlan: isComplexQuery, // Only for complex queries
+});
 ```
 
 ## Troubleshooting
@@ -565,22 +566,24 @@ await monitoring.measureQuery(
 ### Common Issues
 
 1. **High Memory Usage**
+
    ```typescript
    // Reduce sampling rate
    monitoring.updateConfig({
-     performance: { sampleRate: 0.01 },  // 1% sampling
-     metrics: { maxDataPoints: 10000 }   // Reduce buffer size
+     performance: { sampleRate: 0.01 }, // 1% sampling
+     metrics: { maxDataPoints: 10000 }, // Reduce buffer size
    });
    ```
 
 2. **Too Many Alerts**
+
    ```typescript
    // Adjust thresholds
    monitoring.updateConfig({
-     performance: { slowQueryThreshold: 2000 },  // Increase threshold
-     dashboard: { 
-       alertThresholds: { responseTime: 1500 } 
-     }
+     performance: { slowQueryThreshold: 2000 }, // Increase threshold
+     dashboard: {
+       alertThresholds: { responseTime: 1500 },
+     },
    });
    ```
 
@@ -589,7 +592,7 @@ await monitoring.measureQuery(
    // Reduce retention
    monitoring.updateConfig({
      performance: { retentionDays: 3 },
-     metrics: { retentionDays: 7 }
+     metrics: { retentionDays: 7 },
    });
    ```
 
@@ -597,7 +600,7 @@ await monitoring.measureQuery(
 
 ```typescript
 // Enable debug logging
-monitoring.on('metric', (metric) => {
+monitoring.on('metric', metric => {
   if (process.env.DEBUG_MONITORING) {
     console.log('Metric recorded:', metric);
   }
@@ -616,11 +619,13 @@ console.log('Analyzer Stats:', analyzerStats);
 
 ## License
 
-This monitoring system is part of the Mainframe AI Assistant project and follows the same license terms.
+This monitoring system is part of the Mainframe AI Assistant project and follows
+the same license terms.
 
 ## Contributing
 
 Contributions are welcome! Please ensure all monitoring components maintain:
+
 - Minimal performance overhead
 - Production-ready reliability
 - Comprehensive test coverage

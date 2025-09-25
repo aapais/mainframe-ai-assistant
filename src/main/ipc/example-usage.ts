@@ -1,6 +1,6 @@
 /**
  * IPC Handler Usage Example
- * 
+ *
  * Demonstrates how to initialize and use the production-ready IPC handlers
  * in the main process of the Electron application.
  */
@@ -10,7 +10,7 @@ import path from 'path';
 
 /**
  * Example: Initialize IPC Main Process
- * 
+ *
  * This is how you would initialize the IPC system in your main.ts file
  */
 export async function initializeIPCExample(): Promise<void> {
@@ -25,7 +25,7 @@ export async function initializeIPCExample(): Promise<void> {
       enableRequestLogging: process.env.NODE_ENV === 'development',
       geminiApiKey: process.env.GEMINI_API_KEY,
       maxConcurrentRequests: 50,
-      requestTimeoutMs: 30000
+      requestTimeoutMs: 30000,
     });
 
     // Listen to IPC events
@@ -33,9 +33,9 @@ export async function initializeIPCExample(): Promise<void> {
       console.log('✅ IPC Process initialized successfully');
     });
 
-    ipcProcess.on('error', (errorData) => {
+    ipcProcess.on('error', errorData => {
       console.error('❌ IPC Error:', errorData);
-      
+
       // Handle critical errors
       if (errorData.error.severity === 'critical') {
         console.error('🚨 Critical error - may need to restart');
@@ -43,9 +43,9 @@ export async function initializeIPCExample(): Promise<void> {
       }
     });
 
-    ipcProcess.on('performance-update', (performanceData) => {
+    ipcProcess.on('performance-update', performanceData => {
       console.log('📊 Performance Update:', performanceData);
-      
+
       // Monitor for performance issues
       if (performanceData.systemMetrics.errorRate > 0.1) {
         console.warn('⚠️ High error rate detected');
@@ -59,7 +59,7 @@ export async function initializeIPCExample(): Promise<void> {
       activeRequests: status.activeRequests,
       totalHandlers: status.totalHandlers,
       uptime: Math.round(status.uptime),
-      avgResponseTime: status.performance?.averageResponseTime || 0
+      avgResponseTime: status.performance?.averageResponseTime || 0,
     });
 
     // Graceful shutdown on process termination
@@ -76,7 +76,6 @@ export async function initializeIPCExample(): Promise<void> {
     });
 
     return ipcProcess;
-
   } catch (error) {
     console.error('❌ Failed to initialize IPC Main Process:', error);
     throw error;
@@ -85,7 +84,7 @@ export async function initializeIPCExample(): Promise<void> {
 
 /**
  * Example: Advanced IPC Configuration
- * 
+ *
  * Shows how to configure IPC with custom settings for different environments
  */
 export function getIPCConfigForEnvironment(): any {
@@ -95,7 +94,7 @@ export function getIPCConfigForEnvironment(): any {
 
   const baseConfig = {
     databasePath: path.join(process.cwd(), 'data', 'knowledge.db'),
-    geminiApiKey: process.env.GEMINI_API_KEY
+    geminiApiKey: process.env.GEMINI_API_KEY,
   };
 
   if (isDevelopment) {
@@ -105,7 +104,7 @@ export function getIPCConfigForEnvironment(): any {
       enableSecurityValidation: true,
       enableRequestLogging: true,
       maxConcurrentRequests: 20,
-      requestTimeoutMs: 10000
+      requestTimeoutMs: 10000,
     };
   }
 
@@ -116,7 +115,7 @@ export function getIPCConfigForEnvironment(): any {
       enableSecurityValidation: true,
       enableRequestLogging: false,
       maxConcurrentRequests: 100,
-      requestTimeoutMs: 30000
+      requestTimeoutMs: 30000,
     };
   }
 
@@ -128,7 +127,7 @@ export function getIPCConfigForEnvironment(): any {
       enableSecurityValidation: false,
       enableRequestLogging: false,
       maxConcurrentRequests: 10,
-      requestTimeoutMs: 5000
+      requestTimeoutMs: 5000,
     };
   }
 
@@ -137,7 +136,7 @@ export function getIPCConfigForEnvironment(): any {
 
 /**
  * Example: Custom Error Handling
- * 
+ *
  * Shows how to implement custom error handling for different error types
  */
 export function setupCustomErrorHandling(ipcProcess: any): void {
@@ -177,7 +176,7 @@ export function setupCustomErrorHandling(ipcProcess: any): void {
         channel,
         requestId,
         error: error.message,
-        details: error.details
+        details: error.details,
       });
     }
   });
@@ -185,7 +184,7 @@ export function setupCustomErrorHandling(ipcProcess: any): void {
 
 /**
  * Example: Performance Monitoring Setup
- * 
+ *
  * Shows how to monitor IPC performance and set up alerts
  */
 export function setupPerformanceMonitoring(ipcProcess: any): void {
@@ -195,7 +194,7 @@ export function setupPerformanceMonitoring(ipcProcess: any): void {
     // Store performance data
     performanceHistory.push({
       timestamp: data.timestamp,
-      ...data.systemMetrics
+      ...data.systemMetrics,
     });
 
     // Keep only last 100 entries
@@ -206,38 +205,44 @@ export function setupPerformanceMonitoring(ipcProcess: any): void {
     // Check for performance degradation
     const recent = performanceHistory.slice(-10);
     if (recent.length >= 10) {
-      const avgResponseTime = recent.reduce((sum, entry) => sum + entry.averageResponseTime, 0) / recent.length;
+      const avgResponseTime =
+        recent.reduce((sum, entry) => sum + entry.averageResponseTime, 0) / recent.length;
       const avgErrorRate = recent.reduce((sum, entry) => sum + entry.errorRate, 0) / recent.length;
 
       // Alert on performance issues
-      if (avgResponseTime > 2000) { // 2 seconds
+      if (avgResponseTime > 2000) {
+        // 2 seconds
         console.warn('⏱️ PERFORMANCE ALERT: High average response time:', avgResponseTime);
       }
 
-      if (avgErrorRate > 0.05) { // 5% error rate
+      if (avgErrorRate > 0.05) {
+        // 5% error rate
         console.warn('💥 PERFORMANCE ALERT: High error rate:', avgErrorRate);
       }
     }
   });
 
   // Periodic performance report
-  setInterval(() => {
-    if (performanceHistory.length > 0) {
-      const latest = performanceHistory[performanceHistory.length - 1];
-      console.log('📊 Performance Report:', {
-        timestamp: new Date(latest.timestamp).toLocaleTimeString(),
-        activeRequests: latest.activeRequests,
-        avgResponseTime: Math.round(latest.averageResponseTime),
-        errorRate: (latest.errorRate * 100).toFixed(2) + '%',
-        throughput: Math.round(latest.throughputPerSecond) + ' req/s'
-      });
-    }
-  }, 5 * 60 * 1000); // Every 5 minutes
+  setInterval(
+    () => {
+      if (performanceHistory.length > 0) {
+        const latest = performanceHistory[performanceHistory.length - 1];
+        console.log('📊 Performance Report:', {
+          timestamp: new Date(latest.timestamp).toLocaleTimeString(),
+          activeRequests: latest.activeRequests,
+          avgResponseTime: Math.round(latest.averageResponseTime),
+          errorRate: (latest.errorRate * 100).toFixed(2) + '%',
+          throughput: Math.round(latest.throughputPerSecond) + ' req/s',
+        });
+      }
+    },
+    5 * 60 * 1000
+  ); // Every 5 minutes
 }
 
 /**
  * Example: Health Check Integration
- * 
+ *
  * Shows how to integrate with external health monitoring systems
  */
 export async function performHealthCheck(ipcProcess: any): Promise<{
@@ -246,12 +251,12 @@ export async function performHealthCheck(ipcProcess: any): Promise<{
 }> {
   try {
     const status = await ipcProcess.getSystemStatus();
-    
+
     const healthChecks = {
       initialized: status.initialized,
       responsiveness: status.performance.averageResponseTime < 1000,
       errorRate: status.performance.errorRate < 0.05,
-      resourceUsage: status.activeRequests < 50
+      resourceUsage: status.activeRequests < 50,
     };
 
     const healthy = Object.values(healthChecks).every(check => check === true);
@@ -264,26 +269,25 @@ export async function performHealthCheck(ipcProcess: any): Promise<{
           uptime: Math.round(status.uptime),
           activeRequests: status.activeRequests,
           avgResponseTime: Math.round(status.performance.averageResponseTime),
-          errorRate: (status.performance.errorRate * 100).toFixed(2) + '%'
+          errorRate: (status.performance.errorRate * 100).toFixed(2) + '%',
         },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
-
   } catch (error) {
     return {
       healthy: false,
       details: {
         error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 }
 
 /**
  * Example: Integration with Electron Main Process
- * 
+ *
  * Shows how to integrate the IPC system with the main Electron process
  */
 export async function integrateWithElectronMain(): Promise<void> {
@@ -307,8 +311,8 @@ export async function integrateWithElectronMain(): Promise<void> {
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
-          preload: path.join(__dirname, 'preload.js')
-        }
+          preload: path.join(__dirname, 'preload.js'),
+        },
       });
 
       // Load the application
@@ -323,7 +327,6 @@ export async function integrateWithElectronMain(): Promise<void> {
           console.warn('⚠️ Health check failed:', health.details);
         }
       }, 60000); // Every minute
-
     } catch (error) {
       console.error('❌ Failed to initialize Electron with IPC:', error);
       app.quit();

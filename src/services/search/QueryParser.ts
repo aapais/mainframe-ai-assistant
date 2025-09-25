@@ -79,10 +79,10 @@ export class QueryParser {
         problem: 2.0,
         solution: 1.8,
         tags: 1.5,
-        category: 1.2
+        category: 1.2,
       },
       defaultField: 'content',
-      defaultOperator: 'OR'
+      defaultOperator: 'OR',
     };
   }
 
@@ -91,7 +91,7 @@ export class QueryParser {
    */
   parse(queryString: string, options?: Partial<QueryOptions>): ParsedQuery {
     const opts = { ...this.defaultOptions, ...options };
-    
+
     if (!queryString || queryString.trim().length === 0) {
       return this.createEmptyQuery(queryString, opts);
     }
@@ -113,7 +113,7 @@ export class QueryParser {
       filters,
       options: opts,
       original: queryString,
-      normalized
+      normalized,
     };
   }
 
@@ -151,22 +151,22 @@ export class QueryParser {
    */
   parseFieldQuery(queryString: string): Record<string, string[]> {
     const fieldQueries: Record<string, string[]> = {};
-    
+
     // Match field:value patterns
     const fieldPattern = /(\w+):([^\s"]+|"[^"]*")/g;
     let match;
-    
+
     while ((match = fieldPattern.exec(queryString)) !== null) {
       const field = match[1].toLowerCase();
       const value = match[2].replace(/"/g, '');
-      
+
       if (!fieldQueries[field]) {
         fieldQueries[field] = [];
       }
-      
+
       fieldQueries[field].push(value);
     }
-    
+
     return fieldQueries;
   }
 
@@ -220,7 +220,6 @@ export class QueryParser {
 
       // Try to parse the query
       this.parse(queryString);
-
     } catch (error) {
       errors.push(`Parse error: ${error.message}`);
     }
@@ -228,7 +227,7 @@ export class QueryParser {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -237,7 +236,7 @@ export class QueryParser {
    */
   suggest(partialQuery: string, availableFields: string[] = []): string[] {
     const suggestions: string[] = [];
-    
+
     // If query ends with a field name and colon, suggest field values
     const fieldMatch = partialQuery.match(/(\w+):$/);
     if (fieldMatch && availableFields.includes(fieldMatch[1])) {
@@ -251,10 +250,7 @@ export class QueryParser {
 
     // Suggest operators
     if (!partialQuery.includes('AND') && !partialQuery.includes('OR')) {
-      suggestions.push(
-        `${partialQuery} AND`,
-        `${partialQuery} OR`
-      );
+      suggestions.push(`${partialQuery} AND`, `${partialQuery} OR`);
     }
 
     // Suggest phrase queries
@@ -278,7 +274,7 @@ export class QueryParser {
 
   private parseExpression(): QueryTerm[] {
     const terms: QueryTerm[] = [];
-    
+
     while (this.current && this.position < this.tokens.length) {
       const term = this.parseTerm();
       if (term) {
@@ -286,7 +282,7 @@ export class QueryParser {
       }
       this.advance();
     }
-    
+
     return terms;
   }
 
@@ -330,9 +326,9 @@ export class QueryParser {
   private parseOperatorTerm(): QueryTerm | null {
     const operator = this.normalizeOperator(this.current);
     this.advance();
-    
+
     if (!this.current) return null;
-    
+
     const nextTerm = this.parseTerm();
     if (nextTerm) {
       nextTerm.operator = operator;
@@ -342,13 +338,13 @@ export class QueryParser {
         nextTerm.required = true;
       }
     }
-    
+
     return nextTerm;
   }
 
   private parseFieldTerm(): QueryTerm {
     const [field, value] = this.current.split(':', 2);
-    
+
     return {
       text: this.textProcessor.stem(value),
       field: field.toLowerCase(),
@@ -356,28 +352,28 @@ export class QueryParser {
       boost: this.defaultOptions.boost[field.toLowerCase()] || 1.0,
       fuzzy: false,
       required: true,
-      prohibited: false
+      prohibited: false,
     };
   }
 
   private parsePhraseTerm(): QueryTerm {
     const phrase = this.current.slice(1, -1); // Remove quotes
     const processed = this.textProcessor.processText(phrase);
-    
+
     return {
       text: processed.map(t => t.stemmed).join(' '),
       operator: 'PHRASE',
       boost: 1.5, // Phrase queries get boost
       fuzzy: false,
       required: false,
-      prohibited: false
+      prohibited: false,
     };
   }
 
   private parseFuzzyTerm(): QueryTerm {
     const [term, distance] = this.current.split('~');
     const fuzzyDistance = distance ? parseInt(distance) || 2 : 2;
-    
+
     return {
       text: this.textProcessor.stem(term),
       operator: 'OR',
@@ -385,21 +381,21 @@ export class QueryParser {
       fuzzy: true,
       proximity: fuzzyDistance,
       required: false,
-      prohibited: false
+      prohibited: false,
     };
   }
 
   private parseBoostedTerm(): QueryTerm {
     const [term, boostStr] = this.current.split('^');
     const boost = parseFloat(boostStr) || 1.0;
-    
+
     return {
       text: this.textProcessor.stem(term),
       operator: 'OR',
       boost,
       fuzzy: false,
       required: false,
-      prohibited: false
+      prohibited: false,
     };
   }
 
@@ -411,7 +407,7 @@ export class QueryParser {
       boost: 0.9, // Wildcards get slightly lower boost
       fuzzy: false,
       required: false,
-      prohibited: false
+      prohibited: false,
     };
   }
 
@@ -435,21 +431,23 @@ export class QueryParser {
       boost: 1.0,
       fuzzy: false,
       required,
-      prohibited
+      prohibited,
     };
   }
 
   private normalizeQuery(query: string): string {
-    return query
-      .trim()
-      // Normalize operators
-      .replace(/\s+AND\s+/gi, ' AND ')
-      .replace(/\s+OR\s+/gi, ' OR ')
-      .replace(/\s+NOT\s+/gi, ' NOT ')
-      .replace(/&&/g, ' AND ')
-      .replace(/\|\|/g, ' OR ')
-      // Normalize whitespace
-      .replace(/\s+/g, ' ');
+    return (
+      query
+        .trim()
+        // Normalize operators
+        .replace(/\s+AND\s+/gi, ' AND ')
+        .replace(/\s+OR\s+/gi, ' OR ')
+        .replace(/\s+NOT\s+/gi, ' NOT ')
+        .replace(/&&/g, ' AND ')
+        .replace(/\|\|/g, ' OR ')
+        // Normalize whitespace
+        .replace(/\s+/g, ' ')
+    );
   }
 
   private tokenizeQuery(query: string): string[] {
@@ -460,8 +458,8 @@ export class QueryParser {
 
     for (let i = 0; i < query.length; i++) {
       const char = query[i];
-      
-      if (char === '"' && (i === 0 || query[i-1] !== '\\')) {
+
+      if (char === '"' && (i === 0 || query[i - 1] !== '\\')) {
         inQuotes = !inQuotes;
         current += char;
       } else if (char === '(' && !inQuotes) {
@@ -487,11 +485,11 @@ export class QueryParser {
         current += char;
       }
     }
-    
+
     if (current.trim()) {
       tokens.push(current.trim());
     }
-    
+
     return tokens;
   }
 
@@ -524,7 +522,7 @@ export class QueryParser {
 
   private extractFilters(query: string): QueryFilter[] {
     const filters: QueryFilter[] = [];
-    
+
     // Extract field filters like category:VSAM
     const fieldMatches = query.match(/(\w+):([^\s"]+|"[^"]*")/g);
     if (fieldMatches) {
@@ -533,26 +531,26 @@ export class QueryParser {
         filters.push({
           field: field.toLowerCase(),
           value: value.replace(/"/g, ''),
-          operator: 'equals'
+          operator: 'equals',
         });
       }
     }
-    
+
     return filters;
   }
 
   private determineQueryType(terms: QueryTerm[], original: string): QueryType {
     if (terms.length === 0) return 'simple';
-    
+
     const hasOperators = terms.some(t => t.operator === 'AND' || t.operator === 'NOT');
     const hasPhrases = terms.some(t => t.operator === 'PHRASE');
     const hasFields = terms.some(t => t.field !== undefined);
-    
+
     if (hasOperators && (hasPhrases || hasFields)) return 'mixed';
     if (hasOperators) return 'boolean';
     if (hasPhrases) return 'phrase';
     if (hasFields) return 'field';
-    
+
     return 'simple';
   }
 
@@ -563,7 +561,7 @@ export class QueryParser {
       filters: [],
       options,
       original,
-      normalized: ''
+      normalized: '',
     };
   }
 }

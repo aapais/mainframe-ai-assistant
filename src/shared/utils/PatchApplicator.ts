@@ -43,7 +43,7 @@ export class PatchApplicator {
       validatePaths: true,
       maxPatchSize: 1024 * 1024, // 1MB
       timeout: 5000, // 5 seconds
-      ...options
+      ...options,
     };
   }
 
@@ -74,18 +74,13 @@ export class PatchApplicator {
       failedPatches: [],
       metadata: {
         executionTime: 0,
-        rollbackData: originalData
-      }
+        rollbackData: originalData,
+      },
     };
 
     // Apply patches with timeout protection
     try {
-      workingData = await this.applyPatchesWithTimeout(
-        workingData,
-        patches,
-        mergedOptions,
-        result
-      );
+      workingData = await this.applyPatchesWithTimeout(workingData, patches, mergedOptions, result);
 
       result.data = workingData;
       result.metadata.executionTime = Date.now() - startTime;
@@ -121,7 +116,10 @@ export class PatchApplicator {
   /**
    * Validate patch operations without applying them
    */
-  validatePatches(data: any, patches: PatchOperation[]): {
+  validatePatches(
+    data: any,
+    patches: PatchOperation[]
+  ): {
     valid: boolean;
     errors: Array<{ patch: PatchOperation; error: string }>;
   } {
@@ -133,14 +131,14 @@ export class PatchApplicator {
       } catch (error) {
         errors.push({
           patch,
-          error: error instanceof Error ? error.message : 'Validation failed'
+          error: error instanceof Error ? error.message : 'Validation failed',
         });
       }
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -385,10 +383,14 @@ export class PatchApplicator {
     try {
       const actualValue = this.getValueAtPath(data, pathSegments);
       if (!this.deepEqual(actualValue, expectedValue)) {
-        throw new Error(`Test operation failed: expected ${JSON.stringify(expectedValue)}, got ${JSON.stringify(actualValue)}`);
+        throw new Error(
+          `Test operation failed: expected ${JSON.stringify(expectedValue)}, got ${JSON.stringify(actualValue)}`
+        );
       }
     } catch (error) {
-      throw new Error(`Test operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Test operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -478,9 +480,10 @@ export class PatchApplicator {
 
     // Handle JSON Pointer format
     if (path.startsWith('/')) {
-      return path.slice(1).split('/').map(segment =>
-        segment.replace(/~1/g, '/').replace(/~0/g, '~')
-      );
+      return path
+        .slice(1)
+        .split('/')
+        .map(segment => segment.replace(/~1/g, '/').replace(/~0/g, '~'));
     }
 
     // Handle dot notation

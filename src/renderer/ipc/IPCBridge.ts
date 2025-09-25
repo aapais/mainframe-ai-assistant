@@ -10,7 +10,7 @@ import type {
   KBEntryUpdate,
   SearchResult,
   SearchQuery,
-  DatabaseMetrics
+  DatabaseMetrics,
 } from '../../types';
 import { ipcClient, IPCClient, IPCResponse, IPCOptions } from './IPCClient';
 
@@ -51,7 +51,7 @@ export interface BridgeEvents {
   'optimistic:rollback': (update: OptimisticUpdate) => void;
   'offline:detected': () => void;
   'online:detected': () => void;
-  'error': (error: Error) => void;
+  error: (error: Error) => void;
 }
 
 /**
@@ -66,7 +66,7 @@ export class IPCBridge extends EventEmitter {
     searchTTL: 5 * 60 * 1000, // 5 minutes
     metricsTTL: 30 * 1000, // 30 seconds
     entryTTL: 10 * 60 * 1000, // 10 minutes
-    maxSize: 1000
+    maxSize: 1000,
   };
 
   constructor(client?: IPCClient) {
@@ -79,10 +79,10 @@ export class IPCBridge extends EventEmitter {
   /**
    * Knowledge Base Operations with Optimistic Updates
    */
-  
+
   async getKBEntries(query?: SearchQuery, options?: IPCOptions): Promise<SearchResult[]> {
     const cacheKey = this.generateCacheKey('kb-entries', query);
-    
+
     // Check cache first
     const cached = this.getFromCache<SearchResult[]>(cacheKey, this.cacheConfig.searchTTL);
     if (cached) {
@@ -91,16 +91,16 @@ export class IPCBridge extends EventEmitter {
     }
 
     this.emit('cache:miss', cacheKey);
-    
+
     const response = await this.client.getKBEntries(query, options);
-    
+
     if (response.success && response.data) {
       // Apply any pending optimistic updates
       const entries = this.applyOptimisticUpdates(response.data);
       this.setCache(cacheKey, entries, this.cacheConfig.searchTTL);
       return entries;
     }
-    
+
     throw new Error(response.error?.message || 'Failed to get KB entries');
   }
 
@@ -116,7 +116,7 @@ export class IPCBridge extends EventEmitter {
       success_count: 0,
       failure_count: 0,
       version: 1,
-      created_by: entry.created_by || 'current-user'
+      created_by: entry.created_by || 'current-user',
     };
 
     // Apply optimistic update
@@ -128,18 +128,18 @@ export class IPCBridge extends EventEmitter {
       rollback: () => {
         // Remove optimistic entry from any cached results
         this.invalidateSearchCache();
-      }
+      },
     };
 
     this.optimisticUpdates.set(optimisticId, optimisticUpdate);
     this.emit('optimistic:applied', optimisticUpdate);
-    
+
     // Invalidate search cache to force refresh with optimistic data
     this.invalidateSearchCache();
 
     try {
       const response = await this.client.addKBEntry(entry, options);
-      
+
       if (response.success && response.data) {
         // Remove optimistic update and replace with real ID
         this.optimisticUpdates.delete(optimisticId);
@@ -147,9 +147,8 @@ export class IPCBridge extends EventEmitter {
         this.invalidateCache(`entry-${response.data}`);
         return response.data;
       }
-      
+
       throw new Error(response.error?.message || 'Failed to add KB entry');
-      
     } catch (error) {
       // Rollback optimistic update
       this.optimisticUpdates.delete(optimisticId);
@@ -168,26 +167,25 @@ export class IPCBridge extends EventEmitter {
       timestamp: Date.now(),
       rollback: () => {
         this.invalidateCache(`entry-${id}`);
-      }
+      },
     };
 
     this.optimisticUpdates.set(`update-${id}`, optimisticUpdate);
     this.emit('optimistic:applied', optimisticUpdate);
-    
+
     // Invalidate related cache entries
     this.invalidateCache(`entry-${id}`);
 
     try {
       const response = await this.client.updateKBEntry(id, updates, options);
-      
+
       if (response.success) {
         this.optimisticUpdates.delete(`update-${id}`);
         this.emit('optimistic:confirmed', optimisticUpdate);
         return;
       }
-      
+
       throw new Error(response.error?.message || 'Failed to update KB entry');
-      
     } catch (error) {
       // Rollback optimistic update
       this.optimisticUpdates.delete(`update-${id}`);
@@ -207,27 +205,26 @@ export class IPCBridge extends EventEmitter {
       rollback: () => {
         this.invalidateCache(`entry-${id}`);
         this.invalidateSearchCache();
-      }
+      },
     };
 
     this.optimisticUpdates.set(`delete-${id}`, optimisticUpdate);
     this.emit('optimistic:applied', optimisticUpdate);
-    
+
     // Invalidate caches
     this.invalidateCache(`entry-${id}`);
     this.invalidateSearchCache();
 
     try {
       const response = await this.client.deleteKBEntry(id, options);
-      
+
       if (response.success) {
         this.optimisticUpdates.delete(`delete-${id}`);
         this.emit('optimistic:confirmed', optimisticUpdate);
         return;
       }
-      
+
       throw new Error(response.error?.message || 'Failed to delete KB entry');
-      
     } catch (error) {
       // Rollback optimistic update
       this.optimisticUpdates.delete(`delete-${id}`);
@@ -240,7 +237,7 @@ export class IPCBridge extends EventEmitter {
 
   async getEntry(id: string, options?: IPCOptions): Promise<KBEntry | null> {
     const cacheKey = `entry-${id}`;
-    
+
     // Check cache first
     const cached = this.getFromCache<KBEntry>(cacheKey, this.cacheConfig.entryTTL);
     if (cached) {
@@ -249,9 +246,9 @@ export class IPCBridge extends EventEmitter {
     }
 
     this.emit('cache:miss', cacheKey);
-    
+
     const response = await this.client.getEntry(id, options);
-    
+
     if (response.success) {
       if (response.data) {
         const entry = this.applyOptimisticUpdatesToEntry(response.data);
@@ -260,17 +257,21 @@ export class IPCBridge extends EventEmitter {
       }
       return null;
     }
-    
+
     throw new Error(response.error?.message || 'Failed to get KB entry');
   }
 
   /**
    * Search Operations with Smart Caching
    */
-  
-  async searchLocal(query: string, searchOptions?: SearchQuery, options?: IPCOptions): Promise<SearchResult[]> {
+
+  async searchLocal(
+    query: string,
+    searchOptions?: SearchQuery,
+    options?: IPCOptions
+  ): Promise<SearchResult[]> {
     const cacheKey = this.generateCacheKey('search-local', { query, ...searchOptions });
-    
+
     // Check cache first
     const cached = this.getFromCache<SearchResult[]>(cacheKey, this.cacheConfig.searchTTL);
     if (cached) {
@@ -279,21 +280,25 @@ export class IPCBridge extends EventEmitter {
     }
 
     this.emit('cache:miss', cacheKey);
-    
+
     const response = await this.client.searchLocal(query, searchOptions, options);
-    
+
     if (response.success && response.data) {
       const results = this.applyOptimisticUpdates(response.data);
       this.setCache(cacheKey, results, this.cacheConfig.searchTTL);
       return results;
     }
-    
+
     throw new Error(response.error?.message || 'Failed to search locally');
   }
 
-  async searchWithAI(query: string, searchOptions?: SearchQuery, options?: IPCOptions): Promise<SearchResult[]> {
+  async searchWithAI(
+    query: string,
+    searchOptions?: SearchQuery,
+    options?: IPCOptions
+  ): Promise<SearchResult[]> {
     const cacheKey = this.generateCacheKey('search-ai', { query, ...searchOptions });
-    
+
     // Check cache first
     const cached = this.getFromCache<SearchResult[]>(cacheKey, this.cacheConfig.searchTTL);
     if (cached) {
@@ -302,23 +307,28 @@ export class IPCBridge extends EventEmitter {
     }
 
     this.emit('cache:miss', cacheKey);
-    
+
     const response = await this.client.searchWithAI(query, searchOptions, options);
-    
+
     if (response.success && response.data) {
       const results = this.applyOptimisticUpdates(response.data);
       this.setCache(cacheKey, results, this.cacheConfig.searchTTL);
       return results;
     }
-    
+
     throw new Error(response.error?.message || 'Failed to search with AI');
   }
 
   /**
    * Rating and Feedback with Optimistic Updates
    */
-  
-  async rateEntry(id: string, successful: boolean, comment?: string, options?: IPCOptions): Promise<void> {
+
+  async rateEntry(
+    id: string,
+    successful: boolean,
+    comment?: string,
+    options?: IPCOptions
+  ): Promise<void> {
     const optimisticUpdate: OptimisticUpdate = {
       id: `rate-${id}`,
       type: 'rate',
@@ -326,26 +336,25 @@ export class IPCBridge extends EventEmitter {
       timestamp: Date.now(),
       rollback: () => {
         this.invalidateCache(`entry-${id}`);
-      }
+      },
     };
 
     this.optimisticUpdates.set(`rate-${id}`, optimisticUpdate);
     this.emit('optimistic:applied', optimisticUpdate);
-    
+
     // Invalidate entry cache to refresh with optimistic rating
     this.invalidateCache(`entry-${id}`);
 
     try {
       const response = await this.client.rateEntry(id, successful, comment, options);
-      
+
       if (response.success) {
         this.optimisticUpdates.delete(`rate-${id}`);
         this.emit('optimistic:confirmed', optimisticUpdate);
         return;
       }
-      
+
       throw new Error(response.error?.message || 'Failed to rate entry');
-      
     } catch (error) {
       this.optimisticUpdates.delete(`rate-${id}`);
       this.emit('optimistic:rollback', optimisticUpdate);
@@ -357,10 +366,10 @@ export class IPCBridge extends EventEmitter {
   /**
    * System Operations with Caching
    */
-  
+
   async getMetrics(options?: IPCOptions): Promise<DatabaseMetrics> {
     const cacheKey = 'metrics';
-    
+
     // Check cache first (shorter TTL for metrics)
     const cached = this.getFromCache<DatabaseMetrics>(cacheKey, this.cacheConfig.metricsTTL);
     if (cached) {
@@ -369,21 +378,21 @@ export class IPCBridge extends EventEmitter {
     }
 
     this.emit('cache:miss', cacheKey);
-    
+
     const response = await this.client.getMetrics(options);
-    
+
     if (response.success && response.data) {
       this.setCache(cacheKey, response.data, this.cacheConfig.metricsTTL);
       return response.data;
     }
-    
+
     throw new Error(response.error?.message || 'Failed to get metrics');
   }
 
   /**
    * Cache Management
    */
-  
+
   private generateCacheKey(prefix: string, data?: any): string {
     if (!data) return prefix;
     return `${prefix}:${JSON.stringify(data)}`;
@@ -391,14 +400,14 @@ export class IPCBridge extends EventEmitter {
 
   private getFromCache<T>(key: string, ttl: number): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) return null;
-    
+
     if (Date.now() - entry.timestamp > ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 
@@ -412,15 +421,15 @@ export class IPCBridge extends EventEmitter {
       data,
       timestamp: Date.now(),
       ttl,
-      key
+      key,
     });
   }
 
   private invalidateCache(keyPattern: string): void {
-    const keysToDelete = Array.from(this.cache.keys()).filter(key => 
-      key.includes(keyPattern) || key.startsWith(keyPattern)
+    const keysToDelete = Array.from(this.cache.keys()).filter(
+      key => key.includes(keyPattern) || key.startsWith(keyPattern)
     );
-    
+
     keysToDelete.forEach(key => {
       this.cache.delete(key);
       this.emit('cache:invalidate', key);
@@ -433,12 +442,13 @@ export class IPCBridge extends EventEmitter {
   }
 
   private cleanupOldestEntries(): void {
-    const entries = Array.from(this.cache.entries())
-      .sort(([, a], [, b]) => a.timestamp - b.timestamp);
-    
+    const entries = Array.from(this.cache.entries()).sort(
+      ([, a], [, b]) => a.timestamp - b.timestamp
+    );
+
     // Remove oldest 10% of entries
     const toRemove = Math.floor(entries.length * 0.1);
-    
+
     for (let i = 0; i < toRemove; i++) {
       this.cache.delete(entries[i][0]);
     }
@@ -446,43 +456,48 @@ export class IPCBridge extends EventEmitter {
 
   private startCacheCleanup(): void {
     // Clean up expired entries every 5 minutes
-    setInterval(() => {
-      const now = Date.now();
-      
-      for (const [key, entry] of this.cache.entries()) {
-        if (now - entry.timestamp > entry.ttl) {
-          this.cache.delete(key);
+    setInterval(
+      () => {
+        const now = Date.now();
+
+        for (const [key, entry] of this.cache.entries()) {
+          if (now - entry.timestamp > entry.ttl) {
+            this.cache.delete(key);
+          }
         }
-      }
-    }, 5 * 60 * 1000);
+      },
+      5 * 60 * 1000
+    );
   }
 
   /**
    * Optimistic Updates Management
    */
-  
+
   private applyOptimisticUpdates(results: SearchResult[]): SearchResult[] {
     // Apply any pending optimistic updates to search results
-    return results.map(result => ({
-      ...result,
-      entry: this.applyOptimisticUpdatesToEntry(result.entry)
-    })).filter(result => {
-      // Filter out deleted entries
-      const deleteUpdate = this.optimisticUpdates.get(`delete-${result.entry.id}`);
-      return !deleteUpdate;
-    });
+    return results
+      .map(result => ({
+        ...result,
+        entry: this.applyOptimisticUpdatesToEntry(result.entry),
+      }))
+      .filter(result => {
+        // Filter out deleted entries
+        const deleteUpdate = this.optimisticUpdates.get(`delete-${result.entry.id}`);
+        return !deleteUpdate;
+      });
   }
 
   private applyOptimisticUpdatesToEntry(entry: KBEntry): KBEntry {
     let modifiedEntry = { ...entry };
-    
+
     // Apply update optimistic changes
     const updateKey = `update-${entry.id}`;
     const update = this.optimisticUpdates.get(updateKey);
     if (update) {
       modifiedEntry = { ...modifiedEntry, ...update.data, updated_at: new Date() };
     }
-    
+
     // Apply rating optimistic changes
     const rateKey = `rate-${entry.id}`;
     const rating = this.optimisticUpdates.get(rateKey);
@@ -494,21 +509,21 @@ export class IPCBridge extends EventEmitter {
       }
       modifiedEntry.usage_count = (modifiedEntry.usage_count || 0) + 1;
     }
-    
+
     return modifiedEntry;
   }
 
   /**
    * Online/Offline Detection
    */
-  
+
   private setupOnlineOfflineDetection(): void {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         this.isOnline = true;
         this.emit('online:detected');
       });
-      
+
       window.addEventListener('offline', () => {
         this.isOnline = false;
         this.emit('offline:detected');
@@ -519,7 +534,7 @@ export class IPCBridge extends EventEmitter {
   /**
    * Public API
    */
-  
+
   isOffline(): boolean {
     return !this.isOnline;
   }
@@ -531,12 +546,12 @@ export class IPCBridge extends EventEmitter {
   getCacheStats() {
     const now = Date.now();
     const entries = Array.from(this.cache.values());
-    
+
     return {
       size: this.cache.size,
       maxSize: this.cacheConfig.maxSize,
       expired: entries.filter(entry => now - entry.timestamp > entry.ttl).length,
-      hitRatio: 0 // Would need to track hits/misses for accurate ratio
+      hitRatio: 0, // Would need to track hits/misses for accurate ratio
     };
   }
 

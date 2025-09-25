@@ -44,7 +44,15 @@ interface IncidentRelationship {
   id: number;
   source_incident_id: string;
   target_incident_id: string;
-  relationship_type: 'related' | 'duplicate' | 'blocks' | 'blocked_by' | 'parent' | 'child' | 'caused_by' | 'causes';
+  relationship_type:
+    | 'related'
+    | 'duplicate'
+    | 'blocks'
+    | 'blocked_by'
+    | 'parent'
+    | 'child'
+    | 'caused_by'
+    | 'causes';
   similarity_score: number;
   created_at: Date;
   created_by: string;
@@ -95,10 +103,23 @@ export class IncidentService {
 
   // ===== INCIDENT CRUD OPERATIONS =====
 
-  async createIncident(incident: Omit<Incident, 'id' | 'created_at' | 'updated_at' | 'escalation_count' | 'reopen_count' | 'ai_processed' | 'sla_breach' | 'archived'>): Promise<string> {
+  async createIncident(
+    incident: Omit<
+      Incident,
+      | 'id'
+      | 'created_at'
+      | 'updated_at'
+      | 'escalation_count'
+      | 'reopen_count'
+      | 'ai_processed'
+      | 'sla_breach'
+      | 'archived'
+    >
+  ): Promise<string> {
     const id = `INC-${Date.now()}`;
 
-    await this.dbRun(`
+    await this.dbRun(
+      `
       INSERT INTO incidents (
         id, title, description, category, severity, status, priority,
         assigned_team, assigned_to, reporter, resolution, resolution_type,
@@ -106,14 +127,31 @@ export class IncidentService {
         related_kb_entries, ai_suggested_category, ai_confidence_score,
         tags, custom_fields, attachments
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      id, incident.title, incident.description, incident.category, incident.severity,
-      incident.status, incident.priority, incident.assigned_team, incident.assigned_to,
-      incident.reporter, incident.resolution, incident.resolution_type, incident.root_cause,
-      incident.sla_target_response_hours, incident.sla_target_resolution_hours,
-      incident.related_kb_entries, incident.ai_suggested_category, incident.ai_confidence_score,
-      incident.tags, incident.custom_fields, incident.attachments
-    ]);
+    `,
+      [
+        id,
+        incident.title,
+        incident.description,
+        incident.category,
+        incident.severity,
+        incident.status,
+        incident.priority,
+        incident.assigned_team,
+        incident.assigned_to,
+        incident.reporter,
+        incident.resolution,
+        incident.resolution_type,
+        incident.root_cause,
+        incident.sla_target_response_hours,
+        incident.sla_target_resolution_hours,
+        incident.related_kb_entries,
+        incident.ai_suggested_category,
+        incident.ai_confidence_score,
+        incident.tags,
+        incident.custom_fields,
+        incident.attachments,
+      ]
+    );
 
     // Trigger automation rules
     await this.executeAutomationRules(id);
@@ -127,15 +165,20 @@ export class IncidentService {
   }
 
   async updateIncident(id: string, updates: Partial<Incident>): Promise<void> {
-    const setClause = Object.keys(updates).map(key => `${key} = ?`).join(', ');
+    const setClause = Object.keys(updates)
+      .map(key => `${key} = ?`)
+      .join(', ');
     const values = Object.values(updates);
     values.push(id);
 
-    await this.dbRun(`
+    await this.dbRun(
+      `
       UPDATE incidents
       SET ${setClause}, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, values);
+    `,
+      values
+    );
 
     // Trigger automation rules if status changed
     if (updates.status) {
@@ -239,22 +282,33 @@ export class IncidentService {
 
   // ===== RELATIONSHIP MANAGEMENT =====
 
-  async createRelationship(relationship: Omit<IncidentRelationship, 'id' | 'created_at'>): Promise<number> {
-    const result = await this.dbRun(`
+  async createRelationship(
+    relationship: Omit<IncidentRelationship, 'id' | 'created_at'>
+  ): Promise<number> {
+    const result = await this.dbRun(
+      `
       INSERT INTO incident_relationships (
         source_incident_id, target_incident_id, relationship_type,
         similarity_score, created_by, notes
       ) VALUES (?, ?, ?, ?, ?, ?)
-    `, [
-      relationship.source_incident_id, relationship.target_incident_id,
-      relationship.relationship_type, relationship.similarity_score,
-      relationship.created_by, relationship.notes
-    ]);
+    `,
+      [
+        relationship.source_incident_id,
+        relationship.target_incident_id,
+        relationship.relationship_type,
+        relationship.similarity_score,
+        relationship.created_by,
+        relationship.notes,
+      ]
+    );
 
     return result.lastID;
   }
 
-  async getIncidentRelationships(incidentId: string, maxDepth: number = 3): Promise<{
+  async getIncidentRelationships(
+    incidentId: string,
+    maxDepth: number = 3
+  ): Promise<{
     nodes: Array<{ id: string; incident: Incident; level: number }>;
     links: Array<{ source: string; target: string; relationship: IncidentRelationship }>;
   }> {
@@ -286,13 +340,16 @@ export class IncidentService {
     nodes.push({ id: incidentId, incident, level: currentLevel });
 
     // Get related incidents
-    const relationships = await this.dbAll(`
+    const relationships = await this.dbAll(
+      `
       SELECT r.*,
              CASE WHEN r.source_incident_id = ? THEN r.target_incident_id
                   ELSE r.source_incident_id END as related_incident_id
       FROM incident_relationships r
       WHERE r.source_incident_id = ? OR r.target_incident_id = ?
-    `, [incidentId, incidentId, incidentId]);
+    `,
+      [incidentId, incidentId, incidentId]
+    );
 
     for (const rel of relationships) {
       const relationship: IncidentRelationship = {
@@ -303,13 +360,13 @@ export class IncidentService {
         similarity_score: rel.similarity_score,
         created_at: new Date(rel.created_at),
         created_by: rel.created_by,
-        notes: rel.notes
+        notes: rel.notes,
       };
 
       links.push({
         source: rel.source_incident_id,
         target: rel.target_incident_id,
-        relationship
+        relationship,
       });
 
       // Recursively collect relationships
@@ -330,16 +387,27 @@ export class IncidentService {
 
   // ===== AUTOMATION =====
 
-  async createAutomationRule(rule: Omit<AutomationRule, 'id' | 'created_at' | 'success_count' | 'failure_count'>): Promise<number> {
-    const result = await this.dbRun(`
+  async createAutomationRule(
+    rule: Omit<AutomationRule, 'id' | 'created_at' | 'success_count' | 'failure_count'>
+  ): Promise<number> {
+    const result = await this.dbRun(
+      `
       INSERT INTO automation_rules (
         name, description, rule_type, conditions, actions,
         enabled, priority, created_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      rule.name, rule.description, rule.rule_type, rule.conditions,
-      rule.actions, rule.enabled, rule.priority, rule.created_by
-    ]);
+    `,
+      [
+        rule.name,
+        rule.description,
+        rule.rule_type,
+        rule.conditions,
+        rule.actions,
+        rule.enabled,
+        rule.priority,
+        rule.created_by,
+      ]
+    );
 
     return result.lastID;
   }
@@ -361,19 +429,25 @@ export class IncidentService {
 
         if (await this.evaluateConditions(incident, conditions)) {
           await this.executeActions(incident, actions);
-          await this.dbRun(`
+          await this.dbRun(
+            `
             UPDATE automation_rules
             SET success_count = success_count + 1, last_executed = CURRENT_TIMESTAMP
             WHERE id = ?
-          `, [rule.id]);
+          `,
+            [rule.id]
+          );
         }
       } catch (error) {
         console.error(`Error executing automation rule ${rule.id}:`, error);
-        await this.dbRun(`
+        await this.dbRun(
+          `
           UPDATE automation_rules
           SET failure_count = failure_count + 1
           WHERE id = ?
-        `, [rule.id]);
+        `,
+          [rule.id]
+        );
       }
     }
   }
@@ -399,10 +473,14 @@ export class IncidentService {
           matches = fieldValue < value;
           break;
         case 'in':
-          matches = Array.isArray(value) ? value.includes(fieldValue) : value.split(',').includes(fieldValue);
+          matches = Array.isArray(value)
+            ? value.includes(fieldValue)
+            : value.split(',').includes(fieldValue);
           break;
         case 'not_in':
-          matches = Array.isArray(value) ? !value.includes(fieldValue) : !value.split(',').includes(fieldValue);
+          matches = Array.isArray(value)
+            ? !value.includes(fieldValue)
+            : !value.split(',').includes(fieldValue);
           break;
       }
 
@@ -433,7 +511,7 @@ export class IncidentService {
                 category: aiCategory.category,
                 ai_suggested_category: aiCategory.category,
                 ai_confidence_score: aiCategory.confidence,
-                ai_processed: true
+                ai_processed: true,
               });
             }
           } else {
@@ -446,25 +524,29 @@ export class IncidentService {
         case 'escalate':
           await this.updateIncident(incident.id, {
             escalation_count: incident.escalation_count + 1,
-            assigned_to: parameters.escalate_to
+            assigned_to: parameters.escalate_to,
           });
           break;
         case 'send_notification':
           // Notification logic would go here
-          console.log(`Sending notification to ${parameters.recipients} for incident ${incident.id}`);
+          console.log(
+            `Sending notification to ${parameters.recipients} for incident ${incident.id}`
+          );
           break;
         case 'close_incident':
           await this.updateIncident(incident.id, {
             status: 'fechado',
             resolution_type: parameters.resolution_type,
-            resolution: parameters.resolution
+            resolution: parameters.resolution,
           });
           break;
         case 'link_kb':
-          const currentEntries = incident.related_kb_entries ? JSON.parse(incident.related_kb_entries) : [];
+          const currentEntries = incident.related_kb_entries
+            ? JSON.parse(incident.related_kb_entries)
+            : [];
           currentEntries.push(parameters.kb_entry_id);
           await this.updateIncident(incident.id, {
-            related_kb_entries: JSON.stringify(currentEntries)
+            related_kb_entries: JSON.stringify(currentEntries),
           });
           break;
       }
@@ -473,7 +555,9 @@ export class IncidentService {
 
   // ===== AI CATEGORIZATION =====
 
-  private async categorizeWithAI(incident: Incident): Promise<{ category: string; confidence: number; reasoning: string }> {
+  private async categorizeWithAI(
+    incident: Incident
+  ): Promise<{ category: string; confidence: number; reasoning: string }> {
     // Mock AI categorization - in production, this would call an AI service
     const text = `${incident.title} ${incident.description}`.toLowerCase();
 
@@ -493,7 +577,11 @@ export class IncidentService {
       category = 'CICS';
       confidence = 0.85;
       reasoning = 'Contains CICS-related keywords';
-    } else if (text.includes('network') || text.includes('connection') || text.includes('timeout')) {
+    } else if (
+      text.includes('network') ||
+      text.includes('connection') ||
+      text.includes('timeout')
+    ) {
       category = 'Network';
       confidence = 0.79;
       reasoning = 'Contains network-related keywords';
@@ -505,32 +593,44 @@ export class IncidentService {
   // ===== ANALYTICS =====
 
   async getAnalyticsData(timeRange: { start: Date; end: Date }): Promise<AnalyticsData> {
-    const incidents = await this.dbAll(`
+    const incidents = await this.dbAll(
+      `
       SELECT * FROM incidents
       WHERE created_at BETWEEN ? AND ?
       AND archived = FALSE
-    `, [timeRange.start.toISOString(), timeRange.end.toISOString()]);
+    `,
+      [timeRange.start.toISOString(), timeRange.end.toISOString()]
+    );
 
     const totalIncidents = incidents.length;
-    const openIncidents = incidents.filter(i => ['aberto', 'em_tratamento'].includes(i.status)).length;
-    const resolvedIncidents = incidents.filter(i => ['resolvido', 'fechado'].includes(i.status)).length;
+    const openIncidents = incidents.filter(i =>
+      ['aberto', 'em_tratamento'].includes(i.status)
+    ).length;
+    const resolvedIncidents = incidents.filter(i =>
+      ['resolvido', 'fechado'].includes(i.status)
+    ).length;
 
     // Calculate MTTR
     const resolvedWithTime = incidents.filter(i => i.resolution_time_hours != null);
-    const avgMTTR = resolvedWithTime.length > 0
-      ? resolvedWithTime.reduce((sum, i) => sum + i.resolution_time_hours, 0) / resolvedWithTime.length
-      : 0;
+    const avgMTTR =
+      resolvedWithTime.length > 0
+        ? resolvedWithTime.reduce((sum, i) => sum + i.resolution_time_hours, 0) /
+          resolvedWithTime.length
+        : 0;
 
     // Calculate average response time
     const respondedIncidents = incidents.filter(i => i.response_time_hours != null);
-    const avgResponseTime = respondedIncidents.length > 0
-      ? respondedIncidents.reduce((sum, i) => sum + i.response_time_hours, 0) / respondedIncidents.length
-      : 0;
+    const avgResponseTime =
+      respondedIncidents.length > 0
+        ? respondedIncidents.reduce((sum, i) => sum + i.response_time_hours, 0) /
+          respondedIncidents.length
+        : 0;
 
     // Calculate SLA compliance
     const slaEligible = incidents.filter(i => ['resolvido', 'fechado'].includes(i.status));
     const slaCompliant = slaEligible.filter(i => !i.sla_breach);
-    const slaCompliance = slaEligible.length > 0 ? (slaCompliant.length / slaEligible.length) * 100 : 0;
+    const slaCompliance =
+      slaEligible.length > 0 ? (slaCompliant.length / slaEligible.length) * 100 : 0;
 
     // Category breakdown
     const categoryMap = new Map<string, number>();
@@ -540,7 +640,7 @@ export class IncidentService {
     const categoryBreakdown = Array.from(categoryMap.entries()).map(([category, count]) => ({
       category,
       count,
-      percentage: (count / totalIncidents) * 100
+      percentage: (count / totalIncidents) * 100,
     }));
 
     // Severity breakdown
@@ -551,11 +651,12 @@ export class IncidentService {
     const severityBreakdown = Array.from(severityMap.entries()).map(([severity, count]) => ({
       severity,
       count,
-      percentage: (count / totalIncidents) * 100
+      percentage: (count / totalIncidents) * 100,
     }));
 
     // Team performance
-    const teamPerformanceData = await this.dbAll(`
+    const teamPerformanceData = await this.dbAll(
+      `
       SELECT
         assigned_team,
         AVG(resolution_time_hours) as avg_resolution_time,
@@ -566,16 +667,19 @@ export class IncidentService {
         AND status IN ('resolvido', 'fechado')
         AND archived = FALSE
       GROUP BY assigned_team
-    `, [timeRange.start.toISOString(), timeRange.end.toISOString()]);
+    `,
+      [timeRange.start.toISOString(), timeRange.end.toISOString()]
+    );
 
     const teamPerformance = teamPerformanceData.map(t => ({
       team: t.assigned_team,
       avgResolutionTime: t.avg_resolution_time || 0,
-      slaCompliance: t.sla_compliance || 0
+      slaCompliance: t.sla_compliance || 0,
     }));
 
     // Daily trends
-    const dailyTrendsData = await this.dbAll(`
+    const dailyTrendsData = await this.dbAll(
+      `
       SELECT
         DATE(created_at) as date,
         COUNT(*) as new_incidents,
@@ -586,13 +690,15 @@ export class IncidentService {
         AND archived = FALSE
       GROUP BY DATE(created_at)
       ORDER BY date
-    `, [timeRange.start.toISOString(), timeRange.end.toISOString()]);
+    `,
+      [timeRange.start.toISOString(), timeRange.end.toISOString()]
+    );
 
     const dailyTrends = dailyTrendsData.map(d => ({
       date: d.date,
       newIncidents: d.new_incidents,
       resolvedIncidents: d.resolved_incidents,
-      mttr: d.mttr || 0
+      mttr: d.mttr || 0,
     }));
 
     return {
@@ -605,7 +711,7 @@ export class IncidentService {
       categoryBreakdown,
       severityBreakdown,
       teamPerformance,
-      dailyTrends
+      dailyTrends,
     };
   }
 
@@ -647,7 +753,7 @@ export class IncidentService {
       tags: row.tags,
       custom_fields: row.custom_fields,
       attachments: row.attachments,
-      archived: Boolean(row.archived)
+      archived: Boolean(row.archived),
     };
   }
 

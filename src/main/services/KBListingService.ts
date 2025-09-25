@@ -119,10 +119,23 @@ export interface FilterCriteria {
 }
 
 export type FilterOperator =
-  | 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte'
-  | 'contains' | 'not_contains' | 'starts_with' | 'ends_with'
-  | 'in' | 'not_in' | 'between' | 'is_null' | 'is_not_null'
-  | 'regex' | 'fuzzy_match';
+  | 'eq'
+  | 'ne'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'contains'
+  | 'not_contains'
+  | 'starts_with'
+  | 'ends_with'
+  | 'in'
+  | 'not_in'
+  | 'between'
+  | 'is_null'
+  | 'is_not_null'
+  | 'regex'
+  | 'fuzzy_match';
 
 export interface ActiveFilter extends FilterCriteria {
   id: string;
@@ -275,8 +288,8 @@ export class KBListingService {
         totalTime: performance.now() - startTime,
         cacheHit: false,
         queryComplexity: this.calculateQueryComplexity(normalizedOptions),
-        recommendations: this.generateOptimizationRecommendations(normalizedOptions)
-      }
+        recommendations: this.generateOptimizationRecommendations(normalizedOptions),
+      },
     };
 
     // Cache result
@@ -300,7 +313,7 @@ export class KBListingService {
         field: 'category',
         label: 'Category',
         type: 'multiselect',
-        options: await this.getCategoryOptions()
+        options: await this.getCategoryOptions(),
       },
 
       // Severity filter
@@ -308,7 +321,7 @@ export class KBListingService {
         field: 'severity',
         label: 'Severity',
         type: 'multiselect',
-        options: await this.getSeverityOptions()
+        options: await this.getSeverityOptions(),
       },
 
       // Tags filter
@@ -316,26 +329,26 @@ export class KBListingService {
         field: 'tags',
         label: 'Tags',
         type: 'multiselect',
-        options: await this.getTagOptions()
+        options: await this.getTagOptions(),
       },
 
       // Date range filters
       {
         field: 'created_at',
         label: 'Created Date',
-        type: 'date'
+        type: 'date',
       },
 
       {
         field: 'updated_at',
         label: 'Last Updated',
-        type: 'date'
+        type: 'date',
       },
 
       {
         field: 'last_used',
         label: 'Last Used',
-        type: 'date'
+        type: 'date',
       },
 
       // Numeric range filters
@@ -344,7 +357,7 @@ export class KBListingService {
         label: 'Usage Count',
         type: 'range',
         min: 0,
-        max: await this.getMaxUsageCount()
+        max: await this.getMaxUsageCount(),
       },
 
       {
@@ -352,7 +365,7 @@ export class KBListingService {
         label: 'Success Rate',
         type: 'range',
         min: 0,
-        max: 100
+        max: 100,
       },
 
       // Text filters
@@ -360,8 +373,8 @@ export class KBListingService {
         field: 'created_by',
         label: 'Created By',
         type: 'select',
-        options: await this.getCreatorOptions()
-      }
+        options: await this.getCreatorOptions(),
+      },
     ];
 
     this.cacheResult(cacheKey, filterOptions);
@@ -382,32 +395,32 @@ export class KBListingService {
         type: 'recent',
         label: 'Recently Added',
         count: await this.getQuickFilterCount('recent'),
-        active: false
+        active: false,
       },
       {
         type: 'popular',
         label: 'Most Popular',
         count: await this.getQuickFilterCount('popular'),
-        active: false
+        active: false,
       },
       {
         type: 'highly_rated',
         label: 'Highly Rated',
         count: await this.getQuickFilterCount('highly_rated'),
-        active: false
+        active: false,
       },
       {
         type: 'frequently_used',
         label: 'Frequently Used',
         count: await this.getQuickFilterCount('frequently_used'),
-        active: false
+        active: false,
       },
       {
         type: 'needs_review',
         label: 'Needs Review',
         count: await this.getQuickFilterCount('needs_review'),
-        active: false
-      }
+        active: false,
+      },
     ];
 
     this.cacheResult(cacheKey, quickFilters, 60000); // Cache for 1 minute
@@ -456,20 +469,31 @@ export class KBListingService {
       tags: data.tags || [],
       createdAt: now,
       updatedAt: now,
-      usageCount: 0
+      usageCount: 0,
     };
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO saved_searches (
         id, name, description, query_json, user_id, is_public,
         tags_json, created_at, updated_at, usage_count, shortcut
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id, savedSearch.name, savedSearch.description,
-      JSON.stringify(savedSearch.query), savedSearch.userId, savedSearch.isPublic,
-      JSON.stringify(savedSearch.tags), savedSearch.createdAt.toISOString(),
-      savedSearch.updatedAt.toISOString(), savedSearch.usageCount, savedSearch.shortcut
-    );
+    `
+      )
+      .run(
+        id,
+        savedSearch.name,
+        savedSearch.description,
+        JSON.stringify(savedSearch.query),
+        savedSearch.userId,
+        savedSearch.isPublic,
+        JSON.stringify(savedSearch.tags),
+        savedSearch.createdAt.toISOString(),
+        savedSearch.updatedAt.toISOString(),
+        savedSearch.usageCount,
+        savedSearch.shortcut
+      );
 
     this.invalidateCache('saved-searches');
     return id;
@@ -499,11 +523,15 @@ export class KBListingService {
       whereClause = 'WHERE is_public = 1';
     }
 
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(
+        `
       SELECT * FROM saved_searches
       ${whereClause}
       ORDER BY usage_count DESC, updated_at DESC
-    `).all(...params);
+    `
+      )
+      .all(...params);
 
     const savedSearches = rows.map(row => ({
       id: row.id,
@@ -517,7 +545,7 @@ export class KBListingService {
       updatedAt: new Date(row.updated_at),
       usageCount: row.usage_count,
       lastUsed: row.last_used ? new Date(row.last_used) : undefined,
-      shortcut: row.shortcut
+      shortcut: row.shortcut,
     }));
 
     this.cacheResult(cacheKey, savedSearches);
@@ -527,18 +555,25 @@ export class KBListingService {
   /**
    * Execute a saved search
    */
-  async executeSavedSearch(searchId: string, overrides?: Partial<ListingOptions>): Promise<ListingResponse> {
+  async executeSavedSearch(
+    searchId: string,
+    overrides?: Partial<ListingOptions>
+  ): Promise<ListingResponse> {
     const savedSearch = await this.getSavedSearchById(searchId);
     if (!savedSearch) {
       throw new Error(`Saved search ${searchId} not found`);
     }
 
     // Update usage statistics
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE saved_searches
       SET usage_count = usage_count + 1, last_used = ?
       WHERE id = ?
-    `).run(new Date().toISOString(), searchId);
+    `
+      )
+      .run(new Date().toISOString(), searchId);
 
     // Execute search with optional overrides
     const options = overrides ? { ...savedSearch.query, ...overrides } : savedSearch.query;
@@ -557,9 +592,13 @@ export class KBListingService {
       params.push(userId);
     }
 
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       DELETE FROM saved_searches WHERE ${whereClause}
-    `).run(...params);
+    `
+      )
+      .run(...params);
 
     if (result.changes > 0) {
       this.invalidateCache('saved-searches');
@@ -598,7 +637,7 @@ export class KBListingService {
       searchFields: options.searchFields || ['all'],
       includeArchived: options.includeArchived || false,
       includeMetadata: options.includeMetadata || true,
-      includeStats: options.includeStats || true
+      includeStats: options.includeStats || true,
     };
   }
 
@@ -620,7 +659,7 @@ export class KBListingService {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl: ttl || this.cacheTimeout
+      ttl: ttl || this.cacheTimeout,
     });
   }
 
@@ -636,7 +675,10 @@ export class KBListingService {
     }
   }
 
-  private async buildPaginationInfo(totalItems: number, options: Required<ListingOptions>): Promise<PaginationInfo> {
+  private async buildPaginationInfo(
+    totalItems: number,
+    options: Required<ListingOptions>
+  ): Promise<PaginationInfo> {
     const totalPages = Math.ceil(totalItems / options.pageSize);
 
     return {
@@ -646,10 +688,12 @@ export class KBListingService {
       totalPages,
       hasNext: options.page < totalPages,
       hasPrevious: options.page > 1,
-      nextCursor: options.page < totalPages ?
-        Buffer.from(`${options.page + 1}`).toString('base64') : undefined,
-      previousCursor: options.page > 1 ?
-        Buffer.from(`${options.page - 1}`).toString('base64') : undefined
+      nextCursor:
+        options.page < totalPages
+          ? Buffer.from(`${options.page + 1}`).toString('base64')
+          : undefined,
+      previousCursor:
+        options.page > 1 ? Buffer.from(`${options.page - 1}`).toString('base64') : undefined,
     };
   }
 
@@ -661,14 +705,14 @@ export class KBListingService {
       { field: 'updated_at', label: 'Last Updated', defaultDirection: 'desc' },
       { field: 'usage_count', label: 'Usage Count', defaultDirection: 'desc' },
       { field: 'success_rate', label: 'Success Rate', defaultDirection: 'desc' },
-      { field: 'last_used', label: 'Last Used', defaultDirection: 'desc' }
+      { field: 'last_used', label: 'Last Used', defaultDirection: 'desc' },
     ];
 
     return {
       sortBy: options.sortBy,
       sortDirection: options.sortDirection,
       multiSort: options.multiSort,
-      availableSorts
+      availableSorts,
     };
   }
 
@@ -677,7 +721,7 @@ export class KBListingService {
       ...filter,
       id: `filter-${index}`,
       label: this.getFilterLabel(filter),
-      removable: true
+      removable: true,
     }));
 
     const availableFilters = await this.getFilterOptions(options);
@@ -689,34 +733,29 @@ export class KBListingService {
       availableFilters,
       quickFilters: quickFilters.map(qf => ({
         ...qf,
-        active: options.quickFilters.includes(qf.type)
+        active: options.quickFilters.includes(qf.type),
       })),
-      filterCounts
+      filterCounts,
     };
   }
 
   private async buildAggregations(options: Required<ListingOptions>): Promise<AggregationData> {
     // Execute aggregation queries in parallel for performance
-    const [
-      categoryStats,
-      tagCloud,
-      severityDistribution,
-      usageStats,
-      timelineStats
-    ] = await Promise.all([
-      this.getCategoryAggregation(options),
-      this.getTagAggregation(options),
-      this.getSeverityAggregation(options),
-      this.getUsageAggregation(options),
-      this.getTimelineAggregation(options)
-    ]);
+    const [categoryStats, tagCloud, severityDistribution, usageStats, timelineStats] =
+      await Promise.all([
+        this.getCategoryAggregation(options),
+        this.getTagAggregation(options),
+        this.getSeverityAggregation(options),
+        this.getUsageAggregation(options),
+        this.getTimelineAggregation(options),
+      ]);
 
     return {
       categoryStats,
       tagCloud,
       severityDistribution,
       usageStats,
-      timelineStats
+      timelineStats,
     };
   }
 
@@ -727,7 +766,7 @@ export class KBListingService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString();
@@ -775,21 +814,53 @@ export class KBListingService {
   }
 
   // Placeholder methods for aggregations
-  private async getCategoryOptions(): Promise<{ value: any; label: string; count?: number }[]> { return []; }
-  private async getSeverityOptions(): Promise<{ value: any; label: string; count?: number }[]> { return []; }
-  private async getTagOptions(): Promise<{ value: any; label: string; count?: number }[]> { return []; }
-  private async getMaxUsageCount(): Promise<number> { return 0; }
-  private async getCreatorOptions(): Promise<{ value: any; label: string; count?: number }[]> { return []; }
-  private async getQuickFilterCount(type: QuickFilterType): Promise<number> { return 0; }
-  private async getSavedSearchById(id: string): Promise<SavedSearch | null> { return null; }
-  private async getFilterCounts(options: Required<ListingOptions>): Promise<Record<string, number>> { return {}; }
-  private async getCategoryAggregation(options: Required<ListingOptions>): Promise<CategoryAggregation[]> { return []; }
-  private async getTagAggregation(options: Required<ListingOptions>): Promise<TagAggregation[]> { return []; }
-  private async getSeverityAggregation(options: Required<ListingOptions>): Promise<SeverityAggregation[]> { return []; }
+  private async getCategoryOptions(): Promise<{ value: any; label: string; count?: number }[]> {
+    return [];
+  }
+  private async getSeverityOptions(): Promise<{ value: any; label: string; count?: number }[]> {
+    return [];
+  }
+  private async getTagOptions(): Promise<{ value: any; label: string; count?: number }[]> {
+    return [];
+  }
+  private async getMaxUsageCount(): Promise<number> {
+    return 0;
+  }
+  private async getCreatorOptions(): Promise<{ value: any; label: string; count?: number }[]> {
+    return [];
+  }
+  private async getQuickFilterCount(type: QuickFilterType): Promise<number> {
+    return 0;
+  }
+  private async getSavedSearchById(id: string): Promise<SavedSearch | null> {
+    return null;
+  }
+  private async getFilterCounts(
+    options: Required<ListingOptions>
+  ): Promise<Record<string, number>> {
+    return {};
+  }
+  private async getCategoryAggregation(
+    options: Required<ListingOptions>
+  ): Promise<CategoryAggregation[]> {
+    return [];
+  }
+  private async getTagAggregation(options: Required<ListingOptions>): Promise<TagAggregation[]> {
+    return [];
+  }
+  private async getSeverityAggregation(
+    options: Required<ListingOptions>
+  ): Promise<SeverityAggregation[]> {
+    return [];
+  }
   private async getUsageAggregation(options: Required<ListingOptions>): Promise<UsageAggregation> {
     return { totalViews: 0, uniqueUsers: 0, avgSessionTime: 0, bounceRate: 0, conversionRate: 0 };
   }
-  private async getTimelineAggregation(options: Required<ListingOptions>): Promise<TimelineAggregation[]> { return []; }
+  private async getTimelineAggregation(
+    options: Required<ListingOptions>
+  ): Promise<TimelineAggregation[]> {
+    return [];
+  }
   private logExportActivity(format: string, count: number, duration: number): void {}
 }
 

@@ -33,11 +33,14 @@ export interface InvalidationMetrics {
   avgInvalidationTime: number;
   lastInvalidation: number;
   recentEvents: InvalidationEvent[];
-  ruleStats: Map<string, {
-    triggered: number;
-    lastTriggered: number;
-    avgDuration: number;
-  }>;
+  ruleStats: Map<
+    string,
+    {
+      triggered: number;
+      lastTriggered: number;
+      avgDuration: number;
+    }
+  >;
 }
 
 export class CacheInvalidationService extends EventEmitter {
@@ -56,24 +59,24 @@ export class CacheInvalidationService extends EventEmitter {
       avgInvalidationTime: 0,
       lastInvalidation: 0,
       recentEvents: [],
-      ruleStats: new Map()
+      ruleStats: new Map(),
     };
-    
+
     this.setupDefaultRules();
   }
 
   // Register invalidation rule
   registerRule(rule: InvalidationRule): void {
     this.rules.set(rule.id, rule);
-    
+
     if (!this.metrics.ruleStats.has(rule.id)) {
       this.metrics.ruleStats.set(rule.id, {
         triggered: 0,
         lastTriggered: 0,
-        avgDuration: 0
+        avgDuration: 0,
       });
     }
-    
+
     console.log(`Registered invalidation rule: ${rule.name}`);
   }
 
@@ -85,7 +88,7 @@ export class CacheInvalidationService extends EventEmitter {
     const startTime = Date.now();
     const affectedKeys: string[] = [];
     const affectedTags: string[] = [];
-    
+
     try {
       // Find matching rules
       const matchingRules = Array.from(this.rules.values())
@@ -94,7 +97,7 @@ export class CacheInvalidationService extends EventEmitter {
 
       for (const rule of matchingRules) {
         const ruleStartTime = Date.now();
-        
+
         // Invalidate by tags
         for (const tag of rule.tags) {
           const invalidated = await this.cacheOrchestrator.invalidateByTag(tag);
@@ -102,12 +105,12 @@ export class CacheInvalidationService extends EventEmitter {
             affectedTags.push(tag);
           }
         }
-        
+
         // Update rule stats
         this.updateRuleStats(rule.id, Date.now() - ruleStartTime);
         this.metrics.rulesTriggered++;
       }
-      
+
       const duration = Date.now() - startTime;
       const event: InvalidationEvent = {
         type: trigger === 'manual' ? 'manual' : 'automatic',
@@ -116,16 +119,15 @@ export class CacheInvalidationService extends EventEmitter {
         affected: {
           keys: affectedKeys,
           tags: affectedTags,
-          count: affectedKeys.length + affectedTags.length
+          count: affectedKeys.length + affectedTags.length,
         },
-        duration
+        duration,
       };
-      
+
       this.recordEvent(event);
       this.emit('invalidation', event);
-      
+
       return event;
-      
     } catch (error) {
       console.error('Pattern invalidation error:', error);
       throw error;
@@ -137,20 +139,20 @@ export class CacheInvalidationService extends EventEmitter {
     const startTime = Date.now();
     const dependents = this.dependencyGraph.get(dependency) || new Set();
     const affectedTags: string[] = [];
-    
+
     for (const dependent of dependents) {
       const invalidated = await this.cacheOrchestrator.invalidateByTag(dependent);
       if (invalidated > 0) {
         affectedTags.push(dependent);
       }
     }
-    
+
     // Also invalidate the dependency itself
     const selfInvalidated = await this.cacheOrchestrator.invalidateByTag(dependency);
     if (selfInvalidated > 0) {
       affectedTags.push(dependency);
     }
-    
+
     const duration = Date.now() - startTime;
     const event: InvalidationEvent = {
       type: 'dependency',
@@ -159,26 +161,24 @@ export class CacheInvalidationService extends EventEmitter {
       affected: {
         keys: [],
         tags: affectedTags,
-        count: affectedTags.length
+        count: affectedTags.length,
       },
-      duration
+      duration,
     };
-    
+
     this.recordEvent(event);
     this.emit('dependency-invalidation', event);
-    
+
     return event;
   }
 
   // Scheduled invalidation
-  scheduleInvalidation(
-    schedule: {
-      pattern: string | RegExp;
-      interval: number;
-      tags: string[];
-      name: string;
-    }
-  ): void {
+  scheduleInvalidation(schedule: {
+    pattern: string | RegExp;
+    interval: number;
+    tags: string[];
+    name: string;
+  }): void {
     const task = setInterval(async () => {
       try {
         await this.invalidateByPattern(schedule.pattern, `scheduled:${schedule.name}`);
@@ -186,7 +186,7 @@ export class CacheInvalidationService extends EventEmitter {
         console.error(`Scheduled invalidation failed for ${schedule.name}:`, error);
       }
     }, schedule.interval);
-    
+
     this.scheduledTasks.set(schedule.name, task);
     console.log(`Scheduled invalidation: ${schedule.name} every ${schedule.interval}ms`);
   }
@@ -194,19 +194,19 @@ export class CacheInvalidationService extends EventEmitter {
   // TTL-based invalidation
   async invalidateExpired(): Promise<InvalidationEvent> {
     const startTime = Date.now();
-    
+
     // This would typically scan cache entries and check TTL
     // For now, we'll use a simple tag-based approach
     const expiredTags = ['expired', 'stale'];
     const affectedTags: string[] = [];
-    
+
     for (const tag of expiredTags) {
       const invalidated = await this.cacheOrchestrator.invalidateByTag(tag);
       if (invalidated > 0) {
         affectedTags.push(tag);
       }
     }
-    
+
     const duration = Date.now() - startTime;
     const event: InvalidationEvent = {
       type: 'automatic',
@@ -215,34 +215,27 @@ export class CacheInvalidationService extends EventEmitter {
       affected: {
         keys: [],
         tags: affectedTags,
-        count: affectedTags.length
+        count: affectedTags.length,
       },
-      duration
+      duration,
     };
-    
+
     this.recordEvent(event);
     return event;
   }
 
   // Event-driven invalidation
-  onDataChange(
-    entity: string,
-    operation: 'create' | 'update' | 'delete',
-    data?: any
-  ): void {
+  onDataChange(entity: string, operation: 'create' | 'update' | 'delete', data?: any): void {
     const eventKey = `${entity}:${operation}`;
-    
+
     // Find rules that should trigger on this event
-    const triggerRules = Array.from(this.rules.values())
-      .filter(rule => {
-        if (!rule.enabled) return false;
-        return rule.tags.some(tag => 
-          tag.includes(entity) || 
-          tag.includes(operation) ||
-          tag === 'data-change'
-        );
-      });
-    
+    const triggerRules = Array.from(this.rules.values()).filter(rule => {
+      if (!rule.enabled) return false;
+      return rule.tags.some(
+        tag => tag.includes(entity) || tag.includes(operation) || tag === 'data-change'
+      );
+    });
+
     if (triggerRules.length > 0) {
       setImmediate(async () => {
         for (const rule of triggerRules) {
@@ -279,7 +272,7 @@ export class CacheInvalidationService extends EventEmitter {
   getMetrics(): InvalidationMetrics {
     return {
       ...this.metrics,
-      ruleStats: new Map(this.metrics.ruleStats)
+      ruleStats: new Map(this.metrics.ruleStats),
     };
   }
 
@@ -302,10 +295,10 @@ export class CacheInvalidationService extends EventEmitter {
       tags: ['search', 'query'],
       priority: 8,
       conditions: {
-        maxAge: 3600 // 1 hour
-      }
+        maxAge: 3600, // 1 hour
+      },
     });
-    
+
     // Knowledge base invalidation rule
     this.registerRule({
       id: 'kb-invalidation',
@@ -315,10 +308,10 @@ export class CacheInvalidationService extends EventEmitter {
       tags: ['kb', 'knowledge', 'data-change'],
       priority: 9,
       conditions: {
-        dependencies: ['kb:entries', 'kb:categories']
-      }
+        dependencies: ['kb:entries', 'kb:categories'],
+      },
     });
-    
+
     // User data invalidation rule
     this.registerRule({
       id: 'user-invalidation',
@@ -328,10 +321,10 @@ export class CacheInvalidationService extends EventEmitter {
       tags: ['user', 'auth', 'preferences'],
       priority: 7,
       conditions: {
-        timeWindow: 300000 // 5 minutes
-      }
+        timeWindow: 300000, // 5 minutes
+      },
     });
-    
+
     // Database query invalidation rule
     this.registerRule({
       id: 'db-invalidation',
@@ -341,16 +334,16 @@ export class CacheInvalidationService extends EventEmitter {
       tags: ['database', 'query', 'data-change'],
       priority: 10,
       conditions: {
-        maxAge: 1800 // 30 minutes
-      }
+        maxAge: 1800, // 30 minutes
+      },
     });
-    
+
     // Set up scheduled TTL cleanup
     this.scheduleInvalidation({
       name: 'ttl-cleanup',
       pattern: /expired|stale/,
       interval: 300000, // 5 minutes
-      tags: ['expired', 'stale']
+      tags: ['expired', 'stale'],
     });
   }
 
@@ -358,20 +351,20 @@ export class CacheInvalidationService extends EventEmitter {
     if (typeof pattern1 === 'string' && typeof pattern2 === 'string') {
       return pattern1.includes(pattern2) || pattern2.includes(pattern1);
     }
-    
+
     if (pattern1 instanceof RegExp && typeof pattern2 === 'string') {
       return pattern1.test(pattern2);
     }
-    
+
     if (pattern2 instanceof RegExp && typeof pattern1 === 'string') {
       return pattern2.test(pattern1);
     }
-    
+
     // Both are RegExp - check if they might overlap (simplified)
     if (pattern1 instanceof RegExp && pattern2 instanceof RegExp) {
       return pattern1.source === pattern2.source;
     }
-    
+
     return false;
   }
 
@@ -387,17 +380,20 @@ export class CacheInvalidationService extends EventEmitter {
   private recordEvent(event: InvalidationEvent): void {
     this.metrics.totalInvalidations++;
     this.metrics.lastInvalidation = event.timestamp;
-    
+
     // Update average invalidation time
-    const total = this.metrics.avgInvalidationTime * (this.metrics.totalInvalidations - 1) + event.duration;
+    const total =
+      this.metrics.avgInvalidationTime * (this.metrics.totalInvalidations - 1) + event.duration;
     this.metrics.avgInvalidationTime = total / this.metrics.totalInvalidations;
-    
+
     // Keep only recent events (last 100)
     this.metrics.recentEvents.push(event);
     if (this.metrics.recentEvents.length > 100) {
       this.metrics.recentEvents.shift();
     }
-    
-    console.log(`Cache invalidation: ${event.trigger} (${event.duration}ms, ${event.affected.count} items)`);
+
+    console.log(
+      `Cache invalidation: ${event.trigger} (${event.duration}ms, ${event.affected.count} items)`
+    );
   }
 }

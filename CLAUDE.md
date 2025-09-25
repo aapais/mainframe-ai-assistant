@@ -7,7 +7,6 @@
 2. **NEVER save working files, text/mds and tests to the root folder**
 3. ALWAYS organize files in appropriate subdirectories
 4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
-5. **OBSOLETE FILES MUST BE MOVED TO /old FOLDERS** - Never leave obsolete components scattered in the project
 
 ### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
 
@@ -45,21 +44,6 @@
 - `/config` - Configuration files
 - `/scripts` - Utility scripts
 - `/examples` - Example code
-- `/old` - **MANDATORY: Obsolete/deprecated files and components**
-
-### 🧹 Project Cleanliness Rules
-
-**CRITICAL PROJECT MANAGEMENT:**
-1. **ALWAYS move obsolete files to /old directories** when implementing changes
-2. **NEVER leave deprecated components scattered** throughout the project
-3. **CREATE /old subdirectories** to organize obsolete files by category:
-   - `/old/src` - Obsolete source files
-   - `/old/components` - Deprecated React/UI components
-   - `/old/scripts` - Old scripts and utilities
-   - `/old/configs` - Deprecated configuration files
-   - `/old/docs` - Outdated documentation
-4. **MAINTAIN project structure clarity** by removing clutter
-5. **DOCUMENT moves in commit messages** when relocating files to /old
 
 ## Project Overview
 
@@ -99,8 +83,6 @@ This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Co
 - **Test-First**: Write tests before implementation
 - **Clean Architecture**: Separate concerns
 - **Documentation**: Keep updated
-- **Project Cleanliness**: Always move obsolete files to /old directories
-- **No Scattered Legacy**: Maintain clean project structure at all times
 
 ## 🚀 Available Agents (54 Total)
 

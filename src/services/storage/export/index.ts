@@ -27,7 +27,7 @@ export type {
   BatchOptions,
   BatchResult,
   ConversionOptions,
-  ParseOptions
+  ParseOptions,
 } from '../../../types/services';
 
 // Export service factory for easy instantiation
@@ -59,11 +59,14 @@ export class ExportImportServiceFactory {
   /**
    * Create a complete export/import solution
    */
-  static createCompleteService(kbService: any, options: {
-    export?: any;
-    import?: any;
-    batch?: any;
-  } = {}) {
+  static createCompleteService(
+    kbService: any,
+    options: {
+      export?: any;
+      import?: any;
+      batch?: any;
+    } = {}
+  ) {
     const exportService = new ExportService(kbService, options.export);
     const importService = new ImportService(kbService, options.import);
     const formatConverter = new FormatConverter();
@@ -77,7 +80,7 @@ export class ExportImportServiceFactory {
       converter: formatConverter,
       transformer: dataTransformer,
       validator: validationService,
-      batchProcessor
+      batchProcessor,
     };
   }
 }

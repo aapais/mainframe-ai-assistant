@@ -78,7 +78,7 @@ export class BatchProcessor extends EventEmitter {
 
   constructor(options: BatchOptions = {}) {
     super();
-    
+
     this.options = {
       batchSize: options.batchSize || 100,
       maxConcurrency: options.maxConcurrency || Math.min(cpus().length, 4),
@@ -88,7 +88,7 @@ export class BatchProcessor extends EventEmitter {
       retryDelay: options.retryDelay || 1000,
       memoryLimit: options.memoryLimit || 512, // 512MB default
       enableWorkerThreads: options.enableWorkerThreads ?? false,
-      checkpointInterval: options.checkpointInterval || 10 // Every 10 batches
+      checkpointInterval: options.checkpointInterval || 10, // Every 10 batches
     };
   }
 
@@ -107,10 +107,10 @@ export class BatchProcessor extends EventEmitter {
 
     this.isProcessing = true;
     const startTime = performance.now();
-    
+
     try {
       this.startMemoryMonitoring();
-      
+
       const batches = this.createBatches(data);
       const result: BatchResult<R> = {
         data: [],
@@ -118,20 +118,30 @@ export class BatchProcessor extends EventEmitter {
         totalProcessed: 0,
         errors: [],
         checkpoints: [],
-        memoryUsage: this.getMemoryUsage()
+        memoryUsage: this.getMemoryUsage(),
       };
 
       this.emit('batch:started', {
         totalBatches: batches.length,
         totalItems: data.length,
-        batchSize: this.options.batchSize
+        batchSize: this.options.batchSize,
       });
 
       // Process batches with concurrency control
       if (this.options.enableWorkerThreads && data.length > 1000) {
-        result.data = await this.processWithWorkers(batches, processor, progressCallback, errorCallback);
+        result.data = await this.processWithWorkers(
+          batches,
+          processor,
+          progressCallback,
+          errorCallback
+        );
       } else {
-        result.data = await this.processSequentially(batches, processor, progressCallback, errorCallback);
+        result.data = await this.processSequentially(
+          batches,
+          processor,
+          progressCallback,
+          errorCallback
+        );
       }
 
       result.processingTime = performance.now() - startTime;
@@ -141,7 +151,6 @@ export class BatchProcessor extends EventEmitter {
 
       this.emit('batch:completed', result);
       return result;
-
     } catch (error) {
       this.emit('batch:failed', error);
       throw error;
@@ -168,7 +177,7 @@ export class BatchProcessor extends EventEmitter {
     return (async function* () {
       try {
         self.startMemoryMonitoring();
-        
+
         for await (const batch of dataGenerator) {
           try {
             // Memory check before processing
@@ -176,9 +185,9 @@ export class BatchProcessor extends EventEmitter {
             if (memUsage.heapUsed / 1024 / 1024 > self.options.memoryLimit) {
               self.emit('memory:warning', {
                 current: memUsage.heapUsed / 1024 / 1024,
-                limit: self.options.memoryLimit
+                limit: self.options.memoryLimit,
               });
-              
+
               // Force garbage collection if available
               if (global.gc) {
                 global.gc();
@@ -209,19 +218,18 @@ export class BatchProcessor extends EventEmitter {
                 percentComplete: -1, // Unknown for streaming
                 estimatedTimeRemaining: -1,
                 averageBatchTime: 0,
-                memoryUsage: self.getMemoryUsage()
+                memoryUsage: self.getMemoryUsage(),
               });
             }
 
             yield batchResult;
-
           } catch (error) {
             const batchError: BatchError = {
               batchIndex,
               recordIndex: -1,
               error: error.message,
               recoverable: true,
-              retryCount: 0
+              retryCount: 0,
             };
 
             errorCallback?.(batchError);
@@ -251,7 +259,12 @@ export class BatchProcessor extends EventEmitter {
 
     // Resume from checkpoint position
     const remainingData = data.slice(checkpoint.processedCount);
-    const result = await this.processBatch(remainingData, processor, progressCallback, errorCallback);
+    const result = await this.processBatch(
+      remainingData,
+      processor,
+      progressCallback,
+      errorCallback
+    );
 
     // Adjust totals to include checkpoint data
     result.totalProcessed += checkpoint.processedCount;
@@ -268,10 +281,10 @@ export class BatchProcessor extends EventEmitter {
     }
 
     this.emit('batch:cancelling');
-    
+
     // Terminate workers
     await this.cleanupWorkers();
-    
+
     this.isProcessing = false;
     this.emit('batch:cancelled');
   }
@@ -289,7 +302,7 @@ export class BatchProcessor extends EventEmitter {
       isProcessing: this.isProcessing,
       activeWorkers: this.workers.length,
       checkpointCount: this.checkpoints.size,
-      memoryUsage: this.getMemoryUsage()
+      memoryUsage: this.getMemoryUsage(),
     };
   }
 
@@ -299,12 +312,12 @@ export class BatchProcessor extends EventEmitter {
 
   private createBatches<T>(data: T[]): T[][] {
     const batches: T[][] = [];
-    
+
     for (let i = 0; i < data.length; i += this.options.batchSize) {
       const batch = data.slice(i, i + this.options.batchSize);
       batches.push(batch);
     }
-    
+
     return batches;
   }
 
@@ -320,15 +333,10 @@ export class BatchProcessor extends EventEmitter {
 
     for (let i = 0; i < batches.length; i++) {
       const batchStartTime = performance.now();
-      
+
       try {
-        const batchResult = await this.processSingleBatch(
-          batches[i],
-          i,
-          processor,
-          errorCallback
-        );
-        
+        const batchResult = await this.processSingleBatch(batches[i], i, processor, errorCallback);
+
         results.push(...batchResult);
 
         const batchTime = performance.now() - batchStartTime;
@@ -352,17 +360,16 @@ export class BatchProcessor extends EventEmitter {
             percentComplete: ((i + 1) / batches.length) * 100,
             estimatedTimeRemaining,
             averageBatchTime,
-            memoryUsage: this.getMemoryUsage()
+            memoryUsage: this.getMemoryUsage(),
           });
         }
-
       } catch (error) {
         const batchError: BatchError = {
           batchIndex: i,
           recordIndex: -1,
           error: error.message,
           recoverable: true,
-          retryCount: 0
+          retryCount: 0,
         };
 
         errorCallback?.(batchError);
@@ -383,18 +390,18 @@ export class BatchProcessor extends EventEmitter {
   ): Promise<R[]> {
     const results: R[] = [];
     const workerCount = Math.min(this.options.maxConcurrency, batches.length);
-    
+
     // Create worker pool
     await this.createWorkerPool(workerCount);
 
     try {
       // Process batches in parallel using workers
-      const batchPromises = batches.map((batch, index) => 
+      const batchPromises = batches.map((batch, index) =>
         this.processBatchWithWorker(batch, index, processor, errorCallback)
       );
 
       const batchResults = await Promise.allSettled(batchPromises);
-      
+
       batchResults.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           results.push(...result.value);
@@ -404,7 +411,7 @@ export class BatchProcessor extends EventEmitter {
             recordIndex: -1,
             error: result.reason.message,
             recoverable: false,
-            retryCount: 0
+            retryCount: 0,
           };
 
           errorCallback?.(batchError);
@@ -421,10 +428,9 @@ export class BatchProcessor extends EventEmitter {
           percentComplete: 100,
           estimatedTimeRemaining: 0,
           averageBatchTime: 0,
-          memoryUsage: this.getMemoryUsage()
+          memoryUsage: this.getMemoryUsage(),
         });
       }
-
     } finally {
       await this.cleanupWorkers();
     }
@@ -439,23 +445,23 @@ export class BatchProcessor extends EventEmitter {
     errorCallback?: ErrorCallback
   ): Promise<R[]> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt <= this.options.retryAttempts; attempt++) {
       try {
         return await processor(batch);
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt < this.options.retryAttempts && this.options.enableRetry) {
           // Wait before retry
           await new Promise(resolve => setTimeout(resolve, this.options.retryDelay));
-          
+
           const batchError: BatchError = {
             batchIndex,
             recordIndex: -1,
             error: error.message,
             recoverable: true,
-            retryCount: attempt + 1
+            retryCount: attempt + 1,
           };
 
           errorCallback?.(batchError);
@@ -506,7 +512,7 @@ export class BatchProcessor extends EventEmitter {
       batchIndex,
       processedCount,
       timestamp: new Date(),
-      state
+      state,
     };
 
     this.checkpoints.set(checkpoint.id, checkpoint);
@@ -528,16 +534,16 @@ export class BatchProcessor extends EventEmitter {
         this.emit('memory:warning', {
           current: memUsageMB,
           limit: this.options.memoryLimit,
-          percentage: (memUsageMB / this.options.memoryLimit) * 100
+          percentage: (memUsageMB / this.options.memoryLimit) * 100,
         });
       }
 
       if (memUsageMB > this.options.memoryLimit) {
         this.emit('memory:limit', {
           current: memUsageMB,
-          limit: this.options.memoryLimit
+          limit: this.options.memoryLimit,
         });
-        
+
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
@@ -559,30 +565,30 @@ export class BatchProcessor extends EventEmitter {
       heapUsed: usage.heapUsed,
       heapTotal: usage.heapTotal,
       external: usage.external,
-      rss: usage.rss
+      rss: usage.rss,
     };
   }
 }
 
 // Worker thread code (would be in a separate file in real implementation)
 if (!isMainThread && parentPort) {
-  parentPort.on('message', async (data) => {
+  parentPort.on('message', async data => {
     try {
       const { batch, processor, batchIndex } = data;
-      
+
       // Process batch
       const result = await processor(batch);
-      
+
       parentPort!.postMessage({
         success: true,
         result,
-        batchIndex
+        batchIndex,
       });
     } catch (error) {
       parentPort!.postMessage({
         success: false,
         error: error.message,
-        batchIndex: data.batchIndex
+        batchIndex: data.batchIndex,
       });
     }
   });

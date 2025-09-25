@@ -9,7 +9,11 @@
  */
 
 import Database from 'better-sqlite3';
-import { FTS5MainframeTokenizer, createMainframeTokenizer, registerMainframeTokenizer } from './FTS5MainframeTokenizer';
+import {
+  FTS5MainframeTokenizer,
+  createMainframeTokenizer,
+  registerMainframeTokenizer,
+} from './FTS5MainframeTokenizer';
 import { KBEntry, SearchResult, SearchOptions } from '../types/services';
 
 export interface FTS5SearchOptions extends SearchOptions {
@@ -57,7 +61,7 @@ export class FTS5EnhancedSearch {
       preserveCobolKeywords: true,
       preserveSystemMessages: true,
       caseSensitive: false,
-      stemming: true
+      stemming: true,
     });
     this.termWeights = this.tokenizer.getTokenWeights();
     this.queryCache = new Map();
@@ -200,10 +204,7 @@ export class FTS5EnhancedSearch {
   /**
    * Enhanced search with BM25 ranking and snippet generation
    */
-  async search(
-    query: string,
-    options: FTS5SearchOptions = {}
-  ): Promise<EnhancedSearchResult[]> {
+  async search(query: string, options: FTS5SearchOptions = {}): Promise<EnhancedSearchResult[]> {
     const startTime = performance.now();
 
     if (!query?.trim()) {
@@ -213,7 +214,7 @@ export class FTS5EnhancedSearch {
     // Check cache first
     const cacheKey = this.generateCacheKey(query, options);
     const cached = this.queryCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       return cached.results;
     }
 
@@ -237,22 +238,23 @@ export class FTS5EnhancedSearch {
           ftsScore: (result as any).raw_score || 0,
           rankingProfile: options.rankingProfile || 'balanced',
           matchedTerms: this.extractMatchedTerms(query, result.entry),
-          queryTime: Math.round(queryTime * 100) / 100
+          queryTime: Math.round(queryTime * 100) / 100,
         };
       });
 
       // Cache results
       this.queryCache.set(cacheKey, {
         results,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Clean old cache entries
       this.cleanCache();
 
-      console.log(`⚡ Enhanced FTS5 search completed in ${queryTime.toFixed(2)}ms, found ${results.length} results`);
+      console.log(
+        `⚡ Enhanced FTS5 search completed in ${queryTime.toFixed(2)}ms, found ${results.length} results`
+      );
       return results;
-
     } catch (error) {
       console.error('❌ Enhanced FTS5 search failed:', error);
       throw error;
@@ -267,7 +269,6 @@ export class FTS5EnhancedSearch {
     originalQuery: string,
     options: FTS5SearchOptions
   ): Promise<EnhancedSearchResult[]> {
-
     const rankingProfile = options.rankingProfile || 'balanced';
     const limit = options.limit || 20;
     const offset = options.offset || 0;
@@ -344,12 +345,12 @@ export class FTS5EnhancedSearch {
         usage_count: row.usage_count || 0,
         success_count: row.success_count || 0,
         failure_count: row.failure_count || 0,
-        last_used: row.last_used ? new Date(row.last_used) : undefined
+        last_used: row.last_used ? new Date(row.last_used) : undefined,
       },
       score: Math.min(100, Math.max(0, row.final_score * 20 + 50)), // Normalize to 0-100
       matchType: 'fts' as any,
       raw_score: row.bm25_score,
-      explanation: this.generateExplanation(row, originalQuery)
+      explanation: this.generateExplanation(row, originalQuery),
     }));
   }
 
@@ -371,7 +372,7 @@ export class FTS5EnhancedSearch {
       const fields = [
         { name: 'title' as const, content: result.entry.title, weight: 3 },
         { name: 'problem' as const, content: result.entry.problem, weight: 2 },
-        { name: 'solution' as const, content: result.entry.solution, weight: 1 }
+        { name: 'solution' as const, content: result.entry.solution, weight: 1 },
       ];
 
       for (const field of fields) {
@@ -386,15 +387,13 @@ export class FTS5EnhancedSearch {
         if (snippet.highlights.length > 0) {
           snippets.push({
             field: field.name,
-            ...snippet
+            ...snippet,
           });
         }
       }
 
       // Sort snippets by score and limit to top 3
-      result.snippets = snippets
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3);
+      result.snippets = snippets.sort((a, b) => b.score - a.score).slice(0, 3);
     }
   }
 
@@ -407,8 +406,11 @@ export class FTS5EnhancedSearch {
     maxLength: number,
     highlightTags: { start: string; end: string },
     fieldWeight: number
-  ): { text: string; highlights: Array<{ start: number; end: number; term: string }>; score: number } {
-
+  ): {
+    text: string;
+    highlights: Array<{ start: number; end: number; term: string }>;
+    score: number;
+  } {
     if (!content) {
       return { text: '', highlights: [], score: 0 };
     }
@@ -437,7 +439,7 @@ export class FTS5EnhancedSearch {
           start: index,
           end: index + term.length,
           term: content.substring(index, index + term.length), // Preserve original case
-          weight: termWeight * fieldWeight
+          weight: termWeight * fieldWeight,
         });
 
         score += termWeight * fieldWeight;
@@ -471,7 +473,7 @@ export class FTS5EnhancedSearch {
         highlights.push({
           start: match.start - snippetStart + snippetOffset,
           end: match.end - snippetStart + snippetOffset,
-          term: match.term
+          term: match.term,
         });
       }
     }
@@ -492,7 +494,7 @@ export class FTS5EnhancedSearch {
     return {
       text: highlightedText,
       highlights,
-      score: score / matches.length // Average score per match
+      score: score / matches.length, // Average score per match
     };
   }
 
@@ -549,12 +551,17 @@ export class FTS5EnhancedSearch {
   /**
    * Get ranking weights for different profiles
    */
-  private getRankingWeights(profile: string): { title: number; problem: number; solution: number; tags: number } {
+  private getRankingWeights(profile: string): {
+    title: number;
+    problem: number;
+    solution: number;
+    tags: number;
+  } {
     const profiles = {
       balanced: { title: 3.0, problem: 2.0, solution: 1.5, tags: 1.0 },
       precision: { title: 4.0, problem: 2.5, solution: 1.0, tags: 2.0 },
       recall: { title: 2.0, problem: 2.0, solution: 2.0, tags: 1.5 },
-      mainframe_focused: { title: 3.5, problem: 3.0, solution: 2.0, tags: 2.5 }
+      mainframe_focused: { title: 3.5, problem: 3.0, solution: 2.0, tags: 2.5 },
     };
 
     return profiles[profile as keyof typeof profiles] || profiles.balanced;
@@ -580,9 +587,7 @@ export class FTS5EnhancedSearch {
       }
     }
 
-    return weightExpressions.length > 0
-      ? `(${weightExpressions.join(' + ')})`
-      : '0';
+    return weightExpressions.length > 0 ? `(${weightExpressions.join(' + ')})` : '0';
   }
 
   /**
@@ -620,7 +625,9 @@ export class FTS5EnhancedSearch {
 
     // Success rate explanation
     if (row.success_boost > 0) {
-      const successRate = Math.round((row.success_count / (row.success_count + row.failure_count)) * 100);
+      const successRate = Math.round(
+        (row.success_count / (row.success_count + row.failure_count)) * 100
+      );
       explanations.push(`High success rate (${successRate}%)`);
     }
 
@@ -647,7 +654,7 @@ export class FTS5EnhancedSearch {
       limit: options.limit,
       offset: options.offset,
       rankingProfile: options.rankingProfile,
-      enableSnippets: options.enableSnippets
+      enableSnippets: options.enableSnippets,
     });
 
     return `fts5:${query}:${Buffer.from(optionsKey).toString('base64')}`;
@@ -675,15 +682,19 @@ export class FTS5EnhancedSearch {
     averageQueryTime: number;
   } {
     // Get FTS5 index size
-    const indexInfo = this.db.prepare(`
+    const indexInfo = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM kb_fts_enhanced
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
 
     return {
       indexSize: indexInfo.count,
       cacheSize: this.queryCache.size,
       totalQueries: 0, // Would need query counter in production
-      averageQueryTime: 0 // Would need query time tracking in production
+      averageQueryTime: 0, // Would need query time tracking in production
     };
   }
 

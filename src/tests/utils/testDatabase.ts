@@ -203,7 +203,7 @@ export const setupTestDatabase = async (): Promise<TestDatabase> => {
       'tags_fts',
       'kb_entries',
       'tags',
-      'categories'
+      'categories',
     ];
 
     rawDB.transaction(() => {
@@ -227,7 +227,7 @@ export const setupTestDatabase = async (): Promise<TestDatabase> => {
     reset,
     beginTransaction,
     rollbackTransaction,
-    commitTransaction
+    commitTransaction,
   };
 };
 
@@ -279,7 +279,9 @@ export const createDatabaseAssertions = (db: TestDatabase) => ({
   },
 
   async assertEntryCount(expectedCount: number) {
-    const count = db.rawDB.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as { count: number };
+    const count = db.rawDB.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as {
+      count: number;
+    };
     expect(count.count).toBe(expectedCount);
   },
 
@@ -301,7 +303,9 @@ export const createDatabaseAssertions = (db: TestDatabase) => ({
   },
 
   async assertCategoryCount(expectedCount: number) {
-    const count = db.rawDB.prepare('SELECT COUNT(*) as count FROM categories').get() as { count: number };
+    const count = db.rawDB.prepare('SELECT COUNT(*) as count FROM categories').get() as {
+      count: number;
+    };
     expect(count.count).toBe(expectedCount);
   },
 
@@ -317,22 +321,30 @@ export const createDatabaseAssertions = (db: TestDatabase) => ({
 
   async assertForeignKeyIntegrity() {
     // Check that all entry categories exist
-    const orphanedEntries = db.rawDB.prepare(`
+    const orphanedEntries = db.rawDB
+      .prepare(
+        `
       SELECT e.id, e.category
       FROM kb_entries e
       LEFT JOIN categories c ON e.category = c.name
       WHERE c.name IS NULL AND e.category != 'Other'
-    `).all();
+    `
+      )
+      .all();
 
     expect(orphanedEntries).toHaveLength(0);
 
     // Check that all entry tags exist
-    const orphanedTags = db.rawDB.prepare(`
+    const orphanedTags = db.rawDB
+      .prepare(
+        `
       SELECT et.entry_id, et.tag_name
       FROM entry_tags et
       LEFT JOIN tags t ON et.tag_name = t.name
       WHERE t.name IS NULL
-    `).all();
+    `
+      )
+      .all();
 
     expect(orphanedTags).toHaveLength(0);
   },
@@ -344,7 +356,7 @@ export const createDatabaseAssertions = (db: TestDatabase) => ({
     expectedIndexes.forEach(index => {
       expect(planText).toContain(index);
     });
-  }
+  },
 });
 
 // ===========================
@@ -352,7 +364,10 @@ export const createDatabaseAssertions = (db: TestDatabase) => ({
 // ===========================
 
 export const createPerformanceTester = (db: TestDatabase) => ({
-  async measureQueryPerformance(query: string, params: any[] = []): Promise<{
+  async measureQueryPerformance(
+    query: string,
+    params: any[] = []
+  ): Promise<{
     duration: number;
     rowCount: number;
     result: any[];
@@ -364,7 +379,7 @@ export const createPerformanceTester = (db: TestDatabase) => ({
     return {
       duration: end - start,
       rowCount: result.length,
-      result
+      result,
     };
   },
 
@@ -403,11 +418,14 @@ export const createPerformanceTester = (db: TestDatabase) => ({
 
     return {
       duration,
-      rate: count / (duration / 1000)
+      rate: count / (duration / 1000),
     };
   },
 
-  async profileQuery(query: string, params: any[] = []): Promise<{
+  async profileQuery(
+    query: string,
+    params: any[] = []
+  ): Promise<{
     duration: number;
     plan: any[];
     stats: any;
@@ -424,15 +442,15 @@ export const createPerformanceTester = (db: TestDatabase) => ({
     const stats = {
       pageReads: db.rawDB.pragma('cache_spill', { simple: true }),
       memoryUsed: db.rawDB.pragma('memory_used', { simple: true }),
-      resultRows: result.length
+      resultRows: result.length,
     };
 
     return {
       duration: end - start,
       plan,
-      stats
+      stats,
     };
-  }
+  },
 });
 
 // ===========================
@@ -445,23 +463,26 @@ export const createSnapshotManager = (db: TestDatabase) => ({
     const tags = db.rawDB.prepare('SELECT * FROM tags ORDER BY name').all();
     const categories = db.rawDB.prepare('SELECT * FROM categories ORDER BY name').all();
 
-    db.rawDB.prepare(`
+    db.rawDB
+      .prepare(
+        `
       INSERT OR REPLACE INTO test_snapshots (snapshot_name, kb_entries_data, tags_data, categories_data)
       VALUES (?, ?, ?, ?)
-    `).run(
-      name,
-      JSON.stringify(kbEntries),
-      JSON.stringify(tags),
-      JSON.stringify(categories)
-    );
+    `
+      )
+      .run(name, JSON.stringify(kbEntries), JSON.stringify(tags), JSON.stringify(categories));
   },
 
   async restoreSnapshot(name: string) {
-    const snapshot = db.rawDB.prepare(`
+    const snapshot = db.rawDB
+      .prepare(
+        `
       SELECT kb_entries_data, tags_data, categories_data
       FROM test_snapshots
       WHERE snapshot_name = ?
-    `).get(name);
+    `
+      )
+      .get(name);
 
     if (!snapshot) {
       throw new Error(`Snapshot '${name}' not found`);
@@ -485,9 +506,19 @@ export const createSnapshotManager = (db: TestDatabase) => ({
 
       categories.forEach((cat: any) => {
         insertCategory.run(
-          cat.id, cat.name, cat.description, cat.icon, cat.color, cat.is_system,
-          cat.entry_count, cat.created_at, cat.updated_at, cat.parent_id,
-          cat.sort_order, cat.tags, cat.trending_score
+          cat.id,
+          cat.name,
+          cat.description,
+          cat.icon,
+          cat.color,
+          cat.is_system,
+          cat.entry_count,
+          cat.created_at,
+          cat.updated_at,
+          cat.parent_id,
+          cat.sort_order,
+          cat.tags,
+          cat.trending_score
         );
       });
 
@@ -500,9 +531,18 @@ export const createSnapshotManager = (db: TestDatabase) => ({
 
       tags.forEach((tag: any) => {
         insertTag.run(
-          tag.id, tag.name, tag.description, tag.color, tag.usage_count,
-          tag.created_at, tag.created_by, tag.category, tag.is_system,
-          tag.auto_suggest, tag.related_tags, tag.synonyms
+          tag.id,
+          tag.name,
+          tag.description,
+          tag.color,
+          tag.usage_count,
+          tag.created_at,
+          tag.created_by,
+          tag.category,
+          tag.is_system,
+          tag.auto_suggest,
+          tag.related_tags,
+          tag.synonyms
         );
       });
 
@@ -516,10 +556,21 @@ export const createSnapshotManager = (db: TestDatabase) => ({
 
       kbEntries.forEach((entry: any) => {
         insertEntry.run(
-          entry.id, entry.title, entry.problem, entry.solution, entry.category,
-          entry.tags, entry.created_at, entry.updated_at, entry.created_by,
-          entry.usage_count, entry.success_count, entry.failure_count,
-          entry.success_rate, entry.trending_score, entry.last_used
+          entry.id,
+          entry.title,
+          entry.problem,
+          entry.solution,
+          entry.category,
+          entry.tags,
+          entry.created_at,
+          entry.updated_at,
+          entry.created_by,
+          entry.usage_count,
+          entry.success_count,
+          entry.failure_count,
+          entry.success_rate,
+          entry.trending_score,
+          entry.last_used
         );
       });
     });
@@ -534,14 +585,18 @@ export const createSnapshotManager = (db: TestDatabase) => ({
     const current = {
       kbEntries: db.rawDB.prepare('SELECT * FROM kb_entries ORDER BY id').all(),
       tags: db.rawDB.prepare('SELECT * FROM tags ORDER BY name').all(),
-      categories: db.rawDB.prepare('SELECT * FROM categories ORDER BY name').all()
+      categories: db.rawDB.prepare('SELECT * FROM categories ORDER BY name').all(),
     };
 
-    const snapshot = db.rawDB.prepare(`
+    const snapshot = db.rawDB
+      .prepare(
+        `
       SELECT kb_entries_data, tags_data, categories_data
       FROM test_snapshots
       WHERE snapshot_name = ?
-    `).get(name);
+    `
+      )
+      .get(name);
 
     if (!snapshot) {
       return { identical: false, differences: { error: 'Snapshot not found' } };
@@ -550,37 +605,31 @@ export const createSnapshotManager = (db: TestDatabase) => ({
     const snapshotData = {
       kbEntries: JSON.parse(snapshot.kb_entries_data),
       tags: JSON.parse(snapshot.tags_data),
-      categories: JSON.parse(snapshot.categories_data)
+      categories: JSON.parse(snapshot.categories_data),
     };
 
     const differences = {
       kbEntries: {
-        added: current.kbEntries.filter(e =>
-          !snapshotData.kbEntries.some(s => s.id === e.id)),
-        removed: snapshotData.kbEntries.filter(s =>
-          !current.kbEntries.some(e => e.id === s.id)),
-        modified: []
+        added: current.kbEntries.filter(e => !snapshotData.kbEntries.some(s => s.id === e.id)),
+        removed: snapshotData.kbEntries.filter(s => !current.kbEntries.some(e => e.id === s.id)),
+        modified: [],
       },
       tags: {
-        added: current.tags.filter(t =>
-          !snapshotData.tags.some(s => s.name === t.name)),
-        removed: snapshotData.tags.filter(s =>
-          !current.tags.some(t => t.name === s.name)),
-        modified: []
+        added: current.tags.filter(t => !snapshotData.tags.some(s => s.name === t.name)),
+        removed: snapshotData.tags.filter(s => !current.tags.some(t => t.name === s.name)),
+        modified: [],
       },
       categories: {
-        added: current.categories.filter(c =>
-          !snapshotData.categories.some(s => s.id === c.id)),
-        removed: snapshotData.categories.filter(s =>
-          !current.categories.some(c => c.id === s.id)),
-        modified: []
-      }
+        added: current.categories.filter(c => !snapshotData.categories.some(s => s.id === c.id)),
+        removed: snapshotData.categories.filter(s => !current.categories.some(c => c.id === s.id)),
+        modified: [],
+      },
     };
 
-    const identical = Object.values(differences).every(diff =>
-      diff.added.length === 0 && diff.removed.length === 0 && diff.modified.length === 0
+    const identical = Object.values(differences).every(
+      diff => diff.added.length === 0 && diff.removed.length === 0 && diff.modified.length === 0
     );
 
     return { identical, differences };
-  }
+  },
 });

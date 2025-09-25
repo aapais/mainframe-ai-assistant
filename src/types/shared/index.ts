@@ -303,7 +303,9 @@ export type DeepReadonly<T> = {
 // Function utility types
 export type AsyncFunction<T extends any[] = any[], R = any> = (...args: T) => Promise<R>;
 export type SyncFunction<T extends any[] = any[], R = any> = (...args: T) => R;
-export type AnyFunction<T extends any[] = any[], R = any> = AsyncFunction<T, R> | SyncFunction<T, R>;
+export type AnyFunction<T extends any[] = any[], R = any> =
+  | AsyncFunction<T, R>
+  | SyncFunction<T, R>;
 
 // Type assertion helpers
 export function isString(value: any): value is string {

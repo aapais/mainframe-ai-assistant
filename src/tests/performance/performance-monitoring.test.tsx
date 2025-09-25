@@ -23,17 +23,17 @@ Object.defineProperty(window, 'performance', {
     now: jest.fn(() => Date.now()),
     memory: {
       usedJSMemory: 50 * 1024 * 1024, // 50MB
-      totalJSMemory: 100 * 1024 * 1024 // 100MB
-    }
-  }
+      totalJSMemory: 100 * 1024 * 1024, // 100MB
+    },
+  },
 });
 
 // Mock Notification API
 Object.defineProperty(window, 'Notification', {
   value: {
     permission: 'granted',
-    requestPermission: jest.fn(() => Promise.resolve('granted'))
-  }
+    requestPermission: jest.fn(() => Promise.resolve('granted')),
+  },
 });
 
 // =========================
@@ -42,7 +42,7 @@ Object.defineProperty(window, 'Notification', {
 
 const TestComponent: React.FC<{ shouldBeSlow?: boolean; componentName?: string }> = ({
   shouldBeSlow = false,
-  componentName = 'TestComponent'
+  componentName = 'TestComponent',
 }) => {
   const { ProfilerWrapper } = useReactProfiler({
     componentName,
@@ -50,8 +50,8 @@ const TestComponent: React.FC<{ shouldBeSlow?: boolean; componentName?: string }
     thresholds: {
       critical: 16,
       warning: 12,
-      good: 8
-    }
+      good: 8,
+    },
   });
 
   const health = useComponentHealth(componentName);
@@ -67,13 +67,13 @@ const TestComponent: React.FC<{ shouldBeSlow?: boolean; componentName?: string }
 
   return (
     <ProfilerWrapper id={componentName.toLowerCase()}>
-      <div data-testid="test-component">
+      <div data-testid='test-component'>
         <h3>{componentName}</h3>
-        <p data-testid="health-score">Health Score: {health.score}</p>
-        <p data-testid="health-grade">Grade: {health.grade}</p>
+        <p data-testid='health-score'>Health Score: {health.score}</p>
+        <p data-testid='health-grade'>Grade: {health.grade}</p>
         <button
-          data-testid="test-button"
-          onClick={(e) => {
+          data-testid='test-button'
+          onClick={e => {
             trackClick(e);
             // Small delay to simulate interaction
             setTimeout(() => {}, 10);
@@ -87,11 +87,11 @@ const TestComponent: React.FC<{ shouldBeSlow?: boolean; componentName?: string }
 };
 
 const SlowTestComponent: React.FC = () => {
-  return <TestComponent shouldBeSlow={true} componentName="SlowTestComponent" />;
+  return <TestComponent shouldBeSlow={true} componentName='SlowTestComponent' />;
 };
 
 const FastTestComponent: React.FC = () => {
-  return <TestComponent shouldBeSlow={false} componentName="FastTestComponent" />;
+  return <TestComponent shouldBeSlow={false} componentName='FastTestComponent' />;
 };
 
 // =========================
@@ -117,19 +117,25 @@ describe('Performance Monitoring System', () => {
     it('should track render metrics', async () => {
       render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.totalRenders).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.totalRenders).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should detect slow renders', async () => {
       render(<SlowTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.slowRenderCount).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.slowRenderCount).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should track component-specific metrics', async () => {
@@ -140,14 +146,17 @@ describe('Performance Monitoring System', () => {
         </>
       );
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        const fastMetrics = store.metrics.filter(m => m.id.includes('FastTestComponent'));
-        const slowMetrics = store.metrics.filter(m => m.id.includes('SlowTestComponent'));
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          const fastMetrics = store.metrics.filter(m => m.id.includes('FastTestComponent'));
+          const slowMetrics = store.metrics.filter(m => m.id.includes('SlowTestComponent'));
 
-        expect(fastMetrics.length).toBeGreaterThan(0);
-        expect(slowMetrics.length).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+          expect(fastMetrics.length).toBeGreaterThan(0);
+          expect(slowMetrics.length).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
     });
   });
 
@@ -155,32 +164,41 @@ describe('Performance Monitoring System', () => {
     it('should calculate health scores', async () => {
       render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const healthScore = screen.getByTestId('health-score');
-        const healthGrade = screen.getByTestId('health-grade');
+      await waitFor(
+        () => {
+          const healthScore = screen.getByTestId('health-score');
+          const healthGrade = screen.getByTestId('health-grade');
 
-        expect(healthScore).toHaveTextContent(/Health Score: \d+/);
-        expect(healthGrade).toHaveTextContent(/Grade: [A-F]/);
-      }, { timeout: 3000 });
+          expect(healthScore).toHaveTextContent(/Health Score: \d+/);
+          expect(healthGrade).toHaveTextContent(/Grade: [A-F]/);
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should show better health for fast components', async () => {
       const { rerender } = render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.totalRenders).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.totalRenders).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
 
       // Give some time for health calculation
       await new Promise(resolve => setTimeout(resolve, 100));
 
       rerender(<SlowTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.slowRenderCount).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.slowRenderCount).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
     });
   });
 
@@ -222,7 +240,7 @@ describe('Performance Monitoring System', () => {
     it('should render dashboard without crashing', () => {
       render(
         <PerformanceDashboard
-          title="Test Dashboard"
+          title='Test Dashboard'
           realTime={false} // Disable real-time for testing
           enableExport={false}
         />
@@ -235,19 +253,16 @@ describe('Performance Monitoring System', () => {
       // First render some components to generate metrics
       render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.totalRenders).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.totalRenders).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
 
       // Then render the dashboard
-      render(
-        <PerformanceDashboard
-          title="Test Dashboard"
-          realTime={false}
-          enableExport={false}
-        />
-      );
+      render(<PerformanceDashboard title='Test Dashboard' realTime={false} enableExport={false} />);
 
       // Should show some metrics
       expect(screen.getByText('Test Dashboard')).toBeInTheDocument();
@@ -255,11 +270,7 @@ describe('Performance Monitoring System', () => {
 
     it('should handle empty metrics gracefully', () => {
       render(
-        <PerformanceDashboard
-          title="Empty Dashboard"
-          realTime={false}
-          enableExport={false}
-        />
+        <PerformanceDashboard title='Empty Dashboard' realTime={false} enableExport={false} />
       );
 
       expect(screen.getByText('Empty Dashboard')).toBeInTheDocument();
@@ -271,10 +282,13 @@ describe('Performance Monitoring System', () => {
       // Generate some performance data
       render(<SlowTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.totalRenders).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.totalRenders).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
 
       // Run bottleneck analysis
       const store = performanceStore.getStore();
@@ -293,10 +307,13 @@ describe('Performance Monitoring System', () => {
         </>
       );
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.slowRenderCount).toBeGreaterThan(1);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.slowRenderCount).toBeGreaterThan(1);
+        },
+        { timeout: 3000 }
+      );
 
       const store = performanceStore.getStore();
       const bottlenecks = bottleneckAnalyzer.analyzeStore(store);
@@ -311,22 +328,28 @@ describe('Performance Monitoring System', () => {
     it('should store metrics correctly', async () => {
       render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.metrics).toBeDefined();
-        expect(Array.isArray(store.metrics)).toBe(true);
-        expect(store.stats).toBeDefined();
-        expect(typeof store.stats.totalRenders).toBe('number');
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.metrics).toBeDefined();
+          expect(Array.isArray(store.metrics)).toBe(true);
+          expect(store.stats).toBeDefined();
+          expect(typeof store.stats.totalRenders).toBe('number');
+        },
+        { timeout: 3000 }
+      );
     });
 
     it('should clear metrics', async () => {
       render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.totalRenders).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.totalRenders).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
 
       performanceStore.clear();
 
@@ -363,10 +386,13 @@ describe('Performance Monitoring System', () => {
     it('should handle component unmounting', async () => {
       const { unmount } = render(<FastTestComponent />);
 
-      await waitFor(() => {
-        const store = performanceStore.getStore();
-        expect(store.stats.totalRenders).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          const store = performanceStore.getStore();
+          expect(store.stats.totalRenders).toBeGreaterThan(0);
+        },
+        { timeout: 3000 }
+      );
 
       expect(() => {
         unmount();
@@ -405,7 +431,7 @@ describe('Performance Monitoring System', () => {
       const customThresholds = {
         critical: 20,
         warning: 15,
-        good: 10
+        good: 10,
       };
 
       performanceStore.setThresholds(customThresholds);
@@ -453,7 +479,7 @@ describe('Performance System Performance', () => {
       const [count, setCount] = React.useState(0);
       const { ProfilerWrapper } = useReactProfiler({
         componentName: 'RapidComponent',
-        enableLogging: false
+        enableLogging: false,
       });
 
       React.useEffect(() => {
@@ -467,7 +493,7 @@ describe('Performance System Performance', () => {
       }, []);
 
       return (
-        <ProfilerWrapper id="rapid-component">
+        <ProfilerWrapper id='rapid-component'>
           <div>{count}</div>
         </ProfilerWrapper>
       );
@@ -495,10 +521,13 @@ describe('System Integration', () => {
       </>
     );
 
-    await waitFor(() => {
-      const store = performanceStore.getStore();
-      expect(store.stats.totalRenders).toBeGreaterThan(2);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        const store = performanceStore.getStore();
+        expect(store.stats.totalRenders).toBeGreaterThan(2);
+      },
+      { timeout: 3000 }
+    );
 
     // Should handle multiple components without issues
     const store = performanceStore.getStore();
@@ -508,19 +537,25 @@ describe('System Integration', () => {
   it('should maintain data consistency across updates', async () => {
     const { rerender } = render(<FastTestComponent />);
 
-    await waitFor(() => {
-      const store = performanceStore.getStore();
-      expect(store.stats.totalRenders).toBeGreaterThan(0);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        const store = performanceStore.getStore();
+        expect(store.stats.totalRenders).toBeGreaterThan(0);
+      },
+      { timeout: 3000 }
+    );
 
     const initialCount = performanceStore.getStore().stats.totalRenders;
 
     rerender(<SlowTestComponent />);
 
-    await waitFor(() => {
-      const store = performanceStore.getStore();
-      expect(store.stats.totalRenders).toBeGreaterThanOrEqual(initialCount);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        const store = performanceStore.getStore();
+        expect(store.stats.totalRenders).toBeGreaterThanOrEqual(initialCount);
+      },
+      { timeout: 3000 }
+    );
   });
 });
 

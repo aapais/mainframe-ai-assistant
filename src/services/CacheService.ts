@@ -8,7 +8,7 @@ import {
   CacheStats,
   CacheConfig,
   CacheError,
-  ServiceError
+  ServiceError,
 } from '../types/services';
 
 interface CacheEntry<T> {
@@ -36,7 +36,7 @@ export class CacheService implements ICacheService {
   private tail?: CacheNode<any>;
   private currentSize = 0;
   private totalMemoryUsage = 0;
-  
+
   // Statistics
   private stats = {
     hitCount: 0,
@@ -44,7 +44,7 @@ export class CacheService implements ICacheService {
     setCount: 0,
     deleteCount: 0,
     evictionCount: 0,
-    startTime: Date.now()
+    startTime: Date.now(),
   };
 
   private cleanupInterval?: ReturnType<typeof setTimeout>;
@@ -102,7 +102,7 @@ export class CacheService implements ICacheService {
       existingNode.entry.ttl = ttl;
       existingNode.entry.size = entrySize;
       this.totalMemoryUsage += entrySize;
-      
+
       // Move to front
       this.moveToFront(existingNode);
     } else {
@@ -112,12 +112,12 @@ export class CacheService implements ICacheService {
         timestamp: now,
         ttl,
         hitCount: 0,
-        size: entrySize
+        size: entrySize,
       };
 
       const node: CacheNode<T> = {
         key,
-        entry
+        entry,
       };
 
       // Ensure capacity
@@ -241,7 +241,7 @@ export class CacheService implements ICacheService {
 
     node.entry.ttl = ttl;
     node.entry.timestamp = Date.now();
-    
+
     return true;
   }
 
@@ -276,7 +276,7 @@ export class CacheService implements ICacheService {
       evictions: this.stats.evictionCount,
       averageAge,
       oldestEntry: oldestEntry === Date.now() ? new Date() : new Date(oldestEntry),
-      newestEntry: new Date(newestEntry)
+      newestEntry: new Date(newestEntry),
     };
   }
 
@@ -300,9 +300,12 @@ export class CacheService implements ICacheService {
     if (!key || typeof key !== 'string') {
       throw new CacheError('Key must be a non-empty string', 'validation', { key });
     }
-    
+
     if (key.length > 250) {
-      throw new CacheError('Key too long (max 250 characters)', 'validation', { key, length: key.length });
+      throw new CacheError('Key too long (max 250 characters)', 'validation', {
+        key,
+        length: key.length,
+      });
     }
   }
 
@@ -315,7 +318,9 @@ export class CacheService implements ICacheService {
     try {
       JSON.stringify(value);
     } catch (error) {
-      throw new CacheError('Value contains circular references', 'validation', { error: error.message });
+      throw new CacheError('Value contains circular references', 'validation', {
+        error: error.message,
+      });
     }
   }
 
@@ -448,7 +453,7 @@ export class CacheService implements ICacheService {
    */
   async debugInfo(): Promise<any> {
     const entries = [];
-    
+
     for (const [key, node] of this.cache.entries()) {
       entries.push({
         key,
@@ -456,7 +461,7 @@ export class CacheService implements ICacheService {
         age: Date.now() - node.entry.timestamp,
         hitCount: node.entry.hitCount,
         ttl: node.entry.ttl,
-        expired: this.isExpired(node.entry)
+        expired: this.isExpired(node.entry),
       });
     }
 
@@ -467,8 +472,9 @@ export class CacheService implements ICacheService {
       memoryBreakdown: {
         totalMemory: this.totalMemoryUsage,
         averageEntrySize: this.currentSize > 0 ? this.totalMemoryUsage / this.currentSize : 0,
-        utilizationPercent: this.config.maxSize > 0 ? (this.currentSize / this.config.maxSize) * 100 : 0
-      }
+        utilizationPercent:
+          this.config.maxSize > 0 ? (this.currentSize / this.config.maxSize) * 100 : 0,
+      },
     };
   }
 
@@ -477,7 +483,7 @@ export class CacheService implements ICacheService {
    */
   async optimize(): Promise<void> {
     const removed = await this.removeExpiredEntries();
-    
+
     console.info(`Cache optimization completed: removed ${removed} expired entries`);
   }
 
@@ -486,11 +492,11 @@ export class CacheService implements ICacheService {
    */
   async warmup(data: Array<{ key: string; value: any; ttl?: number }>): Promise<void> {
     console.info(`Warming up cache with ${data.length} entries`);
-    
+
     for (const item of data) {
       await this.set(item.key, item.value, item.ttl);
     }
-    
+
     console.info('Cache warmup completed');
   }
 
@@ -499,7 +505,7 @@ export class CacheService implements ICacheService {
    */
   async export(): Promise<string> {
     const entries = [];
-    
+
     for (const [key, node] of this.cache.entries()) {
       if (!this.isExpired(node.entry)) {
         entries.push({
@@ -507,7 +513,7 @@ export class CacheService implements ICacheService {
           value: node.entry.value,
           timestamp: node.entry.timestamp,
           ttl: node.entry.ttl,
-          hitCount: node.entry.hitCount
+          hitCount: node.entry.hitCount,
         });
       }
     }
@@ -516,7 +522,7 @@ export class CacheService implements ICacheService {
       version: '1.0',
       timestamp: new Date().toISOString(),
       entries,
-      stats: this.stats()
+      stats: this.stats(),
     });
   }
 
@@ -526,13 +532,13 @@ export class CacheService implements ICacheService {
   async import(data: string): Promise<void> {
     try {
       const backup = JSON.parse(data);
-      
+
       if (!backup.entries || !Array.isArray(backup.entries)) {
         throw new Error('Invalid backup format');
       }
 
       await this.clear();
-      
+
       for (const entry of backup.entries) {
         // Calculate remaining TTL
         let remainingTTL = entry.ttl;
@@ -543,7 +549,7 @@ export class CacheService implements ICacheService {
 
         if (remainingTTL > 0 || !entry.ttl) {
           await this.set(entry.key, entry.value, remainingTTL || undefined);
-          
+
           // Restore hit count
           const node = this.cache.get(entry.key);
           if (node) {

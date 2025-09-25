@@ -6,8 +6,17 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AccentureLogo, AccentureHeaderLogo, AccentureFooterLogo, AccentureNavLogo, AccentureSymbolOnly } from '../renderer/components/brand/AccentureLogo';
-import { AccentureFooter, AccentureFooterMinimal } from '../renderer/components/brand/AccentureFooter';
+import {
+  AccentureLogo,
+  AccentureHeaderLogo,
+  AccentureFooterLogo,
+  AccentureNavLogo,
+  AccentureSymbolOnly,
+} from '../renderer/components/brand/AccentureLogo';
+import {
+  AccentureFooter,
+  AccentureFooterMinimal,
+} from '../renderer/components/brand/AccentureFooter';
 
 describe('Accenture Branding Components', () => {
   describe('AccentureLogo', () => {
@@ -31,22 +40,22 @@ describe('Accenture Branding Components', () => {
     });
 
     test('symbol-only variant shows only the ">" symbol', () => {
-      render(<AccentureLogo variant="symbol-only" />);
+      render(<AccentureLogo variant='symbol-only' />);
       const symbolElement = screen.getByText('>', { exact: true });
       expect(symbolElement).toBeInTheDocument();
     });
 
     test('stacked variant arranges logo vertically', () => {
-      render(<AccentureLogo variant="stacked" showTagline={true} />);
+      render(<AccentureLogo variant='stacked' showTagline={true} />);
       const container = screen.getByText('Let there be change').closest('div');
       expect(container).toHaveClass('flex-col');
     });
 
     test('responsive sizing works correctly', () => {
-      const { rerender } = render(<AccentureLogo size="small" />);
+      const { rerender } = render(<AccentureLogo size='small' />);
       expect(screen.getByText(/accenture/)).toHaveClass('text-lg');
 
-      rerender(<AccentureLogo size="large" />);
+      rerender(<AccentureLogo size='large' />);
       expect(screen.getByText(/accenture/)).toHaveClass('text-4xl');
     });
   });
@@ -55,7 +64,9 @@ describe('Accenture Branding Components', () => {
     test('displays copyright notice with current year', () => {
       render(<AccentureFooter />);
       const currentYear = new Date().getFullYear();
-      expect(screen.getByText(`© ${currentYear} Accenture. All rights reserved.`)).toBeInTheDocument();
+      expect(
+        screen.getByText(`© ${currentYear} Accenture. All rights reserved.`)
+      ).toBeInTheDocument();
     });
 
     test('shows enterprise-grade badge', () => {
@@ -77,7 +88,9 @@ describe('Accenture Branding Components', () => {
     test('minimal variant renders correctly', () => {
       render(<AccentureFooterMinimal />);
       const currentYear = new Date().getFullYear();
-      expect(screen.getByText(`© ${currentYear} Accenture. All rights reserved.`)).toBeInTheDocument();
+      expect(
+        screen.getByText(`© ${currentYear} Accenture. All rights reserved.`)
+      ).toBeInTheDocument();
     });
   });
 

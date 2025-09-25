@@ -26,7 +26,7 @@ export {
   resetServiceManager,
   DEFAULT_SERVICE_MANAGER_CONFIG,
   DefaultServiceLogger,
-  DefaultServiceMetrics
+  DefaultServiceMetrics,
 } from './ServiceManager';
 
 // KB Listing specific exports
@@ -39,7 +39,7 @@ export type {
   AggregationData,
   FilterCriteria,
   SavedSearch,
-  SavedSearchCreate
+  SavedSearchCreate,
 } from './KBListingService';
 
 export type {
@@ -47,7 +47,7 @@ export type {
   CacheEntry,
   CacheStats,
   CachePriority,
-  PreloadStrategy
+  PreloadStrategy,
 } from './CacheService';
 
 // Error handling

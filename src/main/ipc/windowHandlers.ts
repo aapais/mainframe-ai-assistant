@@ -8,17 +8,14 @@ import path from 'path';
 import { KnowledgeBaseService } from '../../services/KnowledgeBaseService';
 import { GeminiService } from '../../services/GeminiService';
 import { BatchProcessor } from './BatchProcessor';
-import {
-  BatchRequestPayload,
-  BatchResponsePayload
-} from '../../shared/types/BatchTypes';
+import { BatchRequestPayload, BatchResponsePayload } from '../../shared/types/BatchTypes';
 import {
   KBEntry,
   KBEntryInput,
   KBEntryUpdate,
   SearchResult,
   SearchQuery,
-  DatabaseMetrics
+  DatabaseMetrics,
 } from '../../types';
 
 // Services
@@ -41,7 +38,7 @@ export async function initializeIpcHandlers() {
       geminiService = new GeminiService({
         apiKey: geminiApiKey,
         model: 'gemini-pro',
-        temperature: 0.3
+        temperature: 0.3,
       });
       console.log('Gemini AI service initialized');
     } catch (error) {
@@ -58,7 +55,7 @@ export async function initializeIpcHandlers() {
     // databaseManager: kbService.getDatabaseManager(),
     // cache: kbService.getCache(),
     maxConcurrentRequests: 10,
-    defaultTimeout: 5000
+    defaultTimeout: 5000,
   });
 
   // Register all IPC handlers
@@ -85,16 +82,16 @@ function registerKnowledgeBaseHandlers() {
         return await kbService.search(query.query, query);
       } else {
         // Return recent entries
-        const result = await kbService.list({ 
-          limit: query?.limit || 20, 
-          sortBy: 'updated_at', 
-          sortOrder: 'desc' 
+        const result = await kbService.list({
+          limit: query?.limit || 20,
+          sortBy: 'updated_at',
+          sortOrder: 'desc',
         });
         return result.data.map(entry => ({
           entry,
           score: 100,
           matchType: 'exact' as const,
-          highlights: []
+          highlights: [],
         }));
       }
     } catch (error) {
@@ -114,17 +111,20 @@ function registerKnowledgeBaseHandlers() {
   });
 
   // Update KB entry
-  ipcMain.handle('kb:update-entry', async (event, id: string, updates: KBEntryUpdate): Promise<void> => {
-    try {
-      const success = await kbService.update(id, updates);
-      if (!success) {
-        throw new Error('Entry not found or update failed');
+  ipcMain.handle(
+    'kb:update-entry',
+    async (event, id: string, updates: KBEntryUpdate): Promise<void> => {
+      try {
+        const success = await kbService.update(id, updates);
+        if (!success) {
+          throw new Error('Entry not found or update failed');
+        }
+      } catch (error) {
+        console.error('Failed to update KB entry:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Failed to update KB entry:', error);
-      throw error;
     }
-  });
+  );
 
   // Delete KB entry
   ipcMain.handle('kb:delete-entry', async (event, id: string): Promise<void> => {
@@ -155,40 +155,46 @@ function registerKnowledgeBaseHandlers() {
  */
 function registerSearchHandlers() {
   // Local search
-  ipcMain.handle('search:local', async (event, query: string, options?: SearchQuery): Promise<SearchResult[]> => {
-    try {
-      return await kbService.search(query, options || {});
-    } catch (error) {
-      console.error('Local search failed:', error);
-      return [];
-    }
-  });
-
-  // AI-enhanced search
-  ipcMain.handle('search:ai', async (event, query: string, options?: SearchQuery): Promise<SearchResult[]> => {
-    try {
-      if (!geminiService) {
-        throw new Error('AI search service not available');
-      }
-
-      // Get local results first
-      const localResults = await kbService.search(query, options || {});
-      
-      if (localResults.length === 0) {
+  ipcMain.handle(
+    'search:local',
+    async (event, query: string, options?: SearchQuery): Promise<SearchResult[]> => {
+      try {
+        return await kbService.search(query, options || {});
+      } catch (error) {
+        console.error('Local search failed:', error);
         return [];
       }
-
-      // Enhance with AI matching
-      const entries = localResults.map(result => result.entry);
-      const aiResults = await geminiService.findSimilar(query, entries);
-      
-      return aiResults.length > 0 ? aiResults : localResults;
-    } catch (error) {
-      console.error('AI search failed:', error);
-      // Fallback to local search
-      return await kbService.search(query, options || {});
     }
-  });
+  );
+
+  // AI-enhanced search
+  ipcMain.handle(
+    'search:ai',
+    async (event, query: string, options?: SearchQuery): Promise<SearchResult[]> => {
+      try {
+        if (!geminiService) {
+          throw new Error('AI search service not available');
+        }
+
+        // Get local results first
+        const localResults = await kbService.search(query, options || {});
+
+        if (localResults.length === 0) {
+          return [];
+        }
+
+        // Enhance with AI matching
+        const entries = localResults.map(result => result.entry);
+        const aiResults = await geminiService.findSimilar(query, entries);
+
+        return aiResults.length > 0 ? aiResults : localResults;
+      } catch (error) {
+        console.error('AI search failed:', error);
+        // Fallback to local search
+        return await kbService.search(query, options || {});
+      }
+    }
+  );
 }
 
 /**
@@ -196,20 +202,23 @@ function registerSearchHandlers() {
  */
 function registerFeedbackHandlers() {
   // Rate entry
-  ipcMain.handle('feedback:rate-entry', async (event, id: string, successful: boolean, comment?: string): Promise<void> => {
-    try {
-      await kbService.recordUsage(id, successful);
-      
-      // If there's a comment, we could store it in a separate feedback table
-      if (comment) {
-        console.log(`Feedback for entry ${id}: ${comment}`);
-        // TODO: Implement comment storage if needed
+  ipcMain.handle(
+    'feedback:rate-entry',
+    async (event, id: string, successful: boolean, comment?: string): Promise<void> => {
+      try {
+        await kbService.recordUsage(id, successful);
+
+        // If there's a comment, we could store it in a separate feedback table
+        if (comment) {
+          console.log(`Feedback for entry ${id}: ${comment}`);
+          // TODO: Implement comment storage if needed
+        }
+      } catch (error) {
+        console.error('Failed to rate entry:', error);
+        throw error;
       }
-    } catch (error) {
-      console.error('Failed to rate entry:', error);
-      throw error;
     }
-  });
+  );
 
   // Record entry view
   ipcMain.handle('feedback:record-view', async (event, id: string): Promise<void> => {
@@ -239,7 +248,7 @@ function registerSystemHandlers() {
         searches_today: 0,
         avg_response_time: 0,
         cache_hit_rate: 0,
-        storage_used_mb: 0
+        storage_used_mb: 0,
       };
     }
   });
@@ -252,8 +261,8 @@ function registerSystemHandlers() {
         defaultPath: suggestedPath || `kb-export-${new Date().toISOString().split('T')[0]}.json`,
         filters: [
           { name: 'JSON Files', extensions: ['json'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
+          { name: 'All Files', extensions: ['*'] },
+        ],
       });
 
       if (result.canceled || !result.filePath) {
@@ -263,7 +272,7 @@ function registerSystemHandlers() {
       const exportData = await kbService.export();
       const fs = await import('fs/promises');
       await fs.writeFile(result.filePath, exportData, 'utf8');
-      
+
       return result.filePath;
     } catch (error) {
       console.error('Failed to export KB:', error);
@@ -279,9 +288,9 @@ function registerSystemHandlers() {
         defaultPath: suggestedPath,
         filters: [
           { name: 'JSON Files', extensions: ['json'] },
-          { name: 'All Files', extensions: ['*'] }
+          { name: 'All Files', extensions: ['*'] },
         ],
-        properties: ['openFile']
+        properties: ['openFile'],
       });
 
       if (result.canceled || result.filePaths.length === 0) {
@@ -291,7 +300,7 @@ function registerSystemHandlers() {
       const fs = await import('fs/promises');
       const importData = await fs.readFile(result.filePaths[0], 'utf8');
       const importResult = await kbService.import(importData);
-      
+
       return importResult.restored;
     } catch (error) {
       console.error('Failed to import KB:', error);
@@ -300,18 +309,21 @@ function registerSystemHandlers() {
   });
 
   // Check database status
-  ipcMain.handle('system:check-database', async (): Promise<{ connected: boolean; isEmpty: boolean }> => {
-    try {
-      const metrics = await kbService.getMetrics();
-      return {
-        connected: true,
-        isEmpty: metrics.total_entries === 0
-      };
-    } catch (error) {
-      console.error('Database check failed:', error);
-      return { connected: false, isEmpty: true };
+  ipcMain.handle(
+    'system:check-database',
+    async (): Promise<{ connected: boolean; isEmpty: boolean }> => {
+      try {
+        const metrics = await kbService.getMetrics();
+        return {
+          connected: true,
+          isEmpty: metrics.total_entries === 0,
+        };
+      } catch (error) {
+        console.error('Database check failed:', error);
+        return { connected: false, isEmpty: true };
+      }
     }
-  });
+  );
 
   // Load initial templates
   ipcMain.handle('system:load-templates', async (): Promise<void> => {
@@ -319,7 +331,7 @@ function registerSystemHandlers() {
       // Load default KB entries from templates
       const templatesPath = path.join(__dirname, '../../../assets/kb-templates/initial-kb.json');
       const fs = await import('fs/promises');
-      
+
       try {
         const templatesData = await fs.readFile(templatesPath, 'utf8');
         await kbService.import(templatesData);
@@ -399,18 +411,21 @@ function registerWindowHandlers() {
         isMaximized: window.isMaximized(),
         isMinimized: window.isMinimized(),
         isFocused: window.isFocused(),
-        isVisible: window.isVisible()
+        isVisible: window.isVisible(),
       };
     }
     return null;
   });
 
-  ipcMain.handle('window:update-state', async (event, windowId: string, state: any): Promise<void> => {
-    const window = BrowserWindow.fromWebContents(event.sender);
-    if (window && state.bounds) {
-      window.setBounds(state.bounds);
+  ipcMain.handle(
+    'window:update-state',
+    async (event, windowId: string, state: any): Promise<void> => {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      if (window && state.bounds) {
+        window.setBounds(state.bounds);
+      }
     }
-  });
+  );
 }
 
 /**
@@ -449,7 +464,7 @@ function registerThemeHandlers() {
   // Set theme
   ipcMain.handle('theme:set', async (event, theme: 'light' | 'dark'): Promise<void> => {
     currentTheme = theme;
-    
+
     // Broadcast theme change to all windows
     BrowserWindow.getAllWindows().forEach(window => {
       window.webContents.send('theme:changed', theme);
@@ -462,7 +477,7 @@ function registerThemeHandlers() {
  */
 function registerDevelopmentHandlers() {
   // Open dev tools
-  ipcMain.on('dev:open-devtools', (event) => {
+  ipcMain.on('dev:open-devtools', event => {
     const window = BrowserWindow.fromWebContents(event.sender);
     if (window) {
       window.webContents.openDevTools();
@@ -475,15 +490,20 @@ function registerDevelopmentHandlers() {
  */
 function registerBatchHandlers() {
   // Main batch execution handler
-  ipcMain.handle('ipc:execute-batch', async (event, payload: BatchRequestPayload): Promise<BatchResponsePayload> => {
-    try {
-      console.log(`[BatchHandler] Processing batch ${payload.batchId} with ${payload.requests.length} requests`);
-      return await batchProcessor.processBatch(payload);
-    } catch (error) {
-      console.error('[BatchHandler] Batch processing failed:', error);
-      throw error;
+  ipcMain.handle(
+    'ipc:execute-batch',
+    async (event, payload: BatchRequestPayload): Promise<BatchResponsePayload> => {
+      try {
+        console.log(
+          `[BatchHandler] Processing batch ${payload.batchId} with ${payload.requests.length} requests`
+        );
+        return await batchProcessor.processBatch(payload);
+      } catch (error) {
+        console.error('[BatchHandler] Batch processing failed:', error);
+        throw error;
+      }
     }
-  });
+  );
 
   // Batch statistics handler
   ipcMain.handle('ipc:batch-stats', async (): Promise<any> => {
@@ -504,27 +524,30 @@ async function createBasicEntries(): Promise<void> {
     {
       title: 'VSAM Status 35 - File Not Found',
       problem: 'Job abends with VSAM status code 35. The program cannot open the VSAM file.',
-      solution: '1. Verify the dataset exists using ISPF 3.4 or LISTCAT command\n2. Check the DD statement in JCL has correct DSN\n3. Ensure file is cataloged properly\n4. Verify RACF permissions using LISTDSD\n5. Check if file was deleted or renamed',
+      solution:
+        '1. Verify the dataset exists using ISPF 3.4 or LISTCAT command\n2. Check the DD statement in JCL has correct DSN\n3. Ensure file is cataloged properly\n4. Verify RACF permissions using LISTDSD\n5. Check if file was deleted or renamed',
       category: 'VSAM',
       tags: ['vsam', 'status-35', 'file-not-found', 'catalog'],
-      created_by: 'system'
+      created_by: 'system',
     },
     {
       title: 'S0C7 - Data Exception in COBOL',
       problem: 'Program abends with S0C7 data exception during arithmetic operations.',
-      solution: '1. Check for non-numeric data in numeric fields\n2. Initialize all COMP-3 fields properly\n3. Use NUMERIC test before arithmetic\n4. Add DISPLAY statements for debugging\n5. Check compile listing for data definitions',
+      solution:
+        '1. Check for non-numeric data in numeric fields\n2. Initialize all COMP-3 fields properly\n3. Use NUMERIC test before arithmetic\n4. Add DISPLAY statements for debugging\n5. Check compile listing for data definitions',
       category: 'Batch',
       tags: ['s0c7', 'data-exception', 'numeric', 'abend', 'cobol'],
-      created_by: 'system'
+      created_by: 'system',
     },
     {
       title: 'JCL Error - Dataset Not Found (IEF212I)',
       problem: 'JCL fails with IEF212I dataset not found error',
-      solution: '1. Verify dataset name spelling exactly\n2. Check if dataset exists using TSO LISTD\n3. For GDG: Verify generation exists\n4. Check dataset expiration\n5. Verify UNIT and VOL parameters if uncataloged',
+      solution:
+        '1. Verify dataset name spelling exactly\n2. Check if dataset exists using TSO LISTD\n3. For GDG: Verify generation exists\n4. Check dataset expiration\n5. Verify UNIT and VOL parameters if uncataloged',
       category: 'JCL',
       tags: ['jcl', 'dataset', 'not-found', 'ief212i'],
-      created_by: 'system'
-    }
+      created_by: 'system',
+    },
   ];
 
   for (const entry of basicEntries) {

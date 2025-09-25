@@ -23,7 +23,7 @@ export class DataSeeder {
    */
   async seedMainframeKB(): Promise<{ seeded: number; skipped: number; errors: number }> {
     console.log('🌱 Seeding mainframe knowledge base...');
-    
+
     const entries = this.getMainframeEntries();
     let seeded = 0;
     let skipped = 0;
@@ -40,21 +40,24 @@ export class DataSeeder {
         }
 
         // Add entry
-        const id = await this.db.addEntry({
-          id: uuidv4(),
-          title: entry.title,
-          problem: entry.problem,
-          solution: entry.solution,
-          category: entry.category,
-          tags: entry.tags,
-          severity: entry.severity || 'medium'
-        }, 'system');
+        const id = await this.db.addEntry(
+          {
+            id: uuidv4(),
+            title: entry.title,
+            problem: entry.problem,
+            solution: entry.solution,
+            category: entry.category,
+            tags: entry.tags,
+            severity: entry.severity || 'medium',
+          },
+          'system'
+        );
 
         // Set initial success rate based on estimate
         if (entry.estimatedSuccessRate) {
           const successCount = Math.floor(entry.estimatedSuccessRate * 10);
           const failureCount = 10 - successCount;
-          
+
           await this.db.recordUsage(id, true, 'system'); // Initial success
           for (let i = 0; i < successCount - 1; i++) {
             await this.db.recordUsage(id, true, 'system');
@@ -66,7 +69,6 @@ export class DataSeeder {
 
         console.log(`✅ Seeded: ${entry.title}`);
         seeded++;
-
       } catch (error) {
         console.error(`❌ Failed to seed: ${entry.title}`, error);
         errors++;
@@ -85,7 +87,8 @@ export class DataSeeder {
       // VSAM Errors
       {
         title: 'VSAM Status 35 - File Not Found',
-        problem: 'Job abends with VSAM status code 35. The program cannot open the VSAM file for processing.',
+        problem:
+          'Job abends with VSAM status code 35. The program cannot open the VSAM file for processing.',
         solution: `1. Verify dataset exists: Use ISPF 3.4 or TSO LISTCAT command
 2. Check DD statement in JCL:
    - Verify DSN parameter is correct
@@ -101,7 +104,7 @@ export class DataSeeder {
         category: 'VSAM',
         tags: ['vsam', 'status-35', 'file-not-found', 'catalog', 'open-error'],
         severity: 'high',
-        estimatedSuccessRate: 0.92
+        estimatedSuccessRate: 0.92,
       },
       {
         title: 'VSAM Status 37 - Space Problem',
@@ -124,7 +127,7 @@ export class DataSeeder {
         category: 'VSAM',
         tags: ['vsam', 'status-37', 'space', 'extend', 'allocation'],
         severity: 'high',
-        estimatedSuccessRate: 0.88
+        estimatedSuccessRate: 0.88,
       },
       {
         title: 'VSAM Status 39 - Record Already Exists',
@@ -144,13 +147,14 @@ export class DataSeeder {
         category: 'VSAM',
         tags: ['vsam', 'status-39', 'duplicate-key', 'ksds', 'record-exists'],
         severity: 'medium',
-        estimatedSuccessRate: 0.95
+        estimatedSuccessRate: 0.95,
       },
 
       // COBOL/Batch Errors
       {
         title: 'S0C7 - Data Exception in COBOL',
-        problem: 'Program abends with S0C7 data exception. Usually occurs during arithmetic operations or MOVE statements.',
+        problem:
+          'Program abends with S0C7 data exception. Usually occurs during arithmetic operations or MOVE statements.',
         solution: `1. Check for non-numeric data in numeric fields:
    - Use NUMERIC test before arithmetic operations
    - Initialize all COMP-3 fields properly with VALUE clause
@@ -171,7 +175,7 @@ export class DataSeeder {
         category: 'Batch',
         tags: ['s0c7', 'data-exception', 'numeric', 'abend', 'cobol', 'arithmetic'],
         severity: 'critical',
-        estimatedSuccessRate: 0.91
+        estimatedSuccessRate: 0.91,
       },
       {
         title: 'S0C4 - Protection Exception',
@@ -199,11 +203,12 @@ export class DataSeeder {
         category: 'Batch',
         tags: ['s0c4', 'protection-exception', 'bounds', 'pointer', 'cobol'],
         severity: 'critical',
-        estimatedSuccessRate: 0.87
+        estimatedSuccessRate: 0.87,
       },
       {
         title: 'S013 - Open Error - Member Not Found',
-        problem: 'Program abends with S013 when attempting to open a PDS member that does not exist.',
+        problem:
+          'Program abends with S013 when attempting to open a PDS member that does not exist.',
         solution: `1. Verify member exists in PDS:
    - Use ISPF 3.4 to browse PDS
    - Check member name spelling and case
@@ -223,7 +228,7 @@ export class DataSeeder {
         category: 'Batch',
         tags: ['s013', 'open-error', 'member-not-found', 'pds', 'load-module'],
         severity: 'high',
-        estimatedSuccessRate: 0.94
+        estimatedSuccessRate: 0.94,
       },
 
       // JCL Errors
@@ -256,7 +261,7 @@ export class DataSeeder {
         category: 'JCL',
         tags: ['jcl', 'dataset', 'ief212i', 'not-found', 'allocation'],
         severity: 'high',
-        estimatedSuccessRate: 0.90
+        estimatedSuccessRate: 0.9,
       },
       {
         title: 'JCL Error - IEF244I Unable to Allocate Space',
@@ -283,13 +288,14 @@ export class DataSeeder {
         category: 'JCL',
         tags: ['jcl', 'ief244i', 'space', 'allocation', 'volume'],
         severity: 'medium',
-        estimatedSuccessRate: 0.85
+        estimatedSuccessRate: 0.85,
       },
 
       // DB2 Errors
       {
         title: 'DB2 SQLCODE -904 - Resource Unavailable',
-        problem: 'DB2 program receives SQLCODE -904 indicating resource not available for operation.',
+        problem:
+          'DB2 program receives SQLCODE -904 indicating resource not available for operation.',
         solution: `1. Check database/tablespace status:
    - -DISPLAY DATABASE(dbname) SPACES(*)
    - Look for STOP, STOPP, RECP, COPY states
@@ -316,7 +322,7 @@ export class DataSeeder {
         category: 'DB2',
         tags: ['db2', 'sqlcode', '-904', 'resource', 'unavailable', 'tablespace'],
         severity: 'critical',
-        estimatedSuccessRate: 0.82
+        estimatedSuccessRate: 0.82,
       },
       {
         title: 'DB2 SQLCODE -803 - Duplicate Key',
@@ -344,7 +350,7 @@ export class DataSeeder {
         category: 'DB2',
         tags: ['db2', 'sqlcode', '-803', 'duplicate-key', 'unique-constraint'],
         severity: 'medium',
-        estimatedSuccessRate: 0.93
+        estimatedSuccessRate: 0.93,
       },
 
       // CICS Errors
@@ -378,7 +384,7 @@ export class DataSeeder {
         category: 'CICS',
         tags: ['cics', 'asra', 'abend', 'program-check', 'addressing'],
         severity: 'critical',
-        estimatedSuccessRate: 0.88
+        estimatedSuccessRate: 0.88,
       },
       {
         title: 'CICS AICA - Transaction Timeout',
@@ -410,13 +416,14 @@ export class DataSeeder {
         category: 'CICS',
         tags: ['cics', 'aica', 'timeout', 'runaway', 'performance'],
         severity: 'high',
-        estimatedSuccessRate: 0.85
+        estimatedSuccessRate: 0.85,
       },
 
       // IMS Errors
       {
         title: 'IMS U0778 - Database Not Available',
-        problem: 'IMS transaction abends with U0778 indicating database not available for processing.',
+        problem:
+          'IMS transaction abends with U0778 indicating database not available for processing.',
         solution: `1. Check database status:
    - /DIS DB dbname
    - Look for NOTOPEN, STOPPED, or IOPREV status
@@ -442,7 +449,7 @@ export class DataSeeder {
         category: 'IMS',
         tags: ['ims', 'u0778', 'database', 'unavailable', 'status'],
         severity: 'high',
-        estimatedSuccessRate: 0.89
+        estimatedSuccessRate: 0.89,
       },
 
       // Sort/DFSORT Errors
@@ -477,7 +484,7 @@ export class DataSeeder {
         category: 'Batch',
         tags: ['sort', 'dfsort', 'wer027a', 'storage', 'memory', 'region'],
         severity: 'medium',
-        estimatedSuccessRate: 0.92
+        estimatedSuccessRate: 0.92,
       },
 
       // File/Dataset Errors
@@ -513,7 +520,7 @@ export class DataSeeder {
         category: 'VSAM',
         tags: ['vsam', 'verify', 'improper-close', 'recovery', 'idcams'],
         severity: 'medium',
-        estimatedSuccessRate: 0.96
+        estimatedSuccessRate: 0.96,
       },
 
       // Network/FTP Errors
@@ -547,7 +554,7 @@ export class DataSeeder {
         category: 'Network',
         tags: ['ftp', 'edc8128i', 'connection-refused', 'tcpip', 'network'],
         severity: 'medium',
-        estimatedSuccessRate: 0.87
+        estimatedSuccessRate: 0.87,
       },
 
       // Security/RACF Errors
@@ -579,7 +586,7 @@ export class DataSeeder {
         category: 'Security',
         tags: ['racf', 'ich408i', 'security', 'authority', 'permit'],
         severity: 'high',
-        estimatedSuccessRate: 0.94
+        estimatedSuccessRate: 0.94,
       },
 
       // System/Operational Errors
@@ -613,7 +620,7 @@ export class DataSeeder {
         category: 'JCL',
         tags: ['jes2', 'sdsf', 'output', 'missing', 'routing'],
         severity: 'medium',
-        estimatedSuccessRate: 0.91
+        estimatedSuccessRate: 0.91,
       },
 
       // Performance Issues
@@ -647,8 +654,8 @@ export class DataSeeder {
         category: 'Batch',
         tags: ['cobol', 'performance', 'slow', 'optimization', 'degradation'],
         severity: 'medium',
-        estimatedSuccessRate: 0.83
-      }
+        estimatedSuccessRate: 0.83,
+      },
     ];
   }
 
@@ -657,11 +664,12 @@ export class DataSeeder {
    */
   private async findSimilarEntry(entry: MainframeKBEntry): Promise<boolean> {
     const results = await this.db.search(entry.title, 3);
-    
-    return results.some(result => 
-      result.entry.title.toLowerCase() === entry.title.toLowerCase() ||
-      (result.entry.category === entry.category && 
-       this.calculateSimilarity(result.entry.problem, entry.problem) > 0.8)
+
+    return results.some(
+      result =>
+        result.entry.title.toLowerCase() === entry.title.toLowerCase() ||
+        (result.entry.category === entry.category &&
+          this.calculateSimilarity(result.entry.problem, entry.problem) > 0.8)
     );
   }
 
@@ -671,10 +679,10 @@ export class DataSeeder {
   private calculateSimilarity(text1: string, text2: string): number {
     const words1 = new Set(text1.toLowerCase().split(/\s+/));
     const words2 = new Set(text2.toLowerCase().split(/\s+/));
-    
+
     const intersection = new Set([...words1].filter(x => words2.has(x)));
     const union = new Set([...words1, ...words2]);
-    
+
     return intersection.size / union.size;
   }
 
@@ -683,18 +691,58 @@ export class DataSeeder {
    */
   async seedSystemConfig(): Promise<void> {
     console.log('⚙️ Seeding system configuration...');
-    
+
     const configs = [
       { key: 'app_version', value: '1.0.0', type: 'string', description: 'Application version' },
-      { key: 'search_timeout_ms', value: '1000', type: 'integer', description: 'Search timeout in milliseconds' },
-      { key: 'max_search_results', value: '50', type: 'integer', description: 'Maximum search results' },
-      { key: 'auto_backup_enabled', value: 'true', type: 'boolean', description: 'Enable automatic backups' },
-      { key: 'backup_retention_days', value: '30', type: 'integer', description: 'Backup retention period' },
-      { key: 'analytics_enabled', value: 'true', type: 'boolean', description: 'Enable usage analytics' },
-      { key: 'gemini_api_key', value: '', type: 'string', description: 'Gemini API key for AI features' },
-      { key: 'gemini_timeout_ms', value: '5000', type: 'integer', description: 'Gemini API timeout' },
+      {
+        key: 'search_timeout_ms',
+        value: '1000',
+        type: 'integer',
+        description: 'Search timeout in milliseconds',
+      },
+      {
+        key: 'max_search_results',
+        value: '50',
+        type: 'integer',
+        description: 'Maximum search results',
+      },
+      {
+        key: 'auto_backup_enabled',
+        value: 'true',
+        type: 'boolean',
+        description: 'Enable automatic backups',
+      },
+      {
+        key: 'backup_retention_days',
+        value: '30',
+        type: 'integer',
+        description: 'Backup retention period',
+      },
+      {
+        key: 'analytics_enabled',
+        value: 'true',
+        type: 'boolean',
+        description: 'Enable usage analytics',
+      },
+      {
+        key: 'gemini_api_key',
+        value: '',
+        type: 'string',
+        description: 'Gemini API key for AI features',
+      },
+      {
+        key: 'gemini_timeout_ms',
+        value: '5000',
+        type: 'integer',
+        description: 'Gemini API timeout',
+      },
       { key: 'ui_theme', value: 'light', type: 'string', description: 'UI theme preference' },
-      { key: 'default_category', value: 'Other', type: 'string', description: 'Default category for new entries' }
+      {
+        key: 'default_category',
+        value: 'Other',
+        type: 'string',
+        description: 'Default category for new entries',
+      },
     ];
 
     for (const config of configs) {
@@ -713,7 +761,7 @@ export class DataSeeder {
    */
   async seedSearchHistory(): Promise<void> {
     console.log('🔍 Seeding sample search history...');
-    
+
     const searches = [
       'VSAM status 35',
       'S0C7 error',
@@ -724,7 +772,7 @@ export class DataSeeder {
       'file not found',
       'IMS database unavailable',
       'FTP connection refused',
-      'RACF authority'
+      'RACF authority',
     ];
 
     for (const query of searches) {
@@ -741,11 +789,11 @@ export class DataSeeder {
    */
   async seedAll(): Promise<void> {
     console.log('🚀 Starting complete database seeding...');
-    
+
     const kbResult = await this.seedMainframeKB();
     await this.seedSystemConfig();
     await this.seedSearchHistory();
-    
+
     console.log(`🎉 Seeding completed! 
 📊 Summary:
    - KB Entries: ${kbResult.seeded} seeded, ${kbResult.skipped} skipped, ${kbResult.errors} errors

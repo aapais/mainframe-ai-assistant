@@ -54,7 +54,7 @@ const defaultMessages: ScreenReaderMessages = {
   modalClosed: 'Dialog closed',
   tableUpdated: 'Table data updated',
   progressStarted: 'Operation started',
-  progressComplete: 'Operation completed'
+  progressComplete: 'Operation completed',
 };
 
 /**
@@ -63,7 +63,11 @@ const defaultMessages: ScreenReaderMessages = {
 export class EnhancedLiveRegionManager {
   private static instance: EnhancedLiveRegionManager;
   private regions: Map<string, HTMLElement> = new Map();
-  private announcementQueue: Array<{ message: string; priority: ScreenReaderPriority; delay: number }> = [];
+  private announcementQueue: Array<{
+    message: string;
+    priority: ScreenReaderPriority;
+    delay: number;
+  }> = [];
   private isProcessingQueue = false;
   private messages: ScreenReaderMessages;
 
@@ -86,11 +90,15 @@ export class EnhancedLiveRegionManager {
       { id: 'sr-status-assertive', priority: 'assertive', atomic: 'true' },
       { id: 'sr-progress-polite', priority: 'polite', atomic: 'false' },
       { id: 'sr-navigation-polite', priority: 'polite', atomic: 'true' },
-      { id: 'sr-form-errors-assertive', priority: 'assertive', atomic: 'false' }
+      { id: 'sr-form-errors-assertive', priority: 'assertive', atomic: 'false' },
     ];
 
     regionConfigs.forEach(config => {
-      const region = this.createRegion(config.id, config.priority as ScreenReaderPriority, config.atomic === 'true');
+      const region = this.createRegion(
+        config.id,
+        config.priority as ScreenReaderPriority,
+        config.atomic === 'true'
+      );
       this.regions.set(config.id, region);
       document.body.appendChild(region);
     });
@@ -182,16 +190,23 @@ export class EnhancedLiveRegionManager {
     return priority === 'assertive' ? 'sr-status-assertive' : 'sr-status-polite';
   }
 
-  private async makeAnnouncement(region: HTMLElement, message: string, delay: number): Promise<void> {
-    return new Promise((resolve) => {
+  private async makeAnnouncement(
+    region: HTMLElement,
+    message: string,
+    delay: number
+  ): Promise<void> {
+    return new Promise(resolve => {
       setTimeout(() => {
         region.textContent = message;
 
         // Clear after announcement to prevent repeated reading
-        setTimeout(() => {
-          region.textContent = '';
-          resolve();
-        }, Math.max(1000, message.length * 50)); // Adaptive clear time
+        setTimeout(
+          () => {
+            region.textContent = '';
+            resolve();
+          },
+          Math.max(1000, message.length * 50)
+        ); // Adaptive clear time
       }, delay);
     });
   }
@@ -200,7 +215,9 @@ export class EnhancedLiveRegionManager {
    * Announce predefined messages
    */
   public announceLoading(customMessage?: string): void {
-    this.announce(customMessage || this.messages.loading, 'polite', { regionId: 'sr-progress-polite' });
+    this.announce(customMessage || this.messages.loading, 'polite', {
+      regionId: 'sr-progress-polite',
+    });
   }
 
   public announceLoaded(customMessage?: string): void {
@@ -208,7 +225,9 @@ export class EnhancedLiveRegionManager {
   }
 
   public announceSaving(customMessage?: string): void {
-    this.announce(customMessage || this.messages.saving, 'polite', { regionId: 'sr-progress-polite' });
+    this.announce(customMessage || this.messages.saving, 'polite', {
+      regionId: 'sr-progress-polite',
+    });
   }
 
   public announceSaved(customMessage?: string): void {
@@ -216,7 +235,9 @@ export class EnhancedLiveRegionManager {
   }
 
   public announceError(error: string): void {
-    this.announce(`${this.messages.error}: ${error}`, 'assertive', { regionId: 'sr-form-errors-assertive' });
+    this.announce(`${this.messages.error}: ${error}`, 'assertive', {
+      regionId: 'sr-form-errors-assertive',
+    });
   }
 
   public announceSuccess(customMessage?: string): void {
@@ -287,7 +308,7 @@ export class EnhancedLiveRegionManager {
 
     this.announce(message, 'polite', {
       regionId: 'sr-progress-polite',
-      dedupe: false // Allow progress updates
+      dedupe: false, // Allow progress updates
     });
   }
 
@@ -392,11 +413,7 @@ export class ScreenReaderTextUtils {
   /**
    * Create descriptive text for interactive elements
    */
-  static createInteractiveDescription(
-    element: string,
-    action: string,
-    state?: string
-  ): string {
+  static createInteractiveDescription(element: string, action: string, state?: string): string {
     let description = `${element}, ${action}`;
     if (state) {
       description += `, ${state}`;
@@ -434,9 +451,8 @@ export class ScreenReaderTextUtils {
   static createErrorDescription(fieldName: string, errors: string[]): string {
     if (errors.length === 0) return '';
 
-    const errorText = errors.length === 1
-      ? errors[0]
-      : `${errors.length} errors: ${errors.join(', ')}`;
+    const errorText =
+      errors.length === 1 ? errors[0] : `${errors.length} errors: ${errors.join(', ')}`;
 
     return `${fieldName} has errors: ${errorText}`;
   }
@@ -444,11 +460,7 @@ export class ScreenReaderTextUtils {
   /**
    * Create search results description
    */
-  static createSearchResultsDescription(
-    count: number,
-    query: string,
-    totalTime?: number
-  ): string {
+  static createSearchResultsDescription(count: number, query: string, totalTime?: number): string {
     let description = `Search for "${query}" found ${count} result${count !== 1 ? 's' : ''}`;
 
     if (totalTime) {
@@ -515,7 +527,9 @@ let globalScreenReaderManager: EnhancedLiveRegionManager | null = null;
 /**
  * Get the global screen reader manager instance
  */
-export function getScreenReaderManager(customMessages?: Partial<ScreenReaderMessages>): EnhancedLiveRegionManager {
+export function getScreenReaderManager(
+  customMessages?: Partial<ScreenReaderMessages>
+): EnhancedLiveRegionManager {
   if (!globalScreenReaderManager) {
     globalScreenReaderManager = EnhancedLiveRegionManager.getInstance(customMessages);
   }
@@ -549,5 +563,5 @@ export default {
   HeadingManager,
   ScreenReaderTextUtils,
   getScreenReaderManager,
-  announceToScreenReader
+  announceToScreenReader,
 };

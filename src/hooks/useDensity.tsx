@@ -337,13 +337,16 @@ export const useDensity = (options: UseDensityOptions = {}): UseDensityReturn =>
   ]);
 
   // Set mode function
-  const setMode = useCallback((newMode: DensityMode) => {
-    setModeState(newMode);
+  const setMode = useCallback(
+    (newMode: DensityMode) => {
+      setModeState(newMode);
 
-    if (persist) {
-      saveDensityToStorage(storageKey, newMode);
-    }
-  }, [persist, storageKey]);
+      if (persist) {
+        saveDensityToStorage(storageKey, newMode);
+      }
+    },
+    [persist, storageKey]
+  );
 
   // Toggle between modes
   const toggleMode = useCallback(() => {
@@ -354,15 +357,18 @@ export const useDensity = (options: UseDensityOptions = {}): UseDensityReturn =>
   }, [density.mode, setMode]);
 
   // Scaling function
-  const scale = useCallback((value: number, type: 'spacing' | 'font' | 'component' = 'spacing'): number => {
-    const scaleMap = {
-      spacing: density.spacingScale,
-      font: density.fontScale,
-      component: density.componentScale,
-    };
+  const scale = useCallback(
+    (value: number, type: 'spacing' | 'font' | 'component' = 'spacing'): number => {
+      const scaleMap = {
+        spacing: density.spacingScale,
+        font: density.fontScale,
+        component: density.componentScale,
+      };
 
-    return value * scaleMap[type];
-  }, [density.spacingScale, density.fontScale, density.componentScale]);
+      return value * scaleMap[type];
+    },
+    [density.spacingScale, density.fontScale, density.componentScale]
+  );
 
   // CSS custom properties
   const cssVars = useMemo(() => {
@@ -433,10 +439,7 @@ export interface DensityProviderProps {
   options?: UseDensityOptions;
 }
 
-export const DensityProvider: React.FC<DensityProviderProps> = ({
-  children,
-  options = {},
-}) => {
+export const DensityProvider: React.FC<DensityProviderProps> = ({ children, options = {} }) => {
   const { density, setMode, scale } = useDensity(options);
 
   const contextValue: DensityContextValue = {
@@ -481,14 +484,17 @@ export const useDensityContext = (): DensityContextValue => {
 export const useScaledSpacing = (baseSpacing: number = 16) => {
   const { scale } = useDensity();
 
-  return useMemo(() => ({
-    xs: scale(baseSpacing * 0.25, 'spacing'),
-    sm: scale(baseSpacing * 0.5, 'spacing'),
-    md: scale(baseSpacing, 'spacing'),
-    lg: scale(baseSpacing * 1.5, 'spacing'),
-    xl: scale(baseSpacing * 2, 'spacing'),
-    '2xl': scale(baseSpacing * 3, 'spacing'),
-  }), [scale, baseSpacing]);
+  return useMemo(
+    () => ({
+      xs: scale(baseSpacing * 0.25, 'spacing'),
+      sm: scale(baseSpacing * 0.5, 'spacing'),
+      md: scale(baseSpacing, 'spacing'),
+      lg: scale(baseSpacing * 1.5, 'spacing'),
+      xl: scale(baseSpacing * 2, 'spacing'),
+      '2xl': scale(baseSpacing * 3, 'spacing'),
+    }),
+    [scale, baseSpacing]
+  );
 };
 
 /**
@@ -497,10 +503,13 @@ export const useScaledSpacing = (baseSpacing: number = 16) => {
 export const useResponsiveSize = (baseSize: { width?: number; height?: number }) => {
   const { scale } = useDensity();
 
-  return useMemo(() => ({
-    width: baseSize.width ? scale(baseSize.width, 'component') : undefined,
-    height: baseSize.height ? scale(baseSize.height, 'component') : undefined,
-  }), [scale, baseSize.width, baseSize.height]);
+  return useMemo(
+    () => ({
+      width: baseSize.width ? scale(baseSize.width, 'component') : undefined,
+      height: baseSize.height ? scale(baseSize.height, 'component') : undefined,
+    }),
+    [scale, baseSize.width, baseSize.height]
+  );
 };
 
 /**

@@ -45,11 +45,15 @@ export class MigrationManager {
    * Get current schema version
    */
   getCurrentVersion(): number {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT COALESCE(MAX(version), 0) as version 
       FROM schema_migrations
-    `).get() as { version: number };
-    
+    `
+      )
+      .get() as { version: number };
+
     return result.version;
   }
 
@@ -58,13 +62,14 @@ export class MigrationManager {
    */
   private loadMigrations(): Migration[] {
     const migrations: Migration[] = [];
-    
+
     if (!fs.existsSync(this.migrationsPath)) {
       fs.mkdirSync(this.migrationsPath, { recursive: true });
       return migrations;
     }
 
-    const files = fs.readdirSync(this.migrationsPath)
+    const files = fs
+      .readdirSync(this.migrationsPath)
       .filter(file => file.endsWith('.sql'))
       .sort();
 
@@ -87,7 +92,7 @@ export class MigrationManager {
         description,
         up,
         down,
-        checksum: this.calculateChecksum(up + down)
+        checksum: this.calculateChecksum(up + down),
       });
     }
 
@@ -108,7 +113,7 @@ export class MigrationManager {
     for (const migration of migrations) {
       const result = await this.applyMigration(migration);
       results.push(result);
-      
+
       if (!result.success) {
         console.error(`Migration ${migration.version} failed: ${result.error}`);
         break;
@@ -123,14 +128,18 @@ export class MigrationManager {
    */
   private async applyMigration(migration: Migration): Promise<MigrationResult> {
     const startTime = Date.now();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Verify migration hasn't been applied
-        const existing = this.db.prepare(`
+        const existing = this.db
+          .prepare(
+            `
           SELECT version FROM schema_migrations WHERE version = ?
-        `).get(migration.version);
-        
+        `
+          )
+          .get(migration.version);
+
         if (existing) {
           throw new Error(`Migration ${migration.version} already applied`);
         }
@@ -142,19 +151,22 @@ export class MigrationManager {
         this.db.exec(migration.up);
 
         // Record migration
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO schema_migrations (version, description, rollback_sql, checksum, duration_ms)
           VALUES (?, ?, ?, ?, ?)
-        `).run(
-          migration.version,
-          migration.description,
-          migration.down,
-          migration.checksum,
-          Date.now() - startTime
-        );
+        `
+          )
+          .run(
+            migration.version,
+            migration.description,
+            migration.down,
+            migration.checksum,
+            Date.now() - startTime
+          );
 
         console.log(`✅ Migration ${migration.version}: ${migration.description}`);
-        
       } catch (error) {
         console.error(`❌ Migration ${migration.version} failed:`, error);
         throw error;
@@ -166,14 +178,14 @@ export class MigrationManager {
       return {
         success: true,
         version: migration.version,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     } catch (error) {
       return {
         success: false,
         version: migration.version,
         error: error.message,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
@@ -183,17 +195,23 @@ export class MigrationManager {
    */
   async rollback(targetVersion: number): Promise<MigrationResult[]> {
     const currentVersion = this.getCurrentVersion();
-    
+
     if (targetVersion >= currentVersion) {
-      throw new Error(`Target version ${targetVersion} is not less than current version ${currentVersion}`);
+      throw new Error(
+        `Target version ${targetVersion} is not less than current version ${currentVersion}`
+      );
     }
 
-    const migrations = this.db.prepare(`
+    const migrations = this.db
+      .prepare(
+        `
       SELECT version, description, rollback_sql
       FROM schema_migrations
       WHERE version > ?
       ORDER BY version DESC
-    `).all(targetVersion) as Array<{
+    `
+      )
+      .all(targetVersion) as Array<{
       version: number;
       description: string;
       rollback_sql: string;
@@ -204,7 +222,7 @@ export class MigrationManager {
     for (const migration of migrations) {
       const result = await this.rollbackMigration(migration);
       results.push(result);
-      
+
       if (!result.success) {
         console.error(`Rollback ${migration.version} failed: ${result.error}`);
         break;
@@ -223,7 +241,7 @@ export class MigrationManager {
     rollback_sql: string;
   }): Promise<MigrationResult> {
     const startTime = Date.now();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         if (!migration.rollback_sql) {
@@ -234,12 +252,15 @@ export class MigrationManager {
         this.db.exec(migration.rollback_sql);
 
         // Remove migration record
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           DELETE FROM schema_migrations WHERE version = ?
-        `).run(migration.version);
+        `
+          )
+          .run(migration.version);
 
         console.log(`🔄 Rolled back migration ${migration.version}: ${migration.description}`);
-        
       } catch (error) {
         console.error(`❌ Rollback ${migration.version} failed:`, error);
         throw error;
@@ -251,14 +272,14 @@ export class MigrationManager {
       return {
         success: true,
         version: migration.version,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     } catch (error) {
       return {
         success: false,
         version: migration.version,
         error: error.message,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
@@ -271,32 +292,40 @@ export class MigrationManager {
       path.dirname(this.db.name),
       `backup_pre_migration_${version}_${Date.now()}.db`
     );
-    
+
     this.db.backup(backupPath);
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(
+        `
       INSERT INTO backup_log (backup_path, backup_type, entries_count, created_at)
       VALUES (?, 'migration', (SELECT COUNT(*) FROM kb_entries), CURRENT_TIMESTAMP)
-    `).run(backupPath);
+    `
+      )
+      .run(backupPath);
   }
 
   /**
    * Generate schema diff between versions
    */
   generateSchemaDiff(fromVersion: number, toVersion: number): string {
-    const migrations = this.db.prepare(`
+    const migrations = this.db
+      .prepare(
+        `
       SELECT version, description, rollback_sql as sql
       FROM schema_migrations
       WHERE version > ? AND version <= ?
       ORDER BY version
-    `).all(fromVersion, toVersion) as Array<{
+    `
+      )
+      .all(fromVersion, toVersion) as Array<{
       version: number;
       description: string;
       sql: string;
     }>;
 
     let diff = `Schema changes from version ${fromVersion} to ${toVersion}:\n\n`;
-    
+
     for (const migration of migrations) {
       diff += `Version ${migration.version}: ${migration.description}\n`;
       diff += `${'='.repeat(50)}\n`;
@@ -311,9 +340,13 @@ export class MigrationManager {
    */
   validateMigrations(): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-    const appliedMigrations = this.db.prepare(`
+    const appliedMigrations = this.db
+      .prepare(
+        `
       SELECT version, checksum FROM schema_migrations ORDER BY version
-    `).all() as Array<{ version: number; checksum: string }>;
+    `
+      )
+      .all() as Array<{ version: number; checksum: string }>;
 
     const fileMigrations = this.loadMigrations();
 
@@ -321,7 +354,7 @@ export class MigrationManager {
     for (let i = 1; i < appliedMigrations.length; i++) {
       const prev = appliedMigrations[i - 1];
       const curr = appliedMigrations[i];
-      
+
       if (curr.version !== prev.version + 1) {
         errors.push(`Migration gap: ${prev.version} -> ${curr.version}`);
       }
@@ -330,12 +363,12 @@ export class MigrationManager {
     // Check checksums
     for (const applied of appliedMigrations) {
       const file = fileMigrations.find(f => f.version === applied.version);
-      
+
       if (!file) {
         errors.push(`Applied migration ${applied.version} not found in files`);
         continue;
       }
-      
+
       if (file.checksum !== applied.checksum) {
         errors.push(`Checksum mismatch for migration ${applied.version}`);
       }
@@ -343,7 +376,7 @@ export class MigrationManager {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -368,15 +401,18 @@ export class MigrationManager {
     }>;
   } {
     const currentVersion = this.getCurrentVersion();
-    const pendingCount = this.loadMigrations()
-      .filter(m => m.version > currentVersion).length;
-    
-    const applied = this.db.prepare(`
+    const pendingCount = this.loadMigrations().filter(m => m.version > currentVersion).length;
+
+    const applied = this.db
+      .prepare(
+        `
       SELECT version, description, applied_at, duration_ms
       FROM schema_migrations
       ORDER BY version DESC
       LIMIT 10
-    `).all() as Array<{
+    `
+      )
+      .all() as Array<{
       version: number;
       description: string;
       applied_at: string;
@@ -386,7 +422,7 @@ export class MigrationManager {
     return {
       currentVersion,
       pendingMigrations: pendingCount,
-      appliedMigrations: applied
+      appliedMigrations: applied,
     };
   }
 }

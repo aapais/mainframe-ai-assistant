@@ -20,7 +20,7 @@ import {
   DatabaseSchemas,
   KBCategory,
   SearchMatchType,
-  SeverityLevel
+  SeverityLevel,
 } from '../schemas/KnowledgeBase.schema';
 import { AppError, ErrorCode } from '../../core/errors/AppError';
 import { PerformanceMonitor } from '../PerformanceMonitor';
@@ -52,7 +52,7 @@ export class KnowledgeBaseModel {
   private db: Database.Database;
   private performanceMonitor: PerformanceMonitor;
   private queryOptimizer: QueryOptimizer;
-  
+
   // Prepared statements for optimal performance
   private readonly statements = {
     insertEntry: null as Database.Statement | null,
@@ -135,7 +135,6 @@ export class KnowledgeBaseModel {
           user_id, session_id, search_time_ms, filters_used, ai_used
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-
     } catch (error) {
       throw new AppError(
         ErrorCode.DATABASE_INITIALIZATION_ERROR,
@@ -152,23 +151,15 @@ export class KnowledgeBaseModel {
   /**
    * Create a new knowledge base entry with full validation
    */
-  async createEntry(
-    entryData: CreateKBEntry,
-    userId?: string
-  ): Promise<DatabaseResult<string>> {
+  async createEntry(entryData: CreateKBEntry, userId?: string): Promise<DatabaseResult<string>> {
     return this.executeWithPerformanceTracking('createEntry', async () => {
       // Validate input data
-      const validationResult = SchemaValidator.safeParse(
-        DatabaseSchemas.CreateKBEntry,
-        entryData
-      );
+      const validationResult = SchemaValidator.safeParse(DatabaseSchemas.CreateKBEntry, entryData);
 
       if (!validationResult.success) {
-        throw new AppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Invalid KB entry data',
-          { validationErrors: validationResult.error }
-        );
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid KB entry data', {
+          validationErrors: validationResult.error,
+        });
       }
 
       const validatedData = validationResult.data!;
@@ -200,22 +191,21 @@ export class KnowledgeBaseModel {
 
           return id;
         } catch (error) {
-          throw new AppError(
-            ErrorCode.DATABASE_INSERT_ERROR,
-            'Failed to create KB entry',
-            { entryId: id, originalError: error }
-          );
+          throw new AppError(ErrorCode.DATABASE_INSERT_ERROR, 'Failed to create KB entry', {
+            entryId: id,
+            originalError: error,
+          });
         }
       });
 
       const result = transaction();
-      
+
       // Log creation event
       this.logUsageMetric({
         entry_id: result,
         action: 'create',
         user_id: userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       return result;
@@ -232,17 +222,12 @@ export class KnowledgeBaseModel {
   ): Promise<DatabaseResult<void>> {
     return this.executeWithPerformanceTracking('updateEntry', async () => {
       // Validate input data
-      const validationResult = SchemaValidator.safeParse(
-        DatabaseSchemas.UpdateKBEntry,
-        updates
-      );
+      const validationResult = SchemaValidator.safeParse(DatabaseSchemas.UpdateKBEntry, updates);
 
       if (!validationResult.success) {
-        throw new AppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Invalid update data',
-          { validationErrors: validationResult.error }
-        );
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid update data', {
+          validationErrors: validationResult.error,
+        });
       }
 
       const validatedUpdates = validationResult.data!;
@@ -250,24 +235,21 @@ export class KnowledgeBaseModel {
       // Check if entry exists
       const existingEntry = await this.getEntryById(id);
       if (!existingEntry.success || !existingEntry.data) {
-        throw new AppError(
-          ErrorCode.RESOURCE_NOT_FOUND,
-          'KB entry not found',
-          { entryId: id }
-        );
+        throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'KB entry not found', { entryId: id });
       }
 
       // Execute in transaction
       const transaction = this.db.transaction(() => {
         try {
           // Update main entry if any core fields changed
-          if (validatedUpdates.title !== undefined ||
-              validatedUpdates.problem !== undefined ||
-              validatedUpdates.solution !== undefined ||
-              validatedUpdates.category !== undefined ||
-              validatedUpdates.severity !== undefined ||
-              validatedUpdates.archived !== undefined) {
-            
+          if (
+            validatedUpdates.title !== undefined ||
+            validatedUpdates.problem !== undefined ||
+            validatedUpdates.solution !== undefined ||
+            validatedUpdates.category !== undefined ||
+            validatedUpdates.severity !== undefined ||
+            validatedUpdates.archived !== undefined
+          ) {
             this.statements.updateEntry!.run(
               validatedUpdates.title ?? existingEntry.data!.title,
               validatedUpdates.problem ?? existingEntry.data!.problem,
@@ -283,7 +265,7 @@ export class KnowledgeBaseModel {
           if (validatedUpdates.tags !== undefined) {
             // Remove existing tags
             this.statements.deleteEntryTags!.run(id);
-            
+
             // Add new tags
             if (validatedUpdates.tags.length > 0) {
               for (const tag of validatedUpdates.tags) {
@@ -293,24 +275,24 @@ export class KnowledgeBaseModel {
           }
 
           // Update FTS index if content changed
-          if (validatedUpdates.title !== undefined ||
-              validatedUpdates.problem !== undefined ||
-              validatedUpdates.solution !== undefined ||
-              validatedUpdates.tags !== undefined) {
+          if (
+            validatedUpdates.title !== undefined ||
+            validatedUpdates.problem !== undefined ||
+            validatedUpdates.solution !== undefined ||
+            validatedUpdates.tags !== undefined
+          ) {
             this.updateFTSIndex(id, {
               title: validatedUpdates.title ?? existingEntry.data!.title,
               problem: validatedUpdates.problem ?? existingEntry.data!.problem,
               solution: validatedUpdates.solution ?? existingEntry.data!.solution,
-              tags: validatedUpdates.tags ?? existingEntry.data!.tags
+              tags: validatedUpdates.tags ?? existingEntry.data!.tags,
             });
           }
-
         } catch (error) {
-          throw new AppError(
-            ErrorCode.DATABASE_UPDATE_ERROR,
-            'Failed to update KB entry',
-            { entryId: id, originalError: error }
-          );
+          throw new AppError(ErrorCode.DATABASE_UPDATE_ERROR, 'Failed to update KB entry', {
+            entryId: id,
+            originalError: error,
+          });
         }
       });
 
@@ -321,7 +303,7 @@ export class KnowledgeBaseModel {
         entry_id: id,
         action: 'update',
         user_id: userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     });
   }
@@ -332,22 +314,14 @@ export class KnowledgeBaseModel {
   async getEntryById(id: string): Promise<DatabaseResult<KBEntry>> {
     return this.executeWithPerformanceTracking('getEntryById', async () => {
       if (!id || typeof id !== 'string') {
-        throw new AppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Invalid entry ID',
-          { entryId: id }
-        );
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid entry ID', { entryId: id });
       }
 
       try {
         const row = this.statements.selectById!.get(id) as any;
-        
+
         if (!row) {
-          throw new AppError(
-            ErrorCode.RESOURCE_NOT_FOUND,
-            'KB entry not found',
-            { entryId: id }
-          );
+          throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'KB entry not found', { entryId: id });
         }
 
         // Transform database row to KBEntry
@@ -366,14 +340,11 @@ export class KnowledgeBaseModel {
           success_count: row.success_count || 0,
           failure_count: row.failure_count || 0,
           last_used: row.last_used ? new Date(row.last_used) : undefined,
-          archived: Boolean(row.archived)
+          archived: Boolean(row.archived),
         };
 
         // Validate the constructed entry
-        const validationResult = SchemaValidator.safeParse(
-          DatabaseSchemas.KBEntry,
-          entry
-        );
+        const validationResult = SchemaValidator.safeParse(DatabaseSchemas.KBEntry, entry);
 
         if (!validationResult.success) {
           throw new AppError(
@@ -387,7 +358,7 @@ export class KnowledgeBaseModel {
         this.logUsageMetric({
           entry_id: id,
           action: 'view',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         return validationResult.data!;
@@ -395,11 +366,10 @@ export class KnowledgeBaseModel {
         if (error instanceof AppError) {
           throw error;
         }
-        throw new AppError(
-          ErrorCode.DATABASE_QUERY_ERROR,
-          'Failed to retrieve KB entry',
-          { entryId: id, originalError: error }
-        );
+        throw new AppError(ErrorCode.DATABASE_QUERY_ERROR, 'Failed to retrieve KB entry', {
+          entryId: id,
+          originalError: error,
+        });
       }
     });
   }
@@ -412,47 +382,45 @@ export class KnowledgeBaseModel {
       // Check if entry exists first
       const existingEntry = await this.getEntryById(id);
       if (!existingEntry.success || !existingEntry.data) {
-        throw new AppError(
-          ErrorCode.RESOURCE_NOT_FOUND,
-          'KB entry not found',
-          { entryId: id }
-        );
+        throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'KB entry not found', { entryId: id });
       }
 
       const transaction = this.db.transaction(() => {
         try {
           // Delete related records first (cascade)
           this.statements.deleteEntryTags!.run(id);
-          
+
           // Delete feedback records
           this.db.prepare('DELETE FROM entry_feedback WHERE entry_id = ?').run(id);
-          
+
           // Delete usage metrics
           this.db.prepare('DELETE FROM usage_metrics WHERE entry_id = ?').run(id);
-          
+
           // Update search history to remove references
-          this.db.prepare(`
+          this.db
+            .prepare(
+              `
             UPDATE search_history 
             SET selected_entry_id = NULL 
             WHERE selected_entry_id = ?
-          `).run(id);
-          
+          `
+            )
+            .run(id);
+
           // Remove from FTS index
           this.db.prepare('DELETE FROM kb_fts WHERE id = ?').run(id);
-          
+
           // Finally delete the main entry
           const result = this.statements.deleteById!.run(id);
-          
+
           if (result.changes === 0) {
             throw new Error('Entry not found or already deleted');
           }
-          
         } catch (error) {
-          throw new AppError(
-            ErrorCode.DATABASE_DELETE_ERROR,
-            'Failed to delete KB entry',
-            { entryId: id, originalError: error }
-          );
+          throw new AppError(ErrorCode.DATABASE_DELETE_ERROR, 'Failed to delete KB entry', {
+            entryId: id,
+            originalError: error,
+          });
         }
       });
 
@@ -463,7 +431,7 @@ export class KnowledgeBaseModel {
         entry_id: id,
         action: 'delete',
         user_id: userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     });
   }
@@ -478,32 +446,27 @@ export class KnowledgeBaseModel {
   async search(searchQuery: SearchQuery): Promise<DatabaseResult<SearchResult[]>> {
     return this.executeWithPerformanceTracking('search', async () => {
       // Validate search query
-      const validationResult = SchemaValidator.safeParse(
-        DatabaseSchemas.SearchQuery,
-        searchQuery
-      );
+      const validationResult = SchemaValidator.safeParse(DatabaseSchemas.SearchQuery, searchQuery);
 
       if (!validationResult.success) {
-        throw new AppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Invalid search query',
-          { validationErrors: validationResult.error }
-        );
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid search query', {
+          validationErrors: validationResult.error,
+        });
       }
 
       const validatedQuery = validationResult.data!;
-      
+
       try {
         // Use QueryOptimizer for performance
         const searchResults = await this.queryOptimizer.executeOptimizedSearch(validatedQuery);
-        
+
         // Validate search results
         const results: SearchResult[] = searchResults.map(row => ({
           entry: this.transformRowToKBEntry(row),
           score: Math.min(100, Math.max(0, row.relevance_score || 0)),
           matchType: this.determineMatchType(validatedQuery, row),
           highlights: this.generateHighlights(validatedQuery.query, row),
-          executionTime: row.execution_time
+          executionTime: row.execution_time,
         }));
 
         // Log search
@@ -513,16 +476,15 @@ export class KnowledgeBaseModel {
           results_count: results.length,
           filters_used: this.extractFilters(validatedQuery),
           ai_used: validatedQuery.useAI,
-          search_time_ms: Date.now()
+          search_time_ms: Date.now(),
         });
 
         return results;
       } catch (error) {
-        throw new AppError(
-          ErrorCode.SEARCH_ERROR,
-          'Search operation failed',
-          { query: validatedQuery.query, originalError: error }
-        );
+        throw new AppError(ErrorCode.SEARCH_ERROR, 'Search operation failed', {
+          query: validatedQuery.query,
+          originalError: error,
+        });
       }
     });
   }
@@ -533,7 +495,7 @@ export class KnowledgeBaseModel {
   async searchWithFacets(searchQuery: SearchQuery): Promise<DatabaseResult<SearchWithFacets>> {
     return this.executeWithPerformanceTracking('searchWithFacets', async () => {
       const searchResults = await this.search(searchQuery);
-      
+
       if (!searchResults.success) {
         throw searchResults.error!;
       }
@@ -545,7 +507,7 @@ export class KnowledgeBaseModel {
         results: searchResults.data!,
         facets,
         totalCount: searchResults.data!.length,
-        executionTime: searchResults.performance?.executionTime
+        executionTime: searchResults.performance?.executionTime,
       };
 
       return result;
@@ -561,17 +523,12 @@ export class KnowledgeBaseModel {
    */
   async recordFeedback(feedback: EntryFeedback): Promise<DatabaseResult<string>> {
     return this.executeWithPerformanceTracking('recordFeedback', async () => {
-      const validationResult = SchemaValidator.safeParse(
-        DatabaseSchemas.EntryFeedback,
-        feedback
-      );
+      const validationResult = SchemaValidator.safeParse(DatabaseSchemas.EntryFeedback, feedback);
 
       if (!validationResult.success) {
-        throw new AppError(
-          ErrorCode.VALIDATION_ERROR,
-          'Invalid feedback data',
-          { validationErrors: validationResult.error }
-        );
+        throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid feedback data', {
+          validationErrors: validationResult.error,
+        });
       }
 
       const validatedFeedback = validationResult.data!;
@@ -589,18 +546,13 @@ export class KnowledgeBaseModel {
         );
 
         // Update entry success/failure counts
-        this.updateEntryMetrics(
-          validatedFeedback.entry_id,
-          validatedFeedback.successful
-        );
+        this.updateEntryMetrics(validatedFeedback.entry_id, validatedFeedback.successful);
 
         return feedbackId;
       } catch (error) {
-        throw new AppError(
-          ErrorCode.DATABASE_INSERT_ERROR,
-          'Failed to record feedback',
-          { originalError: error }
-        );
+        throw new AppError(ErrorCode.DATABASE_INSERT_ERROR, 'Failed to record feedback', {
+          originalError: error,
+        });
       }
     });
   }
@@ -659,7 +611,9 @@ export class KnowledgeBaseModel {
   async getStatistics(): Promise<DatabaseResult<DatabaseStats>> {
     return this.executeWithPerformanceTracking('getStatistics', async () => {
       try {
-        const basicStats = this.db.prepare(`
+        const basicStats = this.db
+          .prepare(
+            `
           SELECT 
             COUNT(*) as totalEntries,
             COUNT(CASE WHEN last_used > datetime('now', '-7 days') THEN 1 END) as recentActivity,
@@ -668,22 +622,34 @@ export class KnowledgeBaseModel {
                      ELSE 0 END) as averageSuccessRate
           FROM kb_entries
           WHERE archived = FALSE
-        `).get() as any;
+        `
+          )
+          .get() as any;
 
-        const categoryCounts = this.db.prepare(`
+        const categoryCounts = this.db
+          .prepare(
+            `
           SELECT category, COUNT(*) as count
           FROM kb_entries
           WHERE archived = FALSE
           GROUP BY category
-        `).all() as Array<{ category: string; count: number }>;
+        `
+          )
+          .all() as Array<{ category: string; count: number }>;
 
-        const searchesToday = this.db.prepare(`
+        const searchesToday = this.db
+          .prepare(
+            `
           SELECT COUNT(*) as count
           FROM search_history
           WHERE date(timestamp) = date('now')
-        `).get() as { count: number };
+        `
+          )
+          .get() as { count: number };
 
-        const topEntries = this.db.prepare(`
+        const topEntries = this.db
+          .prepare(
+            `
           SELECT id, title, usage_count, 
                  CASE WHEN (success_count + failure_count) > 0 
                       THEN CAST(success_count AS REAL) / (success_count + failure_count) * 100
@@ -692,7 +658,9 @@ export class KnowledgeBaseModel {
           WHERE archived = FALSE
           ORDER BY usage_count DESC, success_rate DESC
           LIMIT 10
-        `).all() as Array<{ id: string; title: string; usage_count: number; success_rate: number }>;
+        `
+          )
+          .all() as Array<{ id: string; title: string; usage_count: number; success_rate: number }>;
 
         const diskUsage = this.getDiskUsage();
         const performanceStats = this.performanceMonitor.getStats();
@@ -715,24 +683,19 @@ export class KnowledgeBaseModel {
             avgSearchTime: performanceStats.avgSearchTime || 0,
             cacheHitRate: performanceStats.cacheHitRate || 0,
             slowQueries: performanceStats.slowQueries || 0,
-            errorRate: performanceStats.errorRate || 0
+            errorRate: performanceStats.errorRate || 0,
           },
           healthStatus,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         // Validate statistics
-        const validationResult = SchemaValidator.safeParse(
-          DatabaseSchemas.DatabaseStats,
-          stats
-        );
+        const validationResult = SchemaValidator.safeParse(DatabaseSchemas.DatabaseStats, stats);
 
         if (!validationResult.success) {
-          throw new AppError(
-            ErrorCode.DATA_CONSISTENCY_ERROR,
-            'Statistics validation failed',
-            { validationErrors: validationResult.error }
-          );
+          throw new AppError(ErrorCode.DATA_CONSISTENCY_ERROR, 'Statistics validation failed', {
+            validationErrors: validationResult.error,
+          });
         }
 
         return validationResult.data!;
@@ -740,11 +703,9 @@ export class KnowledgeBaseModel {
         if (error instanceof AppError) {
           throw error;
         }
-        throw new AppError(
-          ErrorCode.DATABASE_QUERY_ERROR,
-          'Failed to retrieve statistics',
-          { originalError: error }
-        );
+        throw new AppError(ErrorCode.DATABASE_QUERY_ERROR, 'Failed to retrieve statistics', {
+          originalError: error,
+        });
       }
     });
   }
@@ -774,12 +735,12 @@ export class KnowledgeBaseModel {
         performance: {
           executionTime,
           queriesExecuted,
-          cacheHit
-        }
+          cacheHit,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       // Log performance data even for errors
       this.performanceMonitor.recordOperation(operation, executionTime, false);
 
@@ -790,23 +751,21 @@ export class KnowledgeBaseModel {
           performance: {
             executionTime,
             queriesExecuted,
-            cacheHit
-          }
+            cacheHit,
+          },
         };
       }
 
       return {
         success: false,
-        error: new AppError(
-          ErrorCode.UNKNOWN_ERROR,
-          `Operation ${operation} failed`,
-          { originalError: error }
-        ),
+        error: new AppError(ErrorCode.UNKNOWN_ERROR, `Operation ${operation} failed`, {
+          originalError: error,
+        }),
         performance: {
           executionTime,
           queriesExecuted,
-          cacheHit
-        }
+          cacheHit,
+        },
       };
     }
   }
@@ -830,17 +789,16 @@ export class KnowledgeBaseModel {
       success_count: row.success_count || 0,
       failure_count: row.failure_count || 0,
       last_used: row.last_used ? new Date(row.last_used) : undefined,
-      archived: Boolean(row.archived)
+      archived: Boolean(row.archived),
     };
 
     // Validate before returning
     const validationResult = SchemaValidator.safeParse(DatabaseSchemas.KBEntry, entry);
     if (!validationResult.success) {
-      throw new AppError(
-        ErrorCode.DATA_CONSISTENCY_ERROR,
-        'Invalid entry data from database',
-        { entryId: row.id, validationErrors: validationResult.error }
-      );
+      throw new AppError(ErrorCode.DATA_CONSISTENCY_ERROR, 'Invalid entry data from database', {
+        entryId: row.id,
+        validationErrors: validationResult.error,
+      });
     }
 
     return entry;
@@ -853,18 +811,22 @@ export class KnowledgeBaseModel {
     try {
       // Remove existing FTS entry
       this.db.prepare('DELETE FROM kb_fts WHERE id = ?').run(id);
-      
+
       // Insert new FTS entry
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO kb_fts (id, title, problem, solution, tags)
         VALUES (?, ?, ?, ?, ?)
-      `).run(
-        id,
-        data.title || '',
-        data.problem || '',
-        data.solution || '',
-        Array.isArray(data.tags) ? data.tags.join(' ') : (data.tags || '')
-      );
+      `
+        )
+        .run(
+          id,
+          data.title || '',
+          data.problem || '',
+          data.solution || '',
+          Array.isArray(data.tags) ? data.tags.join(' ') : data.tags || ''
+        );
     } catch (error) {
       console.warn('Failed to update FTS index:', error);
       // Don't throw - this is not critical
@@ -876,10 +838,10 @@ export class KnowledgeBaseModel {
    */
   private updateEntryMetrics(entryId: string, successful: boolean): void {
     try {
-      const updateQuery = successful ? 
-        'UPDATE kb_entries SET usage_count = usage_count + 1, success_count = success_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?' :
-        'UPDATE kb_entries SET usage_count = usage_count + 1, failure_count = failure_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?';
-      
+      const updateQuery = successful
+        ? 'UPDATE kb_entries SET usage_count = usage_count + 1, success_count = success_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?'
+        : 'UPDATE kb_entries SET usage_count = usage_count + 1, failure_count = failure_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?';
+
       this.db.prepare(updateQuery).run(entryId);
     } catch (error) {
       console.warn('Failed to update entry metrics:', error);
@@ -902,7 +864,7 @@ export class KnowledgeBaseModel {
     // Simple highlight generation
     const highlights: string[] = [];
     const queryLower = query.toLowerCase();
-    
+
     [row.title, row.problem, row.solution].forEach(field => {
       if (field && field.toLowerCase().includes(queryLower)) {
         const index = field.toLowerCase().indexOf(queryLower);
@@ -911,7 +873,7 @@ export class KnowledgeBaseModel {
         highlights.push(field.substring(start, end));
       }
     });
-    
+
     return highlights.slice(0, 3);
   }
 
@@ -925,22 +887,28 @@ export class KnowledgeBaseModel {
       severity: query.severity,
       tags: query.tags,
       sortBy: query.sortBy,
-      dateRange: query.dateRange
+      dateRange: query.dateRange,
     };
   }
 
   private async calculateFacets(query: string, options: SearchQuery): Promise<any> {
     // Implementation for facet calculation
     const baseWhere = 'WHERE archived = FALSE';
-    
+
     return {
-      categories: this.db.prepare(`
+      categories: this.db
+        .prepare(
+          `
         SELECT category as name, COUNT(*) as count
         FROM kb_entries ${baseWhere}
         GROUP BY category
         ORDER BY count DESC
-      `).all(),
-      tags: this.db.prepare(`
+      `
+        )
+        .all(),
+      tags: this.db
+        .prepare(
+          `
         SELECT t.tag as name, COUNT(*) as count
         FROM kb_tags t
         JOIN kb_entries e ON t.entry_id = e.id
@@ -948,13 +916,19 @@ export class KnowledgeBaseModel {
         GROUP BY t.tag
         ORDER BY count DESC
         LIMIT 15
-      `).all(),
-      severities: this.db.prepare(`
+      `
+        )
+        .all(),
+      severities: this.db
+        .prepare(
+          `
         SELECT severity as name, COUNT(*) as count
         FROM kb_entries ${baseWhere}
         GROUP BY severity
         ORDER BY count DESC
-      `).all()
+      `
+        )
+        .all(),
     };
   }
 
@@ -971,14 +945,14 @@ export class KnowledgeBaseModel {
     try {
       // Basic health checks
       this.db.prepare('SELECT 1').get();
-      
+
       return {
         overall: 'healthy' as const,
         database: true,
         cache: true,
         indexes: true,
         backup: true,
-        issues: []
+        issues: [],
       };
     } catch {
       return {
@@ -987,7 +961,7 @@ export class KnowledgeBaseModel {
         cache: false,
         indexes: false,
         backup: false,
-        issues: ['Database connection failed']
+        issues: ['Database connection failed'],
       };
     }
   }

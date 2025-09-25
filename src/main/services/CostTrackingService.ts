@@ -5,7 +5,13 @@ import { Logger } from '../utils/Logger';
 export interface AIOperation {
   id: string;
   userId?: string;
-  type: 'claude-request' | 'search' | 'document-analysis' | 'memory-operation' | 'workflow' | 'other';
+  type:
+    | 'claude-request'
+    | 'search'
+    | 'document-analysis'
+    | 'memory-operation'
+    | 'workflow'
+    | 'other';
   model?: string;
   inputTokens?: number;
   outputTokens?: number;
@@ -100,7 +106,7 @@ export class CostTrackingService extends EventEmitter {
     'claude-3-sonnet': { input: 0.003, output: 0.015 },
     'claude-3-haiku': { input: 0.00025, output: 0.00125 },
     'claude-3.5-sonnet': { input: 0.003, output: 0.015 },
-    'default': { input: 0.001, output: 0.002 }
+    default: { input: 0.001, output: 0.002 },
   };
 
   constructor(database: Database) {
@@ -180,7 +186,7 @@ export class CostTrackingService extends EventEmitter {
         outputTokens: operation.outputTokens,
         metadata: JSON.stringify(operation.metadata || {}),
         timestamp: operation.timestamp,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
       const stmt = this.db.prepare(`
@@ -222,8 +228,8 @@ export class CostTrackingService extends EventEmitter {
     const model = operation.model || 'default';
     const pricing = this.TOKEN_PRICING[model] || this.TOKEN_PRICING.default;
 
-    const inputCost = (operation.inputTokens || 0) / 1000 * pricing.input;
-    const outputCost = (operation.outputTokens || 0) / 1000 * pricing.output;
+    const inputCost = ((operation.inputTokens || 0) / 1000) * pricing.input;
+    const outputCost = ((operation.outputTokens || 0) / 1000) * pricing.output;
 
     return inputCost + outputCost;
   }
@@ -372,7 +378,9 @@ export class CostTrackingService extends EventEmitter {
         new Date().toISOString()
       );
 
-      this.logger.info(`Set ${limit.limitType} cost limit of ${limit.currency} ${limit.amount} for ${limit.userId || 'global'}`);
+      this.logger.info(
+        `Set ${limit.limitType} cost limit of ${limit.currency} ${limit.amount} for ${limit.userId || 'global'}`
+      );
     } catch (error) {
       this.logger.error('Failed to set cost limit:', error);
       throw error;
@@ -386,10 +394,14 @@ export class CostTrackingService extends EventEmitter {
       const monthlySpent = await this.getMonthlyCost();
 
       // Get active limits
-      const limits = this.db.prepare(`
+      const limits = this.db
+        .prepare(
+          `
         SELECT * FROM cost_limits
         WHERE is_active = 1 AND (user_id IS NULL OR user_id = ?)
-      `).all(null) as any[];
+      `
+        )
+        .all(null) as any[];
 
       const dailyLimit = limits.find(l => l.limit_type === 'daily')?.amount;
       const weeklyLimit = limits.find(l => l.limit_type === 'weekly')?.amount;
@@ -400,7 +412,8 @@ export class CostTrackingService extends EventEmitter {
       const monthlyPercentage = monthlyLimit ? (monthlySpent / monthlyLimit) * 100 : 0;
 
       const alerts: string[] = [];
-      const isOverBudget = dailyPercentage > 100 || weeklyPercentage > 100 || monthlyPercentage > 100;
+      const isOverBudget =
+        dailyPercentage > 100 || weeklyPercentage > 100 || monthlyPercentage > 100;
 
       if (dailyPercentage > 80) alerts.push(`Daily budget at ${dailyPercentage.toFixed(1)}%`);
       if (weeklyPercentage > 80) alerts.push(`Weekly budget at ${weeklyPercentage.toFixed(1)}%`);
@@ -417,7 +430,7 @@ export class CostTrackingService extends EventEmitter {
         weeklyPercentage,
         monthlyPercentage,
         isOverBudget,
-        alerts
+        alerts,
       };
     } catch (error) {
       this.logger.error('Failed to check budget status:', error);
@@ -441,10 +454,9 @@ export class CostTrackingService extends EventEmitter {
         ORDER BY date
       `;
 
-      const results = this.db.prepare(query).all(
-        period.start.toISOString(),
-        period.end.toISOString()
-      ) as any[];
+      const results = this.db
+        .prepare(query)
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       const totalCost = results.reduce((sum, row) => sum + row.total_cost, 0);
       const totalOperations = results.reduce((sum, row) => sum + row.operation_count, 0);
@@ -455,7 +467,8 @@ export class CostTrackingService extends EventEmitter {
       const userBreakdown: Record<string, number> = {};
 
       results.forEach(row => {
-        operationBreakdown[row.operation_type] = (operationBreakdown[row.operation_type] || 0) + row.total_cost;
+        operationBreakdown[row.operation_type] =
+          (operationBreakdown[row.operation_type] || 0) + row.total_cost;
         if (row.model) {
           modelBreakdown[row.model] = (modelBreakdown[row.model] || 0) + row.total_cost;
         }
@@ -487,8 +500,8 @@ export class CostTrackingService extends EventEmitter {
         trends: {
           growthRate,
           mostExpensiveDay,
-          costEfficiency
-        }
+          costEfficiency,
+        },
       };
     } catch (error) {
       this.logger.error('Failed to generate cost report:', error);
@@ -528,17 +541,25 @@ export class CostTrackingService extends EventEmitter {
       lastWeekStart.setDate(lastWeekStart.getDate() - 13);
       const lastWeekEnd = new Date(now);
       lastWeekEnd.setDate(lastWeekEnd.getDate() - 7);
-      const lastWeekTotal = await this.getCostByOperation('', { start: lastWeekStart, end: lastWeekEnd });
+      const lastWeekTotal = await this.getCostByOperation('', {
+        start: lastWeekStart,
+        end: lastWeekEnd,
+      });
 
-      const weekOverWeekChange = lastWeekTotal > 0 ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100 : 0;
+      const weekOverWeekChange =
+        lastWeekTotal > 0 ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100 : 0;
 
       // Calculate month over month change
       const thisMonthTotal = await this.getMonthlyCost();
       const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-      const lastMonthTotal = await this.getCostByOperation('', { start: lastMonth, end: lastMonthEnd });
+      const lastMonthTotal = await this.getCostByOperation('', {
+        start: lastMonth,
+        end: lastMonthEnd,
+      });
 
-      const monthOverMonthChange = lastMonthTotal > 0 ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 : 0;
+      const monthOverMonthChange =
+        lastMonthTotal > 0 ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 : 0;
 
       // Predict costs using linear regression
       const predictedNextWeek = this.predictCost(last7Days, 7);
@@ -558,7 +579,7 @@ export class CostTrackingService extends EventEmitter {
         predictedNextWeek,
         predictedNextMonth,
         peakUsageDays,
-        costEfficiencyTrend
+        costEfficiencyTrend,
       };
 
       this.setCache(cacheKey, trends, 10 * 60 * 1000); // 10 minute cache
@@ -593,7 +614,7 @@ export class CostTrackingService extends EventEmitter {
     const n = values.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, idx) => sum + (idx * val), 0);
+    const sumXY = values.reduce((sum, val, idx) => sum + idx * val, 0);
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
@@ -603,7 +624,7 @@ export class CostTrackingService extends EventEmitter {
   }
 
   private findPeakUsageDays(values: number[]): string[] {
-    const threshold = values.reduce((sum, val) => sum + val, 0) / values.length * 1.5;
+    const threshold = (values.reduce((sum, val) => sum + val, 0) / values.length) * 1.5;
     const peakDays: string[] = [];
 
     const now = new Date();
@@ -648,7 +669,7 @@ export class CostTrackingService extends EventEmitter {
           userId,
           alerts: budgetStatus.alerts,
           isOverBudget: budgetStatus.isOverBudget,
-          status: budgetStatus
+          status: budgetStatus,
         });
       }
     } catch (error) {
@@ -672,7 +693,7 @@ export class CostTrackingService extends EventEmitter {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
   }
 
@@ -680,7 +701,12 @@ export class CostTrackingService extends EventEmitter {
     const keysToDelete: string[] = [];
 
     for (const [key] of this.cache) {
-      if (key.includes(userId || 'all') || key.includes('daily_cost') || key.includes('weekly_cost') || key.includes('monthly_cost')) {
+      if (
+        key.includes(userId || 'all') ||
+        key.includes('daily_cost') ||
+        key.includes('weekly_cost') ||
+        key.includes('monthly_cost')
+      ) {
         keysToDelete.push(key);
       }
     }
@@ -698,15 +724,21 @@ export class CostTrackingService extends EventEmitter {
     }, this.CLEANUP_INTERVAL);
   }
 
-  private async cleanupOldRecords(retentionDays: number = this.DEFAULT_RETENTION_DAYS): Promise<void> {
+  private async cleanupOldRecords(
+    retentionDays: number = this.DEFAULT_RETENTION_DAYS
+  ): Promise<void> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         DELETE FROM cost_tracking
         WHERE created_at < ?
-      `).run(cutoffDate.toISOString());
+      `
+        )
+        .run(cutoffDate.toISOString());
 
       if (result.changes > 0) {
         this.logger.info(`Cleaned up ${result.changes} old cost tracking records`);
@@ -726,14 +758,18 @@ export class CostTrackingService extends EventEmitter {
 
   async getStats(): Promise<any> {
     try {
-      const totalRecords = this.db.prepare('SELECT COUNT(*) as count FROM cost_tracking').get() as { count: number };
-      const totalCost = this.db.prepare('SELECT SUM(cost) as total FROM cost_tracking').get() as { total: number };
+      const totalRecords = this.db.prepare('SELECT COUNT(*) as count FROM cost_tracking').get() as {
+        count: number;
+      };
+      const totalCost = this.db.prepare('SELECT SUM(cost) as total FROM cost_tracking').get() as {
+        total: number;
+      };
 
       return {
         totalRecords: totalRecords.count,
         totalCost: totalCost.total || 0,
         cacheSize: this.cache.size,
-        retentionDays: this.DEFAULT_RETENTION_DAYS
+        retentionDays: this.DEFAULT_RETENTION_DAYS,
       };
     } catch (error) {
       this.logger.error('Failed to get stats:', error);

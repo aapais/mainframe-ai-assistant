@@ -53,43 +53,73 @@ export interface ElectronAPI extends SimpleElectronAPI {
     getProviders: () => Promise<any[]>;
     getProvider: (providerId: string) => Promise<any>;
     getKeys: () => Promise<any[]>;
-    storeKey: (providerId: string, keyName: string, apiKey: string, isSessionOnly?: boolean, monthlyLimit?: number) => Promise<any>;
+    storeKey: (
+      providerId: string,
+      keyName: string,
+      apiKey: string,
+      isSessionOnly?: boolean,
+      monthlyLimit?: number
+    ) => Promise<any>;
     deleteKey: (keyId: string) => Promise<any>;
     updateKeyStatus: (keyId: string, isActive: boolean) => Promise<any>;
     testConnection: (providerId: string, apiKey: string) => Promise<any>;
     testStoredKey: (keyId: string) => Promise<any>;
     getUsageStats: (providerId?: string) => Promise<any[]>;
-    recordUsage: (providerId: string, requestCount?: number, cost?: number, responseTime?: number, isError?: boolean) => Promise<any>;
+    recordUsage: (
+      providerId: string,
+      requestCount?: number,
+      cost?: number,
+      responseTime?: number,
+      isError?: boolean
+    ) => Promise<any>;
   };
   // Database operations with enhanced responses
   db: {
     search: (query: string, options?: any) => Promise<IPCResponse<SearchResult[]>>;
     searchWithAI: (query: string, options?: any) => Promise<IPCResponse<SearchResult[]>>;
     addEntry: (entry: KBEntry, userId?: string) => Promise<IPCResponse<string>>;
-    updateEntry: (id: string, updates: Partial<KBEntry>, userId?: string) => Promise<IPCResponse<void>>;
+    updateEntry: (
+      id: string,
+      updates: Partial<KBEntry>,
+      userId?: string
+    ) => Promise<IPCResponse<void>>;
     getEntry: (id: string) => Promise<IPCResponse<KBEntry | null>>;
     getPopular: (limit?: number) => Promise<IPCResponse<SearchResult[] | string>>; // Can return stream ID
     getRecent: (limit?: number) => Promise<IPCResponse<SearchResult[] | string>>; // Can return stream ID
-    recordUsage: (entryId: string, successful: boolean, userId?: string) => Promise<IPCResponse<void>>;
+    recordUsage: (
+      entryId: string,
+      successful: boolean,
+      userId?: string
+    ) => Promise<IPCResponse<void>>;
     getStats: () => Promise<IPCResponse<DatabaseStats>>;
-    autoComplete: (query: string, limit?: number) => Promise<IPCResponse<Array<{ suggestion: string; category: string; score: number }>>>;
+    autoComplete: (
+      query: string,
+      limit?: number
+    ) => Promise<IPCResponse<Array<{ suggestion: string; category: string; score: number }>>>;
     createBackup: () => Promise<IPCResponse<void>>;
     exportToJSON: (outputPath: string) => Promise<IPCResponse<void>>;
     importFromJSON: (jsonPath: string, mergeMode?: boolean) => Promise<IPCResponse<void>>;
-    healthCheck: () => Promise<IPCResponse<{
-      overall: boolean;
-      database: boolean;
-      cache: boolean;
-      connections: boolean;
-      performance: boolean;
-      issues: string[];
-    }>>;
+    healthCheck: () => Promise<
+      IPCResponse<{
+        overall: boolean;
+        database: boolean;
+        cache: boolean;
+        connections: boolean;
+        performance: boolean;
+        issues: string[];
+      }>
+    >;
   };
 
   // Configuration
   config: {
     get: (key: string) => Promise<IPCResponse<string | null>>;
-    set: (key: string, value: string, type?: string, description?: string) => Promise<IPCResponse<void>>;
+    set: (
+      key: string,
+      value: string,
+      type?: string,
+      description?: string
+    ) => Promise<IPCResponse<void>>;
   };
 
   // AI operations
@@ -105,14 +135,16 @@ export interface ElectronAPI extends SimpleElectronAPI {
 
   // System information
   system: {
-    getInfo: () => Promise<IPCResponse<{
-      platform: string;
-      arch: string;
-      version: string;
-      electronVersion: string;
-      nodeVersion: string;
-      dataPath: string;
-    }>>;
+    getInfo: () => Promise<
+      IPCResponse<{
+        platform: string;
+        arch: string;
+        version: string;
+        electronVersion: string;
+        nodeVersion: string;
+        dataPath: string;
+      }>
+    >;
   };
 
   // Streaming support
@@ -139,17 +171,17 @@ export interface ElectronAPI extends SimpleElectronAPI {
 const safeInvoke = async <T>(channel: string, ...args: any[]): Promise<IPCResponse<T>> => {
   try {
     const response = await ipcRenderer.invoke(channel, ...args);
-    
+
     // Check if response follows the new enhanced format
     if (response && typeof response === 'object' && 'success' in response) {
       return response as IPCResponse<T>;
     }
-    
+
     // For backward compatibility, wrap raw responses
     return {
       success: true,
       data: response,
-      metadata: {}
+      metadata: {},
     } as IPCResponse<T>;
   } catch (error) {
     console.error(`IPC Error in ${channel}:`, error);
@@ -158,8 +190,8 @@ const safeInvoke = async <T>(channel: string, ...args: any[]): Promise<IPCRespon
       error: {
         code: 'IPC_ERROR',
         message: error instanceof Error ? error.message : 'Unknown IPC error',
-        details: error
-      }
+        details: error,
+      },
     } as IPCResponse<T>;
   }
 };
@@ -167,12 +199,23 @@ const safeInvoke = async <T>(channel: string, ...args: any[]): Promise<IPCRespon
 // Simple invoke function for direct IPC calls
 const simpleInvoke = async (channel: string, ...args: any[]): Promise<any> => {
   const allowedChannels = [
-    'search-kb', 'add-kb-entry', 'update-kb-entry', 'delete-kb-entry',
-    'ipc-request', 'ipc-batch-request', 'ipc-stream-request',
-    'api-settings:get-providers', 'api-settings:get-provider', 'api-settings:get-keys',
-    'api-settings:store-key', 'api-settings:delete-key', 'api-settings:update-key-status',
-    'api-settings:test-connection', 'api-settings:test-stored-key',
-    'api-settings:get-usage-stats', 'api-settings:record-usage'
+    'search-kb',
+    'add-kb-entry',
+    'update-kb-entry',
+    'delete-kb-entry',
+    'ipc-request',
+    'ipc-batch-request',
+    'ipc-stream-request',
+    'api-settings:get-providers',
+    'api-settings:get-provider',
+    'api-settings:get-keys',
+    'api-settings:store-key',
+    'api-settings:delete-key',
+    'api-settings:update-key-status',
+    'api-settings:test-connection',
+    'api-settings:test-stored-key',
+    'api-settings:get-usage-stats',
+    'api-settings:record-usage',
   ];
 
   if (!allowedChannels.includes(channel)) {
@@ -191,36 +234,40 @@ const electronAPI: ElectronAPI = {
     search: (query: string, options?: any) => safeInvoke('db:search', query, options),
     searchWithAI: (query: string, options?: any) => safeInvoke('db:searchWithAI', query, options),
     addEntry: (entry: KBEntry, userId?: string) => safeInvoke('db:addEntry', entry, userId),
-    updateEntry: (id: string, updates: Partial<KBEntry>, userId?: string) => safeInvoke('db:updateEntry', id, updates, userId),
+    updateEntry: (id: string, updates: Partial<KBEntry>, userId?: string) =>
+      safeInvoke('db:updateEntry', id, updates, userId),
     getEntry: (id: string) => safeInvoke('db:getEntry', id),
     getPopular: (limit?: number) => safeInvoke('db:getPopular', limit),
     getRecent: (limit?: number) => safeInvoke('db:getRecent', limit),
-    recordUsage: (entryId: string, successful: boolean, userId?: string) => safeInvoke('db:recordUsage', entryId, successful, userId),
+    recordUsage: (entryId: string, successful: boolean, userId?: string) =>
+      safeInvoke('db:recordUsage', entryId, successful, userId),
     getStats: () => safeInvoke('db:getStats'),
     autoComplete: (query: string, limit?: number) => safeInvoke('db:autoComplete', query, limit),
     createBackup: () => safeInvoke('db:createBackup'),
     exportToJSON: (outputPath: string) => safeInvoke('db:exportToJSON', outputPath),
-    importFromJSON: (jsonPath: string, mergeMode?: boolean) => safeInvoke('db:importFromJSON', jsonPath, mergeMode),
-    healthCheck: () => safeInvoke('db:healthCheck')
+    importFromJSON: (jsonPath: string, mergeMode?: boolean) =>
+      safeInvoke('db:importFromJSON', jsonPath, mergeMode),
+    healthCheck: () => safeInvoke('db:healthCheck'),
   },
 
   config: {
     get: (key: string) => safeInvoke('config:get', key),
-    set: (key: string, value: string, type?: string, description?: string) => 
-      safeInvoke('config:set', key, value, type, description)
+    set: (key: string, value: string, type?: string, description?: string) =>
+      safeInvoke('config:set', key, value, type, description),
   },
 
   ai: {
-    explainError: (errorCode: string) => safeInvoke('ai:explainError', errorCode)
+    explainError: (errorCode: string) => safeInvoke('ai:explainError', errorCode),
   },
 
   perf: {
     getStatus: () => safeInvoke('perf:getStatus'),
-    getReport: (startTime?: number, endTime?: number) => safeInvoke('perf:getReport', startTime, endTime)
+    getReport: (startTime?: number, endTime?: number) =>
+      safeInvoke('perf:getReport', startTime, endTime),
   },
 
   system: {
-    getInfo: () => safeInvoke('system:getInfo')
+    getInfo: () => safeInvoke('system:getInfo'),
   },
 
   streaming: {
@@ -242,13 +289,13 @@ const electronAPI: ElectronAPI = {
     removeStreamListeners: (streamId: string) => {
       ipcRenderer.removeAllListeners(`stream:chunk:${streamId}`);
       ipcRenderer.removeAllListeners(`stream:error:${streamId}`);
-    }
+    },
   },
 
   batch: {
     execute: (payload: any) => safeInvoke('ipc:execute-batch', payload),
     getStats: () => safeInvoke('ipc:batch-stats'),
-    clearStats: () => safeInvoke('ipc:clear-batch-stats')
+    clearStats: () => safeInvoke('ipc:clear-batch-stats'),
   },
 
   onMenuEvent: (callback: (event: string, data?: any) => void) => {
@@ -261,7 +308,7 @@ const electronAPI: ElectronAPI = {
       'menu-show-performance',
       'menu-optimize-db',
       'menu-show-settings',
-      'menu-show-about'
+      'menu-show-about',
     ];
 
     menuEvents.forEach(event => {
@@ -279,7 +326,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.removeAllListeners('menu-optimize-db');
     ipcRenderer.removeAllListeners('menu-show-settings');
     ipcRenderer.removeAllListeners('menu-show-about');
-  }
+  },
 };
 
 // Expose the API securely
@@ -297,13 +344,41 @@ electronAPI.apiSettings = {
   getProviders: () => simpleInvoke('api-settings:get-providers'),
   getProvider: (providerId: string) => simpleInvoke('api-settings:get-provider', providerId),
   getKeys: () => simpleInvoke('api-settings:get-keys'),
-  storeKey: (providerId: string, keyName: string, apiKey: string, isSessionOnly?: boolean, monthlyLimit?: number) =>
-    simpleInvoke('api-settings:store-key', providerId, keyName, apiKey, isSessionOnly, monthlyLimit),
+  storeKey: (
+    providerId: string,
+    keyName: string,
+    apiKey: string,
+    isSessionOnly?: boolean,
+    monthlyLimit?: number
+  ) =>
+    simpleInvoke(
+      'api-settings:store-key',
+      providerId,
+      keyName,
+      apiKey,
+      isSessionOnly,
+      monthlyLimit
+    ),
   deleteKey: (keyId: string) => simpleInvoke('api-settings:delete-key', keyId),
-  updateKeyStatus: (keyId: string, isActive: boolean) => simpleInvoke('api-settings:update-key-status', keyId, isActive),
-  testConnection: (providerId: string, apiKey: string) => simpleInvoke('api-settings:test-connection', providerId, apiKey),
+  updateKeyStatus: (keyId: string, isActive: boolean) =>
+    simpleInvoke('api-settings:update-key-status', keyId, isActive),
+  testConnection: (providerId: string, apiKey: string) =>
+    simpleInvoke('api-settings:test-connection', providerId, apiKey),
   testStoredKey: (keyId: string) => simpleInvoke('api-settings:test-stored-key', keyId),
   getUsageStats: (providerId?: string) => simpleInvoke('api-settings:get-usage-stats', providerId),
-  recordUsage: (providerId: string, requestCount?: number, cost?: number, responseTime?: number, isError?: boolean) =>
-    simpleInvoke('api-settings:record-usage', providerId, requestCount, cost, responseTime, isError)
+  recordUsage: (
+    providerId: string,
+    requestCount?: number,
+    cost?: number,
+    responseTime?: number,
+    isError?: boolean
+  ) =>
+    simpleInvoke(
+      'api-settings:record-usage',
+      providerId,
+      requestCount,
+      cost,
+      responseTime,
+      isError
+    ),
 };

@@ -40,12 +40,15 @@ export interface OptimizationMetrics {
 
 export class SearchOptimizer extends EventEmitter {
   private queryCache: Map<string, QueryOptimization> = new Map();
-  private strategyMetrics: Map<string, {
-    usage: number;
-    totalTime: number;
-    successCount: number;
-    failureCount: number;
-  }> = new Map();
+  private strategyMetrics: Map<
+    string,
+    {
+      usage: number;
+      totalTime: number;
+      successCount: number;
+      failureCount: number;
+    }
+  > = new Map();
 
   private optimizationHistory: Array<{
     query: string;
@@ -58,7 +61,7 @@ export class SearchOptimizer extends EventEmitter {
     maxQueryTime: 500, // ms
     maxParallelStrategies: 5,
     minConfidenceThreshold: 0.7,
-    cacheSize: 1000
+    cacheSize: 1000,
   };
 
   constructor() {
@@ -73,7 +76,10 @@ export class SearchOptimizer extends EventEmitter {
     query: string,
     entries: KBEntry[],
     options: SearchOptions = {},
-    searchMethods: Map<string, (query: string, entries: KBEntry[], options: SearchOptions) => Promise<SearchResult[]>>
+    searchMethods: Map<
+      string,
+      (query: string, entries: KBEntry[], options: SearchOptions) => Promise<SearchResult[]>
+    >
   ): Promise<SearchResult[]> {
     const startTime = performance.now();
 
@@ -99,7 +105,6 @@ export class SearchOptimizer extends EventEmitter {
       await this.recordOptimization(query, optimization, results, performance.now() - startTime);
 
       return optimizedResults;
-
     } catch (error) {
       console.error('Search optimization failed:', error);
       // Fallback to basic search if optimization fails
@@ -149,7 +154,7 @@ export class SearchOptimizer extends EventEmitter {
         priority: 10,
         estimatedTime: 50,
         confidence: 0.9,
-        execute: searchMethods.get('fts5')!
+        execute: searchMethods.get('fts5')!,
       });
     }
 
@@ -160,7 +165,7 @@ export class SearchOptimizer extends EventEmitter {
         priority: 8,
         estimatedTime: 200,
         confidence: 0.8,
-        execute: searchMethods.get('ai')!
+        execute: searchMethods.get('ai')!,
       });
     }
 
@@ -171,7 +176,7 @@ export class SearchOptimizer extends EventEmitter {
         priority: 6,
         estimatedTime: 100,
         confidence: 0.7,
-        execute: searchMethods.get('local')!
+        execute: searchMethods.get('local')!,
       });
     }
 
@@ -185,13 +190,13 @@ export class SearchOptimizer extends EventEmitter {
         confidence: 0.85,
         execute: async (q: string, e: KBEntry[], o: SearchOptions) => {
           return searchMethods.get('category')!(q, e, { ...o, category: detectedCategory });
-        }
+        },
       });
     }
 
     // Sort by priority and confidence, limit to top strategies
     return strategies
-      .sort((a, b) => (b.priority * b.confidence) - (a.priority * a.confidence))
+      .sort((a, b) => b.priority * b.confidence - a.priority * a.confidence)
       .slice(0, this.performanceThresholds.maxParallelStrategies);
   }
 
@@ -207,13 +212,15 @@ export class SearchOptimizer extends EventEmitter {
     const startTime = performance.now();
 
     // Create timeout promise for each strategy
-    const strategyPromises = strategies.map(async (strategy) => {
+    const strategyPromises = strategies.map(async strategy => {
       const strategyStart = performance.now();
 
       try {
         const timeoutPromise = new Promise<SearchResult[]>((_, reject) => {
-          setTimeout(() => reject(new Error(`Strategy timeout: ${strategy.name}`)),
-                    strategy.estimatedTime * 2);
+          setTimeout(
+            () => reject(new Error(`Strategy timeout: ${strategy.name}`)),
+            strategy.estimatedTime * 2
+          );
         });
 
         const searchPromise = strategy.execute(query, entries, options);
@@ -226,7 +233,7 @@ export class SearchOptimizer extends EventEmitter {
           strategy: strategy.name,
           results,
           confidence: strategy.confidence,
-          executionTime: performance.now() - strategyStart
+          executionTime: performance.now() - strategyStart,
         };
       } catch (error) {
         this.recordStrategyPerformance(strategy.name, performance.now() - strategyStart, false);
@@ -235,7 +242,7 @@ export class SearchOptimizer extends EventEmitter {
           strategy: strategy.name,
           results: [],
           confidence: 0,
-          executionTime: performance.now() - strategyStart
+          executionTime: performance.now() - strategyStart,
         };
       }
     });
@@ -298,8 +305,8 @@ export class SearchOptimizer extends EventEmitter {
           semanticAlignment: semanticScore,
           historicalPerformance: historyScore,
           contextRelevance: contextScore,
-          diversityScore: 100 - diversityPenalty
-        }
+          diversityScore: 100 - diversityPenalty,
+        },
       };
     });
 
@@ -311,8 +318,8 @@ export class SearchOptimizer extends EventEmitter {
         metadata: {
           ...result.metadata,
           finalRank: index + 1,
-          rankingConfidence: this.calculateRankingConfidence(result, index, rankedResults.length)
-        }
+          rankingConfidence: this.calculateRankingConfidence(result, index, rankedResults.length),
+        },
       }))
       .slice(0, options.limit || 50);
   }
@@ -320,12 +327,15 @@ export class SearchOptimizer extends EventEmitter {
   /**
    * Query analysis and optimization algorithms
    */
-  private async analyzeAndOptimizeQuery(query: string, options: SearchOptions): Promise<QueryOptimization> {
+  private async analyzeAndOptimizeQuery(
+    query: string,
+    options: SearchOptions
+  ): Promise<QueryOptimization> {
     const analysis = {
       intent: this.detectQueryIntent(query),
       complexity: this.assessQueryComplexity(query),
       entities: this.extractEntities(query),
-      patterns: this.identifyPatterns(query)
+      patterns: this.identifyPatterns(query),
     };
 
     let optimizedQuery = query;
@@ -369,13 +379,15 @@ export class SearchOptimizer extends EventEmitter {
       optimizationType,
       confidence,
       estimatedImprovement,
-      reasoning: optimizations
+      reasoning: optimizations,
     };
   }
 
   // Helper methods for query analysis and optimization
 
-  private detectQueryIntent(query: string): 'error_resolution' | 'how_to' | 'information' | 'troubleshooting' {
+  private detectQueryIntent(
+    query: string
+  ): 'error_resolution' | 'how_to' | 'information' | 'troubleshooting' {
     const errorPatterns = /error|fail|abend|exception|status|code|problem/i;
     const howToPatterns = /how\s+to|setup|configure|install|create/i;
     const troublePatterns = /debug|troubleshoot|fix|solve|resolve|issue/i;
@@ -400,7 +412,9 @@ export class SearchOptimizer extends EventEmitter {
     return Math.min(1, complexity);
   }
 
-  private extractEntities(query: string): Array<{ term: string; type: string; confidence: number }> {
+  private extractEntities(
+    query: string
+  ): Array<{ term: string; type: string; confidence: number }> {
     const entities = [];
 
     // Error codes
@@ -440,11 +454,11 @@ export class SearchOptimizer extends EventEmitter {
 
   private detectImplicitCategory(query: string): string | null {
     const categoryPatterns = {
-      'JCL': /\b(jcl|job|step|dd|dataset|allocation)\b/i,
-      'VSAM': /\b(vsam|ksds|esds|rrds|cluster|catalog)\b/i,
-      'DB2': /\b(db2|sql|table|cursor|plan|package)\b/i,
-      'COBOL': /\b(cobol|program|paragraph|copybook|working.storage)\b/i,
-      'Batch': /\b(batch|abend|s0c[0-9a-f]|program|job)\b/i
+      JCL: /\b(jcl|job|step|dd|dataset|allocation)\b/i,
+      VSAM: /\b(vsam|ksds|esds|rrds|cluster|catalog)\b/i,
+      DB2: /\b(db2|sql|table|cursor|plan|package)\b/i,
+      COBOL: /\b(cobol|program|paragraph|copybook|working.storage)\b/i,
+      Batch: /\b(batch|abend|s0c[0-9a-f]|program|job)\b/i,
     };
 
     for (const [category, pattern] of Object.entries(categoryPatterns)) {
@@ -459,13 +473,13 @@ export class SearchOptimizer extends EventEmitter {
   private async applySpellCorrection(query: string): Promise<string> {
     // Simple spell correction for common mainframe terms
     const corrections = {
-      'jcl': ['jcl', 'job control language'],
-      'vsam': ['vsam', 'virtual storage access method'],
-      'cobal': 'cobol',
-      'cicss': 'cics',
-      'db2': ['db2', 'database 2'],
-      'tso': ['tso', 'time sharing option'],
-      'ispf': ['ispf', 'interactive system productivity facility']
+      jcl: ['jcl', 'job control language'],
+      vsam: ['vsam', 'virtual storage access method'],
+      cobal: 'cobol',
+      cicss: 'cics',
+      db2: ['db2', 'database 2'],
+      tso: ['tso', 'time sharing option'],
+      ispf: ['ispf', 'interactive system productivity facility'],
     };
 
     let corrected = query;
@@ -498,9 +512,9 @@ export class SearchOptimizer extends EventEmitter {
   private async focusQuery(query: string, patterns: string[]): Promise<string> {
     // Focus overly broad queries by identifying key terms
     const words = query.split(/\s+/);
-    const importantWords = words.filter(word =>
-      word.length > 3 &&
-      !/\b(and|the|for|with|from|that|this|when|where|what|how)\b/i.test(word)
+    const importantWords = words.filter(
+      word =>
+        word.length > 3 && !/\b(and|the|for|with|from|that|this|when|where|what|how)\b/i.test(word)
     );
 
     return importantWords.slice(0, 5).join(' ');
@@ -512,7 +526,7 @@ export class SearchOptimizer extends EventEmitter {
       'virtual storage access method': 'VSAM',
       'database 2': 'DB2',
       'customer information control system': 'CICS',
-      'information management system': 'IMS'
+      'information management system': 'IMS',
     };
 
     let standardized = query;
@@ -539,7 +553,7 @@ export class SearchOptimizer extends EventEmitter {
       fts5_optimized: 1.0,
       ai_semantic: 0.9,
       category_specific: 0.8,
-      local_fuzzy: 0.7
+      local_fuzzy: 0.7,
     };
 
     strategyResults.forEach(({ strategy, results, confidence }) => {
@@ -555,7 +569,7 @@ export class SearchOptimizer extends EventEmitter {
           existing.metadata = {
             ...existing.metadata,
             multiStrategy: true,
-            strategies: [...(existing.metadata?.strategies || []), strategy]
+            strategies: [...(existing.metadata?.strategies || []), strategy],
           };
         } else {
           merged.set(result.entry.id, {
@@ -565,8 +579,8 @@ export class SearchOptimizer extends EventEmitter {
               ...result.metadata,
               strategy,
               strategyWeight: weight,
-              strategyConfidence: confidence
-            }
+              strategyConfidence: confidence,
+            },
           });
         }
       });
@@ -577,13 +591,17 @@ export class SearchOptimizer extends EventEmitter {
 
   // Performance and metrics tracking methods
 
-  private recordStrategyPerformance(strategyName: string, executionTime: number, success: boolean): void {
+  private recordStrategyPerformance(
+    strategyName: string,
+    executionTime: number,
+    success: boolean
+  ): void {
     if (!this.strategyMetrics.has(strategyName)) {
       this.strategyMetrics.set(strategyName, {
         usage: 0,
         totalTime: 0,
         successCount: 0,
-        failureCount: 0
+        failureCount: 0,
       });
     }
 
@@ -609,7 +627,7 @@ export class SearchOptimizer extends EventEmitter {
       query,
       optimization,
       resultImprovement: improvement,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep only last 1000 optimizations
@@ -620,14 +638,17 @@ export class SearchOptimizer extends EventEmitter {
     this.emit('optimization-recorded', {
       query,
       improvement,
-      executionTime
+      executionTime,
     });
   }
 
-  private calculateActualImprovement(results: SearchResult[], optimization: QueryOptimization): number {
+  private calculateActualImprovement(
+    results: SearchResult[],
+    optimization: QueryOptimization
+  ): number {
     // Simple improvement calculation based on result quality
-    const avgScore = results.length > 0 ?
-      results.reduce((sum, r) => sum + r.score, 0) / results.length : 0;
+    const avgScore =
+      results.length > 0 ? results.reduce((sum, r) => sum + r.score, 0) / results.length : 0;
 
     // Higher average score indicates better optimization
     return Math.min(100, avgScore);
@@ -651,7 +672,7 @@ export class SearchOptimizer extends EventEmitter {
     const successRate = entry.success_count / totalRatings;
     const usageBoost = Math.min(20, Math.log(entry.usage_count + 1) * 3);
 
-    return (successRate * 80) + usageBoost;
+    return successRate * 80 + usageBoost;
   }
 
   private calculateContextRelevance(entry: KBEntry, options: SearchOptions): number {
@@ -673,7 +694,11 @@ export class SearchOptimizer extends EventEmitter {
     return Math.min(100, relevance);
   }
 
-  private calculateDiversityPenalty(result: SearchResult, allResults: SearchResult[], index: number): number {
+  private calculateDiversityPenalty(
+    result: SearchResult,
+    allResults: SearchResult[],
+    index: number
+  ): number {
     if (index === 0) return 0; // No penalty for top result
 
     let penalty = 0;
@@ -690,18 +715,20 @@ export class SearchOptimizer extends EventEmitter {
       }
 
       // Tag overlap penalty
-      const commonTags = currentTags.filter(tag =>
-        otherResult.entry.tags.includes(tag)
-      );
+      const commonTags = currentTags.filter(tag => otherResult.entry.tags.includes(tag));
       penalty += commonTags.length * 0.5;
     }
 
     return Math.min(20, penalty); // Cap penalty at 20 points
   }
 
-  private calculateRankingConfidence(result: SearchResult, position: number, totalResults: number): number {
+  private calculateRankingConfidence(
+    result: SearchResult,
+    position: number,
+    totalResults: number
+  ): number {
     // Higher confidence for higher positions and better scores
-    const positionFactor = 1 - (position / totalResults);
+    const positionFactor = 1 - position / totalResults;
     const scoreFactor = result.score / 100;
 
     return Math.round((positionFactor * 0.6 + scoreFactor * 0.4) * 100);
@@ -733,11 +760,7 @@ export class SearchOptimizer extends EventEmitter {
     return Math.min(1, confidence);
   }
 
-  private estimateImprovement(
-    original: string,
-    optimized: string,
-    analysis: any
-  ): number {
+  private estimateImprovement(original: string, optimized: string, analysis: any): number {
     // Estimate percentage improvement based on optimization type
     let improvement = 0;
 
@@ -789,27 +812,33 @@ export class SearchOptimizer extends EventEmitter {
    * Get optimizer performance metrics
    */
   getMetrics(): OptimizationMetrics {
-    const topStrategies = Array.from(this.strategyMetrics.entries()).map(([name, metrics]) => ({
-      name,
-      usage: metrics.usage,
-      avgTime: metrics.totalTime / metrics.usage,
-      successRate: metrics.successCount / (metrics.successCount + metrics.failureCount)
-    })).sort((a, b) => b.usage - a.usage);
+    const topStrategies = Array.from(this.strategyMetrics.entries())
+      .map(([name, metrics]) => ({
+        name,
+        usage: metrics.usage,
+        avgTime: metrics.totalTime / metrics.usage,
+        successRate: metrics.successCount / (metrics.successCount + metrics.failureCount),
+      }))
+      .sort((a, b) => b.usage - a.usage);
 
-    const avgImprovement = this.optimizationHistory.length > 0 ?
-      this.optimizationHistory.reduce((sum, opt) => sum + opt.resultImprovement, 0) / this.optimizationHistory.length :
-      0;
+    const avgImprovement =
+      this.optimizationHistory.length > 0
+        ? this.optimizationHistory.reduce((sum, opt) => sum + opt.resultImprovement, 0) /
+          this.optimizationHistory.length
+        : 0;
 
-    const successRate = this.optimizationHistory.length > 0 ?
-      this.optimizationHistory.filter(opt => opt.resultImprovement > 50).length / this.optimizationHistory.length :
-      0;
+    const successRate =
+      this.optimizationHistory.length > 0
+        ? this.optimizationHistory.filter(opt => opt.resultImprovement > 50).length /
+          this.optimizationHistory.length
+        : 0;
 
     return {
       totalOptimizations: this.optimizationHistory.length,
       averageImprovement: Math.round(avgImprovement),
       successRate: Math.round(successRate * 100) / 100,
       topStrategies: topStrategies.slice(0, 5),
-      performanceBottlenecks: this.identifyBottlenecks()
+      performanceBottlenecks: this.identifyBottlenecks(),
     };
   }
 

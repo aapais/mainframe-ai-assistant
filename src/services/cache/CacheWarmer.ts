@@ -75,12 +75,15 @@ export class CacheWarmer {
   private warmingQueue: Array<{ strategy: string; priority: number }> = [];
 
   // Analytics and learning
-  private usagePatterns: Map<string, {
-    frequency: number;
-    lastAccess: Date;
-    avgResponseTime: number;
-    userSegments: string[];
-  }> = new Map();
+  private usagePatterns: Map<
+    string,
+    {
+      frequency: number;
+      lastAccess: Date;
+      avgResponseTime: number;
+      userSegments: string[];
+    }
+  > = new Map();
 
   private performanceHistory: Array<{
     timestamp: Date;
@@ -122,16 +125,9 @@ export class CacheWarmer {
   /**
    * Perform immediate cache warming with specific strategy
    */
-  async warmCache(
-    strategy: string,
-    userContext?: UserContext
-  ): Promise<WarmingResult> {
+  async warmCache(strategy: string, userContext?: UserContext): Promise<WarmingResult> {
     if (this.isWarming) {
-      throw new ServiceError(
-        'Cache warming already in progress',
-        'WARMING_IN_PROGRESS',
-        429
-      );
+      throw new ServiceError('Cache warming already in progress', 'WARMING_IN_PROGRESS', 429);
     }
 
     this.isWarming = true;
@@ -164,11 +160,7 @@ export class CacheWarmer {
           result = await this.warmMachineLearning(userContext);
           break;
         default:
-          throw new ServiceError(
-            `Unknown warming strategy: ${strategy}`,
-            'INVALID_STRATEGY',
-            400
-          );
+          throw new ServiceError(`Unknown warming strategy: ${strategy}`, 'INVALID_STRATEGY', 400);
       }
 
       const afterMetrics = this.searchService.getMetrics();
@@ -184,10 +176,11 @@ export class CacheWarmer {
         this.warmingResults = this.warmingResults.slice(-100);
       }
 
-      console.log(`✅ Cache warming completed: ${result.warmed} entries, ${result.hitRateImprovement * 100}% hit rate improvement`);
+      console.log(
+        `✅ Cache warming completed: ${result.warmed} entries, ${result.hitRateImprovement * 100}% hit rate improvement`
+      );
 
       return result;
-
     } catch (error) {
       console.error('❌ Cache warming failed:', error);
       throw error;
@@ -199,14 +192,12 @@ export class CacheWarmer {
   /**
    * Adaptive warming based on current system performance
    */
-  async adaptiveWarming(
-    performanceMetrics: {
-      hitRate: number;
-      avgResponseTime: number;
-      throughput: number;
-      errorRate: number;
-    }
-  ): Promise<WarmingResult[]> {
+  async adaptiveWarming(performanceMetrics: {
+    hitRate: number;
+    avgResponseTime: number;
+    throughput: number;
+    errorRate: number;
+  }): Promise<WarmingResult[]> {
     console.log('🧠 Starting adaptive cache warming...');
 
     const results: WarmingResult[] = [];
@@ -219,12 +210,13 @@ export class CacheWarmer {
 
         // Stop if we've achieved good performance
         const currentMetrics = this.searchService.getMetrics();
-        if (currentMetrics.hitRates.overall > 0.9 &&
-            currentMetrics.performance.avgResponseTime < 200) {
+        if (
+          currentMetrics.hitRates.overall > 0.9 &&
+          currentMetrics.performance.avgResponseTime < 200
+        ) {
           console.log('🎯 Optimal performance achieved, stopping adaptive warming');
           break;
         }
-
       } catch (error) {
         console.warn(`Adaptive warming strategy '${strategy.name}' failed:`, error);
       }
@@ -259,11 +251,15 @@ export class CacheWarmer {
       if (userContext.preferences.categories) {
         for (const category of userContext.preferences.categories.slice(0, 5)) {
           try {
-            await this.searchService.search('', {
-              category,
-              limit: 15,
-              sortBy: 'usage_count'
-            }, userContext);
+            await this.searchService.search(
+              '',
+              {
+                category,
+                limit: 15,
+                sortBy: 'usage_count',
+              },
+              userContext
+            );
             warmed++;
           } catch (error) {
             failed++;
@@ -281,10 +277,9 @@ export class CacheWarmer {
         resourcesUsed: {
           memory: warmed * 1024, // Rough estimate
           cpu: 0.1,
-          storage: warmed * 512
-        }
+          storage: warmed * 512,
+        },
       };
-
     } catch (error) {
       throw new ServiceError(
         `User-specific warming failed: ${error.message}`,
@@ -313,7 +308,7 @@ export class CacheWarmer {
         try {
           await this.searchService.search(prediction.query, {
             limit: prediction.expectedResultCount,
-            category: prediction.likelyCategory
+            category: prediction.likelyCategory,
           });
           warmed++;
         } catch (error) {
@@ -332,10 +327,9 @@ export class CacheWarmer {
         resourcesUsed: {
           memory: warmed * 1536,
           cpu: 0.15,
-          storage: warmed * 768
-        }
+          storage: warmed * 768,
+        },
       };
-
     } catch (error) {
       throw new ServiceError(
         `Predictive warming failed: ${error.message}`,
@@ -366,32 +360,36 @@ export class CacheWarmer {
         avgTimeSaved: 0,
         successRate: 0,
         topStrategies: [],
-        recommendations: ['No warming data available']
+        recommendations: ['No warming data available'],
       };
     }
 
     const totalWarmed = this.warmingResults.reduce((sum, r) => sum + r.warmed, 0);
-    const avgHitRateImprovement = this.warmingResults.reduce((sum, r) => sum + r.hitRateImprovement, 0) / totalResults;
-    const avgTimeSaved = this.warmingResults.reduce((sum, r) => sum + r.estimatedTimeSaved, 0) / totalResults;
-    const successRate = this.warmingResults.reduce((sum, r) => sum + (r.warmed / (r.warmed + r.failed)), 0) / totalResults;
+    const avgHitRateImprovement =
+      this.warmingResults.reduce((sum, r) => sum + r.hitRateImprovement, 0) / totalResults;
+    const avgTimeSaved =
+      this.warmingResults.reduce((sum, r) => sum + r.estimatedTimeSaved, 0) / totalResults;
+    const successRate =
+      this.warmingResults.reduce((sum, r) => sum + r.warmed / (r.warmed + r.failed), 0) /
+      totalResults;
 
     // Calculate strategy effectiveness
     const strategyStats = new Map<string, { total: number; effectiveness: number }>();
 
     for (const result of this.warmingResults) {
       const current = strategyStats.get(result.strategy) || { total: 0, effectiveness: 0 };
-      const effectiveness = (result.hitRateImprovement * 100) + (result.estimatedTimeSaved / 1000);
+      const effectiveness = result.hitRateImprovement * 100 + result.estimatedTimeSaved / 1000;
 
       strategyStats.set(result.strategy, {
         total: current.total + 1,
-        effectiveness: current.effectiveness + effectiveness
+        effectiveness: current.effectiveness + effectiveness,
       });
     }
 
     const topStrategies = Array.from(strategyStats.entries())
       .map(([strategy, stats]) => ({
         strategy,
-        effectiveness: stats.effectiveness / stats.total
+        effectiveness: stats.effectiveness / stats.total,
       }))
       .sort((a, b) => b.effectiveness - a.effectiveness)
       .slice(0, 5);
@@ -405,7 +403,7 @@ export class CacheWarmer {
       avgTimeSaved,
       successRate,
       topStrategies,
-      recommendations
+      recommendations,
     };
   }
 
@@ -435,43 +433,43 @@ export class CacheWarmer {
         priority: 'high',
         estimatedTime: 30000,
         estimatedBenefit: 0.8,
-        enabled: true
+        enabled: true,
       },
       {
         name: 'recent-activity',
         priority: 'normal',
         estimatedTime: 15000,
         estimatedBenefit: 0.6,
-        enabled: true
+        enabled: true,
       },
       {
         name: 'predictive-user',
         priority: 'normal',
         estimatedTime: 20000,
         estimatedBenefit: 0.7,
-        enabled: true
+        enabled: true,
       },
       {
         name: 'category-based',
         priority: 'low',
         estimatedTime: 45000,
         estimatedBenefit: 0.5,
-        enabled: true
+        enabled: true,
       },
       {
         name: 'time-based',
         priority: 'low',
         estimatedTime: 25000,
         estimatedBenefit: 0.4,
-        enabled: false
+        enabled: false,
       },
       {
         name: 'machine-learning',
         priority: 'critical',
         estimatedTime: 60000,
         estimatedBenefit: 0.9,
-        enabled: false
-      }
+        enabled: false,
+      },
     ];
 
     return {
@@ -484,9 +482,9 @@ export class CacheWarmer {
       performanceThresholds: {
         maxWarmingTime: 120000, // 2 minutes
         minHitRateImprovement: 0.05, // 5%
-        maxResourceUsage: 0.7 // 70%
+        maxResourceUsage: 0.7, // 70%
       },
-      ...config
+      ...config,
     };
   }
 
@@ -499,7 +497,7 @@ export class CacheWarmer {
           lastRun: new Date(0),
           nextRun: new Date(Date.now() + this.calculateNextRun(strategy.priority)),
           enabled: true,
-          adaptivePriority: this.calculateAdaptivePriority(strategy)
+          adaptivePriority: this.calculateAdaptivePriority(strategy),
         });
       }
     }
@@ -507,28 +505,45 @@ export class CacheWarmer {
 
   private getDefaultSchedule(priority: string): string {
     switch (priority) {
-      case 'critical': return '0 */5 * * * *'; // Every 5 minutes
-      case 'high': return '0 */15 * * * *'; // Every 15 minutes
-      case 'normal': return '0 0 */1 * * *'; // Every hour
-      case 'low': return '0 0 */6 * * *'; // Every 6 hours
-      default: return '0 0 */12 * * *'; // Every 12 hours
+      case 'critical':
+        return '0 */5 * * * *'; // Every 5 minutes
+      case 'high':
+        return '0 */15 * * * *'; // Every 15 minutes
+      case 'normal':
+        return '0 0 */1 * * *'; // Every hour
+      case 'low':
+        return '0 0 */6 * * *'; // Every 6 hours
+      default:
+        return '0 0 */12 * * *'; // Every 12 hours
     }
   }
 
   private calculateNextRun(priority: string): number {
     switch (priority) {
-      case 'critical': return 5 * 60 * 1000;
-      case 'high': return 15 * 60 * 1000;
-      case 'normal': return 60 * 60 * 1000;
-      case 'low': return 6 * 60 * 60 * 1000;
-      default: return 12 * 60 * 60 * 1000;
+      case 'critical':
+        return 5 * 60 * 1000;
+      case 'high':
+        return 15 * 60 * 1000;
+      case 'normal':
+        return 60 * 60 * 1000;
+      case 'low':
+        return 6 * 60 * 60 * 1000;
+      default:
+        return 12 * 60 * 60 * 1000;
     }
   }
 
   private calculateAdaptivePriority(strategy: WarmingStrategy): number {
-    return strategy.estimatedBenefit * (strategy.priority === 'critical' ? 4 :
-                                      strategy.priority === 'high' ? 3 :
-                                      strategy.priority === 'normal' ? 2 : 1);
+    return (
+      strategy.estimatedBenefit *
+      (strategy.priority === 'critical'
+        ? 4
+        : strategy.priority === 'high'
+          ? 3
+          : strategy.priority === 'normal'
+            ? 2
+            : 1)
+    );
   }
 
   private scheduleWarming(strategyName: string, schedule: WarmingSchedule): void {
@@ -576,7 +591,7 @@ export class CacheWarmer {
       timeTaken: 0, // Will be set by caller
       hitRateImprovement: 0,
       estimatedTimeSaved: warmed * 180,
-      resourcesUsed: { memory: warmed * 1200, cpu: 0.2, storage: warmed * 600 }
+      resourcesUsed: { memory: warmed * 1200, cpu: 0.2, storage: warmed * 600 },
     };
   }
 
@@ -589,10 +604,14 @@ export class CacheWarmer {
 
     for (const pattern of recentPatterns.slice(0, 10)) {
       try {
-        await this.searchService.search(pattern.query, {
-          limit: 20,
-          category: pattern.category
-        }, userContext);
+        await this.searchService.search(
+          pattern.query,
+          {
+            limit: 20,
+            category: pattern.category,
+          },
+          userContext
+        );
         warmed++;
       } catch (error) {
         failed++;
@@ -606,7 +625,7 @@ export class CacheWarmer {
       timeTaken: 0,
       hitRateImprovement: 0,
       estimatedTimeSaved: warmed * 120,
-      resourcesUsed: { memory: warmed * 800, cpu: 0.1, storage: warmed * 400 }
+      resourcesUsed: { memory: warmed * 800, cpu: 0.1, storage: warmed * 400 },
     };
   }
 
@@ -619,7 +638,7 @@ export class CacheWarmer {
         timeTaken: 0,
         hitRateImprovement: 0,
         estimatedTimeSaved: 0,
-        resourcesUsed: { memory: 0, cpu: 0, storage: 0 }
+        resourcesUsed: { memory: 0, cpu: 0, storage: 0 },
       };
     }
 
@@ -645,7 +664,7 @@ export class CacheWarmer {
       timeTaken: 0,
       hitRateImprovement: 0,
       estimatedTimeSaved: warmed * 160,
-      resourcesUsed: { memory: warmed * 1000, cpu: 0.15, storage: warmed * 500 }
+      resourcesUsed: { memory: warmed * 1000, cpu: 0.15, storage: warmed * 500 },
     };
   }
 
@@ -657,11 +676,15 @@ export class CacheWarmer {
 
     for (const category of categories) {
       try {
-        await this.searchService.search('', {
-          category,
-          limit: 30,
-          sortBy: 'usage_count'
-        }, userContext);
+        await this.searchService.search(
+          '',
+          {
+            category,
+            limit: 30,
+            sortBy: 'usage_count',
+          },
+          userContext
+        );
         warmed++;
       } catch (error) {
         failed++;
@@ -675,7 +698,7 @@ export class CacheWarmer {
       timeTaken: 0,
       hitRateImprovement: 0,
       estimatedTimeSaved: warmed * 100,
-      resourcesUsed: { memory: warmed * 1500, cpu: 0.25, storage: warmed * 750 }
+      resourcesUsed: { memory: warmed * 1500, cpu: 0.25, storage: warmed * 750 },
     };
   }
 
@@ -703,7 +726,7 @@ export class CacheWarmer {
       timeTaken: 0,
       hitRateImprovement: 0,
       estimatedTimeSaved: warmed * 140,
-      resourcesUsed: { memory: warmed * 900, cpu: 0.12, storage: warmed * 450 }
+      resourcesUsed: { memory: warmed * 900, cpu: 0.12, storage: warmed * 450 },
     };
   }
 
@@ -730,7 +753,7 @@ export class CacheWarmer {
       timeTaken: 0,
       hitRateImprovement: 0,
       estimatedTimeSaved: warmed * 220,
-      resourcesUsed: { memory: warmed * 1800, cpu: 0.3, storage: warmed * 900 }
+      resourcesUsed: { memory: warmed * 1800, cpu: 0.3, storage: warmed * 900 },
     };
   }
 
@@ -759,14 +782,18 @@ export class CacheWarmer {
       .slice(0, 3); // Top 3 strategies
   }
 
-  private recordPerformanceImprovement(strategy: string, beforeMetrics: any, afterMetrics: any): void {
+  private recordPerformanceImprovement(
+    strategy: string,
+    beforeMetrics: any,
+    afterMetrics: any
+  ): void {
     this.performanceHistory.push({
       timestamp: new Date(),
       strategy,
       hitRateBefore: beforeMetrics.hitRates.overall,
       hitRateAfter: afterMetrics.hitRates.overall,
       responseBefore: beforeMetrics.performance.avgResponseTime,
-      responseAfter: afterMetrics.performance.avgResponseTime
+      responseAfter: afterMetrics.performance.avgResponseTime,
     });
 
     // Keep only last 200 records
@@ -779,9 +806,7 @@ export class CacheWarmer {
     // Extract patterns from recent search activity
     const analytics = this.searchService.getAnalytics();
 
-    return analytics.popularQueries
-      .slice(0, 10)
-      .map(pq => ({ query: pq.query }));
+    return analytics.popularQueries.slice(0, 10).map(pq => ({ query: pq.query }));
   }
 
   private generateUserPredictions(userContext: UserContext): string[] {
@@ -810,44 +835,47 @@ export class CacheWarmer {
       morning: ['system status', 'daily reports', 'performance check'],
       afternoon: ['troubleshooting', 'error resolution', 'configuration'],
       evening: ['batch processing', 'maintenance', 'backup'],
-      night: ['monitoring', 'alerts', 'system health']
+      night: ['monitoring', 'alerts', 'system health'],
     };
 
-    const timeOfDay = hour < 6 ? 'night' :
-                     hour < 12 ? 'morning' :
-                     hour < 18 ? 'afternoon' : 'evening';
+    const timeOfDay =
+      hour < 6 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
     return timeBasedQueries[timeOfDay] || [];
   }
 
-  private async generateQueryPredictions(timeWindow: number): Promise<Array<{
-    query: string;
-    expectedResultCount: number;
-    likelyCategory?: string;
-    confidence: number;
-  }>> {
+  private async generateQueryPredictions(timeWindow: number): Promise<
+    Array<{
+      query: string;
+      expectedResultCount: number;
+      likelyCategory?: string;
+      confidence: number;
+    }>
+  > {
     // Analyze patterns and generate predictions
     const analytics = this.searchService.getAnalytics();
 
     return analytics.popularQueries.slice(0, 15).map(pq => ({
       query: pq.query,
       expectedResultCount: Math.min(20, Math.max(5, Math.floor(pq.count / 2))),
-      confidence: Math.min(0.9, pq.count / 100)
+      confidence: Math.min(0.9, pq.count / 100),
     }));
   }
 
-  private async generateMLPredictions(): Promise<Array<{
-    query: string;
-    options: SearchOptions;
-    confidence: number;
-  }>> {
+  private async generateMLPredictions(): Promise<
+    Array<{
+      query: string;
+      options: SearchOptions;
+      confidence: number;
+    }>
+  > {
     // Placeholder for ML-based predictions
     // In a real implementation, this would use trained models
 
     const predictions = [
       { query: 'performance optimization', options: { limit: 25 }, confidence: 0.85 },
       { query: 'error handling', options: { limit: 20, category: 'System' }, confidence: 0.78 },
-      { query: 'configuration management', options: { limit: 15 }, confidence: 0.72 }
+      { query: 'configuration management', options: { limit: 15 }, confidence: 0.72 },
     ];
 
     return predictions;
@@ -862,7 +890,8 @@ export class CacheWarmer {
       return recommendations;
     }
 
-    const avgSuccessRate = stats.reduce((sum, r) => sum + (r.warmed / (r.warmed + r.failed)), 0) / stats.length;
+    const avgSuccessRate =
+      stats.reduce((sum, r) => sum + r.warmed / (r.warmed + r.failed), 0) / stats.length;
 
     if (avgSuccessRate < 0.8) {
       recommendations.push('Review warming strategies - high failure rate detected');

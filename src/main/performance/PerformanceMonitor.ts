@@ -103,19 +103,19 @@ export class PerformanceMonitor extends EventEmitter {
   private readonly thresholds: PerformanceThresholds = {
     memory: {
       heapUsage: 200, // 200MB
-      rssUsage: 500   // 500MB
+      rssUsage: 500, // 500MB
     },
     cpu: {
-      usage: 80,      // 80%
-      eventLoopDelay: 50 // 50ms
+      usage: 80, // 80%
+      eventLoopDelay: 50, // 50ms
     },
     startup: {
-      totalTime: 5000,  // 5 seconds
-      phaseTime: 2000   // 2 seconds per phase
+      totalTime: 5000, // 5 seconds
+      phaseTime: 2000, // 2 seconds per phase
     },
     disk: {
-      usage: 90       // 90%
-    }
+      usage: 90, // 90%
+    },
   };
 
   constructor() {
@@ -129,10 +129,10 @@ export class PerformanceMonitor extends EventEmitter {
   startStartupTracking(): void {
     this.startupStartTime = Date.now();
     console.log('📊 Performance monitoring started');
-    
+
     // Record initial memory state
     this.recordMemorySnapshot('startup-begin');
-    
+
     this.emit('startup-tracking:started');
   }
 
@@ -141,7 +141,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   recordPhaseTime(phaseName: string, duration: number): void {
     this.phaseTimings.set(phaseName, duration);
-    
+
     // Check if phase exceeded threshold
     if (duration > this.thresholds.startup.phaseTime) {
       this.addAlert({
@@ -151,10 +151,10 @@ export class PerformanceMonitor extends EventEmitter {
         value: duration,
         threshold: this.thresholds.startup.phaseTime,
         timestamp: new Date(),
-        suggestion: `Consider optimizing ${phaseName} phase or moving non-critical operations to background`
+        suggestion: `Consider optimizing ${phaseName} phase or moving non-critical operations to background`,
       });
     }
-    
+
     this.emit('phase-time:recorded', phaseName, duration);
   }
 
@@ -164,14 +164,15 @@ export class PerformanceMonitor extends EventEmitter {
   completeStartupTracking(): StartupMetrics {
     this.startupEndTime = Date.now();
     const totalTime = this.startupEndTime - this.startupStartTime;
-    
+
     const startupMetrics: StartupMetrics = {
       totalTime,
       phaseTimings: Object.fromEntries(this.phaseTimings),
       criticalPathTime: this.calculateCriticalPathTime(),
       preloadTime: this.phaseTimings.get('preloading') || 0,
-      serviceInitTime: (this.phaseTimings.get('services-critical') || 0) + 
-                       (this.phaseTimings.get('services-optional') || 0)
+      serviceInitTime:
+        (this.phaseTimings.get('services-critical') || 0) +
+        (this.phaseTimings.get('services-optional') || 0),
     };
 
     // Check total startup time
@@ -183,13 +184,13 @@ export class PerformanceMonitor extends EventEmitter {
         value: totalTime,
         threshold: this.thresholds.startup.totalTime,
         timestamp: new Date(),
-        suggestion: 'Consider enabling more aggressive caching or reducing startup operations'
+        suggestion: 'Consider enabling more aggressive caching or reducing startup operations',
       });
     }
 
     console.log(`📊 Startup tracking completed: ${totalTime}ms total`);
     this.emit('startup-tracking:completed', startupMetrics);
-    
+
     return startupMetrics;
   }
 
@@ -203,7 +204,7 @@ export class PerformanceMonitor extends EventEmitter {
     }
 
     this.isMonitoring = true;
-    
+
     this.monitoringInterval = setInterval(() => {
       this.collectMetrics();
     }, interval);
@@ -222,14 +223,14 @@ export class PerformanceMonitor extends EventEmitter {
     if (!this.isMonitoring) return;
 
     this.isMonitoring = false;
-    
+
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = undefined;
     }
 
     this.removeSystemEventListeners();
-    
+
     console.log('📊 Performance monitoring stopped');
     this.emit('monitoring:stopped');
   }
@@ -243,7 +244,7 @@ export class PerformanceMonitor extends EventEmitter {
       memory: this.getMemoryMetrics(),
       cpu: this.getCpuMetrics(),
       disk: this.getDiskMetrics(),
-      network: this.getNetworkMetrics()
+      network: this.getNetworkMetrics(),
     };
 
     // Store metrics history (keep last 100 entries)
@@ -268,8 +269,9 @@ export class PerformanceMonitor extends EventEmitter {
       phaseTimings: Object.fromEntries(this.phaseTimings),
       criticalPathTime: this.calculateCriticalPathTime(),
       preloadTime: this.phaseTimings.get('preloading') || 0,
-      serviceInitTime: (this.phaseTimings.get('services-critical') || 0) + 
-                       (this.phaseTimings.get('services-optional') || 0)
+      serviceInitTime:
+        (this.phaseTimings.get('services-critical') || 0) +
+        (this.phaseTimings.get('services-optional') || 0),
     };
   }
 
@@ -278,7 +280,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   private getMemoryMetrics(): MemoryMetrics {
     const memUsage = process.memoryUsage();
-    
+
     return {
       heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
       heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
@@ -287,7 +289,7 @@ export class PerformanceMonitor extends EventEmitter {
       arrayBuffers: Math.round(memUsage.arrayBuffers / 1024 / 1024), // MB
       peakUsage: this.getPeakMemoryUsage(),
       gcCount: this.getGCCount(),
-      gcTime: this.getGCTime()
+      gcTime: this.getGCTime(),
     };
   }
 
@@ -296,13 +298,13 @@ export class PerformanceMonitor extends EventEmitter {
    */
   private getCpuMetrics(): CpuMetrics {
     const cpuUsage = process.cpuUsage();
-    
+
     return {
       usage: this.calculateCpuUsage(cpuUsage),
       loadAverage: os.loadavg(),
       eventLoopDelay: this.measureEventLoopDelay(),
       activeHandles: (process as any)._getActiveHandles().length,
-      activeRequests: (process as any)._getActiveRequests().length
+      activeRequests: (process as any)._getActiveRequests().length,
     };
   }
 
@@ -317,7 +319,7 @@ export class PerformanceMonitor extends EventEmitter {
       readBytes: 0,
       writeBytes: 0,
       spaceUsed: 0,
-      spaceAvailable: this.getAvailableDiskSpace()
+      spaceAvailable: this.getAvailableDiskSpace(),
     };
   }
 
@@ -331,7 +333,7 @@ export class PerformanceMonitor extends EventEmitter {
       responseTime: 0,
       errors: 0,
       bytesReceived: 0,
-      bytesSent: 0
+      bytesSent: 0,
     };
   }
 
@@ -340,10 +342,10 @@ export class PerformanceMonitor extends EventEmitter {
    */
   private calculateCriticalPathTime(): number {
     const phases = Array.from(this.phaseTimings.entries());
-    
+
     // For simplicity, assume critical path is the sum of sequential phases
     const criticalPhases = ['splash', 'services-critical', 'ui-ready', 'finalization'];
-    
+
     return criticalPhases.reduce((total, phase) => {
       return total + (this.phaseTimings.get(phase) || 0);
     }, 0);
@@ -361,7 +363,7 @@ export class PerformanceMonitor extends EventEmitter {
         value: memory.heapUsed,
         threshold: this.thresholds.memory.heapUsage,
         timestamp: new Date(),
-        suggestion: 'Consider running garbage collection or reducing memory-intensive operations'
+        suggestion: 'Consider running garbage collection or reducing memory-intensive operations',
       });
     }
 
@@ -373,7 +375,7 @@ export class PerformanceMonitor extends EventEmitter {
         value: memory.rss,
         threshold: this.thresholds.memory.rssUsage,
         timestamp: new Date(),
-        suggestion: 'Monitor for memory leaks and consider restarting if usage continues to grow'
+        suggestion: 'Monitor for memory leaks and consider restarting if usage continues to grow',
       });
     }
   }
@@ -390,7 +392,7 @@ export class PerformanceMonitor extends EventEmitter {
         value: cpu.usage,
         threshold: this.thresholds.cpu.usage,
         timestamp: new Date(),
-        suggestion: 'Check for CPU-intensive operations or infinite loops'
+        suggestion: 'Check for CPU-intensive operations or infinite loops',
       });
     }
 
@@ -402,7 +404,8 @@ export class PerformanceMonitor extends EventEmitter {
         value: cpu.eventLoopDelay,
         threshold: this.thresholds.cpu.eventLoopDelay,
         timestamp: new Date(),
-        suggestion: 'Consider moving heavy operations to worker threads or reducing synchronous operations'
+        suggestion:
+          'Consider moving heavy operations to worker threads or reducing synchronous operations',
       });
     }
   }
@@ -412,7 +415,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   private addAlert(alert: PerformanceAlert): void {
     this.alerts.push(alert);
-    
+
     // Keep only last 50 alerts
     if (this.alerts.length > 50) {
       this.alerts.shift();
@@ -430,14 +433,14 @@ export class PerformanceMonitor extends EventEmitter {
       // Use V8's GC profiler if available
       if (typeof global.gc === 'function') {
         const PerformanceObserver = require('perf_hooks').PerformanceObserver;
-        
-        this.gcObserver = new PerformanceObserver((list) => {
+
+        this.gcObserver = new PerformanceObserver(list => {
           const entries = list.getEntries();
           for (const entry of entries) {
             if (entry.entryType === 'gc') {
               this.emit('gc:performed', {
                 duration: entry.duration,
-                type: entry.detail?.kind || 'unknown'
+                type: entry.detail?.kind || 'unknown',
               });
             }
           }
@@ -458,7 +461,9 @@ export class PerformanceMonitor extends EventEmitter {
     if (powerMonitor.isOnBatteryPower) {
       powerMonitor.on('on-battery', () => {
         this.emit('power:battery');
-        console.log('📱 System switched to battery power - reducing performance monitoring frequency');
+        console.log(
+          '📱 System switched to battery power - reducing performance monitoring frequency'
+        );
       });
 
       powerMonitor.on('on-ac', () => {
@@ -484,7 +489,7 @@ export class PerformanceMonitor extends EventEmitter {
     console.log(`📊 Memory snapshot [${label}]:`, {
       heap: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
       rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
-      external: `${Math.round(memUsage.external / 1024 / 1024)}MB`
+      external: `${Math.round(memUsage.external / 1024 / 1024)}MB`,
     });
   }
 
@@ -537,8 +542,8 @@ export class PerformanceMonitor extends EventEmitter {
    */
   getOptimizationRecommendations(): string[] {
     const recommendations: string[] = [];
-    const recentAlerts = this.alerts.filter(a => 
-      Date.now() - a.timestamp.getTime() < 300000 // Last 5 minutes
+    const recentAlerts = this.alerts.filter(
+      a => Date.now() - a.timestamp.getTime() < 300000 // Last 5 minutes
     );
 
     if (recentAlerts.some(a => a.category === 'memory')) {
@@ -582,8 +587,8 @@ export class PerformanceMonitor extends EventEmitter {
    */
   getPerformanceSummary(): any {
     const latest = this.metricsHistory[this.metricsHistory.length - 1];
-    const recentAlerts = this.alerts.filter(a => 
-      Date.now() - a.timestamp.getTime() < 600000 // Last 10 minutes
+    const recentAlerts = this.alerts.filter(
+      a => Date.now() - a.timestamp.getTime() < 600000 // Last 10 minutes
     );
 
     return {
@@ -591,7 +596,7 @@ export class PerformanceMonitor extends EventEmitter {
       current: latest,
       alerts: recentAlerts.length,
       recommendations: this.getOptimizationRecommendations(),
-      healthScore: this.calculateHealthScore()
+      healthScore: this.calculateHealthScore(),
     };
   }
 
@@ -600,8 +605,8 @@ export class PerformanceMonitor extends EventEmitter {
    */
   private calculateHealthScore(): number {
     let score = 100;
-    const recentAlerts = this.alerts.filter(a => 
-      Date.now() - a.timestamp.getTime() < 300000 // Last 5 minutes
+    const recentAlerts = this.alerts.filter(
+      a => Date.now() - a.timestamp.getTime() < 300000 // Last 5 minutes
     );
 
     // Deduct points for alerts
@@ -622,7 +627,7 @@ export class PerformanceMonitor extends EventEmitter {
    */
   cleanup(): void {
     this.stop();
-    
+
     if (this.gcObserver) {
       this.gcObserver.disconnect();
       this.gcObserver = null;

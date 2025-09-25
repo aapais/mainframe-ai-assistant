@@ -49,8 +49,8 @@ export class MemoryAnalysisReportGenerator {
     maxMemoryGrowth: 10 * 1024 * 1024, // 10MB per hour
     maxDetachedNodes: 0,
     maxMemoryLeaks: 0,
-    minGcEfficiency: 0.90, // 90%
-    maxOrphanedListeners: 10
+    minGcEfficiency: 0.9, // 90%
+    maxOrphanedListeners: 10,
   };
 
   /**
@@ -69,7 +69,7 @@ export class MemoryAnalysisReportGenerator {
       grade,
       metrics,
       summary,
-      compliance
+      compliance,
     };
   }
 
@@ -138,9 +138,12 @@ export class MemoryAnalysisReportGenerator {
 
 | Metric | Target | Actual | Status | Severity |
 |--------|---------|---------|---------|----------|
-${Object.entries(validationResult.metrics).map(([key, metric]) =>
-  `| ${metric.name} | ${metric.target} ${metric.unit} | ${metric.actual} ${metric.unit} | ${metric.passed ? '✅' : '❌'} | ${metric.severity.toUpperCase()} |`
-).join('\n')}
+${Object.entries(validationResult.metrics)
+  .map(
+    ([key, metric]) =>
+      `| ${metric.name} | ${metric.target} ${metric.unit} | ${metric.actual} ${metric.unit} | ${metric.passed ? '✅' : '❌'} | ${metric.severity.toUpperCase()} |`
+  )
+  .join('\n')}
 
 ## Memory Trends
 
@@ -152,23 +155,31 @@ ${this.generateComponentTrendText(analysisReport.trends.componentCounts)}
 
 ## Issues Detected
 
-${analysisReport.issues.length === 0 ?
-  '✅ No memory issues detected.' :
-  analysisReport.issues.map((issue, index) => `
+${
+  analysisReport.issues.length === 0
+    ? '✅ No memory issues detected.'
+    : analysisReport.issues
+        .map(
+          (issue, index) => `
 ### ${index + 1}. ${issue.type.charAt(0).toUpperCase() + issue.type.slice(1)} Issue - ${issue.severity.toUpperCase()}
 
 **Source**: ${issue.source}
 **Impact**: ${this.formatBytes(issue.memoryDelta)}
 **Description**: ${issue.description}
 **Suggested Fix**: ${issue.suggestedFix}
-`).join('\n')
+`
+        )
+        .join('\n')
 }
 
 ## Optimization Opportunities
 
-${analysisReport.optimizations.length === 0 ?
-  '✅ No optimizations needed at this time.' :
-  analysisReport.optimizations.map((opt, index) => `
+${
+  analysisReport.optimizations.length === 0
+    ? '✅ No optimizations needed at this time.'
+    : analysisReport.optimizations
+        .map(
+          (opt, index) => `
 ### ${index + 1}. ${opt.description}
 
 - **Type**: ${opt.type}
@@ -176,7 +187,9 @@ ${analysisReport.optimizations.length === 0 ?
 - **Expected Savings**: ${this.formatBytes(opt.expectedSavings)}
 - **Implementation Effort**: ${opt.effort}
 - **Implementation**: ${opt.implementation}
-`).join('\n')
+`
+        )
+        .join('\n')
 }
 
 ## Compliance Assessment
@@ -188,15 +201,11 @@ ${analysisReport.optimizations.length === 0 ?
 
 ## Recommendations
 
-${validationResult.summary.recommendations.map((rec, index) =>
-  `${index + 1}. ${rec}`
-).join('\n')}
+${validationResult.summary.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n')}
 
 ## Next Steps
 
-${validationResult.summary.nextSteps.map((step, index) =>
-  `${index + 1}. ${step}`
-).join('\n')}
+${validationResult.summary.nextSteps.map((step, index) => `${index + 1}. ${step}`).join('\n')}
 
 ## Technical Details
 
@@ -247,27 +256,29 @@ ${validationResult.summary.nextSteps.map((step, index) =>
       'Event Listeners',
       'GC Collections',
       'GC Efficiency',
-      'Issues Count'
+      'Issues Count',
     ];
 
     const rows = [headers.join(',')];
 
     // Add current snapshot data
     const current = analysisReport.current;
-    rows.push([
-      current.timestamp.toISOString(),
-      (current.heapUsed / 1024 / 1024).toFixed(2),
-      (current.heapTotal / 1024 / 1024).toFixed(2),
-      (current.rss / 1024 / 1024).toFixed(2),
-      (current.external / 1024 / 1024).toFixed(2),
-      (current.arrayBuffers / 1024 / 1024).toFixed(2),
-      current.domMetrics.totalNodes.toString(),
-      current.domMetrics.detachedNodes.toString(),
-      current.eventListenerMetrics.total.toString(),
-      current.gcMetrics.collections.toString(),
-      current.gcMetrics.efficiency.toFixed(3),
-      current.leakSuspects.length.toString()
-    ].join(','));
+    rows.push(
+      [
+        current.timestamp.toISOString(),
+        (current.heapUsed / 1024 / 1024).toFixed(2),
+        (current.heapTotal / 1024 / 1024).toFixed(2),
+        (current.rss / 1024 / 1024).toFixed(2),
+        (current.external / 1024 / 1024).toFixed(2),
+        (current.arrayBuffers / 1024 / 1024).toFixed(2),
+        current.domMetrics.totalNodes.toString(),
+        current.domMetrics.detachedNodes.toString(),
+        current.eventListenerMetrics.total.toString(),
+        current.gcMetrics.collections.toString(),
+        current.gcMetrics.efficiency.toFixed(3),
+        current.leakSuspects.length.toString(),
+      ].join(',')
+    );
 
     return rows.join('\n');
   }
@@ -282,11 +293,16 @@ ${validationResult.summary.nextSteps.map((step, index) =>
         actual: report.current.heapUsed,
         unit: 'bytes',
         passed: report.current.heapUsed <= this.targetMetrics.heapSizeBaseline,
-        severity: report.current.heapUsed > this.targetMetrics.heapSizeBaseline * 1.5 ? 'critical' :
-                 report.current.heapUsed > this.targetMetrics.heapSizeBaseline ? 'warning' : 'info',
-        recommendation: report.current.heapUsed > this.targetMetrics.heapSizeBaseline
-          ? 'Consider implementing memory optimization strategies'
-          : undefined
+        severity:
+          report.current.heapUsed > this.targetMetrics.heapSizeBaseline * 1.5
+            ? 'critical'
+            : report.current.heapUsed > this.targetMetrics.heapSizeBaseline
+              ? 'warning'
+              : 'info',
+        recommendation:
+          report.current.heapUsed > this.targetMetrics.heapSizeBaseline
+            ? 'Consider implementing memory optimization strategies'
+            : undefined,
       },
       memoryGrowth: {
         name: 'Memory Growth Rate',
@@ -294,11 +310,16 @@ ${validationResult.summary.nextSteps.map((step, index) =>
         actual: report.summary.memoryGrowthRate,
         unit: 'bytes/hour',
         passed: report.summary.memoryGrowthRate <= this.targetMetrics.maxMemoryGrowth,
-        severity: report.summary.memoryGrowthRate > this.targetMetrics.maxMemoryGrowth * 2 ? 'critical' :
-                 report.summary.memoryGrowthRate > this.targetMetrics.maxMemoryGrowth ? 'error' : 'info',
-        recommendation: report.summary.memoryGrowthRate > this.targetMetrics.maxMemoryGrowth
-          ? 'Investigate memory leaks and optimize component lifecycle'
-          : undefined
+        severity:
+          report.summary.memoryGrowthRate > this.targetMetrics.maxMemoryGrowth * 2
+            ? 'critical'
+            : report.summary.memoryGrowthRate > this.targetMetrics.maxMemoryGrowth
+              ? 'error'
+              : 'info',
+        recommendation:
+          report.summary.memoryGrowthRate > this.targetMetrics.maxMemoryGrowth
+            ? 'Investigate memory leaks and optimize component lifecycle'
+            : undefined,
       },
       detachedNodes: {
         name: 'Detached DOM Nodes',
@@ -306,11 +327,16 @@ ${validationResult.summary.nextSteps.map((step, index) =>
         actual: report.current.domMetrics.detachedNodes,
         unit: 'nodes',
         passed: report.current.domMetrics.detachedNodes <= this.targetMetrics.maxDetachedNodes,
-        severity: report.current.domMetrics.detachedNodes > 100 ? 'critical' :
-                 report.current.domMetrics.detachedNodes > 10 ? 'warning' : 'info',
-        recommendation: report.current.domMetrics.detachedNodes > 0
-          ? 'Review component cleanup and DOM manipulation'
-          : undefined
+        severity:
+          report.current.domMetrics.detachedNodes > 100
+            ? 'critical'
+            : report.current.domMetrics.detachedNodes > 10
+              ? 'warning'
+              : 'info',
+        recommendation:
+          report.current.domMetrics.detachedNodes > 0
+            ? 'Review component cleanup and DOM manipulation'
+            : undefined,
       },
       memoryLeaks: {
         name: 'Memory Leaks',
@@ -318,12 +344,15 @@ ${validationResult.summary.nextSteps.map((step, index) =>
         actual: report.summary.leakCount,
         unit: 'leaks',
         passed: report.summary.leakCount <= this.targetMetrics.maxMemoryLeaks,
-        severity: report.issues.some(i => i.severity === 'critical') ? 'critical' :
-                 report.issues.some(i => i.severity === 'high') ? 'error' :
-                 report.summary.leakCount > 0 ? 'warning' : 'info',
-        recommendation: report.summary.leakCount > 0
-          ? 'Address identified memory leaks immediately'
-          : undefined
+        severity: report.issues.some(i => i.severity === 'critical')
+          ? 'critical'
+          : report.issues.some(i => i.severity === 'high')
+            ? 'error'
+            : report.summary.leakCount > 0
+              ? 'warning'
+              : 'info',
+        recommendation:
+          report.summary.leakCount > 0 ? 'Address identified memory leaks immediately' : undefined,
       },
       gcEfficiency: {
         name: 'GC Efficiency',
@@ -331,33 +360,46 @@ ${validationResult.summary.nextSteps.map((step, index) =>
         actual: report.current.gcMetrics.efficiency,
         unit: '%',
         passed: report.current.gcMetrics.efficiency >= this.targetMetrics.minGcEfficiency,
-        severity: report.current.gcMetrics.efficiency < 0.7 ? 'critical' :
-                 report.current.gcMetrics.efficiency < 0.8 ? 'warning' : 'info',
-        recommendation: report.current.gcMetrics.efficiency < this.targetMetrics.minGcEfficiency
-          ? 'Optimize object allocation patterns and reduce GC pressure'
-          : undefined
+        severity:
+          report.current.gcMetrics.efficiency < 0.7
+            ? 'critical'
+            : report.current.gcMetrics.efficiency < 0.8
+              ? 'warning'
+              : 'info',
+        recommendation:
+          report.current.gcMetrics.efficiency < this.targetMetrics.minGcEfficiency
+            ? 'Optimize object allocation patterns and reduce GC pressure'
+            : undefined,
       },
       eventListeners: {
         name: 'Orphaned Event Listeners',
         target: this.targetMetrics.maxOrphanedListeners,
         actual: report.current.eventListenerMetrics.orphaned,
         unit: 'listeners',
-        passed: report.current.eventListenerMetrics.orphaned <= this.targetMetrics.maxOrphanedListeners,
-        severity: report.current.eventListenerMetrics.orphaned > 50 ? 'critical' :
-                 report.current.eventListenerMetrics.orphaned > 20 ? 'warning' : 'info',
-        recommendation: report.current.eventListenerMetrics.orphaned > this.targetMetrics.maxOrphanedListeners
-          ? 'Implement proper event listener cleanup in useEffect hooks'
-          : undefined
-      }
+        passed:
+          report.current.eventListenerMetrics.orphaned <= this.targetMetrics.maxOrphanedListeners,
+        severity:
+          report.current.eventListenerMetrics.orphaned > 50
+            ? 'critical'
+            : report.current.eventListenerMetrics.orphaned > 20
+              ? 'warning'
+              : 'info',
+        recommendation:
+          report.current.eventListenerMetrics.orphaned > this.targetMetrics.maxOrphanedListeners
+            ? 'Implement proper event listener cleanup in useEffect hooks'
+            : undefined,
+      },
     };
   }
 
-  private assessCompliance(metrics: PerformanceValidationResult['metrics']): PerformanceValidationResult['compliance'] {
+  private assessCompliance(
+    metrics: PerformanceValidationResult['metrics']
+  ): PerformanceValidationResult['compliance'] {
     return {
       targetMetricsMet: Object.values(metrics).every(m => m.passed),
       baselineCompliance: metrics.heapSize.passed,
       growthRateCompliance: metrics.memoryGrowth.passed,
-      leakFreeCompliance: metrics.memoryLeaks.passed && metrics.detachedNodes.passed
+      leakFreeCompliance: metrics.memoryLeaks.passed && metrics.detachedNodes.passed,
     };
   }
 
@@ -365,17 +407,19 @@ ${validationResult.summary.nextSteps.map((step, index) =>
     report: MemoryAnalysisReport,
     metrics: PerformanceValidationResult['metrics']
   ): PerformanceValidationResult['summary'] {
-    const criticalIssues = Object.values(metrics).filter(m => m.severity === 'critical').length +
-                          report.issues.filter(i => i.severity === 'critical').length;
+    const criticalIssues =
+      Object.values(metrics).filter(m => m.severity === 'critical').length +
+      report.issues.filter(i => i.severity === 'critical').length;
 
-    const warnings = Object.values(metrics).filter(m => m.severity === 'warning').length +
-                    report.issues.filter(i => i.severity === 'high' || i.severity === 'medium').length;
+    const warnings =
+      Object.values(metrics).filter(m => m.severity === 'warning').length +
+      report.issues.filter(i => i.severity === 'high' || i.severity === 'medium').length;
 
     const recommendations = [
       ...report.summary.recommendations,
       ...Object.values(metrics)
         .filter(m => m.recommendation)
-        .map(m => m.recommendation!)
+        .map(m => m.recommendation!),
     ];
 
     const nextSteps = [];
@@ -404,7 +448,7 @@ ${validationResult.summary.nextSteps.map((step, index) =>
       criticalIssues,
       warnings,
       recommendations: [...new Set(recommendations)], // Remove duplicates
-      nextSteps
+      nextSteps,
     };
   }
 
@@ -415,7 +459,7 @@ ${validationResult.summary.nextSteps.map((step, index) =>
       detachedNodes: 15,
       memoryLeaks: 25,
       gcEfficiency: 10,
-      eventListeners: 5
+      eventListeners: 5,
     };
 
     let totalScore = 0;
@@ -429,10 +473,18 @@ ${validationResult.summary.nextSteps.map((step, index) =>
         score = 100;
       } else {
         switch (metric.severity) {
-          case 'info': score = 90; break;
-          case 'warning': score = 70; break;
-          case 'error': score = 40; break;
-          case 'critical': score = 10; break;
+          case 'info':
+            score = 90;
+            break;
+          case 'warning':
+            score = 70;
+            break;
+          case 'error':
+            score = 40;
+            break;
+          case 'critical':
+            score = 10;
+            break;
         }
       }
 
@@ -548,7 +600,10 @@ ${validationResult.summary.nextSteps.map((step, index) =>
     `;
   }
 
-  private generateExecutiveSummary(report: MemoryAnalysisReport, result: PerformanceValidationResult): string {
+  private generateExecutiveSummary(
+    report: MemoryAnalysisReport,
+    result: PerformanceValidationResult
+  ): string {
     return `
       <div class="section">
         <h2>Executive Summary</h2>
@@ -579,7 +634,9 @@ ${validationResult.summary.nextSteps.map((step, index) =>
       <div class="section">
         <h2>Metrics Validation</h2>
         <div class="metric-grid">
-          ${Object.entries(result.metrics).map(([key, metric]) => `
+          ${Object.entries(result.metrics)
+            .map(
+              ([key, metric]) => `
             <div class="metric-card ${metric.passed ? 'metric-passed' : 'metric-failed'}">
               <h4>${metric.name}</h4>
               <div>Target: ${metric.target} ${metric.unit}</div>
@@ -587,7 +644,9 @@ ${validationResult.summary.nextSteps.map((step, index) =>
               <div>Status: ${metric.passed ? '✅ PASSED' : '❌ FAILED'}</div>
               ${metric.recommendation ? `<div><small>${metric.recommendation}</small></div>` : ''}
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
     `;
@@ -611,7 +670,9 @@ ${validationResult.summary.nextSteps.map((step, index) =>
     return `
       <div class="section">
         <h2>Issues Detected</h2>
-        ${report.issues.map((issue, index) => `
+        ${report.issues
+          .map(
+            (issue, index) => `
           <div class="issue-${issue.severity}">
             <h4>${index + 1}. ${issue.type} - ${issue.severity}</h4>
             <div><strong>Source:</strong> ${issue.source}</div>
@@ -619,7 +680,9 @@ ${validationResult.summary.nextSteps.map((step, index) =>
             <div><strong>Description:</strong> ${issue.description}</div>
             <div><strong>Fix:</strong> ${issue.suggestedFix}</div>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     `;
   }
@@ -632,7 +695,9 @@ ${validationResult.summary.nextSteps.map((step, index) =>
     return `
       <div class="section">
         <h2>Optimization Opportunities</h2>
-        ${report.optimizations.map((opt, index) => `
+        ${report.optimizations
+          .map(
+            (opt, index) => `
           <div class="optimization">
             <h4>${index + 1}. ${opt.description}</h4>
             <div><strong>Type:</strong> ${opt.type}</div>
@@ -641,7 +706,9 @@ ${validationResult.summary.nextSteps.map((step, index) =>
             <div><strong>Effort:</strong> ${opt.effort}</div>
             <div><strong>Implementation:</strong> ${opt.implementation}</div>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
       </div>
     `;
   }

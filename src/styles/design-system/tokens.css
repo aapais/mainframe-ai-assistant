@@ -209,22 +209,26 @@
      ========================================== */
 
   /* Font Families */
-  --font-family-system: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-family-system:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-family-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   --font-family-display: var(--font-family-system);
   --font-family-body: var(--font-family-system);
 
   /* Font Sizes - Scaled Typography */
-  --font-size-xs: 0.75rem;    /* 12px */
-  --font-size-sm: 0.875rem;   /* 14px */
-  --font-size-base: 1rem;     /* 16px */
-  --font-size-lg: 1.125rem;   /* 18px */
-  --font-size-xl: 1.25rem;    /* 20px */
-  --font-size-2xl: 1.5rem;    /* 24px */
-  --font-size-3xl: 1.875rem;  /* 30px */
-  --font-size-4xl: 2.25rem;   /* 36px */
-  --font-size-5xl: 3rem;      /* 48px */
-  --font-size-6xl: 3.75rem;   /* 60px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem; /* 36px */
+  --font-size-5xl: 3rem; /* 48px */
+  --font-size-6xl: 3.75rem; /* 60px */
 
   /* Font Weights */
   --font-weight-thin: 100;
@@ -259,24 +263,24 @@
      ========================================== */
 
   --space-0: 0rem;
-  --space-1: 0.125rem;  /* 2px */
-  --space-2: 0.25rem;   /* 4px */
-  --space-4: 0.5rem;    /* 8px - Base unit */
-  --space-6: 0.75rem;   /* 12px */
-  --space-8: 1rem;      /* 16px */
-  --space-10: 1.25rem;  /* 20px */
-  --space-12: 1.5rem;   /* 24px */
-  --space-16: 2rem;     /* 32px */
-  --space-20: 2.5rem;   /* 40px */
-  --space-24: 3rem;     /* 48px */
-  --space-32: 4rem;     /* 64px */
-  --space-40: 5rem;     /* 80px */
-  --space-48: 6rem;     /* 96px */
-  --space-56: 7rem;     /* 112px */
-  --space-64: 8rem;     /* 128px */
-  --space-80: 10rem;    /* 160px */
-  --space-96: 12rem;    /* 192px */
-  --space-128: 16rem;   /* 256px */
+  --space-1: 0.125rem; /* 2px */
+  --space-2: 0.25rem; /* 4px */
+  --space-4: 0.5rem; /* 8px - Base unit */
+  --space-6: 0.75rem; /* 12px */
+  --space-8: 1rem; /* 16px */
+  --space-10: 1.25rem; /* 20px */
+  --space-12: 1.5rem; /* 24px */
+  --space-16: 2rem; /* 32px */
+  --space-20: 2.5rem; /* 40px */
+  --space-24: 3rem; /* 48px */
+  --space-32: 4rem; /* 64px */
+  --space-40: 5rem; /* 80px */
+  --space-48: 6rem; /* 96px */
+  --space-56: 7rem; /* 112px */
+  --space-64: 8rem; /* 128px */
+  --space-80: 10rem; /* 160px */
+  --space-96: 12rem; /* 192px */
+  --space-128: 16rem; /* 256px */
 
   /* Component-Specific Spacing */
   --space-component-xs: var(--space-2);
@@ -312,13 +316,13 @@
 
   /* Border Radius */
   --border-radius-none: 0;
-  --border-radius-xs: 0.125rem;   /* 2px */
-  --border-radius-sm: 0.25rem;    /* 4px */
-  --border-radius-md: 0.375rem;   /* 6px */
-  --border-radius-lg: 0.5rem;     /* 8px */
-  --border-radius-xl: 0.75rem;    /* 12px */
-  --border-radius-2xl: 1rem;      /* 16px */
-  --border-radius-3xl: 1.5rem;    /* 24px */
+  --border-radius-xs: 0.125rem; /* 2px */
+  --border-radius-sm: 0.25rem; /* 4px */
+  --border-radius-md: 0.375rem; /* 6px */
+  --border-radius-lg: 0.5rem; /* 8px */
+  --border-radius-xl: 0.75rem; /* 12px */
+  --border-radius-2xl: 1rem; /* 16px */
+  --border-radius-3xl: 1.5rem; /* 24px */
   --border-radius-full: 9999px;
 
   /* Component-Specific Border Radius */
@@ -333,10 +337,14 @@
      ========================================== */
 
   --shadow-xs: 0 1px 2px 0 var(--shadow-color-secondary);
-  --shadow-sm: 0 1px 3px 0 var(--shadow-color-primary), 0 1px 2px -1px var(--shadow-color-secondary);
-  --shadow-md: 0 4px 6px -1px var(--shadow-color-primary), 0 2px 4px -2px var(--shadow-color-secondary);
-  --shadow-lg: 0 10px 15px -3px var(--shadow-color-primary), 0 4px 6px -4px var(--shadow-color-secondary);
-  --shadow-xl: 0 20px 25px -5px var(--shadow-color-primary), 0 8px 10px -6px var(--shadow-color-secondary);
+  --shadow-sm:
+    0 1px 3px 0 var(--shadow-color-primary), 0 1px 2px -1px var(--shadow-color-secondary);
+  --shadow-md:
+    0 4px 6px -1px var(--shadow-color-primary), 0 2px 4px -2px var(--shadow-color-secondary);
+  --shadow-lg:
+    0 10px 15px -3px var(--shadow-color-primary), 0 4px 6px -4px var(--shadow-color-secondary);
+  --shadow-xl:
+    0 20px 25px -5px var(--shadow-color-primary), 0 8px 10px -6px var(--shadow-color-secondary);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --shadow-inner: inset 0 2px 4px 0 var(--shadow-color-secondary);
 
@@ -347,15 +355,21 @@
   --shadow-focus-warning: 0 0 0 2px var(--border-warning), 0 0 0 4px rgba(249, 115, 22, 0.25);
 
   /* Colored Shadows */
-  --shadow-brand: 0 4px 6px -1px var(--shadow-color-brand), 0 2px 4px -2px var(--shadow-color-brand);
-  --shadow-success: 0 4px 6px -1px var(--shadow-color-success), 0 2px 4px -2px var(--shadow-color-success);
-  --shadow-warning: 0 4px 6px -1px var(--shadow-color-warning), 0 2px 4px -2px var(--shadow-color-warning);
-  --shadow-error: 0 4px 6px -1px var(--shadow-color-error), 0 2px 4px -2px var(--shadow-color-error);
+  --shadow-brand:
+    0 4px 6px -1px var(--shadow-color-brand), 0 2px 4px -2px var(--shadow-color-brand);
+  --shadow-success:
+    0 4px 6px -1px var(--shadow-color-success), 0 2px 4px -2px var(--shadow-color-success);
+  --shadow-warning:
+    0 4px 6px -1px var(--shadow-color-warning), 0 2px 4px -2px var(--shadow-color-warning);
+  --shadow-error:
+    0 4px 6px -1px var(--shadow-color-error), 0 2px 4px -2px var(--shadow-color-error);
 
   /* Mainframe Glow Effects */
   --shadow-mainframe-glow: 0 0 10px var(--mainframe-green-bright), 0 0 20px rgba(0, 255, 65, 0.3);
-  --shadow-mainframe-amber-glow: 0 0 10px var(--mainframe-amber-bright), 0 0 20px rgba(255, 204, 0, 0.3);
-  --shadow-mainframe-blue-glow: 0 0 10px var(--mainframe-blue-bright), 0 0 20px rgba(0, 204, 255, 0.3);
+  --shadow-mainframe-amber-glow:
+    0 0 10px var(--mainframe-amber-bright), 0 0 20px rgba(255, 204, 0, 0.3);
+  --shadow-mainframe-blue-glow:
+    0 0 10px var(--mainframe-blue-bright), 0 0 20px rgba(0, 204, 255, 0.3);
 
   /* Component-Specific Shadows */
   --shadow-button: var(--shadow-sm);
@@ -388,20 +402,21 @@
   --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Enhanced Component-Specific Transitions */
-  --transition-button: var(--transition-all-colors),
-                       transform var(--duration-normal) var(--easing-smooth);
+  --transition-button:
+    var(--transition-all-colors), transform var(--duration-normal) var(--easing-smooth);
 
-  --transition-input: var(--transition-border-normal),
-                      var(--transition-background-normal),
-                      box-shadow var(--duration-normal) var(--easing-smooth);
+  --transition-input:
+    var(--transition-border-normal), var(--transition-background-normal),
+    box-shadow var(--duration-normal) var(--easing-smooth);
 
-  --transition-modal: opacity var(--duration-normal) var(--easing-smooth),
-                      transform var(--duration-normal) var(--easing-smooth),
-                      backdrop-filter var(--duration-normal) var(--easing-smooth);
+  --transition-modal:
+    opacity var(--duration-normal) var(--easing-smooth),
+    transform var(--duration-normal) var(--easing-smooth),
+    backdrop-filter var(--duration-normal) var(--easing-smooth);
 
-  --transition-card: var(--transition-all-colors),
-                     transform var(--duration-normal) var(--easing-smooth),
-                     box-shadow var(--duration-normal) var(--easing-smooth);
+  --transition-card:
+    var(--transition-all-colors), transform var(--duration-normal) var(--easing-smooth),
+    box-shadow var(--duration-normal) var(--easing-smooth);
 
   --transition-base: var(--transition-all-colors);
 
@@ -476,7 +491,7 @@
    Override tokens for dark theme
    ========================================== */
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Note: Enhanced dark mode colors are defined in enhanced-colors.css */
   /* This ensures the tokens system uses the sophisticated dark theme */
 

@@ -9,7 +9,7 @@ import { CacheService } from './CacheService';
 import {
   AutocompleteSuggestion,
   AutocompleteQuery,
-  HierarchicalSchemaValidator
+  HierarchicalSchemaValidator,
 } from '../database/schemas/HierarchicalCategories.schema';
 import { AppError, ErrorCode } from '../core/errors/AppError';
 
@@ -54,11 +54,7 @@ export class AutocompleteService extends EventEmitter {
   private lastTrieUpdate: number = 0;
   private readonly TRIE_UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-  constructor(
-    db: Database.Database,
-    cacheService?: CacheService,
-    config: AutocompleteConfig = {}
-  ) {
+  constructor(db: Database.Database, cacheService?: CacheService, config: AutocompleteConfig = {}) {
     super();
 
     this.db = db;
@@ -79,8 +75,8 @@ export class AutocompleteService extends EventEmitter {
         recency: 0.05,
         contextRelevance: 20,
         popularity: 0.02,
-        ...config.scoringWeights
-      }
+        ...config.scoringWeights,
+      },
     };
 
     this.initializePreparedStatements();
@@ -89,7 +85,9 @@ export class AutocompleteService extends EventEmitter {
 
   private initializePreparedStatements(): void {
     // Category suggestions
-    this.preparedStatements.set('categorySuggestions', this.db.prepare(`
+    this.preparedStatements.set(
+      'categorySuggestions',
+      this.db.prepare(`
       SELECT
         id,
         'category' as type,
@@ -104,10 +102,13 @@ export class AutocompleteService extends EventEmitter {
       )
       ORDER BY entry_count DESC, name ASC
       LIMIT ?
-    `));
+    `)
+    );
 
     // Tag suggestions
-    this.preparedStatements.set('tagSuggestions', this.db.prepare(`
+    this.preparedStatements.set(
+      'tagSuggestions',
+      this.db.prepare(`
       SELECT
         id,
         'tag' as type,
@@ -120,10 +121,13 @@ export class AutocompleteService extends EventEmitter {
       WHERE (name LIKE ? OR display_name LIKE ? OR description LIKE ?)
       ORDER BY usage_count DESC, name ASC
       LIMIT ?
-    `));
+    `)
+    );
 
     // Entry suggestions (titles)
-    this.preparedStatements.set('entrySuggestions', this.db.prepare(`
+    this.preparedStatements.set(
+      'entrySuggestions',
+      this.db.prepare(`
       SELECT
         id,
         'entry' as type,
@@ -138,10 +142,13 @@ export class AutocompleteService extends EventEmitter {
       )
       ORDER BY usage_count DESC, updated_at DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // Search term suggestions from history
-    this.preparedStatements.set('searchTermSuggestions', this.db.prepare(`
+    this.preparedStatements.set(
+      'searchTermSuggestions',
+      this.db.prepare(`
       SELECT
         'search_term' as type,
         query as value,
@@ -154,10 +161,13 @@ export class AutocompleteService extends EventEmitter {
       GROUP BY query
       ORDER BY usage_count DESC, last_used DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // FTS-based suggestions
-    this.preparedStatements.set('ftsSuggestions', this.db.prepare(`
+    this.preparedStatements.set(
+      'ftsSuggestions',
+      this.db.prepare(`
       SELECT DISTINCT
         t.id,
         'tag' as type,
@@ -172,10 +182,13 @@ export class AutocompleteService extends EventEmitter {
       WHERE tags_fts MATCH ?
       ORDER BY rank, usage_count DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // Context-aware suggestions based on current entry
-    this.preparedStatements.set('contextSuggestions', this.db.prepare(`
+    this.preparedStatements.set(
+      'contextSuggestions',
+      this.db.prepare(`
       SELECT DISTINCT
         t.id,
         'tag' as type,
@@ -199,27 +212,37 @@ export class AutocompleteService extends EventEmitter {
       WHERE (t.name LIKE ? OR t.display_name LIKE ?)
       ORDER BY effective_usage DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // Update autocomplete cache
-    this.preparedStatements.set('updateCache', this.db.prepare(`
+    this.preparedStatements.set(
+      'updateCache',
+      this.db.prepare(`
       INSERT OR REPLACE INTO autocomplete_cache (
         id, type, value, display_value, description, score, usage_count, last_used, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `));
+    `)
+    );
 
     // Record usage for learning
-    this.preparedStatements.set('recordUsage', this.db.prepare(`
+    this.preparedStatements.set(
+      'recordUsage',
+      this.db.prepare(`
       UPDATE autocomplete_cache
       SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP
       WHERE type = ? AND value = ?
-    `));
+    `)
+    );
   }
 
   /**
    * Get autocomplete suggestions
    */
-  async getSuggestions(query: AutocompleteQuery, context?: SearchContext): Promise<AutocompleteSuggestion[]> {
+  async getSuggestions(
+    query: AutocompleteQuery,
+    context?: SearchContext
+  ): Promise<AutocompleteSuggestion[]> {
     try {
       // Validate query
       const validatedQuery = HierarchicalSchemaValidator.validateAutocompleteQuery(query);
@@ -261,7 +284,7 @@ export class AutocompleteService extends EventEmitter {
       this.emit('autocomplete:suggestions_generated', {
         query: validatedQuery.query,
         resultCount: finalSuggestions.length,
-        sources: Array.from(new Set(suggestions.map(s => s.type)))
+        sources: Array.from(new Set(suggestions.map(s => s.type))),
       });
 
       return finalSuggestions;
@@ -285,10 +308,9 @@ export class AutocompleteService extends EventEmitter {
       }
 
       // Update usage count in cache
-      this.preparedStatements.get('recordUsage')!.run(
-        selectedSuggestion.type,
-        selectedSuggestion.value
-      );
+      this.preparedStatements
+        .get('recordUsage')!
+        .run(selectedSuggestion.type, selectedSuggestion.value);
 
       // Update trie with selection feedback
       this.updateTrieWithFeedback(query, selectedSuggestion);
@@ -297,10 +319,15 @@ export class AutocompleteService extends EventEmitter {
       this.emit('autocomplete:selection_recorded', {
         query,
         suggestion: selectedSuggestion,
-        context
+        context,
       });
     } catch (error) {
-      this.emit('autocomplete:error', { action: 'record_selection', error, query, selectedSuggestion });
+      this.emit('autocomplete:error', {
+        action: 'record_selection',
+        error,
+        query,
+        selectedSuggestion,
+      });
       // Don't throw - this is not critical
     }
   }
@@ -321,7 +348,9 @@ export class AutocompleteService extends EventEmitter {
       }
 
       // Get most used suggestions
-      const popular = this.db.prepare(`
+      const popular = this.db
+        .prepare(
+          `
         SELECT
           id,
           type,
@@ -334,7 +363,9 @@ export class AutocompleteService extends EventEmitter {
         FROM autocomplete_cache
         ORDER BY usage_count DESC, last_used DESC
         LIMIT ?
-      `).all(limit) as any[];
+      `
+        )
+        .all(limit) as any[];
 
       const suggestions = popular.map(row => this.mapRowToSuggestion(row));
 
@@ -353,11 +384,16 @@ export class AutocompleteService extends EventEmitter {
   /**
    * Get recent suggestions for a user
    */
-  async getRecentSuggestions(userId: string, limit: number = 10): Promise<AutocompleteSuggestion[]> {
+  async getRecentSuggestions(
+    userId: string,
+    limit: number = 10
+  ): Promise<AutocompleteSuggestion[]> {
     try {
       // This would typically query user-specific search history
       // For now, we'll return recent search terms
-      const recent = this.db.prepare(`
+      const recent = this.db
+        .prepare(
+          `
         SELECT DISTINCT
           'search_term' as type,
           query as value,
@@ -369,7 +405,9 @@ export class AutocompleteService extends EventEmitter {
         WHERE user_id = ?
         ORDER BY timestamp DESC
         LIMIT ?
-      `).all(userId, limit) as any[];
+      `
+        )
+        .all(userId, limit) as any[];
 
       return recent.map(row => this.mapRowToSuggestion(row));
     } catch (error) {
@@ -422,49 +460,49 @@ export class AutocompleteService extends EventEmitter {
 
     // 2. Category suggestions
     if (query.types.includes('category')) {
-      const categoryRows = this.preparedStatements.get('categorySuggestions')!.all(
-        queryPattern, prefixPattern, queryPattern, query.limit
-      ) as any[];
+      const categoryRows = this.preparedStatements
+        .get('categorySuggestions')!
+        .all(queryPattern, prefixPattern, queryPattern, query.limit) as any[];
       allSuggestions.push(...categoryRows.map(row => this.mapRowToSuggestion(row)));
     }
 
     // 3. Tag suggestions
     if (query.types.includes('tag')) {
-      const tagRows = this.preparedStatements.get('tagSuggestions')!.all(
-        queryPattern, queryPattern, queryPattern, query.limit
-      ) as any[];
+      const tagRows = this.preparedStatements
+        .get('tagSuggestions')!
+        .all(queryPattern, queryPattern, queryPattern, query.limit) as any[];
       allSuggestions.push(...tagRows.map(row => this.mapRowToSuggestion(row)));
 
       // FTS search for tags if fuzzy search is enabled
       if (this.config.enableFuzzySearch) {
-        const ftsRows = this.preparedStatements.get('ftsSuggestions')!.all(
-          query.query, query.limit
-        ) as any[];
+        const ftsRows = this.preparedStatements
+          .get('ftsSuggestions')!
+          .all(query.query, query.limit) as any[];
         allSuggestions.push(...ftsRows.map(row => this.mapRowToSuggestion(row)));
       }
     }
 
     // 4. Entry suggestions
     if (query.types.includes('entry')) {
-      const entryRows = this.preparedStatements.get('entrySuggestions')!.all(
-        queryPattern, queryPattern, query.limit
-      ) as any[];
+      const entryRows = this.preparedStatements
+        .get('entrySuggestions')!
+        .all(queryPattern, queryPattern, query.limit) as any[];
       allSuggestions.push(...entryRows.map(row => this.mapRowToSuggestion(row)));
     }
 
     // 5. Search term suggestions
     if (query.types.includes('search_term')) {
-      const searchRows = this.preparedStatements.get('searchTermSuggestions')!.all(
-        queryPattern, query.limit
-      ) as any[];
+      const searchRows = this.preparedStatements
+        .get('searchTermSuggestions')!
+        .all(queryPattern, query.limit) as any[];
       allSuggestions.push(...searchRows.map(row => this.mapRowToSuggestion(row)));
     }
 
     // 6. Context-aware suggestions
     if (this.config.enableContextAware && context?.currentEntryId) {
-      const contextRows = this.preparedStatements.get('contextSuggestions')!.all(
-        context.currentEntryId, queryPattern, queryPattern, query.limit
-      ) as any[];
+      const contextRows = this.preparedStatements
+        .get('contextSuggestions')!
+        .all(context.currentEntryId, queryPattern, queryPattern, query.limit) as any[];
       allSuggestions.push(...contextRows.map(row => this.mapRowToSuggestion(row)));
     }
 
@@ -527,7 +565,10 @@ export class AutocompleteService extends EventEmitter {
       // Context relevance
       if (context) {
         // Category context
-        if (context.currentCategory && suggestion.metadata?.categoryId === context.currentCategory) {
+        if (
+          context.currentCategory &&
+          suggestion.metadata?.categoryId === context.currentCategory
+        ) {
           score += this.config.scoringWeights.contextRelevance;
         }
 
@@ -559,14 +600,13 @@ export class AutocompleteService extends EventEmitter {
     }
 
     // Sort by score and return
-    return Array.from(uniqueSuggestions.values())
-      .sort((a, b) => {
-        if (b.score !== a.score) {
-          return b.score - a.score;
-        }
-        // Secondary sort by usage count
-        return (b.usage_count || 0) - (a.usage_count || 0);
-      });
+    return Array.from(uniqueSuggestions.values()).sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // Secondary sort by usage count
+      return (b.usage_count || 0) - (a.usage_count || 0);
+    });
   }
 
   private mapRowToSuggestion(row: any): AutocompleteSuggestion {
@@ -582,18 +622,13 @@ export class AutocompleteService extends EventEmitter {
       metadata: {
         rank: row.rank,
         categoryId: row.category_id,
-        effectiveUsage: row.effective_usage
-      }
+        effectiveUsage: row.effective_usage,
+      },
     };
   }
 
   private buildCacheKey(query: AutocompleteQuery, context?: SearchContext): string {
-    const parts = [
-      'autocomplete',
-      query.query,
-      query.types.join(','),
-      query.limit.toString()
-    ];
+    const parts = ['autocomplete', query.query, query.types.join(','), query.limit.toString()];
 
     if (context) {
       if (context.currentCategory) parts.push(`cat:${context.currentCategory}`);
@@ -612,16 +647,18 @@ export class AutocompleteService extends EventEmitter {
     // Update autocomplete cache with new data
     for (const suggestion of suggestions) {
       try {
-        this.preparedStatements.get('updateCache')!.run(
-          suggestion.id,
-          suggestion.type,
-          suggestion.value,
-          suggestion.display_value,
-          suggestion.description,
-          suggestion.score,
-          suggestion.usage_count || 0,
-          suggestion.last_used || new Date()
-        );
+        this.preparedStatements
+          .get('updateCache')!
+          .run(
+            suggestion.id,
+            suggestion.type,
+            suggestion.value,
+            suggestion.display_value,
+            suggestion.description,
+            suggestion.score,
+            suggestion.usage_count || 0,
+            suggestion.last_used || new Date()
+          );
       } catch (error) {
         // Ignore individual update failures
       }
@@ -633,9 +670,13 @@ export class AutocompleteService extends EventEmitter {
     this.trieRoot = { children: new Map(), suggestions: [] };
 
     // Build from categories
-    const categories = this.db.prepare(`
+    const categories = this.db
+      .prepare(
+        `
       SELECT name, slug, id, entry_count FROM categories WHERE is_active = TRUE
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     for (const cat of categories) {
       this.insertIntoTrie(cat.name.toLowerCase(), {
@@ -644,14 +685,18 @@ export class AutocompleteService extends EventEmitter {
         value: cat.slug,
         display_value: cat.name,
         score: 50 + (cat.entry_count || 0) * 0.1,
-        usage_count: cat.entry_count || 0
+        usage_count: cat.entry_count || 0,
       });
     }
 
     // Build from tags
-    const tags = this.db.prepare(`
+    const tags = this.db
+      .prepare(
+        `
       SELECT name, display_name, id, usage_count FROM tags ORDER BY usage_count DESC LIMIT 1000
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     for (const tag of tags) {
       this.insertIntoTrie(tag.name.toLowerCase(), {
@@ -660,7 +705,7 @@ export class AutocompleteService extends EventEmitter {
         value: tag.name,
         display_value: tag.display_name,
         score: 50 + (tag.usage_count || 0) * 0.1,
-        usage_count: tag.usage_count || 0
+        usage_count: tag.usage_count || 0,
       });
     }
 
@@ -685,16 +730,14 @@ export class AutocompleteService extends EventEmitter {
       display_value: suggestion.display_value || '',
       score: suggestion.score || 50,
       usage_count: suggestion.usage_count,
-      ...suggestion
+      ...suggestion,
     };
 
     node.suggestions.push(fullSuggestion);
 
     // Limit suggestions per node to prevent memory bloat
     if (node.suggestions.length > 20) {
-      node.suggestions = node.suggestions
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 20);
+      node.suggestions = node.suggestions.sort((a, b) => b.score - a.score).slice(0, 20);
     }
   }
 
@@ -728,8 +771,7 @@ export class AutocompleteService extends EventEmitter {
     const uniqueSuggestions = new Map<string, AutocompleteSuggestion>();
     for (const suggestion of suggestions) {
       const key = `${suggestion.type}:${suggestion.value}`;
-      if (!uniqueSuggestions.has(key) ||
-          uniqueSuggestions.get(key)!.score < suggestion.score) {
+      if (!uniqueSuggestions.has(key) || uniqueSuggestions.get(key)!.score < suggestion.score) {
         uniqueSuggestions.set(key, suggestion);
       }
     }
@@ -765,87 +807,111 @@ export class AutocompleteService extends EventEmitter {
   }
 
   private async cacheFromCategories(): Promise<void> {
-    const categories = this.db.prepare(`
+    const categories = this.db
+      .prepare(
+        `
       SELECT id, name, slug, description, entry_count, updated_at
       FROM categories WHERE is_active = TRUE
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     for (const cat of categories) {
-      this.preparedStatements.get('updateCache')!.run(
-        cat.id,
-        'category',
-        cat.slug,
-        cat.name,
-        cat.description,
-        50 + (cat.entry_count || 0) * 0.1,
-        cat.entry_count || 0,
-        cat.updated_at
-      );
+      this.preparedStatements
+        .get('updateCache')!
+        .run(
+          cat.id,
+          'category',
+          cat.slug,
+          cat.name,
+          cat.description,
+          50 + (cat.entry_count || 0) * 0.1,
+          cat.entry_count || 0,
+          cat.updated_at
+        );
     }
   }
 
   private async cacheFromTags(): Promise<void> {
-    const tags = this.db.prepare(`
+    const tags = this.db
+      .prepare(
+        `
       SELECT id, name, display_name, description, usage_count, updated_at
       FROM tags
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     for (const tag of tags) {
-      this.preparedStatements.get('updateCache')!.run(
-        tag.id,
-        'tag',
-        tag.name,
-        tag.display_name,
-        tag.description,
-        50 + (tag.usage_count || 0) * 0.1,
-        tag.usage_count || 0,
-        tag.updated_at
-      );
+      this.preparedStatements
+        .get('updateCache')!
+        .run(
+          tag.id,
+          'tag',
+          tag.name,
+          tag.display_name,
+          tag.description,
+          50 + (tag.usage_count || 0) * 0.1,
+          tag.usage_count || 0,
+          tag.updated_at
+        );
     }
   }
 
   private async cacheFromEntries(): Promise<void> {
-    const entries = this.db.prepare(`
+    const entries = this.db
+      .prepare(
+        `
       SELECT id, title, usage_count, last_used
       FROM kb_entries WHERE archived = FALSE
       ORDER BY usage_count DESC LIMIT 500
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     for (const entry of entries) {
-      this.preparedStatements.get('updateCache')!.run(
-        entry.id,
-        'entry',
-        entry.title,
-        entry.title,
-        null,
-        30 + (entry.usage_count || 0) * 0.05,
-        entry.usage_count || 0,
-        entry.last_used
-      );
+      this.preparedStatements
+        .get('updateCache')!
+        .run(
+          entry.id,
+          'entry',
+          entry.title,
+          entry.title,
+          null,
+          30 + (entry.usage_count || 0) * 0.05,
+          entry.usage_count || 0,
+          entry.last_used
+        );
     }
   }
 
   private async cacheFromSearchHistory(): Promise<void> {
-    const searches = this.db.prepare(`
+    const searches = this.db
+      .prepare(
+        `
       SELECT query, COUNT(*) as usage_count, MAX(timestamp) as last_used
       FROM search_history
       GROUP BY query
       HAVING usage_count > 1
       ORDER BY usage_count DESC
       LIMIT 200
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     for (const search of searches) {
-      this.preparedStatements.get('updateCache')!.run(
-        `search_term:${search.query}`,
-        'search_term',
-        search.query,
-        search.query,
-        'Previous search',
-        20 + search.usage_count * 2,
-        search.usage_count,
-        search.last_used
-      );
+      this.preparedStatements
+        .get('updateCache')!
+        .run(
+          `search_term:${search.query}`,
+          'search_term',
+          search.query,
+          search.query,
+          'Previous search',
+          20 + search.usage_count * 2,
+          search.usage_count,
+          search.last_used
+        );
     }
   }
 

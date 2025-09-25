@@ -19,20 +19,20 @@ export async function exampleBasicIntegration() {
     healthCheckInterval: 30000,
     logging: {
       level: 'info',
-      console: true
-    }
+      console: true,
+    },
   });
 
   // Register MemoryManager as a service
   const memoryService = registerMemoryService(serviceManager, {
     checkInterval: 15000, // Check every 15 seconds
     thresholds: {
-      warning: 300,  // 300MB
+      warning: 300, // 300MB
       critical: 500, // 500MB
-      cleanup: 600   // 600MB
+      cleanup: 600, // 600MB
     },
     enableAutoCleanup: true,
-    maxCacheSize: 100 // 100MB cache
+    maxCacheSize: 100, // 100MB cache
   });
 
   // Initialize all services
@@ -40,18 +40,21 @@ export async function exampleBasicIntegration() {
     parallelInitialization: true,
     failFast: false,
     enableRetries: true,
-    retryAttempts: 2
+    retryAttempts: 2,
   });
 
   console.log('Services initialized:', result.initialized);
-  console.log('Failed services:', result.failed.map(f => f.name));
+  console.log(
+    'Failed services:',
+    result.failed.map(f => f.name)
+  );
 
   // Get memory report
   const memoryReport = await memoryService.getMemoryReport();
   console.log('Initial memory usage:', {
     heapUsed: `${(memoryReport.metrics.heapUsed / 1024 / 1024).toFixed(1)}MB`,
     status: memoryReport.status,
-    recommendations: memoryReport.recommendations
+    recommendations: memoryReport.recommendations,
   });
 
   return { serviceManager, memoryService };
@@ -78,10 +81,10 @@ export async function exampleConnectionPool(memoryService: MemoryService) {
 
   // Insert test data
   for (let i = 1; i <= 10; i++) {
-    await memoryService.executeQuery(
-      'INSERT INTO test_data (name, value) VALUES (?, ?)',
-      [`Test Item ${i}`, Math.floor(Math.random() * 1000)]
-    );
+    await memoryService.executeQuery('INSERT INTO test_data (name, value) VALUES (?, ?)', [
+      `Test Item ${i}`,
+      Math.floor(Math.random() * 1000),
+    ]);
   }
 
   // Query data
@@ -97,7 +100,7 @@ export async function exampleConnectionPool(memoryService: MemoryService) {
     totalConnections: poolMetrics.totalConnections,
     activeConnections: poolMetrics.activeConnections,
     totalQueries: poolMetrics.totalQueries,
-    avgQueryTime: `${poolMetrics.avgQueryTime.toFixed(2)}ms`
+    avgQueryTime: `${poolMetrics.avgQueryTime.toFixed(2)}ms`,
   });
 
   return results;
@@ -113,17 +116,21 @@ export async function exampleCacheManager(memoryService: MemoryService) {
 
   // Cache some data
   console.log('Storing data in cache...');
-  await cache.set('user:123', {
-    id: 123,
-    name: 'John Doe',
-    email: 'john@example.com',
-    preferences: { theme: 'dark', language: 'en' }
-  }, 300000); // 5 minutes TTL
+  await cache.set(
+    'user:123',
+    {
+      id: 123,
+      name: 'John Doe',
+      email: 'john@example.com',
+      preferences: { theme: 'dark', language: 'en' },
+    },
+    300000
+  ); // 5 minutes TTL
 
   await cache.set('settings:app', {
     version: '1.0.0',
     debugMode: false,
-    features: ['search', 'analytics', 'cache']
+    features: ['search', 'analytics', 'cache'],
   });
 
   // Cache with tags
@@ -131,14 +138,14 @@ export async function exampleCacheManager(memoryService: MemoryService) {
     title: 'VSAM Error Solution',
     content: 'Steps to resolve VSAM errors...',
     category: 'mainframe',
-    tags: ['vsam', 'error', 'solution']
+    tags: ['vsam', 'error', 'solution'],
   });
 
   // Retrieve cached data
   console.log('Retrieving cached data...');
   const user = await cache.get('user:123');
   const settings = await cache.get('settings:app');
-  
+
   console.log('Cached user:', user);
   console.log('Cached settings:', settings);
 
@@ -153,7 +160,7 @@ export async function exampleCacheManager(memoryService: MemoryService) {
     memorySize: `${(cacheMetrics.memory.size / 1024).toFixed(1)}KB`,
     hitRatio: `${(cacheMetrics.total.hitRatio * 100).toFixed(1)}%`,
     totalHits: cacheMetrics.total.hits,
-    totalMisses: cacheMetrics.total.misses
+    totalMisses: cacheMetrics.total.misses,
   });
 
   return cacheMetrics;
@@ -168,37 +175,40 @@ export async function exampleMemoryMonitoring(memoryService: MemoryService) {
   const memoryManager = memoryService.getMemoryManager();
 
   // Setup event listeners
-  memoryManager.on('memory:warning', (report) => {
+  memoryManager.on('memory:warning', report => {
     console.log('⚠️  Memory warning received:', {
       heapUsed: `${(report.metrics.heapUsed / 1024 / 1024).toFixed(1)}MB`,
-      recommendations: report.recommendations.slice(0, 2) // First 2 recommendations
+      recommendations: report.recommendations.slice(0, 2), // First 2 recommendations
     });
   });
 
-  memoryManager.on('memory:cleanup', (result) => {
+  memoryManager.on('memory:cleanup', result => {
     console.log('🧹 Memory cleanup completed:', {
       memoryFreed: `${result.freed.toFixed(1)}MB`,
-      duration: `${result.duration}ms`
+      duration: `${result.duration}ms`,
     });
   });
 
-  memoryManager.on('memory:leaks-detected', (leaks) => {
-    console.log('🚨 Memory leaks detected:', leaks.map(leak => ({
-      type: leak.type,
-      size: `${(leak.size / 1024 / 1024).toFixed(1)}MB`
-    })));
+  memoryManager.on('memory:leaks-detected', leaks => {
+    console.log(
+      '🚨 Memory leaks detected:',
+      leaks.map(leak => ({
+        type: leak.type,
+        size: `${(leak.size / 1024 / 1024).toFixed(1)}MB`,
+      }))
+    );
   });
 
   // Simulate memory usage
   console.log('Simulating memory usage...');
   const largeObjects: any[] = [];
-  
+
   for (let i = 0; i < 50; i++) {
     // Create large objects to increase memory usage
     largeObjects.push({
       id: i,
       data: new Array(10000).fill(`test data ${i}`),
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     // Cache some objects
@@ -211,7 +221,7 @@ export async function exampleMemoryMonitoring(memoryService: MemoryService) {
     heapUsed: `${(report.metrics.heapUsed / 1024 / 1024).toFixed(1)}MB`,
     heapTotal: `${(report.metrics.heapTotal / 1024 / 1024).toFixed(1)}MB`,
     status: report.status,
-    recommendations: report.recommendations.length
+    recommendations: report.recommendations.length,
   });
 
   // Force cleanup
@@ -226,7 +236,7 @@ export async function exampleMemoryMonitoring(memoryService: MemoryService) {
   const finalReport = await memoryService.getMemoryReport();
   console.log('Memory report after cleanup:', {
     heapUsed: `${(finalReport.metrics.heapUsed / 1024 / 1024).toFixed(1)}MB`,
-    status: finalReport.status
+    status: finalReport.status,
   });
 
   return finalReport;
@@ -240,10 +250,10 @@ export async function exampleHealthMonitoring(memoryService: MemoryService) {
 
   // Get comprehensive health status
   const health = await memoryService.getSystemHealth();
-  
+
   console.log('System Health Status:');
   console.log('Overall Healthy:', health.overall);
-  
+
   console.log('\nMemory Manager:');
   console.log('- Healthy:', health.memory.healthy);
   console.log('- Status:', health.memory.status);
@@ -306,7 +316,6 @@ export async function runAllExamples() {
     console.log('🧹 Shutting down services...');
     await serviceManager.shutdown();
     console.log('✅ Services shut down successfully');
-
   } catch (error) {
     console.error('❌ Error running examples:', error);
     throw error;
@@ -320,5 +329,5 @@ export default {
   exampleCacheManager,
   exampleMemoryMonitoring,
   exampleHealthMonitoring,
-  runAllExamples
+  runAllExamples,
 };

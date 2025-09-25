@@ -26,11 +26,20 @@ import { z } from 'zod';
 
 export const TagSchema = z.object({
   id: z.string().uuid(),
-  name: z.string().min(1).max(50).regex(/^[a-zA-Z0-9-_\s]+$/, 'Invalid tag characters'),
+  name: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-zA-Z0-9-_\s]+$/, 'Invalid tag characters'),
   normalized_name: z.string().min(1).max(50), // Lowercase, trimmed
-  slug: z.string().regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   description: z.string().max(200).optional(),
-  color: z.string().regex(/^#[0-9a-f]{6}$/i).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i)
+    .optional(),
   category_id: z.string().uuid().optional(), // Associated category
   parent_tag_id: z.string().uuid().optional(), // For hierarchical tags
   usage_count: z.number().int().min(0).default(0),
@@ -108,7 +117,8 @@ export class EnhancedTagService extends EventEmitter {
   private tagsByName: Map<string, Tag> = new Map();
   private tagRelationships: Map<string, TagRelationship[]> = new Map();
   private tagAnalytics: Map<string, TagAnalytics[]> = new Map();
-  private suggestionCache: Map<string, { suggestions: TagSuggestion[], timestamp: number }> = new Map();
+  private suggestionCache: Map<string, { suggestions: TagSuggestion[]; timestamp: number }> =
+    new Map();
   private options: Required<TagServiceOptions>;
 
   constructor(options: TagServiceOptions = {}) {
@@ -123,7 +133,7 @@ export class EnhancedTagService extends EventEmitter {
       autoNormalize: true,
       enableCaching: true,
       cacheTimeout: 300000, // 5 minutes
-      ...options
+      ...options,
     };
 
     this.initializeSystemTags();
@@ -136,12 +146,16 @@ export class EnhancedTagService extends EventEmitter {
   /**
    * Create a new tag
    */
-  async createTag(tagData: Omit<Tag, 'id' | 'normalized_name' | 'slug' | 'created_at' | 'updated_at'>): Promise<Tag> {
+  async createTag(
+    tagData: Omit<Tag, 'id' | 'normalized_name' | 'slug' | 'created_at' | 'updated_at'>
+  ): Promise<Tag> {
     if (this.options.enableTagValidation) {
       this.validateTagName(tagData.name);
     }
 
-    const normalized = this.options.autoNormalize ? this.normalizeTagName(tagData.name) : tagData.name;
+    const normalized = this.options.autoNormalize
+      ? this.normalizeTagName(tagData.name)
+      : tagData.name;
     const slug = this.generateSlug(normalized);
 
     // Check for duplicates
@@ -183,8 +197,9 @@ export class EnhancedTagService extends EventEmitter {
         this.validateTagName(updates.name);
       }
 
-      const normalized = this.options.autoNormalize ?
-        this.normalizeTagName(updates.name) : updates.name;
+      const normalized = this.options.autoNormalize
+        ? this.normalizeTagName(updates.name)
+        : updates.name;
 
       // Check for duplicates (excluding current tag)
       const existingByName = this.tagsByName.get(normalized);
@@ -211,10 +226,13 @@ export class EnhancedTagService extends EventEmitter {
   /**
    * Delete a tag
    */
-  async deleteTag(id: string, options: {
-    removeFromEntries?: boolean;
-    replaceWith?: string;
-  } = {}): Promise<void> {
+  async deleteTag(
+    id: string,
+    options: {
+      removeFromEntries?: boolean;
+      replaceWith?: string;
+    } = {}
+  ): Promise<void> {
     const tag = this.tags.get(id);
     if (!tag) {
       throw new Error(`Tag not found: ${id}`);
@@ -241,19 +259,22 @@ export class EnhancedTagService extends EventEmitter {
   /**
    * Get tag suggestions based on input query
    */
-  async getSuggestions(query: string, options: {
-    context?: {
-      entryText?: string;
-      category?: string;
-      existingTags?: string[];
-    };
-    includeAI?: boolean;
-    maxResults?: number;
-  } = {}): Promise<TagSuggestion[]> {
+  async getSuggestions(
+    query: string,
+    options: {
+      context?: {
+        entryText?: string;
+        category?: string;
+        existingTags?: string[];
+      };
+      includeAI?: boolean;
+      maxResults?: number;
+    } = {}
+  ): Promise<TagSuggestion[]> {
     const {
       context,
       includeAI = this.options.enableAISuggestions,
-      maxResults = this.options.maxSuggestions
+      maxResults = this.options.maxSuggestions,
     } = options;
 
     const cacheKey = this.generateSuggestionCacheKey(query, context);
@@ -277,7 +298,7 @@ export class EnhancedTagService extends EventEmitter {
         score: 100,
         reason: 'frequency',
         confidence: 1.0,
-        context: 'Exact name match'
+        context: 'Exact name match',
       });
     });
 
@@ -291,7 +312,7 @@ export class EnhancedTagService extends EventEmitter {
           score: Math.round(similarity * 80), // Max 80 for fuzzy
           reason: 'similarity',
           confidence: similarity,
-          context: `Similar to "${tag.name}"`
+          context: `Similar to "${tag.name}"`,
         });
       }
     });
@@ -305,7 +326,7 @@ export class EnhancedTagService extends EventEmitter {
           score: Math.round(tag.trending_score * 60), // Max 60 for trending
           reason: 'trending',
           confidence: tag.trending_score / 100,
-          context: 'Currently trending'
+          context: 'Currently trending',
         });
       }
     });
@@ -320,7 +341,7 @@ export class EnhancedTagService extends EventEmitter {
             score: Math.round((tag.usage_count || 0) / 10 + 40), // Base 40 + usage
             reason: 'category',
             confidence: 0.7,
-            context: `Common in ${context.category} category`
+            context: `Common in ${context.category} category`,
           });
         }
       });
@@ -337,7 +358,7 @@ export class EnhancedTagService extends EventEmitter {
             score: Math.round(baseScore * relationship.strength),
             reason: 'related',
             confidence: relationship.strength,
-            context: `Related to existing tags (${relationship.relationship_type})`
+            context: `Related to existing tags (${relationship.relationship_type})`,
           });
         }
       });
@@ -363,7 +384,7 @@ export class EnhancedTagService extends EventEmitter {
     if (this.options.enableCaching) {
       this.suggestionCache.set(cacheKey, {
         suggestions: finalSuggestions,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -426,10 +447,11 @@ export class EnhancedTagService extends EventEmitter {
     cutoffDate.setDate(cutoffDate.getDate() - this.options.trendingTimeWindow);
 
     return Array.from(this.tags.values())
-      .filter(tag =>
-        tag.is_active &&
-        (tag.usage_count || 0) >= this.options.minUsageForTrending &&
-        (!tag.last_used || tag.last_used > cutoffDate)
+      .filter(
+        tag =>
+          tag.is_active &&
+          (tag.usage_count || 0) >= this.options.minUsageForTrending &&
+          (!tag.last_used || tag.last_used > cutoffDate)
       )
       .sort((a, b) => (b.trending_score || 0) - (a.trending_score || 0))
       .slice(0, limit);
@@ -460,22 +482,18 @@ export class EnhancedTagService extends EventEmitter {
   /**
    * Get tag cloud data
    */
-  async getTagCloud(options: {
-    minUsage?: number;
-    maxTags?: number;
-    category?: string;
-    timeRange?: { from: Date; to: Date };
-  } = {}): Promise<Array<{ tag: Tag; weight: number }>> {
-    const {
-      minUsage = 1,
-      maxTags = 50,
-      category,
-      timeRange
-    } = options;
+  async getTagCloud(
+    options: {
+      minUsage?: number;
+      maxTags?: number;
+      category?: string;
+      timeRange?: { from: Date; to: Date };
+    } = {}
+  ): Promise<Array<{ tag: Tag; weight: number }>> {
+    const { minUsage = 1, maxTags = 50, category, timeRange } = options;
 
-    let tags = Array.from(this.tags.values()).filter(tag =>
-      tag.is_active &&
-      (tag.usage_count || 0) >= minUsage
+    let tags = Array.from(this.tags.values()).filter(
+      tag => tag.is_active && (tag.usage_count || 0) >= minUsage
     );
 
     // Filter by category if specified
@@ -485,10 +503,8 @@ export class EnhancedTagService extends EventEmitter {
 
     // Filter by time range if specified
     if (timeRange) {
-      tags = tags.filter(tag =>
-        tag.last_used &&
-        tag.last_used >= timeRange.from &&
-        tag.last_used <= timeRange.to
+      tags = tags.filter(
+        tag => tag.last_used && tag.last_used >= timeRange.from && tag.last_used <= timeRange.to
       );
     }
 
@@ -499,7 +515,7 @@ export class EnhancedTagService extends EventEmitter {
     return tags
       .map(tag => ({
         tag,
-        weight: this.normalizeWeight(tag.usage_count || 0, minUsageInSet, maxUsage)
+        weight: this.normalizeWeight(tag.usage_count || 0, minUsageInSet, maxUsage),
       }))
       .sort((a, b) => b.weight - a.weight)
       .slice(0, maxTags);
@@ -561,10 +577,12 @@ export class EnhancedTagService extends EventEmitter {
   /**
    * Get related tags
    */
-  async getRelatedTags(tagIds: string[]): Promise<Array<{
-    tag: Tag;
-    relationship: TagRelationship;
-  }>> {
+  async getRelatedTags(tagIds: string[]): Promise<
+    Array<{
+      tag: Tag;
+      relationship: TagRelationship;
+    }>
+  > {
     const related: Array<{ tag: Tag; relationship: TagRelationship }> = [];
 
     for (const tagId of tagIds) {
@@ -586,8 +604,9 @@ export class EnhancedTagService extends EventEmitter {
       }
     });
 
-    return Array.from(uniqueRelated.values())
-      .sort((a, b) => b.relationship.strength - a.relationship.strength);
+    return Array.from(uniqueRelated.values()).sort(
+      (a, b) => b.relationship.strength - a.relationship.strength
+    );
   }
 
   // ===========================
@@ -729,9 +748,23 @@ export class EnhancedTagService extends EventEmitter {
 
   private initializeSystemTags(): void {
     const systemTags = [
-      'error', 'abend', 'failure', 'timeout', 'performance', 'security',
-      'configuration', 'network', 'storage', 'memory', 'cpu', 'urgent',
-      'critical', 'high-priority', 'resolved', 'workaround', 'temporary-fix'
+      'error',
+      'abend',
+      'failure',
+      'timeout',
+      'performance',
+      'security',
+      'configuration',
+      'network',
+      'storage',
+      'memory',
+      'cpu',
+      'urgent',
+      'critical',
+      'high-priority',
+      'resolved',
+      'workaround',
+      'temporary-fix',
     ];
 
     systemTags.forEach(tagName => {
@@ -845,14 +878,26 @@ export class EnhancedTagService extends EventEmitter {
   protected abstract updateTagInStorage(tag: Tag): Promise<void>;
   protected abstract deleteTagFromStorage(id: string): Promise<void>;
   protected abstract insertTagRelationship(relationship: TagRelationship): Promise<void>;
-  protected abstract removeTagFromAllEntries(tagId: string, replacementTagId?: string): Promise<void>;
+  protected abstract removeTagFromAllEntries(
+    tagId: string,
+    replacementTagId?: string
+  ): Promise<void>;
   protected abstract replaceTagInEntries(oldTagId: string, newTagId: string): Promise<void>;
   protected abstract transferTagRelationships(fromTagId: string, toTagId: string): Promise<void>;
-  protected abstract applyTagByCriteria(tagId: string, criteria: (entryText: string) => boolean): Promise<void>;
+  protected abstract applyTagByCriteria(
+    tagId: string,
+    criteria: (entryText: string) => boolean
+  ): Promise<void>;
   protected abstract getTagsByCategory(categoryId: string): Promise<Tag[]>;
-  protected abstract getTagRelationship(tagId1: string, tagId2: string): Promise<TagRelationship | null>;
+  protected abstract getTagRelationship(
+    tagId1: string,
+    tagId2: string
+  ): Promise<TagRelationship | null>;
   protected abstract getRecentEntriesForTag(tagId: string): Promise<any[]>;
   protected abstract getTagTrendingInfo(tagId: string): Promise<{ score: number; rank: number }>;
-  protected abstract findTagsByName(query: string, options: { exact?: boolean; fuzzy?: boolean }): Tag[];
+  protected abstract findTagsByName(
+    query: string,
+    options: { exact?: boolean; fuzzy?: boolean }
+  ): Tag[];
   protected abstract getAISuggestions(entryText: string, query: string): Promise<TagSuggestion[]>;
 }

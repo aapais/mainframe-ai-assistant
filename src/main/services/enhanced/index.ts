@@ -17,7 +17,7 @@ export type {
   BatchExecutionResult,
   BatchProgress,
   ExportOptions,
-  ImportOptions
+  ImportOptions,
 } from '../BatchOperationsService';
 
 export { VersionControlService } from '../VersionControlService';
@@ -29,7 +29,7 @@ export type {
   VersionDiff,
   HistoryQuery,
   RollbackResult,
-  MergeConflict
+  MergeConflict,
 } from '../VersionControlService';
 
 export { SmartSearchService } from '../SmartSearchService';
@@ -37,7 +37,7 @@ export type {
   SearchStrategy,
   SearchSuggestion,
   SearchAnalytics,
-  SearchPerformanceMetrics
+  SearchPerformanceMetrics,
 } from '../SmartSearchService';
 
 export { DuplicateDetectionService } from '../DuplicateDetectionService';
@@ -47,7 +47,7 @@ export type {
   DuplicateDetectionOptions,
   MergeSuggestion,
   DuplicateDetectionResult,
-  DetectionProgress
+  DetectionProgress,
 } from '../DuplicateDetectionService';
 
 export { EnhancedKnowledgeDBService } from '../EnhancedKnowledgeDBService';
@@ -56,7 +56,7 @@ export type {
   ValidationResult,
   EnhancedSearchOptions,
   EntryRelationship,
-  KBAnalytics
+  KBAnalytics,
 } from '../EnhancedKnowledgeDBService';
 
 // Service factory for easy initialization
@@ -90,12 +90,15 @@ export class ServicePerformanceMonitor {
     this.metrics.set(serviceName, current);
   }
 
-  getMetrics(serviceName?: string): Record<string, {
-    averageTime: number;
-    totalCalls: number;
-    errorRate: number;
-    totalTime: number;
-  }> {
+  getMetrics(serviceName?: string): Record<
+    string,
+    {
+      averageTime: number;
+      totalCalls: number;
+      errorRate: number;
+      totalTime: number;
+    }
+  > {
     const result: Record<string, any> = {};
 
     const entries = serviceName
@@ -108,7 +111,7 @@ export class ServicePerformanceMonitor {
           averageTime: data.calls > 0 ? data.totalTime / data.calls : 0,
           totalCalls: data.calls,
           errorRate: data.calls > 0 ? (data.errors / data.calls) * 100 : 0,
-          totalTime: data.totalTime
+          totalTime: data.totalTime,
         };
       }
     });
@@ -156,26 +159,26 @@ export const DEFAULT_CONFIG: EnhancedKBConfig = {
   database: {
     path: './knowledge.db',
     backupEnabled: true,
-    backupInterval: 24
+    backupInterval: 24,
   },
   features: {
     versionControl: true,
     duplicateDetection: true,
     smartSearch: true,
     batchOperations: true,
-    autoOptimization: true
+    autoOptimization: true,
   },
   performance: {
     cacheSize: 1000,
     cacheTTL: 300000, // 5 minutes
     batchSize: 100,
-    maxVirtualScrollItems: 50
+    maxVirtualScrollItems: 50,
   },
   thresholds: {
     duplicateDetection: 0.8,
     qualityScore: 70,
-    autoMergeConfidence: 0.95
-  }
+    autoMergeConfidence: 0.95,
+  },
 };
 
 export function createConfigFromOptions(
@@ -185,6 +188,6 @@ export function createConfigFromOptions(
     database: { ...DEFAULT_CONFIG.database, ...overrides.database },
     features: { ...DEFAULT_CONFIG.features, ...overrides.features },
     performance: { ...DEFAULT_CONFIG.performance, ...overrides.performance },
-    thresholds: { ...DEFAULT_CONFIG.thresholds, ...overrides.thresholds }
+    thresholds: { ...DEFAULT_CONFIG.thresholds, ...overrides.thresholds },
   };
 }

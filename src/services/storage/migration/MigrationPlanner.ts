@@ -64,7 +64,7 @@ export class MigrationPlanner {
   async createComprehensiveMigrationPlan(targetMVP: number): Promise<MigrationPlan> {
     const currentVersion = this.getCurrentVersion();
     const currentMVP = this.detectCurrentMVP(currentVersion);
-    
+
     if (targetMVP <= currentMVP) {
       throw new Error(`Target MVP ${targetMVP} must be greater than current MVP ${currentMVP}`);
     }
@@ -72,7 +72,7 @@ export class MigrationPlanner {
     const migrationPath = this.calculateOptimalMigrationPath(currentMVP, targetMVP);
     const migrations = await this.loadMigrationsForPath(migrationPath);
     const phases = this.organizeMigrationsIntoPhases(migrations, migrationPath);
-    
+
     const plan: MigrationPlan = {
       id: this.generatePlanId(),
       currentVersion,
@@ -88,12 +88,12 @@ export class MigrationPlanner {
       rollbackStrategy: this.selectRollbackStrategy(migrationPath),
       prerequisites: this.generatePrerequisites(migrationPath),
       postMigrationTasks: this.generatePostMigrationTasks(targetMVP),
-      validationChecks: this.generateValidationChecks(migrations, targetMVP)
+      validationChecks: this.generateValidationChecks(migrations, targetMVP),
     };
 
     // Validate the plan
     await this.validateMigrationPlan(plan);
-    
+
     return plan;
   }
 
@@ -121,17 +121,15 @@ export class MigrationPlanner {
   }> {
     const currentMVP = this.detectCurrentMVP(this.getCurrentVersion());
     const allPaths = this.generateAllPossiblePaths(currentMVP, targetMVP);
-    
-    const pathAnalyses = await Promise.all(
-      allPaths.map(path => this.analyzeSinglePath(path))
-    );
+
+    const pathAnalyses = await Promise.all(allPaths.map(path => this.analyzeSinglePath(path)));
 
     const recommendedPath = this.selectRecommendedPath(pathAnalyses);
-    
+
     return {
       recommendedPath: recommendedPath.path,
       alternativePaths: allPaths.filter(p => p !== recommendedPath.path),
-      pathAnalysis: pathAnalyses
+      pathAnalysis: pathAnalyses,
     };
   }
 
@@ -151,12 +149,12 @@ export class MigrationPlanner {
     emergencyContacts: string[];
   }> {
     const appliedMigrations = this.getAppliedMigrationsSince(fromVersion);
-    
+
     return {
       rollbackSteps: this.generateRollbackSteps(appliedMigrations),
       dataRecoverySteps: this.generateDataRecoverySteps(appliedMigrations),
       validationSteps: this.generateRollbackValidationSteps(appliedMigrations),
-      emergencyContacts: this.getEmergencyContacts()
+      emergencyContacts: this.getEmergencyContacts(),
     };
   }
 
@@ -184,25 +182,25 @@ export class MigrationPlanner {
   }> {
     const currentDbSize = this.getDatabaseSize();
     const migrationComplexity = this.calculateMigrationComplexity(plan.migrations);
-    
+
     return {
       storage: {
         additionalSpaceRequired: currentDbSize * 0.2, // 20% growth estimate
         temporarySpaceRequired: currentDbSize * 0.5, // 50% for temp operations
-        backupSpaceRequired: currentDbSize * 2 // Full backup + incremental
+        backupSpaceRequired: currentDbSize * 2, // Full backup + incremental
       },
       memory: {
         peakMemoryUsage: Math.max(512 * 1024 * 1024, currentDbSize * 0.1), // Min 512MB or 10% of DB
-        recommendedMemory: Math.max(1024 * 1024 * 1024, currentDbSize * 0.2) // Min 1GB or 20% of DB
+        recommendedMemory: Math.max(1024 * 1024 * 1024, currentDbSize * 0.2), // Min 1GB or 20% of DB
       },
       cpu: {
         estimatedCpuTime: plan.estimatedDuration * 60 * 1000, // Convert to milliseconds
-        recommendedCores: migrationComplexity > 50 ? 4 : 2
+        recommendedCores: migrationComplexity > 50 ? 4 : 2,
       },
       network: {
         dataTransferRequired: 0, // Local migrations don't require network transfer
-        estimatedBandwidth: 0
-      }
+        estimatedBandwidth: 0,
+      },
     };
   }
 
@@ -234,7 +232,7 @@ export class MigrationPlanner {
       duration: 30, // 30 minutes
       phase: 'preparation',
       dependencies: [],
-      criticalPath: true
+      criticalPath: true,
     });
     currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
 
@@ -246,7 +244,7 @@ export class MigrationPlanner {
         duration: phase.estimatedDuration,
         phase: phase.name,
         dependencies: phase.dependencies,
-        criticalPath: phase.rollbackPoint
+        criticalPath: phase.rollbackPoint,
       });
 
       if (phase.rollbackPoint) {
@@ -263,7 +261,7 @@ export class MigrationPlanner {
       duration: 15, // 15 minutes
       phase: 'validation',
       dependencies: ['all_migrations'],
-      criticalPath: true
+      criticalPath: true,
     });
 
     return {
@@ -273,8 +271,8 @@ export class MigrationPlanner {
       contingencyPlan: [
         'Immediate rollback if critical validation fails',
         'Emergency data recovery procedures',
-        'Escalation to technical lead if rollback fails'
-      ]
+        'Escalation to technical lead if rollback fails',
+      ],
     };
   }
 
@@ -286,7 +284,7 @@ export class MigrationPlanner {
       name: 'Knowledge Base Assistant',
       features: ['basic_kb', 'search', 'gemini_integration'],
       requiredTables: ['kb_entries', 'kb_tags', 'search_history'],
-      schemaVersion: 10
+      schemaVersion: 10,
     });
 
     this.mvpDefinitions.set(2, {
@@ -294,7 +292,7 @@ export class MigrationPlanner {
       name: 'Pattern Detection & Enrichment',
       features: ['incident_import', 'pattern_detection', 'alerts'],
       requiredTables: ['incidents', 'patterns', 'alerts'],
-      schemaVersion: 20
+      schemaVersion: 20,
     });
 
     this.mvpDefinitions.set(3, {
@@ -302,7 +300,7 @@ export class MigrationPlanner {
       name: 'Code Analysis Integration',
       features: ['cobol_parsing', 'kb_code_linking', 'guided_debugging'],
       requiredTables: ['code_files', 'kb_code_links', 'code_analysis'],
-      schemaVersion: 30
+      schemaVersion: 30,
     });
 
     this.mvpDefinitions.set(4, {
@@ -310,7 +308,7 @@ export class MigrationPlanner {
       name: 'IDZ Integration & Templates',
       features: ['idz_import', 'templates', 'workspace_management'],
       requiredTables: ['projects', 'templates', 'workspaces'],
-      schemaVersion: 40
+      schemaVersion: 40,
     });
 
     this.mvpDefinitions.set(5, {
@@ -318,16 +316,20 @@ export class MigrationPlanner {
       name: 'Enterprise Intelligence Platform',
       features: ['auto_resolution', 'predictive_analytics', 'enterprise_features'],
       requiredTables: ['ml_models', 'auto_resolutions', 'analytics'],
-      schemaVersion: 50
+      schemaVersion: 50,
     });
   }
 
   private getCurrentVersion(): number {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT COALESCE(MAX(version), 0) as version 
         FROM schema_migrations
-      `).get() as { version: number };
+      `
+        )
+        .get() as { version: number };
       return result.version;
     } catch {
       return 0;
@@ -355,13 +357,13 @@ export class MigrationPlanner {
       to: toMVP,
       intermediateSteps,
       criticalPath: true,
-      alternativeRoutes: [] // No alternative routes for MVP upgrades
+      alternativeRoutes: [], // No alternative routes for MVP upgrades
     };
   }
 
   private async loadMigrationsForPath(path: MVPMigrationPath): Promise<Migration[]> {
     const migrations: Migration[] = [];
-    
+
     for (const mvp of path.intermediateSteps) {
       const mvpMigrations = await this.loadMigrationsForMVP(mvp);
       migrations.push(...mvpMigrations);
@@ -378,7 +380,8 @@ export class MigrationPlanner {
       return migrations;
     }
 
-    const files = fs.readdirSync(mvpPath)
+    const files = fs
+      .readdirSync(mvpPath)
       .filter(file => file.endsWith('.sql'))
       .sort();
 
@@ -399,7 +402,7 @@ export class MigrationPlanner {
         version,
         description,
         up,
-        down
+        down,
       });
     }
 
@@ -407,15 +410,13 @@ export class MigrationPlanner {
   }
 
   private organizeMigrationsIntoPhases(
-    migrations: Migration[], 
+    migrations: Migration[],
     path: MVPMigrationPath
   ): MigrationPhase[] {
     const phases: MigrationPhase[] = [];
-    
+
     for (const mvp of path.intermediateSteps) {
-      const mvpMigrations = migrations.filter(m => 
-        this.getMVPForVersion(m.version) === mvp
-      );
+      const mvpMigrations = migrations.filter(m => this.getMVPForVersion(m.version) === mvp);
 
       if (mvpMigrations.length > 0) {
         const mvpDef = this.mvpDefinitions.get(mvp);
@@ -426,7 +427,7 @@ export class MigrationPlanner {
           estimatedDuration: this.estimatePhaseDuration(mvpMigrations),
           canRunInParallel: false, // MVP upgrades are sequential
           dependencies: mvp > 1 ? [`MVP${mvp - 1} Upgrade`] : [],
-          rollbackPoint: true
+          rollbackPoint: true,
         });
       }
     }
@@ -440,22 +441,22 @@ export class MigrationPlanner {
 
   private estimatePhaseDuration(migrations: Migration[]): number {
     let duration = 0;
-    
+
     for (const migration of migrations) {
       // Base time: 2 minutes per migration
       duration += 2;
-      
+
       // Add complexity-based time
       const lines = migration.up.split('\n').length;
       if (lines > 50) duration += 3;
       if (lines > 100) duration += 5;
-      
+
       // Add time for specific operations
       if (migration.up.includes('CREATE TABLE')) duration += 1;
       if (migration.up.includes('CREATE INDEX')) duration += 2;
       if (migration.up.includes('INSERT INTO')) duration += 3;
     }
-    
+
     return duration;
   }
 
@@ -463,12 +464,15 @@ export class MigrationPlanner {
     return phases.reduce((total, phase) => total + phase.estimatedDuration, 0);
   }
 
-  private assessOverallRiskLevel(migrations: Migration[], path: MVPMigrationPath): 'low' | 'medium' | 'high' | 'critical' {
+  private assessOverallRiskLevel(
+    migrations: Migration[],
+    path: MVPMigrationPath
+  ): 'low' | 'medium' | 'high' | 'critical' {
     let riskScore = 0;
-    
+
     // Risk based on number of MVPs being upgraded
     riskScore += (path.to - path.from) * 2;
-    
+
     // Risk based on migration content
     for (const migration of migrations) {
       if (migration.up.includes('DROP TABLE')) riskScore += 10;
@@ -476,7 +480,7 @@ export class MigrationPlanner {
       if (migration.up.includes('DELETE FROM')) riskScore += 6;
       if (migration.description.toLowerCase().includes('breaking')) riskScore += 8;
     }
-    
+
     if (riskScore >= 25) return 'critical';
     if (riskScore >= 15) return 'high';
     if (riskScore >= 8) return 'medium';
@@ -484,10 +488,11 @@ export class MigrationPlanner {
   }
 
   private assessDowntimeRequirement(migrations: Migration[]): boolean {
-    return migrations.some(m => 
-      m.up.includes('DROP TABLE') ||
-      m.up.includes('ALTER TABLE') && m.up.includes('DROP') ||
-      m.description.toLowerCase().includes('breaking')
+    return migrations.some(
+      m =>
+        m.up.includes('DROP TABLE') ||
+        (m.up.includes('ALTER TABLE') && m.up.includes('DROP')) ||
+        m.description.toLowerCase().includes('breaking')
     );
   }
 
@@ -510,7 +515,7 @@ export class MigrationPlanner {
     const prerequisites = [
       'Database backup completed and verified',
       'Sufficient disk space available',
-      'Application shutdown during migration window'
+      'Application shutdown during migration window',
     ];
 
     if (path.to >= 4) {
@@ -529,7 +534,7 @@ export class MigrationPlanner {
     const tasks = [
       'Verify all migrations applied successfully',
       'Run data integrity checks',
-      'Test core application functionality'
+      'Test core application functionality',
     ];
 
     if (targetMVP >= 2) {
@@ -558,13 +563,13 @@ export class MigrationPlanner {
         type: 'schema',
         description: 'Verify all required tables exist',
         critical: true,
-        query: 'SELECT name FROM sqlite_master WHERE type="table" ORDER BY name'
+        query: 'SELECT name FROM sqlite_master WHERE type="table" ORDER BY name',
       },
       {
         type: 'data',
         description: 'Verify data integrity',
-        critical: true
-      }
+        critical: true,
+      },
     ];
 
     const mvpDef = this.mvpDefinitions.get(targetMVP);
@@ -574,7 +579,7 @@ export class MigrationPlanner {
           type: 'schema',
           description: `Verify ${table} table exists`,
           critical: true,
-          query: `SELECT name FROM sqlite_master WHERE type="table" AND name="${table}"`
+          query: `SELECT name FROM sqlite_master WHERE type="table" AND name="${table}"`,
         });
       }
     }
@@ -593,7 +598,9 @@ export class MigrationPlanner {
 
     // Validate MVP progression
     if (plan.targetMVP <= plan.currentMVP) {
-      throw new Error(`Target MVP ${plan.targetMVP} must be greater than current MVP ${plan.currentMVP}`);
+      throw new Error(
+        `Target MVP ${plan.targetMVP} must be greater than current MVP ${plan.currentMVP}`
+      );
     }
   }
 
@@ -604,13 +611,13 @@ export class MigrationPlanner {
 
   private async analyzeSinglePath(path: MVPMigrationPath): Promise<any> {
     const migrations = await this.loadMigrationsForPath(path);
-    
+
     return {
       path,
       pros: this.generatePathPros(path),
       cons: this.generatePathCons(path),
       riskLevel: this.assessOverallRiskLevel(migrations, path),
-      estimatedDuration: this.estimatePhaseDuration(migrations)
+      estimatedDuration: this.estimatePhaseDuration(migrations),
     };
   }
 
@@ -623,13 +630,13 @@ export class MigrationPlanner {
     return [
       'Sequential upgrade ensures compatibility',
       'Each MVP builds on previous features',
-      'Rollback points at each MVP level'
+      'Rollback points at each MVP level',
     ];
   }
 
   private generatePathCons(path: MVPMigrationPath): string[] {
     const cons = [];
-    
+
     if (path.to - path.from > 2) {
       cons.push('Multiple MVP upgrades increase overall risk');
       cons.push('Longer migration window required');
@@ -643,11 +650,15 @@ export class MigrationPlanner {
   }
 
   private getAppliedMigrationsSince(fromVersion: number): any[] {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT * FROM schema_migrations 
       WHERE version > ? 
       ORDER BY version DESC
-    `).all(fromVersion);
+    `
+      )
+      .all(fromVersion);
   }
 
   private generateRollbackSteps(migrations: any[]): any[] {
@@ -656,7 +667,7 @@ export class MigrationPlanner {
       description: `Rollback migration ${m.version}: ${m.description}`,
       sql: m.rollback_sql,
       estimatedDuration: 2,
-      riskLevel: 'medium'
+      riskLevel: 'medium',
     }));
   }
 
@@ -666,7 +677,7 @@ export class MigrationPlanner {
       'Stop all application processes',
       'Restore database from backup',
       'Verify data consistency after restore',
-      'Restart application services'
+      'Restart application services',
     ];
   }
 
@@ -675,7 +686,7 @@ export class MigrationPlanner {
       'Verify schema version matches expected',
       'Run data integrity checks',
       'Test core application functionality',
-      'Verify all features working as expected'
+      'Verify all features working as expected',
     ];
   }
 
@@ -683,7 +694,7 @@ export class MigrationPlanner {
     return [
       'Database Administrator: dba@company.com',
       'Technical Lead: lead@company.com',
-      'System Administrator: sysadmin@company.com'
+      'System Administrator: sysadmin@company.com',
     ];
   }
 
@@ -698,14 +709,14 @@ export class MigrationPlanner {
 
   private calculateMigrationComplexity(migrations: Migration[]): number {
     let complexity = 0;
-    
+
     for (const migration of migrations) {
       complexity += migration.up.split('\n').length;
       if (migration.up.includes('CREATE TABLE')) complexity += 10;
       if (migration.up.includes('CREATE INDEX')) complexity += 5;
       if (migration.up.includes('INSERT INTO')) complexity += 15;
     }
-    
+
     return complexity;
   }
 }

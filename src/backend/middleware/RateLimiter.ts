@@ -34,11 +34,14 @@ export interface RateLimitStore {
  * Memory-based Rate Limit Store with sliding window algorithm
  */
 export class MemoryRateLimitStore implements RateLimitStore {
-  private store = new Map<string, {
-    count: number;
-    resetTime: number;
-    requests: number[];
-  }>();
+  private store = new Map<
+    string,
+    {
+      count: number;
+      resetTime: number;
+      requests: number[];
+    }
+  >();
 
   private config: RateLimitConfig;
   private cleanupInterval?: ReturnType<typeof setTimeout>;
@@ -57,7 +60,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
       entry = {
         count: 0,
         resetTime: now + this.config.windowMs,
-        requests: []
+        requests: [],
       };
       this.store.set(key, entry);
     }
@@ -78,7 +81,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
       limit: this.config.max,
       current: entry.count,
       remaining: Math.max(0, this.config.max - entry.count),
-      resetTime: new Date(entry.resetTime)
+      resetTime: new Date(entry.resetTime),
     };
   }
 
@@ -97,30 +100,33 @@ export class MemoryRateLimitStore implements RateLimitStore {
   async getStats(): Promise<{ totalKeys: number; memoryUsage: number }> {
     return {
       totalKeys: this.store.size,
-      memoryUsage: this.store.size * 1024 // Rough estimate
+      memoryUsage: this.store.size * 1024, // Rough estimate
     };
   }
 
   private startCleanup(): void {
-    this.cleanupInterval = setInterval(() => {
-      const now = Date.now();
-      const keysToDelete: string[] = [];
+    this.cleanupInterval = setInterval(
+      () => {
+        const now = Date.now();
+        const keysToDelete: string[] = [];
 
-      this.store.forEach((entry, key) => {
-        if (entry.requests.length === 0 || entry.resetTime < now) {
-          const windowStart = now - this.config.windowMs;
-          entry.requests = entry.requests.filter(timestamp => timestamp > windowStart);
+        this.store.forEach((entry, key) => {
+          if (entry.requests.length === 0 || entry.resetTime < now) {
+            const windowStart = now - this.config.windowMs;
+            entry.requests = entry.requests.filter(timestamp => timestamp > windowStart);
 
-          if (entry.requests.length === 0) {
-            keysToDelete.push(key);
-          } else {
-            entry.count = entry.requests.length;
+            if (entry.requests.length === 0) {
+              keysToDelete.push(key);
+            } else {
+              entry.count = entry.requests.length;
+            }
           }
-        }
-      });
+        });
 
-      keysToDelete.forEach(key => this.store.delete(key));
-    }, Math.min(this.config.windowMs / 4, 60000)); // Cleanup every quarter window or 1 minute
+        keysToDelete.forEach(key => this.store.delete(key));
+      },
+      Math.min(this.config.windowMs / 4, 60000)
+    ); // Cleanup every quarter window or 1 minute
   }
 
   close(): void {
@@ -158,7 +164,7 @@ export class RedisRateLimitStore implements RateLimitStore {
       limit: this.config.max,
       current,
       remaining: Math.max(0, this.config.max - current),
-      resetTime: new Date((window + 1) * this.config.windowMs)
+      resetTime: new Date((window + 1) * this.config.windowMs),
     };
   }
 
@@ -184,7 +190,7 @@ export class RedisRateLimitStore implements RateLimitStore {
 
     return {
       totalKeys: keys.length,
-      memoryUsage: memoryInfo || 0
+      memoryUsage: memoryInfo || 0,
     };
   }
 }
@@ -232,7 +238,7 @@ export class RateLimiter extends EventEmitter {
       userId,
       current: rateLimitInfo.current,
       limit: adaptiveLimit,
-      remaining: rateLimitInfo.remaining
+      remaining: rateLimitInfo.remaining,
     });
 
     if (rateLimitInfo.current > adaptiveLimit) {
@@ -243,7 +249,7 @@ export class RateLimiter extends EventEmitter {
         current: rateLimitInfo.current,
         limit: adaptiveLimit,
         ip: req.ip,
-        userAgent: req.headers['user-agent']
+        userAgent: req.headers['user-agent'],
       });
 
       if (finalConfig.onLimitReached) {
@@ -252,7 +258,9 @@ export class RateLimiter extends EventEmitter {
 
       const error = new Error('Too many requests');
       (error as any).name = 'RateLimitError';
-      (error as any).retryAfter = Math.ceil((rateLimitInfo.resetTime.getTime() - Date.now()) / 1000);
+      (error as any).retryAfter = Math.ceil(
+        (rateLimitInfo.resetTime.getTime() - Date.now()) / 1000
+      );
       (error as any).rateLimitInfo = rateLimitInfo;
 
       throw error;
@@ -262,7 +270,7 @@ export class RateLimiter extends EventEmitter {
     (req as any).rateLimitInfo = {
       ...rateLimitInfo,
       limit: adaptiveLimit,
-      remaining: adaptiveLimit - rateLimitInfo.current
+      remaining: adaptiveLimit - rateLimitInfo.current,
     };
   }
 
@@ -280,18 +288,17 @@ export class RateLimiter extends EventEmitter {
           res.set({
             'X-RateLimit-Limit': info.limit.toString(),
             'X-RateLimit-Remaining': info.remaining.toString(),
-            'X-RateLimit-Reset': info.resetTime.getTime().toString()
+            'X-RateLimit-Reset': info.resetTime.getTime().toString(),
           });
         }
 
         next();
-
       } catch (error: any) {
         if (error.name === 'RateLimitError') {
           res.status(429).json({
             error: 'Too Many Requests',
             message: error.message,
-            retryAfter: error.retryAfter
+            retryAfter: error.retryAfter,
           });
         } else {
           next(error);
@@ -357,7 +364,7 @@ export class RateLimiter extends EventEmitter {
     return {
       storeStats,
       userLimits: this.userLimits.size,
-      systemLoadFactor: this.systemLoadFactor
+      systemLoadFactor: this.systemLoadFactor,
     };
   }
 
@@ -406,7 +413,7 @@ export class RateLimiter extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < userAgent.length; i++) {
       const char = userAgent.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(36);
@@ -416,7 +423,8 @@ export class RateLimiter extends EventEmitter {
     const now = Date.now();
 
     // Check system load periodically
-    if (now - this.lastLoadCheck > 30000) { // Every 30 seconds
+    if (now - this.lastLoadCheck > 30000) {
+      // Every 30 seconds
       this.updateSystemLoad();
       this.lastLoadCheck = now;
     }
@@ -443,9 +451,8 @@ export class RateLimiter extends EventEmitter {
         loadAvg,
         cpuCount,
         memPressure,
-        systemLoadFactor: this.systemLoadFactor
+        systemLoadFactor: this.systemLoadFactor,
       });
-
     } catch (error) {
       console.error('Error updating system load:', error);
     }
@@ -460,7 +467,7 @@ export class SearchRateLimiter extends RateLimiter {
     super({
       windowMs: 60 * 1000, // 1 minute
       max: 100, // 100 searches per minute
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const userId = req.headers['x-user-id'];
         const sessionId = req.headers['x-session-id'];
         return userId ? `search:user:${userId}` : `search:session:${sessionId}`;
@@ -470,13 +477,13 @@ export class SearchRateLimiter extends RateLimiter {
           ip: req.ip,
           userId: req.headers['x-user-id'],
           current: info.current,
-          limit: info.limit
+          limit: info.limit,
         });
-      }
+      },
     });
 
     // Premium users get higher limits
-    this.on('request-checked', (event) => {
+    this.on('request-checked', event => {
       if (event.userId && this.isPremiumUser(event.userId)) {
         // Dynamically increase limit for premium users
       }
@@ -495,11 +502,11 @@ export class AutocompleteRateLimiter extends RateLimiter {
       windowMs: 10 * 1000, // 10 seconds
       max: 50, // 50 autocomplete requests per 10 seconds
       skipSuccessfulRequests: false,
-      keyGenerator: (req) => {
+      keyGenerator: req => {
         const userId = req.headers['x-user-id'];
         const sessionId = req.headers['x-session-id'];
         return userId ? `autocomplete:user:${userId}` : `autocomplete:session:${sessionId}`;
-      }
+      },
     });
   }
 }

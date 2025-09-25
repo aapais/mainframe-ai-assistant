@@ -26,9 +26,13 @@ import {
   GeminiConfig,
   SearchError,
   AIServiceError,
-  ServiceError
+  ServiceError,
 } from '../types/services';
-import { FTS5EnhancedSearch, EnhancedSearchResult, FTS5SearchOptions } from '../database/FTS5EnhancedSearch';
+import {
+  FTS5EnhancedSearch,
+  EnhancedSearchResult,
+  FTS5SearchOptions,
+} from '../database/FTS5EnhancedSearch';
 import { SearchService } from './SearchService';
 
 /**
@@ -41,11 +45,7 @@ export class EnhancedSearchService extends SearchService {
   private fts5Engine?: FTS5EnhancedSearch;
   private enhancedSearchMetrics: Map<string, number[]> = new Map();
 
-  constructor(
-    geminiConfig?: GeminiConfig,
-    database?: any,
-    cacheManager?: any
-  ) {
+  constructor(geminiConfig?: GeminiConfig, database?: any, cacheManager?: any) {
     super(geminiConfig, database, cacheManager);
 
     // Initialize FTS5 enhanced search if database is available
@@ -54,7 +54,10 @@ export class EnhancedSearchService extends SearchService {
         this.fts5Engine = new FTS5EnhancedSearch(database);
         console.log('✅ Enhanced FTS5 search engine initialized');
       } catch (error) {
-        console.warn('⚠️ FTS5 enhanced search initialization failed, falling back to standard search:', error);
+        console.warn(
+          '⚠️ FTS5 enhanced search initialization failed, falling back to standard search:',
+          error
+        );
         this.fts5Engine = undefined;
       }
     }
@@ -68,7 +71,11 @@ export class EnhancedSearchService extends SearchService {
    * - Standard search as fallback for compatibility
    * - Hybrid approach for maximum coverage
    */
-  async search(query: string, entries: KBEntry[], options: SearchOptions = {}): Promise<SearchResult[]> {
+  async search(
+    query: string,
+    entries: KBEntry[],
+    options: SearchOptions = {}
+  ): Promise<SearchResult[]> {
     const startTime = performance.now();
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -115,19 +122,19 @@ export class EnhancedSearchService extends SearchService {
       // AI search if enabled and conditions met
       if (options.useAI !== false && this.geminiConfig && entries.length <= 100) {
         searchPromises.push(
-          this.performAISearch(normalizedQuery, entries, options)
-            .catch(error => {
-              console.warn('AI search failed, continuing with local results:', error);
-              return [];
-            })
+          this.performAISearch(normalizedQuery, entries, options).catch(error => {
+            console.warn('AI search failed, continuing with local results:', error);
+            return [];
+          })
         );
       }
 
       // Execute searches in parallel
       const searchResults = await Promise.allSettled(searchPromises);
       const successfulResults = searchResults
-        .filter((result): result is PromiseFulfilledResult<SearchResult[]> =>
-          result.status === 'fulfilled' && result.value.length > 0
+        .filter(
+          (result): result is PromiseFulfilledResult<SearchResult[]> =>
+            result.status === 'fulfilled' && result.value.length > 0
         )
         .map(result => result.value);
 
@@ -137,14 +144,13 @@ export class EnhancedSearchService extends SearchService {
       }
 
       return this.finalizeResults(results, normalizedQuery, options, startTime);
-
     } catch (error) {
       this.recordPerformanceMetric('search_error', performance.now() - startTime);
-      throw new SearchError(
-        `Enhanced search failed: ${error.message}`,
-        query,
-        { originalError: error, options, processingTime: performance.now() - startTime }
-      );
+      throw new SearchError(`Enhanced search failed: ${error.message}`, query, {
+        originalError: error,
+        options,
+        processingTime: performance.now() - startTime,
+      });
     }
   }
 
@@ -165,7 +171,7 @@ export class EnhancedSearchService extends SearchService {
       snippetLength: 200,
       highlightTags: { start: '<mark>', end: '</mark>' },
       rankingProfile: this.selectRankingProfile(query),
-      proximityBoost: true
+      proximityBoost: true,
     };
 
     const enhancedResults = await this.fts5Engine.search(query, fts5Options);
@@ -184,8 +190,8 @@ export class EnhancedSearchService extends SearchService {
         fallback: false,
         snippet: result.snippets?.[0]?.text,
         enhanced: true,
-        debugInfo: result.debugInfo
-      }
+        debugInfo: result.debugInfo,
+      },
     }));
   }
 
@@ -200,10 +206,10 @@ export class EnhancedSearchService extends SearchService {
 
     // Use FTS5 for mainframe-specific terms
     const mainframePatterns = [
-      /^S\d{3}[A-Z]?$/i,           // System completion codes
-      /^[A-Z]{3}\d{3,4}[A-Z]?$/i,  // System messages
-      /^\/\/[A-Z0-9@#$]{1,8}$/i,   // JCL names
-      /VSAM|COBOL|JCL|DB2|CICS/i   // Mainframe keywords
+      /^S\d{3}[A-Z]?$/i, // System completion codes
+      /^[A-Z]{3}\d{3,4}[A-Z]?$/i, // System messages
+      /^\/\/[A-Z0-9@#$]{1,8}$/i, // JCL names
+      /VSAM|COBOL|JCL|DB2|CICS/i, // Mainframe keywords
     ];
 
     if (mainframePatterns.some(pattern => pattern.test(query))) {
@@ -222,7 +228,9 @@ export class EnhancedSearchService extends SearchService {
   /**
    * Select appropriate ranking profile based on query characteristics
    */
-  private selectRankingProfile(query: string): 'balanced' | 'precision' | 'recall' | 'mainframe_focused' {
+  private selectRankingProfile(
+    query: string
+  ): 'balanced' | 'precision' | 'recall' | 'mainframe_focused' {
     // Error codes and specific terms need precision
     if (/^[A-Z]\d{3,4}[A-Z]?$/.test(query) || /^S\d{3}[A-Z]?$/.test(query)) {
       return 'precision';
@@ -255,7 +263,7 @@ export class EnhancedSearchService extends SearchService {
           start: highlight.start,
           end: highlight.end,
           text: highlight.term,
-          context: snippet.text
+          context: snippet.text,
         });
       });
     });
@@ -296,7 +304,7 @@ export class EnhancedSearchService extends SearchService {
         fallback: result.metadata?.fallback || false,
         rank: index + 1,
         optimized: true,
-        enhanced: true
+        enhanced: true,
       };
     });
 
@@ -328,23 +336,25 @@ export class EnhancedSearchService extends SearchService {
 
     const fts5Successes = this.enhancedSearchMetrics.get('fts5_success') || [];
     const fts5Fallbacks = this.enhancedSearchMetrics.get('fts5_fallback') || [];
-    const fts5SuccessRate = fts5Successes.length + fts5Fallbacks.length > 0
-      ? fts5Successes.length / (fts5Successes.length + fts5Fallbacks.length)
-      : 0;
+    const fts5SuccessRate =
+      fts5Successes.length + fts5Fallbacks.length > 0
+        ? fts5Successes.length / (fts5Successes.length + fts5Fallbacks.length)
+        : 0;
 
     const standardTimes = this.performanceMetrics.get('search_complete') || [];
     const fts5Times = fts5Successes;
 
-    const standardAvg = standardTimes.length > 0
-      ? standardTimes.reduce((a, b) => a + b, 0) / standardTimes.length
-      : 0;
-    const fts5Avg = fts5Times.length > 0
-      ? fts5Times.reduce((a, b) => a + b, 0) / fts5Times.length
-      : 0;
+    const standardAvg =
+      standardTimes.length > 0
+        ? standardTimes.reduce((a, b) => a + b, 0) / standardTimes.length
+        : 0;
+    const fts5Avg =
+      fts5Times.length > 0 ? fts5Times.reduce((a, b) => a + b, 0) / fts5Times.length : 0;
 
-    const improvement = standardAvg > 0 && fts5Avg > 0
-      ? `${Math.round((1 - fts5Avg / standardAvg) * 100)}% faster`
-      : 'N/A';
+    const improvement =
+      standardAvg > 0 && fts5Avg > 0
+        ? `${Math.round((1 - fts5Avg / standardAvg) * 100)}% faster`
+        : 'N/A';
 
     return {
       fts5Available: !!this.fts5Engine,
@@ -355,19 +365,23 @@ export class EnhancedSearchService extends SearchService {
         'Context-aware snippets',
         'Advanced highlight matching',
         'Domain-specific term weighting',
-        'Performance optimization'
+        'Performance optimization',
       ],
       performanceComparison: {
         standardSearch: {
           avg: Math.round(standardAvg),
-          p95: Math.round(standardTimes.sort((a, b) => a - b)[Math.floor(standardTimes.length * 0.95)] || 0)
+          p95: Math.round(
+            standardTimes.sort((a, b) => a - b)[Math.floor(standardTimes.length * 0.95)] || 0
+          ),
         },
         fts5Search: {
           avg: Math.round(fts5Avg),
-          p95: Math.round(fts5Times.sort((a, b) => a - b)[Math.floor(fts5Times.length * 0.95)] || 0)
+          p95: Math.round(
+            fts5Times.sort((a, b) => a - b)[Math.floor(fts5Times.length * 0.95)] || 0
+          ),
         },
-        improvement
-      }
+        improvement,
+      },
     };
   }
 
@@ -435,18 +449,22 @@ export class EnhancedSearchService extends SearchService {
     // Additional FTS5-specific logging
     if (this.database) {
       try {
-        this.database.prepare(`
+        this.database
+          .prepare(
+            `
           INSERT INTO search_performance (
             query, results_count, processing_time_ms, cache_hit, search_type, timestamp
           ) VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
-          query,
-          results.length,
-          Math.round(processingTime),
-          false,
-          this.fts5Engine ? 'enhanced_fts5' : 'standard',
-          Date.now()
-        );
+        `
+          )
+          .run(
+            query,
+            results.length,
+            Math.round(processingTime),
+            false,
+            this.fts5Engine ? 'enhanced_fts5' : 'standard',
+            Date.now()
+          );
       } catch (error) {
         // Ignore if table doesn't exist
       }
@@ -465,34 +483,36 @@ export class EnhancedSearchService extends SearchService {
     const baseRanked = await super['applyAdvancedRanking'](results, query, options);
 
     // Additional FTS5-specific ranking adjustments
-    return baseRanked.map(result => {
-      let enhancedScore = result.score;
+    return baseRanked
+      .map(result => {
+        let enhancedScore = result.score;
 
-      // Boost results with enhanced metadata
-      if (result.metadata?.enhanced) {
-        enhancedScore *= 1.05; // 5% boost for enhanced results
-      }
-
-      // Boost results with good snippets
-      if (result.metadata?.snippet && result.metadata.snippet.length > 50) {
-        enhancedScore *= 1.03; // 3% boost for good snippets
-      }
-
-      // Boost results from FTS5 engine
-      if (result.metadata?.source === 'fts5_enhanced') {
-        enhancedScore *= 1.08; // 8% boost for FTS5 results
-      }
-
-      return {
-        ...result,
-        score: Math.min(100, enhancedScore),
-        metadata: {
-          ...result.metadata,
-          confidence: Math.min(1, enhancedScore / 100),
-          boosted: enhancedScore > result.score
+        // Boost results with enhanced metadata
+        if (result.metadata?.enhanced) {
+          enhancedScore *= 1.05; // 5% boost for enhanced results
         }
-      };
-    }).sort((a, b) => b.score - a.score);
+
+        // Boost results with good snippets
+        if (result.metadata?.snippet && result.metadata.snippet.length > 50) {
+          enhancedScore *= 1.03; // 3% boost for good snippets
+        }
+
+        // Boost results from FTS5 engine
+        if (result.metadata?.source === 'fts5_enhanced') {
+          enhancedScore *= 1.08; // 8% boost for FTS5 results
+        }
+
+        return {
+          ...result,
+          score: Math.min(100, enhancedScore),
+          metadata: {
+            ...result.metadata,
+            confidence: Math.min(1, enhancedScore / 100),
+            boosted: enhancedScore > result.score,
+          },
+        };
+      })
+      .sort((a, b) => b.score - a.score);
   }
 
   /**

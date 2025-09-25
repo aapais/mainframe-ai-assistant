@@ -1,6 +1,6 @@
 /**
  * Migration Framework - Comprehensive Database Migration and Schema Evolution System
- * 
+ *
  * This module provides a complete migration framework supporting schema evolution
  * across MVP transitions with rollback capabilities, data transformation utilities,
  * and comprehensive validation.
@@ -11,7 +11,7 @@ export { MigrationService } from './MigrationService';
 export type {
   MVPMigrationConfig,
   MigrationExecutionOptions,
-  MigrationProgress
+  MigrationProgress,
 } from './MigrationService';
 
 // Migration Planning
@@ -20,7 +20,7 @@ export type {
   MigrationPlan,
   MigrationPhase,
   ValidationCheck,
-  MVPMigrationPath
+  MVPMigrationPath,
 } from './MigrationPlanner';
 
 // Schema Evolution Management
@@ -31,7 +31,7 @@ export type {
   CompatibilityInfo,
   SchemaEvolutionPlan,
   SchemaSnapshot,
-  SchemaRiskAssessment
+  SchemaRiskAssessment,
 } from './SchemaEvolution';
 
 // Data Transformation
@@ -40,7 +40,7 @@ export type {
   DataTransformation,
   TransformationPlan,
   TransformationResult,
-  MVPDataMigration
+  MVPDataMigration,
 } from './DataTransformer';
 
 // Rollback Management
@@ -50,7 +50,7 @@ export type {
   RollbackStep,
   RollbackResult,
   EmergencyRollbackPlan,
-  RollbackCheckpoint
+  RollbackCheckpoint,
 } from './RollbackManager';
 
 // Validation Services
@@ -63,12 +63,12 @@ export type {
   SchemaValidationResult,
   DataIntegrityResult,
   ReferentialIntegrityResult,
-  ValidationSummary
+  ValidationSummary,
 } from './ValidationService';
 
 /**
  * Migration Framework Factory
- * 
+ *
  * Provides a convenient way to initialize the complete migration framework
  * with all services properly configured and interconnected.
  */
@@ -105,7 +105,7 @@ export function createMigrationFramework(config: MigrationFrameworkConfig): Migr
     database,
     migrationsPath = './src/database/migrations/mvp-upgrades',
     enableLogging = true,
-    enableMetrics = true
+    enableMetrics = true,
   } = config;
 
   // Initialize all services
@@ -124,7 +124,7 @@ export function createMigrationFramework(config: MigrationFrameworkConfig): Migr
       schemaEvolution,
       dataTransformer,
       rollbackManager,
-      validation
+      validation,
     });
   }
 
@@ -136,7 +136,7 @@ export function createMigrationFramework(config: MigrationFrameworkConfig): Migr
       schemaEvolution,
       dataTransformer,
       rollbackManager,
-      validation
+      validation,
     });
   }
 
@@ -146,7 +146,7 @@ export function createMigrationFramework(config: MigrationFrameworkConfig): Migr
     schemaEvolution,
     dataTransformer,
     rollbackManager,
-    validation
+    validation,
   };
 }
 
@@ -159,32 +159,42 @@ function setupFrameworkLogging(framework: MigrationFramework): void {
   };
 
   // Migration Service logging
-  framework.migrationService.on('migrationStarted', (data) => 
-    logger('MigrationService', 'Migration Started', data));
-  framework.migrationService.on('migrationStepCompleted', (data) => 
-    logger('MigrationService', 'Step Completed', data));
-  framework.migrationService.on('migrationCompleted', (data) => 
-    logger('MigrationService', 'Migration Completed', data));
-  framework.migrationService.on('migrationFailed', (data) => 
-    logger('MigrationService', 'Migration Failed', data));
+  framework.migrationService.on('migrationStarted', data =>
+    logger('MigrationService', 'Migration Started', data)
+  );
+  framework.migrationService.on('migrationStepCompleted', data =>
+    logger('MigrationService', 'Step Completed', data)
+  );
+  framework.migrationService.on('migrationCompleted', data =>
+    logger('MigrationService', 'Migration Completed', data)
+  );
+  framework.migrationService.on('migrationFailed', data =>
+    logger('MigrationService', 'Migration Failed', data)
+  );
 
   // Rollback Manager logging
-  framework.rollbackManager.on('rollbackStarted', (data) => 
-    logger('RollbackManager', 'Rollback Started', data));
-  framework.rollbackManager.on('rollbackCompleted', (data) => 
-    logger('RollbackManager', 'Rollback Completed', data));
-  framework.rollbackManager.on('emergencyRollbackStarted', (data) => 
-    logger('RollbackManager', 'Emergency Rollback Started', data));
+  framework.rollbackManager.on('rollbackStarted', data =>
+    logger('RollbackManager', 'Rollback Started', data)
+  );
+  framework.rollbackManager.on('rollbackCompleted', data =>
+    logger('RollbackManager', 'Rollback Completed', data)
+  );
+  framework.rollbackManager.on('emergencyRollbackStarted', data =>
+    logger('RollbackManager', 'Emergency Rollback Started', data)
+  );
 
   // Data Transformer logging
-  framework.dataTransformer.on('transformationCompleted', (data) => 
-    logger('DataTransformer', 'Transformation Completed', data));
+  framework.dataTransformer.on('transformationCompleted', data =>
+    logger('DataTransformer', 'Transformation Completed', data)
+  );
 
   // Validation Service logging
-  framework.validation.on('validationStarted', (data) => 
-    logger('ValidationService', 'Validation Started', data));
-  framework.validation.on('validationCompleted', (data) => 
-    logger('ValidationService', 'Validation Completed', data));
+  framework.validation.on('validationStarted', data =>
+    logger('ValidationService', 'Validation Started', data)
+  );
+  framework.validation.on('validationCompleted', data =>
+    logger('ValidationService', 'Validation Completed', data)
+  );
 }
 
 /**
@@ -197,11 +207,11 @@ function setupFrameworkMetrics(framework: MigrationFramework): void {
     transformationsCompleted: 0,
     validationsRun: 0,
     totalMigrationTime: 0,
-    errorCount: 0
+    errorCount: 0,
   };
 
   // Track migration metrics
-  framework.migrationService.on('migrationCompleted', (data) => {
+  framework.migrationService.on('migrationCompleted', data => {
     metrics.migrationsExecuted++;
     metrics.totalMigrationTime += data.totalDuration || 0;
   });
@@ -262,13 +272,13 @@ export const MigrationUtils = {
       return {
         healthy: issues.length === 0,
         issues,
-        recommendations
+        recommendations,
       };
     } catch (error) {
       return {
         healthy: false,
         issues: ['Migration framework health check failed'],
-        recommendations: ['Check database connectivity and framework configuration']
+        recommendations: ['Check database connectivity and framework configuration'],
       };
     }
   },
@@ -283,26 +293,27 @@ export const MigrationUtils = {
   }> {
     const currentMVP = framework.schemaEvolution.detectCurrentMVP();
     const validationResult = await framework.validation.performComprehensiveValidation();
-    
+
     return {
       currentState: {
         mvp: currentMVP,
         overallHealth: validationResult.summary.overallHealth,
         criticalIssues: validationResult.summary.criticalIssues,
-        warnings: validationResult.summary.warnings
+        warnings: validationResult.summary.warnings,
       },
       capabilities: [
         'Schema evolution management',
         'Data transformation pipelines',
         'Comprehensive rollback support',
         'Migration validation and safety checks',
-        'MVP progression tracking'
+        'MVP progression tracking',
       ],
-      recommendations: validationResult.summary.recommendationsCount > 0 
-        ? ['Review validation report for specific recommendations']
-        : ['System is healthy for migrations']
+      recommendations:
+        validationResult.summary.recommendationsCount > 0
+          ? ['Review validation report for specific recommendations']
+          : ['System is healthy for migrations'],
     };
-  }
+  },
 };
 
 /**
@@ -318,7 +329,7 @@ export const SUPPORTED_FEATURES = {
   mvpProgression: true,
   emergencyRecovery: true,
   performanceMonitoring: true,
-  integrityValidation: true
+  integrityValidation: true,
 } as const;
 
 /**
@@ -327,5 +338,5 @@ export const SUPPORTED_FEATURES = {
 export const DEFAULT_MIGRATION_CONFIG: Partial<MigrationFrameworkConfig> = {
   migrationsPath: './src/database/migrations/mvp-upgrades',
   enableLogging: true,
-  enableMetrics: true
+  enableMetrics: true,
 };

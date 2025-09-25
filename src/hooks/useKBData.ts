@@ -128,17 +128,14 @@ export interface UseKBDataReturn {
 // Hook Implementation
 // ========================
 
-export const useKBData = (
-  db: KnowledgeDB,
-  options: UseKBDataOptions = {}
-): UseKBDataReturn => {
+export const useKBData = (db: KnowledgeDB, options: UseKBDataOptions = {}): UseKBDataReturn => {
   const {
     autoRefresh,
     realTimeUpdates = true,
     cacheDuration = 5 * 60 * 1000, // 5 minutes
     optimisticUpdates = true,
     autoLoadEntries = true,
-    autoLoadStats = false
+    autoLoadStats = false,
   } = options;
 
   // State management
@@ -150,20 +147,20 @@ export const useKBData = (
       entries: false,
       search: false,
       stats: false,
-      operation: false
+      operation: false,
     },
     error: {
       entries: null,
       search: null,
       stats: null,
-      operation: null
+      operation: null,
     },
     lastUpdated: null,
     cache: {
       entries: null,
       stats: null,
-      searchResults: new Map()
-    }
+      searchResults: new Map(),
+    },
   });
 
   // Refs for cleanup and consistency
@@ -178,414 +175,477 @@ export const useKBData = (
   }, []);
 
   // Update loading state helper
-  const updateLoading = useCallback((key: keyof KBDataState['loading'], value: boolean) => {
-    updateState({
-      loading: { ...state.loading, [key]: value }
-    });
-  }, [state.loading, updateState]);
+  const updateLoading = useCallback(
+    (key: keyof KBDataState['loading'], value: boolean) => {
+      updateState({
+        loading: { ...state.loading, [key]: value },
+      });
+    },
+    [state.loading, updateState]
+  );
 
   // Update error state helper
-  const updateError = useCallback((key: keyof KBDataState['error'], value: Error | null) => {
-    updateState({
-      error: { ...state.error, [key]: value }
-    });
-  }, [state.error, updateState]);
+  const updateError = useCallback(
+    (key: keyof KBDataState['error'], value: Error | null) => {
+      updateState({
+        error: { ...state.error, [key]: value },
+      });
+    },
+    [state.error, updateState]
+  );
 
   // Check cache validity
-  const isCacheValid = useCallback((timestamp: Date | null): boolean => {
-    if (!timestamp) return false;
-    return Date.now() - timestamp.getTime() < cacheDuration;
-  }, [cacheDuration]);
+  const isCacheValid = useCallback(
+    (timestamp: Date | null): boolean => {
+      if (!timestamp) return false;
+      return Date.now() - timestamp.getTime() < cacheDuration;
+    },
+    [cacheDuration]
+  );
 
   // Load entries from database
-  const loadEntries = useCallback(async (force = false): Promise<KBEntry[]> => {
-    if (!force && isCacheValid(state.cache.entries)) {
-      return state.entries;
-    }
+  const loadEntries = useCallback(
+    async (force = false): Promise<KBEntry[]> => {
+      if (!force && isCacheValid(state.cache.entries)) {
+        return state.entries;
+      }
 
-    updateLoading('entries', true);
-    updateError('entries', null);
+      updateLoading('entries', true);
+      updateError('entries', null);
 
-    try {
-      // Get popular entries as a starting point
-      const popularResults = await db.getPopular(100);
-      const popularEntries = popularResults.map(result => result.entry);
+      try {
+        // Get popular entries as a starting point
+        const popularResults = await db.getPopular(100);
+        const popularEntries = popularResults.map(result => result.entry);
 
-      // Get recent entries to supplement
-      const recentResults = await db.getRecent(50);
-      const recentEntries = recentResults.map(result => result.entry);
+        // Get recent entries to supplement
+        const recentResults = await db.getRecent(50);
+        const recentEntries = recentResults.map(result => result.entry);
 
-      // Combine and deduplicate
-      const entryMap = new Map<string, KBEntry>();
-      [...popularEntries, ...recentEntries].forEach(entry => {
-        if (entry.id) {
-          entryMap.set(entry.id, entry);
-        }
-      });
+        // Combine and deduplicate
+        const entryMap = new Map<string, KBEntry>();
+        [...popularEntries, ...recentEntries].forEach(entry => {
+          if (entry.id) {
+            entryMap.set(entry.id, entry);
+          }
+        });
 
-      const entries = Array.from(entryMap.values());
+        const entries = Array.from(entryMap.values());
 
-      updateState({
-        entries,
-        cache: {
-          ...state.cache,
-          entries: new Date()
-        },
-        lastUpdated: new Date()
-      });
+        updateState({
+          entries,
+          cache: {
+            ...state.cache,
+            entries: new Date(),
+          },
+          lastUpdated: new Date(),
+        });
 
-      return entries;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to load entries');
-      updateError('entries', err);
-      throw err;
-    } finally {
-      updateLoading('entries', false);
-    }
-  }, [db, force, isCacheValid, state.cache, state.entries, updateState, updateLoading, updateError]);
+        return entries;
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to load entries');
+        updateError('entries', err);
+        throw err;
+      } finally {
+        updateLoading('entries', false);
+      }
+    },
+    [db, force, isCacheValid, state.cache, state.entries, updateState, updateLoading, updateError]
+  );
 
   // Search entries
-  const searchEntries = useCallback(async (options: SearchOptions): Promise<SearchResult[]> => {
-    const { query = '', category, tags, sortBy, sortOrder, limit, offset, useAI } = options;
+  const searchEntries = useCallback(
+    async (options: SearchOptions): Promise<SearchResult[]> => {
+      const { query = '', category, tags, sortBy, sortOrder, limit, offset, useAI } = options;
 
-    // Cancel previous search
-    if (searchAbortControllerRef.current) {
-      searchAbortControllerRef.current.abort();
-    }
-
-    searchAbortControllerRef.current = new AbortController();
-
-    // Check cache for this search
-    const cacheKey = JSON.stringify(options);
-    const cachedResult = state.cache.searchResults.get(cacheKey);
-    if (cachedResult && isCacheValid(cachedResult.timestamp)) {
-      updateState({ searchResults: cachedResult.results });
-      return cachedResult.results;
-    }
-
-    updateLoading('search', true);
-    updateError('search', null);
-
-    try {
-      let results: SearchResult[] = [];
-
-      if (query.trim()) {
-        // Perform search query
-        results = await db.search(query, {
-          category,
-          tags,
-          sortBy,
-          sortOrder,
-          limit,
-          offset,
-          includeArchived: false
-        });
-      } else if (category || (tags && tags.length > 0)) {
-        // Filter-only search (no text query)
-        const allResults = await db.getPopular(1000);
-        results = allResults.filter(result => {
-          const entry = result.entry;
-
-          // Category filter
-          if (category && entry.category !== category) {
-            return false;
-          }
-
-          // Tag filter
-          if (tags && tags.length > 0) {
-            const entryTags = entry.tags || [];
-            const hasAllTags = tags.every(tag =>
-              entryTags.some(entryTag =>
-                entryTag.toLowerCase().includes(tag.toLowerCase())
-              )
-            );
-            if (!hasAllTags) return false;
-          }
-
-          return true;
-        }).slice(0, limit || 50);
-      } else {
-        // No filters - return popular entries
-        results = await db.getPopular(limit || 50);
+      // Cancel previous search
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
       }
 
-      // Cache the results
-      const newCache = new Map(state.cache.searchResults);
-      newCache.set(cacheKey, {
-        results,
-        timestamp: new Date()
-      });
+      searchAbortControllerRef.current = new AbortController();
 
-      // Limit cache size
-      if (newCache.size > 20) {
-        const oldestKey = Array.from(newCache.keys())[0];
-        newCache.delete(oldestKey);
+      // Check cache for this search
+      const cacheKey = JSON.stringify(options);
+      const cachedResult = state.cache.searchResults.get(cacheKey);
+      if (cachedResult && isCacheValid(cachedResult.timestamp)) {
+        updateState({ searchResults: cachedResult.results });
+        return cachedResult.results;
       }
 
-      updateState({
-        searchResults: results,
-        cache: {
-          ...state.cache,
-          searchResults: newCache
+      updateLoading('search', true);
+      updateError('search', null);
+
+      try {
+        let results: SearchResult[] = [];
+
+        if (query.trim()) {
+          // Perform search query
+          results = await db.search(query, {
+            category,
+            tags,
+            sortBy,
+            sortOrder,
+            limit,
+            offset,
+            includeArchived: false,
+          });
+        } else if (category || (tags && tags.length > 0)) {
+          // Filter-only search (no text query)
+          const allResults = await db.getPopular(1000);
+          results = allResults
+            .filter(result => {
+              const entry = result.entry;
+
+              // Category filter
+              if (category && entry.category !== category) {
+                return false;
+              }
+
+              // Tag filter
+              if (tags && tags.length > 0) {
+                const entryTags = entry.tags || [];
+                const hasAllTags = tags.every(tag =>
+                  entryTags.some(entryTag => entryTag.toLowerCase().includes(tag.toLowerCase()))
+                );
+                if (!hasAllTags) return false;
+              }
+
+              return true;
+            })
+            .slice(0, limit || 50);
+        } else {
+          // No filters - return popular entries
+          results = await db.getPopular(limit || 50);
         }
-      });
 
-      // Update recent searches
-      if (query.trim()) {
-        recentSearchesRef.current = [
-          query,
-          ...recentSearchesRef.current.filter(s => s !== query)
-        ].slice(0, 10);
+        // Cache the results
+        const newCache = new Map(state.cache.searchResults);
+        newCache.set(cacheKey, {
+          results,
+          timestamp: new Date(),
+        });
+
+        // Limit cache size
+        if (newCache.size > 20) {
+          const oldestKey = Array.from(newCache.keys())[0];
+          newCache.delete(oldestKey);
+        }
+
+        updateState({
+          searchResults: results,
+          cache: {
+            ...state.cache,
+            searchResults: newCache,
+          },
+        });
+
+        // Update recent searches
+        if (query.trim()) {
+          recentSearchesRef.current = [
+            query,
+            ...recentSearchesRef.current.filter(s => s !== query),
+          ].slice(0, 10);
+        }
+
+        return results;
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          return []; // Search was cancelled
+        }
+
+        const err = error instanceof Error ? error : new Error('Search failed');
+        updateError('search', err);
+        throw err;
+      } finally {
+        updateLoading('search', false);
       }
-
-      return results;
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        return []; // Search was cancelled
-      }
-
-      const err = error instanceof Error ? error : new Error('Search failed');
-      updateError('search', err);
-      throw err;
-    } finally {
-      updateLoading('search', false);
-    }
-  }, [db, state.cache, isCacheValid, updateState, updateLoading, updateError]);
+    },
+    [db, state.cache, isCacheValid, updateState, updateLoading, updateError]
+  );
 
   // Load database statistics
-  const loadStats = useCallback(async (force = false): Promise<DatabaseStats> => {
-    if (!force && isCacheValid(state.cache.stats) && state.stats) {
-      return state.stats;
-    }
+  const loadStats = useCallback(
+    async (force = false): Promise<DatabaseStats> => {
+      if (!force && isCacheValid(state.cache.stats) && state.stats) {
+        return state.stats;
+      }
 
-    updateLoading('stats', true);
-    updateError('stats', null);
+      updateLoading('stats', true);
+      updateError('stats', null);
 
-    try {
-      const stats = await db.getStats();
+      try {
+        const stats = await db.getStats();
 
-      updateState({
-        stats,
-        cache: {
-          ...state.cache,
-          stats: new Date()
-        }
-      });
+        updateState({
+          stats,
+          cache: {
+            ...state.cache,
+            stats: new Date(),
+          },
+        });
 
-      return stats;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to load stats');
-      updateError('stats', err);
-      throw err;
-    } finally {
-      updateLoading('stats', false);
-    }
-  }, [db, force, isCacheValid, state.cache.stats, state.stats, updateState, updateLoading, updateError]);
+        return stats;
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to load stats');
+        updateError('stats', err);
+        throw err;
+      } finally {
+        updateLoading('stats', false);
+      }
+    },
+    [
+      db,
+      force,
+      isCacheValid,
+      state.cache.stats,
+      state.stats,
+      updateState,
+      updateLoading,
+      updateError,
+    ]
+  );
 
   // Refresh all data
   const refresh = useCallback(async (): Promise<void> => {
-    await Promise.allSettled([
-      loadEntries(true),
-      loadStats(true)
-    ]);
+    await Promise.allSettled([loadEntries(true), loadStats(true)]);
   }, [loadEntries, loadStats]);
 
   // Get entry by ID
-  const getEntry = useCallback((id: string): KBEntry | undefined => {
-    return state.entries.find(entry => entry.id === id);
-  }, [state.entries]);
+  const getEntry = useCallback(
+    (id: string): KBEntry | undefined => {
+      return state.entries.find(entry => entry.id === id);
+    },
+    [state.entries]
+  );
 
   // Add new entry
-  const addEntry = useCallback(async (entry: Omit<KBEntry, 'id'>): Promise<string> => {
-    updateLoading('operation', true);
-    updateError('operation', null);
+  const addEntry = useCallback(
+    async (entry: Omit<KBEntry, 'id'>): Promise<string> => {
+      updateLoading('operation', true);
+      updateError('operation', null);
 
-    try {
-      const newId = await db.addEntry(entry);
+      try {
+        const newId = await db.addEntry(entry);
 
-      if (optimisticUpdates) {
-        const newEntry: KBEntry = {
-          ...entry,
-          id: newId,
-          created_at: new Date(),
-          updated_at: new Date(),
-          usage_count: 0,
-          success_count: 0,
-          failure_count: 0
-        };
+        if (optimisticUpdates) {
+          const newEntry: KBEntry = {
+            ...entry,
+            id: newId,
+            created_at: new Date(),
+            updated_at: new Date(),
+            usage_count: 0,
+            success_count: 0,
+            failure_count: 0,
+          };
 
-        updateState({
-          entries: [...state.entries, newEntry],
-          cache: { ...state.cache, entries: null } // Invalidate cache
-        });
-      } else {
-        await loadEntries(true);
+          updateState({
+            entries: [...state.entries, newEntry],
+            cache: { ...state.cache, entries: null }, // Invalidate cache
+          });
+        } else {
+          await loadEntries(true);
+        }
+
+        return newId;
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to add entry');
+        updateError('operation', err);
+        throw err;
+      } finally {
+        updateLoading('operation', false);
       }
-
-      return newId;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to add entry');
-      updateError('operation', err);
-      throw err;
-    } finally {
-      updateLoading('operation', false);
-    }
-  }, [db, optimisticUpdates, state.entries, updateState, updateLoading, updateError, loadEntries]);
+    },
+    [db, optimisticUpdates, state.entries, updateState, updateLoading, updateError, loadEntries]
+  );
 
   // Update entry
-  const updateEntry = useCallback(async (id: string, updates: Partial<KBEntry>): Promise<void> => {
-    updateLoading('operation', true);
-    updateError('operation', null);
+  const updateEntry = useCallback(
+    async (id: string, updates: Partial<KBEntry>): Promise<void> => {
+      updateLoading('operation', true);
+      updateError('operation', null);
 
-    try {
-      await db.updateEntry(id, updates);
+      try {
+        await db.updateEntry(id, updates);
 
-      if (optimisticUpdates) {
-        updateState({
-          entries: state.entries.map(entry =>
-            entry.id === id
-              ? { ...entry, ...updates, updated_at: new Date() }
-              : entry
-          ),
-          cache: { ...state.cache, entries: null } // Invalidate cache
-        });
-      } else {
-        await loadEntries(true);
+        if (optimisticUpdates) {
+          updateState({
+            entries: state.entries.map(entry =>
+              entry.id === id ? { ...entry, ...updates, updated_at: new Date() } : entry
+            ),
+            cache: { ...state.cache, entries: null }, // Invalidate cache
+          });
+        } else {
+          await loadEntries(true);
+        }
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to update entry');
+        updateError('operation', err);
+        throw err;
+      } finally {
+        updateLoading('operation', false);
       }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to update entry');
-      updateError('operation', err);
-      throw err;
-    } finally {
-      updateLoading('operation', false);
-    }
-  }, [db, id, updates, optimisticUpdates, state.entries, updateState, updateLoading, updateError, loadEntries]);
+    },
+    [
+      db,
+      id,
+      updates,
+      optimisticUpdates,
+      state.entries,
+      updateState,
+      updateLoading,
+      updateError,
+      loadEntries,
+    ]
+  );
 
   // Delete entry
-  const deleteEntry = useCallback(async (id: string): Promise<void> => {
-    updateLoading('operation', true);
-    updateError('operation', null);
+  const deleteEntry = useCallback(
+    async (id: string): Promise<void> => {
+      updateLoading('operation', true);
+      updateError('operation', null);
 
-    try {
-      await db.updateEntry(id, { archived: true }); // Soft delete
+      try {
+        await db.updateEntry(id, { archived: true }); // Soft delete
 
-      if (optimisticUpdates) {
-        updateState({
-          entries: state.entries.filter(entry => entry.id !== id),
-          cache: { ...state.cache, entries: null } // Invalidate cache
-        });
-      } else {
-        await loadEntries(true);
+        if (optimisticUpdates) {
+          updateState({
+            entries: state.entries.filter(entry => entry.id !== id),
+            cache: { ...state.cache, entries: null }, // Invalidate cache
+          });
+        } else {
+          await loadEntries(true);
+        }
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to delete entry');
+        updateError('operation', err);
+        throw err;
+      } finally {
+        updateLoading('operation', false);
       }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to delete entry');
-      updateError('operation', err);
-      throw err;
-    } finally {
-      updateLoading('operation', false);
-    }
-  }, [db, id, optimisticUpdates, state.entries, updateState, updateLoading, updateError, loadEntries]);
+    },
+    [db, id, optimisticUpdates, state.entries, updateState, updateLoading, updateError, loadEntries]
+  );
 
   // Duplicate entry
-  const duplicateEntry = useCallback(async (id: string): Promise<string> => {
-    const originalEntry = getEntry(id);
-    if (!originalEntry) {
-      throw new Error('Entry not found');
-    }
+  const duplicateEntry = useCallback(
+    async (id: string): Promise<string> => {
+      const originalEntry = getEntry(id);
+      if (!originalEntry) {
+        throw new Error('Entry not found');
+      }
 
-    const duplicatedEntry: Omit<KBEntry, 'id'> = {
-      ...originalEntry,
-      title: `${originalEntry.title} (Copy)`,
-      created_at: new Date(),
-      updated_at: new Date(),
-      usage_count: 0,
-      success_count: 0,
-      failure_count: 0
-    };
+      const duplicatedEntry: Omit<KBEntry, 'id'> = {
+        ...originalEntry,
+        title: `${originalEntry.title} (Copy)`,
+        created_at: new Date(),
+        updated_at: new Date(),
+        usage_count: 0,
+        success_count: 0,
+        failure_count: 0,
+      };
 
-    return await addEntry(duplicatedEntry);
-  }, [getEntry, addEntry]);
+      return await addEntry(duplicatedEntry);
+    },
+    [getEntry, addEntry]
+  );
 
   // Bulk operations
-  const addMultipleEntries = useCallback(async (entries: Omit<KBEntry, 'id'>[]): Promise<string[]> => {
-    updateLoading('operation', true);
-    updateError('operation', null);
+  const addMultipleEntries = useCallback(
+    async (entries: Omit<KBEntry, 'id'>[]): Promise<string[]> => {
+      updateLoading('operation', true);
+      updateError('operation', null);
 
-    try {
-      const ids: string[] = [];
-      for (const entry of entries) {
-        const id = await db.addEntry(entry);
-        ids.push(id);
+      try {
+        const ids: string[] = [];
+        for (const entry of entries) {
+          const id = await db.addEntry(entry);
+          ids.push(id);
+        }
+
+        if (!optimisticUpdates) {
+          await loadEntries(true);
+        }
+
+        return ids;
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to add multiple entries');
+        updateError('operation', err);
+        throw err;
+      } finally {
+        updateLoading('operation', false);
       }
+    },
+    [db, entries, optimisticUpdates, updateLoading, updateError, loadEntries]
+  );
 
-      if (!optimisticUpdates) {
-        await loadEntries(true);
+  const updateMultipleEntries = useCallback(
+    async (updates: Array<{ id: string; data: Partial<KBEntry> }>): Promise<void> => {
+      updateLoading('operation', true);
+      updateError('operation', null);
+
+      try {
+        for (const { id, data } of updates) {
+          await db.updateEntry(id, data);
+        }
+
+        if (!optimisticUpdates) {
+          await loadEntries(true);
+        }
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to update multiple entries');
+        updateError('operation', err);
+        throw err;
+      } finally {
+        updateLoading('operation', false);
       }
+    },
+    [db, updates, optimisticUpdates, updateLoading, updateError, loadEntries]
+  );
 
-      return ids;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to add multiple entries');
-      updateError('operation', err);
-      throw err;
-    } finally {
-      updateLoading('operation', false);
-    }
-  }, [db, entries, optimisticUpdates, updateLoading, updateError, loadEntries]);
+  const deleteMultipleEntries = useCallback(
+    async (ids: string[]): Promise<void> => {
+      updateLoading('operation', true);
+      updateError('operation', null);
 
-  const updateMultipleEntries = useCallback(async (
-    updates: Array<{ id: string; data: Partial<KBEntry> }>
-  ): Promise<void> => {
-    updateLoading('operation', true);
-    updateError('operation', null);
+      try {
+        for (const id of ids) {
+          await db.updateEntry(id, { archived: true }); // Soft delete
+        }
 
-    try {
-      for (const { id, data } of updates) {
-        await db.updateEntry(id, data);
+        if (optimisticUpdates) {
+          updateState({
+            entries: state.entries.filter(entry => !ids.includes(entry.id!)),
+            cache: { ...state.cache, entries: null },
+          });
+        } else {
+          await loadEntries(true);
+        }
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error('Failed to delete multiple entries');
+        updateError('operation', err);
+        throw err;
+      } finally {
+        updateLoading('operation', false);
       }
-
-      if (!optimisticUpdates) {
-        await loadEntries(true);
-      }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to update multiple entries');
-      updateError('operation', err);
-      throw err;
-    } finally {
-      updateLoading('operation', false);
-    }
-  }, [db, updates, optimisticUpdates, updateLoading, updateError, loadEntries]);
-
-  const deleteMultipleEntries = useCallback(async (ids: string[]): Promise<void> => {
-    updateLoading('operation', true);
-    updateError('operation', null);
-
-    try {
-      for (const id of ids) {
-        await db.updateEntry(id, { archived: true }); // Soft delete
-      }
-
-      if (optimisticUpdates) {
-        updateState({
-          entries: state.entries.filter(entry => !ids.includes(entry.id!)),
-          cache: { ...state.cache, entries: null }
-        });
-      } else {
-        await loadEntries(true);
-      }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to delete multiple entries');
-      updateError('operation', err);
-      throw err;
-    } finally {
-      updateLoading('operation', false);
-    }
-  }, [db, ids, optimisticUpdates, state.entries, updateState, updateLoading, updateError, loadEntries]);
+    },
+    [
+      db,
+      ids,
+      optimisticUpdates,
+      state.entries,
+      updateState,
+      updateLoading,
+      updateError,
+      loadEntries,
+    ]
+  );
 
   // Search helpers
   const clearSearch = useCallback(() => {
     updateState({
       searchResults: [],
-      cache: { ...state.cache, searchResults: new Map() }
+      cache: { ...state.cache, searchResults: new Map() },
     });
   }, [state.cache, updateState]);
 
@@ -593,15 +653,18 @@ export const useKBData = (
     return [...recentSearchesRef.current];
   }, []);
 
-  const getSuggestions = useCallback(async (query: string): Promise<string[]> => {
-    try {
-      const suggestions = await db.autoComplete(query, 5);
-      return suggestions.map(s => s.suggestion);
-    } catch (error) {
-      console.warn('Failed to get suggestions:', error);
-      return [];
-    }
-  }, [db, query]);
+  const getSuggestions = useCallback(
+    async (query: string): Promise<string[]> => {
+      try {
+        const suggestions = await db.autoComplete(query, 5);
+        return suggestions.map(s => s.suggestion);
+      } catch (error) {
+        console.warn('Failed to get suggestions:', error);
+        return [];
+      }
+    },
+    [db, query]
+  );
 
   // Cache management
   const clearCache = useCallback(() => {
@@ -609,8 +672,8 @@ export const useKBData = (
       cache: {
         entries: null,
         stats: null,
-        searchResults: new Map()
-      }
+        searchResults: new Map(),
+      },
     });
   }, [updateState]);
 
@@ -619,48 +682,62 @@ export const useKBData = (
   }, [state.cache]);
 
   // Utility functions
-  const exportEntries = useCallback(async (format: 'json' | 'csv' = 'json'): Promise<string> => {
-    const entries = state.entries;
+  const exportEntries = useCallback(
+    async (format: 'json' | 'csv' = 'json'): Promise<string> => {
+      const entries = state.entries;
 
-    if (format === 'json') {
-      return JSON.stringify(entries, null, 2);
-    } else if (format === 'csv') {
-      const headers = ['id', 'title', 'problem', 'solution', 'category', 'tags', 'created_at', 'usage_count'];
-      const csvRows = [
-        headers.join(','),
-        ...entries.map(entry => [
-          entry.id,
-          `"${entry.title?.replace(/"/g, '""')}"`,
-          `"${entry.problem?.replace(/"/g, '""')}"`,
-          `"${entry.solution?.replace(/"/g, '""')}"`,
-          entry.category,
-          `"${entry.tags?.join(', ') || ''}"`,
-          entry.created_at?.toISOString(),
-          entry.usage_count || 0
-        ].join(','))
-      ];
-      return csvRows.join('\n');
-    }
+      if (format === 'json') {
+        return JSON.stringify(entries, null, 2);
+      } else if (format === 'csv') {
+        const headers = [
+          'id',
+          'title',
+          'problem',
+          'solution',
+          'category',
+          'tags',
+          'created_at',
+          'usage_count',
+        ];
+        const csvRows = [
+          headers.join(','),
+          ...entries.map(entry =>
+            [
+              entry.id,
+              `"${entry.title?.replace(/"/g, '""')}"`,
+              `"${entry.problem?.replace(/"/g, '""')}"`,
+              `"${entry.solution?.replace(/"/g, '""')}"`,
+              entry.category,
+              `"${entry.tags?.join(', ') || ''}"`,
+              entry.created_at?.toISOString(),
+              entry.usage_count || 0,
+            ].join(',')
+          ),
+        ];
+        return csvRows.join('\n');
+      }
 
-    throw new Error(`Unsupported export format: ${format}`);
-  }, [state.entries]);
+      throw new Error(`Unsupported export format: ${format}`);
+    },
+    [state.entries]
+  );
 
-  const importEntries = useCallback(async (
-    data: string,
-    format: 'json' | 'csv' = 'json'
-  ): Promise<number> => {
-    let entries: Omit<KBEntry, 'id'>[] = [];
+  const importEntries = useCallback(
+    async (data: string, format: 'json' | 'csv' = 'json'): Promise<number> => {
+      let entries: Omit<KBEntry, 'id'>[] = [];
 
-    if (format === 'json') {
-      const parsed = JSON.parse(data);
-      entries = Array.isArray(parsed) ? parsed : [parsed];
-    } else {
-      throw new Error(`Unsupported import format: ${format}`);
-    }
+      if (format === 'json') {
+        const parsed = JSON.parse(data);
+        entries = Array.isArray(parsed) ? parsed : [parsed];
+      } else {
+        throw new Error(`Unsupported import format: ${format}`);
+      }
 
-    await addMultipleEntries(entries);
-    return entries.length;
-  }, [addMultipleEntries]);
+      await addMultipleEntries(entries);
+      return entries.length;
+    },
+    [addMultipleEntries]
+  );
 
   // Auto-load on mount
   useEffect(() => {
@@ -696,67 +773,70 @@ export const useKBData = (
   }, []);
 
   // Memoized return value
-  return useMemo(() => ({
-    // State
-    entries: state.entries,
-    searchResults: state.searchResults,
-    stats: state.stats,
-    loading: state.loading,
-    error: state.error,
-    lastUpdated: state.lastUpdated,
+  return useMemo(
+    () => ({
+      // State
+      entries: state.entries,
+      searchResults: state.searchResults,
+      stats: state.stats,
+      loading: state.loading,
+      error: state.error,
+      lastUpdated: state.lastUpdated,
 
-    // Data operations
-    loadEntries,
-    searchEntries,
-    loadStats,
-    refresh,
+      // Data operations
+      loadEntries,
+      searchEntries,
+      loadStats,
+      refresh,
 
-    // Entry operations
-    getEntry,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    duplicateEntry,
+      // Entry operations
+      getEntry,
+      addEntry,
+      updateEntry,
+      deleteEntry,
+      duplicateEntry,
 
-    // Bulk operations
-    addMultipleEntries,
-    updateMultipleEntries,
-    deleteMultipleEntries,
+      // Bulk operations
+      addMultipleEntries,
+      updateMultipleEntries,
+      deleteMultipleEntries,
 
-    // Search helpers
-    clearSearch,
-    getRecentSearches,
-    getSuggestions,
+      // Search helpers
+      clearSearch,
+      getRecentSearches,
+      getSuggestions,
 
-    // Cache management
-    clearCache,
-    getCacheInfo,
+      // Cache management
+      clearCache,
+      getCacheInfo,
 
-    // Utility functions
-    exportEntries,
-    importEntries
-  }), [
-    state,
-    loadEntries,
-    searchEntries,
-    loadStats,
-    refresh,
-    getEntry,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    duplicateEntry,
-    addMultipleEntries,
-    updateMultipleEntries,
-    deleteMultipleEntries,
-    clearSearch,
-    getRecentSearches,
-    getSuggestions,
-    clearCache,
-    getCacheInfo,
-    exportEntries,
-    importEntries
-  ]);
+      // Utility functions
+      exportEntries,
+      importEntries,
+    }),
+    [
+      state,
+      loadEntries,
+      searchEntries,
+      loadStats,
+      refresh,
+      getEntry,
+      addEntry,
+      updateEntry,
+      deleteEntry,
+      duplicateEntry,
+      addMultipleEntries,
+      updateMultipleEntries,
+      deleteMultipleEntries,
+      clearSearch,
+      getRecentSearches,
+      getSuggestions,
+      clearCache,
+      getCacheInfo,
+      exportEntries,
+      importEntries,
+    ]
+  );
 };
 
 export default useKBData;

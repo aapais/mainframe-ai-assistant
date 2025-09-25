@@ -58,7 +58,7 @@ export class CacheMetrics extends EventEmitter {
       layer,
       operation: 'hit',
       timestamp: Date.now(),
-      latency
+      latency,
     });
 
     this.updateStats(layer, 'hit', latency);
@@ -72,7 +72,7 @@ export class CacheMetrics extends EventEmitter {
       layer,
       operation: 'miss',
       timestamp: Date.now(),
-      latency
+      latency,
     });
 
     this.updateStats(layer, 'miss', latency);
@@ -87,7 +87,7 @@ export class CacheMetrics extends EventEmitter {
       operation: 'set',
       timestamp: Date.now(),
       latency,
-      size
+      size,
     });
 
     this.updateStats(layer, 'set', latency, size);
@@ -101,7 +101,7 @@ export class CacheMetrics extends EventEmitter {
       layer,
       operation: 'delete',
       timestamp: Date.now(),
-      latency
+      latency,
     });
 
     this.updateStats(layer, 'delete', latency);
@@ -115,7 +115,7 @@ export class CacheMetrics extends EventEmitter {
       layer,
       operation: 'error',
       timestamp: Date.now(),
-      latency
+      latency,
     });
 
     this.updateStats(layer, 'error', latency);
@@ -129,7 +129,7 @@ export class CacheMetrics extends EventEmitter {
       layer: 'ALL',
       operation: 'clear',
       timestamp: Date.now(),
-      latency
+      latency,
     });
 
     // Reset all stats
@@ -158,14 +158,17 @@ export class CacheMetrics extends EventEmitter {
   /**
    * Get performance trends over time
    */
-  getTrends(layer: string, windowMinutes: number = 30): {
+  getTrends(
+    layer: string,
+    windowMinutes: number = 30
+  ): {
     hitRate: number[];
     avgLatency: number[];
     errorRate: number[];
     timestamps: number[];
   } {
     const windows = this.metricsBuffer.get(layer) || [];
-    const cutoffTime = Date.now() - (windowMinutes * 60 * 1000);
+    const cutoffTime = Date.now() - windowMinutes * 60 * 1000;
 
     const relevantWindows = windows.filter(w => w.end > cutoffTime);
 
@@ -173,7 +176,7 @@ export class CacheMetrics extends EventEmitter {
       hitRate: [] as number[],
       avgLatency: [] as number[],
       errorRate: [] as number[],
-      timestamps: [] as number[]
+      timestamps: [] as number[],
     };
 
     relevantWindows.forEach(window => {
@@ -185,14 +188,10 @@ export class CacheMetrics extends EventEmitter {
       trends.hitRate.push(total > 0 ? hits / total : 0);
       trends.errorRate.push(total > 0 ? errors / total : 0);
 
-      const latencies = window.events
-        .filter(e => e.operation !== 'error')
-        .map(e => e.latency);
+      const latencies = window.events.filter(e => e.operation !== 'error').map(e => e.latency);
 
       trends.avgLatency.push(
-        latencies.length > 0
-          ? latencies.reduce((sum, l) => sum + l, 0) / latencies.length
-          : 0
+        latencies.length > 0 ? latencies.reduce((sum, l) => sum + l, 0) / latencies.length : 0
       );
 
       trends.timestamps.push(window.end);
@@ -226,7 +225,7 @@ export class CacheMetrics extends EventEmitter {
           severity: layerStats.hitRate < 0.3 ? 'critical' : 'warning',
           value: layerStats.hitRate,
           threshold: this.config.alertThresholds.hitRateBelow,
-          message: `Cache hit rate for ${layer} is ${(layerStats.hitRate * 100).toFixed(1)}%`
+          message: `Cache hit rate for ${layer} is ${(layerStats.hitRate * 100).toFixed(1)}%`,
         });
       }
 
@@ -237,11 +236,12 @@ export class CacheMetrics extends EventEmitter {
           severity: layerStats.avgLatency > 1000 ? 'critical' : 'warning',
           value: layerStats.avgLatency,
           threshold: this.config.alertThresholds.latencyAbove,
-          message: `Average latency for ${layer} is ${layerStats.avgLatency}ms`
+          message: `Average latency for ${layer} is ${layerStats.avgLatency}ms`,
         });
       }
 
-      const errorRate = layerStats.errors / (layerStats.hits + layerStats.misses + layerStats.errors);
+      const errorRate =
+        layerStats.errors / (layerStats.hits + layerStats.misses + layerStats.errors);
       if (errorRate > this.config.alertThresholds.errorRateAbove) {
         alerts.push({
           type: 'error_rate',
@@ -249,7 +249,7 @@ export class CacheMetrics extends EventEmitter {
           severity: errorRate > 0.1 ? 'critical' : 'warning',
           value: errorRate,
           threshold: this.config.alertThresholds.errorRateAbove,
-          message: `Error rate for ${layer} is ${(errorRate * 100).toFixed(1)}%`
+          message: `Error rate for ${layer} is ${(errorRate * 100).toFixed(1)}%`,
         });
       }
     });
@@ -288,9 +288,9 @@ export class CacheMetrics extends EventEmitter {
       trends: {
         L0: this.getTrends('L0'),
         L1: this.getTrends('L1'),
-        L2: this.getTrends('L2')
+        L2: this.getTrends('L2'),
       },
-      exportedAt: new Date().toISOString()
+      exportedAt: new Date().toISOString(),
     };
 
     if (format === 'json') {
@@ -303,7 +303,7 @@ export class CacheMetrics extends EventEmitter {
       'Layer,Hits,Misses,HitRate,AvgLatency,Errors,CurrentSize,MaxSize',
       `L0,${stats.l0.hits},${stats.l0.misses},${stats.l0.hitRate.toFixed(3)},${stats.l0.avgLatency.toFixed(2)},${stats.l0.errors},${stats.l0.currentSize},${stats.l0.maxSize}`,
       `L1,${stats.l1.hits},${stats.l1.misses},${stats.l1.hitRate.toFixed(3)},${stats.l1.avgLatency.toFixed(2)},${stats.l1.errors},${stats.l1.currentSize},${stats.l1.maxSize}`,
-      `L2,${stats.l2.hits},${stats.l2.misses},${stats.l2.hitRate.toFixed(3)},${stats.l2.avgLatency.toFixed(2)},${stats.l2.errors},${stats.l2.currentSize},${stats.l2.maxSize}`
+      `L2,${stats.l2.hits},${stats.l2.misses},${stats.l2.hitRate.toFixed(3)},${stats.l2.avgLatency.toFixed(2)},${stats.l2.errors},${stats.l2.currentSize},${stats.l2.maxSize}`,
     ];
 
     return csvRows.join('\n');
@@ -322,7 +322,7 @@ export class CacheMetrics extends EventEmitter {
       currentWindow = {
         start: event.timestamp,
         end: event.timestamp + this.windowSizeMs,
-        events: []
+        events: [],
       };
       layerBuffers.push(currentWindow);
 
@@ -368,7 +368,7 @@ export class CacheMetrics extends EventEmitter {
 
     // Update running averages
     const totalOps = stats.hits + stats.misses + stats.sets + stats.deletes + stats.errors;
-    stats.avgLatency = ((stats.avgLatency * (totalOps - 1)) + latency) / totalOps;
+    stats.avgLatency = (stats.avgLatency * (totalOps - 1) + latency) / totalOps;
     stats.hitRate = stats.hits / (stats.hits + stats.misses + 0.001); // Avoid division by zero
 
     this.currentStats.set(layer, stats);
@@ -386,9 +386,11 @@ export class CacheMetrics extends EventEmitter {
         sets: acc.sets + stats.sets,
         deletes: acc.deletes + stats.deletes,
         errors: acc.errors + stats.errors,
-        latencySum: acc.latencySum + (stats.avgLatency * (stats.hits + stats.misses + stats.sets + stats.deletes)),
+        latencySum:
+          acc.latencySum +
+          stats.avgLatency * (stats.hits + stats.misses + stats.sets + stats.deletes),
         operations: acc.operations + stats.hits + stats.misses + stats.sets + stats.deletes,
-        memoryUsage: acc.memoryUsage + stats.currentSize
+        memoryUsage: acc.memoryUsage + stats.currentSize,
       }),
       {
         hits: 0,
@@ -398,7 +400,7 @@ export class CacheMetrics extends EventEmitter {
         errors: 0,
         latencySum: 0,
         operations: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       }
     );
 
@@ -408,7 +410,7 @@ export class CacheMetrics extends EventEmitter {
       overallHitRate: totals.hits / (totals.hits + totals.misses + 0.001),
       avgResponseTime: totals.operations > 0 ? totals.latencySum / totals.operations : 0,
       memoryUsage: totals.memoryUsage,
-      errorRate: totals.errors / (totals.operations + totals.errors + 0.001)
+      errorRate: totals.errors / (totals.operations + totals.errors + 0.001),
     };
   }
 
@@ -422,7 +424,7 @@ export class CacheMetrics extends EventEmitter {
       hitRate: 0,
       avgLatency: 0,
       currentSize: 0,
-      maxSize: 0
+      maxSize: 0,
     };
   }
 
@@ -444,7 +446,7 @@ export class CacheMetrics extends EventEmitter {
   }
 
   private cleanupOldWindows(): void {
-    const cutoffTime = Date.now() - (this.maxWindows * this.windowSizeMs);
+    const cutoffTime = Date.now() - this.maxWindows * this.windowSizeMs;
 
     this.metricsBuffer.forEach((windows, layer) => {
       const filtered = windows.filter(w => w.end > cutoffTime);

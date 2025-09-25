@@ -1,6 +1,6 @@
 /**
  * Window Integration Service - Service Coordination for Window Management
- * 
+ *
  * Coordinates between WindowManager and other services to provide
  * seamless integration and error recovery mechanisms
  */
@@ -10,11 +10,11 @@ import { WindowManager } from '../windows/WindowManager';
 import { WindowDatabaseService } from './WindowDatabaseService';
 import { EnhancedIPCService } from './EnhancedIPCService';
 import { EventEmitter } from 'events';
-import { 
-  WindowType, 
-  WindowInstance, 
+import {
+  WindowType,
+  WindowInstance,
   WindowEventData,
-  WindowWorkspace 
+  WindowWorkspace,
 } from '../windows/types/WindowTypes';
 
 interface WindowIntegrationConfig {
@@ -48,11 +48,11 @@ export class WindowIntegrationService extends EventEmitter implements Service {
   private windowManager?: WindowManager;
   private databaseService?: WindowDatabaseService;
   private ipcService?: EnhancedIPCService;
-  
+
   private config: WindowIntegrationConfig;
   private healthCheckTimer?: ReturnType<typeof setTimeout>;
   private recoveryAttempts = new Map<string, number>();
-  
+
   private stats = {
     windowsCreated: 0,
     windowsDestroyed: 0,
@@ -60,18 +60,18 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     recoveryAttempts: 0,
     recoverySuccesses: 0,
     healthChecks: 0,
-    errors: [] as string[]
+    errors: [] as string[],
   };
 
   constructor(private context: ServiceContext) {
     super();
-    
+
     this.config = {
       enableAutoRecovery: true,
       maxRecoveryAttempts: 3,
       healthCheckInterval: 30000, // 30 seconds
       enableEventLogging: true,
-      enablePerformanceMetrics: true
+      enablePerformanceMetrics: true,
     };
   }
 
@@ -107,7 +107,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
       this.registerIntegrationHandlers();
 
       context.logger.info('Window Integration Service initialized successfully');
-      
+
       this.emit('initialized');
     } catch (error) {
       context.logger.error('Failed to initialize Window Integration Service', error);
@@ -129,7 +129,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
       this.removeAllListeners();
 
       this.context.logger.info('Window Integration Service shut down successfully');
-      
+
       this.emit('shutdown');
     } catch (error) {
       this.context.logger.error('Error during Window Integration Service shutdown', error);
@@ -139,32 +139,32 @@ export class WindowIntegrationService extends EventEmitter implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       const componentHealth = await this.checkComponentHealth();
-      
+
       this.stats.healthChecks++;
-      
+
       const healthy = Object.values(componentHealth).every(h => h === true);
-      
+
       return {
         healthy,
         details: {
           components: componentHealth,
           stats: this.stats,
-          recoveryAttempts: Array.from(this.recoveryAttempts.entries())
+          recoveryAttempts: Array.from(this.recoveryAttempts.entries()),
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       this.stats.errors.push(`Health check failed: ${error.message}`);
-      
+
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
@@ -176,7 +176,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
    */
   async createWindow(type: WindowType, config?: any): Promise<WindowInstance | null> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.windowManager) {
         throw new Error('WindowManager not available');
@@ -184,7 +184,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
 
       // Create the window
       const windowInstance = await this.windowManager.createWindow(type, config);
-      
+
       if (!windowInstance) {
         this.context.logger.warn(`Failed to create window of type: ${type}`);
         return null;
@@ -203,13 +203,13 @@ export class WindowIntegrationService extends EventEmitter implements Service {
           windowType: type,
           event: 'created',
           timestamp: new Date(),
-          data: { config }
+          data: { config },
         });
       }
 
       // Update stats
       this.stats.windowsCreated++;
-      
+
       // Performance metrics
       if (this.config.enablePerformanceMetrics) {
         this.context.metrics.histogram('window.integration.create_time', Date.now() - startTime);
@@ -218,17 +218,17 @@ export class WindowIntegrationService extends EventEmitter implements Service {
 
       this.context.logger.info(`Successfully created window: ${type} (${windowInstance.id})`);
       this.emit('windowCreated', windowInstance);
-      
+
       return windowInstance;
     } catch (error) {
       this.stats.errors.push(`Window creation failed: ${error.message}`);
       this.context.logger.error(`Failed to create window: ${type}`, error);
-      
+
       // Attempt recovery if enabled
       if (this.config.enableAutoRecovery) {
         return await this.attemptWindowRecovery(type, config, 'create');
       }
-      
+
       throw error;
     }
   }
@@ -244,10 +244,10 @@ export class WindowIntegrationService extends EventEmitter implements Service {
 
       // Get window info before closing
       const windowInstance = this.windowManager.getWindow(windowId);
-      
+
       // Close the window
       const closed = await this.windowManager.closeWindow(windowId);
-      
+
       if (closed && windowInstance) {
         // Clean up database
         if (this.databaseService) {
@@ -260,13 +260,13 @@ export class WindowIntegrationService extends EventEmitter implements Service {
             windowId,
             windowType: windowInstance.type,
             event: 'destroyed',
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
         // Update stats
         this.stats.windowsDestroyed++;
-        
+
         this.context.logger.info(`Successfully closed window: ${windowId}`);
         this.emit('windowClosed', windowInstance);
       }
@@ -275,7 +275,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     } catch (error) {
       this.stats.errors.push(`Window close failed: ${error.message}`);
       this.context.logger.error(`Failed to close window: ${windowId}`, error);
-      
+
       // Don't throw on close errors to prevent cascading failures
       return false;
     }
@@ -299,7 +299,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
 
       // Switch workspace
       const success = await this.windowManager.switchWorkspace(workspaceName);
-      
+
       if (success) {
         // Log workspace switch
         if (this.config.enableEventLogging) {
@@ -308,7 +308,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
 
         // Update stats
         this.stats.workspacesSwitched++;
-        
+
         this.context.logger.info(`Successfully switched to workspace: ${workspaceName}`);
         this.emit('workspaceSwitched', workspaceName);
       }
@@ -317,12 +317,12 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     } catch (error) {
       this.stats.errors.push(`Workspace switch failed: ${error.message}`);
       this.context.logger.error(`Failed to switch workspace: ${workspaceName}`, error);
-      
+
       // Attempt recovery
       if (this.config.enableAutoRecovery) {
         return await this.attemptWorkspaceRecovery(workspaceName);
       }
-      
+
       return false;
     }
   }
@@ -334,7 +334,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     return {
       ...this.stats,
       recoveryAttempts: Array.from(this.recoveryAttempts.entries()),
-      config: this.config
+      config: this.config,
     };
   }
 
@@ -367,9 +367,12 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     // Register IPC handlers for integration functions
     const { ipcMain } = require('electron');
 
-    ipcMain.handle('window-integration:create-window', async (event, type: WindowType, config?: any) => {
-      return await this.createWindow(type, config);
-    });
+    ipcMain.handle(
+      'window-integration:create-window',
+      async (event, type: WindowType, config?: any) => {
+        return await this.createWindow(type, config);
+      }
+    );
 
     ipcMain.handle('window-integration:close-window', async (event, windowId: string) => {
       return await this.closeWindow(windowId);
@@ -388,7 +391,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     this.healthCheckTimer = setInterval(async () => {
       try {
         const health = await this.healthCheck();
-        
+
         if (!health.healthy && this.config.enableAutoRecovery) {
           await this.attemptSystemRecovery();
         }
@@ -401,7 +404,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
   private async checkComponentHealth(): Promise<WindowServiceHealth> {
     const startTime = Date.now();
     const errors: string[] = [];
-    
+
     let windowManager = false;
     let database = false;
     let ipc = false;
@@ -443,7 +446,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
         ipc,
         integration,
         lastCheck: new Date(),
-        errors
+        errors,
       };
     } catch (error) {
       errors.push(`Health check error: ${error.message}`);
@@ -453,15 +456,19 @@ export class WindowIntegrationService extends EventEmitter implements Service {
         ipc: false,
         integration: false,
         lastCheck: new Date(),
-        errors
+        errors,
       };
     }
   }
 
-  private async attemptWindowRecovery(type: WindowType, config: any, operation: string): Promise<WindowInstance | null> {
+  private async attemptWindowRecovery(
+    type: WindowType,
+    config: any,
+    operation: string
+  ): Promise<WindowInstance | null> {
     const recoveryKey = `${operation}-${type}`;
     const attempts = this.recoveryAttempts.get(recoveryKey) || 0;
-    
+
     if (attempts >= this.config.maxRecoveryAttempts) {
       this.context.logger.error(`Max recovery attempts reached for ${recoveryKey}`);
       return null;
@@ -471,20 +478,22 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     this.stats.recoveryAttempts++;
 
     try {
-      this.context.logger.info(`Attempting window recovery: ${recoveryKey} (attempt ${attempts + 1})`);
-      
+      this.context.logger.info(
+        `Attempting window recovery: ${recoveryKey} (attempt ${attempts + 1})`
+      );
+
       // Wait a bit before retry
       await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1)));
-      
+
       // Retry the operation
       const result = await this.createWindow(type, config);
-      
+
       if (result) {
         this.stats.recoverySuccesses++;
         this.recoveryAttempts.delete(recoveryKey); // Clear attempts on success
         this.context.logger.info(`Window recovery successful: ${recoveryKey}`);
       }
-      
+
       return result;
     } catch (error) {
       this.context.logger.error(`Window recovery failed: ${recoveryKey}`, error);
@@ -495,7 +504,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
   private async attemptWorkspaceRecovery(workspaceName: string): Promise<boolean> {
     const recoveryKey = `workspace-${workspaceName}`;
     const attempts = this.recoveryAttempts.get(recoveryKey) || 0;
-    
+
     if (attempts >= this.config.maxRecoveryAttempts) {
       return false;
     }
@@ -506,7 +515,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
     try {
       // Wait before retry
       await new Promise(resolve => setTimeout(resolve, 2000 * (attempts + 1)));
-      
+
       // Try to recover workspace from database
       if (this.databaseService) {
         const workspace = await this.databaseService.loadWorkspace(workspaceName);
@@ -519,7 +528,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
           }
         }
       }
-      
+
       return false;
     } catch (error) {
       this.context.logger.error(`Workspace recovery failed: ${recoveryKey}`, error);
@@ -530,10 +539,10 @@ export class WindowIntegrationService extends EventEmitter implements Service {
   private async attemptSystemRecovery(): Promise<void> {
     try {
       this.context.logger.warn('Attempting system-wide window management recovery');
-      
+
       // Reset recovery attempts for critical failures
       this.recoveryAttempts.clear();
-      
+
       // Try to reinitialize critical components
       if (this.windowManager) {
         const mainWindow = this.windowManager.getMainWindow();
@@ -542,7 +551,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
           // This would need to be implemented in WindowManager
         }
       }
-      
+
       this.context.logger.info('System recovery attempt completed');
     } catch (error) {
       this.context.logger.error('System recovery failed', error);
@@ -557,21 +566,24 @@ export class WindowIntegrationService extends EventEmitter implements Service {
           windowId: windowInstance.id,
           windowType: windowInstance.type,
           event: 'created',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
-      
+
       // Initialize window health tracking
       if (this.databaseService) {
         await this.databaseService.updateWindowHealth(windowInstance.id, {
           responsive: true,
           lastHealthCheck: new Date(),
           errors: [],
-          warnings: []
+          warnings: [],
         });
       }
     } catch (error) {
-      this.context.logger.error(`Failed to handle window created event: ${windowInstance.id}`, error);
+      this.context.logger.error(
+        `Failed to handle window created event: ${windowInstance.id}`,
+        error
+      );
     }
   }
 
@@ -582,11 +594,14 @@ export class WindowIntegrationService extends EventEmitter implements Service {
           windowId: windowInstance.id,
           windowType: windowInstance.type,
           event: 'destroyed',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     } catch (error) {
-      this.context.logger.error(`Failed to handle window closed event: ${windowInstance.id}`, error);
+      this.context.logger.error(
+        `Failed to handle window closed event: ${windowInstance.id}`,
+        error
+      );
     }
   }
 
@@ -596,14 +611,17 @@ export class WindowIntegrationService extends EventEmitter implements Service {
         await this.logWorkspaceEvent(workspace.name, 'switched');
       }
     } catch (error) {
-      this.context.logger.error(`Failed to handle workspace switched event: ${workspace.name}`, error);
+      this.context.logger.error(
+        `Failed to handle workspace switched event: ${workspace.name}`,
+        error
+      );
     }
   }
 
   private handleWindowManagerError(error: Error): void {
     this.stats.errors.push(`WindowManager error: ${error.message}`);
     this.context.logger.error('WindowManager error received', error);
-    
+
     this.emit('componentError', 'WindowManager', error);
   }
 
@@ -619,7 +637,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
       focused: instance.focused,
       workspace: instance.config.workspace,
       customData: instance.metadata,
-      lastSaved: new Date()
+      lastSaved: new Date(),
     };
   }
 
@@ -636,7 +654,7 @@ export class WindowIntegrationService extends EventEmitter implements Service {
         windowType: 'main',
         event: 'workspace_changed',
         timestamp: new Date(),
-        data: { workspaceName, event }
+        data: { workspaceName, event },
       });
     }
   }

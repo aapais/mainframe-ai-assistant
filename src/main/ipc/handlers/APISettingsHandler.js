@@ -21,7 +21,7 @@ class APISettingsHandler {
         testEndpoint: '/models',
         requiresApiKey: true,
         enabled: false,
-        isDefault: false
+        isDefault: false,
       },
       anthropic: {
         id: 'anthropic',
@@ -32,7 +32,7 @@ class APISettingsHandler {
         testEndpoint: '/messages',
         requiresApiKey: true,
         enabled: false,
-        isDefault: false
+        isDefault: false,
       },
       gemini: {
         id: 'gemini',
@@ -43,7 +43,7 @@ class APISettingsHandler {
         testEndpoint: '/models',
         requiresApiKey: true,
         enabled: false,
-        isDefault: false
+        isDefault: false,
       },
       copilot: {
         id: 'copilot',
@@ -54,7 +54,7 @@ class APISettingsHandler {
         testEndpoint: '/completions',
         requiresApiKey: true,
         enabled: false,
-        isDefault: false
+        isDefault: false,
       },
       local: {
         id: 'local',
@@ -65,8 +65,8 @@ class APISettingsHandler {
         testEndpoint: '/api/tags',
         requiresApiKey: false,
         enabled: false,
-        isDefault: false
-      }
+        isDefault: false,
+      },
     };
 
     this.setupHandlers();
@@ -107,7 +107,7 @@ class APISettingsHandler {
         if (this.providers[providerId]) {
           this.providers[providerId] = {
             ...this.providers[providerId],
-            ...settings.providers[providerId]
+            ...settings.providers[providerId],
           };
         }
       });
@@ -128,7 +128,7 @@ class APISettingsHandler {
     try {
       const settings = {
         providers: {},
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       };
 
       // Save provider configurations (without keys)
@@ -138,7 +138,7 @@ class APISettingsHandler {
           enabled: provider.enabled,
           isDefault: provider.isDefault,
           baseUrl: provider.baseUrl,
-          selectedModel: provider.selectedModel
+          selectedModel: provider.selectedModel,
         };
       });
 
@@ -162,7 +162,7 @@ class APISettingsHandler {
         const cipher = crypto.createCipher('aes-256-ctr', this.encryptionKey);
         let encrypted = cipher.update(text, 'utf8', 'hex');
         encrypted += cipher.final('hex');
-        return `${iv.toString('hex')  }:${  encrypted}`;
+        return `${iv.toString('hex')}:${encrypted}`;
       }
     } catch (error) {
       console.error('Encryption failed:', error);
@@ -208,7 +208,7 @@ class APISettingsHandler {
     try {
       const headers = {
         'Content-Type': 'application/json',
-        'User-Agent': 'Accenture-Mainframe-AI-Assistant/1.0.0'
+        'User-Agent': 'Accenture-Mainframe-AI-Assistant/1.0.0',
       };
 
       // Add authentication headers based on provider
@@ -236,7 +236,7 @@ class APISettingsHandler {
       const response = await fetchFn(testUrl, {
         method: 'GET',
         headers,
-        signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined
+        signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined,
       });
 
       if (response.ok) {
@@ -244,20 +244,20 @@ class APISettingsHandler {
           success: true,
           message: 'Connection successful',
           status: response.status,
-          provider: provider.name
+          provider: provider.name,
         };
       } else {
         return {
           success: false,
           message: `Connection failed: ${response.status} ${response.statusText}`,
-          status: response.status
+          status: response.status,
         };
       }
     } catch (error) {
       return {
         success: false,
         message: `Connection error: ${error.message}`,
-        error: error.code
+        error: error.code,
       };
     }
   }
@@ -271,7 +271,7 @@ class APISettingsHandler {
       try {
         const providers = Object.values(this.providers);
         const providersWithKeyStatus = await Promise.all(
-          providers.map(async (provider) => ({
+          providers.map(async provider => ({
             id: provider.id,
             name: provider.name,
             description: provider.description,
@@ -279,7 +279,7 @@ class APISettingsHandler {
             isDefault: provider.isDefault,
             requiresApiKey: provider.requiresApiKey,
             models: provider.models,
-            hasValidKey: await this.hasValidApiKey(provider.id)
+            hasValidKey: await this.hasValidApiKey(provider.id),
           }))
         );
         return providersWithKeyStatus;
@@ -299,7 +299,7 @@ class APISettingsHandler {
 
         return {
           ...provider,
-          hasValidKey: await this.hasValidApiKey(providerId)
+          hasValidKey: await this.hasValidApiKey(providerId),
         };
       } catch (error) {
         console.error('Failed to get provider:', error);
@@ -308,37 +308,40 @@ class APISettingsHandler {
     });
 
     // Save API key securely
-    ipcMain.handle('api-settings:save-key', async (event, providerId, apiKey, customEndpoint = null) => {
-      try {
-        if (!apiKey || typeof apiKey !== 'string') {
-          throw new Error('Invalid API key provided');
+    ipcMain.handle(
+      'api-settings:save-key',
+      async (event, providerId, apiKey, customEndpoint = null) => {
+        try {
+          if (!apiKey || typeof apiKey !== 'string') {
+            throw new Error('Invalid API key provided');
+          }
+
+          const provider = this.providers[providerId];
+          if (!provider) {
+            throw new Error(`Provider ${providerId} not found`);
+          }
+
+          // Encrypt and store the API key
+          const encryptedKey = this.encrypt(apiKey);
+          const keyPath = path.join(app.getPath('userData'), `${providerId}-key.enc`);
+          await fs.writeFile(keyPath, encryptedKey);
+
+          // Update provider settings
+          if (customEndpoint) {
+            provider.baseUrl = customEndpoint;
+          }
+          provider.enabled = true;
+
+          await this.saveSettings();
+
+          console.log(`API key saved for provider: ${providerId}`);
+          return { success: true, message: 'API key saved successfully' };
+        } catch (error) {
+          console.error('Failed to save API key:', error);
+          return { success: false, message: error.message };
         }
-
-        const provider = this.providers[providerId];
-        if (!provider) {
-          throw new Error(`Provider ${providerId} not found`);
-        }
-
-        // Encrypt and store the API key
-        const encryptedKey = this.encrypt(apiKey);
-        const keyPath = path.join(app.getPath('userData'), `${providerId}-key.enc`);
-        await fs.writeFile(keyPath, encryptedKey);
-
-        // Update provider settings
-        if (customEndpoint) {
-          provider.baseUrl = customEndpoint;
-        }
-        provider.enabled = true;
-
-        await this.saveSettings();
-
-        console.log(`API key saved for provider: ${providerId}`);
-        return { success: true, message: 'API key saved successfully' };
-      } catch (error) {
-        console.error('Failed to save API key:', error);
-        return { success: false, message: error.message };
       }
-    });
+    );
 
     // Get API key (returns boolean to indicate if key exists)
     ipcMain.handle('api-settings:has-key', async (event, providerId) => {
@@ -390,7 +393,7 @@ class APISettingsHandler {
           if (!apiKey) {
             return {
               success: false,
-              message: 'No API key found for this provider'
+              message: 'No API key found for this provider',
             };
           }
         }
@@ -402,7 +405,7 @@ class APISettingsHandler {
         console.error('Connection test failed:', error);
         return {
           success: false,
-          message: error.message
+          message: error.message,
         };
       }
     });
@@ -458,7 +461,9 @@ class APISettingsHandler {
         // If disabling the default provider, find another enabled one
         if (!enabled && provider.isDefault) {
           provider.isDefault = false;
-          const enabledProvider = Object.values(this.providers).find(p => p.enabled && p.id !== providerId);
+          const enabledProvider = Object.values(this.providers).find(
+            p => p.enabled && p.id !== providerId
+          );
           if (enabledProvider) {
             enabledProvider.isDefault = true;
           }
@@ -467,7 +472,10 @@ class APISettingsHandler {
         await this.saveSettings();
 
         console.log(`Provider ${providerId} ${enabled ? 'enabled' : 'disabled'}`);
-        return { success: true, message: `Provider ${provider.name} ${enabled ? 'enabled' : 'disabled'}` };
+        return {
+          success: true,
+          message: `Provider ${provider.name} ${enabled ? 'enabled' : 'disabled'}`,
+        };
       } catch (error) {
         console.error('Failed to toggle provider:', error);
         return { success: false, message: error.message };
@@ -507,7 +515,7 @@ class APISettingsHandler {
           totalTokens: 0,
           lastUsed: null,
           dailyLimit: null,
-          remainingQuota: null
+          remainingQuota: null,
         };
       } catch (error) {
         console.error('Failed to get usage stats:', error);
@@ -560,7 +568,7 @@ class APISettingsHandler {
       'api-settings:get-default',
       'api-settings:toggle-provider',
       'api-settings:update-provider',
-      'api-settings:get-usage-stats'
+      'api-settings:get-usage-stats',
     ];
 
     handlers.forEach(handler => {
@@ -578,7 +586,7 @@ class APISettingsHandler {
       const settings = {
         providers: {},
         exportDate: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
       };
 
       // Export provider configurations (without keys for security)
@@ -591,7 +599,7 @@ class APISettingsHandler {
           isDefault: provider.isDefault,
           baseUrl: provider.baseUrl,
           selectedModel: provider.selectedModel,
-          hasKey: await this.hasValidApiKey(providerId)
+          hasKey: await this.hasValidApiKey(providerId),
         };
       }
 

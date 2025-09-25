@@ -45,81 +45,254 @@ export class FTS5MainframeTokenizer {
 
   // Mainframe error code patterns
   private readonly ERROR_CODE_PATTERNS = [
-    /^S\d{3}[A-Z]?$/i,           // System completion codes: S0C7, S806
-    /^[A-Z]{3}\d{3,4}[A-Z]?$/i,  // System messages: IEF212I, WER027A
-    /^SQLCODE\s*[-]?\d+$/i,      // DB2 SQL codes: SQLCODE -904
-    /^VSAM\s*STATUS\s*\d+$/i,    // VSAM status: VSAM STATUS 35
-    /^RC\s*=\s*\d+$/i,           // Return codes: RC=8
-    /^U\d{4}$/i,                 // User completion codes: U0778
-    /^CEE\d{4}[A-Z]?$/i,         // Language Environment: CEE3204S
-    /^IGZ\d{4}[A-Z]?$/i,         // COBOL runtime: IGZ0035S
-    /^IKJ\d{4}[A-Z]?$/i,         // TSO/ISPF: IKJ56650I
-    /^ICH\d{4}[A-Z]?$/i,         // RACF security: ICH408I
-    /^ARC\d{4}[A-Z]?$/i,         // Archive: ARC1130I
-    /^IGD\d{4}[A-Z]?$/i,         // SMS/DFSMS: IGD17501I
-    /^IEA\d{4}[A-Z]?$/i,         // System control: IEA989I
-    /^IOS\d{4}[A-Z]?$/i,         // I/O Supervisor: IOS020I
-    /^IRA\d{4}[A-Z]?$/i,         // RSM: IRA050I
-    /^ISG\d{4}[A-Z]?$/i,         // System Logger: ISG319I
+    /^S\d{3}[A-Z]?$/i, // System completion codes: S0C7, S806
+    /^[A-Z]{3}\d{3,4}[A-Z]?$/i, // System messages: IEF212I, WER027A
+    /^SQLCODE\s*[-]?\d+$/i, // DB2 SQL codes: SQLCODE -904
+    /^VSAM\s*STATUS\s*\d+$/i, // VSAM status: VSAM STATUS 35
+    /^RC\s*=\s*\d+$/i, // Return codes: RC=8
+    /^U\d{4}$/i, // User completion codes: U0778
+    /^CEE\d{4}[A-Z]?$/i, // Language Environment: CEE3204S
+    /^IGZ\d{4}[A-Z]?$/i, // COBOL runtime: IGZ0035S
+    /^IKJ\d{4}[A-Z]?$/i, // TSO/ISPF: IKJ56650I
+    /^ICH\d{4}[A-Z]?$/i, // RACF security: ICH408I
+    /^ARC\d{4}[A-Z]?$/i, // Archive: ARC1130I
+    /^IGD\d{4}[A-Z]?$/i, // SMS/DFSMS: IGD17501I
+    /^IEA\d{4}[A-Z]?$/i, // System control: IEA989I
+    /^IOS\d{4}[A-Z]?$/i, // I/O Supervisor: IOS020I
+    /^IRA\d{4}[A-Z]?$/i, // RSM: IRA050I
+    /^ISG\d{4}[A-Z]?$/i, // System Logger: ISG319I
   ];
 
   // JCL syntax patterns
   private readonly JCL_SYNTAX_PATTERNS = [
-    /^\/\/[A-Z0-9@#$]{1,8}$/i,   // Job/step names: //MYJOB
+    /^\/\/[A-Z0-9@#$]{1,8}$/i, // Job/step names: //MYJOB
     /^\/\/\s*[A-Z0-9@#$]+\s+DD$/i, // DD statements: //SYSIN DD
-    /^DISP\s*=\s*\([^)]+\)$/i,   // DISP parameter: DISP=(NEW,CATLG)
+    /^DISP\s*=\s*\([^)]+\)$/i, // DISP parameter: DISP=(NEW,CATLG)
     /^DSN\s*=\s*[A-Z0-9.@#$]+$/i, // Dataset names: DSN=MY.DATA.SET
-    /^SPACE\s*=\s*\([^)]+\)$/i,  // SPACE parameter: SPACE=(TRK,(10,5))
-    /^UNIT\s*=\s*[A-Z0-9]+$/i,   // UNIT parameter: UNIT=SYSDA
+    /^SPACE\s*=\s*\([^)]+\)$/i, // SPACE parameter: SPACE=(TRK,(10,5))
+    /^UNIT\s*=\s*[A-Z0-9]+$/i, // UNIT parameter: UNIT=SYSDA
     /^VOL\s*=\s*SER\s*=\s*[A-Z0-9]+$/i, // Volume: VOL=SER=VOL001
-    /^CLASS\s*=\s*[A-Z0-9]$/i,   // Job class: CLASS=A
+    /^CLASS\s*=\s*[A-Z0-9]$/i, // Job class: CLASS=A
     /^MSGCLASS\s*=\s*[A-Z0-9]$/i, // Message class: MSGCLASS=H
     /^REGION\s*=\s*\d+[KMG]?$/i, // Region size: REGION=8M
   ];
 
   // COBOL keyword patterns
   private readonly COBOL_KEYWORDS = [
-    'IDENTIFICATION', 'DIVISION', 'PROGRAM-ID', 'ENVIRONMENT', 'CONFIGURATION',
-    'DATA', 'WORKING-STORAGE', 'SECTION', 'PROCEDURE', 'PERFORM', 'UNTIL',
-    'MOVE', 'TO', 'FROM', 'COMPUTE', 'ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE',
-    'IF', 'THEN', 'ELSE', 'END-IF', 'EVALUATE', 'WHEN', 'END-EVALUATE',
-    'CALL', 'USING', 'RETURNING', 'GO', 'STOP', 'RUN', 'EXIT',
-    'OPEN', 'CLOSE', 'READ', 'WRITE', 'REWRITE', 'DELETE',
-    'PIC', 'PICTURE', 'OCCURS', 'DEPENDING', 'ON', 'REDEFINES',
-    'COMP', 'COMP-3', 'PACKED-DECIMAL', 'BINARY', 'DISPLAY',
-    'FILLER', 'VALUE', 'SPACES', 'ZEROS', 'ZEROES', 'HIGH-VALUES', 'LOW-VALUES',
-    'ACCEPT', 'DISPLAY', 'STRING', 'UNSTRING', 'INSPECT', 'REPLACE',
-    'FILE', 'RECORD', 'FD', 'SELECT', 'ASSIGN', 'ACCESS', 'ORGANIZATION',
-    'SEQUENTIAL', 'INDEXED', 'RELATIVE', 'DYNAMIC', 'RANDOM',
-    'VSAM', 'QSAM', 'BSAM', 'ISAM', 'KEY', 'ALTERNATE',
-    'COPY', 'COPYBOOK', 'REPLACING', 'LEADING', 'BY',
-    'LINKAGE', 'POINTER', 'REFERENCE', 'MODIFICATION', 'LENGTH', 'OF'
+    'IDENTIFICATION',
+    'DIVISION',
+    'PROGRAM-ID',
+    'ENVIRONMENT',
+    'CONFIGURATION',
+    'DATA',
+    'WORKING-STORAGE',
+    'SECTION',
+    'PROCEDURE',
+    'PERFORM',
+    'UNTIL',
+    'MOVE',
+    'TO',
+    'FROM',
+    'COMPUTE',
+    'ADD',
+    'SUBTRACT',
+    'MULTIPLY',
+    'DIVIDE',
+    'IF',
+    'THEN',
+    'ELSE',
+    'END-IF',
+    'EVALUATE',
+    'WHEN',
+    'END-EVALUATE',
+    'CALL',
+    'USING',
+    'RETURNING',
+    'GO',
+    'STOP',
+    'RUN',
+    'EXIT',
+    'OPEN',
+    'CLOSE',
+    'READ',
+    'WRITE',
+    'REWRITE',
+    'DELETE',
+    'PIC',
+    'PICTURE',
+    'OCCURS',
+    'DEPENDING',
+    'ON',
+    'REDEFINES',
+    'COMP',
+    'COMP-3',
+    'PACKED-DECIMAL',
+    'BINARY',
+    'DISPLAY',
+    'FILLER',
+    'VALUE',
+    'SPACES',
+    'ZEROS',
+    'ZEROES',
+    'HIGH-VALUES',
+    'LOW-VALUES',
+    'ACCEPT',
+    'DISPLAY',
+    'STRING',
+    'UNSTRING',
+    'INSPECT',
+    'REPLACE',
+    'FILE',
+    'RECORD',
+    'FD',
+    'SELECT',
+    'ASSIGN',
+    'ACCESS',
+    'ORGANIZATION',
+    'SEQUENTIAL',
+    'INDEXED',
+    'RELATIVE',
+    'DYNAMIC',
+    'RANDOM',
+    'VSAM',
+    'QSAM',
+    'BSAM',
+    'ISAM',
+    'KEY',
+    'ALTERNATE',
+    'COPY',
+    'COPYBOOK',
+    'REPLACING',
+    'LEADING',
+    'BY',
+    'LINKAGE',
+    'POINTER',
+    'REFERENCE',
+    'MODIFICATION',
+    'LENGTH',
+    'OF',
   ];
 
   // System message type keywords
   private readonly SYSTEM_MSG_KEYWORDS = [
-    'ABEND', 'COMPLETION', 'CODE', 'ERROR', 'WARNING', 'INFORMATION',
-    'CANCELLED', 'FAILED', 'SUCCESSFUL', 'TERMINATED', 'INITIATED',
-    'ALLOCATED', 'UNALLOCATED', 'OPENED', 'CLOSED', 'DATASET',
-    'CATALOG', 'UNCATALOG', 'SCRATCH', 'RENAME', 'VOLUME',
-    'MOUNT', 'DEMOUNT', 'OFFLINE', 'ONLINE', 'VARY', 'DEVICE',
-    'JOB', 'STEP', 'PROC', 'PROGRAM', 'MODULE', 'LOAD', 'LIBRARY',
-    'SUBSYSTEM', 'STARTED', 'STOPPED', 'ACTIVE', 'INACTIVE',
-    'CHECKPOINT', 'RESTART', 'RECOVERY', 'BACKUP', 'ARCHIVE',
-    'SYSOUT', 'HELD', 'RELEASED', 'PURGED', 'WRITER', 'OUTPUT'
+    'ABEND',
+    'COMPLETION',
+    'CODE',
+    'ERROR',
+    'WARNING',
+    'INFORMATION',
+    'CANCELLED',
+    'FAILED',
+    'SUCCESSFUL',
+    'TERMINATED',
+    'INITIATED',
+    'ALLOCATED',
+    'UNALLOCATED',
+    'OPENED',
+    'CLOSED',
+    'DATASET',
+    'CATALOG',
+    'UNCATALOG',
+    'SCRATCH',
+    'RENAME',
+    'VOLUME',
+    'MOUNT',
+    'DEMOUNT',
+    'OFFLINE',
+    'ONLINE',
+    'VARY',
+    'DEVICE',
+    'JOB',
+    'STEP',
+    'PROC',
+    'PROGRAM',
+    'MODULE',
+    'LOAD',
+    'LIBRARY',
+    'SUBSYSTEM',
+    'STARTED',
+    'STOPPED',
+    'ACTIVE',
+    'INACTIVE',
+    'CHECKPOINT',
+    'RESTART',
+    'RECOVERY',
+    'BACKUP',
+    'ARCHIVE',
+    'SYSOUT',
+    'HELD',
+    'RELEASED',
+    'PURGED',
+    'WRITER',
+    'OUTPUT',
   ];
 
   // VSAM operation keywords
   private readonly VSAM_KEYWORDS = [
-    'KSDS', 'ESDS', 'RRDS', 'LDS', 'AIX', 'PATH', 'CLUSTER',
-    'GET', 'PUT', 'ERASE', 'POINT', 'ENDREQ', 'SHOWCB', 'TESTCB',
-    'GENERIC', 'EQUAL', 'GTEQ', 'RBA', 'RRN', 'KEYLEN', 'REC',
-    'SKIP', 'BWD', 'FWD', 'KEYFROM', 'KEYTO', 'FROMKEY', 'TOKEY',
-    'OPTCD', 'MACRF', 'ACB', 'RPL', 'EXLST', 'SYNAD', 'LERAD',
-    'BUFND', 'BUFNI', 'STRNO', 'IMBED', 'REPLICATE', 'SPEED',
-    'RECOVERY', 'BWO', 'KEYUPD', 'UPD', 'OUT', 'ADD', 'CNV',
-    'DIR', 'SEQ', 'SKP', 'SYN', 'ASY', 'DFR', 'NDF', 'ARD',
-    'NRM', 'MSR', 'UBF', 'LOC', 'MVE', 'KEY', 'ADR', 'CNT'
+    'KSDS',
+    'ESDS',
+    'RRDS',
+    'LDS',
+    'AIX',
+    'PATH',
+    'CLUSTER',
+    'GET',
+    'PUT',
+    'ERASE',
+    'POINT',
+    'ENDREQ',
+    'SHOWCB',
+    'TESTCB',
+    'GENERIC',
+    'EQUAL',
+    'GTEQ',
+    'RBA',
+    'RRN',
+    'KEYLEN',
+    'REC',
+    'SKIP',
+    'BWD',
+    'FWD',
+    'KEYFROM',
+    'KEYTO',
+    'FROMKEY',
+    'TOKEY',
+    'OPTCD',
+    'MACRF',
+    'ACB',
+    'RPL',
+    'EXLST',
+    'SYNAD',
+    'LERAD',
+    'BUFND',
+    'BUFNI',
+    'STRNO',
+    'IMBED',
+    'REPLICATE',
+    'SPEED',
+    'RECOVERY',
+    'BWO',
+    'KEYUPD',
+    'UPD',
+    'OUT',
+    'ADD',
+    'CNV',
+    'DIR',
+    'SEQ',
+    'SKP',
+    'SYN',
+    'ASY',
+    'DFR',
+    'NDF',
+    'ARD',
+    'NRM',
+    'MSR',
+    'UBF',
+    'LOC',
+    'MVE',
+    'KEY',
+    'ADR',
+    'CNT',
   ];
 
   constructor(config: Partial<MainframeTokenizerConfig> = {}) {
@@ -130,7 +303,7 @@ export class FTS5MainframeTokenizer {
       preserveSystemMessages: true,
       caseSensitive: false,
       stemming: true,
-      ...config
+      ...config,
     };
   }
 
@@ -170,7 +343,7 @@ export class FTS5MainframeTokenizer {
         if (preserved) {
           tokens.push({
             ...preserved,
-            position: position++
+            position: position++,
           });
         }
       } else {
@@ -186,7 +359,7 @@ export class FTS5MainframeTokenizer {
     if (this.config.stemming) {
       return tokens.map(token => ({
         ...token,
-        stemmed: this.applyStemming(token.token)
+        stemmed: this.applyStemming(token.token),
       }));
     }
 
@@ -208,7 +381,7 @@ export class FTS5MainframeTokenizer {
               token: this.config.caseSensitive ? match : match.toUpperCase(),
               type: 'error_code',
               weight: 3.0, // High weight for error codes
-              position: 0 // Will be set later
+              position: 0, // Will be set later
             });
           });
         }
@@ -224,7 +397,7 @@ export class FTS5MainframeTokenizer {
               token: this.config.caseSensitive ? match : match.toUpperCase(),
               type: 'jcl_syntax',
               weight: 2.5, // High weight for JCL syntax
-              position: 0
+              position: 0,
             });
           });
         }
@@ -262,7 +435,7 @@ export class FTS5MainframeTokenizer {
         token: upperToken,
         type: 'cobol_keyword',
         weight: 2.0,
-        position
+        position,
       };
     }
 
@@ -272,7 +445,7 @@ export class FTS5MainframeTokenizer {
         token: upperToken,
         type: 'system_msg',
         weight: 2.0,
-        position
+        position,
       };
     }
 
@@ -282,7 +455,7 @@ export class FTS5MainframeTokenizer {
         token: upperToken,
         type: 'system_msg',
         weight: 1.5,
-        position
+        position,
       };
     }
 
@@ -291,7 +464,7 @@ export class FTS5MainframeTokenizer {
       token: this.config.caseSensitive ? token : token.toLowerCase(),
       type: 'general',
       weight: 1.0,
-      position
+      position,
     };
   }
 
@@ -313,21 +486,21 @@ export class FTS5MainframeTokenizer {
 
     // Handle common mainframe suffixes
     const mainframeSuffixes = [
-      { suffix: 'ing', replacement: '' },     // Processing -> Process
-      { suffix: 'ed', replacement: '' },      // Allocated -> Allocat
-      { suffix: 'ion', replacement: '' },     // Allocation -> Allocat
-      { suffix: 'tion', replacement: '' },    // Compilation -> Compil
-      { suffix: 'ness', replacement: '' },    // Readiness -> Readi
-      { suffix: 'ment', replacement: '' },    // Statement -> State
-      { suffix: 'able', replacement: '' },    // Available -> Avail
-      { suffix: 'ible', replacement: '' },    // Possible -> Poss
-      { suffix: 'ful', replacement: '' },     // Successful -> Success
-      { suffix: 'less', replacement: '' },    // Endless -> End
-      { suffix: 'ly', replacement: '' },      // Successfully -> Successfu
-      { suffix: 'er', replacement: '' },      // Handler -> Handl
-      { suffix: 'or', replacement: '' },      // Processor -> Process
-      { suffix: 'ar', replacement: '' },      // Similar -> Simil
-      { suffix: 'est', replacement: '' },     // Latest -> Lat
+      { suffix: 'ing', replacement: '' }, // Processing -> Process
+      { suffix: 'ed', replacement: '' }, // Allocated -> Allocat
+      { suffix: 'ion', replacement: '' }, // Allocation -> Allocat
+      { suffix: 'tion', replacement: '' }, // Compilation -> Compil
+      { suffix: 'ness', replacement: '' }, // Readiness -> Readi
+      { suffix: 'ment', replacement: '' }, // Statement -> State
+      { suffix: 'able', replacement: '' }, // Available -> Avail
+      { suffix: 'ible', replacement: '' }, // Possible -> Poss
+      { suffix: 'ful', replacement: '' }, // Successful -> Success
+      { suffix: 'less', replacement: '' }, // Endless -> End
+      { suffix: 'ly', replacement: '' }, // Successfully -> Successfu
+      { suffix: 'er', replacement: '' }, // Handler -> Handl
+      { suffix: 'or', replacement: '' }, // Processor -> Process
+      { suffix: 'ar', replacement: '' }, // Similar -> Simil
+      { suffix: 'est', replacement: '' }, // Latest -> Lat
     ];
 
     for (const { suffix, replacement } of mainframeSuffixes) {
@@ -470,12 +643,53 @@ export class FTS5MainframeTokenizer {
 
     // Skip common stop words that are not mainframe-specific
     const stopWords = new Set([
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during',
-      'before', 'after', 'above', 'below', 'between', 'among', 'throughout',
-      'despite', 'towards', 'upon', 'concerning', 'under', 'within', 'without',
-      'according', 'because', 'therefore', 'however', 'although', 'unless',
-      'until', 'while', 'whereas', 'since', 'though', 'whenever', 'wherever'
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'up',
+      'about',
+      'into',
+      'through',
+      'during',
+      'before',
+      'after',
+      'above',
+      'below',
+      'between',
+      'among',
+      'throughout',
+      'despite',
+      'towards',
+      'upon',
+      'concerning',
+      'under',
+      'within',
+      'without',
+      'according',
+      'because',
+      'therefore',
+      'however',
+      'although',
+      'unless',
+      'until',
+      'while',
+      'whereas',
+      'since',
+      'though',
+      'whenever',
+      'wherever',
     ]);
 
     return !stopWords.has(token.toLowerCase());
@@ -485,7 +699,9 @@ export class FTS5MainframeTokenizer {
 /**
  * Factory function to create FTS5 tokenizer instance
  */
-export function createMainframeTokenizer(config?: Partial<MainframeTokenizerConfig>): FTS5MainframeTokenizer {
+export function createMainframeTokenizer(
+  config?: Partial<MainframeTokenizerConfig>
+): FTS5MainframeTokenizer {
   return new FTS5MainframeTokenizer(config);
 }
 

@@ -40,7 +40,9 @@
 
 .search-container-enhanced:focus-within {
   @apply -translate-y-px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 /* Search Icon Enhancement */
@@ -69,7 +71,9 @@
 .suggestions-dropdown {
   animation: slideDown 200ms ease-out;
   @apply rounded-b-lg;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion-item-enhanced {
@@ -193,7 +197,9 @@
 }
 
 .shadow-purple-lg {
-  box-shadow: 0 8px 25px -5px rgba(139, 69, 255, 0.3), 0 8px 10px -6px rgba(139, 69, 255, 0.2);
+  box-shadow:
+    0 8px 25px -5px rgba(139, 69, 255, 0.3),
+    0 8px 10px -6px rgba(139, 69, 255, 0.2);
 }
 
 /* Terminal Glow Effects */

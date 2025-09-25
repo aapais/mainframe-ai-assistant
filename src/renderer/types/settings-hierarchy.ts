@@ -25,29 +25,13 @@ export interface SettingsCategoryDefinition {
 // TIER 2: Subcategories (2-4 per main category)
 // ============================================================================
 
-export type EssentialsSubcategory =
-  | 'quick-setup'
-  | 'ai-services'
-  | 'notifications'
-  | 'preferences';
+export type EssentialsSubcategory = 'quick-setup' | 'ai-services' | 'notifications' | 'preferences';
 
-export type WorkspaceSubcategory =
-  | 'appearance'
-  | 'layout'
-  | 'productivity'
-  | 'accessibility';
+export type WorkspaceSubcategory = 'appearance' | 'layout' | 'productivity' | 'accessibility';
 
-export type SystemSubcategory =
-  | 'api-config'
-  | 'performance'
-  | 'database'
-  | 'developer';
+export type SystemSubcategory = 'api-config' | 'performance' | 'database' | 'developer';
 
-export type AccountSubcategory =
-  | 'profile'
-  | 'security'
-  | 'data-privacy'
-  | 'billing';
+export type AccountSubcategory = 'profile' | 'security' | 'data-privacy' | 'billing';
 
 export type SettingsSubcategory =
   | EssentialsSubcategory
@@ -150,8 +134,9 @@ export interface SettingsRoute {
   setting?: string;
 }
 
-export type SettingsPath = `/settings/${SettingsMainCategory}/${SettingsSubcategory}` |
-                          `/settings/${SettingsMainCategory}/${SettingsSubcategory}#${string}`;
+export type SettingsPath =
+  | `/settings/${SettingsMainCategory}/${SettingsSubcategory}`
+  | `/settings/${SettingsMainCategory}/${SettingsSubcategory}#${string}`;
 
 // ============================================================================
 // User Roles and Permissions
@@ -364,7 +349,9 @@ export interface SettingsAPI {
   // Presets
   getPresets: (role?: UserRole) => Promise<SettingsPreset[]>;
   applyPreset: (presetId: string) => Promise<void>;
-  savePreset: (preset: Omit<SettingsPreset, 'id' | 'createdAt' | 'updatedAt'>) => Promise<SettingsPreset>;
+  savePreset: (
+    preset: Omit<SettingsPreset, 'id' | 'createdAt' | 'updatedAt'>
+  ) => Promise<SettingsPreset>;
   deletePreset: (presetId: string) => Promise<void>;
 
   // Import/Export

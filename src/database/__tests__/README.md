@@ -1,15 +1,18 @@
 # Database Test Suite
 
-A comprehensive test suite for all database utilities and migration systems, designed to ensure 90%+ code coverage with performance regression detection and automated CI/CD integration.
+A comprehensive test suite for all database utilities and migration systems,
+designed to ensure 90%+ code coverage with performance regression detection and
+automated CI/CD integration.
 
 ## 🎯 Overview
 
 This test suite provides comprehensive testing across four main categories:
 
 - **Unit Tests**: Individual component testing with mocking and isolation
-- **Integration Tests**: End-to-end workflows and cross-component interactions  
+- **Integration Tests**: End-to-end workflows and cross-component interactions
 - **Performance Tests**: Benchmarking, scaling tests, and regression detection
-- **Error Handling Tests**: Failure scenarios, recovery mechanisms, and resilience testing
+- **Error Handling Tests**: Failure scenarios, recovery mechanisms, and
+  resilience testing
 
 ## 📁 Structure
 
@@ -38,6 +41,7 @@ __tests__/
 ## 🚀 Quick Start
 
 ### Run All Tests
+
 ```bash
 # From the database directory
 node __tests__/run-tests.js
@@ -47,6 +51,7 @@ npm run test:database
 ```
 
 ### Run Specific Test Suites
+
 ```bash
 # Unit tests only
 node __tests__/run-tests.js --suite=unit
@@ -62,6 +67,7 @@ node __tests__/run-tests.js --suite=error-handling
 ```
 
 ### Coverage Reports
+
 ```bash
 # Generate coverage report
 node __tests__/run-tests.js --coverage
@@ -71,6 +77,7 @@ node __tests__/run-tests.js --ci
 ```
 
 ### Verbose Output
+
 ```bash
 # Detailed test output
 node __tests__/run-tests.js --verbose
@@ -83,13 +90,14 @@ node __tests__/run-tests.js --verbose
 Individual component testing with proper isolation and mocking:
 
 - **DatabaseManager**: Connection pooling, transactions, query execution
-- **MigrationManager**: Schema versioning, rollback mechanisms  
+- **MigrationManager**: Schema versioning, rollback mechanisms
 - **KnowledgeDB**: CRUD operations, search functionality, usage tracking
 - **BackupSystem**: Backup creation, restoration, validation
 - **QueryBuilder**: Query construction, optimization
 - **DataValidator**: Input validation, constraint checking
 
 **Key Features:**
+
 - In-memory databases for fast execution
 - Comprehensive mocking of external dependencies
 - Performance thresholds for critical operations
@@ -106,6 +114,7 @@ End-to-end testing of complete workflows:
 - **Health Monitoring**: System health checks and degradation scenarios
 
 **Key Features:**
+
 - File-based databases for realistic testing
 - Multi-component interactions
 - Concurrent operation testing
@@ -123,6 +132,7 @@ Benchmarking and performance regression detection:
 - **Scaling Tests**: Performance scaling with dataset growth
 
 **Key Features:**
+
 - Automated baseline comparisons
 - Performance regression detection
 - Memory usage profiling
@@ -141,6 +151,7 @@ Failure scenarios and recovery mechanisms:
 - **Migration Failures**: Recovery from failed schema updates
 
 **Key Features:**
+
 - Simulated failure conditions
 - Recovery time measurements
 - Data consistency verification
@@ -172,20 +183,23 @@ Comprehensive performance measurement and benchmarking:
 const helper = new PerformanceTestHelper();
 
 // Measure operation performance
-const result = await helper.measureOperation('test-operation', 
-  () => someOperation(), 100);
+const result = await helper.measureOperation(
+  'test-operation',
+  () => someOperation(),
+  100
+);
 
 // Run load tests
 const loadResults = await helper.runLoadTest({
   concurrentUsers: 10,
   duration: 30,
-  operations: [op1, op2, op3]
+  operations: [op1, op2, op3],
 });
 
 // Compare implementations
 const comparison = await helper.compareImplementations([
   { name: 'implementation-a', fn: implA },
-  { name: 'implementation-b', fn: implB }
+  { name: 'implementation-b', fn: implB },
 ]);
 ```
 
@@ -199,6 +213,7 @@ The test suite targets 90%+ coverage across all metrics:
 - **Statements**: 90%+
 
 Coverage reports are generated in multiple formats:
+
 - HTML reports for detailed analysis
 - LCOV format for CI integration
 - Cobertura XML for build systems
@@ -213,7 +228,7 @@ Coverage reports are generated in multiple formats:
   run: |
     cd src/database
     node __tests__/run-tests.js --ci
-    
+
 - name: Upload Coverage
   uses: codecov/codecov-action@v3
   with:
@@ -246,22 +261,22 @@ steps:
 
 ### Target Performance Metrics
 
-| Operation | Target | Measurement |
-|-----------|--------|-------------|
-| Simple Query | <1ms | Average execution time |
-| KB Search | <50ms | Full-text search response |
-| Bulk Insert | >1000 ops/sec | Transaction throughput |
-| Migration | <30s | Schema update completion |
-| Backup Creation | <60s | Full database backup |
+| Operation       | Target        | Measurement               |
+| --------------- | ------------- | ------------------------- |
+| Simple Query    | <1ms          | Average execution time    |
+| KB Search       | <50ms         | Full-text search response |
+| Bulk Insert     | >1000 ops/sec | Transaction throughput    |
+| Migration       | <30s          | Schema update completion  |
+| Backup Creation | <60s          | Full database backup      |
 
 ### Scaling Requirements
 
-| Data Size | Search Time | Memory Usage |
-|-----------|-------------|--------------|
-| 1K entries | <10ms | <50MB |
-| 10K entries | <50ms | <100MB |
-| 100K entries | <200ms | <200MB |
-| 1M entries | <1s | <500MB |
+| Data Size    | Search Time | Memory Usage |
+| ------------ | ----------- | ------------ |
+| 1K entries   | <10ms       | <50MB        |
+| 10K entries  | <50ms       | <100MB       |
+| 100K entries | <200ms      | <200MB       |
+| 1M entries   | <1s         | <500MB       |
 
 ## 🚨 Error Recovery Testing
 
@@ -290,7 +305,8 @@ Each failure scenario tests:
 
 ### Jest Configuration
 
-The test suite uses a specialized Jest configuration optimized for database testing:
+The test suite uses a specialized Jest configuration optimized for database
+testing:
 
 ```javascript
 {
@@ -311,7 +327,7 @@ Configure test behavior with environment variables:
 # Enable debug logging
 DEBUG=database:test
 
-# Custom test database path  
+# Custom test database path
 TEST_DB_PATH=/tmp/test-db
 
 # Performance test iterations
@@ -338,10 +354,10 @@ describe('MyComponent Unit Tests', () => {
   it('should handle normal operation', async () => {
     // Arrange
     const input = createTestInput();
-    
+
     // Act
     const result = await component.process(input);
-    
+
     // Assert
     expect(result).toBeDefined();
     expect(mockDependency.method).toHaveBeenCalledWith(input);
@@ -364,10 +380,10 @@ describe('MyWorkflow Integration Tests', () => {
   it('should execute complete workflow', async () => {
     // Setup
     await setupTestData(dbManager);
-    
+
     // Execute
     const result = await component.executeWorkflow();
-    
+
     // Verify
     expect(result.success).toBe(true);
     await verifyDatabaseState(dbManager);
@@ -460,4 +476,5 @@ When adding new tests:
 
 ## 📄 License
 
-This test suite is part of the Mainframe KB Assistant project and follows the same license terms.
+This test suite is part of the Mainframe KB Assistant project and follows the
+same license terms.

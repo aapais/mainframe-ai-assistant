@@ -1,14 +1,14 @@
 /**
  * Storage Adapter Interface
  * Defines the contract for different storage backends (SQLite, PostgreSQL, etc.)
- * 
+ *
  * This interface enables the Strategy pattern for storage backends, allowing
  * the StorageService to work with different database systems transparently.
  */
 
-import { 
-  KBEntry, 
-  KBEntryInput, 
+import {
+  KBEntry,
+  KBEntryInput,
   KBEntryUpdate,
   SearchResult,
   SearchOptions,
@@ -18,19 +18,19 @@ import {
   ImportOptions,
   ImportResult,
   OptimizationResult,
-  DatabaseMetrics
+  DatabaseMetrics,
 } from '../IStorageService';
 
 export interface IStorageAdapter {
   // ========================
   // Lifecycle Management
   // ========================
-  
+
   /**
    * Initialize the storage adapter with configuration
    */
   initialize(): Promise<void>;
-  
+
   /**
    * Close the storage adapter and cleanup resources
    */
@@ -39,22 +39,22 @@ export interface IStorageAdapter {
   // ========================
   // Core CRUD Operations
   // ========================
-  
+
   /**
    * Create a new knowledge base entry
    */
   createEntry(entry: KBEntryInput): Promise<string>;
-  
+
   /**
    * Read a knowledge base entry by ID
    */
   readEntry(id: string): Promise<KBEntry | null>;
-  
+
   /**
    * Update an existing knowledge base entry
    */
   updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean>;
-  
+
   /**
    * Delete a knowledge base entry
    */
@@ -63,22 +63,22 @@ export interface IStorageAdapter {
   // ========================
   // Batch Operations
   // ========================
-  
+
   /**
    * Create multiple knowledge base entries in a single transaction
    */
   createEntries(entries: KBEntryInput[]): Promise<string[]>;
-  
+
   /**
    * Read multiple knowledge base entries by IDs
    */
   readEntries(ids: string[]): Promise<(KBEntry | null)[]>;
-  
+
   /**
    * Update multiple knowledge base entries in a single transaction
    */
   updateEntries(updates: Array<{ id: string; updates: KBEntryUpdate }>): Promise<boolean[]>;
-  
+
   /**
    * Delete multiple knowledge base entries in a single transaction
    */
@@ -87,22 +87,22 @@ export interface IStorageAdapter {
   // ========================
   // Search Operations
   // ========================
-  
+
   /**
    * Search knowledge base entries with advanced options
    */
   searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]>;
-  
+
   /**
    * Get popular entries based on usage metrics
    */
   getPopularEntries(limit?: number): Promise<SearchResult[]>;
-  
+
   /**
    * Get recent entries based on creation date
    */
   getRecentEntries(limit?: number): Promise<SearchResult[]>;
-  
+
   /**
    * Auto-complete search suggestions
    */
@@ -111,22 +111,22 @@ export interface IStorageAdapter {
   // ========================
   // Data Management
   // ========================
-  
+
   /**
    * Execute raw SQL for plugin extensions
    */
   executeSQL(sql: string, params?: any[]): Promise<any>;
-  
+
   /**
    * Begin a database transaction
    */
   beginTransaction(): Promise<StorageTransaction>;
-  
+
   /**
    * Export data in specified format
    */
   export(format: ExportFormat, options?: ExportOptions): Promise<string>;
-  
+
   /**
    * Import data from specified format
    */
@@ -135,22 +135,22 @@ export interface IStorageAdapter {
   // ========================
   // Performance & Monitoring
   // ========================
-  
+
   /**
    * Get database performance metrics
    */
   getMetrics(): Promise<DatabaseMetrics>;
-  
+
   /**
    * Optimize database performance
    */
   optimize(): Promise<OptimizationResult>;
-  
+
   /**
    * Perform health check on the database
    */
   healthCheck(): Promise<AdapterHealthStatus>;
-  
+
   /**
    * Get database schema information
    */
@@ -159,12 +159,12 @@ export interface IStorageAdapter {
   // ========================
   // Configuration
   // ========================
-  
+
   /**
    * Get adapter-specific configuration
    */
   getConfig(): AdapterConfig;
-  
+
   /**
    * Update adapter configuration
    */
@@ -180,17 +180,17 @@ export interface StorageTransaction {
    * Execute SQL within the transaction
    */
   execute(sql: string, params?: any[]): Promise<any>;
-  
+
   /**
    * Commit the transaction
    */
   commit(): Promise<void>;
-  
+
   /**
    * Rollback the transaction
    */
   rollback(): Promise<void>;
-  
+
   /**
    * Check if transaction is active
    */
@@ -310,12 +310,12 @@ export interface AdapterFactory {
    * Create a storage adapter instance
    */
   createAdapter(type: AdapterType, config: any): IStorageAdapter;
-  
+
   /**
    * Get supported adapter types
    */
   getSupportedTypes(): AdapterType[];
-  
+
   /**
    * Check if adapter type is supported
    */
@@ -331,77 +331,77 @@ export interface QueryBuilder {
    * Start a SELECT query
    */
   select(columns?: string[]): QueryBuilder;
-  
+
   /**
    * Specify FROM table
    */
   from(table: string): QueryBuilder;
-  
+
   /**
    * Add WHERE condition
    */
   where(condition: string, ...params: any[]): QueryBuilder;
-  
+
   /**
    * Add AND condition
    */
   and(condition: string, ...params: any[]): QueryBuilder;
-  
+
   /**
    * Add OR condition
    */
   or(condition: string, ...params: any[]): QueryBuilder;
-  
+
   /**
    * Add ORDER BY clause
    */
   orderBy(column: string, direction?: 'ASC' | 'DESC'): QueryBuilder;
-  
+
   /**
    * Add LIMIT clause
    */
   limit(count: number): QueryBuilder;
-  
+
   /**
    * Add OFFSET clause
    */
   offset(count: number): QueryBuilder;
-  
+
   /**
    * Add JOIN clause
    */
   join(table: string, condition: string): QueryBuilder;
-  
+
   /**
    * Add LEFT JOIN clause
    */
   leftJoin(table: string, condition: string): QueryBuilder;
-  
+
   /**
    * Add GROUP BY clause
    */
   groupBy(columns: string[]): QueryBuilder;
-  
+
   /**
    * Add HAVING clause
    */
   having(condition: string, ...params: any[]): QueryBuilder;
-  
+
   /**
    * Build the final SQL query
    */
   build(): { sql: string; params: any[] };
-  
+
   /**
    * Execute the query
    */
   execute(): Promise<any[]>;
-  
+
   /**
    * Execute and get first result
    */
   first(): Promise<any | null>;
-  
+
   /**
    * Execute and get count
    */

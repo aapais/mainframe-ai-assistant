@@ -1,6 +1,6 @@
 /**
  * SQLite Connection Pool for High-Performance Concurrent Access
- * 
+ *
  * Manages multiple SQLite connections for read operations while maintaining
  * single-writer semantics for data consistency.
  */
@@ -57,23 +57,23 @@ export class ConnectionPool extends EventEmitter {
     totalAcquired: 0,
     totalReleased: 0,
     totalAcquireTime: 0,
-    peakConnections: 0
+    peakConnections: 0,
   };
   private maintenanceTimer?: ReturnType<typeof setTimeout>;
 
   constructor(dbPath: string, config?: Partial<PoolConfig>) {
     super();
-    
+
     this.dbPath = dbPath;
     this.config = {
       maxReaders: 5,
       maxWriters: 1,
       acquireTimeout: 30000, // 30 seconds
-      idleTimeout: 300000,   // 5 minutes
-      maxLifetime: 3600000,  // 1 hour
+      idleTimeout: 300000, // 5 minutes
+      maxLifetime: 3600000, // 1 hour
       validateConnection: true,
       enableWAL: true,
-      ...config
+      ...config,
     };
 
     this.initializePool();
@@ -85,11 +85,11 @@ export class ConnectionPool extends EventEmitter {
    */
   private initializePool(): void {
     console.log('🏊 Initializing SQLite connection pool...');
-    
+
     try {
       // Create initial writer connection
       this.createConnection('writer');
-      
+
       // Create initial reader connections
       const initialReaders = Math.min(2, this.config.maxReaders);
       for (let i = 0; i < initialReaders; i++) {
@@ -97,8 +97,9 @@ export class ConnectionPool extends EventEmitter {
       }
 
       console.log(`✅ Connection pool initialized with ${this.connections.size} connections`);
-      console.log(`📊 Pool config: ${this.config.maxReaders} readers, ${this.config.maxWriters} writers`);
-      
+      console.log(
+        `📊 Pool config: ${this.config.maxReaders} readers, ${this.config.maxWriters} writers`
+      );
     } catch (error) {
       console.error('❌ Failed to initialize connection pool:', error);
       throw error;
@@ -110,11 +111,11 @@ export class ConnectionPool extends EventEmitter {
    */
   private createConnection(type: 'reader' | 'writer'): PoolConnection {
     const connectionId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
       const db = new Database(this.dbPath, {
         readonly: type === 'reader',
-        fileMustExist: true
+        fileMustExist: true,
       });
 
       // Apply optimized pragmas
@@ -128,11 +129,11 @@ export class ConnectionPool extends EventEmitter {
         lastUsed: Date.now(),
         inUse: false,
         transactionDepth: 0,
-        queryCount: 0
+        queryCount: 0,
       };
 
       this.connections.set(connectionId, connection);
-      
+
       // Update peak connections stat
       if (this.connections.size > this.stats.peakConnections) {
         this.stats.peakConnections = this.connections.size;
@@ -140,9 +141,8 @@ export class ConnectionPool extends EventEmitter {
 
       console.log(`✅ Created ${type} connection: ${connectionId}`);
       this.emit('connectionCreated', { type, id: connectionId });
-      
+
       return connection;
-      
     } catch (error) {
       console.error(`❌ Failed to create ${type} connection:`, error);
       throw error;
@@ -168,12 +168,12 @@ export class ConnectionPool extends EventEmitter {
         db.pragma('cache_size = -64000'); // 64MB cache per reader (increased for large datasets)
         db.pragma('temp_store = MEMORY');
         db.pragma('mmap_size = 268435456'); // 256MB mmap (doubled for better I/O)
-        
+
         // Search-specific optimizations
         db.pragma('cache_spill = OFF'); // Keep everything in memory cache
         db.pragma('page_size = 4096'); // Optimal page size for search workloads
         db.pragma('lookaside = 1024,128'); // Larger lookaside buffer for frequent allocations
-        
+
         // FTS optimizations
         db.pragma('secure_delete = OFF'); // Faster deletes for FTS maintenance
         db.pragma('auto_vacuum = INCREMENTAL'); // Better space management
@@ -183,7 +183,7 @@ export class ConnectionPool extends EventEmitter {
         db.pragma('synchronous = NORMAL');
         db.pragma('temp_store = MEMORY');
         db.pragma('foreign_keys = ON');
-        
+
         // Write performance optimizations
         db.pragma('busy_timeout = 30000'); // 30 second busy timeout
         db.pragma('journal_size_limit = 67108864'); // 64MB journal limit
@@ -192,19 +192,18 @@ export class ConnectionPool extends EventEmitter {
       // Advanced shared optimizations for large datasets
       db.pragma('threads = 4'); // Enable multi-threading for complex queries
       db.pragma('analysis_limit = 1000'); // Limit analysis for better performance
-      
+
       // Memory optimizations for 1000+ entries
       db.function('log', Math.log); // Register math functions for calculated indexes
       db.function('pow', Math.pow);
-      
+
       // Pre-compile frequently used prepared statements
       this.precompileSearchStatements(db, type);
-      
+
       // Run optimization
       db.pragma('optimize');
-      
+
       console.log(`✅ Optimized ${type} connection for search performance`);
-      
     } catch (error) {
       console.error('Error configuring connection:', error);
     }
@@ -223,22 +222,22 @@ export class ConnectionPool extends EventEmitter {
         `SELECT e.id, e.title, e.category, e.usage_count 
          FROM kb_entries e WHERE e.category = ? AND e.archived = FALSE 
          ORDER BY e.usage_count DESC LIMIT ?`,
-        
+
         // FTS search
         `SELECT e.id, e.title, bm25(kb_fts) as score 
          FROM kb_fts f JOIN kb_entries e ON f.id = e.id 
          WHERE kb_fts MATCH ? AND e.archived = FALSE 
          ORDER BY score LIMIT ?`,
-        
+
         // Popular entries
         `SELECT e.id, e.title, e.usage_count 
          FROM kb_entries e WHERE e.archived = FALSE 
          ORDER BY e.usage_count DESC, e.success_count DESC LIMIT ?`,
-        
+
         // Recent entries
         `SELECT e.id, e.title, e.created_at 
          FROM kb_entries e WHERE e.archived = FALSE 
-         ORDER BY e.created_at DESC LIMIT ?`
+         ORDER BY e.created_at DESC LIMIT ?`,
       ];
 
       // Prepare and cache statements
@@ -251,7 +250,6 @@ export class ConnectionPool extends EventEmitter {
           console.warn(`Failed to precompile statement ${index}:`, error);
         }
       });
-
     } catch (error) {
       console.error('Error precompiling search statements:', error);
     }
@@ -301,7 +299,7 @@ export class ConnectionPool extends EventEmitter {
         resolve,
         reject,
         requestTime: startTime,
-        timeout
+        timeout,
       });
 
       this.emit('connectionWaiting', { type, queueLength: this.waitingQueue.length });
@@ -339,10 +337,10 @@ export class ConnectionPool extends EventEmitter {
     type: 'reader' | 'writer' = 'reader'
   ): Promise<T> {
     const connection = await this.acquireConnection(type);
-    
+
     try {
       connection.queryCount++;
-      
+
       // Validate connection if enabled
       if (this.config.validateConnection) {
         this.validateConnection(connection);
@@ -350,7 +348,7 @@ export class ConnectionPool extends EventEmitter {
 
       // Execute query based on expected result type
       let result: any;
-      
+
       if (sql.trim().toLowerCase().startsWith('select')) {
         // For SELECT queries, use .all() or .get() based on expected results
         const stmt = connection.db.prepare(sql);
@@ -362,7 +360,6 @@ export class ConnectionPool extends EventEmitter {
       }
 
       return result;
-      
     } catch (error) {
       console.error('Query execution error:', error);
       throw error;
@@ -379,10 +376,10 @@ export class ConnectionPool extends EventEmitter {
     type: 'reader' | 'writer' = 'writer'
   ): Promise<T[]> {
     const connection = await this.acquireConnection(type);
-    
+
     try {
       const results: T[] = [];
-      
+
       // Begin transaction
       connection.db.exec('BEGIN TRANSACTION');
       connection.transactionDepth++;
@@ -399,7 +396,6 @@ export class ConnectionPool extends EventEmitter {
       connection.transactionDepth--;
 
       return results;
-      
     } catch (error) {
       // Rollback on error
       try {
@@ -408,7 +404,7 @@ export class ConnectionPool extends EventEmitter {
       } catch (rollbackError) {
         console.error('Rollback error:', rollbackError);
       }
-      
+
       console.error('Transaction error:', error);
       throw error;
     } finally {
@@ -434,9 +430,9 @@ export class ConnectionPool extends EventEmitter {
   private canCreateConnection(type: 'reader' | 'writer'): boolean {
     const currentConnections = Array.from(this.connections.values());
     const currentTypeCount = currentConnections.filter(c => c.type === type).length;
-    
+
     const maxAllowed = type === 'reader' ? this.config.maxReaders : this.config.maxWriters;
-    
+
     return currentTypeCount < maxAllowed;
   }
 
@@ -456,7 +452,7 @@ export class ConnectionPool extends EventEmitter {
     while (this.waitingQueue.length > 0) {
       const request = this.waitingQueue[0];
       const connection = this.getAvailableConnection(request.type);
-      
+
       if (!connection && !this.canCreateConnection(request.type)) {
         break; // No available connections and can't create new ones
       }
@@ -467,7 +463,7 @@ export class ConnectionPool extends EventEmitter {
 
       try {
         let connectionToUse: PoolConnection;
-        
+
         if (connection) {
           connectionToUse = connection;
         } else {
@@ -477,7 +473,6 @@ export class ConnectionPool extends EventEmitter {
         this.markConnectionInUse(connectionToUse);
         this.updateAcquireStats(Date.now() - request.requestTime);
         request.resolve(connectionToUse);
-        
       } catch (error) {
         request.reject(error);
       }
@@ -508,10 +503,10 @@ export class ConnectionPool extends EventEmitter {
       } catch (error) {
         console.error(`Error closing connection ${connectionId}:`, error);
       }
-      
+
       this.connections.delete(connectionId);
       this.emit('connectionRemoved', { id: connectionId, type: connection.type });
-      
+
       console.log(`🗑️ Removed connection: ${connectionId}`);
     }
   }
@@ -556,11 +551,12 @@ export class ConnectionPool extends EventEmitter {
 
       // Remove idle connections (but keep minimum)
       if (idleTime > this.config.idleTimeout && !connection.inUse) {
-        const sameTypeConnections = Array.from(this.connections.values())
-          .filter(c => c.type === connection.type && c.id !== id);
-        
+        const sameTypeConnections = Array.from(this.connections.values()).filter(
+          c => c.type === connection.type && c.id !== id
+        );
+
         const minConnections = connection.type === 'reader' ? 1 : 1;
-        
+
         if (sameTypeConnections.length >= minConnections) {
           connectionsToRemove.push(id);
           console.log(`💤 Removing idle connection: ${id} (idle: ${idleTime}ms)`);
@@ -584,10 +580,9 @@ export class ConnectionPool extends EventEmitter {
     const connections = Array.from(this.connections.values());
     const activeConnections = connections.filter(c => c.inUse).length;
     const idleConnections = connections.filter(c => !c.inUse).length;
-    
+
     const totalOperations = this.stats.totalAcquired;
-    const avgAcquireTime = totalOperations > 0 ? 
-      this.stats.totalAcquireTime / totalOperations : 0;
+    const avgAcquireTime = totalOperations > 0 ? this.stats.totalAcquireTime / totalOperations : 0;
 
     return {
       totalConnections: this.connections.size,
@@ -597,7 +592,7 @@ export class ConnectionPool extends EventEmitter {
       totalAcquired: this.stats.totalAcquired,
       totalReleased: this.stats.totalReleased,
       averageAcquireTime: Math.round(avgAcquireTime),
-      peakConnections: this.stats.peakConnections
+      peakConnections: this.stats.peakConnections,
     };
   }
 
@@ -678,7 +673,7 @@ export class ConnectionPool extends EventEmitter {
     return {
       healthy: issues.length === 0,
       issues,
-      stats
+      stats,
     };
   }
 }

@@ -26,7 +26,7 @@ export class ElectronPreloader {
     try {
       // Use requestIdleCallback for low-priority loads
       if (priority === 'low' && 'requestIdleCallback' in window) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           window.requestIdleCallback(async () => {
             await this.executeLoad(componentName, importFn);
             resolve();
@@ -36,7 +36,7 @@ export class ElectronPreloader {
 
       // Use setTimeout for medium priority to avoid blocking
       if (priority === 'medium') {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           setTimeout(async () => {
             await this.executeLoad(componentName, importFn);
             resolve();
@@ -75,7 +75,7 @@ export class ElectronPreloader {
       // Dispatch custom event for monitoring
       window.dispatchEvent(
         new CustomEvent('component-preloaded', {
-          detail: { componentName, loadTime }
+          detail: { componentName, loadTime },
         })
       );
     } catch (error) {
@@ -126,18 +126,14 @@ export class ElectronPreloader {
 
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
+        entries => {
+          entries.forEach(entry => {
             if (entry.isIntersecting) {
               const componentName = entry.target.getAttribute('data-preload-component');
               const importPath = entry.target.getAttribute('data-preload-path');
 
               if (componentName && importPath) {
-                this.preloadComponent(
-                  componentName,
-                  () => import(importPath),
-                  'low'
-                );
+                this.preloadComponent(componentName, () => import(importPath), 'low');
 
                 // Stop observing this element
                 observer.unobserve(entry.target);
@@ -146,11 +142,11 @@ export class ElectronPreloader {
           });
         },
         {
-          rootMargin: '50px' // Start loading 50px before element comes into view
+          rootMargin: '50px', // Start loading 50px before element comes into view
         }
       );
 
-      preloadTriggers.forEach((trigger) => {
+      preloadTriggers.forEach(trigger => {
         observer.observe(trigger);
       });
     }
@@ -205,7 +201,7 @@ export class ElectronPreloader {
       // Add any critical assets here
     ];
 
-    criticalResources.forEach((resource) => {
+    criticalResources.forEach(resource => {
       const link = document.createElement('link');
       link.rel = 'prefetch';
       link.href = resource;
@@ -222,7 +218,7 @@ export class ElectronPreloader {
       queued: Array.from(this.loadQueue),
       cached: Array.from(this.resourceCache.keys()),
       totalLoaded: this.loadedComponents.size,
-      memoryEstimate: this.resourceCache.size * 10 // Rough estimate in KB
+      memoryEstimate: this.resourceCache.size * 10, // Rough estimate in KB
     };
   }
 
@@ -242,7 +238,7 @@ export function usePreloader() {
   return {
     preload: ElectronPreloader.preloadComponent.bind(ElectronPreloader),
     stats: ElectronPreloader.getStats(),
-    clearCache: ElectronPreloader.clearCache.bind(ElectronPreloader)
+    clearCache: ElectronPreloader.clearCache.bind(ElectronPreloader),
   };
 }
 

@@ -127,14 +127,10 @@ export class SearchApiService {
       this.validateSearchParams(params);
 
       // Start parallel operations for performance
-      const [
-        searchResults,
-        suggestions,
-        facets
-      ] = await Promise.all([
+      const [searchResults, suggestions, facets] = await Promise.all([
         this.performSearch(params),
         this.generateSuggestions(params.query, params.category),
-        this.generateFacets(params)
+        this.generateFacets(params),
       ]);
 
       const totalTime = Date.now() - startTime;
@@ -151,16 +147,15 @@ export class SearchApiService {
           totalResults: searchResults.total,
           hasMore: searchResults.hasMore,
           appliedFilters: this.extractAppliedFilters(params),
-          searchAlgorithm: searchResults.algorithm
+          searchAlgorithm: searchResults.algorithm,
         },
         timing: {
           indexTime: searchResults.timing.indexTime,
           queryTime: searchResults.timing.queryTime,
           rankingTime: searchResults.timing.rankingTime,
-          totalTime
-        }
+          totalTime,
+        },
       };
-
     } catch (error) {
       console.error('Search execution error:', error);
 
@@ -170,12 +165,9 @@ export class SearchApiService {
         return this.executeSearch({ ...params, useAI: false });
       }
 
-      throw new AppError(
-        'Search execution failed',
-        'SEARCH_ERROR',
-        500,
-        { originalError: error.message }
-      );
+      throw new AppError('Search execution failed', 'SEARCH_ERROR', 500, {
+        originalError: error.message,
+      });
     }
   }
 
@@ -189,33 +181,32 @@ export class SearchApiService {
       }
 
       // Get suggestions from multiple sources in parallel
-      const [
-        querySuggestions,
-        categorySuggestions,
-        titleSuggestions,
-        tagSuggestions
-      ] = await Promise.all([
-        this.autocompleteService.getQuerySuggestions(params.query, params.limit),
-        this.autocompleteService.getCategorySuggestions(params.query, params.category),
-        this.autocompleteService.getTitleSuggestions(params.query, params.limit),
-        this.autocompleteService.getTagSuggestions(params.query, params.limit)
-      ]);
+      const [querySuggestions, categorySuggestions, titleSuggestions, tagSuggestions] =
+        await Promise.all([
+          this.autocompleteService.getQuerySuggestions(params.query, params.limit),
+          this.autocompleteService.getCategorySuggestions(params.query, params.category),
+          this.autocompleteService.getTitleSuggestions(params.query, params.limit),
+          this.autocompleteService.getTagSuggestions(params.query, params.limit),
+        ]);
 
       // Combine and rank suggestions
       const allSuggestions = [
         ...querySuggestions.map(s => ({ ...s, type: 'query' as const })),
         ...categorySuggestions.map(s => ({ ...s, type: 'category' as const })),
         ...titleSuggestions.map(s => ({ ...s, type: 'title' as const })),
-        ...tagSuggestions.map(s => ({ ...s, type: 'tag' as const }))
+        ...tagSuggestions.map(s => ({ ...s, type: 'tag' as const })),
       ];
 
       // Remove duplicates and sort by relevance
       const uniqueSuggestions = this.deduplicateSuggestions(allSuggestions);
 
       return uniqueSuggestions
-        .sort((a, b) => this.calculateSuggestionScore(b, params.query) - this.calculateSuggestionScore(a, params.query))
+        .sort(
+          (a, b) =>
+            this.calculateSuggestionScore(b, params.query) -
+            this.calculateSuggestionScore(a, params.query)
+        )
         .slice(0, params.limit);
-
     } catch (error) {
       console.error('Autocomplete error:', error);
       // Return empty array on error to avoid breaking the UI
@@ -232,7 +223,7 @@ export class SearchApiService {
         userId: params.userId,
         limit: params.limit,
         offset: params.offset,
-        timeframe: this.parseTimeframe(params.timeframe)
+        timeframe: this.parseTimeframe(params.timeframe),
       });
 
       return {
@@ -243,23 +234,19 @@ export class SearchApiService {
           resultCount: entry.resultCount,
           responseTime: entry.responseTime,
           category: entry.category,
-          successful: entry.successful
+          successful: entry.successful,
         })),
         pagination: {
           total: result.total,
           hasMore: result.hasMore,
-          nextOffset: result.hasMore ? params.offset + params.limit : undefined
-        }
+          nextOffset: result.hasMore ? params.offset + params.limit : undefined,
+        },
       };
-
     } catch (error) {
       console.error('Search history error:', error);
-      throw new AppError(
-        'Failed to retrieve search history',
-        'HISTORY_ERROR',
-        500,
-        { originalError: error.message }
-      );
+      throw new AppError('Failed to retrieve search history', 'HISTORY_ERROR', 500, {
+        originalError: error.message,
+      });
     }
   }
 
@@ -283,7 +270,7 @@ export class SearchApiService {
       includeArchived: params.includeArchived,
       fuzzyThreshold: params.fuzzyThreshold,
       useAI: params.useAI,
-      userId: params.userId
+      userId: params.userId,
     };
 
     const response = await this.searchEngine.search(searchOptions);
@@ -291,14 +278,14 @@ export class SearchApiService {
     return {
       results: response.results,
       total: response.metadata.totalResults,
-      hasMore: response.metadata.totalResults > (params.offset + params.limit),
+      hasMore: response.metadata.totalResults > params.offset + params.limit,
       algorithm: response.metadata.algorithm || 'combined',
       timing: {
         indexTime: response.metrics?.indexTime || 0,
         queryTime: response.metrics?.queryTime || 0,
         rankingTime: response.metrics?.rankingTime || 0,
-        totalTime: Date.now() - searchStartTime
-      }
+        totalTime: Date.now() - searchStartTime,
+      },
     };
   }
 
@@ -313,7 +300,6 @@ export class SearchApiService {
 
       const suggestions = await this.autocompleteService.getQuerySuggestions(query, 5);
       return suggestions.map(s => s.text);
-
     } catch (error) {
       console.error('Suggestion generation error:', error);
       return [];
@@ -334,9 +320,9 @@ export class SearchApiService {
             { value: 'VSAM', count: 0 },
             { value: 'DB2', count: 0 },
             { value: 'Batch', count: 0 },
-            { value: 'Functional', count: 0 }
-          ]
-        }
+            { value: 'Functional', count: 0 },
+          ],
+        },
       ];
 
       // Get actual counts if needed (optimize for performance)
@@ -346,13 +332,12 @@ export class SearchApiService {
         if (counts) {
           facets[0].values = Object.entries(counts.categories || {}).map(([value, count]) => ({
             value,
-            count: count as number
+            count: count as number,
           }));
         }
       }
 
       return facets;
-
     } catch (error) {
       console.error('Facet generation error:', error);
       return [];
@@ -373,7 +358,7 @@ export class SearchApiService {
           responseTime,
           category: params.category,
           successful: (results.results?.length || 0) > 0,
-          useAI: params.useAI
+          useAI: params.useAI,
         });
       } catch (error) {
         console.error('Failed to record search history:', error);
@@ -499,7 +484,7 @@ export class SearchApiService {
       '1d': 24,
       '3d': 72,
       '7d': 168,
-      '30d': 720
+      '30d': 720,
     };
 
     return timeframeMap[timeframe] || 168; // default to 7 days

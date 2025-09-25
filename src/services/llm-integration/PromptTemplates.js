@@ -6,116 +6,114 @@
 const logger = require('../../core/logging/Logger');
 
 class PromptTemplates {
-    constructor() {
-        this.templates = new Map();
-        this.initializeTemplates();
+  constructor() {
+    this.templates = new Map();
+    this.initializeTemplates();
+  }
+
+  /**
+   * Inicializa todos os templates de prompt
+   */
+  initializeTemplates() {
+    // Templates por tipo de incidente
+    this.registerTemplate('system-outage', 'critical', this.createSystemOutageTemplate());
+    this.registerTemplate('performance', 'high', this.createPerformanceTemplate());
+    this.registerTemplate('security', 'critical', this.createSecurityTemplate());
+    this.registerTemplate('database', 'medium', this.createDatabaseTemplate());
+    this.registerTemplate('network', 'high', this.createNetworkTemplate());
+    this.registerTemplate('application', 'medium', this.createApplicationTemplate());
+    this.registerTemplate('integration', 'medium', this.createIntegrationTemplate());
+    this.registerTemplate('capacity', 'low', this.createCapacityTemplate());
+
+    // Templates especializados por área tecnológica
+    this.registerTemplate('mainframe', 'critical', this.createMainframeTemplate());
+    this.registerTemplate('mobile-banking', 'high', this.createMobileBankingTemplate());
+    this.registerTemplate('payment-gateway', 'critical', this.createPaymentGatewayTemplate());
+    this.registerTemplate('core-banking', 'critical', this.createCoreBankingTemplate());
+    this.registerTemplate('atm-network', 'high', this.createATMNetworkTemplate());
+
+    logger.info('Templates de prompt inicializados', {
+      totalTemplates: this.templates.size,
+    });
+  }
+
+  /**
+   * Registra um template de prompt
+   */
+  registerTemplate(type, category, template) {
+    const key = `${type}-${category}`;
+    this.templates.set(key, template);
+  }
+
+  /**
+   * Obtém template baseado no tipo e categoria do incidente
+   */
+  getTemplate(type, category = 'medium') {
+    const key = `${type}-${category}`;
+    const template =
+      this.templates.get(key) || this.templates.get(`${type}-medium`) || this.getDefaultTemplate();
+
+    logger.debug('Template selecionado', { type, category, key });
+    return template;
+  }
+
+  /**
+   * Constrói prompt final com contexto
+   */
+  buildPrompt(template, context) {
+    try {
+      let prompt = template.systemPrompt + '\n\n';
+
+      // Adiciona contexto do incidente
+      prompt += this.buildIncidentContext(context.incident);
+
+      // Adiciona exemplos few-shot se disponíveis
+      if (template.fewShotExamples && template.fewShotExamples.length > 0) {
+        prompt += '\n## Exemplos de Incidentes Similares Resolvidos:\n';
+        prompt += this.buildFewShotExamples(template.fewShotExamples);
+      }
+
+      // Adiciona incidentes similares encontrados
+      if (context.similarIncidents && context.similarIncidents.length > 0) {
+        prompt += '\n## Incidentes Similares da Base de Dados:\n';
+        prompt += this.buildSimilarIncidentsContext(context.similarIncidents);
+      }
+
+      // Adiciona conhecimento da knowledge base
+      if (context.knowledgeBase && context.knowledgeBase.length > 0) {
+        prompt += '\n## Documentação Relevante:\n';
+        prompt += this.buildKnowledgeBaseContext(context.knowledgeBase);
+      }
+
+      // Adiciona contexto histórico se disponível
+      if (context.context && context.context.enrichment) {
+        prompt += '\n## Contexto Histórico:\n';
+        prompt += this.buildHistoricalContext(context.context.enrichment);
+      }
+
+      // Adiciona instruções de Chain-of-Thought
+      prompt += '\n' + template.chainOfThoughtInstructions;
+
+      // Adiciona formato de resposta esperado
+      prompt += '\n' + template.responseFormat;
+
+      return prompt;
+    } catch (error) {
+      logger.error('Erro ao construir prompt', { error: error.message });
+      return this.buildFallbackPrompt(context);
     }
+  }
 
-    /**
-     * Inicializa todos os templates de prompt
-     */
-    initializeTemplates() {
-        // Templates por tipo de incidente
-        this.registerTemplate('system-outage', 'critical', this.createSystemOutageTemplate());
-        this.registerTemplate('performance', 'high', this.createPerformanceTemplate());
-        this.registerTemplate('security', 'critical', this.createSecurityTemplate());
-        this.registerTemplate('database', 'medium', this.createDatabaseTemplate());
-        this.registerTemplate('network', 'high', this.createNetworkTemplate());
-        this.registerTemplate('application', 'medium', this.createApplicationTemplate());
-        this.registerTemplate('integration', 'medium', this.createIntegrationTemplate());
-        this.registerTemplate('capacity', 'low', this.createCapacityTemplate());
-
-        // Templates especializados por área tecnológica
-        this.registerTemplate('mainframe', 'critical', this.createMainframeTemplate());
-        this.registerTemplate('mobile-banking', 'high', this.createMobileBankingTemplate());
-        this.registerTemplate('payment-gateway', 'critical', this.createPaymentGatewayTemplate());
-        this.registerTemplate('core-banking', 'critical', this.createCoreBankingTemplate());
-        this.registerTemplate('atm-network', 'high', this.createATMNetworkTemplate());
-
-        logger.info('Templates de prompt inicializados', {
-            totalTemplates: this.templates.size
-        });
-    }
-
-    /**
-     * Registra um template de prompt
-     */
-    registerTemplate(type, category, template) {
-        const key = `${type}-${category}`;
-        this.templates.set(key, template);
-    }
-
-    /**
-     * Obtém template baseado no tipo e categoria do incidente
-     */
-    getTemplate(type, category = 'medium') {
-        const key = `${type}-${category}`;
-        const template = this.templates.get(key) ||
-                        this.templates.get(`${type}-medium`) ||
-                        this.getDefaultTemplate();
-
-        logger.debug('Template selecionado', { type, category, key });
-        return template;
-    }
-
-    /**
-     * Constrói prompt final com contexto
-     */
-    buildPrompt(template, context) {
-        try {
-            let prompt = template.systemPrompt + '\n\n';
-
-            // Adiciona contexto do incidente
-            prompt += this.buildIncidentContext(context.incident);
-
-            // Adiciona exemplos few-shot se disponíveis
-            if (template.fewShotExamples && template.fewShotExamples.length > 0) {
-                prompt += '\n## Exemplos de Incidentes Similares Resolvidos:\n';
-                prompt += this.buildFewShotExamples(template.fewShotExamples);
-            }
-
-            // Adiciona incidentes similares encontrados
-            if (context.similarIncidents && context.similarIncidents.length > 0) {
-                prompt += '\n## Incidentes Similares da Base de Dados:\n';
-                prompt += this.buildSimilarIncidentsContext(context.similarIncidents);
-            }
-
-            // Adiciona conhecimento da knowledge base
-            if (context.knowledgeBase && context.knowledgeBase.length > 0) {
-                prompt += '\n## Documentação Relevante:\n';
-                prompt += this.buildKnowledgeBaseContext(context.knowledgeBase);
-            }
-
-            // Adiciona contexto histórico se disponível
-            if (context.context && context.context.enrichment) {
-                prompt += '\n## Contexto Histórico:\n';
-                prompt += this.buildHistoricalContext(context.context.enrichment);
-            }
-
-            // Adiciona instruções de Chain-of-Thought
-            prompt += '\n' + template.chainOfThoughtInstructions;
-
-            // Adiciona formato de resposta esperado
-            prompt += '\n' + template.responseFormat;
-
-            return prompt;
-
-        } catch (error) {
-            logger.error('Erro ao construir prompt', { error: error.message });
-            return this.buildFallbackPrompt(context);
-        }
-    }
-
-    /**
-     * Template para interrupções de sistema críticas
-     */
-    createSystemOutageTemplate() {
-        return {
-            systemPrompt: `Você é um especialista sênior em análise de incidentes de sistemas bancários críticos.
+  /**
+   * Template para interrupções de sistema críticas
+   */
+  createSystemOutageTemplate() {
+    return {
+      systemPrompt: `Você é um especialista sênior em análise de incidentes de sistemas bancários críticos.
             Sua especialidade é identificar rapidamente a causa raiz de interrupções de sistema e fornecer
             planos de ação imediatos para minimizar o impacto nos negócios.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise (Chain-of-Thought):
 
 1. **ANÁLISE INICIAL (2 min)**:
@@ -138,22 +136,25 @@ class PromptTemplates {
    - Sugira medidas preventivas
    - Recomende ajustes na arquitetura se necessário`,
 
-            fewShotExamples: [
-                {
-                    incident: "Core Banking indisponível - Erro de conectividade com mainframe",
-                    analysis: "Falha na conexão MQ Series entre middleware e mainframe. Pool de conexões esgotado.",
-                    solution: "1. Restart do MQ Manager, 2. Aumento temporário do pool, 3. Verificação de memory leaks",
-                    resolutionTime: "15 minutos"
-                },
-                {
-                    incident: "ATM Network down - Falha na autenticação",
-                    analysis: "Certificado SSL expirado no servidor de autenticação central",
-                    solution: "1. Renovação emergencial do certificado, 2. Deploy imediato, 3. Teste de conectividade",
-                    resolutionTime: "30 minutos"
-                }
-            ],
+      fewShotExamples: [
+        {
+          incident: 'Core Banking indisponível - Erro de conectividade com mainframe',
+          analysis:
+            'Falha na conexão MQ Series entre middleware e mainframe. Pool de conexões esgotado.',
+          solution:
+            '1. Restart do MQ Manager, 2. Aumento temporário do pool, 3. Verificação de memory leaks',
+          resolutionTime: '15 minutos',
+        },
+        {
+          incident: 'ATM Network down - Falha na autenticação',
+          analysis: 'Certificado SSL expirado no servidor de autenticação central',
+          solution:
+            '1. Renovação emergencial do certificado, 2. Deploy imediato, 3. Teste de conectividade',
+          resolutionTime: '30 minutos',
+        },
+      ],
 
-            responseFormat: `
+      responseFormat: `
 ## RESPOSTA OBRIGATÓRIA EM JSON:
 
 {
@@ -186,20 +187,20 @@ class PromptTemplates {
   "relatedDocumentation": [
     "links ou referências relevantes"
   ]
-}`
-        };
-    }
+}`,
+    };
+  }
 
-    /**
-     * Template para problemas de performance
-     */
-    createPerformanceTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em performance de sistemas bancários.
+  /**
+   * Template para problemas de performance
+   */
+  createPerformanceTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em performance de sistemas bancários.
             Sua especialidade é diagnosticar gargalos de performance, otimizar recursos
             e garantir SLAs de resposta em ambientes de alta demanda.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Performance:
 
 1. **BASELINE E MÉTRICAS**:
@@ -223,16 +224,16 @@ class PromptTemplates {
    - Necessidade de recursos adicionais
    - Refatoração de código crítico`,
 
-            fewShotExamples: [
-                {
-                    incident: "Transações PIX com latência alta (>5s)",
-                    analysis: "Gargalo na validação de CPF - query sem índice em tabela de 50M registros",
-                    solution: "1. Criar índice composto, 2. Cache em Redis, 3. Otimizar query",
-                    resolutionTime: "2 horas"
-                }
-            ],
+      fewShotExamples: [
+        {
+          incident: 'Transações PIX com latência alta (>5s)',
+          analysis: 'Gargalo na validação de CPF - query sem índice em tabela de 50M registros',
+          solution: '1. Criar índice composto, 2. Cache em Redis, 3. Otimizar query',
+          resolutionTime: '2 horas',
+        },
+      ],
 
-            responseFormat: `
+      responseFormat: `
 {
   "rootCause": "Gargalo identificado",
   "severity": "High|Medium|Low",
@@ -260,20 +261,20 @@ class PromptTemplates {
   "estimatedResolutionTime": "tempo estimado",
   "preventionMeasures": ["medidas preventivas"],
   "monitoringRecommendations": ["alertas recomendados"]
-}`
-        };
-    }
+}`,
+    };
+  }
 
-    /**
-     * Template para incidentes de segurança
-     */
-    createSecurityTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em segurança cibernética para sistemas bancários.
+  /**
+   * Template para incidentes de segurança
+   */
+  createSecurityTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em segurança cibernética para sistemas bancários.
             Sua prioridade é identificar e conter ameaças de segurança, proteger dados sensíveis
             e manter a conformidade regulatória.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Segurança:
 
 1. **CONTENÇÃO IMEDIATA**:
@@ -296,16 +297,16 @@ class PromptTemplates {
    - Implemente controles adicionais
    - Atualize políticas de segurança`,
 
-            fewShotExamples: [
-                {
-                    incident: "Tentativas de login suspeitas em contas administrativas",
-                    analysis: "Ataque de força bruta coordenado de múltiplos IPs. Possível botnet.",
-                    solution: "1. Bloqueio de IPs, 2. Reset de senhas admin, 3. MFA obrigatório",
-                    resolutionTime: "1 hora"
-                }
-            ],
+      fewShotExamples: [
+        {
+          incident: 'Tentativas de login suspeitas em contas administrativas',
+          analysis: 'Ataque de força bruta coordenado de múltiplos IPs. Possível botnet.',
+          solution: '1. Bloqueio de IPs, 2. Reset de senhas admin, 3. MFA obrigatório',
+          resolutionTime: '1 hora',
+        },
+      ],
 
-            responseFormat: `
+      responseFormat: `
 {
   "rootCause": "Tipo de ameaça identificada",
   "severity": "Critical|High|Medium|Low",
@@ -334,20 +335,20 @@ class PromptTemplates {
   "preventionMeasures": [
     "controles de segurança recomendados"
   ]
-}`
-        };
-    }
+}`,
+    };
+  }
 
-    /**
-     * Template para problemas de banco de dados
-     */
-    createDatabaseTemplate() {
-        return {
-            systemPrompt: `Você é um DBA especialista em sistemas bancários.
+  /**
+   * Template para problemas de banco de dados
+   */
+  createDatabaseTemplate() {
+    return {
+      systemPrompt: `Você é um DBA especialista em sistemas bancários.
             Sua expertise inclui otimização de queries, troubleshooting de conexões,
             recovery de dados e manutenção de alta disponibilidade.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Database:
 
 1. **DIAGNÓSTICO INICIAL**:
@@ -370,16 +371,17 @@ class PromptTemplates {
    - Necessidade de manutenção
    - Estratégias de recovery se necessário`,
 
-            fewShotExamples: [
-                {
-                    incident: "Timeout em consultas de saldo - Oracle 19c",
-                    analysis: "Estatísticas de tabela desatualizadas causando plano de execução ineficiente",
-                    solution: "1. Gather stats em tabelas críticas, 2. Hint de força de índice, 3. Rebuild de índice fragmentado",
-                    resolutionTime: "45 minutos"
-                }
-            ],
+      fewShotExamples: [
+        {
+          incident: 'Timeout em consultas de saldo - Oracle 19c',
+          analysis: 'Estatísticas de tabela desatualizadas causando plano de execução ineficiente',
+          solution:
+            '1. Gather stats em tabelas críticas, 2. Hint de força de índice, 3. Rebuild de índice fragmentado',
+          resolutionTime: '45 minutos',
+        },
+      ],
 
-            responseFormat: `
+      responseFormat: `
 {
   "rootCause": "Problema específico do database",
   "severity": "High|Medium|Low",
@@ -403,20 +405,20 @@ class PromptTemplates {
   "preventionMeasures": [
     "manutenções preventivas recomendadas"
   ]
-}`
-        };
-    }
+}`,
+    };
+  }
 
-    /**
-     * Template para problemas de rede
-     */
-    createNetworkTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em infraestrutura de rede bancária.
+  /**
+   * Template para problemas de rede
+   */
+  createNetworkTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em infraestrutura de rede bancária.
             Sua especialidade inclui conectividade, latência, throughput, VPNs,
             firewalls e segurança de rede em ambientes críticos.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Rede:
 
 1. **VERIFICAÇÃO DE CONECTIVIDADE**:
@@ -439,21 +441,21 @@ class PromptTemplates {
    - QoS para tráfego crítico
    - Redundância e failover`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para aplicações
-     */
-    createApplicationTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em aplicações bancárias.
+  /**
+   * Template para aplicações
+   */
+  createApplicationTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em aplicações bancárias.
             Foco em debugging de código, análise de logs, gerenciamento de memória
             e otimização de aplicações Java, .NET e mainframe.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Aplicação:
 
 1. **ANÁLISE DE LOGS**:
@@ -476,21 +478,21 @@ class PromptTemplates {
    - Plano de teste
    - Rollback se necessário`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para integrações
-     */
-    createIntegrationTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em integrações bancárias.
+  /**
+   * Template para integrações
+   */
+  createIntegrationTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em integrações bancárias.
             APIs, web services, mensageria, EDI e comunicação entre sistemas
             heterogêneos são sua especialidade.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Integração:
 
 1. **MAPEAMENTO DO FLUXO**:
@@ -513,21 +515,21 @@ class PromptTemplates {
    - Circuit breakers
    - Fallback mechanisms`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para capacidade
-     */
-    createCapacityTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em planejamento de capacidade bancária.
+  /**
+   * Template para capacidade
+   */
+  createCapacityTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em planejamento de capacidade bancária.
             Análise de crescimento, dimensionamento de recursos e otimização
             de infraestrutura para suportar demanda crescente.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise de Capacidade:
 
 1. **ANÁLISE DE TENDÊNCIAS**:
@@ -550,21 +552,21 @@ class PromptTemplates {
    - Consolidação possível
    - Automação de scaling`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template especializado para mainframe
-     */
-    createMainframeTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em sistemas mainframe bancários.
+  /**
+   * Template especializado para mainframe
+   */
+  createMainframeTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em sistemas mainframe bancários.
             COBOL, CICS, DB2, JCL, TSO/ISPF e z/OS são sua especialidade.
             Foco em alta disponibilidade e processamento batch crítico.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise Mainframe:
 
 1. **VERIFICAÇÃO DE JOBS**:
@@ -587,29 +589,30 @@ class PromptTemplates {
    - Restart procedures
    - Backup/restore options`,
 
-            fewShotExamples: [
-                {
-                    incident: "CICS região PROD1 com ASRA abends em massa",
-                    analysis: "Storage violation em programa COBOL após mudança recente. Array bounds exceeded.",
-                    solution: "1. Emergency shutdown CICS, 2. Rollback program, 3. Cold start com dumps",
-                    resolutionTime: "30 minutos"
-                }
-            ],
+      fewShotExamples: [
+        {
+          incident: 'CICS região PROD1 com ASRA abends em massa',
+          analysis:
+            'Storage violation em programa COBOL após mudança recente. Array bounds exceeded.',
+          solution: '1. Emergency shutdown CICS, 2. Rollback program, 3. Cold start com dumps',
+          resolutionTime: '30 minutos',
+        },
+      ],
 
-            responseFormat: this.getMainframeResponseFormat()
-        };
-    }
+      responseFormat: this.getMainframeResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para mobile banking
-     */
-    createMobileBankingTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em aplicações mobile banking.
+  /**
+   * Template para mobile banking
+   */
+  createMobileBankingTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em aplicações mobile banking.
             iOS, Android, APIs mobile, push notifications, biometria
             e experiência do usuário são sua especialidade.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise Mobile:
 
 1. **PLATAFORMA E VERSÃO**:
@@ -633,21 +636,21 @@ class PromptTemplates {
    - Crash reports
    - User feedback patterns`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para payment gateway
-     */
-    createPaymentGatewayTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em payment gateways bancários.
+  /**
+   * Template para payment gateway
+   */
+  createPaymentGatewayTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em payment gateways bancários.
             PIX, TED, DOC, cartões, processamento de pagamentos
             e compliance PCI-DSS são sua especialidade.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise Payment Gateway:
 
 1. **TRANSACTION FLOW**:
@@ -670,21 +673,21 @@ class PromptTemplates {
    - APIs de third parties
    - Callback mechanisms`,
 
-            fewShotExamples: [],
-            responseFormat: this.getPaymentResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getPaymentResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para core banking
-     */
-    createCoreBankingTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em core banking systems.
+  /**
+   * Template para core banking
+   */
+  createCoreBankingTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em core banking systems.
             Contas, empréstimos, investimentos, contabilidade
             e regulatory reporting são sua especialidade.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise Core Banking:
 
 1. **TRANSACTIONAL INTEGRITY**:
@@ -707,21 +710,21 @@ class PromptTemplates {
    - Balance inquiries
    - Transaction posting`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template para ATM network
-     */
-    createATMNetworkTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em redes ATM bancárias.
+  /**
+   * Template para ATM network
+   */
+  createATMNetworkTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em redes ATM bancárias.
             Switching, ISO 8583, network routing, cash management
             e disponibilidade ATM são sua especialidade.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo de Análise ATM Network:
 
 1. **NETWORK CONNECTIVITY**:
@@ -744,21 +747,21 @@ class PromptTemplates {
    - Fraud detection
    - Physical security alerts`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Template padrão para casos não específicos
-     */
-    getDefaultTemplate() {
-        return {
-            systemPrompt: `Você é um especialista em sistemas bancários com amplo conhecimento
+  /**
+   * Template padrão para casos não específicos
+   */
+  getDefaultTemplate() {
+    return {
+      systemPrompt: `Você é um especialista em sistemas bancários com amplo conhecimento
             em infraestrutura, aplicações, segurança e operações. Forneça análise
             técnica detalhada e sugestões práticas de resolução.`,
 
-            chainOfThoughtInstructions: `
+      chainOfThoughtInstructions: `
 ## Processo Geral de Análise:
 
 1. **COLETA DE INFORMAÇÕES**:
@@ -781,16 +784,16 @@ class PromptTemplates {
    - Sugira monitoramento adicional
    - Documente lições aprendidas`,
 
-            fewShotExamples: [],
-            responseFormat: this.getStandardResponseFormat()
-        };
-    }
+      fewShotExamples: [],
+      responseFormat: this.getStandardResponseFormat(),
+    };
+  }
 
-    /**
-     * Formatos de resposta especializados
-     */
-    getStandardResponseFormat() {
-        return `
+  /**
+   * Formatos de resposta especializados
+   */
+  getStandardResponseFormat() {
+    return `
 {
   "rootCause": "Causa raiz identificada",
   "severity": "Critical|High|Medium|Low",
@@ -813,10 +816,10 @@ class PromptTemplates {
   "escalationRecommendation": true|false,
   "relatedDocumentation": ["referências"]
 }`;
-    }
+  }
 
-    getMainframeResponseFormat() {
-        return `
+  getMainframeResponseFormat() {
+    return `
 {
   "rootCause": "Causa raiz mainframe",
   "severity": "Critical|High|Medium|Low",
@@ -839,10 +842,10 @@ class PromptTemplates {
   "backup_recommendation": "necessidade de backup",
   "performance_impact": "impacto na performance"
 }`;
-    }
+  }
 
-    getPaymentResponseFormat() {
-        return `
+  getPaymentResponseFormat() {
+    return `
 {
   "rootCause": "Causa raiz do payment issue",
   "severity": "Critical|High|Medium|Low",
@@ -869,13 +872,13 @@ class PromptTemplates {
     }
   ]
 }`;
-    }
+  }
 
-    /**
-     * Constrói contexto do incidente
-     */
-    buildIncidentContext(incident) {
-        return `
+  /**
+   * Constrói contexto do incidente
+   */
+  buildIncidentContext(incident) {
+    return `
 ## Detalhes do Incidente:
 
 **ID**: ${incident.id}
@@ -891,84 +894,96 @@ class PromptTemplates {
 
 **Detalhes Técnicos**:
 ${JSON.stringify(incident.technicalDetails || {}, null, 2)}`;
-    }
+  }
 
-    /**
-     * Constrói exemplos few-shot
-     */
-    buildFewShotExamples(examples) {
-        return examples.map((example, index) => `
+  /**
+   * Constrói exemplos few-shot
+   */
+  buildFewShotExamples(examples) {
+    return examples
+      .map(
+        (example, index) => `
 ### Exemplo ${index + 1}:
 **Incidente**: ${example.incident}
 **Análise**: ${example.analysis}
 **Solução**: ${example.solution}
 **Tempo de Resolução**: ${example.resolutionTime}
-`).join('\n');
-    }
+`
+      )
+      .join('\n');
+  }
 
-    /**
-     * Constrói contexto de incidentes similares
-     */
-    buildSimilarIncidentsContext(similarIncidents) {
-        return similarIncidents.map((incident, index) => `
+  /**
+   * Constrói contexto de incidentes similares
+   */
+  buildSimilarIncidentsContext(similarIncidents) {
+    return similarIncidents
+      .map(
+        (incident, index) => `
 ### Incidente Similar ${index + 1} (Similaridade: ${(incident.similarity * 100).toFixed(1)}%):
 **Título**: ${incident.title}
 **Solução**: ${incident.solution}
 **Tempo de Resolução**: ${incident.resolutionTime}
 **Complexidade**: ${incident.complexity}
-`).join('\n');
-    }
+`
+      )
+      .join('\n');
+  }
 
-    /**
-     * Constrói contexto da knowledge base
-     */
-    buildKnowledgeBaseContext(knowledgeBase) {
-        return knowledgeBase.map((doc, index) => `
+  /**
+   * Constrói contexto da knowledge base
+   */
+  buildKnowledgeBaseContext(knowledgeBase) {
+    return knowledgeBase
+      .map(
+        (doc, index) => `
 ### Documento ${index + 1} (Relevância: ${(doc.relevance * 100).toFixed(1)}%):
 **Título**: ${doc.title}
 **Categoria**: ${doc.category}
 **Fonte**: ${doc.source}
 **Conteúdo**: ${doc.content.substring(0, 300)}...
-`).join('\n');
-    }
+`
+      )
+      .join('\n');
+  }
 
-    /**
-     * Constrói contexto histórico
-     */
-    buildHistoricalContext(enrichment) {
-        let context = '';
+  /**
+   * Constrói contexto histórico
+   */
+  buildHistoricalContext(enrichment) {
+    let context = '';
 
-        if (enrichment.historicalPattern) {
-            context += `
+    if (enrichment.historicalPattern) {
+      context += `
 **Padrão Histórico**:
 - Frequência: ${enrichment.historicalPattern.frequency || 'N/A'}
 - Última ocorrência: ${enrichment.historicalPattern.lastOccurrence || 'N/A'}
 `;
-        }
+    }
 
-        if (enrichment.resolutionStats) {
-            context += `
+    if (enrichment.resolutionStats) {
+      context += `
 **Estatísticas de Resolução**:
 - Tempo médio: ${enrichment.resolutionStats.averageResolutionTime}
 - Taxa de sucesso: ${(enrichment.resolutionStats.successRate * 100).toFixed(1)}%
 - Taxa de escalação: ${(enrichment.resolutionStats.escalationRate * 100).toFixed(1)}%
 `;
-        }
-
-        if (enrichment.riskFactors?.length > 0) {
-            context += `
-**Fatores de Risco**: ${enrichment.riskFactors.join(', ')}
-`;
-        }
-
-        return context;
     }
 
-    /**
-     * Constrói prompt de fallback
-     */
-    buildFallbackPrompt(context) {
-        return `
+    if (enrichment.riskFactors?.length > 0) {
+      context += `
+**Fatores de Risco**: ${enrichment.riskFactors.join(', ')}
+`;
+    }
+
+    return context;
+  }
+
+  /**
+   * Constrói prompt de fallback
+   */
+  buildFallbackPrompt(context) {
+    return `
 Analise o seguinte incidente bancário e forneça recomendações:
 
 ${this.buildIncidentContext(context.incident)}
@@ -984,7 +999,7 @@ Forneça sua análise em formato JSON com as seguintes informações:
 - escalationRecommendation
 
 Seja específico e prático nas recomendações.`;
-    }
+  }
 }
 
 module.exports = PromptTemplates;

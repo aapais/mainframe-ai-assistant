@@ -1,5 +1,10 @@
 import { ValidationEngine, ValidationResult, ValidationContext } from './ValidationEngine';
-import { StringValidators, ArrayValidators, AsyncValidators, CrossFieldValidators } from './ValidationUtils';
+import {
+  StringValidators,
+  ArrayValidators,
+  AsyncValidators,
+  CrossFieldValidators,
+} from './ValidationUtils';
 import { KBEntry } from '../../database/KnowledgeDB';
 
 /**
@@ -60,13 +65,15 @@ export class SchemaValidator {
     if (!schema) {
       return {
         isValid: false,
-        errors: [{
-          field: 'schema',
-          code: 'SCHEMA_NOT_FOUND',
-          message: `Schema "${schemaName}" not found`,
-          value: schemaName
-        }],
-        warnings: []
+        errors: [
+          {
+            field: 'schema',
+            code: 'SCHEMA_NOT_FOUND',
+            message: `Schema "${schemaName}" not found`,
+            value: schemaName,
+          },
+        ],
+        warnings: [],
       };
     }
 
@@ -90,24 +97,33 @@ export class SchemaValidator {
   /**
    * Validate KB entry for creation
    */
-  async validateKBEntryCreate(entry: Partial<KBEntry>, context?: ValidationContext): Promise<ValidationResult> {
+  async validateKBEntryCreate(
+    entry: Partial<KBEntry>,
+    context?: ValidationContext
+  ): Promise<ValidationResult> {
     return this.validateAgainstSchema('kb-entry-create', entry, context);
   }
 
   /**
    * Validate KB entry for update
    */
-  async validateKBEntryUpdate(entry: Partial<KBEntry>, context?: ValidationContext): Promise<ValidationResult> {
+  async validateKBEntryUpdate(
+    entry: Partial<KBEntry>,
+    context?: ValidationContext
+  ): Promise<ValidationResult> {
     return this.validateAgainstSchema('kb-entry-update', entry, context);
   }
 
   /**
    * Validate KB entry import data
    */
-  async validateKBEntryImport(entries: Partial<KBEntry>[], context?: ValidationContext): Promise<ValidationResult[]> {
-    return Promise.all(entries.map(entry => 
-      this.validateAgainstSchema('kb-entry-import', entry, context)
-    ));
+  async validateKBEntryImport(
+    entries: Partial<KBEntry>[],
+    context?: ValidationContext
+  ): Promise<ValidationResult[]> {
+    return Promise.all(
+      entries.map(entry => this.validateAgainstSchema('kb-entry-import', entry, context))
+    );
   }
 
   /**
@@ -143,7 +159,7 @@ export class SchemaValidator {
         field: 'root',
         code: 'REQUIRED',
         message: 'Object is required',
-        value: data
+        value: data,
       });
       return { isValid: false, errors, warnings };
     }
@@ -153,7 +169,7 @@ export class SchemaValidator {
         field: 'root',
         code: 'INVALID_TYPE',
         message: 'Expected object',
-        value: data
+        value: data,
       });
       return { isValid: false, errors, warnings };
     }
@@ -166,7 +182,7 @@ export class SchemaValidator {
             field: requiredProp,
             code: 'REQUIRED',
             message: `Property '${requiredProp}' is required`,
-            value: undefined
+            value: undefined,
           });
         }
       }
@@ -176,12 +192,10 @@ export class SchemaValidator {
     if (schema.properties) {
       for (const [propName, propSchema] of Object.entries(schema.properties)) {
         if (propName in data) {
-          const propResult = await this.validateProperty(
-            data[propName], 
-            propSchema, 
-            propName, 
-            { ...context, entry: data }
-          );
+          const propResult = await this.validateProperty(data[propName], propSchema, propName, {
+            ...context,
+            entry: data,
+          });
           errors.push(...propResult.errors);
           warnings.push(...propResult.warnings);
         }
@@ -197,7 +211,7 @@ export class SchemaValidator {
             field: propName,
             code: 'ADDITIONAL_PROPERTY',
             message: `Property '${propName}' is not defined in schema`,
-            suggestion: 'Remove this property or update schema'
+            suggestion: 'Remove this property or update schema',
           });
         }
       }
@@ -211,7 +225,7 @@ export class SchemaValidator {
         code: 'MIN_PROPERTIES',
         message: `Object must have at least ${schema.minProperties} properties (has ${propCount})`,
         value: data,
-        metadata: { min: schema.minProperties, current: propCount }
+        metadata: { min: schema.minProperties, current: propCount },
       });
     }
 
@@ -221,7 +235,7 @@ export class SchemaValidator {
         code: 'MAX_PROPERTIES',
         message: `Object must have at most ${schema.maxProperties} properties (has ${propCount})`,
         value: data,
-        metadata: { max: schema.maxProperties, current: propCount }
+        metadata: { max: schema.maxProperties, current: propCount },
       });
     }
 
@@ -244,7 +258,7 @@ export class SchemaValidator {
         field: 'root',
         code: 'INVALID_TYPE',
         message: 'Expected array',
-        value: data
+        value: data,
       });
       return { isValid: false, errors, warnings };
     }
@@ -296,7 +310,7 @@ export class SchemaValidator {
         field: fieldName,
         code: 'INVALID_TYPE',
         message: `Expected ${schema.type}, got ${typeof value}`,
-        value
+        value,
       });
       return { isValid: false, errors, warnings };
     }
@@ -312,7 +326,7 @@ export class SchemaValidator {
           code: 'MIN_LENGTH',
           message: `Must be at least ${schema.minLength} characters (current: ${strValue.length})`,
           value,
-          metadata: { min: schema.minLength, current: strValue.length }
+          metadata: { min: schema.minLength, current: strValue.length },
         });
       }
 
@@ -322,7 +336,7 @@ export class SchemaValidator {
           code: 'MAX_LENGTH',
           message: `Must not exceed ${schema.maxLength} characters (current: ${strValue.length})`,
           value,
-          metadata: { max: schema.maxLength, current: strValue.length }
+          metadata: { max: schema.maxLength, current: strValue.length },
         });
       }
 
@@ -335,7 +349,7 @@ export class SchemaValidator {
             code: 'PATTERN',
             message: `Does not match required pattern`,
             value,
-            metadata: { pattern: schema.pattern }
+            metadata: { pattern: schema.pattern },
           });
         }
       }
@@ -347,7 +361,7 @@ export class SchemaValidator {
           code: 'INVALID_ENUM',
           message: `Must be one of: ${schema.enum.join(', ')}`,
           value,
-          metadata: { validValues: schema.enum }
+          metadata: { validValues: schema.enum },
         });
       }
 
@@ -365,7 +379,7 @@ export class SchemaValidator {
       if (schema.uniqueItems) {
         const seen = new Set();
         const duplicates: any[] = [];
-        
+
         value.forEach((item, index) => {
           const key = JSON.stringify(item);
           if (seen.has(key)) {
@@ -381,7 +395,7 @@ export class SchemaValidator {
             code: 'DUPLICATE_ITEMS',
             message: 'Array items must be unique',
             value,
-            metadata: { duplicates }
+            metadata: { duplicates },
           });
         }
       }
@@ -409,7 +423,7 @@ export class SchemaValidator {
           code: 'MINIMUM',
           message: `Must be at least ${schema.minimum}`,
           value,
-          metadata: { minimum: schema.minimum }
+          metadata: { minimum: schema.minimum },
         });
       }
 
@@ -419,7 +433,7 @@ export class SchemaValidator {
           code: 'MAXIMUM',
           message: `Must be at most ${schema.maximum}`,
           value,
-          metadata: { maximum: schema.maximum }
+          metadata: { maximum: schema.maximum },
         });
       }
     }
@@ -455,7 +469,7 @@ export class SchemaValidator {
             field: fieldName,
             code: 'INVALID_EMAIL',
             message: 'Invalid email format',
-            value
+            value,
           });
         }
         break;
@@ -468,7 +482,7 @@ export class SchemaValidator {
             field: fieldName,
             code: 'INVALID_URL',
             message: 'Invalid URL format',
-            value
+            value,
           });
         }
         break;
@@ -479,22 +493,20 @@ export class SchemaValidator {
             field: fieldName,
             code: 'INVALID_ERROR_CODE',
             message: 'Does not appear to be a valid mainframe error code',
-            suggestion: 'Expected format: IEF212I, S0C7, SQLCODE -904, etc.'
+            suggestion: 'Expected format: IEF212I, S0C7, SQLCODE -904, etc.',
           });
         }
         break;
 
       case 'structured-text':
-        const hasStructure = 
-          /^\s*(\d+\.|\*|-|•)/.test(value) ||
-          /\n\s*(\d+\.|\*|-|•)/.test(value);
-        
+        const hasStructure = /^\s*(\d+\.|\*|-|•)/.test(value) || /\n\s*(\d+\.|\*|-|•)/.test(value);
+
         if (!hasStructure) {
           warnings.push({
             field: fieldName,
             code: 'UNSTRUCTURED',
             message: 'Text would be more readable with numbered steps or bullet points',
-            suggestion: 'Use 1., 2., 3... or bullet points for better structure'
+            suggestion: 'Use 1., 2., 3... or bullet points for better structure',
           });
         }
         break;
@@ -551,7 +563,7 @@ export class SchemaValidator {
           minLength: 10,
           maxLength: 200,
           description: 'Brief, descriptive title of the problem/solution',
-          examples: ['VSAM Status 35 - File Not Found', 'S0C7 Data Exception in COBOL Program']
+          examples: ['VSAM Status 35 - File Not Found', 'S0C7 Data Exception in COBOL Program'],
         },
         problem: {
           type: 'string',
@@ -561,8 +573,11 @@ export class SchemaValidator {
           format: 'structured-text',
           description: 'Detailed description of the problem or error condition',
           custom: [
-            { validator: 'mainframeTerms', message: 'Consider including mainframe-specific terminology' }
-          ]
+            {
+              validator: 'mainframeTerms',
+              message: 'Consider including mainframe-specific terminology',
+            },
+          ],
         },
         solution: {
           type: 'string',
@@ -570,20 +585,33 @@ export class SchemaValidator {
           minLength: 50,
           maxLength: 10000,
           format: 'structured-text',
-          description: 'Step-by-step solution or resolution steps'
+          description: 'Step-by-step solution or resolution steps',
         },
         category: {
           type: 'string',
           required: true,
-          enum: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'TSO/ISPF', 'RACF', 'System', 'Network', 'Other'],
-          description: 'Mainframe component category'
+          enum: [
+            'JCL',
+            'VSAM',
+            'DB2',
+            'Batch',
+            'Functional',
+            'CICS',
+            'IMS',
+            'TSO/ISPF',
+            'RACF',
+            'System',
+            'Network',
+            'Other',
+          ],
+          description: 'Mainframe component category',
         },
         severity: {
           type: 'string',
           required: false,
           enum: ['critical', 'high', 'medium', 'low'],
           default: 'medium',
-          description: 'Severity level indicating urgency/impact'
+          description: 'Severity level indicating urgency/impact',
         },
         tags: {
           type: 'array',
@@ -593,12 +621,12 @@ export class SchemaValidator {
             type: 'string',
             minLength: 2,
             maxLength: 30,
-            pattern: '^[a-zA-Z0-9_-]+$'
+            pattern: '^[a-zA-Z0-9_-]+$',
           },
           description: 'Array of searchable tags for categorization',
-          examples: [['vsam', 'status-35', 'file-not-found']]
-        }
-      }
+          examples: [['vsam', 'status-35', 'file-not-found']],
+        },
+      },
     });
 
     // KB Entry Update Schema (similar to create but all fields optional except id)
@@ -610,32 +638,45 @@ export class SchemaValidator {
         id: {
           type: 'string',
           required: true,
-          description: 'Unique identifier of the entry to update'
+          description: 'Unique identifier of the entry to update',
         },
         title: {
           type: 'string',
           minLength: 10,
-          maxLength: 200
+          maxLength: 200,
         },
         problem: {
           type: 'string',
           minLength: 50,
           maxLength: 5000,
-          format: 'structured-text'
+          format: 'structured-text',
         },
         solution: {
           type: 'string',
           minLength: 50,
           maxLength: 10000,
-          format: 'structured-text'
+          format: 'structured-text',
         },
         category: {
           type: 'string',
-          enum: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'TSO/ISPF', 'RACF', 'System', 'Network', 'Other']
+          enum: [
+            'JCL',
+            'VSAM',
+            'DB2',
+            'Batch',
+            'Functional',
+            'CICS',
+            'IMS',
+            'TSO/ISPF',
+            'RACF',
+            'System',
+            'Network',
+            'Other',
+          ],
         },
         severity: {
           type: 'string',
-          enum: ['critical', 'high', 'medium', 'low']
+          enum: ['critical', 'high', 'medium', 'low'],
         },
         tags: {
           type: 'array',
@@ -644,14 +685,14 @@ export class SchemaValidator {
             type: 'string',
             minLength: 2,
             maxLength: 30,
-            pattern: '^[a-zA-Z0-9_-]+$'
-          }
+            pattern: '^[a-zA-Z0-9_-]+$',
+          },
         },
         archived: {
           type: 'boolean',
-          description: 'Whether entry should be archived (hidden from searches)'
-        }
-      }
+          description: 'Whether entry should be archived (hidden from searches)',
+        },
+      },
     });
 
     // KB Entry Import Schema (for bulk imports, more lenient)
@@ -663,26 +704,26 @@ export class SchemaValidator {
         title: {
           type: 'string',
           minLength: 5, // More lenient for imports
-          maxLength: 300
+          maxLength: 300,
         },
         problem: {
           type: 'string',
           minLength: 20, // More lenient for imports
-          maxLength: 10000
+          maxLength: 10000,
         },
         solution: {
           type: 'string',
           minLength: 10, // More lenient for imports
-          maxLength: 20000
+          maxLength: 20000,
         },
         category: {
           type: 'string',
-          default: 'Other' // Default category for imports
+          default: 'Other', // Default category for imports
         },
         severity: {
           type: 'string',
           enum: ['critical', 'high', 'medium', 'low'],
-          default: 'medium'
+          default: 'medium',
         },
         tags: {
           type: 'array',
@@ -690,10 +731,10 @@ export class SchemaValidator {
           items: {
             type: 'string',
             minLength: 1, // More lenient
-            maxLength: 50
-          }
-        }
-      }
+            maxLength: 50,
+          },
+        },
+      },
     });
 
     // Search Query Schema
@@ -706,47 +747,60 @@ export class SchemaValidator {
           required: true,
           minLength: 1,
           maxLength: 500,
-          description: 'Search query string'
+          description: 'Search query string',
         },
         category: {
           type: 'string',
-          enum: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'TSO/ISPF', 'RACF', 'System', 'Network', 'Other'],
-          description: 'Filter by category'
+          enum: [
+            'JCL',
+            'VSAM',
+            'DB2',
+            'Batch',
+            'Functional',
+            'CICS',
+            'IMS',
+            'TSO/ISPF',
+            'RACF',
+            'System',
+            'Network',
+            'Other',
+          ],
+          description: 'Filter by category',
         },
         tags: {
           type: 'array',
           items: {
             type: 'string',
             minLength: 1,
-            maxLength: 30
+            maxLength: 30,
           },
-          description: 'Filter by tags'
+          description: 'Filter by tags',
         },
         limit: {
           type: 'number',
           minimum: 1,
           maximum: 100,
           default: 10,
-          description: 'Maximum number of results'
+          description: 'Maximum number of results',
         },
         offset: {
           type: 'number',
           minimum: 0,
           default: 0,
-          description: 'Number of results to skip'
+          description: 'Number of results to skip',
         },
         sortBy: {
           type: 'string',
           enum: ['relevance', 'usage', 'success_rate', 'created_at'],
           default: 'relevance',
-          description: 'Sort order'
+          description: 'Sort order',
         },
         includeArchived: {
           type: 'boolean',
           default: false,
-          description: 'Include archived entries'
-        }
-      }
+          description: 'Include archived entries',
+        },
+      },
     });
   }
 
@@ -766,14 +820,14 @@ export class SchemaValidator {
     context?: ValidationContext
   ): Promise<{ isValid: boolean; data: any; result: ValidationResult }> {
     const result = await this.validateAgainstSchema(schemaName, data, context);
-    
+
     // Basic sanitization
     const sanitized = this.sanitizeData(data, this.schemas.get(schemaName));
-    
+
     return {
       isValid: result.isValid,
       data: sanitized,
-      result
+      result,
     };
   }
 

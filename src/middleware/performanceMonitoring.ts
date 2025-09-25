@@ -11,7 +11,7 @@ import type {
   HTTPPerformanceMetrics as PerformanceMetrics,
   PerformanceAlert,
   PerformanceConfig,
-  PerformanceStats
+  PerformanceStats,
 } from '../types/shared/performance';
 
 /**
@@ -50,13 +50,13 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
         highErrorRate: 0.05, // 5%
         cacheMissRate: 0.7, // 70%
         memoryUsage: 0.8, // 80%
-        cpuUsage: 0.9 // 90%
+        cpuUsage: 0.9, // 90%
       },
       samplingRate: 1.0, // 100% sampling by default
       retentionPeriodMs: 24 * 60 * 60 * 1000, // 24 hours
       batchSize: 100,
       flushIntervalMs: 5000, // 5 seconds
-      ...config
+      ...config,
     };
 
     this.startFlushTimer();
@@ -87,7 +87,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
 
       // Override res.json to detect cache hits
       const originalJson = res.json;
-      res.json = function(body: any) {
+      res.json = function (body: any) {
         if (body && typeof body === 'object' && body.cached === true) {
           cacheHit = true;
         }
@@ -96,7 +96,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
 
       // Track cache operations
       const originalSend = res.send;
-      res.send = function(body: any) {
+      res.send = function (body: any) {
         return originalSend.call(this, body);
       };
 
@@ -122,8 +122,10 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
             userAgent: req.get('User-Agent'),
             userId: req.headers['user-id'] as string,
             sessionId: req.headers['session-id'] as string,
-            contentLength: res.get('Content-Length') ? parseInt(res.get('Content-Length')!) : undefined,
-            errorMessage: res.statusCode >= 400 ? this.extractErrorMessage(res) : undefined
+            contentLength: res.get('Content-Length')
+              ? parseInt(res.get('Content-Length')!)
+              : undefined,
+            errorMessage: res.statusCode >= 400 ? this.extractErrorMessage(res) : undefined,
           };
 
           this.recordMetrics(metrics);
@@ -133,7 +135,6 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
           if (this.config.enableDetailedLogging) {
             this.logRequestDetails(metrics);
           }
-
         } catch (error) {
           console.error('Performance monitoring error:', error);
         }
@@ -159,7 +160,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
       hit,
       latency,
       size,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (latency > this.config.alertThresholds.highLatency / 4) {
@@ -170,7 +171,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
         value: latency,
         threshold: this.config.alertThresholds.highLatency / 4,
         timestamp: Date.now(),
-        metadata: { operation, key: this.sanitizeKey(key) }
+        metadata: { operation, key: this.sanitizeKey(key) },
       });
     }
 
@@ -191,7 +192,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
         value: heapUsagePercent,
         threshold: this.config.alertThresholds.memoryUsage,
         timestamp: Date.now(),
-        metadata: { memoryUsage: usage }
+        metadata: { memoryUsage: usage },
       });
     }
 
@@ -232,7 +233,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
       .map(([endpoint, data]) => ({
         endpoint,
         avgTime: data.times.reduce((sum, t) => sum + t, 0) / data.times.length,
-        requestCount: data.count
+        requestCount: data.count,
       }))
       .sort((a, b) => b.avgTime - a.avgTime)
       .slice(0, 10);
@@ -242,7 +243,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
       .map(([error, data]) => ({
         error,
         count: data.count,
-        lastSeen: data.lastSeen
+        lastSeen: data.lastSeen,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -254,14 +255,16 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
       p99ResponseTime: responseTimes[p99Index] || 0,
       errorRate: errors.length / recentMetrics.length,
       cacheHitRate: cacheHits.length / recentMetrics.length,
-      averageCacheLatency: cacheOperations.length > 0
-        ? cacheOperations.reduce((sum, m) => sum + (m.cacheLatency || 0), 0) / cacheOperations.length
-        : 0,
+      averageCacheLatency:
+        cacheOperations.length > 0
+          ? cacheOperations.reduce((sum, m) => sum + (m.cacheLatency || 0), 0) /
+            cacheOperations.length
+          : 0,
       throughput: recentMetrics.length / (timeWindowMs / 1000),
       peakMemoryUsage: Math.max(...recentMetrics.map(m => m.memoryUsage)),
       averageCpuUsage: recentMetrics.reduce((sum, m) => sum + m.cpuUsage, 0) / recentMetrics.length,
       slowestEndpoints,
-      topErrors
+      topErrors,
     };
   }
 
@@ -296,7 +299,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
         cacheHitRate: 0,
         memoryUsage: 0,
         cpuUsage: 0,
-        activeAlerts: 0
+        activeAlerts: 0,
       };
     }
 
@@ -306,12 +309,13 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
 
     return {
       requestsPerSecond: recentMetrics.length / 60,
-      averageResponseTime: recentMetrics.reduce((sum, m) => sum + m.responseTime, 0) / recentMetrics.length,
+      averageResponseTime:
+        recentMetrics.reduce((sum, m) => sum + m.responseTime, 0) / recentMetrics.length,
       errorRate: errors.length / recentMetrics.length,
       cacheHitRate: cacheHits.length / recentMetrics.length,
       memoryUsage: currentMemory.heapUsed / currentMemory.heapTotal,
       cpuUsage: this.calculateCpuUsage(),
-      activeAlerts: this.getAlerts(300000).length // Last 5 minutes
+      activeAlerts: this.getAlerts(300000).length, // Last 5 minutes
     };
   }
 
@@ -325,12 +329,16 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
       return this.formatPrometheusMetrics(stats);
     }
 
-    return JSON.stringify({
-      timestamp: Date.now(),
-      stats,
-      alerts: this.getAlerts(),
-      realtime: this.getRealTimeMetrics()
-    }, null, 2);
+    return JSON.stringify(
+      {
+        timestamp: Date.now(),
+        stats,
+        alerts: this.getAlerts(),
+        realtime: this.getRealTimeMetrics(),
+      },
+      null,
+      2
+    );
   }
 
   /**
@@ -358,7 +366,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
 
     this.emit('cleanup-completed', {
       metricsRetained: this.metrics.length,
-      alertsRetained: this.alertHistory.length
+      alertsRetained: this.alertHistory.length,
     });
   }
 
@@ -436,12 +444,15 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
     if (metrics.responseTime > this.config.alertThresholds.highLatency) {
       this.emitAlert({
         type: 'high_latency',
-        severity: metrics.responseTime > this.config.alertThresholds.highLatency * 2 ? 'critical' : 'warning',
+        severity:
+          metrics.responseTime > this.config.alertThresholds.highLatency * 2
+            ? 'critical'
+            : 'warning',
         message: `High response time: ${metrics.responseTime}ms for ${metrics.method} ${metrics.url}`,
         value: metrics.responseTime,
         threshold: this.config.alertThresholds.highLatency,
         timestamp: metrics.timestamp,
-        requestId: metrics.requestId
+        requestId: metrics.requestId,
       });
     }
 
@@ -455,7 +466,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
         value: memoryUsagePercent,
         threshold: this.config.alertThresholds.memoryUsage,
         timestamp: metrics.timestamp,
-        requestId: metrics.requestId
+        requestId: metrics.requestId,
       });
     }
 
@@ -468,7 +479,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
         value: metrics.cpuUsage,
         threshold: this.config.alertThresholds.cpuUsage,
         timestamp: metrics.timestamp,
-        requestId: metrics.requestId
+        requestId: metrics.requestId,
       });
     }
 
@@ -517,16 +528,19 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
   }
 
   private normalizeEndpoint(url: string): string {
-    return url.replace(/\/\d+/g, '/:id')
-              .replace(/\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '/:uuid')
-              .replace(/\?.*$/, '');
+    return url
+      .replace(/\/\d+/g, '/:id')
+      .replace(/\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '/:uuid')
+      .replace(/\?.*$/, '');
   }
 
   private logRequestDetails(metrics: PerformanceMetrics): void {
-    const logLevel = metrics.statusCode >= 400 ? 'error' :
-                    metrics.responseTime > 1000 ? 'warn' : 'info';
+    const logLevel =
+      metrics.statusCode >= 400 ? 'error' : metrics.responseTime > 1000 ? 'warn' : 'info';
 
-    console[logLevel](`${metrics.method} ${metrics.url} - ${metrics.statusCode} - ${metrics.responseTime}ms - Cache: ${metrics.cacheHit ? 'HIT' : 'MISS'}`);
+    console[logLevel](
+      `${metrics.method} ${metrics.url} - ${metrics.statusCode} - ${metrics.responseTime}ms - Cache: ${metrics.cacheHit ? 'HIT' : 'MISS'}`
+    );
   }
 
   private getEmptyStats(): PerformanceStats {
@@ -542,7 +556,7 @@ export class PerformanceMonitoringMiddleware extends EventEmitter {
       peakMemoryUsage: 0,
       averageCpuUsage: 0,
       slowestEndpoints: [],
-      topErrors: []
+      topErrors: [],
     };
   }
 
@@ -554,7 +568,7 @@ http_requests_total ${stats.totalRequests}
 
 # HELP http_request_duration_seconds HTTP request duration in seconds
 # TYPE http_request_duration_seconds histogram
-http_request_duration_seconds_sum ${stats.averageResponseTime * stats.totalRequests / 1000}
+http_request_duration_seconds_sum ${(stats.averageResponseTime * stats.totalRequests) / 1000}
 http_request_duration_seconds_count ${stats.totalRequests}
 
 # HELP http_request_duration_seconds_p95 95th percentile response time
@@ -612,7 +626,7 @@ memory_usage_bytes ${stats.peakMemoryUsage}
         message: `High error rate: ${(errorRate * 100).toFixed(1)}%`,
         value: errorRate,
         threshold: this.config.alertThresholds.highErrorRate,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   }
@@ -633,7 +647,7 @@ memory_usage_bytes ${stats.peakMemoryUsage}
         message: `High cache miss rate: ${(missRate * 100).toFixed(1)}%`,
         value: missRate,
         threshold: this.config.alertThresholds.cacheMissRate,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
   }
@@ -649,7 +663,7 @@ export function createPerformanceMiddleware(config?: Partial<PerformanceConfig>)
     getStats: () => monitor.getStats(),
     getAlerts: () => monitor.getAlerts(),
     getRealTimeMetrics: () => monitor.getRealTimeMetrics(),
-    exportMetrics: (format?: 'json' | 'prometheus') => monitor.exportMetrics(format)
+    exportMetrics: (format?: 'json' | 'prometheus') => monitor.exportMetrics(format),
   };
 }
 

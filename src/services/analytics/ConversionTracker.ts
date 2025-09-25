@@ -83,17 +83,23 @@ export interface ConversionMetrics {
     averageValue: number;
     averageTimeToConvert: number;
   };
-  byGoal: Record<string, {
-    conversions: number;
-    conversionRate: number;
-    value: number;
-    averageTimeToConvert: number;
-  }>;
-  bySource: Record<string, {
-    conversions: number;
-    conversionRate: number;
-    value: number;
-  }>;
+  byGoal: Record<
+    string,
+    {
+      conversions: number;
+      conversionRate: number;
+      value: number;
+      averageTimeToConvert: number;
+    }
+  >;
+  bySource: Record<
+    string,
+    {
+      conversions: number;
+      conversionRate: number;
+      value: number;
+    }
+  >;
   byTimeframe: Array<{
     period: string;
     conversions: number;
@@ -146,7 +152,10 @@ export class ConversionTracker extends EventEmitter {
   private attributionModels: Map<string, AttributionModel> = new Map();
   private metricsCache: Map<string, any> = new Map();
   private cacheExpiry: number = 5 * 60 * 1000; // 5 minutes
-  private activeUserSessions: Map<string, { userId: string; startTime: number; events: ConversionEvent[] }> = new Map();
+  private activeUserSessions: Map<
+    string,
+    { userId: string; startTime: number; events: ConversionEvent[] }
+  > = new Map();
 
   constructor() {
     super();
@@ -164,8 +173,8 @@ export class ConversionTracker extends EventEmitter {
       id: this.generateId(),
       metadata: {
         ...goal.metadata,
-        createdAt: Date.now()
-      }
+        createdAt: Date.now(),
+      },
     };
 
     this.goals.set(goalRecord.id, goalRecord);
@@ -182,7 +191,7 @@ export class ConversionTracker extends EventEmitter {
     const eventRecord: ConversionEvent = {
       ...event,
       id: this.generateId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (!this.events.has(event.userId)) {
@@ -257,9 +266,9 @@ export class ConversionTracker extends EventEmitter {
   ): Promise<void> {
     // Check if this conversion already exists (prevent duplicates)
     const existingConversions = this.conversions.get(userId) || [];
-    const isDuplicate = existingConversions.some(conv =>
-      conv.goalId === goal.id &&
-      Math.abs(conv.completedAt - completionEvent.timestamp) < 5000 // Within 5 seconds
+    const isDuplicate = existingConversions.some(
+      conv =>
+        conv.goalId === goal.id && Math.abs(conv.completedAt - completionEvent.timestamp) < 5000 // Within 5 seconds
     );
 
     if (isDuplicate) {
@@ -276,7 +285,8 @@ export class ConversionTracker extends EventEmitter {
     const funnel = await this.calculateFunnelPosition(userId, goal, touchpoints);
 
     // Calculate time to convert
-    const firstTouchTime = touchpoints.length > 0 ? touchpoints[0].timestamp : completionEvent.timestamp;
+    const firstTouchTime =
+      touchpoints.length > 0 ? touchpoints[0].timestamp : completionEvent.timestamp;
     const timeToConvert = completionEvent.timestamp - firstTouchTime;
 
     const conversion: Conversion = {
@@ -290,7 +300,7 @@ export class ConversionTracker extends EventEmitter {
       timeToConvert,
       touchpoints,
       attribution,
-      funnel
+      funnel,
     };
 
     if (!this.conversions.has(userId)) {
@@ -325,24 +335,28 @@ export class ConversionTracker extends EventEmitter {
     const averageValue = totalConversions > 0 ? totalValue / totalConversions : 0;
 
     const timeToConvertValues = conversions.map(conv => conv.timeToConvert);
-    const averageTimeToConvert = timeToConvertValues.length > 0
-      ? timeToConvertValues.reduce((sum, time) => sum + time, 0) / timeToConvertValues.length
-      : 0;
+    const averageTimeToConvert =
+      timeToConvertValues.length > 0
+        ? timeToConvertValues.reduce((sum, time) => sum + time, 0) / timeToConvertValues.length
+        : 0;
 
     // Calculate unique users for conversion rate
     const uniqueUsers = new Set([
       ...conversions.map(conv => conv.userId),
-      ...events.map(event => event.userId)
+      ...events.map(event => event.userId),
     ]).size;
 
-    const conversionRate = uniqueUsers > 0 ? (new Set(conversions.map(conv => conv.userId)).size / uniqueUsers) * 100 : 0;
+    const conversionRate =
+      uniqueUsers > 0
+        ? (new Set(conversions.map(conv => conv.userId)).size / uniqueUsers) * 100
+        : 0;
 
     const overall = {
       conversionRate,
       totalConversions,
       totalValue,
       averageValue,
-      averageTimeToConvert
+      averageTimeToConvert,
     };
 
     // Metrics by goal
@@ -362,7 +376,7 @@ export class ConversionTracker extends EventEmitter {
       byGoal,
       bySource,
       byTimeframe,
-      funnelAnalysis
+      funnelAnalysis,
     };
 
     this.setCachedMetrics(cacheKey, metrics);
@@ -376,7 +390,7 @@ export class ConversionTracker extends EventEmitter {
     const funnelRecord: ConversionFunnel = {
       ...funnel,
       id: this.generateId(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     this.funnels.set(funnelRecord.id, funnelRecord);
@@ -424,7 +438,8 @@ export class ConversionTracker extends EventEmitter {
       funnel.stages.map(async (stage, index) => {
         const stageUsers = this.getUsersInStage(stage, events);
         const stageCompletions = this.getStageCompletions(stage, events);
-        const conversionRate = stageUsers.size > 0 ? (stageCompletions.size / stageUsers.size) * 100 : 0;
+        const conversionRate =
+          stageUsers.size > 0 ? (stageCompletions.size / stageUsers.size) * 100 : 0;
         const dropoffRate = 100 - conversionRate;
         const averageTimeInStage = this.calculateAverageTimeInStage(stage, events);
 
@@ -434,7 +449,7 @@ export class ConversionTracker extends EventEmitter {
           completions: stageCompletions.size,
           conversionRate,
           dropoffRate,
-          averageTimeInStage
+          averageTimeInStage,
         };
       })
     );
@@ -445,7 +460,7 @@ export class ConversionTracker extends EventEmitter {
     return {
       funnel,
       performance,
-      insights
+      insights,
     };
   }
 
@@ -453,15 +468,23 @@ export class ConversionTracker extends EventEmitter {
    * Get conversion attribution analysis
    */
   async getAttributionAnalysis(
-    modelType: 'first_touch' | 'last_touch' | 'linear' | 'time_decay' | 'position_based' = 'last_touch',
+    modelType:
+      | 'first_touch'
+      | 'last_touch'
+      | 'linear'
+      | 'time_decay'
+      | 'position_based' = 'last_touch',
     timeRange?: [number, number]
   ): Promise<{
     model: AttributionModel;
-    attribution: Record<string, {
-      conversions: number;
-      value: number;
-      percentage: number;
-    }>;
+    attribution: Record<
+      string,
+      {
+        conversions: number;
+        value: number;
+        percentage: number;
+      }
+    >;
     comparison: Record<string, Record<string, number>>; // Compare different models
   }> {
     const { conversions } = this.getFilteredData({ timeRange });
@@ -487,13 +510,17 @@ export class ConversionTracker extends EventEmitter {
     });
 
     // Calculate percentages
-    const totalConversions = Object.values(attributionData).reduce((sum, data) => sum + data.conversions, 0);
-    const attribution: Record<string, { conversions: number; value: number; percentage: number }> = {};
+    const totalConversions = Object.values(attributionData).reduce(
+      (sum, data) => sum + data.conversions,
+      0
+    );
+    const attribution: Record<string, { conversions: number; value: number; percentage: number }> =
+      {};
 
     Object.entries(attributionData).forEach(([source, data]) => {
       attribution[source] = {
         ...data,
-        percentage: totalConversions > 0 ? (data.conversions / totalConversions) * 100 : 0
+        percentage: totalConversions > 0 ? (data.conversions / totalConversions) * 100 : 0,
       };
     });
 
@@ -503,7 +530,7 @@ export class ConversionTracker extends EventEmitter {
     return {
       model,
       attribution,
-      comparison
+      comparison,
     };
   }
 
@@ -547,7 +574,7 @@ export class ConversionTracker extends EventEmitter {
     const todayStart = new Date(now).setHours(0, 0, 0, 0);
 
     const todayConversions = this.getFilteredData({
-      timeRange: [todayStart, now]
+      timeRange: [todayStart, now],
     }).conversions;
 
     // Real-time metrics
@@ -555,7 +582,7 @@ export class ConversionTracker extends EventEmitter {
       conversionsToday: todayConversions.length,
       conversionRateToday: await this.calculateTodayConversionRate(),
       valueToday: todayConversions.reduce((sum, conv) => sum + conv.value, 0),
-      activeGoals: Array.from(this.goals.values()).filter(goal => goal.metadata.isActive).length
+      activeGoals: Array.from(this.goals.values()).filter(goal => goal.metadata.isActive).length,
     };
 
     // Top converting goals
@@ -575,7 +602,7 @@ export class ConversionTracker extends EventEmitter {
       topConvertingGoals,
       conversionTrends,
       funnelHealth,
-      alerts
+      alerts,
     };
   }
 
@@ -597,7 +624,9 @@ export class ConversionTracker extends EventEmitter {
     if (filters) {
       if (filters.timeRange) {
         const [start, end] = filters.timeRange;
-        conversions = conversions.filter(conv => conv.completedAt >= start && conv.completedAt <= end);
+        conversions = conversions.filter(
+          conv => conv.completedAt >= start && conv.completedAt <= end
+        );
         events = events.filter(event => event.timestamp >= start && event.timestamp <= end);
       }
 
@@ -651,7 +680,10 @@ export class ConversionTracker extends EventEmitter {
     for (const event of userEvents) {
       if (event.timestamp < startTime) continue;
 
-      if (triggerIndex < triggers.length && this.eventMatchesTrigger(event, triggers[triggerIndex])) {
+      if (
+        triggerIndex < triggers.length &&
+        this.eventMatchesTrigger(event, triggers[triggerIndex])
+      ) {
         triggerIndex++;
         if (triggerIndex === triggers.length) {
           return true;
@@ -680,7 +712,7 @@ export class ConversionTracker extends EventEmitter {
     goal: ConversionGoal,
     completionEvent: ConversionEvent
   ): ConversionEvent[] {
-    const lookbackTime = goal.conditions.timeframe || (30 * 24 * 60 * 60 * 1000); // 30 days default
+    const lookbackTime = goal.conditions.timeframe || 30 * 24 * 60 * 60 * 1000; // 30 days default
     const startTime = completionEvent.timestamp - lookbackTime;
 
     return userEvents
@@ -704,7 +736,7 @@ export class ConversionTracker extends EventEmitter {
         lastTouch: touchpoints[0],
         assistingTouches: [],
         model: modelType,
-        weights: {}
+        weights: {},
       };
     }
 
@@ -727,7 +759,7 @@ export class ConversionTracker extends EventEmitter {
       case 'linear':
         touchpoints.forEach(touchpoint => {
           const source = this.getTouchpointSource(touchpoint);
-          weights[source] = (weights[source] || 0) + (1 / touchpoints.length);
+          weights[source] = (weights[source] || 0) + 1 / touchpoints.length;
         });
         break;
 
@@ -752,7 +784,8 @@ export class ConversionTracker extends EventEmitter {
           weights[this.getTouchpointSource(firstTouch)] = 1;
         } else {
           weights[this.getTouchpointSource(firstTouch)] = 0.4;
-          weights[this.getTouchpointSource(lastTouch)] = (weights[this.getTouchpointSource(lastTouch)] || 0) + 0.4;
+          weights[this.getTouchpointSource(lastTouch)] =
+            (weights[this.getTouchpointSource(lastTouch)] || 0) + 0.4;
 
           if (assistingTouches.length > 0) {
             const middleWeight = 0.2 / assistingTouches.length;
@@ -773,12 +806,14 @@ export class ConversionTracker extends EventEmitter {
       lastTouch,
       assistingTouches,
       model: modelType,
-      weights
+      weights,
     };
   }
 
   private getTouchpointSource(touchpoint: ConversionEvent): string {
-    return touchpoint.source.campaign || touchpoint.source.referrer || touchpoint.source.page || 'direct';
+    return (
+      touchpoint.source.campaign || touchpoint.source.referrer || touchpoint.source.page || 'direct'
+    );
   }
 
   private async calculateFunnelPosition(
@@ -818,15 +853,21 @@ export class ConversionTracker extends EventEmitter {
     return {
       stage: funnel.stages[Math.min(completedStages, funnel.stages.length - 1)].name,
       completionRate,
-      dropoffPoint
+      dropoffPoint,
     };
   }
 
   private calculateGoalMetrics(
     conversions: Conversion[],
     events: ConversionEvent[]
-  ): Record<string, { conversions: number; conversionRate: number; value: number; averageTimeToConvert: number }> {
-    const goalMetrics: Record<string, { conversions: number; conversionRate: number; value: number; averageTimeToConvert: number }> = {};
+  ): Record<
+    string,
+    { conversions: number; conversionRate: number; value: number; averageTimeToConvert: number }
+  > {
+    const goalMetrics: Record<
+      string,
+      { conversions: number; conversionRate: number; value: number; averageTimeToConvert: number }
+    > = {};
 
     // Group conversions by goal
     const conversionsByGoal = this.groupBy(conversions, 'goalId');
@@ -854,17 +895,24 @@ export class ConversionTracker extends EventEmitter {
         conversions: goalConversions.length,
         conversionRate: totalEligibleUsers > 0 ? (uniqueConverters / totalEligibleUsers) * 100 : 0,
         value: goalConversions.reduce((sum, conv) => sum + conv.value, 0),
-        averageTimeToConvert: goalConversions.length > 0
-          ? goalConversions.reduce((sum, conv) => sum + conv.timeToConvert, 0) / goalConversions.length
-          : 0
+        averageTimeToConvert:
+          goalConversions.length > 0
+            ? goalConversions.reduce((sum, conv) => sum + conv.timeToConvert, 0) /
+              goalConversions.length
+            : 0,
       };
     });
 
     return goalMetrics;
   }
 
-  private calculateSourceMetrics(conversions: Conversion[]): Record<string, { conversions: number; conversionRate: number; value: number }> {
-    const sourceMetrics: Record<string, { conversions: number; conversionRate: number; value: number }> = {};
+  private calculateSourceMetrics(
+    conversions: Conversion[]
+  ): Record<string, { conversions: number; conversionRate: number; value: number }> {
+    const sourceMetrics: Record<
+      string,
+      { conversions: number; conversionRate: number; value: number }
+    > = {};
 
     conversions.forEach(conversion => {
       const source = this.getTouchpointSource(conversion.attribution.lastTouch);
@@ -885,8 +933,15 @@ export class ConversionTracker extends EventEmitter {
     return sourceMetrics;
   }
 
-  private calculateTimeframeMetrics(conversions: Conversion[]): Array<{ period: string; conversions: number; conversionRate: number; value: number }> {
-    const timeframeMetrics: Array<{ period: string; conversions: number; conversionRate: number; value: number }> = [];
+  private calculateTimeframeMetrics(
+    conversions: Conversion[]
+  ): Array<{ period: string; conversions: number; conversionRate: number; value: number }> {
+    const timeframeMetrics: Array<{
+      period: string;
+      conversions: number;
+      conversionRate: number;
+      value: number;
+    }> = [];
 
     // Group by day for the last 30 days
     const now = new Date();
@@ -896,15 +951,15 @@ export class ConversionTracker extends EventEmitter {
       const periodStart = date.setHours(0, 0, 0, 0);
       const periodEnd = date.setHours(23, 59, 59, 999);
 
-      const periodConversions = conversions.filter(conv =>
-        conv.completedAt >= periodStart && conv.completedAt <= periodEnd
+      const periodConversions = conversions.filter(
+        conv => conv.completedAt >= periodStart && conv.completedAt <= periodEnd
       );
 
       timeframeMetrics.push({
         period: date.toISOString().split('T')[0],
         conversions: periodConversions.length,
         conversionRate: periodConversions.length, // Simplified
-        value: periodConversions.reduce((sum, conv) => sum + conv.value, 0)
+        value: periodConversions.reduce((sum, conv) => sum + conv.value, 0),
       });
     }
 
@@ -914,8 +969,22 @@ export class ConversionTracker extends EventEmitter {
   private async calculateFunnelAnalysis(
     conversions: Conversion[],
     events: ConversionEvent[]
-  ): Promise<Array<{ stage: string; users: number; conversions: number; conversionRate: number; dropoffRate: number }>> {
-    const funnelAnalysis: Array<{ stage: string; users: number; conversions: number; conversionRate: number; dropoffRate: number }> = [];
+  ): Promise<
+    Array<{
+      stage: string;
+      users: number;
+      conversions: number;
+      conversionRate: number;
+      dropoffRate: number;
+    }>
+  > {
+    const funnelAnalysis: Array<{
+      stage: string;
+      users: number;
+      conversions: number;
+      conversionRate: number;
+      dropoffRate: number;
+    }> = [];
 
     // For each active funnel
     for (const funnel of this.funnels.values()) {
@@ -929,7 +998,8 @@ export class ConversionTracker extends EventEmitter {
         const stageConversions = conversions.filter(conv => conv.goalId === funnel.goalId);
 
         const eligibleUsers = isFirstStage ? stageUsers : previousStageUsers;
-        const conversionRate = eligibleUsers.size > 0 ? (stageUsers.size / eligibleUsers.size) * 100 : 0;
+        const conversionRate =
+          eligibleUsers.size > 0 ? (stageUsers.size / eligibleUsers.size) * 100 : 0;
         const dropoffRate = 100 - conversionRate;
 
         funnelAnalysis.push({
@@ -937,7 +1007,7 @@ export class ConversionTracker extends EventEmitter {
           users: stageUsers.size,
           conversions: stageConversions.length,
           conversionRate,
-          dropoffRate
+          dropoffRate,
         });
 
         previousStageUsers = stageUsers;
@@ -973,14 +1043,16 @@ export class ConversionTracker extends EventEmitter {
     return 60000; // 1 minute placeholder
   }
 
-  private generateFunnelInsights(performance: Array<{
-    stage: FunnelStage;
-    users: number;
-    completions: number;
-    conversionRate: number;
-    dropoffRate: number;
-    averageTimeInStage: number;
-  }>): {
+  private generateFunnelInsights(
+    performance: Array<{
+      stage: FunnelStage;
+      users: number;
+      completions: number;
+      conversionRate: number;
+      dropoffRate: number;
+      averageTimeInStage: number;
+    }>
+  ): {
     bottleneckStage: string;
     improvementOpportunities: Array<{
       stage: string;
@@ -1002,7 +1074,7 @@ export class ConversionTracker extends EventEmitter {
         stage: p.stage.name,
         currentRate: p.conversionRate,
         potentialRate: Math.min(p.conversionRate * 1.5, 95), // 50% improvement cap
-        impact: p.users * 0.5 * (p.dropoffRate / 100)
+        impact: p.users * 0.5 * (p.dropoffRate / 100),
       }))
       .sort((a, b) => b.impact - a.impact);
 
@@ -1011,17 +1083,19 @@ export class ConversionTracker extends EventEmitter {
       `Focus on optimizing ${bottleneckStage} stage to reduce dropoff`,
       'A/B test different approaches for high-dropoff stages',
       'Implement exit-intent surveys to understand user friction points',
-      'Add progress indicators to improve user confidence'
+      'Add progress indicators to improve user confidence',
     ];
 
     return {
       bottleneckStage,
       improvementOpportunities,
-      recommendations
+      recommendations,
     };
   }
 
-  private async compareAttributionModels(conversions: Conversion[]): Promise<Record<string, Record<string, number>>> {
+  private async compareAttributionModels(
+    conversions: Conversion[]
+  ): Promise<Record<string, Record<string, number>>> {
     const models = ['first_touch', 'last_touch', 'linear', 'time_decay', 'position_based'];
     const comparison: Record<string, Record<string, number>> = {};
 
@@ -1032,7 +1106,7 @@ export class ConversionTracker extends EventEmitter {
         const attribution = this.calculateAttribution(conversion.touchpoints, model);
 
         Object.entries(attribution.weights).forEach(([source, weight]) => {
-          comparison[model][source] = (comparison[model][source] || 0) + (conversion.value * weight);
+          comparison[model][source] = (comparison[model][source] || 0) + conversion.value * weight;
         });
       });
     });
@@ -1045,12 +1119,12 @@ export class ConversionTracker extends EventEmitter {
     const todayStart = new Date(now).setHours(0, 0, 0, 0);
 
     const { conversions, events } = this.getFilteredData({
-      timeRange: [todayStart, now]
+      timeRange: [todayStart, now],
     });
 
     const uniqueUsers = new Set([
       ...conversions.map(conv => conv.userId),
-      ...events.map(event => event.userId)
+      ...events.map(event => event.userId),
     ]).size;
 
     const convertedUsers = new Set(conversions.map(conv => conv.userId)).size;
@@ -1058,13 +1132,15 @@ export class ConversionTracker extends EventEmitter {
     return uniqueUsers > 0 ? (convertedUsers / uniqueUsers) * 100 : 0;
   }
 
-  private async getTopConvertingGoals(limit: number): Promise<Array<{
-    goalId: string;
-    goalName: string;
-    conversions: number;
-    conversionRate: number;
-    value: number;
-  }>> {
+  private async getTopConvertingGoals(limit: number): Promise<
+    Array<{
+      goalId: string;
+      goalName: string;
+      conversions: number;
+      conversionRate: number;
+      value: number;
+    }>
+  > {
     const { conversions } = this.getFilteredData();
     const goalStats: Record<string, { conversions: number; value: number }> = {};
 
@@ -1084,42 +1160,46 @@ export class ConversionTracker extends EventEmitter {
           goalName: goal?.name || 'Unknown Goal',
           conversions: stats.conversions,
           conversionRate: stats.conversions, // Simplified
-          value: stats.value
+          value: stats.value,
         };
       })
       .sort((a, b) => b.conversions - a.conversions)
       .slice(0, limit);
   }
 
-  private generateConversionTrends(hours: number): Array<{ time: string; conversions: number; conversionRate: number }> {
+  private generateConversionTrends(
+    hours: number
+  ): Array<{ time: string; conversions: number; conversionRate: number }> {
     const trends: Array<{ time: string; conversions: number; conversionRate: number }> = [];
     const now = Date.now();
 
     for (let i = hours - 1; i >= 0; i--) {
-      const hourStart = now - (i * 60 * 60 * 1000);
-      const hourEnd = hourStart + (60 * 60 * 1000);
+      const hourStart = now - i * 60 * 60 * 1000;
+      const hourEnd = hourStart + 60 * 60 * 1000;
 
       const { conversions } = this.getFilteredData({
-        timeRange: [hourStart, hourEnd]
+        timeRange: [hourStart, hourEnd],
       });
 
       trends.push({
         time: new Date(hourStart).toISOString().slice(0, 16),
         conversions: conversions.length,
-        conversionRate: conversions.length // Simplified
+        conversionRate: conversions.length, // Simplified
       });
     }
 
     return trends;
   }
 
-  private async assessFunnelHealth(): Promise<Array<{
-    funnelId: string;
-    funnelName: string;
-    overallConversionRate: number;
-    bottleneckStage: string;
-    status: 'healthy' | 'warning' | 'critical';
-  }>> {
+  private async assessFunnelHealth(): Promise<
+    Array<{
+      funnelId: string;
+      funnelName: string;
+      overallConversionRate: number;
+      bottleneckStage: string;
+      status: 'healthy' | 'warning' | 'critical';
+    }>
+  > {
     const health: Array<{
       funnelId: string;
       funnelName: string;
@@ -1132,9 +1212,10 @@ export class ConversionTracker extends EventEmitter {
       if (!funnel.isActive) continue;
 
       const analysis = await this.analyzeFunnelPerformance(funnel.id);
-      const overallConversionRate = analysis.performance.length > 0
-        ? analysis.performance[analysis.performance.length - 1].conversionRate
-        : 0;
+      const overallConversionRate =
+        analysis.performance.length > 0
+          ? analysis.performance[analysis.performance.length - 1].conversionRate
+          : 0;
 
       let status: 'healthy' | 'warning' | 'critical' = 'healthy';
       if (overallConversionRate < 5) status = 'critical';
@@ -1145,19 +1226,21 @@ export class ConversionTracker extends EventEmitter {
         funnelName: funnel.name,
         overallConversionRate,
         bottleneckStage: analysis.insights.bottleneckStage,
-        status
+        status,
       });
     }
 
     return health;
   }
 
-  private async generateConversionAlerts(): Promise<Array<{
-    type: 'goal_underperforming' | 'funnel_bottleneck' | 'conversion_spike' | 'technical_issue';
-    severity: 'low' | 'medium' | 'high';
-    message: string;
-    timestamp: number;
-  }>> {
+  private async generateConversionAlerts(): Promise<
+    Array<{
+      type: 'goal_underperforming' | 'funnel_bottleneck' | 'conversion_spike' | 'technical_issue';
+      severity: 'low' | 'medium' | 'high';
+      message: string;
+      timestamp: number;
+    }>
+  > {
     const alerts: Array<{
       type: 'goal_underperforming' | 'funnel_bottleneck' | 'conversion_spike' | 'technical_issue';
       severity: 'low' | 'medium' | 'high';
@@ -1176,7 +1259,7 @@ export class ConversionTracker extends EventEmitter {
           type: 'goal_underperforming',
           severity: 'high',
           message: `Goal "${goal?.name}" has low conversion rate: ${goalMetrics.conversionRate.toFixed(1)}%`,
-          timestamp: now
+          timestamp: now,
         });
       }
     });
@@ -1189,7 +1272,7 @@ export class ConversionTracker extends EventEmitter {
       this.activeUserSessions.set(sessionId, {
         userId,
         startTime: Date.now(),
-        events: []
+        events: [],
       });
     }
 
@@ -1202,14 +1285,17 @@ export class ConversionTracker extends EventEmitter {
   }
 
   private groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-    return array.reduce((groups, item) => {
-      const groupKey = String(item[key]);
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push(item);
-      return groups;
-    }, {} as Record<string, T[]>);
+    return array.reduce(
+      (groups, item) => {
+        const groupKey = String(item[key]);
+        if (!groups[groupKey]) {
+          groups[groupKey] = [];
+        }
+        groups[groupKey].push(item);
+        return groups;
+      },
+      {} as Record<string, T[]>
+    );
   }
 
   private getCachedMetrics(key: string): any | null {
@@ -1223,7 +1309,7 @@ export class ConversionTracker extends EventEmitter {
   private setCachedMetrics(key: string, data: any): void {
     this.metricsCache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -1244,13 +1330,13 @@ export class ConversionTracker extends EventEmitter {
         category: 'micro' as const,
         value: 1,
         conditions: {
-          triggers: [{ event: 'result_click' }]
+          triggers: [{ event: 'result_click' }],
         },
         metadata: {
           description: 'User clicks on a search result',
           priority: 'medium' as const,
-          isActive: true
-        }
+          isActive: true,
+        },
       },
       {
         name: 'Knowledge Base Article View',
@@ -1258,13 +1344,13 @@ export class ConversionTracker extends EventEmitter {
         category: 'micro' as const,
         value: 2,
         conditions: {
-          triggers: [{ event: 'page_view', parameters: { page_type: 'article' } }]
+          triggers: [{ event: 'page_view', parameters: { page_type: 'article' } }],
         },
         metadata: {
           description: 'User views a knowledge base article',
           priority: 'high' as const,
-          isActive: true
-        }
+          isActive: true,
+        },
       },
       {
         name: 'Deep Engagement',
@@ -1272,14 +1358,14 @@ export class ConversionTracker extends EventEmitter {
         category: 'macro' as const,
         value: 10,
         conditions: {
-          triggers: [{ event: 'time_spent', operator: 'greater_than', value: 300000 }] // 5 minutes
+          triggers: [{ event: 'time_spent', operator: 'greater_than', value: 300000 }], // 5 minutes
         },
         metadata: {
           description: 'User spends significant time engaging with content',
           priority: 'high' as const,
-          isActive: true
-        }
-      }
+          isActive: true,
+        },
+      },
     ];
 
     defaultGoals.forEach(goal => this.createGoal(goal));
@@ -1289,26 +1375,26 @@ export class ConversionTracker extends EventEmitter {
     const models: AttributionModel[] = [
       {
         name: 'First Touch',
-        type: 'first_touch'
+        type: 'first_touch',
       },
       {
         name: 'Last Touch',
-        type: 'last_touch'
+        type: 'last_touch',
       },
       {
         name: 'Linear',
-        type: 'linear'
+        type: 'linear',
       },
       {
         name: 'Time Decay',
         type: 'time_decay',
-        decayRate: 0.5
+        decayRate: 0.5,
       },
       {
         name: 'Position Based',
         type: 'position_based',
-        weights: [0.4, 0.2, 0.4] // First 40%, Middle 20%, Last 40%
-      }
+        weights: [0.4, 0.2, 0.4], // First 40%, Middle 20%, Last 40%
+      },
     ];
 
     models.forEach(model => {
@@ -1318,16 +1404,19 @@ export class ConversionTracker extends EventEmitter {
 
   private startSessionMonitoring(): void {
     // Clean up old sessions every hour
-    setInterval(() => {
-      const now = Date.now();
-      const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+    setInterval(
+      () => {
+        const now = Date.now();
+        const sessionTimeout = 30 * 60 * 1000; // 30 minutes
 
-      for (const [sessionId, session] of this.activeUserSessions.entries()) {
-        if (now - session.startTime > sessionTimeout) {
-          this.activeUserSessions.delete(sessionId);
+        for (const [sessionId, session] of this.activeUserSessions.entries()) {
+          if (now - session.startTime > sessionTimeout) {
+            this.activeUserSessions.delete(sessionId);
+          }
         }
-      }
-    }, 60 * 60 * 1000);
+      },
+      60 * 60 * 1000
+    );
 
     this.emit('sessionMonitoringStarted', { timestamp: Date.now() });
   }

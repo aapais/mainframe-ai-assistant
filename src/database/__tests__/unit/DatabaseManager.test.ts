@@ -27,13 +27,13 @@ describe('DatabaseManager Unit Tests', () => {
         enabled: false,
         intervalHours: 24,
         retentionDays: 7,
-        path: path.join(__dirname, '..', 'temp', 'backups')
+        path: path.join(__dirname, '..', 'temp', 'backups'),
       },
       queryCache: {
         enabled: true,
         maxSize: 100,
-        ttlMs: 60000
-      }
+        ttlMs: 60000,
+      },
     };
   });
 
@@ -50,7 +50,7 @@ describe('DatabaseManager Unit Tests', () => {
   describe('Initialization', () => {
     it('should initialize successfully with default config', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager(testConfig);
-      
+
       expect(dbManager).toBeDefined();
       const health = await dbManager.getHealth();
       expect(health.status).toBe('healthy');
@@ -62,12 +62,12 @@ describe('DatabaseManager Unit Tests', () => {
         ...testConfig,
         maxConnections: 10,
         cacheSize: 100,
-        timeout: 10000
+        timeout: 10000,
       };
 
       dbManager = await TestDatabaseFactory.createTestDatabaseManager(customConfig);
       const health = await dbManager.getHealth();
-      
+
       expect(health.status).toBe('healthy');
       expect(health.connections.maxConnections).toBe(10);
     });
@@ -75,11 +75,10 @@ describe('DatabaseManager Unit Tests', () => {
     it('should handle initialization errors gracefully', async () => {
       const invalidConfig: DatabaseConfig = {
         ...testConfig,
-        path: '/invalid/path/database.db'
+        path: '/invalid/path/database.db',
       };
 
-      await expect(TestDatabaseFactory.createTestDatabaseManager(invalidConfig))
-        .rejects.toThrow();
+      await expect(TestDatabaseFactory.createTestDatabaseManager(invalidConfig)).rejects.toThrow();
     });
 
     it('should initialize within performance threshold', async () => {
@@ -102,16 +101,16 @@ describe('DatabaseManager Unit Tests', () => {
 
     it('should manage connection pool correctly', async () => {
       const health = await dbManager.getHealth();
-      
+
       expect(health.connections).toBeDefined();
       expect(health.connections.active).toBeGreaterThanOrEqual(0);
       expect(health.connections.maxConnections).toBe(testConfig.maxConnections);
     });
 
     it('should handle concurrent connections', async () => {
-      const promises = Array(5).fill(0).map(() => 
-        dbManager.execute('SELECT 1 as test')
-      );
+      const promises = Array(5)
+        .fill(0)
+        .map(() => dbManager.execute('SELECT 1 as test'));
 
       const results = await Promise.all(promises);
       results.forEach(result => {
@@ -127,16 +126,15 @@ describe('DatabaseManager Unit Tests', () => {
     it('should handle connection timeouts', async () => {
       // Create a long-running query to test timeout
       const longQuery = 'SELECT * FROM (SELECT 1) as t1 CROSS JOIN (SELECT 1) as t2';
-      
-      await expect(dbManager.execute(longQuery, [], { timeout: 1 }))
-        .rejects.toThrow();
+
+      await expect(dbManager.execute(longQuery, [], { timeout: 1 })).rejects.toThrow();
     });
   });
 
   describe('Query Execution', () => {
     beforeEach(async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager(testConfig);
-      
+
       // Create test table
       await dbManager.execute(`
         CREATE TABLE test_table (
@@ -154,15 +152,9 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should execute parameterized queries', async () => {
-      await dbManager.execute(
-        'INSERT INTO test_table (name, value) VALUES (?, ?)',
-        ['test', 100]
-      );
+      await dbManager.execute('INSERT INTO test_table (name, value) VALUES (?, ?)', ['test', 100]);
 
-      const result = await dbManager.execute(
-        'SELECT * FROM test_table WHERE name = ?',
-        ['test']
-      );
+      const result = await dbManager.execute('SELECT * FROM test_table WHERE name = ?', ['test']);
 
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('test');
@@ -170,8 +162,7 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should handle query errors gracefully', async () => {
-      await expect(dbManager.execute('SELECT * FROM non_existent_table'))
-        .rejects.toThrow();
+      await expect(dbManager.execute('SELECT * FROM non_existent_table')).rejects.toThrow();
     });
 
     it('should execute queries within performance thresholds', async () => {
@@ -186,21 +177,20 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should handle bulk inserts efficiently', async () => {
-      const data = Array(1000).fill(0).map((_, i) => [`test_${i}`, i]);
-      
-      const result = await performanceHelper.measureOperation(
-        'bulk-insert',
-        async () => {
-          await dbManager.transaction(async () => {
-            for (const [name, value] of data) {
-              await dbManager.execute(
-                'INSERT INTO test_table (name, value) VALUES (?, ?)',
-                [name, value]
-              );
-            }
-          });
-        }
-      );
+      const data = Array(1000)
+        .fill(0)
+        .map((_, i) => [`test_${i}`, i]);
+
+      const result = await performanceHelper.measureOperation('bulk-insert', async () => {
+        await dbManager.transaction(async () => {
+          for (const [name, value] of data) {
+            await dbManager.execute('INSERT INTO test_table (name, value) VALUES (?, ?)', [
+              name,
+              value,
+            ]);
+          }
+        });
+      });
 
       expect(result.success).toBe(true);
       expect(result.metrics.executionTime).toHaveExecutedWithin(5000);
@@ -214,7 +204,7 @@ describe('DatabaseManager Unit Tests', () => {
   describe('Transaction Management', () => {
     beforeEach(async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager(testConfig);
-      
+
       await dbManager.execute(`
         CREATE TABLE transaction_test (
           id INTEGER PRIMARY KEY,
@@ -224,14 +214,14 @@ describe('DatabaseManager Unit Tests', () => {
       `);
 
       // Insert initial data
-      await dbManager.execute(
-        'INSERT INTO transaction_test (name, balance) VALUES (?, ?)',
-        ['account1', 1000]
-      );
-      await dbManager.execute(
-        'INSERT INTO transaction_test (name, balance) VALUES (?, ?)',
-        ['account2', 500]
-      );
+      await dbManager.execute('INSERT INTO transaction_test (name, balance) VALUES (?, ?)', [
+        'account1',
+        1000,
+      ]);
+      await dbManager.execute('INSERT INTO transaction_test (name, balance) VALUES (?, ?)', [
+        'account2',
+        500,
+      ]);
     });
 
     it('should commit successful transactions', async () => {
@@ -252,16 +242,20 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should rollback failed transactions', async () => {
-      await expect(dbManager.transaction(async () => {
-        await dbManager.execute(
-          'UPDATE transaction_test SET balance = balance - 100 WHERE name = ?',
-          ['account1']
-        );
-        // This should cause the transaction to fail
-        throw new Error('Simulated error');
-      })).rejects.toThrow('Simulated error');
+      await expect(
+        dbManager.transaction(async () => {
+          await dbManager.execute(
+            'UPDATE transaction_test SET balance = balance - 100 WHERE name = ?',
+            ['account1']
+          );
+          // This should cause the transaction to fail
+          throw new Error('Simulated error');
+        })
+      ).rejects.toThrow('Simulated error');
 
-      const results = await dbManager.execute('SELECT * FROM transaction_test WHERE name = ?', ['account1']);
+      const results = await dbManager.execute('SELECT * FROM transaction_test WHERE name = ?', [
+        'account1',
+      ]);
       expect(results[0].balance).toBe(1000); // Should remain unchanged
     });
 
@@ -287,15 +281,17 @@ describe('DatabaseManager Unit Tests', () => {
 
     it('should respect transaction isolation levels', async () => {
       const options: TransactionOptions = { isolation: 'immediate' };
-      
+
       await dbManager.transaction(async () => {
-        await dbManager.execute(
-          'UPDATE transaction_test SET balance = 0 WHERE name = ?',
-          ['account1']
-        );
+        await dbManager.execute('UPDATE transaction_test SET balance = 0 WHERE name = ?', [
+          'account1',
+        ]);
       }, options);
 
-      const result = await dbManager.execute('SELECT balance FROM transaction_test WHERE name = ?', ['account1']);
+      const result = await dbManager.execute(
+        'SELECT balance FROM transaction_test WHERE name = ?',
+        ['account1']
+      );
       expect(result[0].balance).toBe(0);
     });
 
@@ -327,17 +323,15 @@ describe('DatabaseManager Unit Tests', () => {
 
     it('should cache query results', async () => {
       const query = 'SELECT 1 as cached_value';
-      
+
       // First execution should cache the result
-      const result1 = await performanceHelper.measureOperation(
-        'first-query-execution',
-        () => dbManager.execute(query)
+      const result1 = await performanceHelper.measureOperation('first-query-execution', () =>
+        dbManager.execute(query)
       );
 
       // Second execution should be faster due to cache
-      const result2 = await performanceHelper.measureOperation(
-        'cached-query-execution',
-        () => dbManager.execute(query)
+      const result2 = await performanceHelper.measureOperation('cached-query-execution', () =>
+        dbManager.execute(query)
       );
 
       expect(result1.success).toBe(true);
@@ -355,14 +349,14 @@ describe('DatabaseManager Unit Tests', () => {
       `);
 
       await dbManager.execute('INSERT INTO cache_test (value) VALUES (?)', ['initial']);
-      
+
       // Query should be cached
       const result1 = await dbManager.execute('SELECT * FROM cache_test');
       expect(result1[0].value).toBe('initial');
 
       // Update should invalidate relevant cache entries
       await dbManager.execute('UPDATE cache_test SET value = ? WHERE id = 1', ['updated']);
-      
+
       const result2 = await dbManager.execute('SELECT * FROM cache_test');
       expect(result2[0].value).toBe('updated');
     });
@@ -370,7 +364,7 @@ describe('DatabaseManager Unit Tests', () => {
     it('should respect cache size limits', async () => {
       // Fill cache with more queries than the limit
       const cacheSize = testConfig.queryCache!.maxSize!;
-      
+
       for (let i = 0; i < cacheSize + 10; i++) {
         await dbManager.execute(`SELECT ${i} as value`);
       }
@@ -392,9 +386,8 @@ describe('DatabaseManager Unit Tests', () => {
       await TestDatabaseFactory.wait(150);
 
       // This query should not be served from cache
-      const result = await performanceHelper.measureOperation(
-        'post-ttl-query',
-        () => dbManager.execute(query)
+      const result = await performanceHelper.measureOperation('post-ttl-query', () =>
+        dbManager.execute(query)
       );
 
       expect(result.success).toBe(true);
@@ -409,7 +402,7 @@ describe('DatabaseManager Unit Tests', () => {
 
     it('should report database health status', async () => {
       const health = await dbManager.getHealth();
-      
+
       expect(health).toHaveProperty('status');
       expect(health).toHaveProperty('connections');
       expect(health).toHaveProperty('cache');
@@ -450,10 +443,10 @@ describe('DatabaseManager Unit Tests', () => {
 
     it('should create backup successfully', async () => {
       const backupPath = await dbManager.createBackup();
-      
+
       expect(backupPath).toBeDefined();
       expect(fs.existsSync(backupPath)).toBe(true);
-      
+
       // Cleanup
       if (fs.existsSync(backupPath)) {
         fs.unlinkSync(backupPath);
@@ -472,7 +465,7 @@ describe('DatabaseManager Unit Tests', () => {
 
       // Create backup
       const backupPath = await dbManager.createBackup();
-      
+
       // Modify data
       await dbManager.execute('UPDATE backup_test SET data = ?', ['modified_data']);
 
@@ -490,8 +483,7 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should handle backup errors gracefully', async () => {
-      await expect(dbManager.restoreBackup('/non/existent/backup.db'))
-        .rejects.toThrow();
+      await expect(dbManager.restoreBackup('/non/existent/backup.db')).rejects.toThrow();
     });
   });
 
@@ -501,13 +493,11 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should handle SQL syntax errors', async () => {
-      await expect(dbManager.execute('INVALID SQL STATEMENT'))
-        .rejects.toThrow();
+      await expect(dbManager.execute('INVALID SQL STATEMENT')).rejects.toThrow();
     });
 
     it('should handle parameter binding errors', async () => {
-      await expect(dbManager.execute('SELECT ? as value', []))
-        .rejects.toThrow();
+      await expect(dbManager.execute('SELECT ? as value', [])).rejects.toThrow();
     });
 
     it('should handle constraint violations', async () => {
@@ -519,9 +509,10 @@ describe('DatabaseManager Unit Tests', () => {
       `);
 
       await dbManager.execute('INSERT INTO constraint_test (unique_value) VALUES (?)', ['test']);
-      
-      await expect(dbManager.execute('INSERT INTO constraint_test (unique_value) VALUES (?)', ['test']))
-        .rejects.toThrow();
+
+      await expect(
+        dbManager.execute('INSERT INTO constraint_test (unique_value) VALUES (?)', ['test'])
+      ).rejects.toThrow();
     });
 
     it('should maintain consistency after errors', async () => {
@@ -536,8 +527,9 @@ describe('DatabaseManager Unit Tests', () => {
       await dbManager.execute('INSERT INTO error_test (value) VALUES (?)', [1]);
 
       // This should fail
-      await expect(dbManager.execute('INSERT INTO error_test (value) VALUES (?)', [null]))
-        .rejects.toThrow();
+      await expect(
+        dbManager.execute('INSERT INTO error_test (value) VALUES (?)', [null])
+      ).rejects.toThrow();
 
       // Database should still be usable
       const result = await dbManager.execute('SELECT COUNT(*) as count FROM error_test');
@@ -548,7 +540,7 @@ describe('DatabaseManager Unit Tests', () => {
   describe('Performance Benchmarks', () => {
     beforeEach(async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager(testConfig);
-      
+
       // Create test table for benchmarks
       await dbManager.execute(`
         CREATE TABLE benchmark_test (
@@ -562,15 +554,12 @@ describe('DatabaseManager Unit Tests', () => {
     });
 
     it('should handle high query volume', async () => {
-      const result = await performanceHelper.measureOperation(
-        'high-volume-queries',
-        async () => {
-          const promises = Array(1000).fill(0).map((_, i) => 
-            dbManager.execute('SELECT ? as id, ? as name', [i, `test_${i}`])
-          );
-          await Promise.all(promises);
-        }
-      );
+      const result = await performanceHelper.measureOperation('high-volume-queries', async () => {
+        const promises = Array(1000)
+          .fill(0)
+          .map((_, i) => dbManager.execute('SELECT ? as id, ? as name', [i, `test_${i}`]));
+        await Promise.all(promises);
+      });
 
       expect(result.success).toBe(true);
       expect(result.metrics.executionTime).toHaveExecutedWithin(10000);
@@ -610,32 +599,43 @@ describe('DatabaseManager Unit Tests', () => {
 
     it('should maintain consistent performance under load', async () => {
       const operations = [
-        () => dbManager.execute('INSERT INTO benchmark_test (name, value) VALUES (?, ?)', 
-          [TestDatabaseFactory.randomString(), Math.floor(Math.random() * 1000)]),
-        () => dbManager.execute('SELECT * FROM benchmark_test WHERE value > ? LIMIT 10', 
-          [Math.floor(Math.random() * 500)]),
-        () => dbManager.execute('UPDATE benchmark_test SET value = ? WHERE id = ?', 
-          [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100) + 1]),
-        () => dbManager.execute('DELETE FROM benchmark_test WHERE value < ?', 
-          [Math.floor(Math.random() * 100)])
+        () =>
+          dbManager.execute('INSERT INTO benchmark_test (name, value) VALUES (?, ?)', [
+            TestDatabaseFactory.randomString(),
+            Math.floor(Math.random() * 1000),
+          ]),
+        () =>
+          dbManager.execute('SELECT * FROM benchmark_test WHERE value > ? LIMIT 10', [
+            Math.floor(Math.random() * 500),
+          ]),
+        () =>
+          dbManager.execute('UPDATE benchmark_test SET value = ? WHERE id = ?', [
+            Math.floor(Math.random() * 1000),
+            Math.floor(Math.random() * 100) + 1,
+          ]),
+        () =>
+          dbManager.execute('DELETE FROM benchmark_test WHERE value < ?', [
+            Math.floor(Math.random() * 100),
+          ]),
       ];
 
       const loadTestConfig = {
         concurrentUsers: 5,
         duration: 10, // 10 seconds
         rampUpTime: 2, // 2 seconds
-        operations
+        operations,
       };
 
       const results = await performanceHelper.runLoadTest(loadTestConfig);
-      
+
       const successfulResults = results.filter(r => r.success);
       expect(successfulResults.length).toBeGreaterThan(0);
-      
+
       // Calculate average performance
-      const avgTime = successfulResults.reduce((sum, r) => sum + r.metrics.executionTime, 0) 
-        / successfulResults.length;
-      
+      const avgTime =
+        successfulResults.reduce((sum, r) => sum + r.metrics.executionTime, 0) /
+        successfulResults.length;
+
       expect(avgTime).toHaveExecutedWithin(100); // Average operation should complete within 100ms
     });
   });

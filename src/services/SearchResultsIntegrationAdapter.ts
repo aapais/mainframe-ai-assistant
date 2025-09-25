@@ -21,7 +21,7 @@ import type {
   SearchOptions,
   KBEntry,
   SearchMetadata,
-  ExportFormat
+  ExportFormat,
 } from '../types/services';
 
 // Enhanced interfaces for integration
@@ -103,7 +103,10 @@ export interface WebSocketMessage {
 /**
  * Main integration adapter implementation
  */
-export class SearchResultsIntegrationAdapter extends EventEmitter implements SearchResultsIntegration {
+export class SearchResultsIntegrationAdapter
+  extends EventEmitter
+  implements SearchResultsIntegration
+{
   private searchService: SearchService;
   private cache: Map<string, CacheEntry> = new Map();
   private websocket: WebSocket | null = null;
@@ -111,10 +114,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
   private state: SearchIntegrationState;
   private realtimeEnabled = false;
 
-  constructor(
-    searchService: SearchService,
-    websocketUrl?: string
-  ) {
+  constructor(searchService: SearchService, websocketUrl?: string) {
     super();
     this.searchService = searchService;
 
@@ -130,7 +130,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       sortBy: 'relevance',
       sortOrder: 'desc',
       selectedResults: [],
-      lastSearchTime: 0
+      lastSearchTime: 0,
     };
 
     this.metrics = {
@@ -139,7 +139,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       successRate: 0,
       cacheHitRate: 0,
       popularQueries: [],
-      errorRate: 0
+      errorRate: 0,
     };
 
     if (websocketUrl) {
@@ -161,7 +161,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         query,
         loading: true,
         error: null,
-        lastSearchTime: Date.now()
+        lastSearchTime: Date.now(),
       });
 
       // Check cache first
@@ -170,7 +170,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         this.updateSearchState({
           results: cached,
           loading: false,
-          totalResults: cached.length
+          totalResults: cached.length,
         });
 
         this.updateMetrics('cache_hit', performance.now() - startTime);
@@ -191,7 +191,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         results,
         loading: false,
         totalResults: results.length,
-        hasMore: results.length >= (options.limit || 50)
+        hasMore: results.length >= (options.limit || 50),
       });
 
       // Track analytics
@@ -201,9 +201,9 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         metadata: {
           resultCount: results.length,
           responseTime: performance.now() - startTime,
-          cacheUsed: false
+          cacheUsed: false,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Emit real-time update if enabled
@@ -213,13 +213,12 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
 
       this.updateMetrics('search_success', performance.now() - startTime);
       return results;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Search failed';
 
       this.updateSearchState({
         loading: false,
-        error: errorMessage
+        error: errorMessage,
       });
 
       this.trackSearchEvent({
@@ -227,9 +226,9 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         query,
         metadata: {
           error: errorMessage,
-          responseTime: performance.now() - startTime
+          responseTime: performance.now() - startTime,
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       this.updateMetrics('search_error', performance.now() - startTime);
@@ -294,8 +293,8 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       metadata: {
         query,
         resultCount: results.length,
-        options
-      }
+        options,
+      },
     };
 
     // Prevent cache from growing too large
@@ -360,15 +359,15 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       type: 'export',
       metadata: {
         format,
-        resultCount: results.length
+        resultCount: results.length,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     switch (format) {
       case 'json':
         return new Blob([JSON.stringify(results, null, 2)], {
-          type: 'application/json'
+          type: 'application/json',
         });
 
       case 'csv':
@@ -399,7 +398,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       category: this.state.filters.category,
       tags: this.state.filters.tags,
       sortBy: this.state.sortBy,
-      sortOrder: this.state.sortOrder
+      sortOrder: this.state.sortOrder,
     };
 
     // Get entries from reactive store
@@ -416,7 +415,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       results: allResults,
       currentPage: Math.floor(offset / limit) + 1,
       hasMore: results.length === limit,
-      totalResults: allResults.length
+      totalResults: allResults.length,
     });
 
     return results;
@@ -450,7 +449,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         this.emit('websocketConnected');
       };
 
-      this.websocket.onmessage = (event) => {
+      this.websocket.onmessage = event => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           this.handleWebSocketMessage(message);
@@ -459,7 +458,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
         }
       };
 
-      this.websocket.onerror = (error) => {
+      this.websocket.onerror = error => {
         console.error('Search WebSocket error:', error);
         this.emit('websocketError', error);
       };
@@ -475,7 +474,6 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
           }
         }, 5000);
       };
-
     } catch (error) {
       console.error('Failed to initialize WebSocket:', error);
     }
@@ -520,7 +518,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       sortBy: options.sortBy,
       sortOrder: options.sortOrder,
       limit: options.limit,
-      offset: options.offset
+      offset: options.offset,
     };
 
     return btoa(JSON.stringify(key)).replace(/[+/=]/g, '');
@@ -596,8 +594,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
     const currentAvg = this.metrics.averageResponseTime;
     const totalSearches = this.metrics.totalSearches;
 
-    this.metrics.averageResponseTime =
-      (currentAvg * (totalSearches - 1) + newTime) / totalSearches;
+    this.metrics.averageResponseTime = (currentAvg * (totalSearches - 1) + newTime) / totalSearches;
   }
 
   /**
@@ -641,7 +638,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
       `"${result.entry.solution.replace(/"/g, '""')}"`,
       `"${result.entry.tags.join(', ')}"`,
       result.score.toString(),
-      result.entry.created_at
+      result.entry.created_at,
     ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -657,26 +654,32 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
   private async exportToPDF(results: SearchResult[]): Promise<Blob> {
     // This would require a PDF library like jsPDF
     // For now, return text format
-    const text = results.map(result =>
-      `Title: ${result.entry.title}\n` +
-      `Category: ${result.entry.category}\n` +
-      `Problem: ${result.entry.problem}\n` +
-      `Solution: ${result.entry.solution}\n` +
-      `Score: ${result.score}\n\n`
-    ).join('---\n\n');
+    const text = results
+      .map(
+        result =>
+          `Title: ${result.entry.title}\n` +
+          `Category: ${result.entry.category}\n` +
+          `Problem: ${result.entry.problem}\n` +
+          `Solution: ${result.entry.solution}\n` +
+          `Score: ${result.score}\n\n`
+      )
+      .join('---\n\n');
 
     return new Blob([text], { type: 'text/plain' });
   }
 
   private exportToMarkdown(results: SearchResult[]): Blob {
-    const markdown = results.map(result =>
-      `# ${result.entry.title}\n\n` +
-      `**Category:** ${result.entry.category}  \n` +
-      `**Score:** ${result.score}  \n` +
-      `**Tags:** ${result.entry.tags.join(', ')}  \n\n` +
-      `## Problem\n\n${result.entry.problem}\n\n` +
-      `## Solution\n\n${result.entry.solution}\n\n`
-    ).join('---\n\n');
+    const markdown = results
+      .map(
+        result =>
+          `# ${result.entry.title}\n\n` +
+          `**Category:** ${result.entry.category}  \n` +
+          `**Score:** ${result.score}  \n` +
+          `**Tags:** ${result.entry.tags.join(', ')}  \n\n` +
+          `## Problem\n\n${result.entry.problem}\n\n` +
+          `## Solution\n\n${result.entry.solution}\n\n`
+      )
+      .join('---\n\n');
 
     return new Blob([markdown], { type: 'text/markdown' });
   }
@@ -737,7 +740,7 @@ export class SearchResultsIntegrationAdapter extends EventEmitter implements Sea
     const results = this.state.results.filter(result => result.entry.id !== entryId);
     this.updateSearchState({
       results,
-      totalResults: results.length
+      totalResults: results.length,
     });
   }
 

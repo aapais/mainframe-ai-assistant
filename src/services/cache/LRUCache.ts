@@ -83,7 +83,7 @@ export class LRUCache<T = any> {
       enableStats: true,
       cleanupInterval: 60000, // 1 minute
       memoryPressureThreshold: 0.8,
-      ...config
+      ...config,
     };
 
     this.stats = {
@@ -95,7 +95,7 @@ export class LRUCache<T = any> {
       averageAccessTime: 0,
       evictions: 0,
       hotKeyCount: 0,
-      averageEntryAge: 0
+      averageEntryAge: 0,
     };
 
     this.startCleanupTimer();
@@ -129,7 +129,6 @@ export class LRUCache<T = any> {
 
       this.recordHit(startTime);
       return node.entry.value;
-
     } catch (error) {
       console.error('LRU Cache get error:', error);
       this.recordMiss(startTime);
@@ -170,7 +169,7 @@ export class LRUCache<T = any> {
         accessCount: 1,
         frequency: 1,
         ttl: ttl || this.config.defaultTTL,
-        size
+        size,
       };
 
       const node: LRUCacheNode<T> = { entry };
@@ -187,7 +186,6 @@ export class LRUCache<T = any> {
       this.handleInsertion(node);
 
       return true;
-
     } catch (error) {
       console.error('LRU Cache set error:', error);
       return false;
@@ -268,7 +266,7 @@ export class LRUCache<T = any> {
       .map(([key, node]) => ({
         key,
         frequency: node.entry.frequency,
-        accessCount: node.entry.accessCount
+        accessCount: node.entry.accessCount,
       }))
       .sort((a, b) => b.frequency - a.frequency);
 
@@ -357,7 +355,10 @@ export class LRUCache<T = any> {
     // Check ghost lists
     if (this.b1.has(key)) {
       // Increase preference for T1
-      this.adaptiveP = Math.min(this.adaptiveP + Math.max(1, this.b2.size / this.b1.size), this.config.maxSize);
+      this.adaptiveP = Math.min(
+        this.adaptiveP + Math.max(1, this.b2.size / this.b1.size),
+        this.config.maxSize
+      );
       this.b1.delete(key);
       this.t2.set(key, node);
     } else if (this.b2.has(key)) {
@@ -575,13 +576,16 @@ export class LRUCache<T = any> {
     this.stats.size = this.cache.size;
 
     // Calculate hot key count
-    this.stats.hotKeyCount = Array.from(this.cache.values())
-      .filter(node => node.entry.frequency > this.calculateHotThreshold()).length;
+    this.stats.hotKeyCount = Array.from(this.cache.values()).filter(
+      node => node.entry.frequency > this.calculateHotThreshold()
+    ).length;
 
     // Calculate average entry age
     const now = Date.now();
-    const totalAge = Array.from(this.cache.values())
-      .reduce((sum, node) => sum + (now - node.entry.timestamp), 0);
+    const totalAge = Array.from(this.cache.values()).reduce(
+      (sum, node) => sum + (now - node.entry.timestamp),
+      0
+    );
     this.stats.averageEntryAge = this.cache.size > 0 ? totalAge / this.cache.size : 0;
   }
 

@@ -130,7 +130,7 @@ export class PredictiveCache extends EventEmitter {
       enableTemporalPredictions: true,
       maxPatternHistory: 10000,
       predictionBatchSize: 10,
-      ...config
+      ...config,
     };
 
     this.stats = {
@@ -141,7 +141,7 @@ export class PredictiveCache extends EventEmitter {
       computationTimeSaved: 0,
       modelsActive: 0,
       patternsLearned: 0,
-      averagePredictionTime: 0
+      averagePredictionTime: 0,
     };
 
     this.initializeModels();
@@ -151,11 +151,7 @@ export class PredictiveCache extends EventEmitter {
   /**
    * Record a search event for pattern learning
    */
-  recordSearchEvent(
-    sessionId: string,
-    event: SearchEvent,
-    userId?: string
-  ): void {
+  recordSearchEvent(sessionId: string, event: SearchEvent, userId?: string): void {
     const userKey = userId || sessionId;
 
     if (!this.userPatterns.has(userKey)) {
@@ -166,7 +162,7 @@ export class PredictiveCache extends EventEmitter {
         categoryPreferences: new Map(),
         timePatterns: new Map(),
         queryPatterns: [],
-        behaviorScore: 0
+        behaviorScore: 0,
       });
     }
 
@@ -317,7 +313,7 @@ export class PredictiveCache extends EventEmitter {
       computationTimeSaved: 0,
       modelsActive: 0,
       patternsLearned: 0,
-      averagePredictionTime: 0
+      averagePredictionTime: 0,
     };
   }
 
@@ -332,7 +328,7 @@ export class PredictiveCache extends EventEmitter {
       accuracy: 0.6,
       lastTraining: Date.now(),
       features: ['query_frequency', 'category_frequency', 'temporal_pattern'],
-      weights: [0.4, 0.3, 0.3]
+      weights: [0.4, 0.3, 0.3],
     };
 
     this.predictionModels.set(baseModel.id, baseModel);
@@ -360,8 +356,8 @@ export class PredictiveCache extends EventEmitter {
   }
 
   private updateQueryPatterns(pattern: UserPattern, event: SearchEvent): void {
-    const existingPattern = pattern.queryPatterns.find(p =>
-      this.calculateSimilarity(p.pattern, event.query) > 0.8
+    const existingPattern = pattern.queryPatterns.find(
+      p => this.calculateSimilarity(p.pattern, event.query) > 0.8
     );
 
     if (existingPattern) {
@@ -379,7 +375,7 @@ export class PredictiveCache extends EventEmitter {
         frequency: 1,
         nextQueries: new Map(),
         contextClues: this.extractContextClues(event.query),
-        temporalPattern: new Array(24).fill(0)
+        temporalPattern: new Array(24).fill(0),
       };
 
       event.followupQueries.forEach(nextQuery => {
@@ -402,7 +398,7 @@ export class PredictiveCache extends EventEmitter {
         frequency: 0,
         nextQueries: new Map(),
         contextClues: this.extractContextClues(event.query),
-        temporalPattern: new Array(24).fill(0)
+        temporalPattern: new Array(24).fill(0),
       });
     }
 
@@ -461,9 +457,7 @@ export class PredictiveCache extends EventEmitter {
     const predictions: PredictionCandidate[] = [];
 
     // Get recent queries
-    const recentQueries = userPattern.searchHistory
-      .slice(-5)
-      .map(event => event.query);
+    const recentQueries = userPattern.searchHistory.slice(-5).map(event => event.query);
 
     // Find matching patterns
     for (const queryPattern of userPattern.queryPatterns) {
@@ -481,7 +475,7 @@ export class PredictiveCache extends EventEmitter {
             timeToNeeded: this.estimateTimeToNeeded(queryPattern, context),
             userContext: userPattern.userId,
             tags: ['pattern-based'],
-            category: this.predictCategory(nextQuery, userPattern)
+            category: this.predictCategory(nextQuery, userPattern),
           });
         }
       }
@@ -522,7 +516,7 @@ export class PredictiveCache extends EventEmitter {
             timeToNeeded: (60 - new Date().getMinutes()) * 60 * 1000, // time to next hour
             userContext: userPattern.userId,
             tags: ['temporal-based'],
-            category: this.predictCategory(query, userPattern)
+            category: this.predictCategory(query, userPattern),
           });
         }
       });
@@ -562,7 +556,7 @@ export class PredictiveCache extends EventEmitter {
             timeToNeeded: 5 * 60 * 1000, // 5 minutes
             userContext: userPattern.userId,
             tags: ['context-based'],
-            category: context.currentCategory
+            category: context.currentCategory,
           });
         }
       }
@@ -594,7 +588,7 @@ export class PredictiveCache extends EventEmitter {
         timeToNeeded: prediction.timeToNeeded,
         userContext: userPattern.userId,
         tags: ['ml-based'],
-        category: prediction.category
+        category: prediction.category,
       });
     }
 
@@ -654,27 +648,33 @@ export class PredictiveCache extends EventEmitter {
       this.predictionHistory.push({
         prediction,
         actual: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       this.emit('prediction-generated', prediction);
     });
 
     // Cleanup old prediction history
-    const cutoff = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours
     this.predictionHistory = this.predictionHistory.filter(p => p.timestamp > cutoff);
   }
 
   private startPredictionEngine(): void {
     // Periodic model updates
-    setInterval(() => {
-      this.trainModels();
-    }, this.config.modelUpdateInterval * 60 * 1000);
+    setInterval(
+      () => {
+        this.trainModels();
+      },
+      this.config.modelUpdateInterval * 60 * 1000
+    );
 
     // Cleanup old patterns
-    setInterval(() => {
-      this.cleanupOldPatterns();
-    }, 60 * 60 * 1000); // 1 hour
+    setInterval(
+      () => {
+        this.cleanupOldPatterns();
+      },
+      60 * 60 * 1000
+    ); // 1 hour
   }
 
   // Helper methods
@@ -692,7 +692,8 @@ export class PredictiveCache extends EventEmitter {
 
   private extractContextClues(query: string): string[] {
     // Extract meaningful terms
-    return query.toLowerCase()
+    return query
+      .toLowerCase()
       .split(/\s+/)
       .filter(term => term.length > 3)
       .slice(0, 5);
@@ -724,10 +725,13 @@ export class PredictiveCache extends EventEmitter {
     const terms = query.split(' ').length;
     const basecost = 0.1;
 
-    return baseCore + (terms * 0.05);
+    return baseCore + terms * 0.05;
   }
 
-  private calculatePriority(confidence: number, frequency: number): 'low' | 'medium' | 'high' | 'critical' {
+  private calculatePriority(
+    confidence: number,
+    frequency: number
+  ): 'low' | 'medium' | 'high' | 'critical' {
     const score = confidence * Math.log(frequency + 1);
 
     if (score > 2) return 'critical';
@@ -749,8 +753,9 @@ export class PredictiveCache extends EventEmitter {
 
   private predictCategory(query: string, userPattern: UserPattern): string | undefined {
     // Simple category prediction based on user preferences
-    const categories = Array.from(userPattern.categoryPreferences.entries())
-      .sort((a, b) => b[1] - a[1]);
+    const categories = Array.from(userPattern.categoryPreferences.entries()).sort(
+      (a, b) => b[1] - a[1]
+    );
 
     return categories[0]?.[0];
   }
@@ -767,7 +772,7 @@ export class PredictiveCache extends EventEmitter {
       userPattern.categoryPreferences.size,
       userPattern.timePatterns.size,
       context?.urgency || 0,
-      context?.sessionLength || 0
+      context?.sessionLength || 0,
     ];
   }
 
@@ -783,7 +788,7 @@ export class PredictiveCache extends EventEmitter {
       confidence: Math.min(1, Math.max(0, score)),
       value: score * 0.5,
       timeToNeeded: 10 * 60 * 1000,
-      category: 'General'
+      category: 'General',
     };
   }
 
@@ -796,9 +801,9 @@ export class PredictiveCache extends EventEmitter {
           p.prediction.confidence,
           p.prediction.estimatedValue,
           p.prediction.computationCost,
-          p.prediction.timeToNeeded
+          p.prediction.timeToNeeded,
         ],
-        label: p.actual ? 1 : 0
+        label: p.actual ? 1 : 0,
       }));
   }
 
@@ -813,7 +818,7 @@ export class PredictiveCache extends EventEmitter {
       accuracy,
       lastTraining: Date.now(),
       features: ['confidence', 'value', 'cost', 'time'],
-      weights: [0.4, 0.3, 0.2, 0.1]
+      weights: [0.4, 0.3, 0.2, 0.1],
     };
   }
 
@@ -827,8 +832,9 @@ export class PredictiveCache extends EventEmitter {
     this.stats.modelsActive = this.predictionModels.size;
 
     // Calculate average prediction time
-    const recentPredictions = this.predictionHistory
-      .filter(p => Date.now() - p.timestamp < 60 * 60 * 1000); // Last hour
+    const recentPredictions = this.predictionHistory.filter(
+      p => Date.now() - p.timestamp < 60 * 60 * 1000
+    ); // Last hour
 
     if (recentPredictions.length > 0) {
       this.stats.averagePredictionTime = recentPredictions.length / 60; // per minute
@@ -836,7 +842,7 @@ export class PredictiveCache extends EventEmitter {
   }
 
   private cleanupOldPatterns(): void {
-    const cutoff = Date.now() - (this.config.maxPatternHistory * 60 * 1000);
+    const cutoff = Date.now() - this.config.maxPatternHistory * 60 * 1000;
 
     // Clean user patterns
     for (const [userKey, pattern] of this.userPatterns) {

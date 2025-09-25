@@ -1,5 +1,10 @@
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
-import { CostTrackingService, AIOperation, DateRange, CostLimit } from '../services/CostTrackingService';
+import {
+  CostTrackingService,
+  AIOperation,
+  DateRange,
+  CostLimit,
+} from '../services/CostTrackingService';
 import { Logger } from '../utils/Logger';
 
 export class CostTrackingHandler {
@@ -52,7 +57,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to track operation:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -70,7 +75,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to get daily cost:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -86,7 +91,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to get weekly cost:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -102,7 +107,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to get monthly cost:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -113,10 +118,12 @@ export class CostTrackingHandler {
     period?: { start: string; end: string }
   ): Promise<{ success: boolean; cost?: number; error?: string }> {
     try {
-      const dateRange: DateRange | undefined = period ? {
-        start: new Date(period.start),
-        end: new Date(period.end)
-      } : undefined;
+      const dateRange: DateRange | undefined = period
+        ? {
+            start: new Date(period.start),
+            end: new Date(period.end),
+          }
+        : undefined;
 
       const cost = await this.costService.getCostByOperation(operationType, dateRange);
       return { success: true, cost };
@@ -124,7 +131,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to get cost by operation:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -140,7 +147,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to set cost limit:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -155,7 +162,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to check budget status:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -167,7 +174,7 @@ export class CostTrackingHandler {
     try {
       const dateRange: DateRange = {
         start: new Date(period.start),
-        end: new Date(period.end)
+        end: new Date(period.end),
       };
 
       const report = await this.costService.generateCostReport(dateRange);
@@ -176,7 +183,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to generate cost report:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -191,7 +198,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to get cost trends:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -206,7 +213,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to predict monthly cost:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -221,7 +228,7 @@ export class CostTrackingHandler {
       this.logger.error('Failed to get stats:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -257,12 +264,12 @@ export class CostTrackingHandler {
         'claude-3-sonnet': { input: 0.003, output: 0.015 },
         'claude-3-haiku': { input: 0.00025, output: 0.00125 },
         'claude-3.5-sonnet': { input: 0.003, output: 0.015 },
-        'default': { input: 0.001, output: 0.002 }
+        default: { input: 0.001, output: 0.002 },
       };
 
       const pricing = TOKEN_PRICING[model] || TOKEN_PRICING.default;
-      const inputCost = inputTokens / 1000 * pricing.input;
-      const outputCost = outputTokens / 1000 * pricing.output;
+      const inputCost = (inputTokens / 1000) * pricing.input;
+      const outputCost = (outputTokens / 1000) * pricing.output;
 
       return inputCost + outputCost;
     } catch (error) {
@@ -321,5 +328,5 @@ export type {
   CostLimit,
   BudgetStatus,
   CostReport,
-  CostTrends
+  CostTrends,
 } from '../services/CostTrackingService';

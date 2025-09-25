@@ -83,10 +83,10 @@ export class RelevanceScorer extends EventEmitter {
     // Default scoring weights
     this.scoringWeights = {
       textual: 0.25,
-      behavioral: 0.30,
-      contextual: 0.20,
+      behavioral: 0.3,
+      contextual: 0.2,
       semantic: 0.15,
-      temporal: 0.10
+      temporal: 0.1,
     };
 
     // Quality thresholds
@@ -94,7 +94,7 @@ export class RelevanceScorer extends EventEmitter {
       excellent: 0.9,
       good: 0.7,
       fair: 0.5,
-      poor: 0.0
+      poor: 0.0,
     };
 
     this.initializeModels();
@@ -151,7 +151,7 @@ export class RelevanceScorer extends EventEmitter {
       signals,
       explanation,
       recommendations,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Store scoring history
@@ -168,7 +168,12 @@ export class RelevanceScorer extends EventEmitter {
    * Calculate textual relevance signals
    */
   private async calculateTextualSignals(
-    resultContent: { title: string; snippet: string; content?: string; metadata: Record<string, any> },
+    resultContent: {
+      title: string;
+      snippet: string;
+      content?: string;
+      metadata: Record<string, any>;
+    },
     query: string
   ): Promise<RelevanceSignal[]> {
     const signals: RelevanceSignal[] = [];
@@ -181,7 +186,7 @@ export class RelevanceScorer extends EventEmitter {
       score: exactMatchScore,
       confidence: 0.9,
       source: 'exact_match',
-      metadata: { algorithm: 'string_matching' }
+      metadata: { algorithm: 'string_matching' },
     });
 
     // TF-IDF scoring
@@ -192,7 +197,7 @@ export class RelevanceScorer extends EventEmitter {
       score: tfidfScore,
       confidence: 0.8,
       source: 'tfidf',
-      metadata: { algorithm: 'tf_idf' }
+      metadata: { algorithm: 'tf_idf' },
     });
 
     // BM25 scoring
@@ -203,7 +208,7 @@ export class RelevanceScorer extends EventEmitter {
       score: bm25Score,
       confidence: 0.85,
       source: 'bm25',
-      metadata: { algorithm: 'bm25' }
+      metadata: { algorithm: 'bm25' },
     });
 
     return signals;
@@ -227,7 +232,7 @@ export class RelevanceScorer extends EventEmitter {
       score: ctrScore,
       confidence: 0.8,
       source: 'ctr',
-      metadata: { metric: 'click_through_rate' }
+      metadata: { metric: 'click_through_rate' },
     });
 
     // Dwell time analysis
@@ -238,7 +243,7 @@ export class RelevanceScorer extends EventEmitter {
       score: dwellTimeScore,
       confidence: 0.75,
       source: 'dwell_time',
-      metadata: { metric: 'average_time_spent' }
+      metadata: { metric: 'average_time_spent' },
     });
 
     // User interaction patterns
@@ -249,7 +254,7 @@ export class RelevanceScorer extends EventEmitter {
       score: interactionScore,
       confidence: 0.7,
       source: 'interactions',
-      metadata: { metric: 'user_interactions' }
+      metadata: { metric: 'user_interactions' },
     });
 
     return signals;
@@ -259,7 +264,12 @@ export class RelevanceScorer extends EventEmitter {
    * Calculate contextual relevance signals
    */
   private async calculateContextualSignals(
-    resultContent: { title: string; snippet: string; content?: string; metadata: Record<string, any> },
+    resultContent: {
+      title: string;
+      snippet: string;
+      content?: string;
+      metadata: Record<string, any>;
+    },
     query: string,
     context: ContextualFactors
   ): Promise<RelevanceSignal[]> {
@@ -273,29 +283,36 @@ export class RelevanceScorer extends EventEmitter {
       score: profileScore,
       confidence: 0.75,
       source: 'user_profile',
-      metadata: { factor: 'profile_alignment' }
+      metadata: { factor: 'profile_alignment' },
     });
 
     // Session context relevance
-    const sessionScore = this.calculateSessionRelevance(resultContent, query, context.sessionContext);
+    const sessionScore = this.calculateSessionRelevance(
+      resultContent,
+      query,
+      context.sessionContext
+    );
     signals.push({
       type: 'contextual',
       weight: 0.35,
       score: sessionScore,
       confidence: 0.7,
       source: 'session_context',
-      metadata: { factor: 'session_continuity' }
+      metadata: { factor: 'session_continuity' },
     });
 
     // Location relevance (if applicable)
-    const locationScore = this.calculateLocationRelevance(resultContent, context.userProfile.location);
+    const locationScore = this.calculateLocationRelevance(
+      resultContent,
+      context.userProfile.location
+    );
     signals.push({
       type: 'contextual',
       weight: 0.25,
       score: locationScore,
       confidence: 0.6,
       source: 'location',
-      metadata: { factor: 'geographical_relevance' }
+      metadata: { factor: 'geographical_relevance' },
     });
 
     return signals;
@@ -305,7 +322,12 @@ export class RelevanceScorer extends EventEmitter {
    * Calculate semantic relevance signals
    */
   private async calculateSemanticSignals(
-    resultContent: { title: string; snippet: string; content?: string; metadata: Record<string, any> },
+    resultContent: {
+      title: string;
+      snippet: string;
+      content?: string;
+      metadata: Record<string, any>;
+    },
     query: string,
     context: ContextualFactors
   ): Promise<RelevanceSignal[]> {
@@ -319,7 +341,7 @@ export class RelevanceScorer extends EventEmitter {
       score: embeddingScore,
       confidence: 0.8,
       source: 'word_embeddings',
-      metadata: { model: 'word2vec' }
+      metadata: { model: 'word2vec' },
     });
 
     // Topic modeling alignment
@@ -330,7 +352,7 @@ export class RelevanceScorer extends EventEmitter {
       score: topicScore,
       confidence: 0.75,
       source: 'topic_modeling',
-      metadata: { model: 'lda' }
+      metadata: { model: 'lda' },
     });
 
     // Intent matching
@@ -341,7 +363,7 @@ export class RelevanceScorer extends EventEmitter {
       score: intentScore,
       confidence: 0.7,
       source: 'intent_analysis',
-      metadata: { model: 'intent_classifier' }
+      metadata: { model: 'intent_classifier' },
     });
 
     return signals;
@@ -351,7 +373,12 @@ export class RelevanceScorer extends EventEmitter {
    * Calculate temporal relevance signals
    */
   private async calculateTemporalSignals(
-    resultContent: { title: string; snippet: string; content?: string; metadata: Record<string, any> },
+    resultContent: {
+      title: string;
+      snippet: string;
+      content?: string;
+      metadata: Record<string, any>;
+    },
     query: string,
     context: ContextualFactors
   ): Promise<RelevanceSignal[]> {
@@ -365,7 +392,7 @@ export class RelevanceScorer extends EventEmitter {
       score: freshnessScore,
       confidence: 0.8,
       source: 'freshness',
-      metadata: { factor: 'content_age' }
+      metadata: { factor: 'content_age' },
     });
 
     // Trending relevance
@@ -376,7 +403,7 @@ export class RelevanceScorer extends EventEmitter {
       score: trendingScore,
       confidence: 0.65,
       source: 'trending',
-      metadata: { factor: 'current_trends' }
+      metadata: { factor: 'current_trends' },
     });
 
     // Seasonal relevance
@@ -387,7 +414,7 @@ export class RelevanceScorer extends EventEmitter {
       score: seasonalScore,
       confidence: 0.6,
       source: 'seasonal',
-      metadata: { factor: 'seasonal_patterns' }
+      metadata: { factor: 'seasonal_patterns' },
     });
 
     return signals;
@@ -399,7 +426,7 @@ export class RelevanceScorer extends EventEmitter {
   recordUserFeedback(feedback: Omit<UserFeedback, 'timestamp'>): string {
     const feedbackWithTimestamp: UserFeedback = {
       ...feedback,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     const key = `${feedback.resultId}_${feedback.query}`;
@@ -430,18 +457,22 @@ export class RelevanceScorer extends EventEmitter {
     }
 
     // Average relevance
-    const averageRelevance = scoringResults.reduce((sum, result) => sum + result.overallScore, 0) / scoringResults.length;
+    const averageRelevance =
+      scoringResults.reduce((sum, result) => sum + result.overallScore, 0) / scoringResults.length;
 
     // Top results relevance (top 3)
     const topResults = scoringResults.slice(0, 3);
-    const topResultsRelevance = topResults.length > 0
-      ? topResults.reduce((sum, result) => sum + result.overallScore, 0) / topResults.length
-      : 0;
+    const topResultsRelevance =
+      topResults.length > 0
+        ? topResults.reduce((sum, result) => sum + result.overallScore, 0) / topResults.length
+        : 0;
 
     // Precision at K
     const precisionAtK: Record<number, number> = {};
     [1, 3, 5, 10].forEach(k => {
-      const relevantResults = scoringResults.slice(0, k).filter(result => result.overallScore >= this.qualityThresholds.good);
+      const relevantResults = scoringResults
+        .slice(0, k)
+        .filter(result => result.overallScore >= this.qualityThresholds.good);
       precisionAtK[k] = relevantResults.length / Math.min(k, scoringResults.length);
     });
 
@@ -452,15 +483,31 @@ export class RelevanceScorer extends EventEmitter {
     });
 
     // Mean Reciprocal Rank
-    const firstRelevantPosition = scoringResults.findIndex(result => result.overallScore >= this.qualityThresholds.good);
+    const firstRelevantPosition = scoringResults.findIndex(
+      result => result.overallScore >= this.qualityThresholds.good
+    );
     const meanReciprocalRank = firstRelevantPosition >= 0 ? 1 / (firstRelevantPosition + 1) : 0;
 
     // Quality distribution
     const qualityDistribution = {
-      excellent: scoringResults.filter(r => r.overallScore >= this.qualityThresholds.excellent).length / scoringResults.length,
-      good: scoringResults.filter(r => r.overallScore >= this.qualityThresholds.good && r.overallScore < this.qualityThresholds.excellent).length / scoringResults.length,
-      fair: scoringResults.filter(r => r.overallScore >= this.qualityThresholds.fair && r.overallScore < this.qualityThresholds.good).length / scoringResults.length,
-      poor: scoringResults.filter(r => r.overallScore < this.qualityThresholds.fair).length / scoringResults.length
+      excellent:
+        scoringResults.filter(r => r.overallScore >= this.qualityThresholds.excellent).length /
+        scoringResults.length,
+      good:
+        scoringResults.filter(
+          r =>
+            r.overallScore >= this.qualityThresholds.good &&
+            r.overallScore < this.qualityThresholds.excellent
+        ).length / scoringResults.length,
+      fair:
+        scoringResults.filter(
+          r =>
+            r.overallScore >= this.qualityThresholds.fair &&
+            r.overallScore < this.qualityThresholds.good
+        ).length / scoringResults.length,
+      poor:
+        scoringResults.filter(r => r.overallScore < this.qualityThresholds.fair).length /
+        scoringResults.length,
     };
 
     return {
@@ -469,7 +516,7 @@ export class RelevanceScorer extends EventEmitter {
       precisionAtK,
       ndcg,
       meanReciprocalRank,
-      qualityDistribution
+      qualityDistribution,
     };
   }
 
@@ -483,10 +530,12 @@ export class RelevanceScorer extends EventEmitter {
 
     const totalWeight = signals.reduce((sum, signal) => {
       const typeWeight = this.scoringWeights[signal.type] || 0.2;
-      return sum + (signal.weight * typeWeight * signal.confidence);
+      return sum + signal.weight * typeWeight * signal.confidence;
     }, 0);
 
-    return totalWeight > 0 ? weightedScores.reduce((sum, score) => sum + score, 0) / totalWeight : 0;
+    return totalWeight > 0
+      ? weightedScores.reduce((sum, score) => sum + score, 0) / totalWeight
+      : 0;
   }
 
   private calculateConfidence(signals: RelevanceSignal[]): number {
@@ -519,15 +568,16 @@ export class RelevanceScorer extends EventEmitter {
     const titleMatches = queryWords.filter(word => titleWords.includes(word)).length;
     const snippetMatches = queryWords.filter(word => snippetWords.includes(word)).length;
 
-    const titleScore = titleMatches / queryWords.length * 0.8;
-    const snippetScore = snippetMatches / queryWords.length * 0.6;
+    const titleScore = (titleMatches / queryWords.length) * 0.8;
+    const snippetScore = (snippetMatches / queryWords.length) * 0.6;
 
     return Math.max(titleScore, snippetScore);
   }
 
   private calculateTFIDF(resultContent: any, query: string): number {
     // Simplified TF-IDF implementation
-    const text = `${resultContent.title} ${resultContent.snippet} ${resultContent.content || ''}`.toLowerCase();
+    const text =
+      `${resultContent.title} ${resultContent.snippet} ${resultContent.content || ''}`.toLowerCase();
     const words = text.split(/\s+/);
     const queryWords = query.toLowerCase().split(/\s+/);
 
@@ -592,7 +642,11 @@ export class RelevanceScorer extends EventEmitter {
     return (expertiseMatch + preferenceMatch) / 2;
   }
 
-  private calculateSessionRelevance(resultContent: any, query: string, sessionContext: any): number {
+  private calculateSessionRelevance(
+    resultContent: any,
+    query: string,
+    sessionContext: any
+  ): number {
     // Analyze how well this result fits in the session context
     const queryRelation = this.analyzeQueryRelation(query, sessionContext.previousQueries);
     const resultRelation = this.analyzeResultRelation(resultContent, sessionContext.clickedResults);
@@ -604,9 +658,10 @@ export class RelevanceScorer extends EventEmitter {
     if (!location) return 0.5; // Neutral if no location info
 
     // Check if content has location relevance
-    const hasLocationInfo = resultContent.metadata?.location ||
-                           resultContent.title.toLowerCase().includes(location.toLowerCase()) ||
-                           resultContent.snippet.toLowerCase().includes(location.toLowerCase());
+    const hasLocationInfo =
+      resultContent.metadata?.location ||
+      resultContent.title.toLowerCase().includes(location.toLowerCase()) ||
+      resultContent.snippet.toLowerCase().includes(location.toLowerCase());
 
     return hasLocationInfo ? 0.8 : 0.3;
   }
@@ -623,7 +678,11 @@ export class RelevanceScorer extends EventEmitter {
     return Math.random() * 0.5 + 0.3; // 0.3-0.8 range
   }
 
-  private async calculateIntentMatch(resultContent: any, query: string, context: ContextualFactors): Promise<number> {
+  private async calculateIntentMatch(
+    resultContent: any,
+    query: string,
+    context: ContextualFactors
+  ): Promise<number> {
     // Analyze query intent and match with content type
     const queryIntent = this.classifyQueryIntent(query);
     const contentType = this.classifyContentType(resultContent);
@@ -632,7 +691,9 @@ export class RelevanceScorer extends EventEmitter {
   }
 
   private calculateFreshnessScore(metadata: Record<string, any>): number {
-    const publishDate = metadata.publishDate ? new Date(metadata.publishDate).getTime() : Date.now();
+    const publishDate = metadata.publishDate
+      ? new Date(metadata.publishDate).getTime()
+      : Date.now();
     const ageInDays = (Date.now() - publishDate) / (1000 * 60 * 60 * 24);
 
     // Fresher content gets higher scores
@@ -667,7 +728,7 @@ export class RelevanceScorer extends EventEmitter {
     const dcg = results.reduce((sum, result, index) => {
       const relevance = result.overallScore;
       const discount = Math.log2(index + 2); // +2 because index starts at 0
-      return sum + (relevance / discount);
+      return sum + relevance / discount;
     }, 0);
 
     // Calculate IDCG (Ideal DCG) - results sorted by relevance
@@ -675,7 +736,7 @@ export class RelevanceScorer extends EventEmitter {
     const idcg = idealResults.reduce((sum, result, index) => {
       const relevance = result.overallScore;
       const discount = Math.log2(index + 2);
-      return sum + (relevance / discount);
+      return sum + relevance / discount;
     }, 0);
 
     return idcg > 0 ? dcg / idcg : 0;
@@ -691,12 +752,10 @@ export class RelevanceScorer extends EventEmitter {
   }
 
   private generateExplanation(signals: RelevanceSignal[], overallScore: number): string {
-    const topSignals = signals
-      .sort((a, b) => (b.score * b.weight) - (a.score * a.weight))
-      .slice(0, 3);
+    const topSignals = signals.sort((a, b) => b.score * b.weight - a.score * a.weight).slice(0, 3);
 
-    const explanations = topSignals.map(signal =>
-      `${signal.source}: ${(signal.score * 100).toFixed(1)}% (${signal.type})`
+    const explanations = topSignals.map(
+      signal => `${signal.source}: ${(signal.score * 100).toFixed(1)}% (${signal.type})`
     );
 
     return `Relevance: ${(overallScore * 100).toFixed(1)}%. Top factors: ${explanations.join(', ')}`;
@@ -736,8 +795,8 @@ export class RelevanceScorer extends EventEmitter {
 
   private analyzeQueryRelation(query: string, previousQueries: string[]): number {
     // Analyze semantic relation between current and previous queries
-    const hasRelatedQuery = previousQueries.some(prev =>
-      this.calculateQuerySimilarity(query, prev) > 0.5
+    const hasRelatedQuery = previousQueries.some(
+      prev => this.calculateQuerySimilarity(query, prev) > 0.5
     );
     return hasRelatedQuery ? 0.8 : 0.4;
   }
@@ -758,8 +817,10 @@ export class RelevanceScorer extends EventEmitter {
   private classifyQueryIntent(query: string): string {
     // Simple intent classification
     if (query.toLowerCase().includes('how to') || query.includes('?')) return 'informational';
-    if (query.toLowerCase().includes('buy') || query.toLowerCase().includes('price')) return 'transactional';
-    if (query.toLowerCase().includes('best') || query.toLowerCase().includes('review')) return 'commercial';
+    if (query.toLowerCase().includes('buy') || query.toLowerCase().includes('price'))
+      return 'transactional';
+    if (query.toLowerCase().includes('best') || query.toLowerCase().includes('review'))
+      return 'commercial';
     return 'navigational';
   }
 
@@ -776,7 +837,7 @@ export class RelevanceScorer extends EventEmitter {
       informational: { tutorial: 0.9, article: 0.8, review: 0.6 },
       transactional: { product: 0.9, review: 0.7, article: 0.4 },
       commercial: { review: 0.9, product: 0.8, article: 0.5 },
-      navigational: { official: 0.9, article: 0.6, tutorial: 0.5 }
+      navigational: { official: 0.9, article: 0.6, tutorial: 0.5 },
     };
 
     return alignmentMatrix[intent]?.[contentType] || 0.5;
@@ -795,7 +856,7 @@ export class RelevanceScorer extends EventEmitter {
       8: ['fall', 'september', 'autumn'],
       9: ['fall', 'october', 'autumn', 'halloween'],
       10: ['fall', 'november', 'thanksgiving'],
-      11: ['winter', 'december', 'christmas', 'holiday']
+      11: ['winter', 'december', 'christmas', 'holiday'],
     };
 
     return seasonalMap[month] || [];

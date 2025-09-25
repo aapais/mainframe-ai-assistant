@@ -1,7 +1,7 @@
 /**
  * Storage Factory
  * Creates storage adapters and plugins using the Factory pattern
- * 
+ *
  * This factory provides a centralized way to create storage components,
  * ensuring proper configuration and dependency injection.
  */
@@ -21,14 +21,14 @@ export class StorageFactory {
     sqlite: SQLiteAdapter as any,
     postgresql: PostgreSQLAdapter as any,
     mysql: null as any, // Not implemented yet
-    memory: MemoryAdapter as any
+    memory: MemoryAdapter as any,
   };
 
   private static readonly SUPPORTED_PLUGINS: Record<string, typeof IStoragePlugin> = {
     'pattern-detection': PatternDetectionPlugin as any,
     'code-analysis': CodeAnalysisPlugin as any,
     'template-engine': TemplateEnginePlugin as any,
-    'analytics': AnalyticsPlugin as any
+    analytics: AnalyticsPlugin as any,
   };
 
   // ========================
@@ -40,7 +40,7 @@ export class StorageFactory {
    */
   static createAdapter(type: AdapterType, config: any): IStorageAdapter {
     const AdapterClass = this.SUPPORTED_ADAPTERS[type];
-    
+
     if (!AdapterClass) {
       throw new Error(`Unsupported adapter type: ${type}`);
     }
@@ -84,24 +84,24 @@ export class StorageFactory {
             cache_size: -64000, // 64MB
             foreign_keys: 'ON',
             temp_store: 'MEMORY',
-            mmap_size: 268435456 // 256MB
+            mmap_size: 268435456, // 256MB
           },
           performanceTuning: {
             enableQueryPlan: true,
             enableStatistics: true,
             autoVacuum: true,
-            analysisInterval: 3600000 // 1 hour
+            analysisInterval: 3600000, // 1 hour
           },
           security: {
             enableEncryption: false,
             enableAudit: false,
-            auditLevel: 'minimal'
+            auditLevel: 'minimal',
           },
           backup: {
             enableWALCheckpoint: true,
             checkpointInterval: 300000, // 5 minutes
-            backupOnClose: true
-          }
+            backupOnClose: true,
+          },
         };
 
       case 'postgresql':
@@ -121,24 +121,24 @@ export class StorageFactory {
             maintenance_work_mem: '64MB',
             checkpoint_completion_target: '0.9',
             wal_buffers: '16MB',
-            default_statistics_target: '100'
+            default_statistics_target: '100',
           },
           performanceTuning: {
             enableQueryPlan: true,
             enableStatistics: true,
             autoVacuum: true,
-            analysisInterval: 3600000 // 1 hour
+            analysisInterval: 3600000, // 1 hour
           },
           security: {
             enableEncryption: true,
             enableAudit: true,
-            auditLevel: 'standard'
+            auditLevel: 'standard',
           },
           backup: {
             enableWALCheckpoint: false,
             checkpointInterval: 0,
-            backupOnClose: false
-          }
+            backupOnClose: false,
+          },
         };
 
       case 'memory':
@@ -154,18 +154,18 @@ export class StorageFactory {
             enableQueryPlan: false,
             enableStatistics: false,
             autoVacuum: false,
-            analysisInterval: 0
+            analysisInterval: 0,
           },
           security: {
             enableEncryption: false,
             enableAudit: false,
-            auditLevel: 'minimal'
+            auditLevel: 'minimal',
           },
           backup: {
             enableWALCheckpoint: false,
             checkpointInterval: 0,
-            backupOnClose: false
-          }
+            backupOnClose: false,
+          },
         };
 
       default:
@@ -182,7 +182,7 @@ export class StorageFactory {
    */
   static createPlugin(name: string, config?: any): IStoragePlugin {
     const PluginClass = this.SUPPORTED_PLUGINS[name];
-    
+
     if (!PluginClass) {
       throw new Error(`Unsupported plugin: ${name}`);
     }
@@ -209,23 +209,23 @@ export class StorageFactory {
    */
   static getPluginsForMVP(mvpVersion: number): string[] {
     const plugins: string[] = [];
-    
+
     if (mvpVersion >= 2) {
       plugins.push('pattern-detection');
     }
-    
+
     if (mvpVersion >= 3) {
       plugins.push('code-analysis');
     }
-    
+
     if (mvpVersion >= 4) {
       plugins.push('template-engine');
     }
-    
+
     if (mvpVersion >= 5) {
       plugins.push('analytics');
     }
-    
+
     return plugins;
   }
 
@@ -247,7 +247,7 @@ export class StorageFactory {
   private static createAdapterConfig(type: AdapterType, config: any): AdapterConfig {
     const defaultConfig = this.getDefaultAdapterConfig(type);
     const mergedConfig = this.mergeConfigs(defaultConfig, config);
-    
+
     return {
       connectionString: this.buildConnectionString(type, config),
       maxConnections: mergedConfig.maxConnections || 1,
@@ -261,19 +261,19 @@ export class StorageFactory {
         enableQueryPlan: mergedConfig.performanceTuning?.enableQueryPlan || false,
         enableStatistics: mergedConfig.performanceTuning?.enableStatistics || false,
         autoVacuum: mergedConfig.performanceTuning?.autoVacuum || true,
-        analysisInterval: mergedConfig.performanceTuning?.analysisInterval || 3600000
+        analysisInterval: mergedConfig.performanceTuning?.analysisInterval || 3600000,
       },
       security: {
         enableEncryption: mergedConfig.security?.enableEncryption || false,
         encryptionKey: mergedConfig.security?.encryptionKey,
         enableAudit: mergedConfig.security?.enableAudit || false,
-        auditLevel: mergedConfig.security?.auditLevel || 'minimal'
+        auditLevel: mergedConfig.security?.auditLevel || 'minimal',
       },
       backup: {
         enableWALCheckpoint: mergedConfig.backup?.enableWALCheckpoint || false,
         checkpointInterval: mergedConfig.backup?.checkpointInterval || 0,
-        backupOnClose: mergedConfig.backup?.backupOnClose || false
-      }
+        backupOnClose: mergedConfig.backup?.backupOnClose || false,
+      },
     };
   }
 
@@ -284,18 +284,18 @@ export class StorageFactory {
     switch (type) {
       case 'sqlite':
         return config.path || './knowledge.db';
-      
+
       case 'postgresql':
         const pg = config;
         return `postgresql://${pg.credentials?.username || 'postgres'}:${pg.credentials?.password || ''}@${pg.host || 'localhost'}:${pg.port || 5432}/${pg.database || 'knowledge'}${pg.credentials?.ssl ? '?sslmode=require' : ''}`;
-      
+
       case 'mysql':
         const mysql = config;
         return `mysql://${mysql.credentials?.username || 'root'}:${mysql.credentials?.password || ''}@${mysql.host || 'localhost'}:${mysql.port || 3306}/${mysql.database || 'knowledge'}`;
-      
+
       case 'memory':
         return ':memory:';
-      
+
       default:
         throw new Error(`Cannot build connection string for adapter type: ${type}`);
     }
@@ -306,17 +306,21 @@ export class StorageFactory {
    */
   private static mergeConfigs(defaultConfig: any, userConfig: any): any {
     if (!userConfig) return defaultConfig;
-    
+
     const result = { ...defaultConfig };
-    
+
     for (const key in userConfig) {
-      if (userConfig[key] && typeof userConfig[key] === 'object' && !Array.isArray(userConfig[key])) {
+      if (
+        userConfig[key] &&
+        typeof userConfig[key] === 'object' &&
+        !Array.isArray(userConfig[key])
+      ) {
         result[key] = this.mergeConfigs(result[key] || {}, userConfig[key]);
       } else {
         result[key] = userConfig[key];
       }
     }
-    
+
     return result;
   }
 
@@ -327,16 +331,19 @@ export class StorageFactory {
   /**
    * Validate adapter configuration
    */
-  static validateAdapterConfig(type: AdapterType, config: any): { valid: boolean; errors: string[] } {
+  static validateAdapterConfig(
+    type: AdapterType,
+    config: any
+  ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
+
     switch (type) {
       case 'sqlite':
         if (!config.path && config.path !== ':memory:') {
           errors.push('SQLite adapter requires a path configuration');
         }
         break;
-      
+
       case 'postgresql':
         if (!config.host) {
           errors.push('PostgreSQL adapter requires host configuration');
@@ -351,7 +358,7 @@ export class StorageFactory {
           errors.push('PostgreSQL adapter requires database name');
         }
         break;
-      
+
       case 'mysql':
         if (!config.host) {
           errors.push('MySQL adapter requires host configuration');
@@ -363,25 +370,27 @@ export class StorageFactory {
           errors.push('MySQL adapter requires database name');
         }
         break;
-      
+
       case 'memory':
         // Memory adapter has no specific requirements
         break;
-      
+
       default:
         errors.push(`Unsupported adapter type: ${type}`);
     }
-    
+
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
   /**
    * Get recommended adapter for environment
    */
-  static getRecommendedAdapter(environment: 'development' | 'testing' | 'production' | 'memory'): AdapterType {
+  static getRecommendedAdapter(
+    environment: 'development' | 'testing' | 'production' | 'memory'
+  ): AdapterType {
     switch (environment) {
       case 'development':
         return 'sqlite';
@@ -408,17 +417,17 @@ export class StorageFactory {
     if (process.env.DATABASE_URL || process.env.POSTGRES_URL) {
       return 'postgresql';
     }
-    
+
     // Check for MySQL
     if (process.env.MYSQL_URL || process.env.MYSQL_HOST) {
       return 'mysql';
     }
-    
+
     // Check if running in test environment
     if (process.env.NODE_ENV === 'test') {
       return 'memory';
     }
-    
+
     // Default to SQLite
     return 'sqlite';
   }
@@ -429,7 +438,7 @@ export class StorageFactory {
   static createAdapterFromEnvironment(): IStorageAdapter {
     const type = this.detectBestAdapter();
     let config: any;
-    
+
     switch (type) {
       case 'postgresql':
         config = {
@@ -439,11 +448,11 @@ export class StorageFactory {
           credentials: {
             username: process.env.POSTGRES_USER || process.env.DB_USER || 'postgres',
             password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || '',
-            ssl: process.env.POSTGRES_SSL === 'true' || process.env.DB_SSL === 'true'
-          }
+            ssl: process.env.POSTGRES_SSL === 'true' || process.env.DB_SSL === 'true',
+          },
         };
         break;
-      
+
       case 'mysql':
         config = {
           host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',
@@ -451,23 +460,23 @@ export class StorageFactory {
           database: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'knowledge',
           credentials: {
             username: process.env.MYSQL_USER || process.env.DB_USER || 'root',
-            password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || ''
-          }
+            password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
+          },
         };
         break;
-      
+
       case 'sqlite':
         config = {
-          path: process.env.SQLITE_PATH || process.env.DB_PATH || './knowledge.db'
+          path: process.env.SQLITE_PATH || process.env.DB_PATH || './knowledge.db',
         };
         break;
-      
+
       case 'memory':
       default:
         config = {};
         break;
     }
-    
+
     return this.createAdapter(type, config);
   }
 }

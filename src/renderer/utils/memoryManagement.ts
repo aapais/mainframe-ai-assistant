@@ -65,7 +65,7 @@ export class MemoryUtils {
     if (bytes === 0) return '0 Bytes';
 
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   }
 
   static triggerGarbageCollection(): void {
@@ -294,11 +294,7 @@ export class GenericResourcePool<T> implements ResourcePool<T> {
   private resetFunction?: (resource: T) => void;
   private maxSize: number;
 
-  constructor(
-    factory: () => T,
-    maxSize: number = 10,
-    resetFunction?: (resource: T) => void
-  ) {
+  constructor(factory: () => T, maxSize: number = 10, resetFunction?: (resource: T) => void) {
     this.factory = factory;
     this.maxSize = maxSize;
     this.resetFunction = resetFunction;
@@ -423,12 +419,14 @@ export function useMemoryLeakDetector(intervalMs: number = 5000) {
   }, [intervalMs]);
 
   const detectLeaks = useCallback(() => {
-    return detectorRef.current?.detectLeaks() || {
-      hasLeak: false,
-      trend: 'stable' as const,
-      growthRate: 0,
-      recommendations: [],
-    };
+    return (
+      detectorRef.current?.detectLeaks() || {
+        hasLeak: false,
+        trend: 'stable' as const,
+        growthRate: 0,
+        recommendations: [],
+      }
+    );
   }, []);
 
   const getMemoryTrend = useCallback(() => {
@@ -468,10 +466,7 @@ export function useWeakMapCache<K extends object, V>(): WeakMapCache<K, V> {
   return cacheRef.current;
 }
 
-export function useMemoryPressureMonitor(
-  onPressureHigh: () => void,
-  checkInterval: number = 2000
-) {
+export function useMemoryPressureMonitor(onPressureHigh: () => void, checkInterval: number = 2000) {
   const onPressureHighRef = useRef(onPressureHigh);
   onPressureHighRef.current = onPressureHigh;
 
@@ -554,9 +549,11 @@ class GlobalMemoryManager {
     MemoryUtils.triggerGarbageCollection();
 
     // Emit memory pressure event
-    window.dispatchEvent(new CustomEvent('memoryPressure', {
-      detail: { level: 'high' }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('memoryPressure', {
+        detail: { level: 'high' },
+      })
+    );
   }
 
   cleanup(): void {
@@ -602,10 +599,7 @@ export function createMemoizedCallback<T extends (...args: any[]) => any>(
   return useCallback(callback, deps);
 }
 
-export function createMemoizedValue<T>(
-  factory: () => T,
-  deps: React.DependencyList
-): T {
+export function createMemoizedValue<T>(factory: () => T, deps: React.DependencyList): T {
   return useMemo(factory, deps);
 }
 

@@ -3,7 +3,7 @@ import {
   createKBEntryValidationSchema,
   validateField,
   validateForm,
-  VALIDATION_MESSAGES
+  VALIDATION_MESSAGES,
 } from '../validation';
 
 describe('ValidationRules', () => {
@@ -250,7 +250,7 @@ describe('ValidationRules', () => {
         if (value === 'invalid') return 'Custom error message';
         return undefined;
       };
-      
+
       const rule = ValidationRules.custom(customValidator);
       expect(rule.validate('valid')).toBeUndefined();
       expect(rule.validate('invalid')).toBe('Custom error message');
@@ -261,13 +261,13 @@ describe('ValidationRules', () => {
 describe('createKBEntryValidationSchema', () => {
   it('should create validation schema for create mode', () => {
     const schema = createKBEntryValidationSchema('create');
-    
+
     expect(schema).toHaveProperty('title');
     expect(schema).toHaveProperty('problem');
     expect(schema).toHaveProperty('solution');
     expect(schema).toHaveProperty('category');
     expect(schema).toHaveProperty('tags');
-    
+
     // Each field should have validation rules
     expect(Array.isArray(schema.title)).toBe(true);
     expect(schema.title.length).toBeGreaterThan(0);
@@ -275,7 +275,7 @@ describe('createKBEntryValidationSchema', () => {
 
   it('should create validation schema for edit mode', () => {
     const schema = createKBEntryValidationSchema('edit');
-    
+
     expect(schema).toHaveProperty('title');
     expect(schema).toHaveProperty('problem');
     expect(schema).toHaveProperty('solution');
@@ -286,10 +286,10 @@ describe('createKBEntryValidationSchema', () => {
   it('should have stricter validation for create mode', () => {
     const createSchema = createKBEntryValidationSchema('create');
     const editSchema = createKBEntryValidationSchema('edit');
-    
+
     // Both should have the same basic structure
     expect(Object.keys(createSchema)).toEqual(Object.keys(editSchema));
-    
+
     // Rules might be different but both should exist
     expect(createSchema.title.length).toBeGreaterThan(0);
     expect(editSchema.title.length).toBeGreaterThan(0);
@@ -299,7 +299,7 @@ describe('createKBEntryValidationSchema', () => {
 describe('validateField', () => {
   const testRules = [
     ValidationRules.required('Field is required'),
-    ValidationRules.minLength(3, 'Must be at least 3 characters')
+    ValidationRules.minLength(3, 'Must be at least 3 characters'),
   ];
 
   it('should return undefined for valid value', () => {
@@ -311,7 +311,7 @@ describe('validateField', () => {
     const result = validateField('', testRules);
     expect(result).toEqual({
       message: 'Field is required',
-      type: 'required'
+      type: 'required',
     });
   });
 
@@ -319,7 +319,7 @@ describe('validateField', () => {
     const result = validateField('ab', testRules);
     expect(result).toEqual({
       message: 'Must be at least 3 characters',
-      type: 'minLength'
+      type: 'minLength',
     });
   });
 
@@ -339,35 +339,35 @@ describe('validateForm', () => {
     name: '',
     email: 'invalid-email',
     age: '25',
-    tags: ['valid-tag']
+    tags: ['valid-tag'],
   };
 
   const testSchema = {
     name: [ValidationRules.required('Name is required')],
     email: [
       ValidationRules.required('Email is required'),
-      ValidationRules.email('Invalid email format')
+      ValidationRules.email('Invalid email format'),
     ],
     age: [ValidationRules.pattern(/^\d+$/, 'Age must be a number')],
-    tags: [ValidationRules.arrayMinLength(2, 'At least 2 tags required')]
+    tags: [ValidationRules.arrayMinLength(2, 'At least 2 tags required')],
   };
 
   it('should validate all fields and return errors', () => {
     const result = validateForm(testData, testSchema);
-    
+
     expect(result).toEqual({
       name: {
         message: 'Name is required',
-        type: 'required'
+        type: 'required',
       },
       email: {
         message: 'Invalid email format',
-        type: 'email'
+        type: 'email',
       },
       tags: {
         message: 'At least 2 tags required',
-        type: 'arrayMinLength'
-      }
+        type: 'arrayMinLength',
+      },
     });
   });
 
@@ -376,34 +376,34 @@ describe('validateForm', () => {
       name: 'John Doe',
       email: 'john@example.com',
       age: '25',
-      tags: ['tag1', 'tag2']
+      tags: ['tag1', 'tag2'],
     };
-    
+
     const result = validateForm(validData, testSchema);
     expect(result).toEqual({});
   });
 
   it('should handle missing fields in data', () => {
     const incompleteData = {
-      name: 'John'
+      name: 'John',
     };
-    
+
     const result = validateForm(incompleteData, testSchema);
-    
+
     expect(result.email).toEqual({
       message: 'Email is required',
-      type: 'required'
+      type: 'required',
     });
   });
 
   it('should handle fields not in schema', () => {
     const dataWithExtra = {
       ...testData,
-      extraField: 'extra value'
+      extraField: 'extra value',
     };
-    
+
     const result = validateForm(dataWithExtra, testSchema);
-    
+
     // Should not include validation for extraField
     expect(result.extraField).toBeUndefined();
   });
@@ -433,7 +433,7 @@ describe('VALIDATION_MESSAGES', () => {
     expect(typeof VALIDATION_MESSAGES.categoryRequired).toBe('string');
     expect(typeof VALIDATION_MESSAGES.invalidTag).toBe('string');
     expect(typeof VALIDATION_MESSAGES.duplicateTag).toBe('string');
-    
+
     // Function messages
     expect(typeof VALIDATION_MESSAGES.minLength).toBe('function');
     expect(typeof VALIDATION_MESSAGES.maxLength).toBe('function');
@@ -454,12 +454,12 @@ describe('VALIDATION_MESSAGES', () => {
 describe('Edge Cases and Error Handling', () => {
   it('should handle null/undefined values gracefully', () => {
     const schema = {
-      field: [ValidationRules.required()]
+      field: [ValidationRules.required()],
     };
-    
+
     const nullResult = validateForm({ field: null }, schema);
     const undefinedResult = validateForm({ field: undefined }, schema);
-    
+
     expect(nullResult.field.message).toBe(VALIDATION_MESSAGES.required);
     expect(undefinedResult.field.message).toBe(VALIDATION_MESSAGES.required);
   });
@@ -467,9 +467,9 @@ describe('Edge Cases and Error Handling', () => {
   it('should handle malformed validation rules', () => {
     const malformedRule = {
       type: 'test',
-      validate: null // Invalid validate function
+      validate: null, // Invalid validate function
     };
-    
+
     // Should not crash
     expect(() => {
       validateField('test', [malformedRule as any]);
@@ -478,14 +478,14 @@ describe('Edge Cases and Error Handling', () => {
 
   it('should handle circular references in data', () => {
     const circularData: any = {
-      name: 'test'
+      name: 'test',
     };
     circularData.self = circularData;
-    
+
     const schema = {
-      name: [ValidationRules.required()]
+      name: [ValidationRules.required()],
     };
-    
+
     // Should not crash on circular reference
     expect(() => {
       validateForm(circularData, schema);

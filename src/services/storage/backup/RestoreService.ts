@@ -1,6 +1,6 @@
 /**
  * Restore Service
- * 
+ *
  * Comprehensive restore service with support for different backup strategies,
  * point-in-time recovery, validation, and rollback capabilities.
  */
@@ -159,7 +159,6 @@ export class RestoreService extends EventEmitter {
 
       this.emit('restore:started', job);
       return jobId;
-
     } catch (error) {
       console.error(`❌ Failed to create restore job ${jobId}:`, error);
       throw error;
@@ -189,7 +188,6 @@ export class RestoreService extends EventEmitter {
 
       console.log(`🚫 Restore cancelled: ${jobId}`);
       return true;
-
     } catch (error) {
       console.error(`❌ Failed to cancel restore ${jobId}:`, error);
       return false;
@@ -218,7 +216,7 @@ export class RestoreService extends EventEmitter {
         entryCount: backup.entryCount,
         dependencies: backup.dependencies || [],
         description: `${backup.strategy} backup from ${backup.timestamp.toISOString()}`,
-        tags: ['backup', backup.strategy]
+        tags: ['backup', backup.strategy],
       });
     }
 
@@ -228,18 +226,19 @@ export class RestoreService extends EventEmitter {
 
   async findNearestRestorePoint(targetTime: Date): Promise<RestorePoint | null> {
     const restorePoints = await this.listRestorePoints();
-    
+
     // Find the nearest backup before or at the target time
     const validPoints = restorePoints.filter(point => point.timestamp <= targetTime);
-    
+
     if (validPoints.length === 0) {
       return null;
     }
 
     // Return the closest one
-    return validPoints.sort((a, b) => 
-      Math.abs(targetTime.getTime() - a.timestamp.getTime()) - 
-      Math.abs(targetTime.getTime() - b.timestamp.getTime())
+    return validPoints.sort(
+      (a, b) =>
+        Math.abs(targetTime.getTime() - a.timestamp.getTime()) -
+        Math.abs(targetTime.getTime() - b.timestamp.getTime())
     )[0];
   }
 
@@ -255,8 +254,8 @@ export class RestoreService extends EventEmitter {
       totalSize: 0,
       timeSpan: {
         start: backup.timestamp,
-        end: backup.timestamp
-      }
+        end: backup.timestamp,
+      },
     };
 
     if (!chain.fullBackup) {
@@ -349,7 +348,7 @@ export class RestoreService extends EventEmitter {
     for (let i = 0; i < chain.length; i++) {
       const incrementalBackup = chain[i];
       await this.applyIncrementalChanges(tempPath, incrementalBackup);
-      
+
       progress += progressStep;
       this.updateProgress(job.progress, `applying_incremental_${i + 1}`, progress);
     }
@@ -404,8 +403,8 @@ export class RestoreService extends EventEmitter {
       issues: [],
       performance: {
         validationTime: 0,
-        avgQueryTime: 0
-      }
+        avgQueryTime: 0,
+      },
     };
 
     try {
@@ -435,20 +434,23 @@ export class RestoreService extends EventEmitter {
 
         for (const table of tables) {
           const queryStart = Date.now();
-          
+
           try {
-            const count = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number };
+            const count = db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+              count: number;
+            };
             totalRecords += count.count;
-            
+
             queryTimes.push(Date.now() - queryStart);
 
             // Basic data integrity check
-            const integrityCheck = db.prepare(`PRAGMA integrity_check`).get() as { integrity_check: string };
+            const integrityCheck = db.prepare(`PRAGMA integrity_check`).get() as {
+              integrity_check: string;
+            };
             if (integrityCheck.integrity_check !== 'ok') {
               result.dataIntegrityValid = false;
               result.issues.push(`Integrity check failed for table ${table}`);
             }
-
           } catch (error) {
             result.issues.push(`Error validating table ${table}: ${error.message}`);
             result.dataIntegrityValid = false;
@@ -456,29 +458,33 @@ export class RestoreService extends EventEmitter {
         }
 
         result.recordCount = totalRecords;
-        result.performance.avgQueryTime = queryTimes.length > 0 ? 
-          queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length : 0;
+        result.performance.avgQueryTime =
+          queryTimes.length > 0
+            ? queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length
+            : 0;
 
         // Validate against expected backup metadata
         if (job.backupChain && job.backupChain.length > 0) {
           const expectedEntryCount = job.backupChain[job.backupChain.length - 1].entryCount;
-          
+
           // Get actual KB entry count
           try {
-            const actualEntryCount = db.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as { count: number };
-            
+            const actualEntryCount = db
+              .prepare('SELECT COUNT(*) as count FROM kb_entries')
+              .get() as { count: number };
+
             if (actualEntryCount.count !== expectedEntryCount) {
-              result.issues.push(`Entry count mismatch: expected ${expectedEntryCount}, got ${actualEntryCount.count}`);
+              result.issues.push(
+                `Entry count mismatch: expected ${expectedEntryCount}, got ${actualEntryCount.count}`
+              );
             }
           } catch {
             // Table might not exist in this restore
           }
         }
-
       } finally {
         db.close();
       }
-
     } catch (error) {
       result.success = false;
       result.issues.push(`Validation failed: ${error.message}`);
@@ -496,7 +502,7 @@ export class RestoreService extends EventEmitter {
     try {
       // Check if database can be opened and basic operations work
       const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-      
+
       if (tables.length === 0) {
         issues.push('No tables found in restored database');
       }
@@ -518,14 +524,13 @@ export class RestoreService extends EventEmitter {
           issues.push(`Cannot validate schema for table ${table.name}: ${error.message}`);
         }
       }
-
     } catch (error) {
       issues.push(`Schema validation failed: ${error.message}`);
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -551,8 +556,8 @@ export class RestoreService extends EventEmitter {
         tablesProcessed: 0,
         totalTables: 0,
         bytesProcessed: 0,
-        totalBytes: 0
-      }
+        totalBytes: 0,
+      },
     };
 
     // Validate request
@@ -627,7 +632,7 @@ export class RestoreService extends EventEmitter {
       if (job.request.includeValidation) {
         this.updateProgress(job.progress, 'validating_restore', 95);
         job.validationResult = await this.validateRestore(job);
-        
+
         if (!job.validationResult.success) {
           throw new Error(`Restore validation failed: ${job.validationResult.issues.join(', ')}`);
         }
@@ -647,7 +652,6 @@ export class RestoreService extends EventEmitter {
 
       this.emit('restore:completed', job);
       console.log(`✅ Restore completed: ${job.id}`);
-
     } catch (error) {
       job.status = 'failed';
       job.error = error.message;
@@ -685,7 +689,7 @@ export class RestoreService extends EventEmitter {
 
     // Extract data from package format
     const content = data.toString('utf-8');
-    
+
     if (content.includes('---BACKUP-DATA-SEPARATOR---')) {
       const parts = content.split('---BACKUP-DATA-SEPARATOR---');
       if (parts.length === 2) {
@@ -705,7 +709,7 @@ export class RestoreService extends EventEmitter {
     }
 
     const content = data.toString('utf-8');
-    
+
     if (content.includes('---BACKUP-DATA-SEPARATOR---')) {
       const parts = content.split('---BACKUP-DATA-SEPARATOR---');
       if (parts.length === 2) {
@@ -724,10 +728,10 @@ export class RestoreService extends EventEmitter {
   private async verifyRestoredDatabase(dbPath: string): Promise<void> {
     try {
       const db = new Database(dbPath, { readonly: true });
-      
+
       // Basic verification
       const result = db.prepare('PRAGMA integrity_check').get() as { integrity_check: string };
-      
+
       if (result.integrity_check !== 'ok') {
         throw new Error('Database integrity check failed');
       }
@@ -787,7 +791,7 @@ export class RestoreService extends EventEmitter {
     // Build chain backwards to the full backup
     while (current && current.strategy !== 'full') {
       chain.unshift(current);
-      
+
       if (current.dependencies && current.dependencies.length > 0) {
         const dep = await this.getBackupMetadata(current.dependencies[0]);
         if (dep) {
@@ -847,7 +851,6 @@ export class RestoreService extends EventEmitter {
       });
 
       applyChanges();
-
     } finally {
       db.close();
     }
@@ -859,13 +862,15 @@ export class RestoreService extends EventEmitter {
   }
 
   private async getTableNames(db: Database): Promise<string[]> {
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+      .all() as { name: string }[];
     return tables.map(t => t.name);
   }
 
   private calculateRestoreMetrics(job: RestoreJob): RestoreMetrics {
-    const totalDuration = job.endTime && job.startTime ? 
-      job.endTime.getTime() - job.startTime.getTime() : 0;
+    const totalDuration =
+      job.endTime && job.startTime ? job.endTime.getTime() - job.startTime.getTime() : 0;
 
     return {
       totalDuration,
@@ -874,15 +879,12 @@ export class RestoreService extends EventEmitter {
       validationTime: job.validationResult?.performance.validationTime || 0,
       dataSize: 0, // TODO: Track data size
       tablesRestored: job.progress.totalTables,
-      recordsRestored: job.validationResult?.recordCount || 0
+      recordsRestored: job.validationResult?.recordCount || 0,
     };
   }
 
   private async cleanupPartialRestore(job: RestoreJob): Promise<void> {
-    const tempFiles = [
-      `${job.request.destinationPath}.temp`,
-      job.request.destinationPath
-    ];
+    const tempFiles = [`${job.request.destinationPath}.temp`, job.request.destinationPath];
 
     for (const file of tempFiles) {
       if (fs.existsSync(file)) {
@@ -915,8 +917,10 @@ export function calculateRestoreTime(backupChain: BackupChain): {
 
   // Time for incremental backups
   if (backupChain.incrementalBackups.length > 0) {
-    const incrementalTime = backupChain.incrementalBackups.reduce((sum, backup) => 
-      sum + Math.max(backup.size / (1024 * 1024 * 2), 5), 0); // Faster for incremental
+    const incrementalTime = backupChain.incrementalBackups.reduce(
+      (sum, backup) => sum + Math.max(backup.size / (1024 * 1024 * 2), 5),
+      0
+    ); // Faster for incremental
     estimatedSeconds += incrementalTime;
     factors.push(`Incremental backups: ${incrementalTime.toFixed(1)}s`);
   }
@@ -935,14 +939,14 @@ export function calculateRestoreTime(backupChain: BackupChain): {
 
   return {
     estimated: Math.round(estimatedSeconds),
-    factors
+    factors,
   };
 }
 
 export function getRestoreComplexity(backupChain: BackupChain): 'simple' | 'moderate' | 'complex' {
   const chainLength = backupChain.incrementalBackups.length;
-  const hasLargeDifferential = backupChain.differentialBackup && 
-    backupChain.differentialBackup.size > 100 * 1024 * 1024; // > 100MB
+  const hasLargeDifferential =
+    backupChain.differentialBackup && backupChain.differentialBackup.size > 100 * 1024 * 1024; // > 100MB
 
   if (chainLength === 0 && !hasLargeDifferential) {
     return 'simple';

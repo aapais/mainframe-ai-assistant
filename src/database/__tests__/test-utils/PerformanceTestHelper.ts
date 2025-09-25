@@ -65,7 +65,7 @@ export class PerformanceTestHelper extends EventEmitter {
     const cpuEnd = process.cpuUsage(cpuStart);
 
     const executionTime = timeEnd - timeStart;
-    const operationsPerSecond = iterations > 1 ? (iterations / (executionTime / 1000)) : undefined;
+    const operationsPerSecond = iterations > 1 ? iterations / (executionTime / 1000) : undefined;
 
     const result: BenchmarkResult = {
       name,
@@ -80,11 +80,11 @@ export class PerformanceTestHelper extends EventEmitter {
           heapUsed: memEnd.heapUsed - memStart.heapUsed,
           heapTotal: memEnd.heapTotal - memStart.heapTotal,
           external: memEnd.external - memStart.external,
-          arrayBuffers: memEnd.arrayBuffers - memStart.arrayBuffers
+          arrayBuffers: memEnd.arrayBuffers - memStart.arrayBuffers,
         },
         cpuUsage: cpuEnd,
-        operationsPerSecond
-      }
+        operationsPerSecond,
+      },
     };
 
     this.benchmarkResults.push(result);
@@ -99,28 +99,20 @@ export class PerformanceTestHelper extends EventEmitter {
   async runLoadTest(config: LoadTestConfig): Promise<BenchmarkResult[]> {
     const results: BenchmarkResult[] = [];
     const startTime = Date.now();
-    const endTime = startTime + (config.duration * 1000);
-    const rampUpEnd = startTime + (config.rampUpTime * 1000);
+    const endTime = startTime + config.duration * 1000;
+    const rampUpEnd = startTime + config.rampUpTime * 1000;
 
     const workers: Promise<void>[] = [];
 
     // Create concurrent workers
     for (let i = 0; i < config.concurrentUsers; i++) {
       const workerDelay = (config.rampUpTime * 1000 * i) / config.concurrentUsers;
-      
-      workers.push(
-        this.runWorker(
-          i,
-          workerDelay,
-          endTime,
-          config.operations,
-          results
-        )
-      );
+
+      workers.push(this.runWorker(i, workerDelay, endTime, config.operations, results));
     }
 
     await Promise.all(workers);
-    
+
     return results;
   }
 
@@ -140,7 +132,7 @@ export class PerformanceTestHelper extends EventEmitter {
 
     while (Date.now() < endTime) {
       const operation = operations[operationCount % operations.length];
-      
+
       try {
         const result = await this.measureOperation(
           `worker-${workerId}-op-${operationCount}`,
@@ -167,7 +159,7 @@ export class PerformanceTestHelper extends EventEmitter {
 
     for (const size of sizes) {
       await setupData(size);
-      
+
       const result = await this.measureOperation(
         `query-scaling-${size}`,
         query,
@@ -196,11 +188,11 @@ export class PerformanceTestHelper extends EventEmitter {
     const memoryMonitor = setInterval(() => {
       const memUsage = process.memoryUsage();
       const cpuUsage = process.cpuUsage();
-      
+
       metrics.push({
         executionTime: Date.now() - startTime,
         memoryUsage: memUsage,
-        cpuUsage: cpuUsage
+        cpuUsage: cpuUsage,
       });
     }, interval);
 
@@ -227,18 +219,13 @@ export class PerformanceTestHelper extends EventEmitter {
     const results: { [key: string]: BenchmarkResult } = {};
 
     for (const impl of implementations) {
-      results[impl.name] = await this.measureOperation(
-        impl.name,
-        impl.fn,
-        iterations
-      );
+      results[impl.name] = await this.measureOperation(impl.name, impl.fn, iterations);
     }
 
     // Calculate relative performance
-    const fastest = Object.values(results)
-      .reduce((min, current) => 
-        current.metrics.executionTime < min.metrics.executionTime ? current : min
-      );
+    const fastest = Object.values(results).reduce((min, current) =>
+      current.metrics.executionTime < min.metrics.executionTime ? current : min
+    );
 
     Object.values(results).forEach(result => {
       result.metrics.throughput = fastest.metrics.executionTime / result.metrics.executionTime;
@@ -259,15 +246,16 @@ export class PerformanceTestHelper extends EventEmitter {
 
     baseline.forEach(baselineResult => {
       const currentResult = current.find(r => r.name === baselineResult.name);
-      
+
       if (currentResult) {
-        const degradation = (currentResult.metrics.executionTime - baselineResult.metrics.executionTime) 
-          / baselineResult.metrics.executionTime;
-        
+        const degradation =
+          (currentResult.metrics.executionTime - baselineResult.metrics.executionTime) /
+          baselineResult.metrics.executionTime;
+
         analysis.push({
           test: baselineResult.name,
           degradation,
-          isRegression: degradation > threshold
+          isRegression: degradation > threshold,
         });
       }
     });
@@ -290,22 +278,25 @@ export class PerformanceTestHelper extends EventEmitter {
     report += `Memory: ${Math.round(os.totalmem() / 1024 / 1024 / 1024)}GB\n\n`;
 
     report += '## Test Results\n\n';
-    report += '| Test Name | Execution Time (ms) | Memory Usage (MB) | Operations/sec | Success |\n';
+    report +=
+      '| Test Name | Execution Time (ms) | Memory Usage (MB) | Operations/sec | Success |\n';
     report += '|-----------|-------------------|------------------|----------------|----------|\n';
 
     this.benchmarkResults.forEach(result => {
-      const memUsageMB = Math.round(result.metrics.memoryUsage.heapUsed / 1024 / 1024 * 100) / 100;
-      const opsPerSec = result.metrics.operationsPerSecond 
-        ? Math.round(result.metrics.operationsPerSecond * 100) / 100 
+      const memUsageMB =
+        Math.round((result.metrics.memoryUsage.heapUsed / 1024 / 1024) * 100) / 100;
+      const opsPerSec = result.metrics.operationsPerSecond
+        ? Math.round(result.metrics.operationsPerSecond * 100) / 100
         : 'N/A';
-      
+
       report += `| ${result.name} | ${Math.round(result.metrics.executionTime * 100) / 100} | ${memUsageMB} | ${opsPerSec} | ${result.success ? '✅' : '❌'} |\n`;
     });
 
     // Add summary statistics
     const successful = this.benchmarkResults.filter(r => r.success);
     if (successful.length > 0) {
-      const avgTime = successful.reduce((sum, r) => sum + r.metrics.executionTime, 0) / successful.length;
+      const avgTime =
+        successful.reduce((sum, r) => sum + r.metrics.executionTime, 0) / successful.length;
       const maxTime = Math.max(...successful.map(r => r.metrics.executionTime));
       const minTime = Math.min(...successful.map(r => r.metrics.executionTime));
 

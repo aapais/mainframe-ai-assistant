@@ -80,25 +80,25 @@ export class AlgorithmTuner extends EventEmitter {
         threshold: 0.6,
         distance: 100,
         includeScore: true,
-        includeMatches: true
+        includeMatches: true,
       },
       indexing: {
         batchSize: 1000,
         updateFrequency: 300, // 5 minutes
-        compressionLevel: 6
+        compressionLevel: 6,
       },
       scoring: {
         relevanceWeight: 0.4,
         freshnessWeight: 0.2,
         popularityWeight: 0.2,
-        personalizedWeight: 0.2
+        personalizedWeight: 0.2,
       },
       performance: {
         maxResults: 50,
         cacheSize: 1000,
         cacheTTL: 300, // 5 minutes
-        timeoutMs: 5000
-      }
+        timeoutMs: 5000,
+      },
     };
   }
 
@@ -123,7 +123,7 @@ export class AlgorithmTuner extends EventEmitter {
   recordSearchMetrics(metrics: SearchMetrics): void {
     this.metrics.push({
       ...metrics,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep only last 10,000 metrics for memory efficiency
@@ -154,7 +154,7 @@ export class AlgorithmTuner extends EventEmitter {
       queryPatterns: this.analyzeQueryPatterns(recentMetrics),
       performanceTrends: this.analyzePerformanceTrends(recentMetrics),
       algorithmEfficiency: this.analyzeAlgorithmEfficiency(recentMetrics),
-      userEngagement: this.analyzeUserEngagement(recentMetrics)
+      userEngagement: this.analyzeUserEngagement(recentMetrics),
     };
 
     this.emit('performance-analyzed', analysis);
@@ -173,10 +173,10 @@ export class AlgorithmTuner extends EventEmitter {
     }
 
     // Analyze different aspects and generate recommendations
-    recommendations.push(...await this.analyzeFuzzySearchParameters(recentMetrics));
-    recommendations.push(...await this.analyzeScoringWeights(recentMetrics));
-    recommendations.push(...await this.analyzePerformanceParameters(recentMetrics));
-    recommendations.push(...await this.analyzeIndexingStrategy(recentMetrics));
+    recommendations.push(...(await this.analyzeFuzzySearchParameters(recentMetrics)));
+    recommendations.push(...(await this.analyzeScoringWeights(recentMetrics)));
+    recommendations.push(...(await this.analyzePerformanceParameters(recentMetrics)));
+    recommendations.push(...(await this.analyzeIndexingStrategy(recentMetrics)));
 
     // Sort by expected improvement and confidence
     return recommendations.sort((a, b) => {
@@ -189,7 +189,9 @@ export class AlgorithmTuner extends EventEmitter {
   /**
    * Analyze fuzzy search parameters
    */
-  private async analyzeFuzzySearchParameters(metrics: SearchMetrics[]): Promise<TuningRecommendation[]> {
+  private async analyzeFuzzySearchParameters(
+    metrics: SearchMetrics[]
+  ): Promise<TuningRecommendation[]> {
     const recommendations: TuningRecommendation[] = [];
     const avgRelevance = this.calculateAverageRelevanceScore(metrics);
     const avgResponseTime = this.calculateAverageResponseTime(metrics);
@@ -211,8 +213,8 @@ export class AlgorithmTuner extends EventEmitter {
         testData: {
           sampleQueries: this.extractSampleQueries(metrics, 10),
           expectedResults: [],
-          benchmarkMetrics: metrics.slice(-50)
-        }
+          benchmarkMetrics: metrics.slice(-50),
+        },
       });
     }
 
@@ -233,8 +235,8 @@ export class AlgorithmTuner extends EventEmitter {
         testData: {
           sampleQueries: this.extractSampleQueries(metrics, 10),
           expectedResults: [],
-          benchmarkMetrics: metrics.slice(-50)
-        }
+          benchmarkMetrics: metrics.slice(-50),
+        },
       });
     }
 
@@ -265,8 +267,8 @@ export class AlgorithmTuner extends EventEmitter {
         testData: {
           sampleQueries: this.extractSampleQueries(metrics, 15),
           expectedResults: [],
-          benchmarkMetrics: metrics.slice(-100)
-        }
+          benchmarkMetrics: metrics.slice(-100),
+        },
       });
     }
 
@@ -276,7 +278,9 @@ export class AlgorithmTuner extends EventEmitter {
   /**
    * Analyze performance parameters
    */
-  private async analyzePerformanceParameters(metrics: SearchMetrics[]): Promise<TuningRecommendation[]> {
+  private async analyzePerformanceParameters(
+    metrics: SearchMetrics[]
+  ): Promise<TuningRecommendation[]> {
     const recommendations: TuningRecommendation[] = [];
     const avgResponseTime = this.calculateAverageResponseTime(metrics);
 
@@ -297,8 +301,8 @@ export class AlgorithmTuner extends EventEmitter {
         testData: {
           sampleQueries: this.extractSampleQueries(metrics, 10),
           expectedResults: [],
-          benchmarkMetrics: metrics.slice(-50)
-        }
+          benchmarkMetrics: metrics.slice(-50),
+        },
       });
     }
 
@@ -320,8 +324,8 @@ export class AlgorithmTuner extends EventEmitter {
         testData: {
           sampleQueries: this.extractSampleQueries(metrics, 20),
           expectedResults: [],
-          benchmarkMetrics: metrics.slice(-100)
-        }
+          benchmarkMetrics: metrics.slice(-100),
+        },
       });
     }
 
@@ -352,8 +356,8 @@ export class AlgorithmTuner extends EventEmitter {
         testData: {
           sampleQueries: this.extractSampleQueries(metrics, 10),
           expectedResults: [],
-          benchmarkMetrics: metrics.slice(-50)
-        }
+          benchmarkMetrics: metrics.slice(-50),
+        },
       });
     }
 
@@ -382,13 +386,13 @@ export class AlgorithmTuner extends EventEmitter {
         history.push({
           ...recommendation,
           appliedAt: Date.now(),
-          results: testResults
+          results: testResults,
         });
         this.tuningHistory.set(recommendation.algorithm, history);
 
         this.emit('tuning-applied', {
           recommendation,
-          results: testResults
+          results: testResults,
         });
 
         return true;
@@ -398,7 +402,6 @@ export class AlgorithmTuner extends EventEmitter {
         console.log(`Optimization failed, rolled back: ${recommendation.title}`);
         return false;
       }
-
     } catch (error) {
       console.error('Error applying algorithm optimization:', error);
       return false;
@@ -413,7 +416,8 @@ export class AlgorithmTuner extends EventEmitter {
     const results = [];
 
     // Run test queries and measure performance
-    for (const query of testQueries.slice(0, 5)) { // Test with first 5 queries
+    for (const query of testQueries.slice(0, 5)) {
+      // Test with first 5 queries
       const startTime = Date.now();
 
       // Simulate search execution with new parameters
@@ -425,7 +429,7 @@ export class AlgorithmTuner extends EventEmitter {
         query,
         responseTime: endTime - startTime,
         relevanceScore: testResult.relevanceScore,
-        resultsCount: testResult.resultsCount
+        resultsCount: testResult.resultsCount,
       });
     }
 
@@ -436,7 +440,8 @@ export class AlgorithmTuner extends EventEmitter {
     const baselineResponseTime = this.performanceBaselines.get('responseTime') || 1000;
     const baselineRelevance = this.performanceBaselines.get('relevance') || 0.7;
 
-    const responseTimeImprovement = ((baselineResponseTime - avgResponseTime) / baselineResponseTime) * 100;
+    const responseTimeImprovement =
+      ((baselineResponseTime - avgResponseTime) / baselineResponseTime) * 100;
     const relevanceImprovement = ((avgRelevance - baselineRelevance) / baselineRelevance) * 100;
 
     return {
@@ -444,7 +449,7 @@ export class AlgorithmTuner extends EventEmitter {
       responseTimeImprovement,
       relevanceImprovement,
       testResults: results,
-      overallImprovement: (responseTimeImprovement + relevanceImprovement) / 2
+      overallImprovement: (responseTimeImprovement + relevanceImprovement) / 2,
     };
   }
 
@@ -461,8 +466,8 @@ export class AlgorithmTuner extends EventEmitter {
 
     return {
       responseTime: baseResponseTime + fuzzinessPenalty + distancePenalty,
-      relevanceScore: this.config.fuzzySearch.threshold + (Math.random() * 0.2),
-      resultsCount: Math.floor(Math.random() * this.config.performance.maxResults)
+      relevanceScore: this.config.fuzzySearch.threshold + Math.random() * 0.2,
+      resultsCount: Math.floor(Math.random() * this.config.performance.maxResults),
     };
   }
 
@@ -513,7 +518,7 @@ export class AlgorithmTuner extends EventEmitter {
     return {
       averageQueryLength: avgQueryLength,
       commonTerms: this.extractCommonTerms(metrics),
-      queryTypes: this.categorizeQueries(metrics)
+      queryTypes: this.categorizeQueries(metrics),
     };
   }
 
@@ -522,7 +527,7 @@ export class AlgorithmTuner extends EventEmitter {
     return {
       peakHours: this.identifyPeakHours(hourlyData),
       trendDirection: this.calculateTrendDirection(hourlyData),
-      volatility: this.calculateVolatility(hourlyData)
+      volatility: this.calculateVolatility(hourlyData),
     };
   }
 
@@ -532,7 +537,7 @@ export class AlgorithmTuner extends EventEmitter {
       algorithm,
       averageResponseTime: this.calculateAverageResponseTime(groupMetrics as SearchMetrics[]),
       averageRelevance: this.calculateAverageRelevanceScore(groupMetrics as SearchMetrics[]),
-      usageCount: (groupMetrics as SearchMetrics[]).length
+      usageCount: (groupMetrics as SearchMetrics[]).length,
     }));
   }
 
@@ -543,17 +548,20 @@ export class AlgorithmTuner extends EventEmitter {
       return {
         averageClickThroughRate: 0.3, // Default assumption
         averageDwellTime: 30000,
-        averageRefinements: 1
+        averageRefinements: 1,
       };
     }
 
     return {
-      averageClickThroughRate: engagementMetrics.reduce((sum, m) =>
-        sum + (m.userInteraction?.clickThroughRate || 0), 0) / engagementMetrics.length,
-      averageDwellTime: engagementMetrics.reduce((sum, m) =>
-        sum + (m.userInteraction?.dwellTime || 0), 0) / engagementMetrics.length,
-      averageRefinements: engagementMetrics.reduce((sum, m) =>
-        sum + (m.userInteraction?.refinements || 0), 0) / engagementMetrics.length
+      averageClickThroughRate:
+        engagementMetrics.reduce((sum, m) => sum + (m.userInteraction?.clickThroughRate || 0), 0) /
+        engagementMetrics.length,
+      averageDwellTime:
+        engagementMetrics.reduce((sum, m) => sum + (m.userInteraction?.dwellTime || 0), 0) /
+        engagementMetrics.length,
+      averageRefinements:
+        engagementMetrics.reduce((sum, m) => sum + (m.userInteraction?.refinements || 0), 0) /
+        engagementMetrics.length,
     };
   }
 
@@ -565,8 +573,8 @@ export class AlgorithmTuner extends EventEmitter {
 
     return {
       hitRate: cacheableQueries / totalQueries,
-      potentialSavings: (cacheableQueries * 0.8), // Assume 80% time savings from cache
-      recommendations: cacheableQueries > totalQueries * 0.3 ? ['increase-cache-size'] : []
+      potentialSavings: cacheableQueries * 0.8, // Assume 80% time savings from cache
+      recommendations: cacheableQueries > totalQueries * 0.3 ? ['increase-cache-size'] : [],
     };
   }
 
@@ -575,7 +583,7 @@ export class AlgorithmTuner extends EventEmitter {
     return {
       updateLatency: Math.random() * 20000, // 0-20 seconds
       updateFrequency: this.config.indexing.updateFrequency,
-      impactOnSearch: Math.random() * 0.3 // 0-30% impact
+      impactOnSearch: Math.random() * 0.3, // 0-30% impact
     };
   }
 
@@ -604,7 +612,7 @@ export class AlgorithmTuner extends EventEmitter {
     return {
       short: metrics.filter(m => m.query.length < 10).length,
       medium: metrics.filter(m => m.query.length >= 10 && m.query.length < 30).length,
-      long: metrics.filter(m => m.query.length >= 30).length
+      long: metrics.filter(m => m.query.length >= 30).length,
     };
   }
 
@@ -650,8 +658,11 @@ export class AlgorithmTuner extends EventEmitter {
     const recentHours = hours.slice(-3);
     const olderHours = hours.slice(0, 3);
 
-    const recentAvg = recentHours.reduce((sum, h) => sum + (hourlyData.get(h)?.length || 0), 0) / recentHours.length;
-    const olderAvg = olderHours.reduce((sum, h) => sum + (hourlyData.get(h)?.length || 0), 0) / olderHours.length;
+    const recentAvg =
+      recentHours.reduce((sum, h) => sum + (hourlyData.get(h)?.length || 0), 0) /
+      recentHours.length;
+    const olderAvg =
+      olderHours.reduce((sum, h) => sum + (hourlyData.get(h)?.length || 0), 0) / olderHours.length;
 
     if (recentAvg > olderAvg * 1.1) return 'increasing';
     if (recentAvg < olderAvg * 0.9) return 'decreasing';
@@ -663,7 +674,8 @@ export class AlgorithmTuner extends EventEmitter {
     if (counts.length < 2) return 0;
 
     const mean = counts.reduce((sum, count) => sum + count, 0) / counts.length;
-    const variance = counts.reduce((sum, count) => sum + Math.pow(count - mean, 2), 0) / counts.length;
+    const variance =
+      counts.reduce((sum, count) => sum + Math.pow(count - mean, 2), 0) / counts.length;
 
     return Math.sqrt(variance) / mean; // Coefficient of variation
   }
@@ -692,15 +704,18 @@ export class AlgorithmTuner extends EventEmitter {
       value: analysis.averageResponseTime,
       unit: 'ms',
       trend: this.determineTrend(analysis.performanceTrends),
-      severity: this.determineSeverity(analysis.averageResponseTime)
+      severity: this.determineSeverity(analysis.averageResponseTime),
     };
   }
 
   private determineTrend(trends: any): 'improving' | 'degrading' | 'stable' {
     switch (trends.trendDirection) {
-      case 'decreasing': return 'improving'; // Lower response time is better
-      case 'increasing': return 'degrading';
-      default: return 'stable';
+      case 'decreasing':
+        return 'improving'; // Lower response time is better
+      case 'increasing':
+        return 'degrading';
+      default:
+        return 'stable';
     }
   }
 
@@ -724,7 +739,7 @@ export class AlgorithmTuner extends EventEmitter {
       this.emit('tuning-recommendation', {
         type: 'monitoring',
         timestamp: Date.now(),
-        metrics: this.getRecentMetrics(60000) // Last minute
+        metrics: this.getRecentMetrics(60000), // Last minute
       });
     }, 60000); // Every minute
   }
@@ -736,7 +751,7 @@ export class AlgorithmTuner extends EventEmitter {
         type: 'slow_query',
         query: metrics.query,
         responseTime: metrics.responseTime,
-        recommendation: 'Consider query optimization or caching'
+        recommendation: 'Consider query optimization or caching',
       });
     }
   }

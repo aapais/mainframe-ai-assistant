@@ -1,6 +1,6 @@
 /**
  * Cache Types and Interfaces
- * 
+ *
  * Shared type definitions for frontend and backend cache integration
  */
 

@@ -1,13 +1,13 @@
 /**
  * Cache API Client
- * 
+ *
  * Handles communication with backend cache endpoints:
  * - Cache operations (get, set, delete, clear)
  * - Performance metrics retrieval
  * - Cache warming and prefetching
  * - Real-time cache status updates
  * - Automatic retry and error handling
- * 
+ *
  * @author Frontend Cache Team
  * @version 1.0.0
  */
@@ -110,7 +110,7 @@ export class CacheApiClient {
   private enableCompression: boolean;
   private headers: Record<string, string>;
   private requestId: number = 0;
-  
+
   constructor(options: CacheApiOptions = {}) {
     this.baseUrl = options.baseUrl || '/api/cache';
     this.timeout = options.timeout || 30000;
@@ -120,71 +120,77 @@ export class CacheApiClient {
     this.headers = {
       'Content-Type': 'application/json',
       ...(this.enableCompression && { 'Accept-Encoding': 'gzip, deflate, br' }),
-      ...options.headers
+      ...options.headers,
     };
   }
-  
+
   // ========================
   // Core Cache Operations
   // ========================
-  
+
   async get<T = any>(key: string): Promise<CacheApiResponse<T>> {
     return this.request<T>('GET', `/entries/${encodeURIComponent(key)}`);
   }
-  
-  async set<T = any>(key: string, value: T, options?: {
-    ttl?: number;
-    tags?: string[];
-    priority?: 'low' | 'normal' | 'high';
-  }): Promise<CacheApiResponse<boolean>> {
+
+  async set<T = any>(
+    key: string,
+    value: T,
+    options?: {
+      ttl?: number;
+      tags?: string[];
+      priority?: 'low' | 'normal' | 'high';
+    }
+  ): Promise<CacheApiResponse<boolean>> {
     return this.request<boolean>('PUT', `/entries/${encodeURIComponent(key)}`, {
       value,
-      ...options
+      ...options,
     });
   }
-  
+
   async delete(key: string): Promise<CacheApiResponse<boolean>> {
     return this.request<boolean>('DELETE', `/entries/${encodeURIComponent(key)}`);
   }
-  
+
   async has(key: string): Promise<CacheApiResponse<boolean>> {
     return this.request<boolean>('HEAD', `/entries/${encodeURIComponent(key)}`);
   }
-  
+
   async clear(pattern?: string): Promise<CacheApiResponse<number>> {
     const params = pattern ? `?pattern=${encodeURIComponent(pattern)}` : '';
     return this.request<number>('DELETE', `/entries${params}`);
   }
-  
+
   // ========================
   // Batch Operations
   // ========================
-  
+
   async getMany<T = any>(keys: string[]): Promise<CacheApiResponse<Array<T | null>>> {
     return this.request<Array<T | null>>('POST', '/entries/batch/get', { keys });
   }
-  
-  async setMany<T = any>(entries: Array<{
-    key: string;
-    value: T;
-    ttl?: number;
-    tags?: string[];
-  }>): Promise<CacheApiResponse<number>> {
+
+  async setMany<T = any>(
+    entries: Array<{
+      key: string;
+      value: T;
+      ttl?: number;
+      tags?: string[];
+    }>
+  ): Promise<CacheApiResponse<number>> {
     return this.request<number>('POST', '/entries/batch/set', { entries });
   }
-  
+
   async deleteMany(keys: string[]): Promise<CacheApiResponse<number>> {
     return this.request<number>('POST', '/entries/batch/delete', { keys });
   }
-  
+
   // ========================
   // Search Operations
   // ========================
-  
+
   async search(request: SearchCacheRequest): Promise<CacheApiResponse<SearchCacheResponse>> {
     return this.request<SearchCacheResponse>('POST', '/search', request);
   }
-  
+
   async searchIncremental(
     query: string,
     token?: string,
@@ -196,108 +202,125 @@ export class CacheApiClient {
     return this.request<SearchCacheResponse>('POST', '/search/incremental', {
       query,
       token,
-      ...options
+      ...options,
     });
   }
-  
-  async getSuggestions(query: string, options?: {
-    maxSuggestions?: number;
-    enableML?: boolean;
-    context?: Record<string, any>;
-  }): Promise<CacheApiResponse<any[]>> {
+
+  async getSuggestions(
+    query: string,
+    options?: {
+      maxSuggestions?: number;
+      enableML?: boolean;
+      context?: Record<string, any>;
+    }
+  ): Promise<CacheApiResponse<any[]>> {
     const params = new URLSearchParams({
       q: query,
       ...(options?.maxSuggestions && { limit: options.maxSuggestions.toString() }),
-      ...(options?.enableML && { ml: 'true' })
+      ...(options?.enableML && { ml: 'true' }),
     });
-    
-    return this.request<any[]>('GET', `/suggestions?${params}`, 
+
+    return this.request<any[]>(
+      'GET',
+      `/suggestions?${params}`,
       options?.context ? { context: options.context } : undefined
     );
   }
-  
+
   // ========================
   // Performance & Monitoring
   // ========================
-  
+
   async getStats(): Promise<CacheApiResponse<CacheStats>> {
     return this.request<CacheStats>('GET', '/stats');
   }
-  
+
   async getMetrics(timeframe?: string): Promise<CacheApiResponse<CachePerformanceMetrics>> {
     const params = timeframe ? `?timeframe=${timeframe}` : '';
     return this.request<CachePerformanceMetrics>('GET', `/metrics${params}`);
   }
-  
-  async getHealth(): Promise<CacheApiResponse<{
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    checks: Record<string, boolean>;
-    uptime: number;
-    version: string;
-  }>> {
+
+  async getHealth(): Promise<
+    CacheApiResponse<{
+      status: 'healthy' | 'degraded' | 'unhealthy';
+      checks: Record<string, boolean>;
+      uptime: number;
+      version: string;
+    }>
+  > {
     return this.request('GET', '/health');
   }
-  
+
   // ========================
   // Cache Management
   // ========================
-  
-  async warmup(request: CacheWarmupRequest): Promise<CacheApiResponse<{
-    jobId: string;
-    estimatedDuration: number;
-    itemsToWarm: number;
-  }>> {
+
+  async warmup(request: CacheWarmupRequest): Promise<
+    CacheApiResponse<{
+      jobId: string;
+      estimatedDuration: number;
+      itemsToWarm: number;
+    }>
+  > {
     return this.request('POST', '/warmup', request);
   }
-  
-  async prefetch(request: CachePrefetchRequest): Promise<CacheApiResponse<{
-    jobId: string;
-    prefetchedCount: number;
-    failedCount: number;
-  }>> {
+
+  async prefetch(request: CachePrefetchRequest): Promise<
+    CacheApiResponse<{
+      jobId: string;
+      prefetchedCount: number;
+      failedCount: number;
+    }>
+  > {
     return this.request('POST', '/prefetch', request);
   }
-  
-  async invalidate(request: CacheInvalidationRequest): Promise<CacheApiResponse<{
-    invalidatedCount: number;
-    cascadeCount?: number;
-  }>> {
+
+  async invalidate(request: CacheInvalidationRequest): Promise<
+    CacheApiResponse<{
+      invalidatedCount: number;
+      cascadeCount?: number;
+    }>
+  > {
     return this.request('POST', '/invalidate', request);
   }
-  
-  async optimize(): Promise<CacheApiResponse<{
-    compactedEntries: number;
-    reclaimedMemory: number;
-    duration: number;
-  }>> {
+
+  async optimize(): Promise<
+    CacheApiResponse<{
+      compactedEntries: number;
+      reclaimedMemory: number;
+      duration: number;
+    }>
+  > {
     return this.request('POST', '/optimize');
   }
-  
+
   // ========================
   // Real-time Updates
   // ========================
-  
+
   createEventSource(topics: string[] = ['stats', 'metrics']): EventSource | null {
     if (typeof EventSource === 'undefined') {
       console.warn('EventSource not supported in this environment');
       return null;
     }
-    
+
     const params = new URLSearchParams();
     topics.forEach(topic => params.append('topic', topic));
-    
+
     const eventSource = new EventSource(`${this.baseUrl}/events?${params}`);
-    
-    eventSource.onerror = (error) => {
+
+    eventSource.onerror = error => {
       console.error('Cache API EventSource error:', error);
     };
-    
+
     return eventSource;
   }
-  
-  async subscribeToMetrics(callback: (metrics: CachePerformanceMetrics) => void): Promise<() => void> {
+
+  async subscribeToMetrics(
+    callback: (metrics: CachePerformanceMetrics) => void
+  ): Promise<() => void> {
     const eventSource = this.createEventSource(['metrics']);
-    
+
     if (!eventSource) {
       // Fallback to polling
       const interval = setInterval(async () => {
@@ -310,11 +333,11 @@ export class CacheApiClient {
           console.error('Error polling cache metrics:', error);
         }
       }, 5000);
-      
+
       return () => clearInterval(interval);
     }
-    
-    eventSource.addEventListener('metrics', (event) => {
+
+    eventSource.addEventListener('metrics', event => {
       try {
         const metrics = JSON.parse(event.data);
         callback(metrics);
@@ -322,14 +345,14 @@ export class CacheApiClient {
         console.error('Error parsing metrics event:', error);
       }
     });
-    
+
     return () => eventSource.close();
   }
-  
+
   // ========================
   // Private Methods
   // ========================
-  
+
   private async request<T = any>(
     method: string,
     endpoint: string,
@@ -337,29 +360,29 @@ export class CacheApiClient {
   ): Promise<CacheApiResponse<T>> {
     const requestId = (++this.requestId).toString();
     const startTime = performance.now();
-    
+
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt <= this.retries; attempt++) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-        
+
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
           method,
           headers: {
             ...this.headers,
             'X-Request-ID': requestId,
-            ...(this.enableMetrics && { 'X-Enable-Metrics': 'true' })
+            ...(this.enableMetrics && { 'X-Enable-Metrics': 'true' }),
           },
           body: body ? JSON.stringify(body) : undefined,
-          signal: controller.signal
+          signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         const responseTime = performance.now() - startTime;
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new CacheApiError(
@@ -369,7 +392,7 @@ export class CacheApiClient {
             errorData
           );
         }
-        
+
         // Handle HEAD requests (has operation)
         if (method === 'HEAD') {
           return {
@@ -381,13 +404,13 @@ export class CacheApiClient {
             performance: {
               responseTime,
               cacheHit: response.headers.get('X-Cache-Hit') === 'true',
-              bytesTransferred: parseInt(response.headers.get('Content-Length') || '0')
-            }
+              bytesTransferred: parseInt(response.headers.get('Content-Length') || '0'),
+            },
           };
         }
-        
+
         const data = await response.json();
-        
+
         return {
           success: true,
           data: data.data || data,
@@ -398,33 +421,32 @@ export class CacheApiClient {
           performance: {
             responseTime,
             cacheHit: response.headers.get('X-Cache-Hit') === 'true',
-            bytesTransferred: parseInt(response.headers.get('Content-Length') || '0')
-          }
+            bytesTransferred: parseInt(response.headers.get('Content-Length') || '0'),
+          },
         };
-        
       } catch (error) {
         lastError = error as Error;
-        
+
         // Don't retry on certain errors
         if (error instanceof CacheApiError) {
           if (error.status === 400 || error.status === 401 || error.status === 403) {
             break;
           }
         }
-        
+
         // Wait before retry
         if (attempt < this.retries) {
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
       }
     }
-    
+
     // All retries failed
     return {
       success: false,
       error: lastError?.message || 'Unknown error',
       timestamp: Date.now(),
-      requestId
+      requestId,
     };
   }
 }

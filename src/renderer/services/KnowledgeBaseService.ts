@@ -3,7 +3,11 @@
  * Handles all communication between renderer and main process for KB operations
  */
 
-import { KBEntry, CreateKBEntry, UpdateKBEntry } from '../../backend/core/interfaces/ServiceInterfaces';
+import {
+  KBEntry,
+  CreateKBEntry,
+  UpdateKBEntry,
+} from '../../backend/core/interfaces/ServiceInterfaces';
 
 // Types for IPC responses
 interface IPCResponse<T = any> {
@@ -50,7 +54,8 @@ class KnowledgeBaseService {
 
   constructor() {
     // Access the Electron IPC renderer
-    this.ipcRenderer = (window as any).electronAPI || (window as any).require?.('electron')?.ipcRenderer;
+    this.ipcRenderer =
+      (window as any).electronAPI || (window as any).require?.('electron')?.ipcRenderer;
 
     if (!this.ipcRenderer) {
       console.warn('IPC Renderer not available - running in web mode');
@@ -73,7 +78,10 @@ class KnowledgeBaseService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke('kb:create-entry', entryData);
+      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke(
+        'kb:create-entry',
+        entryData
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to create entry');
@@ -103,7 +111,10 @@ class KnowledgeBaseService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke('kb:update-entry', { id, data: updateData });
+      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke('kb:update-entry', {
+        id,
+        data: updateData,
+      });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to update entry');
@@ -155,7 +166,9 @@ class KnowledgeBaseService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke('kb:archive-entry', { id });
+      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke('kb:archive-entry', {
+        id,
+      });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to archive entry');
@@ -192,10 +205,13 @@ class KnowledgeBaseService {
         category: entry.category,
         severity: entry.severity,
         tags: [...(entry.tags || [])],
-        created_by: 'current-user' // This should come from auth context
+        created_by: 'current-user', // This should come from auth context
       };
 
-      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke('kb:create-entry', duplicateData);
+      const response: IPCResponse<KBEntry> = await this.ipcRenderer.invoke(
+        'kb:create-entry',
+        duplicateData
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to duplicate entry');
@@ -250,7 +266,8 @@ class KnowledgeBaseService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<{ entries: KBEntry[]; total: number }> = await this.ipcRenderer.invoke('kb:get-entries', options);
+      const response: IPCResponse<{ entries: KBEntry[]; total: number }> =
+        await this.ipcRenderer.invoke('kb:get-entries', options);
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get entries');
@@ -266,13 +283,17 @@ class KnowledgeBaseService {
   /**
    * Search knowledge base entries
    */
-  async searchEntries(query: string, options: SearchOptions = {}): Promise<{ entries: KBEntry[]; total: number }> {
+  async searchEntries(
+    query: string,
+    options: SearchOptions = {}
+  ): Promise<{ entries: KBEntry[]; total: number }> {
     try {
       if (!this.ipcRenderer) {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<{ entries: KBEntry[]; total: number }> = await this.ipcRenderer.invoke('kb:search-entries', { query, options });
+      const response: IPCResponse<{ entries: KBEntry[]; total: number }> =
+        await this.ipcRenderer.invoke('kb:search-entries', { query, options });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to search entries');
@@ -296,22 +317,27 @@ class KnowledgeBaseService {
           searchReferences: Math.floor(Math.random() * 20) + 1,
           userBookmarks: Math.floor(Math.random() * 15),
           linkedEntries: Math.floor(Math.random() * 8),
-          recentUsage: Math.floor(Math.random() * 10)
+          recentUsage: Math.floor(Math.random() * 10),
         };
       }
 
-      const response: IPCResponse<RelatedEntryData> = await this.ipcRenderer.invoke('kb:get-entry-related-data', { id });
+      const response: IPCResponse<RelatedEntryData> = await this.ipcRenderer.invoke(
+        'kb:get-entry-related-data',
+        { id }
+      );
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get related data');
       }
 
-      return response.data || {
-        searchReferences: 0,
-        userBookmarks: 0,
-        linkedEntries: 0,
-        recentUsage: 0
-      };
+      return (
+        response.data || {
+          searchReferences: 0,
+          userBookmarks: 0,
+          linkedEntries: 0,
+          recentUsage: 0,
+        }
+      );
     } catch (error) {
       console.error('Error getting entry related data:', error);
       throw error;
@@ -327,20 +353,23 @@ class KnowledgeBaseService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<KBStatistics> = await this.ipcRenderer.invoke('kb:get-statistics');
+      const response: IPCResponse<KBStatistics> =
+        await this.ipcRenderer.invoke('kb:get-statistics');
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get statistics');
       }
 
-      return response.data || {
-        totalEntries: 0,
-        categoryCounts: {},
-        recentActivity: 0,
-        searchesToday: 0,
-        averageSuccessRate: 0,
-        topEntries: []
-      };
+      return (
+        response.data || {
+          totalEntries: 0,
+          categoryCounts: {},
+          recentActivity: 0,
+          searchesToday: 0,
+          averageSuccessRate: 0,
+          topEntries: [],
+        }
+      );
     } catch (error) {
       console.error('Error getting KB statistics:', error);
       throw error;
@@ -356,7 +385,9 @@ class KnowledgeBaseService {
         throw new Error('IPC not available');
       }
 
-      const response: IPCResponse<any[]> = await this.ipcRenderer.invoke('kb:get-entry-history', { id });
+      const response: IPCResponse<any[]> = await this.ipcRenderer.invoke('kb:get-entry-history', {
+        id,
+      });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get entry history');
@@ -372,13 +403,19 @@ class KnowledgeBaseService {
   /**
    * Record feedback for an entry
    */
-  async recordFeedback(entryId: string, feedback: { rating: number; successful: boolean; comment?: string }): Promise<void> {
+  async recordFeedback(
+    entryId: string,
+    feedback: { rating: number; successful: boolean; comment?: string }
+  ): Promise<void> {
     try {
       if (!this.ipcRenderer) {
         return; // Silently fail in web mode
       }
 
-      const response: IPCResponse = await this.ipcRenderer.invoke('kb:record-feedback', { entryId, feedback });
+      const response: IPCResponse = await this.ipcRenderer.invoke('kb:record-feedback', {
+        entryId,
+        feedback,
+      });
 
       if (!response.success) {
         console.warn('Failed to record feedback:', response.error?.message);
@@ -397,7 +434,11 @@ class KnowledgeBaseService {
         return; // Silently fail in web mode
       }
 
-      const response: IPCResponse = await this.ipcRenderer.invoke('kb:record-usage', { entryId, action, metadata });
+      const response: IPCResponse = await this.ipcRenderer.invoke('kb:record-usage', {
+        entryId,
+        action,
+        metadata,
+      });
 
       if (!response.success) {
         console.warn('Failed to record usage:', response.error?.message);
@@ -421,11 +462,12 @@ class KnowledgeBaseService {
           { name: 'VSAM', count: 23 },
           { name: 'CICS', count: 31 },
           { name: 'IMS', count: 19 },
-          { name: 'Other', count: 27 }
+          { name: 'Other', count: 27 },
         ];
       }
 
-      const response: IPCResponse<Array<{ name: string; count: number }>> = await this.ipcRenderer.invoke('kb:get-categories');
+      const response: IPCResponse<Array<{ name: string; count: number }>> =
+        await this.ipcRenderer.invoke('kb:get-categories');
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get categories');
@@ -450,11 +492,12 @@ class KnowledgeBaseService {
           { name: 'error-code', count: 12 },
           { name: 'batch-job', count: 8 },
           { name: 'sql-error', count: 10 },
-          { name: 'performance', count: 6 }
+          { name: 'performance', count: 6 },
         ];
       }
 
-      const response: IPCResponse<Array<{ name: string; count: number }>> = await this.ipcRenderer.invoke('kb:get-tags', { limit });
+      const response: IPCResponse<Array<{ name: string; count: number }>> =
+        await this.ipcRenderer.invoke('kb:get-tags', { limit });
 
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to get tags');
@@ -476,7 +519,7 @@ class KnowledgeBaseService {
         this.ipcRenderer.invoke('analytics:track-operation', {
           operation: `kb:${operation}`,
           executionTime,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -495,9 +538,9 @@ class KnowledgeBaseService {
           error: {
             message: error.message,
             stack: error.stack,
-            name: error.name
+            name: error.name,
           },
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (err) {

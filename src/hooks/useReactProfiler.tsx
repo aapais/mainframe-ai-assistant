@@ -5,7 +5,14 @@
  * using React DevTools Profiler API with <16ms render threshold detection
  */
 
-import React, { useCallback, useRef, useEffect, useState, Profiler, ProfilerOnRenderCallback } from 'react';
+import React, {
+  useCallback,
+  useRef,
+  useEffect,
+  useState,
+  Profiler,
+  ProfilerOnRenderCallback,
+} from 'react';
 
 // =========================
 // TYPES AND INTERFACES
@@ -80,8 +87,8 @@ export interface PerformanceStore {
 
 const DEFAULT_THRESHOLDS: PerformanceThresholds = {
   critical: 16, // 16ms for 60fps
-  warning: 12,  // 12ms warning zone
-  good: 8       // 8ms good performance
+  warning: 12, // 12ms warning zone
+  good: 8, // 8ms good performance
 };
 
 const PERFORMANCE_STORAGE_KEY = 'react-performance-metrics';
@@ -117,13 +124,12 @@ class ReactPerformanceStore {
       stats: {
         totalRenders: this.metrics.length,
         slowRenderCount: slowRenders.length,
-        averageRenderTime: renderTimes.length > 0
-          ? renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length
-          : 0,
+        averageRenderTime:
+          renderTimes.length > 0 ? renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length : 0,
         maxRenderTime: Math.max(...renderTimes, 0),
         minRenderTime: Math.min(...renderTimes, Infinity) || 0,
-        lastRenderTime: renderTimes[0] || 0
-      }
+        lastRenderTime: renderTimes[0] || 0,
+      },
     };
   }
 
@@ -168,7 +174,7 @@ export function useReactProfiler(options: ProfilerOptions = {}) {
     enableLogging = process.env.NODE_ENV === 'development',
     sampleRate = 1,
     trackMemory = true,
-    metadata = {}
+    metadata = {},
   } = options;
 
   const renderCountRef = useRef(0);
@@ -200,12 +206,14 @@ export function useReactProfiler(options: ProfilerOptions = {}) {
         metadata: {
           ...metadata,
           ...(trackMemory && {
-            memoryUsage: (performance as any).memory ? {
-              usedJSMemory: (performance as any).memory.usedJSMemory,
-              totalJSMemory: (performance as any).memory.totalJSMemory
-            } : null
-          })
-        }
+            memoryUsage: (performance as any).memory
+              ? {
+                  usedJSMemory: (performance as any).memory.usedJSMemory,
+                  totalJSMemory: (performance as any).memory.totalJSMemory,
+                }
+              : null,
+          }),
+        },
       };
 
       // Store metric
@@ -213,15 +221,18 @@ export function useReactProfiler(options: ProfilerOptions = {}) {
 
       // Logging for development
       if (enableLogging) {
-        const severity = actualDuration > finalThresholds.critical ? '🔴 CRITICAL' :
-                        actualDuration > finalThresholds.warning ? '🟡 WARNING' :
-                        '🟢 GOOD';
+        const severity =
+          actualDuration > finalThresholds.critical
+            ? '🔴 CRITICAL'
+            : actualDuration > finalThresholds.warning
+              ? '🟡 WARNING'
+              : '🟢 GOOD';
 
         console.log(
           `${severity} [${componentName}] Render #${renderCountRef.current} (${phase}): ${actualDuration.toFixed(2)}ms`,
           {
             metric: renderMetric,
-            thresholds: finalThresholds
+            thresholds: finalThresholds,
           }
         );
 
@@ -247,7 +258,7 @@ export function useReactProfiler(options: ProfilerOptions = {}) {
         </Profiler>
       ),
       [componentName, onRenderCallback]
-    )
+    ),
   };
 }
 
@@ -278,7 +289,7 @@ export function usePerformanceStore() {
     store,
     clearMetrics,
     setThresholds,
-    thresholds: performanceStore.getThresholds()
+    thresholds: performanceStore.getThresholds(),
   };
 }
 
@@ -292,7 +303,7 @@ export function useRenderPerformance(componentName?: string) {
     renderCount: 0,
     lastRenderTime: 0,
     averageRenderTime: 0,
-    exceedsThreshold: false
+    exceedsThreshold: false,
   });
 
   useEffect(() => {
@@ -310,8 +321,10 @@ export function useRenderPerformance(componentName?: string) {
       setRenderStats(prev => ({
         renderCount: renderCountRef.current,
         lastRenderTime: renderTime,
-        averageRenderTime: (prev.averageRenderTime * (renderCountRef.current - 1) + renderTime) / renderCountRef.current,
-        exceedsThreshold
+        averageRenderTime:
+          (prev.averageRenderTime * (renderCountRef.current - 1) + renderTime) /
+          renderCountRef.current,
+        exceedsThreshold,
       }));
 
       if (exceedsThreshold && process.env.NODE_ENV === 'development') {
@@ -329,19 +342,21 @@ export function useRenderPerformance(componentName?: string) {
  * Hook for component-specific performance alerts
  */
 export function usePerformanceAlerts(componentName: string) {
-  const [alerts, setAlerts] = useState<Array<{
-    id: string;
-    timestamp: number;
-    message: string;
-    severity: 'warning' | 'critical';
-    renderTime: number;
-  }>>([]);
+  const [alerts, setAlerts] = useState<
+    Array<{
+      id: string;
+      timestamp: number;
+      message: string;
+      severity: 'warning' | 'critical';
+      renderTime: number;
+    }>
+  >([]);
 
   const { store } = usePerformanceStore();
 
   useEffect(() => {
-    const componentMetrics = store.metrics.filter(m =>
-      m.id.includes(componentName) && m.exceededThreshold
+    const componentMetrics = store.metrics.filter(
+      m => m.id.includes(componentName) && m.exceededThreshold
     );
 
     const newAlerts = componentMetrics
@@ -350,8 +365,8 @@ export function usePerformanceAlerts(componentName: string) {
         id: `${metric.id}-${metric.timestamp}`,
         timestamp: metric.timestamp,
         message: `Slow render: ${metric.actualDuration.toFixed(2)}ms (${metric.phase})`,
-        severity: metric.actualDuration > 32 ? 'critical' as const : 'warning' as const,
-        renderTime: metric.actualDuration
+        severity: metric.actualDuration > 32 ? ('critical' as const) : ('warning' as const),
+        renderTime: metric.actualDuration,
       }));
 
     setAlerts(newAlerts);
@@ -364,7 +379,7 @@ export function usePerformanceAlerts(componentName: string) {
   return {
     alerts,
     clearAlerts,
-    hasAlerts: alerts.length > 0
+    hasAlerts: alerts.length > 0,
   };
 }
 
@@ -391,7 +406,7 @@ export function getPerformanceSummary() {
     ...store.stats,
     thresholds,
     performanceScore: calculatePerformanceScore(store),
-    recommendations: generateRecommendations(store)
+    recommendations: generateRecommendations(store),
   };
 }
 
@@ -420,20 +435,28 @@ function generateRecommendations(store: PerformanceStore): string[] {
     const slowRenderRatio = stats.slowRenderCount / stats.totalRenders;
 
     if (slowRenderRatio > 0.1) {
-      recommendations.push('High number of slow renders detected. Consider implementing React.memo for component optimization.');
+      recommendations.push(
+        'High number of slow renders detected. Consider implementing React.memo for component optimization.'
+      );
     }
 
     if (stats.maxRenderTime > 50) {
-      recommendations.push('Very slow renders detected (>50ms). Consider breaking down large components or implementing virtualization.');
+      recommendations.push(
+        'Very slow renders detected (>50ms). Consider breaking down large components or implementing virtualization.'
+      );
     }
 
     if (stats.averageRenderTime > 20) {
-      recommendations.push('Average render time is high. Consider optimizing expensive calculations with useMemo and useCallback.');
+      recommendations.push(
+        'Average render time is high. Consider optimizing expensive calculations with useMemo and useCallback.'
+      );
     }
   }
 
   if (stats.totalRenders > 100 && stats.averageRenderTime > 10) {
-    recommendations.push('Frequent re-renders detected. Review component dependencies and state management.');
+    recommendations.push(
+      'Frequent re-renders detected. Review component dependencies and state management.'
+    );
   }
 
   if (recommendations.length === 0) {
@@ -453,7 +476,7 @@ export function exportPerformanceData(format: 'json' | 'csv' = 'json'): string {
   const data = {
     summary,
     metrics: store.metrics,
-    exportTimestamp: new Date().toISOString()
+    exportTimestamp: new Date().toISOString(),
   };
 
   if (format === 'csv') {
@@ -466,7 +489,15 @@ export function exportPerformanceData(format: 'json' | 'csv' = 'json'): string {
 function convertToCSV(metrics: RenderMetrics[]): string {
   if (metrics.length === 0) return '';
 
-  const headers = ['timestamp', 'id', 'phase', 'actualDuration', 'baseDuration', 'exceededThreshold', 'renderCount'];
+  const headers = [
+    'timestamp',
+    'id',
+    'phase',
+    'actualDuration',
+    'baseDuration',
+    'exceededThreshold',
+    'renderCount',
+  ];
   const rows = metrics.map(metric => [
     new Date(metric.timestamp).toISOString(),
     metric.id,
@@ -474,12 +505,10 @@ function convertToCSV(metrics: RenderMetrics[]): string {
     metric.actualDuration.toString(),
     metric.baseDuration.toString(),
     metric.exceededThreshold.toString(),
-    metric.renderCount.toString()
+    metric.renderCount.toString(),
   ]);
 
-  return [headers, ...rows]
-    .map(row => row.map(field => `"${field}"`).join(','))
-    .join('\n');
+  return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
 }
 
 // =========================

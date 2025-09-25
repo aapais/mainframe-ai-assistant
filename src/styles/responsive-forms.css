@@ -634,7 +634,9 @@
 }
 
 .responsive-form__floating .responsive-form__input:focus ~ .responsive-form__label,
-.responsive-form__floating .responsive-form__input:not(:placeholder-shown) ~ .responsive-form__label {
+.responsive-form__floating
+  .responsive-form__input:not(:placeholder-shown)
+  ~ .responsive-form__label {
   transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
   color: var(--form-border-focus);
 }

@@ -35,7 +35,7 @@ export interface PerformanceAlert {
 
 /**
  * Centralized Performance Management System
- * 
+ *
  * Integrates all performance optimization components:
  * - Connection pooling management
  * - Query caching coordination
@@ -51,7 +51,7 @@ export class PerformanceManager extends EventEmitter {
   private indexStrategy: AdvancedIndexStrategy;
   private optimizationEngine: SearchOptimizationEngine;
   private benchmark: SearchPerformanceBenchmark;
-  
+
   private metrics: PerformanceMetrics = {
     avgQueryTime: 0,
     cacheHitRate: 0,
@@ -60,14 +60,14 @@ export class PerformanceManager extends EventEmitter {
     totalQueries: 0,
     slowQueries: 0,
     optimizationsApplied: 0,
-    lastBenchmarkScore: 0
+    lastBenchmarkScore: 0,
   };
 
   private thresholds: PerformanceThresholds = {
     maxQueryTime: 1000, // 1 second
     minCacheHitRate: 0.8, // 80%
     maxSlowQueryPercent: 0.05, // 5%
-    benchmarkIntervalHours: 24
+    benchmarkIntervalHours: 24,
   };
 
   private monitoringInterval?: ReturnType<typeof setTimeout>;
@@ -75,20 +75,16 @@ export class PerformanceManager extends EventEmitter {
   private queryTimes: number[] = [];
   private lastBenchmark: Date = new Date();
 
-  constructor(
-    knowledgeDB: KnowledgeDB,
-    connectionPool: ConnectionPool,
-    queryCache: QueryCache
-  ) {
+  constructor(knowledgeDB: KnowledgeDB, connectionPool: ConnectionPool, queryCache: QueryCache) {
     super();
-    
+
     this.knowledgeDB = knowledgeDB;
     this.connectionPool = connectionPool;
     this.queryCache = queryCache;
     this.indexStrategy = new AdvancedIndexStrategy();
     this.optimizationEngine = new SearchOptimizationEngine();
     this.benchmark = new SearchPerformanceBenchmark();
-    
+
     this.setupEventListeners();
   }
 
@@ -98,30 +94,29 @@ export class PerformanceManager extends EventEmitter {
    */
   async initialize(): Promise<void> {
     console.log('🚀 Initializing Performance Management System...');
-    
+
     try {
       // Apply index optimizations
       console.log('📊 Applying index optimizations...');
       await this.indexStrategy.createOptimizedIndexes(this.connectionPool.getWriterConnection());
-      
+
       // Initialize optimization engine
       console.log('🔧 Setting up optimization engine...');
       await this.optimizationEngine.initialize(this.knowledgeDB);
-      
+
       // Run baseline benchmark
       console.log('⏱️ Running baseline performance benchmark...');
       await this.runBenchmark(true);
-      
+
       // Start monitoring
       console.log('📈 Starting performance monitoring...');
       this.startMonitoring();
-      
+
       // Schedule periodic benchmarks
       this.scheduleBenchmarks();
-      
+
       console.log('✅ Performance Management System initialized successfully');
       this.emit('initialized', { metrics: this.metrics });
-      
     } catch (error) {
       console.error('❌ Failed to initialize Performance Manager:', error);
       this.emit('error', error);
@@ -135,26 +130,30 @@ export class PerformanceManager extends EventEmitter {
   recordQuery(queryTime: number, cacheHit: boolean): void {
     this.queryTimes.push(queryTime);
     this.metrics.totalQueries++;
-    
+
     // Track slow queries
     if (queryTime > this.thresholds.maxQueryTime) {
       this.metrics.slowQueries++;
       this.emit('slow_query', { queryTime, threshold: this.thresholds.maxQueryTime });
     }
-    
+
     // Update cache hit rate
     if (cacheHit) {
-      this.metrics.cacheHitRate = (this.metrics.cacheHitRate * (this.metrics.totalQueries - 1) + 1) / this.metrics.totalQueries;
+      this.metrics.cacheHitRate =
+        (this.metrics.cacheHitRate * (this.metrics.totalQueries - 1) + 1) /
+        this.metrics.totalQueries;
     } else {
-      this.metrics.cacheHitRate = (this.metrics.cacheHitRate * (this.metrics.totalQueries - 1)) / this.metrics.totalQueries;
+      this.metrics.cacheHitRate =
+        (this.metrics.cacheHitRate * (this.metrics.totalQueries - 1)) / this.metrics.totalQueries;
     }
-    
+
     // Update average query time (rolling window of last 1000 queries)
     if (this.queryTimes.length > 1000) {
       this.queryTimes.shift();
     }
-    this.metrics.avgQueryTime = this.queryTimes.reduce((sum, time) => sum + time, 0) / this.queryTimes.length;
-    
+    this.metrics.avgQueryTime =
+      this.queryTimes.reduce((sum, time) => sum + time, 0) / this.queryTimes.length;
+
     this.checkThresholds();
   }
 
@@ -180,30 +179,29 @@ export class PerformanceManager extends EventEmitter {
   async runBenchmark(isBaseline: boolean = false): Promise<void> {
     try {
       console.log(`🔬 Running ${isBaseline ? 'baseline' : 'scheduled'} performance benchmark...`);
-      
+
       const results = await this.benchmark.runSearchBenchmark({
         datasetSize: 1000,
         iterations: 100,
         includeStressTest: true,
-        enableOptimizations: true
+        enableOptimizations: true,
       });
-      
+
       this.metrics.lastBenchmarkScore = this.calculateBenchmarkScore(results);
       this.lastBenchmark = new Date();
-      
+
       console.log(`📈 Benchmark completed. Score: ${this.metrics.lastBenchmarkScore.toFixed(2)}`);
-      
+
       // Check if optimization is needed
       if (this.metrics.lastBenchmarkScore < 80 && !isBaseline) {
         await this.applyAutomaticOptimizations(results);
       }
-      
-      this.emit('benchmark_completed', { 
-        score: this.metrics.lastBenchmarkScore, 
+
+      this.emit('benchmark_completed', {
+        score: this.metrics.lastBenchmarkScore,
         results,
-        isBaseline 
+        isBaseline,
       });
-      
     } catch (error) {
       console.error('❌ Benchmark failed:', error);
       this.emit('benchmark_error', error);
@@ -215,46 +213,48 @@ export class PerformanceManager extends EventEmitter {
    */
   async applyAutomaticOptimizations(benchmarkResults?: any): Promise<void> {
     console.log('🔧 Applying automatic optimizations...');
-    
+
     const strategies: OptimizationStrategy[] = [];
-    
+
     // Determine optimization strategies based on metrics
     if (this.metrics.avgQueryTime > this.thresholds.maxQueryTime) {
       strategies.push({
         name: 'query_optimization',
         description: 'Optimize slow queries with better indexing',
         priority: 'high',
-        estimatedImpact: 25
+        estimatedImpact: 25,
       });
     }
-    
+
     if (this.metrics.cacheHitRate < this.thresholds.minCacheHitRate) {
       strategies.push({
         name: 'cache_optimization',
         description: 'Improve cache hit rate with better pre-warming',
         priority: 'medium',
-        estimatedImpact: 15
+        estimatedImpact: 15,
       });
     }
-    
+
     const slowQueryPercent = this.metrics.slowQueries / this.metrics.totalQueries;
     if (slowQueryPercent > this.thresholds.maxSlowQueryPercent) {
       strategies.push({
         name: 'index_optimization',
         description: 'Add specialized indexes for frequent query patterns',
         priority: 'high',
-        estimatedImpact: 30
+        estimatedImpact: 30,
       });
     }
-    
+
     // Apply optimizations
     for (const strategy of strategies) {
       try {
         const result = await this.optimizationEngine.applyOptimization(strategy);
-        
+
         if (result.success) {
           this.metrics.optimizationsApplied++;
-          console.log(`✅ Applied optimization: ${strategy.name} (${result.improvement}% improvement)`);
+          console.log(
+            `✅ Applied optimization: ${strategy.name} (${result.improvement}% improvement)`
+          );
           this.emit('optimization_applied', { strategy, result });
         } else {
           console.warn(`⚠️ Optimization failed: ${strategy.name} - ${result.error}`);
@@ -278,10 +278,12 @@ export class PerformanceManager extends EventEmitter {
     const analysis: string[] = [];
     const recommendations: string[] = [];
     const alerts: PerformanceAlert[] = [];
-    
+
     // Analyze current metrics
     if (this.metrics.avgQueryTime > this.thresholds.maxQueryTime) {
-      analysis.push(`Average query time (${this.metrics.avgQueryTime.toFixed(2)}ms) exceeds threshold`);
+      analysis.push(
+        `Average query time (${this.metrics.avgQueryTime.toFixed(2)}ms) exceeds threshold`
+      );
       recommendations.push('Consider additional indexing or query optimization');
       alerts.push({
         type: 'slow_query',
@@ -289,12 +291,14 @@ export class PerformanceManager extends EventEmitter {
         message: 'Query performance is below target',
         recommendation: 'Run optimization engine or review query patterns',
         timestamp: new Date(),
-        metrics: { avgQueryTime: this.metrics.avgQueryTime }
+        metrics: { avgQueryTime: this.metrics.avgQueryTime },
       });
     }
-    
+
     if (this.metrics.cacheHitRate < this.thresholds.minCacheHitRate) {
-      analysis.push(`Cache hit rate (${(this.metrics.cacheHitRate * 100).toFixed(1)}%) is below target`);
+      analysis.push(
+        `Cache hit rate (${(this.metrics.cacheHitRate * 100).toFixed(1)}%) is below target`
+      );
       recommendations.push('Improve cache pre-warming strategy or increase cache size');
       alerts.push({
         type: 'low_cache_hit',
@@ -302,13 +306,15 @@ export class PerformanceManager extends EventEmitter {
         message: 'Cache effectiveness is suboptimal',
         recommendation: 'Review cache configuration and pre-warming patterns',
         timestamp: new Date(),
-        metrics: { cacheHitRate: this.metrics.cacheHitRate }
+        metrics: { cacheHitRate: this.metrics.cacheHitRate },
       });
     }
-    
-    const slowQueryPercent = this.metrics.totalQueries > 0 ? 
-      (this.metrics.slowQueries / this.metrics.totalQueries) * 100 : 0;
-    
+
+    const slowQueryPercent =
+      this.metrics.totalQueries > 0
+        ? (this.metrics.slowQueries / this.metrics.totalQueries) * 100
+        : 0;
+
     if (slowQueryPercent > this.thresholds.maxSlowQueryPercent * 100) {
       analysis.push(`Slow query percentage (${slowQueryPercent.toFixed(2)}%) exceeds threshold`);
       recommendations.push('Investigate and optimize the slowest query patterns');
@@ -318,15 +324,15 @@ export class PerformanceManager extends EventEmitter {
         message: 'Too many slow queries detected',
         recommendation: 'Run detailed query analysis and apply targeted optimizations',
         timestamp: new Date(),
-        metrics: { slowQueries: this.metrics.slowQueries, totalQueries: this.metrics.totalQueries }
+        metrics: { slowQueries: this.metrics.slowQueries, totalQueries: this.metrics.totalQueries },
       });
     }
-    
+
     return {
       summary: this.metrics,
       analysis,
       recommendations,
-      alerts
+      alerts,
     };
   }
 
@@ -345,7 +351,7 @@ export class PerformanceManager extends EventEmitter {
    */
   private scheduleBenchmarks(): void {
     const intervalMs = this.thresholds.benchmarkIntervalHours * 60 * 60 * 1000;
-    
+
     this.benchmarkInterval = setInterval(() => {
       this.runBenchmark(false);
     }, intervalMs);
@@ -357,10 +363,10 @@ export class PerformanceManager extends EventEmitter {
   private updateMetrics(): void {
     // Update connection pool utilization
     this.metrics.connectionPoolUtilization = this.connectionPool.getUtilization();
-    
+
     // Update index utilization (placeholder - would need database-specific implementation)
     this.metrics.indexUtilization = 0.85; // Mock value
-    
+
     this.emit('metrics_updated', this.metrics);
   }
 
@@ -369,27 +375,28 @@ export class PerformanceManager extends EventEmitter {
    */
   private checkThresholds(): void {
     const alerts: PerformanceAlert[] = [];
-    
+
     if (this.metrics.avgQueryTime > this.thresholds.maxQueryTime) {
       alerts.push({
         type: 'slow_query',
-        severity: this.metrics.avgQueryTime > this.thresholds.maxQueryTime * 2 ? 'critical' : 'high',
+        severity:
+          this.metrics.avgQueryTime > this.thresholds.maxQueryTime * 2 ? 'critical' : 'high',
         message: `Average query time ${this.metrics.avgQueryTime.toFixed(2)}ms exceeds threshold`,
         recommendation: 'Apply query optimizations or increase resources',
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
-    
+
     if (this.metrics.cacheHitRate < this.thresholds.minCacheHitRate) {
       alerts.push({
         type: 'low_cache_hit',
         severity: this.metrics.cacheHitRate < 0.5 ? 'high' : 'medium',
         message: `Cache hit rate ${(this.metrics.cacheHitRate * 100).toFixed(1)}% is below target`,
         recommendation: 'Review cache configuration and pre-warming strategy',
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
-    
+
     alerts.forEach(alert => this.emit('alert', alert));
   }
 
@@ -398,19 +405,19 @@ export class PerformanceManager extends EventEmitter {
    */
   private calculateBenchmarkScore(results: any): number {
     if (!results || !results.scenarios) return 0;
-    
+
     let totalScore = 0;
     let scenarioCount = 0;
-    
+
     for (const scenario of results.scenarios) {
       if (scenario.metrics && scenario.metrics.p50) {
         // Score based on p50 latency (lower is better)
-        const score = Math.max(0, 100 - (scenario.metrics.p50 / 10)); // 1000ms = 0 points
+        const score = Math.max(0, 100 - scenario.metrics.p50 / 10); // 1000ms = 0 points
         totalScore += score;
         scenarioCount++;
       }
     }
-    
+
     return scenarioCount > 0 ? totalScore / scenarioCount : 0;
   }
 
@@ -421,9 +428,9 @@ export class PerformanceManager extends EventEmitter {
     // Listen for cache events
     this.queryCache.on('hit', () => this.recordQuery(0, true));
     this.queryCache.on('miss', (queryTime: number) => this.recordQuery(queryTime, false));
-    
+
     // Listen for optimization engine events
-    this.optimizationEngine.on('optimization_applied', (result) => {
+    this.optimizationEngine.on('optimization_applied', result => {
       this.metrics.optimizationsApplied++;
       this.emit('optimization_completed', result);
     });
@@ -434,15 +441,15 @@ export class PerformanceManager extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     console.log('🧹 Cleaning up Performance Manager...');
-    
+
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
     }
-    
+
     if (this.benchmarkInterval) {
       clearInterval(this.benchmarkInterval);
     }
-    
+
     this.removeAllListeners();
     console.log('✅ Performance Manager cleanup completed');
   }
@@ -460,7 +467,7 @@ export class PerformanceManager extends EventEmitter {
       metrics: { ...this.metrics },
       thresholds: { ...this.thresholds },
       queryTimes: [...this.queryTimes],
-      lastBenchmark: new Date(this.lastBenchmark)
+      lastBenchmark: new Date(this.lastBenchmark),
     };
   }
 }
@@ -480,15 +487,15 @@ export class PerformanceManagerFactory {
     }
   ): Promise<PerformanceManager> {
     const manager = new PerformanceManager(knowledgeDB, connectionPool, queryCache);
-    
+
     if (options?.thresholds) {
       manager.updateThresholds(options.thresholds);
     }
-    
+
     if (options?.autoInitialize !== false) {
       await manager.initialize();
     }
-    
+
     return manager;
   }
 }

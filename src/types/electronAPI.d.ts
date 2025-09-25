@@ -3,14 +3,14 @@
  * Defines the interface exposed to the renderer process via contextBridge
  */
 
-import { 
-  KBEntry, 
-  KBEntryInput, 
-  KBEntryUpdate, 
-  SearchResult, 
-  SearchQuery, 
+import {
+  KBEntry,
+  KBEntryInput,
+  KBEntryUpdate,
+  SearchResult,
+  SearchQuery,
   DatabaseMetrics,
-  KBCategory 
+  KBCategory,
 } from './index';
 
 declare global {
@@ -30,21 +30,21 @@ export interface ElectronAPI {
   // ===========================
   // Knowledge Base Operations
   // ===========================
-  
+
   /**
    * Retrieve knowledge base entries with optional search query
    * @param query - Optional search parameters
    * @returns Promise of search results
    */
   getKBEntries: (query?: SearchQuery) => Promise<SearchResult[]>;
-  
+
   /**
    * Add a new knowledge base entry
    * @param entry - Entry data (without id, timestamps, usage stats)
    * @returns Promise of the created entry ID
    */
   addKBEntry: (entry: KBEntryInput) => Promise<string>;
-  
+
   /**
    * Update an existing knowledge base entry
    * @param id - Entry ID to update
@@ -52,14 +52,14 @@ export interface ElectronAPI {
    * @returns Promise that resolves when update is complete
    */
   updateKBEntry: (id: string, updates: KBEntryUpdate) => Promise<void>;
-  
+
   /**
    * Delete a knowledge base entry
    * @param id - Entry ID to delete
    * @returns Promise that resolves when deletion is complete
    */
   deleteKBEntry: (id: string) => Promise<void>;
-  
+
   /**
    * Get a single knowledge base entry by ID
    * @param id - Entry ID
@@ -70,7 +70,7 @@ export interface ElectronAPI {
   // ===========================
   // Search Operations
   // ===========================
-  
+
   /**
    * Perform local search using SQLite FTS
    * @param query - Search query string
@@ -78,7 +78,7 @@ export interface ElectronAPI {
    * @returns Promise of search results
    */
   searchLocal: (query: string, options?: SearchQuery) => Promise<SearchResult[]>;
-  
+
   /**
    * Perform AI-enhanced search using Gemini
    * Falls back to local search if AI service is unavailable
@@ -91,7 +91,7 @@ export interface ElectronAPI {
   // ===========================
   // Feedback and Analytics
   // ===========================
-  
+
   /**
    * Rate the usefulness of a knowledge base entry
    * @param id - Entry ID
@@ -100,7 +100,7 @@ export interface ElectronAPI {
    * @returns Promise that resolves when rating is recorded
    */
   rateEntry: (id: string, successful: boolean, comment?: string) => Promise<void>;
-  
+
   /**
    * Record that a user viewed an entry (for analytics)
    * @param id - Entry ID
@@ -111,39 +111,39 @@ export interface ElectronAPI {
   // ===========================
   // System Operations
   // ===========================
-  
+
   /**
    * Get system metrics and statistics
    * @returns Promise of database metrics
    */
   getMetrics: () => Promise<DatabaseMetrics>;
-  
+
   /**
    * Export knowledge base to JSON file
    * @param path - Optional suggested file path
    * @returns Promise of the export file path
    */
   exportKB?: (path?: string) => Promise<string>;
-  
+
   /**
    * Import knowledge base from JSON file
    * @param path - Optional file path to import
    * @returns Promise of the number of entries imported
    */
   importKB?: (path?: string) => Promise<number>;
-  
+
   /**
    * Check database connection and status
    * @returns Promise of database status
    */
   checkDatabase?: () => Promise<{ connected: boolean; isEmpty: boolean }>;
-  
+
   /**
    * Load initial knowledge base templates
    * @returns Promise that resolves when templates are loaded
    */
   loadInitialTemplates?: () => Promise<void>;
-  
+
   /**
    * Check AI service availability
    * @returns Promise of AI service status
@@ -153,19 +153,19 @@ export interface ElectronAPI {
   // ===========================
   // Application Lifecycle
   // ===========================
-  
+
   /**
    * Close the application
    * @returns Promise that resolves when close is initiated
    */
   closeApplication?: () => Promise<void>;
-  
+
   /**
    * Get the application version
    * @returns Promise of version string
    */
   getAppVersion?: () => Promise<string>;
-  
+
   /**
    * Check for application updates
    * @returns Promise of whether updates are available
@@ -175,49 +175,49 @@ export interface ElectronAPI {
   // ===========================
   // Window Management
   // ===========================
-  
+
   /**
    * Minimize a window
    * @param windowId - Window identifier
    * @returns Promise that resolves when window is minimized
    */
   minimizeWindow?: (windowId: string) => Promise<void>;
-  
+
   /**
    * Maximize or restore a window
    * @param windowId - Window identifier
    * @returns Promise that resolves when window state changes
    */
   maximizeWindow?: (windowId: string) => Promise<void>;
-  
+
   /**
    * Restore a minimized or maximized window
    * @param windowId - Window identifier
    * @returns Promise that resolves when window is restored
    */
   restoreWindow?: (windowId: string) => Promise<void>;
-  
+
   /**
    * Focus a window
    * @param windowId - Window identifier
    * @returns Promise that resolves when window is focused
    */
   focusWindow?: (windowId: string) => Promise<void>;
-  
+
   /**
    * Close a window
    * @param windowId - Window identifier
    * @returns Promise that resolves when window is closed
    */
   closeWindow?: (windowId: string) => Promise<void>;
-  
+
   /**
    * Get window state information
    * @param windowId - Window identifier
    * @returns Promise of window state object
    */
   getWindowState?: (windowId: string) => Promise<WindowState | null>;
-  
+
   /**
    * Update window state
    * @param windowId - Window identifier
@@ -229,13 +229,13 @@ export interface ElectronAPI {
   // ===========================
   // Theme Management
   // ===========================
-  
+
   /**
    * Get the current application theme
    * @returns Promise of current theme ('light' or 'dark')
    */
   getTheme?: () => Promise<'light' | 'dark'>;
-  
+
   /**
    * Set the application theme
    * @param theme - Theme to set ('light' or 'dark')
@@ -246,7 +246,7 @@ export interface ElectronAPI {
   // ===========================
   // Development Tools
   // ===========================
-  
+
   /**
    * Open developer tools for debugging
    */
@@ -278,19 +278,19 @@ export interface ElectronAPIEvents {
    * @param callback - Function to call when theme changes
    */
   onThemeChanged?: (callback: (theme: 'light' | 'dark') => void) => void;
-  
+
   /**
    * Listen for window state changes
    * @param callback - Function to call when window state changes
    */
   onWindowStateChanged?: (callback: (state: WindowState) => void) => void;
-  
+
   /**
    * Listen for knowledge base updates
    * @param callback - Function to call when KB is updated
    */
   onKBUpdated?: (callback: (data: { type: string; payload: any }) => void) => void;
-  
+
   /**
    * Remove all event listeners for a channel
    * @param channel - IPC channel name
@@ -329,12 +329,12 @@ export interface ElectronAPIConfig {
    * Timeout for API calls in milliseconds
    */
   timeout?: number;
-  
+
   /**
    * Whether to enable detailed logging
    */
   enableLogging?: boolean;
-  
+
   /**
    * Whether to enable offline mode (disable AI features)
    */
@@ -351,9 +351,11 @@ export type PartialElectronAPI = Partial<ElectronAPI>;
  * Type guard to check if ElectronAPI is available
  */
 export function isElectronAPIAvailable(): boolean {
-  return typeof window !== 'undefined' && 
-         typeof window.electronAPI === 'object' && 
-         window.electronAPI !== null;
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.electronAPI === 'object' &&
+    window.electronAPI !== null
+  );
 }
 
 /**

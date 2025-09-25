@@ -71,7 +71,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       messageType,
       dataSize,
       payload: this.shouldIncludePayload(payload) ? payload : '[payload-excluded]',
-      errorOccurred: false
+      errorOccurred: false,
     };
 
     this.activeRequests.set(requestId, metrics);
@@ -103,7 +103,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       messageType: requestData.messageType || 'request',
       payload: requestData.payload,
       errorOccurred: !!error,
-      errorMessage: error
+      errorMessage: error,
     };
 
     this.activeRequests.delete(requestId);
@@ -118,7 +118,7 @@ export class IPCPerformanceTracker extends EventEmitter {
         channel: metrics.channel,
         latency: metrics.latency,
         target: this.targetLatency,
-        message: `IPC channel "${metrics.channel}" latency ${latency.toFixed(2)}ms exceeds target of ${this.targetLatency}ms`
+        message: `IPC channel "${metrics.channel}" latency ${latency.toFixed(2)}ms exceeds target of ${this.targetLatency}ms`,
       });
     }
 
@@ -126,7 +126,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       this.emit('ipc-error', {
         channel: metrics.channel,
         error: metrics.errorMessage,
-        latency: metrics.latency
+        latency: metrics.latency,
       });
     }
 
@@ -301,7 +301,7 @@ export class IPCPerformanceTracker extends EventEmitter {
         maxLatency,
         targetMeetRate: targetMeets / totalMessages,
         errorRate: errors / totalMessages,
-        totalDataTransferred
+        totalDataTransferred,
       };
     });
   }
@@ -337,7 +337,7 @@ export class IPCPerformanceTracker extends EventEmitter {
         slowestOperation: null,
         fastestOperation: null,
         topChannelsByVolume: [],
-        topChannelsByLatency: []
+        topChannelsByLatency: [],
       };
     }
 
@@ -348,10 +348,12 @@ export class IPCPerformanceTracker extends EventEmitter {
     const totalDataTransferred = this.metrics.reduce((sum, m) => sum + m.dataSize, 0);
 
     const slowestOperation = this.metrics.reduce((slowest, current) =>
-      !slowest || current.latency > slowest.latency ? current : slowest);
+      !slowest || current.latency > slowest.latency ? current : slowest
+    );
 
     const fastestOperation = this.metrics.reduce((fastest, current) =>
-      !fastest || current.latency < fastest.latency ? current : fastest);
+      !fastest || current.latency < fastest.latency ? current : fastest
+    );
 
     const channelStats = this.getChannelStats();
     const topChannelsByVolume = channelStats
@@ -373,7 +375,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       slowestOperation,
       fastestOperation,
       topChannelsByVolume,
-      topChannelsByLatency
+      topChannelsByLatency,
     };
   }
 
@@ -387,7 +389,7 @@ export class IPCPerformanceTracker extends EventEmitter {
     if (this.metrics.length === 0) {
       return {
         buckets: [],
-        percentiles: { p50: 0, p90: 0, p95: 0, p99: 0 }
+        percentiles: { p50: 0, p90: 0, p95: 0, p99: 0 },
       };
     }
 
@@ -402,7 +404,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       { min: 10, max: 25, label: '10-25ms' },
       { min: 25, max: 50, label: '25-50ms' },
       { min: 50, max: 100, label: '50-100ms' },
-      { min: 100, max: Infinity, label: '100ms+' }
+      { min: 100, max: Infinity, label: '100ms+' },
     ];
 
     const buckets = bucketRanges.map(range => {
@@ -410,7 +412,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       return {
         range: range.label,
         count,
-        percentage: (count / latencies.length) * 100
+        percentage: (count / latencies.length) * 100,
       };
     });
 
@@ -419,7 +421,7 @@ export class IPCPerformanceTracker extends EventEmitter {
       p50: latencies[Math.floor(latencies.length * 0.5)],
       p90: latencies[Math.floor(latencies.length * 0.9)],
       p95: latencies[Math.floor(latencies.length * 0.95)],
-      p99: latencies[Math.floor(latencies.length * 0.99)]
+      p99: latencies[Math.floor(latencies.length * 0.99)],
     };
 
     return { buckets, percentiles };
@@ -431,8 +433,16 @@ export class IPCPerformanceTracker extends EventEmitter {
   public exportData(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
       const headers = [
-        'channel', 'direction', 'startTime', 'endTime', 'latency',
-        'isTargetMet', 'dataSize', 'messageType', 'errorOccurred', 'errorMessage'
+        'channel',
+        'direction',
+        'startTime',
+        'endTime',
+        'latency',
+        'isTargetMet',
+        'dataSize',
+        'messageType',
+        'errorOccurred',
+        'errorMessage',
       ];
 
       const rows = this.metrics.map(m => [
@@ -445,18 +455,22 @@ export class IPCPerformanceTracker extends EventEmitter {
         m.dataSize,
         m.messageType,
         m.errorOccurred,
-        m.errorMessage || ''
+        m.errorMessage || '',
       ]);
 
       return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     }
 
-    return JSON.stringify({
-      metrics: this.metrics,
-      channelStats: this.getChannelStats(),
-      summary: this.getPerformanceSummary(),
-      latencyDistribution: this.getLatencyDistribution()
-    }, null, 2);
+    return JSON.stringify(
+      {
+        metrics: this.metrics,
+        channelStats: this.getChannelStats(),
+        summary: this.getPerformanceSummary(),
+        latencyDistribution: this.getLatencyDistribution(),
+      },
+      null,
+      2
+    );
   }
 
   /**

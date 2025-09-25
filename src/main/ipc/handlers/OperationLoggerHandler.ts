@@ -14,7 +14,7 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import {
   OperationLoggerService,
@@ -28,7 +28,7 @@ import {
   OperationStatus,
   DecisionAction,
   ErrorType,
-  ErrorSeverity
+  ErrorSeverity,
 } from '../../services/OperationLoggerService';
 import { HandlerUtils, HandlerConfigs } from './index';
 
@@ -160,14 +160,12 @@ interface ServiceStatsIPCResponse extends BaseIPCResponse {
  * Operation Logger Handler Implementation
  */
 export class OperationLoggerHandler {
-  constructor(
-    private operationLoggerService: OperationLoggerService
-  ) {}
+  constructor(private operationLoggerService: OperationLoggerService) {}
 
   /**
    * Log a new operation
    */
-  handleLogOperation: IPCHandlerFunction<'operationLogger:logOperation'> = async (request) => {
+  handleLogOperation: IPCHandlerFunction<'operationLogger:logOperation'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -200,7 +198,7 @@ export class OperationLoggerHandler {
         'kb_delete',
         'autocomplete',
         'bulk_operation',
-        'system_operation'
+        'system_operation',
       ];
 
       if (!validOperationTypes.includes(operation.type)) {
@@ -217,7 +215,7 @@ export class OperationLoggerHandler {
       const sanitizedOperation = {
         ...operation,
         query: HandlerUtils.sanitizeString(operation.query, 5000),
-        metadata: operation.metadata ? this.sanitizeMetadata(operation.metadata) : undefined
+        metadata: operation.metadata ? this.sanitizeMetadata(operation.metadata) : undefined,
       };
 
       // Log the operation
@@ -229,10 +227,9 @@ export class OperationLoggerHandler {
         { logged: true },
         {
           operationType: operation.type,
-          queryLength: sanitizedOperation.query.length
+          queryLength: sanitizedOperation.query.length,
         }
       );
-
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -247,7 +244,7 @@ export class OperationLoggerHandler {
   /**
    * Log an authorization decision
    */
-  handleLogDecision: IPCHandlerFunction<'operationLogger:logDecision'> = async (request) => {
+  handleLogDecision: IPCHandlerFunction<'operationLogger:logDecision'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -270,7 +267,7 @@ export class OperationLoggerHandler {
         'approve_always',
         'deny',
         'use_local_only',
-        'modify_query'
+        'modify_query',
       ];
 
       if (!validActions.includes(decision.action)) {
@@ -287,7 +284,7 @@ export class OperationLoggerHandler {
       const sanitizedDecision = {
         ...decision,
         notes: decision.notes ? HandlerUtils.sanitizeString(decision.notes, 1000) : undefined,
-        reason: decision.reason ? HandlerUtils.sanitizeString(decision.reason, 500) : undefined
+        reason: decision.reason ? HandlerUtils.sanitizeString(decision.reason, 500) : undefined,
       };
 
       await this.operationLoggerService.logDecision(sanitizedDecision);
@@ -298,10 +295,9 @@ export class OperationLoggerHandler {
         { logged: true },
         {
           action: decision.action,
-          autoApproved: decision.autoApproved
+          autoApproved: decision.autoApproved,
         }
       );
-
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -316,14 +312,20 @@ export class OperationLoggerHandler {
   /**
    * Log an operation error
    */
-  handleLogError: IPCHandlerFunction<'operationLogger:logError'> = async (request) => {
+  handleLogError: IPCHandlerFunction<'operationLogger:logError'> = async request => {
     const startTime = Date.now();
 
     try {
       const { error } = request as LogErrorIPCRequest;
 
       // Validate error data
-      if (!error?.errorCode || !error?.errorType || !error?.message || !error?.severity || !error?.timestamp) {
+      if (
+        !error?.errorCode ||
+        !error?.errorType ||
+        !error?.message ||
+        !error?.severity ||
+        !error?.timestamp
+      ) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
@@ -343,7 +345,7 @@ export class OperationLoggerHandler {
         'cost_limit_error',
         'timeout_error',
         'system_error',
-        'user_error'
+        'user_error',
       ];
 
       const validSeverities: ErrorSeverity[] = ['critical', 'high', 'medium', 'low', 'info'];
@@ -372,7 +374,7 @@ export class OperationLoggerHandler {
       const sanitizedError = {
         ...error,
         message: HandlerUtils.sanitizeString(error.message, 2000),
-        stack: error.stack ? HandlerUtils.sanitizeString(error.stack, 10000) : undefined
+        stack: error.stack ? HandlerUtils.sanitizeString(error.stack, 10000) : undefined,
       };
 
       await this.operationLoggerService.logError(sanitizedError);
@@ -383,10 +385,9 @@ export class OperationLoggerHandler {
         { logged: true },
         {
           errorType: error.errorType,
-          severity: error.severity
+          severity: error.severity,
         }
       );
-
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -401,150 +402,135 @@ export class OperationLoggerHandler {
   /**
    * Get operation history with filtering
    */
-  handleGetOperationHistory: IPCHandlerFunction<'operationLogger:getOperationHistory'> = async (request) => {
-    const startTime = Date.now();
+  handleGetOperationHistory: IPCHandlerFunction<'operationLogger:getOperationHistory'> =
+    async request => {
+      const startTime = Date.now();
 
-    try {
-      const { filters = {} } = request as GetOperationHistoryIPCRequest;
+      try {
+        const { filters = {} } = request as GetOperationHistoryIPCRequest;
 
-      // Validate and sanitize filters
-      const sanitizedFilters = this.sanitizeFilters(filters);
+        // Validate and sanitize filters
+        const sanitizedFilters = this.sanitizeFilters(filters);
 
-      const operations = await this.operationLoggerService.getOperationHistory(sanitizedFilters);
+        const operations = await this.operationLoggerService.getOperationHistory(sanitizedFilters);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        operations,
-        {
+        return HandlerUtils.createSuccessResponse(request.requestId, startTime, operations, {
           count: operations.length,
-          hasFilters: Object.keys(filters).length > 0
-        }
-      ) as OperationHistoryIPCResponse;
-
-    } catch (error) {
-      return HandlerUtils.createErrorResponse(
-        request.requestId,
-        startTime,
-        IPCErrorCode.DATABASE_ERROR,
-        'Failed to get operation history',
-        { error: error instanceof Error ? error.message : 'Unknown error' }
-      );
-    }
-  };
+          hasFilters: Object.keys(filters).length > 0,
+        }) as OperationHistoryIPCResponse;
+      } catch (error) {
+        return HandlerUtils.createErrorResponse(
+          request.requestId,
+          startTime,
+          IPCErrorCode.DATABASE_ERROR,
+          'Failed to get operation history',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
+        );
+      }
+    };
 
   /**
    * Get operation metrics for a time period
    */
-  handleGetOperationMetrics: IPCHandlerFunction<'operationLogger:getOperationMetrics'> = async (request) => {
-    const startTime = Date.now();
+  handleGetOperationMetrics: IPCHandlerFunction<'operationLogger:getOperationMetrics'> =
+    async request => {
+      const startTime = Date.now();
 
-    try {
-      const { period } = request as GetOperationMetricsIPCRequest;
+      try {
+        const { period } = request as GetOperationMetricsIPCRequest;
 
-      // Validate period
-      if (!period?.start || !period?.end) {
-        return HandlerUtils.createErrorResponse(
-          request.requestId,
-          startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Missing required period start or end date',
-          { period }
-        );
-      }
-
-      // Validate date range
-      const start = new Date(period.start);
-      const end = new Date(period.end);
-
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        return HandlerUtils.createErrorResponse(
-          request.requestId,
-          startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Invalid date format in period',
-          { period }
-        );
-      }
-
-      if (start >= end) {
-        return HandlerUtils.createErrorResponse(
-          request.requestId,
-          startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Period start date must be before end date',
-          { period }
-        );
-      }
-
-      const metrics = await this.operationLoggerService.getOperationMetrics({ start, end });
-
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        metrics,
-        {
-          periodDays: Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
-          cached: true
+        // Validate period
+        if (!period?.start || !period?.end) {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Missing required period start or end date',
+            { period }
+          );
         }
-      ) as OperationMetricsIPCResponse;
 
-    } catch (error) {
-      return HandlerUtils.createErrorResponse(
-        request.requestId,
-        startTime,
-        IPCErrorCode.DATABASE_ERROR,
-        'Failed to get operation metrics',
-        { error: error instanceof Error ? error.message : 'Unknown error' }
-      );
-    }
-  };
+        // Validate date range
+        const start = new Date(period.start);
+        const end = new Date(period.end);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Invalid date format in period',
+            { period }
+          );
+        }
+
+        if (start >= end) {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Period start date must be before end date',
+            { period }
+          );
+        }
+
+        const metrics = await this.operationLoggerService.getOperationMetrics({ start, end });
+
+        return HandlerUtils.createSuccessResponse(request.requestId, startTime, metrics, {
+          periodDays: Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+          cached: true,
+        }) as OperationMetricsIPCResponse;
+      } catch (error) {
+        return HandlerUtils.createErrorResponse(
+          request.requestId,
+          startTime,
+          IPCErrorCode.DATABASE_ERROR,
+          'Failed to get operation metrics',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
+        );
+      }
+    };
 
   /**
    * Get a specific operation by ID
    */
-  handleGetOperationById: IPCHandlerFunction<'operationLogger:getOperationById'> = async (request) => {
-    const startTime = Date.now();
+  handleGetOperationById: IPCHandlerFunction<'operationLogger:getOperationById'> =
+    async request => {
+      const startTime = Date.now();
 
-    try {
-      const { id } = request as GetOperationByIdIPCRequest;
+      try {
+        const { id } = request as GetOperationByIdIPCRequest;
 
-      if (!id || typeof id !== 'string') {
+        if (!id || typeof id !== 'string') {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Invalid operation ID',
+            { id }
+          );
+        }
+
+        const operation = await this.operationLoggerService.getOperationById(id);
+
+        return HandlerUtils.createSuccessResponse(request.requestId, startTime, operation, {
+          found: operation !== null,
+        }) as OperationIPCResponse;
+      } catch (error) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Invalid operation ID',
-          { id }
+          IPCErrorCode.DATABASE_ERROR,
+          'Failed to get operation by ID',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
         );
       }
-
-      const operation = await this.operationLoggerService.getOperationById(id);
-
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        operation,
-        {
-          found: operation !== null
-        }
-      ) as OperationIPCResponse;
-
-    } catch (error) {
-      return HandlerUtils.createErrorResponse(
-        request.requestId,
-        startTime,
-        IPCErrorCode.DATABASE_ERROR,
-        'Failed to get operation by ID',
-        { error: error instanceof Error ? error.message : 'Unknown error' }
-      );
-    }
-  };
+    };
 
   /**
    * Search logs with a query string
    */
-  handleSearchLogs: IPCHandlerFunction<'operationLogger:searchLogs'> = async (request) => {
+  handleSearchLogs: IPCHandlerFunction<'operationLogger:searchLogs'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -565,16 +551,10 @@ export class OperationLoggerHandler {
 
       const results = await this.operationLoggerService.searchLogs(sanitizedQuery);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        results,
-        {
-          query: sanitizedQuery,
-          resultCount: results.length
-        }
-      ) as SearchResultsIPCResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, results, {
+        query: sanitizedQuery,
+        resultCount: results.length,
+      }) as SearchResultsIPCResponse;
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -589,7 +569,7 @@ export class OperationLoggerHandler {
   /**
    * Export logs to file
    */
-  handleExportLogs: IPCHandlerFunction<'operationLogger:exportLogs'> = async (request) => {
+  handleExportLogs: IPCHandlerFunction<'operationLogger:exportLogs'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -630,7 +610,11 @@ export class OperationLoggerHandler {
         );
       }
 
-      const exportPath = await this.operationLoggerService.exportLogs(format, { start, end }, filePath);
+      const exportPath = await this.operationLoggerService.exportLogs(
+        format,
+        { start, end },
+        filePath
+      );
 
       // Get file size
       const fs = await import('fs').then(m => m.promises);
@@ -641,14 +625,13 @@ export class OperationLoggerHandler {
         startTime,
         {
           filePath: exportPath,
-          size: stats.size
+          size: stats.size,
         },
         {
           format,
-          periodDays: Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+          periodDays: Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
         }
       ) as ExportResultIPCResponse;
-
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -663,14 +646,17 @@ export class OperationLoggerHandler {
   /**
    * Clean up old logs
    */
-  handleCleanupLogs: IPCHandlerFunction<'operationLogger:cleanupLogs'> = async (request) => {
+  handleCleanupLogs: IPCHandlerFunction<'operationLogger:cleanupLogs'> = async request => {
     const startTime = Date.now();
 
     try {
       const { daysToKeep } = request as CleanupLogsIPCRequest;
 
       // Validate daysToKeep if provided
-      if (daysToKeep !== undefined && (typeof daysToKeep !== 'number' || daysToKeep < 1 || daysToKeep > 3650)) {
+      if (
+        daysToKeep !== undefined &&
+        (typeof daysToKeep !== 'number' || daysToKeep < 1 || daysToKeep > 3650)
+      ) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
@@ -687,10 +673,9 @@ export class OperationLoggerHandler {
         startTime,
         { deletedCount },
         {
-          daysToKeep: daysToKeep || 90
+          daysToKeep: daysToKeep || 90,
         }
       ) as CleanupResultIPCResponse;
-
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -705,7 +690,7 @@ export class OperationLoggerHandler {
   /**
    * Get service health and statistics
    */
-  handleGetServiceStats: IPCHandlerFunction<'operationLogger:getServiceStats'> = async (request) => {
+  handleGetServiceStats: IPCHandlerFunction<'operationLogger:getServiceStats'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -720,19 +705,13 @@ export class OperationLoggerHandler {
         averageResponseTime: metrics.averageResponseTime,
         cacheHitRate: metrics.cacheHitRate || 0,
         databaseSize: health.details?.databaseSize || 0,
-        lastCleanup: health.details?.lastCleanup
+        lastCleanup: health.details?.lastCleanup,
       };
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        stats,
-        {
-          healthy: health.healthy,
-          lastCheck: health.lastCheck
-        }
-      ) as ServiceStatsIPCResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, stats, {
+        healthy: health.healthy,
+        lastCheck: health.lastCheck,
+      }) as ServiceStatsIPCResponse;
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -778,7 +757,7 @@ export class OperationLoggerHandler {
     if (filters.dateRange) {
       sanitized.dateRange = {
         start: new Date(filters.dateRange.start),
-        end: new Date(filters.dateRange.end)
+        end: new Date(filters.dateRange.end),
       };
     }
 
@@ -865,8 +844,8 @@ export class OperationLoggerHandler {
           rateLimitConfig: { requests: 100, windowMs: 60000 },
           trackMetrics: true,
           validateInput: true,
-          sanitizeInput: true
-        }
+          sanitizeInput: true,
+        },
       },
       'operationLogger:logDecision': {
         handler: 'handleLogDecision',
@@ -875,8 +854,8 @@ export class OperationLoggerHandler {
           rateLimitConfig: { requests: 50, windowMs: 60000 },
           trackMetrics: true,
           validateInput: true,
-          sanitizeInput: true
-        }
+          sanitizeInput: true,
+        },
       },
       'operationLogger:logError': {
         handler: 'handleLogError',
@@ -885,8 +864,8 @@ export class OperationLoggerHandler {
           rateLimitConfig: { requests: 100, windowMs: 60000 },
           trackMetrics: true,
           validateInput: true,
-          sanitizeInput: true
-        }
+          sanitizeInput: true,
+        },
       },
       'operationLogger:getOperationHistory': {
         handler: 'handleGetOperationHistory',
@@ -894,8 +873,8 @@ export class OperationLoggerHandler {
           ...HandlerConfigs.READ_HEAVY,
           cacheTTL: 60000, // 1 minute
           rateLimitConfig: { requests: 30, windowMs: 60000 },
-          trackMetrics: true
-        }
+          trackMetrics: true,
+        },
       },
       'operationLogger:getOperationMetrics': {
         handler: 'handleGetOperationMetrics',
@@ -903,8 +882,8 @@ export class OperationLoggerHandler {
           ...HandlerConfigs.READ_HEAVY,
           cacheTTL: 300000, // 5 minutes
           rateLimitConfig: { requests: 20, windowMs: 60000 },
-          trackMetrics: true
-        }
+          trackMetrics: true,
+        },
       },
       'operationLogger:getOperationById': {
         handler: 'handleGetOperationById',
@@ -912,8 +891,8 @@ export class OperationLoggerHandler {
           ...HandlerConfigs.READ_HEAVY,
           cacheTTL: 300000, // 5 minutes
           rateLimitConfig: { requests: 50, windowMs: 60000 },
-          trackMetrics: true
-        }
+          trackMetrics: true,
+        },
       },
       'operationLogger:searchLogs': {
         handler: 'handleSearchLogs',
@@ -923,8 +902,8 @@ export class OperationLoggerHandler {
           rateLimitConfig: { requests: 20, windowMs: 60000 },
           trackMetrics: true,
           validateInput: true,
-          sanitizeInput: true
-        }
+          sanitizeInput: true,
+        },
       },
       'operationLogger:exportLogs': {
         handler: 'handleExportLogs',
@@ -934,8 +913,8 @@ export class OperationLoggerHandler {
           trackMetrics: true,
           validateInput: true,
           alertOnErrors: true,
-          timeout: 60000 // 1 minute timeout for exports
-        }
+          timeout: 60000, // 1 minute timeout for exports
+        },
       },
       'operationLogger:cleanupLogs': {
         handler: 'handleCleanupLogs',
@@ -946,8 +925,8 @@ export class OperationLoggerHandler {
           validateInput: true,
           alertOnErrors: true,
           requireAuth: true,
-          timeout: 120000 // 2 minute timeout for cleanup
-        }
+          timeout: 120000, // 2 minute timeout for cleanup
+        },
       },
       'operationLogger:getServiceStats': {
         handler: 'handleGetServiceStats',
@@ -955,9 +934,9 @@ export class OperationLoggerHandler {
           ...HandlerConfigs.SYSTEM_OPERATIONS,
           cacheTTL: 30000, // 30 seconds
           rateLimitConfig: { requests: 60, windowMs: 60000 },
-          trackMetrics: false // Avoid recursion
-        }
-      }
+          trackMetrics: false, // Avoid recursion
+        },
+      },
     };
   }
 }
@@ -965,7 +944,9 @@ export class OperationLoggerHandler {
 /**
  * Factory function to create operation logger handler
  */
-export function createOperationLoggerHandler(operationLoggerService: OperationLoggerService): OperationLoggerHandler {
+export function createOperationLoggerHandler(
+  operationLoggerService: OperationLoggerService
+): OperationLoggerHandler {
   return new OperationLoggerHandler(operationLoggerService);
 }
 

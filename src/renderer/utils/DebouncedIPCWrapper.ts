@@ -25,7 +25,7 @@ import type {
   KBEntryUpdate,
   SearchResult,
   SearchQuery,
-  DatabaseMetrics
+  DatabaseMetrics,
 } from '../../types';
 
 // =====================
@@ -100,36 +100,36 @@ export interface BatchOperation {
 
 const DEFAULT_CONFIG: DebounceConfiguration = {
   search: {
-    local: 300,      // Local search debounce
-    ai: 500,         // AI search debounce (higher due to cost)
-    suggestions: 200  // Suggestion generation
+    local: 300, // Local search debounce
+    ai: 500, // AI search debounce (higher due to cost)
+    suggestions: 200, // Suggestion generation
   },
   metrics: {
-    basic: 1000,     // Basic metrics refresh
-    realtime: 2000,  // Real-time metrics
-    batch: 5000      // Batch metrics processing
+    basic: 1000, // Basic metrics refresh
+    realtime: 2000, // Real-time metrics
+    batch: 5000, // Batch metrics processing
   },
   forms: {
-    validation: 500,   // Form field validation
-    autosave: 2000,    // Auto-save drafts
-    autocomplete: 250  // Autocomplete suggestions
+    validation: 500, // Form field validation
+    autosave: 2000, // Auto-save drafts
+    autocomplete: 250, // Autocomplete suggestions
   },
   rating: {
-    feedback: 100,   // User rating feedback
-    batch: 1000      // Batch rating updates
+    feedback: 100, // User rating feedback
+    batch: 1000, // Batch rating updates
   },
   entries: {
-    create: 0,      // No debounce for critical operations
-    update: 500,    // Update operations
-    delete: 0       // No debounce for deletes
-  }
+    create: 0, // No debounce for critical operations
+    update: 500, // Update operations
+    delete: 0, // No debounce for deletes
+  },
 };
 
 const DEFAULT_BATCHING: BatchingConfig = {
   enabled: true,
   maxBatchSize: 10,
   maxWaitTime: 1000,
-  batchableOperations: ['rateEntry', 'updateMetrics', 'validateField']
+  batchableOperations: ['rateEntry', 'updateMetrics', 'validateField'],
 };
 
 // =====================
@@ -175,7 +175,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
       enableDeduplication: true,
       enableCaching: true,
       logLevel: 'info',
-      ...options
+      ...options,
     };
 
     this.config = this.mergeConfig(DEFAULT_CONFIG, this.options.debounce);
@@ -186,7 +186,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
     this.log('debug', 'DebouncedIPCWrapper initialized', {
       config: this.config,
-      batching: this.batchingConfig
+      batching: this.batchingConfig,
     });
   }
 
@@ -203,7 +203,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
       metrics: { ...defaultConfig.metrics, ...userConfig.metrics },
       forms: { ...defaultConfig.forms, ...userConfig.forms },
       rating: { ...defaultConfig.rating, ...userConfig.rating },
-      entries: { ...defaultConfig.entries, ...userConfig.entries }
+      entries: { ...defaultConfig.entries, ...userConfig.entries },
     };
   }
 
@@ -211,8 +211,14 @@ export class DebouncedIPCWrapper extends EventEmitter {
     // Initialize performance monitors
     if (this.options.enablePerformanceMonitoring) {
       const operations = [
-        'searchLocal', 'searchWithAI', 'addKBEntry', 'updateKBEntry',
-        'deleteKBEntry', 'getEntry', 'rateEntry', 'getMetrics'
+        'searchLocal',
+        'searchWithAI',
+        'addKBEntry',
+        'updateKBEntry',
+        'deleteKBEntry',
+        'getEntry',
+        'rateEntry',
+        'getMetrics',
       ];
 
       operations.forEach(op => {
@@ -224,7 +230,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
           batchedCount: 0,
           deduplicatedCount: 0,
           averageResponseTime: 0,
-          reductionPercentage: 0
+          reductionPercentage: 0,
         });
       });
     }
@@ -241,7 +247,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
   private initializeSearchWrappers(): void {
     // Local search with intelligent debouncing
-    this.debouncedFunctions.set('searchLocal',
+    this.debouncedFunctions.set(
+      'searchLocal',
       debounce(async (query: string, searchOptions?: SearchQuery) => {
         return this.executeWithMonitoring('searchLocal', async () => {
           const cacheKey = this.generateCacheKey('searchLocal', query, searchOptions);
@@ -268,7 +275,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
     );
 
     // AI search with higher debounce due to cost
-    this.debouncedFunctions.set('searchWithAI',
+    this.debouncedFunctions.set(
+      'searchWithAI',
       debounce(async (query: string, searchOptions?: SearchQuery) => {
         return this.executeWithMonitoring('searchWithAI', async () => {
           const cacheKey = this.generateCacheKey('searchAI', query, searchOptions);
@@ -294,7 +302,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
     );
 
     // Search suggestions
-    this.debouncedFunctions.set('getSearchSuggestions',
+    this.debouncedFunctions.set(
+      'getSearchSuggestions',
       debounce(async (query: string, limit: number = 5) => {
         return this.executeWithMonitoring('getSearchSuggestions', async () => {
           // Implement suggestion logic here
@@ -321,7 +330,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
     });
 
     // Entry updates - debounced for auto-save scenarios
-    this.debouncedFunctions.set('updateKBEntry',
+    this.debouncedFunctions.set(
+      'updateKBEntry',
       debounce(async (id: string, updates: KBEntryUpdate) => {
         return this.executeWithMonitoring('updateKBEntry', async () => {
           const result = await this.bridge.updateKBEntry(id, updates);
@@ -343,10 +353,13 @@ export class DebouncedIPCWrapper extends EventEmitter {
     });
 
     // Entry rating - minimal debounce for user feedback
-    this.debouncedFunctions.set('rateEntry',
+    this.debouncedFunctions.set(
+      'rateEntry',
       debounce(async (id: string, successful: boolean, comment?: string) => {
-        if (this.batchingConfig.enabled &&
-            this.batchingConfig.batchableOperations.includes('rateEntry')) {
+        if (
+          this.batchingConfig.enabled &&
+          this.batchingConfig.batchableOperations.includes('rateEntry')
+        ) {
           return this.addToBatch('rateEntry', [id, successful, comment]);
         }
 
@@ -365,7 +378,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
   private initializeSystemWrappers(): void {
     // Basic metrics - throttled instead of debounced for regular updates
-    this.throttledFunctions.set('getMetrics',
+    this.throttledFunctions.set(
+      'getMetrics',
       throttle(async () => {
         return this.executeWithMonitoring('getMetrics', async () => {
           const cacheKey = 'metrics';
@@ -390,7 +404,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
     );
 
     // Real-time metrics with higher throttling
-    this.throttledFunctions.set('getRealtimeMetrics',
+    this.throttledFunctions.set(
+      'getRealtimeMetrics',
       throttle(async () => {
         return this.executeWithMonitoring('getRealtimeMetrics', async () => {
           return await this.bridge.getMetrics();
@@ -412,7 +427,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
         args,
         timestamp: Date.now(),
         resolve,
-        reject
+        reject,
       };
 
       // Get or create batch queue
@@ -425,7 +440,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
       this.log('debug', `Added operation to batch: ${operation}`, {
         batchSize: queue.length,
-        operation: batchOperation
+        operation: batchOperation,
       });
 
       // Update metrics
@@ -465,7 +480,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
     this.log('info', `Processing batch: ${operation}`, {
       batchSize: operations.length,
-      operation
+      operation,
     });
 
     try {
@@ -515,7 +530,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
 
         this.log('debug', `Batch rated entry: ${entryId}`, {
           operationsCount: ops.length,
-          finalRating: latestOp.args
+          finalRating: latestOp.args,
         });
       } catch (error) {
         ops.forEach(op => op.reject(error));
@@ -619,11 +634,17 @@ export class DebouncedIPCWrapper extends EventEmitter {
       this.emit('performance-stats', stats);
 
       // Log performance improvements
-      const totalReduction = Array.from(this.operationMetrics.values())
-        .reduce((sum, metric) => sum + metric.reductionPercentage, 0) / this.operationMetrics.size;
+      const totalReduction =
+        Array.from(this.operationMetrics.values()).reduce(
+          (sum, metric) => sum + metric.reductionPercentage,
+          0
+        ) / this.operationMetrics.size;
 
       if (totalReduction > 0) {
-        this.log('info', `Performance optimization achieved: ${totalReduction.toFixed(1)}% reduction in IPC calls`);
+        this.log(
+          'info',
+          `Performance optimization achieved: ${totalReduction.toFixed(1)}% reduction in IPC calls`
+        );
       }
     }, 30000);
   }
@@ -657,7 +678,7 @@ export class DebouncedIPCWrapper extends EventEmitter {
     this.responseCache.set(key, {
       data: JSON.parse(JSON.stringify(data)), // Deep clone
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
 
     // Cleanup old entries periodically
@@ -704,14 +725,16 @@ export class DebouncedIPCWrapper extends EventEmitter {
    */
   async searchLocal(query: string, searchOptions?: SearchQuery): Promise<SearchResult[]> {
     const searchFn = this.debouncedFunctions.get('searchLocal') as Function;
-    return this.executeWithDeduplication('searchLocal', [query, searchOptions],
-      () => searchFn(query, searchOptions));
+    return this.executeWithDeduplication('searchLocal', [query, searchOptions], () =>
+      searchFn(query, searchOptions)
+    );
   }
 
   async searchWithAI(query: string, searchOptions?: SearchQuery): Promise<SearchResult[]> {
     const searchFn = this.debouncedFunctions.get('searchWithAI') as Function;
-    return this.executeWithDeduplication('searchWithAI', [query, searchOptions],
-      () => searchFn(query, searchOptions));
+    return this.executeWithDeduplication('searchWithAI', [query, searchOptions], () =>
+      searchFn(query, searchOptions)
+    );
   }
 
   async getSearchSuggestions(query: string, limit?: number): Promise<string[]> {
@@ -762,7 +785,8 @@ export class DebouncedIPCWrapper extends EventEmitter {
     // Calculate reduction percentages
     this.operationMetrics.forEach((metrics, operation) => {
       const totalCalls = metrics.callCount;
-      const optimizedCalls = metrics.debouncedCount + metrics.batchedCount + metrics.deduplicatedCount;
+      const optimizedCalls =
+        metrics.debouncedCount + metrics.batchedCount + metrics.deduplicatedCount;
 
       if (totalCalls > 0) {
         metrics.reductionPercentage = (optimizedCalls / totalCalls) * 100;
@@ -813,12 +837,12 @@ export class DebouncedIPCWrapper extends EventEmitter {
  * Default singleton instance with optimal configuration
  */
 export const debouncedIPC = new DebouncedIPCWrapper(ipcBridge, {
-  debounce: {},  // Use defaults
+  debounce: {}, // Use defaults
   batching: { enabled: true },
   enablePerformanceMonitoring: true,
   enableDeduplication: true,
   enableCaching: true,
-  logLevel: 'info'
+  logLevel: 'info',
 });
 
 // Export for direct usage

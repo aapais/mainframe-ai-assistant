@@ -19,7 +19,7 @@ import {
   mapUnifiedEntryToRow,
   UnifiedEntryRow,
   KnowledgeEntryInput,
-  IncidentEntryInput
+  IncidentEntryInput,
 } from './unified';
 
 // ===========================
@@ -36,8 +36,8 @@ const kbInput: KnowledgeEntryInput = {
   created_by: 'test-user',
   kb_metadata: {
     verified: true,
-    confidence_score: 0.95
-  }
+    confidence_score: 0.95,
+  },
 };
 
 // Test creating incident entry
@@ -56,19 +56,19 @@ const incidentInput: IncidentEntryInput = {
   reporter: 'user123',
   incident_metadata: {
     severity: 'critical',
-    sla_breach: false
-  }
+    sla_breach: false,
+  },
 };
 
 // Test unified input with discriminated union
 const unifiedKBInput: UnifiedEntryInput = {
   entry_type: 'knowledge',
-  ...kbInput
+  ...kbInput,
 };
 
 const unifiedIncidentInput: UnifiedEntryInput = {
   entry_type: 'incident',
-  ...incidentInput
+  ...incidentInput,
 };
 
 // Test knowledge base entry structure
@@ -95,8 +95,8 @@ const mockKBEntry: KnowledgeBaseEntry = {
   kb_metadata: {
     verified: true,
     verification_date: new Date(),
-    verified_by: 'admin'
-  }
+    verified_by: 'admin',
+  },
 };
 
 // Test incident entry structure
@@ -137,8 +137,8 @@ const mockIncidentEntry: IncidentEntry = {
     escalation_count: 1,
     reopen_count: 0,
     sla_breach: false,
-    related_kb_entries: ['kb_123']
-  }
+    related_kb_entries: ['kb_123'],
+  },
 };
 
 // Test unified entry array
@@ -187,7 +187,7 @@ const searchQuery: UnifiedSearchQuery = {
   verified: true,
   useAI: true,
   limit: 10,
-  created_after: new Date('2024-01-01')
+  created_after: new Date('2024-01-01'),
 };
 
 const searchResult: UnifiedSearchResult = {
@@ -198,8 +198,8 @@ const searchResult: UnifiedSearchResult = {
   explanation: 'Matches incident involving database connection issues',
   context: {
     sla_status: 'on_time',
-    urgency_score: 8.5
-  }
+    urgency_score: 8.5,
+  },
 };
 
 // ===========================
@@ -223,7 +223,7 @@ function testDatabaseMapping() {
     success_count: 0,
     failure_count: 0,
     entry_type: 'knowledge',
-    kb_metadata: '{"verified": true}'
+    kb_metadata: '{"verified": true}',
   };
 
   // Test row to entry mapping
@@ -246,8 +246,8 @@ const kbUpdate: UnifiedEntryUpdate = {
   tags: ['updated'],
   kb_metadata: {
     verified: true,
-    verification_date: new Date()
-  }
+    verification_date: new Date(),
+  },
 };
 
 const incidentUpdate: UnifiedEntryUpdate = {
@@ -256,8 +256,8 @@ const incidentUpdate: UnifiedEntryUpdate = {
   solution: 'Issue resolved',
   resolver: 'tech-team',
   incident_metadata: {
-    resolution_type: 'fixed'
-  }
+    resolution_type: 'fixed',
+  },
 };
 
 // ===========================
@@ -291,5 +291,5 @@ export {
   searchQuery,
   searchResult,
   testTypeGuards,
-  testDatabaseMapping
+  testDatabaseMapping,
 };

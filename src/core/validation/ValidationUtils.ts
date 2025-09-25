@@ -2,7 +2,7 @@ import { ValidationRule, ValidationResult, ValidationContext } from './Validatio
 
 /**
  * Common validation utility functions and rule builders
- * 
+ *
  * Provides reusable validation functions that can be combined to create
  * complex validation rules with minimal code duplication.
  */
@@ -17,20 +17,24 @@ export class StringValidators {
   static required(message?: string): ValidationRule<string> {
     return {
       name: 'required',
-      validate: (value) => {
+      validate: value => {
         const isValid = value != null && String(value).trim() !== '';
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'REQUIRED',
-            message: message || 'This field is required',
-            value
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'REQUIRED',
+                  message: message || 'This field is required',
+                  value,
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || 'This field is required'
+      errorMessage: message || 'This field is required',
     };
   }
 
@@ -40,10 +44,10 @@ export class StringValidators {
   static length(min?: number, max?: number, message?: string): ValidationRule<string> {
     return {
       name: 'length',
-      validate: (value) => {
+      validate: value => {
         const str = String(value || '');
         const length = str.length;
-        
+
         let isValid = true;
         let errorMessage = '';
 
@@ -61,26 +65,32 @@ export class StringValidators {
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'LENGTH',
-            message: message || `${errorMessage} (current: ${length})`,
-            value,
-            metadata: { min, max, current: length }
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'LENGTH',
+                  message: message || `${errorMessage} (current: ${length})`,
+                  value,
+                  metadata: { min, max, current: length },
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || (() => {
-        if (min !== undefined && max !== undefined) {
-          return `Must be between ${min} and ${max} characters`;
-        } else if (min !== undefined) {
-          return `Must be at least ${min} characters`;
-        } else if (max !== undefined) {
-          return `Must not exceed ${max} characters`;
-        }
-        return 'Invalid length';
-      })()
+      errorMessage:
+        message ||
+        (() => {
+          if (min !== undefined && max !== undefined) {
+            return `Must be between ${min} and ${max} characters`;
+          } else if (min !== undefined) {
+            return `Must be at least ${min} characters`;
+          } else if (max !== undefined) {
+            return `Must not exceed ${max} characters`;
+          }
+          return 'Invalid length';
+        })(),
     };
   }
 
@@ -90,25 +100,29 @@ export class StringValidators {
   static pattern(regex: RegExp, message?: string): ValidationRule<string> {
     return {
       name: 'pattern',
-      validate: (value) => {
+      validate: value => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
+
         const str = String(value);
         const isValid = regex.test(str);
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'PATTERN',
-            message: message || 'Invalid format',
-            value,
-            metadata: { pattern: regex.source }
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'PATTERN',
+                  message: message || 'Invalid format',
+                  value,
+                  metadata: { pattern: regex.source },
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || 'Invalid format'
+      errorMessage: message || 'Invalid format',
     };
   }
 
@@ -116,34 +130,38 @@ export class StringValidators {
    * Create an enum validation rule
    */
   static enum<T extends string>(
-    validValues: T[], 
+    validValues: T[],
     message?: string,
     caseSensitive: boolean = true
   ): ValidationRule<string> {
     return {
       name: 'enum',
-      validate: (value) => {
+      validate: value => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
+
         const str = String(value);
         const compareValue = caseSensitive ? str : str.toLowerCase();
         const compareValues = caseSensitive ? validValues : validValues.map(v => v.toLowerCase());
-        
+
         const isValid = compareValues.includes(compareValue as T);
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'INVALID_ENUM',
-            message: message || `Must be one of: ${validValues.join(', ')}`,
-            value,
-            metadata: { validValues, caseSensitive }
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'INVALID_ENUM',
+                  message: message || `Must be one of: ${validValues.join(', ')}`,
+                  value,
+                  metadata: { validValues, caseSensitive },
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || `Must be one of: ${validValues.join(', ')}`
+      errorMessage: message || `Must be one of: ${validValues.join(', ')}`,
     };
   }
 
@@ -151,37 +169,40 @@ export class StringValidators {
    * Create a contains validation rule (checks if string contains specific substrings)
    */
   static contains(
-    requiredTerms: string[], 
+    requiredTerms: string[],
     mode: 'any' | 'all' = 'any',
     message?: string
   ): ValidationRule<string> {
     return {
       name: 'contains',
-      validate: (value) => {
+      validate: value => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
-        const str = String(value).toLowerCase();
-        const matchedTerms = requiredTerms.filter(term => 
-          str.includes(term.toLowerCase())
-        );
 
-        const isValid = mode === 'any' 
-          ? matchedTerms.length > 0 
-          : matchedTerms.length === requiredTerms.length;
+        const str = String(value).toLowerCase();
+        const matchedTerms = requiredTerms.filter(term => str.includes(term.toLowerCase()));
+
+        const isValid =
+          mode === 'any' ? matchedTerms.length > 0 : matchedTerms.length === requiredTerms.length;
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'MISSING_TERMS',
-            message: message || `Must contain ${mode === 'any' ? 'at least one of' : 'all of'}: ${requiredTerms.join(', ')}`,
-            value,
-            metadata: { requiredTerms, mode, matched: matchedTerms }
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'MISSING_TERMS',
+                  message:
+                    message ||
+                    `Must contain ${mode === 'any' ? 'at least one of' : 'all of'}: ${requiredTerms.join(', ')}`,
+                  value,
+                  metadata: { requiredTerms, mode, matched: matchedTerms },
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || `Must contain required terms`
+      errorMessage: message || `Must contain required terms`,
     };
   }
 
@@ -191,29 +212,35 @@ export class StringValidators {
   static structured(message?: string): ValidationRule<string> {
     return {
       name: 'structured',
-      validate: (value) => {
+      validate: value => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
+
         const str = String(value);
-        const hasStructure = 
+        const hasStructure =
           /^\s*(\d+\.|\*|-|•)/.test(str) || // Starts with number/bullet
           /\n\s*(\d+\.|\*|-|•)/.test(str) || // Contains numbered/bulleted lines
           /^.+:\s*\n/.test(str); // Has headers with colons
 
-        const warnings = !hasStructure ? [{
-          field: '',
-          code: 'UNSTRUCTURED',
-          message: message || 'Consider using numbered steps or bullet points for better readability',
-          suggestion: 'Format with 1., 2., 3... or • bullet points'
-        }] : [];
+        const warnings = !hasStructure
+          ? [
+              {
+                field: '',
+                code: 'UNSTRUCTURED',
+                message:
+                  message ||
+                  'Consider using numbered steps or bullet points for better readability',
+                suggestion: 'Format with 1., 2., 3... or • bullet points',
+              },
+            ]
+          : [];
 
         return {
           isValid: true, // This is a warning-only rule
           errors: [],
-          warnings
+          warnings,
         };
       },
-      errorMessage: message || 'Should be structured with steps or bullets'
+      errorMessage: message || 'Should be structured with steps or bullets',
     };
   }
 
@@ -222,35 +249,61 @@ export class StringValidators {
    */
   static mainframeTerms(message?: string): ValidationRule<string> {
     const mainframeTerms = [
-      'JCL', 'VSAM', 'DB2', 'CICS', 'IMS', 'COBOL', 'TSO', 'ISPF', 'RACF',
-      'S0C7', 'S0C4', 'SQLCODE', 'ABEND', 'STATUS', 'ERROR', 'IEF', 'WER',
-      'DATASET', 'SYSOUT', 'SYSIN', 'DD', 'DSN', 'DISP', 'UNIT', 'VOL'
+      'JCL',
+      'VSAM',
+      'DB2',
+      'CICS',
+      'IMS',
+      'COBOL',
+      'TSO',
+      'ISPF',
+      'RACF',
+      'S0C7',
+      'S0C4',
+      'SQLCODE',
+      'ABEND',
+      'STATUS',
+      'ERROR',
+      'IEF',
+      'WER',
+      'DATASET',
+      'SYSOUT',
+      'SYSIN',
+      'DD',
+      'DSN',
+      'DISP',
+      'UNIT',
+      'VOL',
     ];
 
     return {
       name: 'mainframeTerms',
-      validate: (value) => {
+      validate: value => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
-        const str = String(value).toUpperCase();
-        const hasMainframeTerms = mainframeTerms.some(term => 
-          str.includes(term)
-        );
 
-        const warnings = !hasMainframeTerms ? [{
-          field: '',
-          code: 'NO_MAINFRAME_TERMS',
-          message: message || 'Consider including specific mainframe terms (JCL, VSAM, error codes) for better categorization',
-          suggestion: 'Add relevant mainframe terminology'
-        }] : [];
+        const str = String(value).toUpperCase();
+        const hasMainframeTerms = mainframeTerms.some(term => str.includes(term));
+
+        const warnings = !hasMainframeTerms
+          ? [
+              {
+                field: '',
+                code: 'NO_MAINFRAME_TERMS',
+                message:
+                  message ||
+                  'Consider including specific mainframe terms (JCL, VSAM, error codes) for better categorization',
+                suggestion: 'Add relevant mainframe terminology',
+              },
+            ]
+          : [];
 
         return {
           isValid: true, // This is a warning-only rule
           errors: [],
-          warnings
+          warnings,
         };
       },
-      errorMessage: message || 'Should include mainframe-specific terminology'
+      errorMessage: message || 'Should include mainframe-specific terminology',
     };
   }
 }
@@ -265,17 +318,19 @@ export class ArrayValidators {
   static length(min?: number, max?: number, message?: string): ValidationRule<any[]> {
     return {
       name: 'arrayLength',
-      validate: (value) => {
+      validate: value => {
         if (!Array.isArray(value)) {
           return {
             isValid: false,
-            errors: [{
-              field: '',
-              code: 'NOT_ARRAY',
-              message: 'Must be an array',
-              value
-            }],
-            warnings: []
+            errors: [
+              {
+                field: '',
+                code: 'NOT_ARRAY',
+                message: 'Must be an array',
+                value,
+              },
+            ],
+            warnings: [],
           };
         }
 
@@ -293,17 +348,21 @@ export class ArrayValidators {
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'ARRAY_LENGTH',
-            message: message || `${errorMessage} (current: ${length})`,
-            value,
-            metadata: { min, max, current: length }
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'ARRAY_LENGTH',
+                  message: message || `${errorMessage} (current: ${length})`,
+                  value,
+                  metadata: { min, max, current: length },
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || 'Invalid array length'
+      errorMessage: message || 'Invalid array length',
     };
   }
 
@@ -313,12 +372,12 @@ export class ArrayValidators {
   static unique(keyExtractor?: (item: any) => any, message?: string): ValidationRule<any[]> {
     return {
       name: 'unique',
-      validate: (value) => {
+      validate: value => {
         if (!Array.isArray(value)) {
           return { isValid: true, errors: [], warnings: [] };
         }
 
-        const extract = keyExtractor || ((item) => String(item).toLowerCase());
+        const extract = keyExtractor || (item => String(item).toLowerCase());
         const seen = new Set();
         const duplicates: any[] = [];
 
@@ -335,17 +394,22 @@ export class ArrayValidators {
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: '',
-            code: 'DUPLICATE_VALUES',
-            message: message || `Duplicate values found: ${duplicates.map(d => d.item).join(', ')}`,
-            value,
-            metadata: { duplicates }
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: '',
+                  code: 'DUPLICATE_VALUES',
+                  message:
+                    message || `Duplicate values found: ${duplicates.map(d => d.item).join(', ')}`,
+                  value,
+                  metadata: { duplicates },
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || 'All values must be unique'
+      errorMessage: message || 'All values must be unique',
     };
   }
 
@@ -366,13 +430,13 @@ export class ArrayValidators {
 
         for (let i = 0; i < value.length; i++) {
           const itemResult = await itemRule.validate(value[i], context);
-          
+
           // Add index information to errors/warnings
           itemResult.errors.forEach(error => {
             allErrors.push({
               ...error,
               message: `Item ${i + 1}: ${error.message}`,
-              metadata: { ...error.metadata, index: i }
+              metadata: { ...error.metadata, index: i },
             });
           });
 
@@ -380,7 +444,7 @@ export class ArrayValidators {
             allWarnings.push({
               ...warning,
               message: `Item ${i + 1}: ${warning.message}`,
-              metadata: { index: i }
+              metadata: { index: i },
             });
           });
         }
@@ -388,10 +452,10 @@ export class ArrayValidators {
         return {
           isValid: allErrors.length === 0,
           errors: allErrors,
-          warnings: allWarnings
+          warnings: allWarnings,
         };
       },
-      errorMessage: message || 'One or more items are invalid'
+      errorMessage: message || 'One or more items are invalid',
     };
   }
 }
@@ -412,34 +476,40 @@ export class AsyncValidators {
       async: true,
       validate: async (value, context) => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
+
         try {
           const isUnique = await checkFn(value, context);
-          
+
           return {
             isValid: isUnique,
-            errors: !isUnique ? [{
-              field: '',
-              code: 'NOT_UNIQUE',
-              message: message || `"${value}" already exists`,
-              value
-            }] : [],
-            warnings: []
+            errors: !isUnique
+              ? [
+                  {
+                    field: '',
+                    code: 'NOT_UNIQUE',
+                    message: message || `"${value}" already exists`,
+                    value,
+                  },
+                ]
+              : [],
+            warnings: [],
           };
         } catch (error) {
           return {
             isValid: false,
-            errors: [{
-              field: '',
-              code: 'VALIDATION_ERROR',
-              message: `Uniqueness check failed: ${error.message}`,
-              value
-            }],
-            warnings: []
+            errors: [
+              {
+                field: '',
+                code: 'VALIDATION_ERROR',
+                message: `Uniqueness check failed: ${error.message}`,
+                value,
+              },
+            ],
+            warnings: [],
           };
         }
       },
-      errorMessage: message || 'Value must be unique'
+      errorMessage: message || 'Value must be unique',
     };
   }
 
@@ -455,7 +525,7 @@ export class AsyncValidators {
       name,
       async: true,
       validate: validateFn,
-      errorMessage: message || 'Custom validation failed'
+      errorMessage: message || 'Custom validation failed',
     };
   }
 
@@ -470,40 +540,49 @@ export class AsyncValidators {
     return {
       name: 'aiQuality',
       async: true,
-      validate: async (value) => {
+      validate: async value => {
         if (!value || String(value).trim().length < 50) {
           return { isValid: true, errors: [], warnings: [] };
         }
 
         try {
           const result = await aiCheckFn(String(value));
-          const warnings = result.score < threshold ? [{
-            field: '',
-            code: 'AI_QUALITY_LOW',
-            message: message || `Content quality could be improved (score: ${Math.round(result.score * 100)}%)`,
-            suggestion: result.feedback
-          }] : [];
+          const warnings =
+            result.score < threshold
+              ? [
+                  {
+                    field: '',
+                    code: 'AI_QUALITY_LOW',
+                    message:
+                      message ||
+                      `Content quality could be improved (score: ${Math.round(result.score * 100)}%)`,
+                    suggestion: result.feedback,
+                  },
+                ]
+              : [];
 
           return {
             isValid: true, // AI quality is warning-only
             errors: [],
-            warnings
+            warnings,
           };
         } catch (error) {
           // AI check failed, but don't fail validation
           return {
             isValid: true,
             errors: [],
-            warnings: [{
-              field: '',
-              code: 'AI_CHECK_FAILED',
-              message: 'AI quality check unavailable',
-              suggestion: 'Review content manually for quality'
-            }]
+            warnings: [
+              {
+                field: '',
+                code: 'AI_CHECK_FAILED',
+                message: 'AI quality check unavailable',
+                suggestion: 'Review content manually for quality',
+              },
+            ],
           };
         }
       },
-      errorMessage: message || 'Content quality could be improved'
+      errorMessage: message || 'Content quality could be improved',
     };
   }
 }
@@ -515,30 +594,31 @@ export class CrossFieldValidators {
   /**
    * Create a dependency validation rule (field A requires field B)
    */
-  static requires(
-    dependentField: string,
-    message?: string
-  ): ValidationRule {
+  static requires(dependentField: string, message?: string): ValidationRule {
     return {
       name: 'requires',
       validate: (value, context) => {
         if (!value) return { isValid: true, errors: [], warnings: [] };
-        
+
         const dependentValue = context?.entry?.[dependentField as keyof typeof context.entry];
         const isValid = dependentValue != null && String(dependentValue).trim() !== '';
 
         return {
           isValid,
-          errors: !isValid ? [{
-            field: dependentField,
-            code: 'REQUIRED_DEPENDENCY',
-            message: message || `${dependentField} is required when this field is provided`,
-            value: dependentValue
-          }] : [],
-          warnings: []
+          errors: !isValid
+            ? [
+                {
+                  field: dependentField,
+                  code: 'REQUIRED_DEPENDENCY',
+                  message: message || `${dependentField} is required when this field is provided`,
+                  value: dependentValue,
+                },
+              ]
+            : [],
+          warnings: [],
         };
       },
-      errorMessage: message || 'Required field is missing'
+      errorMessage: message || 'Required field is missing',
     };
   }
 
@@ -565,20 +645,26 @@ export class CrossFieldValidators {
         const similarity = calculateTextSimilarity(String(value), String(relatedValue));
         const isRelevant = similarity >= similarityThreshold;
 
-        const warnings = !isRelevant ? [{
-          field: '',
-          code: 'LOW_RELEVANCE',
-          message: message || `Content may not be relevant to ${relatedField} (similarity: ${Math.round(similarity * 100)}%)`,
-          suggestion: `Consider including keywords from ${relatedField}`
-        }] : [];
+        const warnings = !isRelevant
+          ? [
+              {
+                field: '',
+                code: 'LOW_RELEVANCE',
+                message:
+                  message ||
+                  `Content may not be relevant to ${relatedField} (similarity: ${Math.round(similarity * 100)}%)`,
+                suggestion: `Consider including keywords from ${relatedField}`,
+              },
+            ]
+          : [];
 
         return {
           isValid: true, // Relevance is warning-only
           errors: [],
-          warnings
+          warnings,
         };
       },
-      errorMessage: message || 'Content should be relevant to related field'
+      errorMessage: message || 'Content should be relevant to related field',
     };
   }
 }
@@ -591,12 +677,22 @@ export class CrossFieldValidators {
  * Calculate text similarity between two strings (0-1)
  */
 export function calculateTextSimilarity(text1: string, text2: string): number {
-  const words1 = new Set(text1.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-  const words2 = new Set(text2.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-  
+  const words1 = new Set(
+    text1
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(w => w.length > 2)
+  );
+  const words2 = new Set(
+    text2
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(w => w.length > 2)
+  );
+
   const intersection = new Set([...words1].filter(word => words2.has(word)));
   const union = new Set([...words1, ...words2]);
-  
+
   return union.size > 0 ? intersection.size / union.size : 0;
 }
 
@@ -620,10 +716,10 @@ export function combineRules(rules: ValidationRule[], name?: string): Validation
       return {
         isValid: allErrors.length === 0,
         errors: allErrors,
-        warnings: allWarnings
+        warnings: allWarnings,
       };
     },
-    errorMessage: 'Combined validation failed'
+    errorMessage: 'Combined validation failed',
   };
 }
 
@@ -642,10 +738,10 @@ export function conditional(
       if (!condition(value, context)) {
         return { isValid: true, errors: [], warnings: [] };
       }
-      
+
       return await rule.validate(value, context);
     },
-    errorMessage: rule.errorMessage
+    errorMessage: rule.errorMessage,
   };
 }
 
@@ -658,13 +754,13 @@ export function debounceValidation<T>(
 ): (value: T) => Promise<ValidationResult> {
   let timeoutId: ReturnType<typeof setTimeout>;
   let latestValue: T;
-  
+
   return (value: T): Promise<ValidationResult> => {
     latestValue = value;
-    
-    return new Promise((resolve) => {
+
+    return new Promise(resolve => {
       clearTimeout(timeoutId);
-      
+
       timeoutId = setTimeout(async () => {
         if (latestValue === value) {
           const result = await validator(value);

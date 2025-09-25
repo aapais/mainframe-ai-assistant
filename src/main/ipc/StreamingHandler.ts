@@ -47,13 +47,16 @@ export interface StreamChunk {
  * Supports async generators, backpressure, and progress reporting
  */
 export class StreamingHandler extends EventEmitter {
-  private activeStreams = new Map<string, {
-    generator: AsyncGenerator<any, any, unknown>;
-    config: StreamConfig;
-    startTime: number;
-    sentChunks: number;
-    totalSize: number;
-  }>();
+  private activeStreams = new Map<
+    string,
+    {
+      generator: AsyncGenerator<any, any, unknown>;
+      config: StreamConfig;
+      startTime: number;
+      sentChunks: number;
+      totalSize: number;
+    }
+  >();
 
   private config: StreamConfig;
   private metrics: StreamMetrics;
@@ -66,7 +69,7 @@ export class StreamingHandler extends EventEmitter {
       maxBufferSize: 10000,
       timeoutMs: 30000,
       enableBackpressure: true,
-      ...config
+      ...config,
     };
 
     this.metrics = {
@@ -75,7 +78,7 @@ export class StreamingHandler extends EventEmitter {
       totalBytes: 0,
       averageChunkSize: 0,
       averageStreamTime: 0,
-      failedStreams: 0
+      failedStreams: 0,
     };
 
     console.log('🌊 StreamingHandler initialized', this.config);
@@ -112,7 +115,7 @@ export class StreamingHandler extends EventEmitter {
         config: streamConfig,
         startTime: Date.now(),
         sentChunks: 0,
-        totalSize: 0
+        totalSize: 0,
       });
 
       // Start streaming in background
@@ -120,7 +123,6 @@ export class StreamingHandler extends EventEmitter {
 
       // Return stream ID for client to listen to
       return streamId;
-
     } catch (error) {
       this.metrics.failedStreams++;
       console.error('❌ Stream setup failed:', error);
@@ -131,7 +133,7 @@ export class StreamingHandler extends EventEmitter {
   /**
    * Create async generator from various data types
    */
-  private async* createAsyncGenerator(data: any): AsyncGenerator<any, void, unknown> {
+  private async *createAsyncGenerator(data: any): AsyncGenerator<any, void, unknown> {
     if (this.isAsyncIterable(data)) {
       // Already an async generator or async iterable
       yield* data;
@@ -184,7 +186,7 @@ export class StreamingHandler extends EventEmitter {
         // Send chunk when buffer is full or at end
         if (buffer.length >= config.chunkSize) {
           await this.sendChunk(streamId, sender, buffer, chunkIndex, false);
-          
+
           streamInfo.sentChunks++;
           streamInfo.totalSize += this.calculateSize(buffer);
           chunkIndex++;
@@ -214,14 +216,13 @@ export class StreamingHandler extends EventEmitter {
       this.updateMetrics(streamInfo.sentChunks, streamInfo.totalSize, streamTime, false);
 
       console.log(`✅ Stream ${streamId} completed: ${totalProcessed} items in ${streamTime}ms`);
-
     } catch (error) {
       console.error(`❌ Stream ${streamId} failed:`, error);
       this.metrics.failedStreams++;
-      
+
       // Send error to client
       sender.send(`stream:error:${streamId}`, {
-        error: error instanceof Error ? error.message : 'Unknown streaming error'
+        error: error instanceof Error ? error.message : 'Unknown streaming error',
       });
     } finally {
       // Cleanup
@@ -245,11 +246,11 @@ export class StreamingHandler extends EventEmitter {
 
     const progress: StreamProgress = {
       streamId,
-      processedItems: (chunkIndex * this.config.chunkSize) + data.length,
+      processedItems: chunkIndex * this.config.chunkSize + data.length,
       percentage: 0, // Will be calculated on client side if total is known
       currentChunk: chunkIndex + 1,
       startTime: streamInfo.startTime,
-      estimatedTimeRemaining: this.calculateETA(streamInfo, chunkIndex)
+      estimatedTimeRemaining: this.calculateETA(streamInfo, chunkIndex),
     };
 
     const chunk: StreamChunk = {
@@ -260,8 +261,8 @@ export class StreamingHandler extends EventEmitter {
       progress,
       metadata: {
         size: this.calculateSize(data),
-        timestamp: Date.now()
-      }
+        timestamp: Date.now(),
+      },
     };
 
     // Send chunk to renderer process
@@ -270,7 +271,9 @@ export class StreamingHandler extends EventEmitter {
     this.metrics.totalChunks++;
     this.metrics.totalBytes += chunk.metadata!.size;
 
-    console.log(`📦 Sent chunk ${chunkIndex} for stream ${streamId}: ${data.length} items (${chunk.metadata!.size} bytes)`);
+    console.log(
+      `📦 Sent chunk ${chunkIndex} for stream ${streamId}: ${data.length} items (${chunk.metadata!.size} bytes)`
+    );
 
     // Small delay to prevent overwhelming the renderer
     if (!isLast) {
@@ -294,7 +297,7 @@ export class StreamingHandler extends EventEmitter {
 
     const elapsedTime = Date.now() - streamInfo.startTime;
     const averageTimePerChunk = elapsedTime / (currentChunk + 1);
-    
+
     // This is a rough estimate - in practice, you'd want more sophisticated prediction
     return Math.round(averageTimePerChunk * 2); // Estimate 2 more chunks on average
   }
@@ -348,7 +351,7 @@ export class StreamingHandler extends EventEmitter {
       startTime: info.startTime,
       sentChunks: info.sentChunks,
       totalSize: info.totalSize,
-      elapsedTime: now - info.startTime
+      elapsedTime: now - info.startTime,
     }));
   }
 

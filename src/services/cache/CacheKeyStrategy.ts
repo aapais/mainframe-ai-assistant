@@ -75,7 +75,7 @@ export class CacheKeyStrategy extends EventEmitter {
       averageKeyLength: 0,
       collisionRate: 0,
       invalidationEvents: 0,
-      hotKeys: []
+      hotKeys: [],
     };
 
     this.initializeDefaultNamespaces();
@@ -133,40 +133,32 @@ export class CacheKeyStrategy extends EventEmitter {
       entityType: 'query',
       identifier: query,
       userContext,
-      filters: options
+      filters: options,
     });
   }
 
   /**
    * Generate result cache key
    */
-  generateResultKey(
-    resultId: string,
-    version?: string,
-    userContext?: string
-  ): string {
+  generateResultKey(resultId: string, version?: string, userContext?: string): string {
     return this.generateKey({
       namespace: 'results',
       entityType: 'item',
       identifier: resultId,
       version,
-      userContext
+      userContext,
     });
   }
 
   /**
    * Generate index cache key
    */
-  generateIndexKey(
-    indexName: string,
-    segment: string,
-    version?: string
-  ): string {
+  generateIndexKey(indexName: string, segment: string, version?: string): string {
     return this.generateKey({
       namespace: 'index',
       entityType: indexName,
       identifier: segment,
-      version
+      version,
     });
   }
 
@@ -182,38 +174,30 @@ export class CacheKeyStrategy extends EventEmitter {
       namespace: 'aggregation',
       entityType: aggregationType,
       identifier: timeWindow || 'global',
-      filters: parameters
+      filters: parameters,
     });
   }
 
   /**
    * Generate user-specific cache key
    */
-  generateUserKey(
-    userId: string,
-    dataType: string,
-    identifier: string
-  ): string {
+  generateUserKey(userId: string, dataType: string, identifier: string): string {
     return this.generateKey({
       namespace: 'user',
       entityType: dataType,
       identifier,
-      userContext: userId
+      userContext: userId,
     });
   }
 
   /**
    * Generate temporary cache key
    */
-  generateTempKey(
-    operation: string,
-    sessionId: string,
-    identifier: string
-  ): string {
+  generateTempKey(operation: string, sessionId: string, identifier: string): string {
     return this.generateKey({
       namespace: 'temp',
       entityType: operation,
-      identifier: `${sessionId}:${identifier}`
+      identifier: `${sessionId}:${identifier}`,
     });
   }
 
@@ -225,15 +209,16 @@ export class CacheKeyStrategy extends EventEmitter {
     if (parts.length < 3) return null;
 
     const namespacePrefix = parts[0];
-    const namespace = Array.from(this.namespaces.values())
-      .find(ns => ns.prefix === namespacePrefix);
+    const namespace = Array.from(this.namespaces.values()).find(
+      ns => ns.prefix === namespacePrefix
+    );
 
     if (!namespace) return null;
 
     const components: Partial<CacheKeyComponents> = {
       namespace: namespace.name,
       entityType: parts[1],
-      identifier: parts[2]
+      identifier: parts[2],
     };
 
     // Parse additional components
@@ -281,7 +266,7 @@ export class CacheKeyStrategy extends EventEmitter {
         this.emit('keys-invalidated', {
           rule: rule.id,
           pattern: rule.pattern,
-          keys: keysToInvalidate
+          keys: keysToInvalidate,
         });
 
         // Handle cascade invalidation
@@ -293,13 +278,14 @@ export class CacheKeyStrategy extends EventEmitter {
 
       this.keyMetrics.invalidationEvents++;
 
-      console.log(`Cache invalidation: ${invalidatedKeys.length} keys invalidated using ${rulesApplied.length} rules`);
+      console.log(
+        `Cache invalidation: ${invalidatedKeys.length} keys invalidated using ${rulesApplied.length} rules`
+      );
 
       return {
         invalidatedKeys: [...new Set(invalidatedKeys)], // Remove duplicates
-        rulesApplied
+        rulesApplied,
       };
-
     } catch (error) {
       console.error('Cache invalidation error:', error);
       return { invalidatedKeys: [], rulesApplied: [] };
@@ -315,8 +301,7 @@ export class CacheKeyStrategy extends EventEmitter {
     // Add to namespace if specified
     if (rule.pattern.includes(':')) {
       const prefix = rule.pattern.split(':')[0];
-      const namespace = Array.from(this.namespaces.values())
-        .find(ns => ns.prefix === prefix);
+      const namespace = Array.from(this.namespaces.values()).find(ns => ns.prefix === prefix);
 
       if (namespace) {
         namespace.invalidationRules.push(rule);
@@ -337,8 +322,7 @@ export class CacheKeyStrategy extends EventEmitter {
 
     // Remove from namespaces
     for (const namespace of this.namespaces.values()) {
-      namespace.invalidationRules = namespace.invalidationRules
-        .filter(r => r.id !== ruleId);
+      namespace.invalidationRules = namespace.invalidationRules.filter(r => r.id !== ruleId);
     }
 
     this.emit('rule-removed', { ruleId });
@@ -435,7 +419,7 @@ export class CacheKeyStrategy extends EventEmitter {
       suggestions,
       longKeys,
       collisions,
-      namespaceStats
+      namespaceStats,
     };
   }
 
@@ -450,7 +434,7 @@ export class CacheKeyStrategy extends EventEmitter {
         versioning: false,
         compression: true,
         encryption: false,
-        invalidationRules: []
+        invalidationRules: [],
       },
       {
         name: 'results',
@@ -459,7 +443,7 @@ export class CacheKeyStrategy extends EventEmitter {
         versioning: true,
         compression: true,
         encryption: false,
-        invalidationRules: []
+        invalidationRules: [],
       },
       {
         name: 'index',
@@ -468,7 +452,7 @@ export class CacheKeyStrategy extends EventEmitter {
         versioning: true,
         compression: true,
         encryption: false,
-        invalidationRules: []
+        invalidationRules: [],
       },
       {
         name: 'aggregation',
@@ -477,7 +461,7 @@ export class CacheKeyStrategy extends EventEmitter {
         versioning: false,
         compression: true,
         encryption: false,
-        invalidationRules: []
+        invalidationRules: [],
       },
       {
         name: 'user',
@@ -486,7 +470,7 @@ export class CacheKeyStrategy extends EventEmitter {
         versioning: false,
         compression: true,
         encryption: true,
-        invalidationRules: []
+        invalidationRules: [],
       },
       {
         name: 'temp',
@@ -495,8 +479,8 @@ export class CacheKeyStrategy extends EventEmitter {
         versioning: false,
         compression: false,
         encryption: false,
-        invalidationRules: []
-      }
+        invalidationRules: [],
+      },
     ];
 
     defaultNamespaces.forEach(namespace => {
@@ -514,7 +498,7 @@ export class CacheKeyStrategy extends EventEmitter {
         triggerEvents: ['data-updated', 'index-rebuilt'],
         cascade: true,
         priority: 10,
-        enabled: true
+        enabled: true,
       },
       {
         id: 'user-data-change',
@@ -524,7 +508,7 @@ export class CacheKeyStrategy extends EventEmitter {
         triggerEvents: ['user-updated', 'user-deleted'],
         cascade: false,
         priority: 5,
-        enabled: true
+        enabled: true,
       },
       {
         id: 'index-rebuild',
@@ -534,7 +518,7 @@ export class CacheKeyStrategy extends EventEmitter {
         triggerEvents: ['index-rebuilt', 'schema-changed'],
         cascade: true,
         priority: 15,
-        enabled: true
+        enabled: true,
       },
       {
         id: 'temp-cleanup',
@@ -544,7 +528,7 @@ export class CacheKeyStrategy extends EventEmitter {
         triggerEvents: ['session-ended', 'cleanup'],
         cascade: false,
         priority: 1,
-        enabled: true
+        enabled: true,
       },
       {
         id: 'aggregation-refresh',
@@ -554,8 +538,8 @@ export class CacheKeyStrategy extends EventEmitter {
         triggerEvents: ['data-updated', 'time-window-expired'],
         cascade: false,
         priority: 8,
-        enabled: true
-      }
+        enabled: true,
+      },
     ];
 
     defaultRules.forEach(rule => {
@@ -577,7 +561,7 @@ export class CacheKeyStrategy extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < userContext.length; i++) {
       const char = userContext.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);
@@ -586,10 +570,13 @@ export class CacheKeyStrategy extends EventEmitter {
   private hashFilters(filters: Record<string, any>): string {
     const normalized = Object.keys(filters)
       .sort()
-      .reduce((acc, key) => {
-        acc[key] = filters[key];
-        return acc;
-      }, {} as Record<string, any>);
+      .reduce(
+        (acc, key) => {
+          acc[key] = filters[key];
+          return acc;
+        },
+        {} as Record<string, any>
+      );
 
     const serialized = JSON.stringify(normalized);
 
@@ -597,7 +584,7 @@ export class CacheKeyStrategy extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < serialized.length; i++) {
       const char = serialized.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
@@ -709,9 +696,8 @@ export class CacheKeyStrategy extends EventEmitter {
       totalLength += key.length;
     }
 
-    this.keyMetrics.averageKeyLength = this.keyAccessLog.size > 0
-      ? totalLength / this.keyAccessLog.size
-      : 0;
+    this.keyMetrics.averageKeyLength =
+      this.keyAccessLog.size > 0 ? totalLength / this.keyAccessLog.size : 0;
 
     // Update hot keys
     this.keyMetrics.hotKeys = this.getHotKeys(10);
@@ -727,7 +713,7 @@ export class CacheKeyStrategy extends EventEmitter {
   }
 
   private cleanupOldKeys(): void {
-    const cutoff = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours
     const keysToDelete: string[] = [];
 
     for (const [key, stats] of this.keyAccessLog) {

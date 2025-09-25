@@ -1,6 +1,6 @@
 /**
  * Advanced Search Optimization Engine
- * 
+ *
  * Specifically designed to handle 1000+ KB entries with sub-1s search performance.
  * Implements intelligent query routing, result pre-computation, and adaptive optimization.
  */
@@ -111,7 +111,7 @@ export class SearchOptimizationEngine extends EventEmitter {
     console.log('🔍 Analyzing search performance for optimization opportunities...');
 
     const strategies: OptimizationStrategy[] = [];
-    
+
     // Analyze slow queries
     const slowQueries = await this.identifySlowQueries();
     if (slowQueries.length > 0) {
@@ -154,7 +154,7 @@ export class SearchOptimizationEngine extends EventEmitter {
     if (this.activeOptimizations.has(strategy.name)) {
       return {
         success: false,
-        error: 'Optimization already active'
+        error: 'Optimization already active',
       };
     }
 
@@ -166,11 +166,11 @@ export class SearchOptimizationEngine extends EventEmitter {
 
       // Apply the optimization
       const success = await strategy.implementation();
-      
+
       if (!success) {
         return {
           success: false,
-          error: 'Optimization implementation failed'
+          error: 'Optimization implementation failed',
         };
       }
 
@@ -181,32 +181,41 @@ export class SearchOptimizationEngine extends EventEmitter {
       const afterMetrics = await this.measureCurrentPerformance();
 
       // Calculate actual improvement
-      const improvement = ((beforeMetrics.averageResponseTime - afterMetrics.averageResponseTime) / beforeMetrics.averageResponseTime) * 100;
+      const improvement =
+        ((beforeMetrics.averageResponseTime - afterMetrics.averageResponseTime) /
+          beforeMetrics.averageResponseTime) *
+        100;
 
       // Log the optimization
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_optimization_log 
         (strategy_name, before_avg_time, after_avg_time, improvement_pct)
         VALUES (?, ?, ?, ?)
-      `).run(
-        strategy.name,
-        beforeMetrics.averageResponseTime,
-        afterMetrics.averageResponseTime,
-        improvement
-      );
+      `
+        )
+        .run(
+          strategy.name,
+          beforeMetrics.averageResponseTime,
+          afterMetrics.averageResponseTime,
+          improvement
+        );
 
       // If improvement is less than expected, consider rollback
       if (improvement < strategy.estimatedImprovement * 0.5) {
-        console.warn(`⚠️ Optimization ${strategy.name} underperformed. Expected: ${strategy.estimatedImprovement}%, Actual: ${improvement}%`);
-        
+        console.warn(
+          `⚠️ Optimization ${strategy.name} underperformed. Expected: ${strategy.estimatedImprovement}%, Actual: ${improvement}%`
+        );
+
         if (improvement < 5) {
           console.log(`🔄 Rolling back ${strategy.name} due to insufficient improvement`);
           await strategy.rollback();
           this.activeOptimizations.delete(strategy.name);
-          
+
           return {
             success: false,
-            error: `Insufficient improvement: ${improvement}%, rolled back`
+            error: `Insufficient improvement: ${improvement}%, rolled back`,
           };
         }
       }
@@ -215,19 +224,20 @@ export class SearchOptimizationEngine extends EventEmitter {
         strategy: strategy.name,
         improvement,
         beforeMetrics,
-        afterMetrics
+        afterMetrics,
       });
 
-      console.log(`✅ Optimization ${strategy.name} applied successfully. Improvement: ${improvement.toFixed(2)}%`);
+      console.log(
+        `✅ Optimization ${strategy.name} applied successfully. Improvement: ${improvement.toFixed(2)}%`
+      );
 
       return {
         success: true,
-        improvement
+        improvement,
       };
-
     } catch (error) {
       console.error(`❌ Failed to apply optimization ${strategy.name}:`, error);
-      
+
       // Attempt rollback
       try {
         await strategy.rollback();
@@ -238,7 +248,7 @@ export class SearchOptimizationEngine extends EventEmitter {
 
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -246,13 +256,17 @@ export class SearchOptimizationEngine extends EventEmitter {
   /**
    * Identify queries that consistently take longer than 500ms
    */
-  private async identifySlowQueries(): Promise<Array<{
-    query: string;
-    pattern: string;
-    avgTime: number;
-    frequency: number;
-  }>> {
-    return this.db.prepare(`
+  private async identifySlowQueries(): Promise<
+    Array<{
+      query: string;
+      pattern: string;
+      avgTime: number;
+      frequency: number;
+    }>
+  > {
+    return this.db
+      .prepare(
+        `
       SELECT 
         query,
         CASE 
@@ -271,20 +285,26 @@ export class SearchOptimizationEngine extends EventEmitter {
       HAVING frequency > 3
       ORDER BY avgTime DESC, frequency DESC
       LIMIT 20
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
   }
 
   /**
    * Identify frequent queries that aren't being cached effectively
    */
-  private async identifyUncachedFrequentQueries(): Promise<Array<{
-    query: string;
-    frequency: number;
-    avgTime: number;
-    cacheHitRate: number;
-  }>> {
+  private async identifyUncachedFrequentQueries(): Promise<
+    Array<{
+      query: string;
+      frequency: number;
+      avgTime: number;
+      cacheHitRate: number;
+    }>
+  > {
     // This would typically integrate with the QueryCache to get cache hit rates
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT 
         query,
         COUNT(*) as frequency,
@@ -297,28 +317,36 @@ export class SearchOptimizationEngine extends EventEmitter {
       HAVING frequency > 10
       ORDER BY frequency DESC, avgTime DESC
       LIMIT 15
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
   }
 
   /**
    * Identify opportunities for new or optimized indexes
    */
-  private async identifyIndexOpportunities(): Promise<Array<{
-    table: string;
-    columns: string[];
-    queryPattern: string;
-    frequency: number;
-    estimatedImprovement: number;
-  }>> {
+  private async identifyIndexOpportunities(): Promise<
+    Array<{
+      table: string;
+      columns: string[];
+      queryPattern: string;
+      frequency: number;
+      estimatedImprovement: number;
+    }>
+  > {
     const opportunities = [];
 
     // Analyze queries for missing covering indexes
-    const categoryQueries = this.db.prepare(`
+    const categoryQueries = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as freq
       FROM search_history 
       WHERE timestamp > datetime('now', '-7 days')
         AND query LIKE 'category:%'
-    `).get() as { freq: number };
+    `
+      )
+      .get() as { freq: number };
 
     if (categoryQueries.freq > 50) {
       opportunities.push({
@@ -326,17 +354,21 @@ export class SearchOptimizationEngine extends EventEmitter {
         columns: ['category', 'title', 'usage_count', 'success_count'],
         queryPattern: 'category_with_text_search',
         frequency: categoryQueries.freq,
-        estimatedImprovement: 25
+        estimatedImprovement: 25,
       });
     }
 
     // Check for tag-based search patterns
-    const tagQueries = this.db.prepare(`
+    const tagQueries = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as freq
       FROM search_history 
       WHERE timestamp > datetime('now', '-7 days')
         AND query LIKE 'tag:%'
-    `).get() as { freq: number };
+    `
+      )
+      .get() as { freq: number };
 
     if (tagQueries.freq > 30) {
       opportunities.push({
@@ -344,7 +376,7 @@ export class SearchOptimizationEngine extends EventEmitter {
         columns: ['tag', 'entry_id'],
         queryPattern: 'tag_lookup_with_sorting',
         frequency: tagQueries.freq,
-        estimatedImprovement: 30
+        estimatedImprovement: 30,
       });
     }
 
@@ -354,24 +386,30 @@ export class SearchOptimizationEngine extends EventEmitter {
   /**
    * Identify query routing optimizations
    */
-  private async identifyRoutingOptimizations(): Promise<Array<{
-    pattern: string;
-    currentStrategy: string;
-    suggestedStrategy: string;
-    frequency: number;
-    estimatedImprovement: number;
-  }>> {
+  private async identifyRoutingOptimizations(): Promise<
+    Array<{
+      pattern: string;
+      currentStrategy: string;
+      suggestedStrategy: string;
+      frequency: number;
+      estimatedImprovement: number;
+    }>
+  > {
     const opportunities = [];
 
     // Analyze error code searches (should use exact matching)
-    const errorCodePattern = this.db.prepare(`
+    const errorCodePattern = this.db
+      .prepare(
+        `
       SELECT 
         COUNT(*) as freq,
         AVG(search_time_ms) as avgTime
       FROM search_history 
       WHERE timestamp > datetime('now', '-7 days')
         AND query REGEXP '^[A-Z][0-9]{3,4}[A-Z]?$'
-    `).get() as { freq: number; avgTime: number };
+    `
+      )
+      .get() as { freq: number; avgTime: number };
 
     if (errorCodePattern.freq > 20 && errorCodePattern.avgTime > 300) {
       opportunities.push({
@@ -379,7 +417,7 @@ export class SearchOptimizationEngine extends EventEmitter {
         currentStrategy: 'fts',
         suggestedStrategy: 'exact',
         frequency: errorCodePattern.freq,
-        estimatedImprovement: 40
+        estimatedImprovement: 40,
       });
     }
 
@@ -395,11 +433,12 @@ export class SearchOptimizationEngine extends EventEmitter {
       priority: 9,
       estimatedImprovement: 35,
       description: `Optimize ${slowQueries.length} slow queries with targeted indexes and caching`,
-      
+
       implementation: async () => {
         try {
           // Create specialized indexes for slow query patterns
-          for (const query of slowQueries.slice(0, 5)) { // Limit to top 5
+          for (const query of slowQueries.slice(0, 5)) {
+            // Limit to top 5
             if (query.pattern === 'category_filter') {
               this.db.exec(`
                 CREATE INDEX IF NOT EXISTS idx_slow_category_${Date.now()}
@@ -422,7 +461,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       rollback: async () => {
         // Remove created indexes if needed
         return true;
-      }
+      },
     };
   }
 
@@ -435,7 +474,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       priority: 8,
       estimatedImprovement: 45,
       description: `Implement aggressive caching for ${uncachedQueries.length} frequent queries`,
-      
+
       implementation: async () => {
         try {
           // Pre-warm cache with frequent queries
@@ -456,7 +495,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       rollback: async () => {
         this.optimizationCache.delete('frequent_query_ttl');
         return true;
-      }
+      },
     };
   }
 
@@ -469,13 +508,13 @@ export class SearchOptimizationEngine extends EventEmitter {
       priority: 7,
       estimatedImprovement: 30,
       description: `Create ${opportunities.length} new optimized indexes`,
-      
+
       implementation: async () => {
         try {
           for (const opp of opportunities) {
             const indexName = `idx_auto_opt_${opp.queryPattern}_${Date.now()}`;
             const columns = opp.columns.join(', ');
-            
+
             this.db.exec(`
               CREATE INDEX IF NOT EXISTS ${indexName}
               ON ${opp.table}(${columns})
@@ -495,7 +534,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       rollback: async () => {
         // Indexes can be dropped if needed
         return true;
-      }
+      },
     };
   }
 
@@ -508,7 +547,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       priority: 6,
       estimatedImprovement: 25,
       description: `Optimize query routing for ${opportunities.length} patterns`,
-      
+
       implementation: async () => {
         try {
           // Store routing preferences
@@ -528,7 +567,7 @@ export class SearchOptimizationEngine extends EventEmitter {
           this.optimizationCache.delete(`routing_${opp.pattern}`);
         }
         return true;
-      }
+      },
     };
   }
 
@@ -552,7 +591,9 @@ export class SearchOptimizationEngine extends EventEmitter {
    * Measure current search performance
    */
   private async measureCurrentPerformance(): Promise<SearchPerformanceProfile> {
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT 
         AVG(search_time_ms) as avgTime,
         MAX(search_time_ms) as maxTime,
@@ -560,7 +601,9 @@ export class SearchOptimizationEngine extends EventEmitter {
         COUNT(CASE WHEN search_time_ms > 1000 THEN 1 END) as slowQueries
       FROM search_history 
       WHERE timestamp > datetime('now', '-1 hour')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     return {
       averageResponseTime: stats.avgTime || 0,
@@ -569,7 +612,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       cacheHitRate: 0.75, // Would integrate with actual cache stats
       queryVolume: stats.totalQueries || 0,
       slowQueryCount: stats.slowQueries || 0,
-      indexEfficiency: 0.85 // Would calculate based on EXPLAIN QUERY PLAN analysis
+      indexEfficiency: 0.85, // Would calculate based on EXPLAIN QUERY PLAN analysis
     };
   }
 
@@ -583,7 +626,8 @@ export class SearchOptimizationEngine extends EventEmitter {
         this.performanceHistory.push(profile);
 
         // Keep only last 24 hours of history
-        if (this.performanceHistory.length > 144) { // 24 hours * 6 (10-minute intervals)
+        if (this.performanceHistory.length > 144) {
+          // 24 hours * 6 (10-minute intervals)
           this.performanceHistory = this.performanceHistory.slice(-144);
         }
 
@@ -592,10 +636,9 @@ export class SearchOptimizationEngine extends EventEmitter {
           this.emit('performanceAlert', {
             type: 'slow_queries',
             severity: 'high',
-            metrics: profile
+            metrics: profile,
           });
         }
-
       } catch (error) {
         console.error('Performance monitoring error:', error);
       }
@@ -610,7 +653,7 @@ export class SearchOptimizationEngine extends EventEmitter {
     setInterval(async () => {
       try {
         const strategies = await this.analyzeAndOptimize();
-        
+
         // Auto-apply low-risk, high-impact optimizations
         for (const strategy of strategies) {
           if (strategy.priority >= 8 && strategy.estimatedImprovement >= 30) {
@@ -639,14 +682,17 @@ export class SearchOptimizationEngine extends EventEmitter {
       cacheHitRate: 0,
       queryVolume: 0,
       slowQueryCount: 0,
-      indexEfficiency: 0
+      indexEfficiency: 0,
     };
 
     let trend: 'improving' | 'stable' | 'degrading' = 'stable';
     if (this.performanceHistory.length >= 2) {
       const previous = this.performanceHistory[this.performanceHistory.length - 2];
-      const change = ((current.averageResponseTime - previous.averageResponseTime) / previous.averageResponseTime) * 100;
-      
+      const change =
+        ((current.averageResponseTime - previous.averageResponseTime) /
+          previous.averageResponseTime) *
+        100;
+
       if (change < -5) trend = 'improving';
       else if (change > 5) trend = 'degrading';
     }
@@ -666,7 +712,7 @@ export class SearchOptimizationEngine extends EventEmitter {
       current,
       trend,
       activeOptimizations: Array.from(this.activeOptimizations),
-      recommendations
+      recommendations,
     };
   }
 
@@ -679,7 +725,9 @@ export class SearchOptimizationEngine extends EventEmitter {
     improvement: number;
     status: string;
   }> {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT 
         strategy_name as strategy,
         applied_at as appliedAt,
@@ -688,6 +736,8 @@ export class SearchOptimizationEngine extends EventEmitter {
       FROM search_optimization_log
       ORDER BY applied_at DESC
       LIMIT 20
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
   }
 }

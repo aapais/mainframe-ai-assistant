@@ -37,7 +37,7 @@ class LiveRegionManager {
       priority = 'polite',
       atomic = false,
       relevant = 'additions text',
-      busy = false
+      busy = false,
     } = options;
 
     const region = document.createElement('div');
@@ -103,7 +103,7 @@ class LiveRegionManager {
   }
 
   cleanup(): void {
-    this.regions.forEach((region) => {
+    this.regions.forEach(region => {
       if (region.parentNode) {
         region.parentNode.removeChild(region);
       }
@@ -169,11 +169,12 @@ export class FocusTrap {
       'select:not([disabled])',
       'textarea:not([disabled])',
       '[tabindex]:not([tabindex="-1"]):not([disabled])',
-      '[contenteditable]:not([contenteditable="false"])'
+      '[contenteditable]:not([contenteditable="false"])',
     ].join(', ');
 
-    this.focusableElements = Array.from(this.container.querySelectorAll(selector))
-      .filter(el => this.isVisible(el)) as HTMLElement[];
+    this.focusableElements = Array.from(this.container.querySelectorAll(selector)).filter(el =>
+      this.isVisible(el)
+    ) as HTMLElement[];
   }
 
   private isVisible(element: HTMLElement): boolean {
@@ -227,7 +228,7 @@ export function focusElement(element: HTMLElement | null, options: FocusOptions 
 
   try {
     element.focus({
-      preventScroll: options.preventScroll
+      preventScroll: options.preventScroll,
     });
 
     // Select text if it's an input and select option is true
@@ -250,15 +251,14 @@ export function getFocusableElements(container: HTMLElement = document.body): HT
     'select:not([disabled])',
     'textarea:not([disabled])',
     '[tabindex]:not([tabindex="-1"]):not([disabled])',
-    '[contenteditable]:not([contenteditable="false"])'
+    '[contenteditable]:not([contenteditable="false"])',
   ].join(', ');
 
-  return Array.from(container.querySelectorAll(selector))
-    .filter((el): el is HTMLElement => {
-      const element = el as HTMLElement;
-      const style = getComputedStyle(element);
-      return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-    });
+  return Array.from(container.querySelectorAll(selector)).filter((el): el is HTMLElement => {
+    const element = el as HTMLElement;
+    const style = getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+  });
 }
 
 // ========================
@@ -276,11 +276,13 @@ export interface ColorContrastRatio {
  */
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : null;
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
 }
 
 /**
@@ -362,19 +364,20 @@ export class KeyboardNavigator {
   constructor(container: HTMLElement, options: KeyboardNavigationOptions = {}) {
     this.container = container;
     this.options = {
-      selector: '[data-keyboard-nav], button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      selector:
+        '[data-keyboard-nav], button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       wrap: true,
       includeDisabled: false,
       onNavigate: () => {},
-      ...options
+      ...options,
     };
 
     this.updateElements();
   }
 
   updateElements(): void {
-    this.elements = Array.from(this.container.querySelectorAll(this.options.selector))
-      .filter((el): el is HTMLElement => {
+    this.elements = Array.from(this.container.querySelectorAll(this.options.selector)).filter(
+      (el): el is HTMLElement => {
         const element = el as HTMLElement;
 
         // Check if disabled
@@ -385,7 +388,8 @@ export class KeyboardNavigator {
         // Check visibility
         const style = getComputedStyle(element);
         return style.display !== 'none' && style.visibility !== 'hidden';
-      });
+      }
+    );
 
     // Reset current index if out of bounds
     if (this.currentIndex >= this.elements.length) {
@@ -393,7 +397,10 @@ export class KeyboardNavigator {
     }
   }
 
-  navigate(direction: 'next' | 'prev' | 'first' | 'last', focus: boolean = true): HTMLElement | null {
+  navigate(
+    direction: 'next' | 'prev' | 'first' | 'last',
+    focus: boolean = true
+  ): HTMLElement | null {
     this.updateElements();
 
     if (this.elements.length === 0) return null;
@@ -549,7 +556,7 @@ export function useKeyboardNavigation(options?: KeyboardNavigationOptions) {
     containerRef,
     navigate,
     updateElements,
-    getCurrentElement
+    getCurrentElement,
   };
 }
 

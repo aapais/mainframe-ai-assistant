@@ -74,7 +74,7 @@ export class DifferentialStateManager extends EventEmitter {
       enableVersionCleanup: true,
       cleanupIntervalMs: 5 * 60 * 1000, // 5 minutes
       enableMetrics: true,
-      ...(config || {})
+      ...(config || {}),
     };
 
     if (this.config.enableVersionCleanup) {
@@ -85,7 +85,11 @@ export class DifferentialStateManager extends EventEmitter {
   /**
    * Initialize or update state and return differential change
    */
-  async setState<T>(stateKey: string, data: T, options: SetStateOptions | undefined = {}): Promise<StateChange<T> | null> {
+  async setState<T>(
+    stateKey: string,
+    data: T,
+    options: SetStateOptions | undefined = {}
+  ): Promise<StateChange<T> | null> {
     const tracker = this.getOrCreateTracker(stateKey, options);
     const newVersion = ++this.globalVersion;
     const timestamp = Date.now();
@@ -101,7 +105,7 @@ export class DifferentialStateManager extends EventEmitter {
       timestamp,
       data,
       checksum,
-      size
+      size,
     };
 
     // Check if data actually changed
@@ -113,14 +117,11 @@ export class DifferentialStateManager extends EventEmitter {
 
     if (tracker.currentVersion) {
       // Calculate differential changes
-      const diff = await this.diffCalculator.calculateDiff(
-        tracker.currentVersion.data,
-        data
-      );
+      const diff = await this.diffCalculator.calculateDiff(tracker.currentVersion.data, data);
 
       const patches = await this.diffCalculator.generatePatches(diff);
-      const compressionRatio = patches.length > 0 ?
-        (size - this.estimatePatchSize(patches)) / size : 0;
+      const compressionRatio =
+        patches.length > 0 ? (size - this.estimatePatchSize(patches)) / size : 0;
 
       // Only create differential if it provides savings
       if (compressionRatio > 0.1 && patches.length / size < this.config.maxDiffSizeRatio) {
@@ -135,8 +136,8 @@ export class DifferentialStateManager extends EventEmitter {
             source: stateKey,
             timestamp,
             dataType: typeof data,
-            estimatedSavings: Math.round((size * compressionRatio) / 1024) // KB saved
-          }
+            estimatedSavings: Math.round((size * compressionRatio) / 1024), // KB saved
+          },
         };
       }
     }
@@ -165,7 +166,7 @@ export class DifferentialStateManager extends EventEmitter {
     this.emit('stateChanged', {
       stateKey,
       change: stateChange,
-      fullUpdate: !stateChange
+      fullUpdate: !stateChange,
     });
 
     return stateChange;
@@ -253,8 +254,8 @@ export class DifferentialStateManager extends EventEmitter {
         throttleMs: 0,
         maxDiffSize: 10 * 1024, // 10KB
         fallbackToFull: true,
-        ...(options || {})
-      }
+        ...(options || {}),
+      },
     };
 
     this.subscriptions.set(subscriptionId, subscription);
@@ -268,18 +269,20 @@ export class DifferentialStateManager extends EventEmitter {
         previousVersion: 0,
         currentVersion: tracker.currentVersion.version,
         diff: { added: [], modified: [], deleted: [] },
-        patches: [{
-          op: 'replace',
-          path: '',
-          value: tracker.currentVersion.data
-        }],
+        patches: [
+          {
+            op: 'replace',
+            path: '',
+            value: tracker.currentVersion.data,
+          },
+        ],
         compressionRatio: 0,
         metadata: {
           source: stateKey,
           timestamp: tracker.currentVersion.timestamp,
           dataType: typeof tracker.currentVersion.data,
-          estimatedSavings: 0
-        }
+          estimatedSavings: 0,
+        },
       };
 
       // Use setTimeout to make it async
@@ -330,7 +333,8 @@ export class DifferentialStateManager extends EventEmitter {
 
     const patches = await this.diffCalculator.generatePatches(diff);
     const estimatedPatchSize = this.estimatePatchSize(patches);
-    const compressionRatio = (tracker.currentVersion.size - estimatedPatchSize) / tracker.currentVersion.size;
+    const compressionRatio =
+      (tracker.currentVersion.size - estimatedPatchSize) / tracker.currentVersion.size;
 
     return {
       id: this.generateChangeId(),
@@ -343,8 +347,8 @@ export class DifferentialStateManager extends EventEmitter {
         source: stateKey,
         timestamp: tracker.currentVersion.timestamp,
         dataType: typeof tracker.currentVersion.data,
-        estimatedSavings: Math.round(((tracker.currentVersion.size - estimatedPatchSize) / 1024))
-      }
+        estimatedSavings: Math.round((tracker.currentVersion.size - estimatedPatchSize) / 1024),
+      },
     };
   }
 
@@ -389,12 +393,15 @@ export class DifferentialStateManager extends EventEmitter {
       totalDataSizeBytes: totalDataSize,
       averageCompressionRatio,
       memoryUsageBytes: this.estimateMemoryUsage(),
-      activeTrackers: Array.from(this.stateTrackers.keys())
+      activeTrackers: Array.from(this.stateTrackers.keys()),
     };
   }
 
   // Private helper methods
-  private getOrCreateTracker<T>(stateKey: string, options: SetStateOptions | undefined = {}): StateTracker<T> {
+  private getOrCreateTracker<T>(
+    stateKey: string,
+    options: SetStateOptions | undefined = {}
+  ): StateTracker<T> {
     let tracker = this.stateTrackers.get(stateKey) as StateTracker<T>;
 
     if (!tracker) {
@@ -404,8 +411,14 @@ export class DifferentialStateManager extends EventEmitter {
         previousVersions: new Map(),
         subscriptions: new Set(),
         lastUpdateTime: 0,
-        compressionEnabled: (options !== undefined && options.enableCompression !== undefined) ? options.enableCompression : this.config.enableCompression,
-        maxHistorySize: (options !== undefined && options.maxHistoryVersions !== undefined) ? options.maxHistoryVersions : this.config.maxHistoryVersions
+        compressionEnabled:
+          options !== undefined && options.enableCompression !== undefined
+            ? options.enableCompression
+            : this.config.enableCompression,
+        maxHistorySize:
+          options !== undefined && options.maxHistoryVersions !== undefined
+            ? options.maxHistoryVersions
+            : this.config.maxHistoryVersions,
       };
 
       this.stateTrackers.set(stateKey, tracker);
@@ -420,19 +433,22 @@ export class DifferentialStateManager extends EventEmitter {
 
     tracker.subscriptions.forEach(subscription => {
       // Check if subscription should receive this update
-      if (subscription.options.maxDiffSize !== undefined &&
-          this.estimatePatchSize(stateChange.patches) > subscription.options.maxDiffSize) {
-
+      if (
+        subscription.options.maxDiffSize !== undefined &&
+        this.estimatePatchSize(stateChange.patches) > subscription.options.maxDiffSize
+      ) {
         if (subscription.options.fallbackToFull === true) {
           // Send full state instead of diff
           const fullStateChange: StateChange = {
             ...stateChange,
-            patches: [{
-              op: 'replace',
-              path: '',
-              value: tracker.currentVersion.data
-            }],
-            compressionRatio: 0
+            patches: [
+              {
+                op: 'replace',
+                path: '',
+                value: tracker.currentVersion.data,
+              },
+            ],
+            compressionRatio: 0,
           };
           subscription.callback(fullStateChange);
         }
@@ -472,7 +488,7 @@ export class DifferentialStateManager extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString(36);

@@ -58,7 +58,7 @@ export class InvertedIndex {
     problem: 2.0,
     solution: 1.8,
     tags: 1.5,
-    category: 1.2
+    category: 1.2,
   };
 
   // Performance optimizations
@@ -74,7 +74,7 @@ export class InvertedIndex {
       averageDocumentLength: 0,
       indexSize: 0,
       buildTime: 0,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
   }
 
@@ -94,7 +94,7 @@ export class InvertedIndex {
     for (let i = 0; i < entries.length; i += batchSize) {
       const batch = entries.slice(i, i + batchSize);
       await this.processBatch(batch);
-      
+
       // Log progress
       if (i % 500 === 0) {
         console.log(`Processed ${i + batch.length}/${entries.length} documents`);
@@ -104,7 +104,7 @@ export class InvertedIndex {
     // Update statistics
     this.updateStats();
     this.stats.buildTime = Date.now() - startTime;
-    
+
     console.log(`Index built in ${this.stats.buildTime}ms`);
     console.log(`- Documents: ${this.stats.totalDocuments}`);
     console.log(`- Unique terms: ${this.stats.uniqueTerms}`);
@@ -146,7 +146,7 @@ export class InvertedIndex {
       if (postingList) {
         postingList.documents.delete(docId);
         postingList.frequency -= doc.termFrequencies.get(term) || 0;
-        
+
         // Remove empty posting lists
         if (postingList.documents.size === 0) {
           this.index.delete(term);
@@ -166,14 +166,14 @@ export class InvertedIndex {
    */
   search(terms: string[]): Map<string, PostingList> {
     const results = new Map<string, PostingList>();
-    
+
     for (const term of terms) {
       const postingList = this.index.get(term);
       if (postingList) {
         results.set(term, postingList);
       }
     }
-    
+
     return results;
   }
 
@@ -197,14 +197,14 @@ export class InvertedIndex {
   findTermsWithPrefix(prefix: string, limit: number = 20): string[] {
     const results: string[] = [];
     const lowerPrefix = prefix.toLowerCase();
-    
+
     for (const term of this.index.keys()) {
       if (term.startsWith(lowerPrefix)) {
         results.push(term);
         if (results.length >= limit) break;
       }
     }
-    
+
     return results.sort((a, b) => {
       const aPosting = this.index.get(a)!;
       const bPosting = this.index.get(b)!;
@@ -232,7 +232,7 @@ export class InvertedIndex {
       averageDocumentLength: 0,
       indexSize: 0,
       buildTime: 0,
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
   }
 
@@ -252,8 +252,8 @@ export class InvertedIndex {
           termFrequency: entry.termFrequency,
           positions: entry.positions.slice(0, 10), // Limit for export size
           fields: Array.from(entry.fields),
-          boost: entry.boost
-        }))
+          boost: entry.boost,
+        })),
       })),
       documents: Array.from(this.documents.entries()).map(([id, doc]) => ({
         id,
@@ -261,10 +261,10 @@ export class InvertedIndex {
         termFrequencies: Array.from(doc.termFrequencies.entries()),
         fieldLengths: doc.fieldLengths,
         totalTerms: doc.totalTerms,
-        lastModified: doc.lastModified
-      }))
+        lastModified: doc.lastModified,
+      })),
     };
-    
+
     return exportData;
   }
 
@@ -273,14 +273,14 @@ export class InvertedIndex {
    */
   import(data: any): void {
     this.clear();
-    
+
     if (data.version !== '1.0') {
       throw new Error(`Unsupported index version: ${data.version}`);
     }
-    
+
     // Import statistics
     this.stats = { ...data.stats };
-    
+
     // Import documents
     for (const docData of data.documents) {
       const doc: IndexedDocument = {
@@ -289,33 +289,35 @@ export class InvertedIndex {
         termFrequencies: new Map(docData.termFrequencies),
         fieldLengths: docData.fieldLengths,
         totalTerms: docData.totalTerms,
-        lastModified: docData.lastModified
+        lastModified: docData.lastModified,
       };
       this.documents.set(doc.id, doc);
     }
-    
+
     // Import index
     for (const termData of data.index) {
       const postingList: PostingList = {
         term: termData.term,
         frequency: termData.frequency,
-        documents: new Map()
+        documents: new Map(),
       };
-      
+
       for (const docEntry of termData.documents) {
         postingList.documents.set(docEntry.docId, {
           docId: docEntry.docId,
           termFrequency: docEntry.termFrequency,
           positions: docEntry.positions,
           fields: new Set(docEntry.fields),
-          boost: docEntry.boost
+          boost: docEntry.boost,
         });
       }
-      
+
       this.index.set(termData.term, postingList);
     }
-    
-    console.log(`Index imported: ${this.stats.totalDocuments} documents, ${this.stats.uniqueTerms} terms`);
+
+    console.log(
+      `Index imported: ${this.stats.totalDocuments} documents, ${this.stats.uniqueTerms} terms`
+    );
   }
 
   // =========================
@@ -345,7 +347,7 @@ export class InvertedIndex {
       problem: entry.problem || '',
       solution: entry.solution || '',
       tags: (entry.tags || []).join(' '),
-      category: entry.category || ''
+      category: entry.category || '',
     };
 
     for (const [fieldName, fieldValue] of Object.entries(fields)) {
@@ -366,23 +368,23 @@ export class InvertedIndex {
       termFrequencies,
       fieldLengths,
       totalTerms,
-      lastModified: entry.updated_at?.getTime() || Date.now()
+      lastModified: entry.updated_at?.getTime() || Date.now(),
     };
   }
 
   private addTermToIndex(
-    term: string, 
-    docId: string, 
-    frequency: number, 
+    term: string,
+    docId: string,
+    frequency: number,
     indexedDoc: IndexedDocument
   ): void {
     let postingList = this.index.get(term);
-    
+
     if (!postingList) {
       postingList = {
         term,
         frequency: 0,
-        documents: new Map()
+        documents: new Map(),
       };
       this.index.set(term, postingList);
     }
@@ -390,7 +392,7 @@ export class InvertedIndex {
     // Calculate boost based on fields where term appears
     let boost = 1.0;
     const fields = new Set<string>();
-    
+
     // Determine which fields contain this term
     // (simplified - in production you'd track this during tokenization)
     for (const [fieldName] of Object.entries(this.fieldBoosts)) {
@@ -406,7 +408,7 @@ export class InvertedIndex {
       termFrequency: frequency,
       positions: [], // Simplified - would be populated during tokenization
       fields,
-      boost
+      boost,
     };
 
     postingList.documents.set(docId, postingEntry);
@@ -415,27 +417,25 @@ export class InvertedIndex {
 
   private tokenizeText(text: string): string[] {
     if (!text) return [];
-    
+
     return text
       .toLowerCase()
       .replace(/[^\w\s-]/g, ' ') // Keep alphanumeric, spaces, hyphens
       .split(/\s+/)
-      .filter(term => 
-        term.length >= this.minTermLength && 
-        term.length <= this.maxTermLength
-      )
+      .filter(term => term.length >= this.minTermLength && term.length <= this.maxTermLength)
       .slice(0, 1000); // Limit terms per document for performance
   }
 
   private updateStats(): void {
     this.stats.totalDocuments = this.documents.size;
     this.stats.uniqueTerms = this.index.size;
-    this.stats.totalTerms = Array.from(this.documents.values())
-      .reduce((sum, doc) => sum + doc.totalTerms, 0);
-    this.stats.averageDocumentLength = this.stats.totalDocuments > 0 
-      ? this.stats.totalTerms / this.stats.totalDocuments 
-      : 0;
-    
+    this.stats.totalTerms = Array.from(this.documents.values()).reduce(
+      (sum, doc) => sum + doc.totalTerms,
+      0
+    );
+    this.stats.averageDocumentLength =
+      this.stats.totalDocuments > 0 ? this.stats.totalTerms / this.stats.totalDocuments : 0;
+
     // Estimate index size in bytes
     let indexSize = 0;
     for (const postingList of this.index.values()) {

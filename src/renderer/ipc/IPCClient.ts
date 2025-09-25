@@ -12,7 +12,7 @@ import type {
   DatabaseMetrics,
   ElectronAPI,
   AppError,
-  AppErrorType
+  AppErrorType,
 } from '../../types';
 
 // IPC Error types
@@ -50,13 +50,15 @@ export class IPCClient {
   private api: ElectronAPI;
   private defaultTimeout = 5000;
   private defaultRetries = 2;
-  
+
   constructor() {
     // Check if we're in the correct context
     if (typeof window === 'undefined' || !window.electronAPI) {
-      throw new Error('IPCClient can only be used in the renderer process with ElectronAPI available');
+      throw new Error(
+        'IPCClient can only be used in the renderer process with ElectronAPI available'
+      );
     }
-    
+
     this.api = window.electronAPI;
   }
 
@@ -71,7 +73,7 @@ export class IPCClient {
     const startTime = performance.now();
 
     let lastError: IPCError | null = null;
-    
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         // Add timeout wrapper
@@ -79,31 +81,36 @@ export class IPCClient {
           operation(),
           new Promise<never>((_, reject) => {
             setTimeout(() => {
-              reject(this.createIPCError('IPC_TIMEOUT', `Operation timed out after ${timeout}ms`, 'NETWORK_ERROR'));
+              reject(
+                this.createIPCError(
+                  'IPC_TIMEOUT',
+                  `Operation timed out after ${timeout}ms`,
+                  'NETWORK_ERROR'
+                )
+              );
             }, timeout);
-          })
+          }),
         ]);
 
         const endTime = performance.now();
-        
+
         return {
           success: true,
           data: result,
           timing: {
             start: startTime,
             end: endTime,
-            duration: endTime - startTime
-          }
+            duration: endTime - startTime,
+          },
         };
-        
       } catch (error) {
         lastError = this.normalizeError(error);
-        
+
         // Don't retry on certain error types
         if (lastError.type === 'VALIDATION_ERROR' || lastError.type === 'PERMISSION_ERROR') {
           break;
         }
-        
+
         // Wait before retry (exponential backoff)
         if (attempt < retries) {
           await this.delay(Math.pow(2, attempt) * 100);
@@ -112,22 +119,25 @@ export class IPCClient {
     }
 
     const endTime = performance.now();
-    
+
     return {
       success: false,
       error: lastError!,
       timing: {
         start: startTime,
         end: endTime,
-        duration: endTime - startTime
-      }
+        duration: endTime - startTime,
+      },
     };
   }
 
   /**
    * Knowledge Base Operations
    */
-  async getKBEntries(query?: SearchQuery, options?: IPCOptions): Promise<IPCResponse<SearchResult[]>> {
+  async getKBEntries(
+    query?: SearchQuery,
+    options?: IPCOptions
+  ): Promise<IPCResponse<SearchResult[]>> {
     return this.executeWithRetry(() => this.api.getKBEntries(query), options);
   }
 
@@ -137,7 +147,11 @@ export class IPCClient {
     return this.executeWithRetry(() => this.api.addKBEntry(entry), options);
   }
 
-  async updateKBEntry(id: string, updates: KBEntryUpdate, options?: IPCOptions): Promise<IPCResponse<void>> {
+  async updateKBEntry(
+    id: string,
+    updates: KBEntryUpdate,
+    options?: IPCOptions
+  ): Promise<IPCResponse<void>> {
     if (!id) throw this.createIPCError('INVALID_ID', 'Entry ID is required', 'VALIDATION_ERROR');
     return this.executeWithRetry(() => this.api.updateKBEntry(id, updates), options);
   }
@@ -155,29 +169,47 @@ export class IPCClient {
   /**
    * Search Operations
    */
-  async searchLocal(query: string, searchOptions?: SearchQuery, ipcOptions?: IPCOptions): Promise<IPCResponse<SearchResult[]>> {
-    if (!query.trim()) throw this.createIPCError('EMPTY_QUERY', 'Search query cannot be empty', 'VALIDATION_ERROR');
+  async searchLocal(
+    query: string,
+    searchOptions?: SearchQuery,
+    ipcOptions?: IPCOptions
+  ): Promise<IPCResponse<SearchResult[]>> {
+    if (!query.trim())
+      throw this.createIPCError('EMPTY_QUERY', 'Search query cannot be empty', 'VALIDATION_ERROR');
     return this.executeWithRetry(() => this.api.searchLocal(query, searchOptions), ipcOptions);
   }
 
-  async searchWithAI(query: string, searchOptions?: SearchQuery, ipcOptions?: IPCOptions): Promise<IPCResponse<SearchResult[]>> {
-    if (!query.trim()) throw this.createIPCError('EMPTY_QUERY', 'Search query cannot be empty', 'VALIDATION_ERROR');
-    
-    const result = await this.executeWithRetry(() => this.api.searchWithAI(query, searchOptions), ipcOptions);
-    
+  async searchWithAI(
+    query: string,
+    searchOptions?: SearchQuery,
+    ipcOptions?: IPCOptions
+  ): Promise<IPCResponse<SearchResult[]>> {
+    if (!query.trim())
+      throw this.createIPCError('EMPTY_QUERY', 'Search query cannot be empty', 'VALIDATION_ERROR');
+
+    const result = await this.executeWithRetry(
+      () => this.api.searchWithAI(query, searchOptions),
+      ipcOptions
+    );
+
     // If AI search fails and fallback is enabled, try local search
     if (!result.success && ipcOptions?.fallback !== false) {
       console.warn('AI search failed, falling back to local search:', result.error);
       return this.searchLocal(query, searchOptions, ipcOptions);
     }
-    
+
     return result;
   }
 
   /**
    * Rating and Feedback Operations
    */
-  async rateEntry(id: string, successful: boolean, comment?: string, options?: IPCOptions): Promise<IPCResponse<void>> {
+  async rateEntry(
+    id: string,
+    successful: boolean,
+    comment?: string,
+    options?: IPCOptions
+  ): Promise<IPCResponse<void>> {
     if (!id) throw this.createIPCError('INVALID_ID', 'Entry ID is required', 'VALIDATION_ERROR');
     return this.executeWithRetry(() => this.api.rateEntry(id, successful, comment), options);
   }
@@ -202,11 +234,15 @@ export class IPCClient {
     return this.executeWithRetry(() => this.api.importKB(path), options);
   }
 
-  async checkDatabase(options?: IPCOptions): Promise<IPCResponse<{ connected: boolean; isEmpty: boolean }>> {
+  async checkDatabase(
+    options?: IPCOptions
+  ): Promise<IPCResponse<{ connected: boolean; isEmpty: boolean }>> {
     return this.executeWithRetry(() => this.api.checkDatabase(), options);
   }
 
-  async checkAIService(options?: IPCOptions): Promise<IPCResponse<{ available: boolean; model?: string }>> {
+  async checkAIService(
+    options?: IPCOptions
+  ): Promise<IPCResponse<{ available: boolean; model?: string }>> {
     return this.executeWithRetry(() => this.api.checkAIService(), options);
   }
 
@@ -254,31 +290,55 @@ export class IPCClient {
     if (!entry.title?.trim()) {
       throw this.createIPCError('INVALID_TITLE', 'Entry title is required', 'VALIDATION_ERROR');
     }
-    
+
     if (!entry.problem?.trim()) {
-      throw this.createIPCError('INVALID_PROBLEM', 'Entry problem description is required', 'VALIDATION_ERROR');
+      throw this.createIPCError(
+        'INVALID_PROBLEM',
+        'Entry problem description is required',
+        'VALIDATION_ERROR'
+      );
     }
-    
+
     if (!entry.solution?.trim()) {
-      throw this.createIPCError('INVALID_SOLUTION', 'Entry solution is required', 'VALIDATION_ERROR');
+      throw this.createIPCError(
+        'INVALID_SOLUTION',
+        'Entry solution is required',
+        'VALIDATION_ERROR'
+      );
     }
-    
+
     if (!entry.category) {
-      throw this.createIPCError('INVALID_CATEGORY', 'Entry category is required', 'VALIDATION_ERROR');
+      throw this.createIPCError(
+        'INVALID_CATEGORY',
+        'Entry category is required',
+        'VALIDATION_ERROR'
+      );
     }
 
     // Validate title length
     if (entry.title.length > 200) {
-      throw this.createIPCError('TITLE_TOO_LONG', 'Title must be 200 characters or less', 'VALIDATION_ERROR');
+      throw this.createIPCError(
+        'TITLE_TOO_LONG',
+        'Title must be 200 characters or less',
+        'VALIDATION_ERROR'
+      );
     }
 
     // Validate problem and solution length
     if (entry.problem.length > 5000) {
-      throw this.createIPCError('PROBLEM_TOO_LONG', 'Problem description must be 5000 characters or less', 'VALIDATION_ERROR');
+      throw this.createIPCError(
+        'PROBLEM_TOO_LONG',
+        'Problem description must be 5000 characters or less',
+        'VALIDATION_ERROR'
+      );
     }
 
     if (entry.solution.length > 5000) {
-      throw this.createIPCError('SOLUTION_TOO_LONG', 'Solution must be 5000 characters or less', 'VALIDATION_ERROR');
+      throw this.createIPCError(
+        'SOLUTION_TOO_LONG',
+        'Solution must be 5000 characters or less',
+        'VALIDATION_ERROR'
+      );
     }
   }
 
@@ -308,11 +368,15 @@ export class IPCClient {
 
   private inferErrorType(error: any): AppErrorType {
     if (error.message?.includes('timeout')) return 'NETWORK_ERROR';
-    if (error.message?.includes('database') || error.message?.includes('sql')) return 'DATABASE_ERROR';
-    if (error.message?.includes('ai') || error.message?.includes('gemini')) return 'AI_SERVICE_ERROR';
-    if (error.message?.includes('permission') || error.message?.includes('access')) return 'PERMISSION_ERROR';
-    if (error.message?.includes('validation') || error.message?.includes('invalid')) return 'VALIDATION_ERROR';
-    
+    if (error.message?.includes('database') || error.message?.includes('sql'))
+      return 'DATABASE_ERROR';
+    if (error.message?.includes('ai') || error.message?.includes('gemini'))
+      return 'AI_SERVICE_ERROR';
+    if (error.message?.includes('permission') || error.message?.includes('access'))
+      return 'PERMISSION_ERROR';
+    if (error.message?.includes('validation') || error.message?.includes('invalid'))
+      return 'VALIDATION_ERROR';
+
     return 'UNKNOWN_ERROR';
   }
 
@@ -325,7 +389,10 @@ export class IPCClient {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await this.executeWithRetry(() => this.api.getAppVersion(), { timeout: 1000, retries: 0 });
+      const response = await this.executeWithRetry(() => this.api.getAppVersion(), {
+        timeout: 1000,
+        retries: 0,
+      });
       return response.success;
     } catch {
       return false;

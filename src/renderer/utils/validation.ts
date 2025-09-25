@@ -27,7 +27,7 @@ export interface FormErrors {
  */
 export const ValidationRules = {
   required: (message = 'This field is required'): ValidationRule => ({
-    validate: (value) => {
+    validate: value => {
       if (value === null || value === undefined || value === '') {
         return message;
       }
@@ -38,7 +38,7 @@ export const ValidationRules = {
         return message;
       }
       return null;
-    }
+    },
   }),
 
   minLength: (min: number, message?: string): ValidationRule => ({
@@ -48,7 +48,7 @@ export const ValidationRules = {
         return message || `Must be at least ${min} characters long`;
       }
       return null;
-    }
+    },
   }),
 
   maxLength: (max: number, message?: string): ValidationRule => ({
@@ -58,7 +58,7 @@ export const ValidationRules = {
         return message || `Must be no more than ${max} characters long`;
       }
       return null;
-    }
+    },
   }),
 
   pattern: (regex: RegExp, message: string): ValidationRule => ({
@@ -68,7 +68,7 @@ export const ValidationRules = {
         return message;
       }
       return null;
-    }
+    },
   }),
 
   email: (message = 'Please enter a valid email address'): ValidationRule => ({
@@ -79,7 +79,7 @@ export const ValidationRules = {
         return message;
       }
       return null;
-    }
+    },
   }),
 
   arrayMinLength: (min: number, message?: string): ValidationRule => ({
@@ -89,7 +89,7 @@ export const ValidationRules = {
         return message || `Must have at least ${min} item${min > 1 ? 's' : ''}`;
       }
       return null;
-    }
+    },
   }),
 
   // Custom validation for KB entries
@@ -105,7 +105,7 @@ export const ValidationRules = {
         return 'Title must be no more than 200 characters long';
       }
       return null;
-    }
+    },
   }),
 
   kbProblem: (): ValidationRule => ({
@@ -120,7 +120,7 @@ export const ValidationRules = {
         return 'Problem description must be no more than 5000 characters long';
       }
       return null;
-    }
+    },
   }),
 
   kbSolution: (): ValidationRule => ({
@@ -135,19 +135,19 @@ export const ValidationRules = {
         return 'Solution must be no more than 10000 characters long';
       }
       return null;
-    }
+    },
   }),
 
   kbTags: (): ValidationRule => ({
     validate: (value: string[]) => {
       if (!Array.isArray(value)) return null;
-      
+
       // Check for duplicate tags
       const uniqueTags = new Set(value.map(tag => tag.toLowerCase()));
       if (uniqueTags.size !== value.length) {
         return 'Duplicate tags are not allowed';
       }
-      
+
       // Validate individual tags
       for (const tag of value) {
         if (typeof tag !== 'string' || tag.trim() === '') {
@@ -160,13 +160,13 @@ export const ValidationRules = {
           return 'Tags can only contain letters, numbers, hyphens, and underscores';
         }
       }
-      
+
       if (value.length > 10) {
         return 'Maximum 10 tags allowed';
       }
-      
+
       return null;
-    }
+    },
   }),
 
   conditional: (
@@ -179,25 +179,25 @@ export const ValidationRules = {
         return rule.validate(value, allValues);
       }
       return null;
-    }
-  })
+    },
+  }),
 };
 
 /**
  * Validate a single field with multiple rules
  */
 export function validateField(
-  value: any, 
-  rules: ValidationRule | ValidationRule[], 
+  value: any,
+  rules: ValidationRule | ValidationRule[],
   allValues?: Record<string, any>
 ): string | null {
   const ruleArray = Array.isArray(rules) ? rules : [rules];
-  
+
   for (const rule of ruleArray) {
     const error = rule.validate(value, allValues);
     if (error) return error;
   }
-  
+
   return null;
 }
 
@@ -205,12 +205,12 @@ export function validateField(
  * Validate entire form against schema
  */
 export function validateForm(
-  values: Record<string, any>, 
+  values: Record<string, any>,
   schema: ValidationSchema
 ): ValidationResult {
   const errors: Record<string, string> = {};
   let firstErrorField: string | undefined;
-  
+
   for (const [field, rules] of Object.entries(schema)) {
     const error = validateField(values[field], rules, values);
     if (error) {
@@ -220,40 +220,36 @@ export function validateForm(
       }
     }
   }
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
-    firstErrorField
+    firstErrorField,
   };
 }
 
 /**
  * Create a validation schema for KB entries
  */
-export function createKBEntryValidationSchema(mode: 'create' | 'edit' = 'create'): ValidationSchema {
+export function createKBEntryValidationSchema(
+  mode: 'create' | 'edit' = 'create'
+): ValidationSchema {
   return {
     title: ValidationRules.kbTitle(),
     problem: ValidationRules.kbProblem(),
     solution: ValidationRules.kbSolution(),
     category: ValidationRules.required('Please select a category'),
-    tags: ValidationRules.kbTags()
+    tags: ValidationRules.kbTags(),
   };
 }
 
 /**
  * Real-time validation debouncing
  */
-export function createDebouncedValidator(
-  schema: ValidationSchema,
-  delay = 300
-) {
+export function createDebouncedValidator(schema: ValidationSchema, delay = 300) {
   let timeoutId: ReturnType<typeof setTimeout>;
-  
-  return (
-    values: Record<string, any>,
-    callback: (result: ValidationResult) => void
-  ) => {
+
+  return (values: Record<string, any>, callback: (result: ValidationResult) => void) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
       const result = validateForm(values, schema);
@@ -272,18 +268,18 @@ export const ErrorMessages = {
   duplicate: 'An entry with this title already exists.',
   unauthorized: 'You do not have permission to perform this action.',
   unknown: 'An unexpected error occurred. Please try again.',
-  
+
   getFieldError: (field: string, errors: FormErrors): string | undefined => {
     return errors[field];
   },
-  
+
   hasErrors: (errors: FormErrors): boolean => {
     return Object.values(errors).some(error => error !== undefined);
   },
-  
+
   getFirstError: (errors: FormErrors): string | undefined => {
     return Object.values(errors).find(error => error !== undefined);
-  }
+  },
 };
 
 /**
@@ -307,6 +303,6 @@ export function createInitialFormState<T extends Record<string, any>>(
     touched: {},
     isSubmitting: false,
     isDirty: false,
-    isValid: false
+    isValid: false,
   };
 }

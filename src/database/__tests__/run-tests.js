@@ -2,7 +2,7 @@
 
 /**
  * Comprehensive Database Test Runner
- * 
+ *
  * This script runs all database tests with proper reporting and coverage analysis.
  * It supports different test suites and provides detailed performance metrics.
  */
@@ -18,9 +18,9 @@ class DatabaseTestRunner {
       unit: null,
       integration: null,
       performance: null,
-      errorHandling: null
+      errorHandling: null,
     };
-    
+
     this.startTime = Date.now();
     this.config = {
       maxWorkers: 1, // Important for SQLite to avoid file locking issues
@@ -28,7 +28,7 @@ class DatabaseTestRunner {
       verbose: process.argv.includes('--verbose'),
       coverage: process.argv.includes('--coverage'),
       ci: process.argv.includes('--ci'),
-      suite: this.extractSuite() || 'all'
+      suite: this.extractSuite() || 'all',
     };
   }
 
@@ -49,26 +49,25 @@ class DatabaseTestRunner {
 
     try {
       await this.setupTestEnvironment();
-      
+
       if (this.config.suite === 'all' || this.config.suite === 'unit') {
         await this.runUnitTests();
       }
-      
+
       if (this.config.suite === 'all' || this.config.suite === 'integration') {
         await this.runIntegrationTests();
       }
-      
+
       if (this.config.suite === 'all' || this.config.suite === 'performance') {
         await this.runPerformanceTests();
       }
-      
+
       if (this.config.suite === 'all' || this.config.suite === 'error-handling') {
         await this.runErrorHandlingTests();
       }
 
       await this.generateReport();
       await this.cleanup();
-
     } catch (error) {
       console.error('❌ Test execution failed:', error.message);
       process.exit(1);
@@ -77,13 +76,13 @@ class DatabaseTestRunner {
 
   async setupTestEnvironment() {
     console.log('🔧 Setting up test environment...');
-    
+
     // Ensure test directories exist
     const testDirs = [
       path.join(__dirname, 'temp'),
       path.join(__dirname, 'temp', 'backups'),
       path.join(__dirname, 'temp', 'migrations'),
-      path.join(__dirname, '..', '..', '..', 'coverage', 'database')
+      path.join(__dirname, '..', '..', '..', 'coverage', 'database'),
     ];
 
     for (const dir of testDirs) {
@@ -99,7 +98,7 @@ class DatabaseTestRunner {
     console.log('🔍 Running Unit Tests...');
     this.testResults.unit = await this.executeJest('unit/**/*.test.ts', {
       displayName: 'Unit Tests',
-      testPathPattern: 'unit'
+      testPathPattern: 'unit',
     });
   }
 
@@ -108,7 +107,7 @@ class DatabaseTestRunner {
     this.testResults.integration = await this.executeJest('integration/**/*.test.ts', {
       displayName: 'Integration Tests',
       testPathPattern: 'integration',
-      timeout: 120000 // 2 minutes for integration tests
+      timeout: 120000, // 2 minutes for integration tests
     });
   }
 
@@ -118,7 +117,7 @@ class DatabaseTestRunner {
       displayName: 'Performance Tests',
       testPathPattern: 'performance',
       timeout: 300000, // 5 minutes for performance tests
-      maxWorkers: 1 // Sequential execution for accurate performance measurement
+      maxWorkers: 1, // Sequential execution for accurate performance measurement
     });
   }
 
@@ -127,7 +126,7 @@ class DatabaseTestRunner {
     this.testResults.errorHandling = await this.executeJest('error-handling/**/*.test.ts', {
       displayName: 'Error Handling Tests',
       testPathPattern: 'error-handling',
-      timeout: 180000 // 3 minutes for error handling tests
+      timeout: 180000, // 3 minutes for error handling tests
     });
   }
 
@@ -149,18 +148,18 @@ class DatabaseTestRunner {
         ...(this.config.ci && {
           ci: true,
           coverage: true,
-          watchAll: false
-        })
+          watchAll: false,
+        }),
       };
 
-      const configPath = path.join(__dirname, 'temp', `jest-${options.testPathPattern || 'config'}.json`);
+      const configPath = path.join(
+        __dirname,
+        'temp',
+        `jest-${options.testPathPattern || 'config'}.json`
+      );
       fs.writeFileSync(configPath, JSON.stringify(jestConfig, null, 2));
 
-      const jestArgs = [
-        '--config', configPath,
-        '--rootDir', __dirname,
-        '--passWithNoTests'
-      ];
+      const jestArgs = ['--config', configPath, '--rootDir', __dirname, '--passWithNoTests'];
 
       if (options.displayName) {
         console.log(`  Running: ${options.displayName}`);
@@ -168,30 +167,30 @@ class DatabaseTestRunner {
 
       const jest = spawn('npx', ['jest', ...jestArgs], {
         stdio: this.config.verbose ? 'inherit' : 'pipe',
-        cwd: path.join(__dirname, '..', '..', '..')
+        cwd: path.join(__dirname, '..', '..', '..'),
       });
 
       let output = '';
       let errorOutput = '';
 
       if (!this.config.verbose) {
-        jest.stdout?.on('data', (data) => {
+        jest.stdout?.on('data', data => {
           output += data.toString();
         });
 
-        jest.stderr?.on('data', (data) => {
+        jest.stderr?.on('data', data => {
           errorOutput += data.toString();
         });
       }
 
-      jest.on('close', (code) => {
+      jest.on('close', code => {
         const result = {
           success: code === 0,
           code,
           output,
           errorOutput,
           pattern,
-          options
+          options,
         };
 
         if (code === 0) {
@@ -206,7 +205,7 @@ class DatabaseTestRunner {
         resolve(result);
       });
 
-      jest.on('error', (error) => {
+      jest.on('error', error => {
         console.error(`  ❌ Failed to start Jest: ${error.message}`);
         reject(error);
       });
@@ -217,21 +216,23 @@ class DatabaseTestRunner {
     const totalTime = Date.now() - this.startTime;
     const results = Object.values(this.testResults).filter(r => r !== null);
     const successfulTests = results.filter(r => r.success);
-    
-    console.log(`\n${  '='.repeat(60)}`);
+
+    console.log(`\n${'='.repeat(60)}`);
     console.log('📊 TEST EXECUTION REPORT');
     console.log('='.repeat(60));
-    
+
     console.log(`Total execution time: ${this.formatDuration(totalTime)}`);
     console.log(`Test suites: ${results.length}`);
     console.log(`Successful: ${successfulTests.length}`);
     console.log(`Failed: ${results.length - successfulTests.length}`);
-    
+
     // Detailed results
     Object.entries(this.testResults).forEach(([suite, result]) => {
       if (result) {
         const status = result.success ? '✅' : '❌';
-        console.log(`${status} ${suite.padEnd(15)} - ${result.success ? 'PASSED' : `FAILED (${result.code})`}`);
+        console.log(
+          `${status} ${suite.padEnd(15)} - ${result.success ? 'PASSED' : `FAILED (${result.code})`}`
+        );
       }
     });
 
@@ -246,26 +247,28 @@ class DatabaseTestRunner {
     if (this.config.coverage) {
       console.log('\n📋 COVERAGE INFORMATION');
       console.log('-'.repeat(30));
-      console.log(`Coverage reports: ${path.join(__dirname, '..', '..', '..', 'coverage', 'database')}`);
+      console.log(
+        `Coverage reports: ${path.join(__dirname, '..', '..', '..', 'coverage', 'database')}`
+      );
     }
 
     // Recommendations
     console.log('\n💡 RECOMMENDATIONS');
     console.log('-'.repeat(20));
-    
+
     if (results.some(r => !r.success)) {
       console.log('• Fix failing tests before deployment');
     }
-    
+
     if (this.config.suite !== 'all') {
       console.log('• Run full test suite (--suite=all) before production deployment');
     }
-    
+
     console.log('• Monitor performance regression with baseline comparisons');
     console.log('• Review error handling test results for production readiness');
-    
-    console.log(`\n${  '='.repeat(60)}`);
-    
+
+    console.log(`\n${'='.repeat(60)}`);
+
     // Exit with appropriate code
     const overallSuccess = results.every(r => r.success);
     if (!overallSuccess) {
@@ -278,7 +281,7 @@ class DatabaseTestRunner {
 
   async cleanup() {
     console.log('🧹 Cleaning up test environment...');
-    
+
     try {
       // Clean up temporary files
       const tempDir = path.join(__dirname, 'temp');
@@ -291,7 +294,7 @@ class DatabaseTestRunner {
           }
         });
       }
-      
+
       console.log('✅ Cleanup completed');
     } catch (error) {
       console.warn('⚠️ Cleanup warning:', error.message);
@@ -301,7 +304,7 @@ class DatabaseTestRunner {
   formatDuration(ms) {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
-    
+
     if (minutes > 0) {
       return `${minutes}m ${seconds % 60}s`;
     } else {

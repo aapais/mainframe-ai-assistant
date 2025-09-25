@@ -41,13 +41,13 @@ export class RequestBatcher extends EventEmitter {
 
   constructor(ipcManager: any, config: Partial<BatchConfig> = {}) {
     super();
-    
+
     this.ipcManager = ipcManager;
     this.config = {
       maxBatchSize: 50,
       maxDelayMs: 100,
       maxConcurrentBatches: 10,
-      ...config
+      ...config,
     };
 
     this.metrics = {
@@ -55,7 +55,7 @@ export class RequestBatcher extends EventEmitter {
       totalRequests: 0,
       averageBatchSize: 0,
       averageProcessingTime: 0,
-      failedBatches: 0
+      failedBatches: 0,
     };
 
     console.log('📦 RequestBatcher initialized', this.config);
@@ -78,7 +78,7 @@ export class RequestBatcher extends EventEmitter {
         event,
         resolve,
         reject,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Check if we're at max concurrent batches
@@ -183,12 +183,11 @@ export class RequestBatcher extends EventEmitter {
 
       // Update metrics
       this.updateMetrics(batchSize, Date.now() - startTime, false);
-      
-      console.log(`✅ Batch ${batchKey} processed successfully in ${Date.now() - startTime}ms`);
 
+      console.log(`✅ Batch ${batchKey} processed successfully in ${Date.now() - startTime}ms`);
     } catch (error) {
       console.error(`❌ Batch ${batchKey} failed:`, error);
-      
+
       // Reject all requests in the failed batch
       batch.forEach(req => {
         req.reject(error);
@@ -234,11 +233,11 @@ export class RequestBatcher extends EventEmitter {
   private async executeBatchedSearch(batch: BatchRequest[]): Promise<void> {
     // Group similar searches together
     const searchGroups = new Map<string, BatchRequest[]>();
-    
+
     batch.forEach(req => {
       const query = req.request.data[0] || '';
       const normalizedQuery = query.toLowerCase().trim();
-      
+
       if (!searchGroups.has(normalizedQuery)) {
         searchGroups.set(normalizedQuery, []);
       }
@@ -249,11 +248,14 @@ export class RequestBatcher extends EventEmitter {
     for (const [query, requests] of searchGroups) {
       try {
         // Execute search once for all similar queries
-        const result = await requests[0].handler(requests[0].event, query, requests[0].request.data[1]);
-        
+        const result = await requests[0].handler(
+          requests[0].event,
+          query,
+          requests[0].request.data[1]
+        );
+
         // Resolve all requests with the same result
         requests.forEach(req => req.resolve(result));
-        
       } catch (error) {
         // Reject all requests in this group
         requests.forEach(req => req.reject(error));
@@ -273,11 +275,11 @@ export class RequestBatcher extends EventEmitter {
       // This would ideally be a single database query for multiple IDs
       // For now, we'll process in parallel but could be optimized
       const results = await Promise.all(
-        uniqueIds.map(async (id) => {
+        uniqueIds.map(async id => {
           const request = batch.find(req => req.request.data[0] === id)!;
           return {
             id,
-            result: await request.handler(request.event, id)
+            result: await request.handler(request.event, id),
           };
         })
       );
@@ -288,7 +290,6 @@ export class RequestBatcher extends EventEmitter {
         const entryId = req.request.data[0];
         req.resolve(resultMap.get(entryId));
       });
-
     } catch (error) {
       batch.forEach(req => req.reject(error));
     }
@@ -300,14 +301,17 @@ export class RequestBatcher extends EventEmitter {
   private async executeBatchedRecordUsage(batch: BatchRequest[]): Promise<void> {
     try {
       // Group usage records by entry ID for potential optimization
-      const usageGroups = new Map<string, { successful: number; failed: number; userId?: string }>();
-      
+      const usageGroups = new Map<
+        string,
+        { successful: number; failed: number; userId?: string }
+      >();
+
       batch.forEach(req => {
         const [entryId, successful, userId] = req.request.data;
         if (!usageGroups.has(entryId)) {
           usageGroups.set(entryId, { successful: 0, failed: 0, userId });
         }
-        
+
         const group = usageGroups.get(entryId)!;
         if (successful) {
           group.successful++;
@@ -329,7 +333,6 @@ export class RequestBatcher extends EventEmitter {
 
       // Resolve all requests
       batch.forEach(req => req.resolve(undefined));
-
     } catch (error) {
       batch.forEach(req => req.reject(error));
     }
@@ -341,7 +344,7 @@ export class RequestBatcher extends EventEmitter {
   private async executeBatchedExplainError(batch: BatchRequest[]): Promise<void> {
     // Group by error code
     const errorGroups = new Map<string, BatchRequest[]>();
-    
+
     batch.forEach(req => {
       const errorCode = req.request.data[0] || '';
       if (!errorGroups.has(errorCode)) {
@@ -365,7 +368,7 @@ export class RequestBatcher extends EventEmitter {
    * Execute batch in parallel for unknown operations
    */
   private async executeParallelBatch(batch: BatchRequest[]): Promise<void> {
-    const promises = batch.map(async (req) => {
+    const promises = batch.map(async req => {
       try {
         const result = await req.handler(req.event, ...req.request.data);
         req.resolve(result);
@@ -383,14 +386,14 @@ export class RequestBatcher extends EventEmitter {
   private updateMetrics(batchSize: number, processingTime: number, failed: boolean): void {
     this.metrics.totalBatches++;
     this.metrics.totalRequests += batchSize;
-    
+
     // Update average batch size
     this.metrics.averageBatchSize = this.metrics.totalRequests / this.metrics.totalBatches;
-    
+
     // Update average processing time
     const totalTime = this.metrics.averageProcessingTime * (this.metrics.totalBatches - 1);
     this.metrics.averageProcessingTime = (totalTime + processingTime) / this.metrics.totalBatches;
-    
+
     if (failed) {
       this.metrics.failedBatches++;
     }
@@ -419,7 +422,7 @@ export class RequestBatcher extends EventEmitter {
     return {
       pendingBatches: this.batches.size,
       activeBatches: this.activeBatches.size,
-      totalPendingRequests
+      totalPendingRequests,
     };
   }
 
@@ -451,7 +454,7 @@ export class RequestBatcher extends EventEmitter {
     this.batches.clear();
     this.activeBatches.clear();
     this.removeAllListeners();
-    
+
     console.log('🧹 RequestBatcher destroyed');
   }
 }

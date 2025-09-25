@@ -1,18 +1,23 @@
 # ServiceManager for Electron Main Process
 
-A robust service lifecycle management system for the Mainframe KB Assistant Electron application.
+A robust service lifecycle management system for the Mainframe KB Assistant
+Electron application.
 
 ## Overview
 
-The ServiceManager provides a comprehensive solution for managing services in the Electron main process with features including:
+The ServiceManager provides a comprehensive solution for managing services in
+the Electron main process with features including:
 
-- **Service Lifecycle Management**: Initialize, start, stop, and restart services
-- **Dependency Resolution**: Automatic ordering of service initialization based on dependencies
+- **Service Lifecycle Management**: Initialize, start, stop, and restart
+  services
+- **Dependency Resolution**: Automatic ordering of service initialization based
+  on dependencies
 - **Health Monitoring**: Continuous health checks with alerting
 - **Error Recovery**: Automatic restart attempts and fallback services
 - **Graceful Shutdown**: Ordered shutdown in reverse dependency order
 - **Performance Metrics**: Built-in metrics collection and monitoring
-- **Parallel Initialization**: Efficient startup with dependency-aware parallelization
+- **Parallel Initialization**: Efficient startup with dependency-aware
+  parallelization
 
 ## Architecture
 
@@ -20,7 +25,8 @@ The ServiceManager provides a comprehensive solution for managing services in th
 
 1. **ServiceManager**: Main orchestrator class that manages all services
 2. **Service Interface**: Contract that all services must implement
-3. **ServiceRegistry**: Internal registry for service discovery and dependency management
+3. **ServiceRegistry**: Internal registry for service discovery and dependency
+   management
 4. **ServiceProxy**: Wrapper around services for monitoring and control
 5. **Health Monitoring**: Continuous health checking system
 6. **Metrics Collection**: Performance and usage metrics tracking
@@ -38,7 +44,11 @@ The ServiceManager provides a comprehensive solution for managing services in th
 ### Basic Setup
 
 ```typescript
-import { getServiceManager, Service, ServiceContext } from './services/ServiceManager';
+import {
+  getServiceManager,
+  Service,
+  ServiceContext,
+} from './services/ServiceManager';
 
 // Get the singleton ServiceManager instance
 const serviceManager = getServiceManager();
@@ -79,11 +89,11 @@ Services must implement the `Service` interface:
 
 ```typescript
 interface Service {
-  readonly name: string;           // Unique service identifier
-  readonly version: string;        // Service version
+  readonly name: string; // Unique service identifier
+  readonly version: string; // Service version
   readonly dependencies: string[]; // List of dependency service names
-  readonly priority: number;       // Initialization priority (lower = higher priority)
-  readonly critical: boolean;      // If true, service failure causes app shutdown
+  readonly priority: number; // Initialization priority (lower = higher priority)
+  readonly critical: boolean; // If true, service failure causes app shutdown
   readonly healthCheck?: () => Promise<ServiceHealth>;
 
   initialize(context: ServiceContext): Promise<void>;
@@ -94,15 +104,22 @@ interface Service {
 
 ### Fallback Services
 
-For critical services, you can register fallback services that activate when the primary service fails:
+For critical services, you can register fallback services that activate when the
+primary service fails:
 
 ```typescript
 class FallbackAIService implements FallbackService {
   readonly fallbackFor = 'AIService';
-  
-  isActive(): boolean { /* ... */ }
-  async activate(): Promise<void> { /* ... */ }
-  async deactivate(): Promise<void> { /* ... */ }
+
+  isActive(): boolean {
+    /* ... */
+  }
+  async activate(): Promise<void> {
+    /* ... */
+  }
+  async deactivate(): Promise<void> {
+    /* ... */
+  }
   // ... other Service interface methods
 }
 
@@ -118,7 +135,7 @@ serviceManager.on('service:failed', (serviceName, error) => {
   console.error(`Service ${serviceName} failed:`, error);
 });
 
-serviceManager.on('health:degraded', (unhealthyServices) => {
+serviceManager.on('health:degraded', unhealthyServices => {
   console.warn(`Unhealthy services: ${unhealthyServices.join(', ')}`);
 });
 
@@ -130,18 +147,21 @@ serviceManager.on('service:restarted', (serviceName, attempt) => {
 ## Built-in Services
 
 ### DatabaseService
+
 - Manages the SQLite knowledge database
 - Priority: 1 (high)
 - Critical: true
 - Dependencies: none
 
-### WindowService  
+### WindowService
+
 - Manages the main Electron window
 - Priority: 2 (high)
 - Critical: true
 - Dependencies: none
 
 ### AIService
+
 - Manages the Gemini AI integration
 - Priority: 3 (medium)
 - Critical: false
@@ -149,6 +169,7 @@ serviceManager.on('service:restarted', (serviceName, attempt) => {
 - Has fallback: FallbackAIService
 
 ### IPCService
+
 - Manages IPC handlers for renderer communication
 - Priority: 4 (low)
 - Critical: true
@@ -160,15 +181,15 @@ The ServiceManager accepts a configuration object:
 
 ```typescript
 interface ServiceManagerConfig {
-  gracefulShutdownTimeout: number;    // Max time to wait for graceful shutdown
-  healthCheckInterval: number;        // Interval for health checks
-  maxRestartAttempts: number;         // Max restart attempts for failed services
-  restartDelay: number;              // Delay between restart attempts
-  enableMetrics: boolean;            // Enable metrics collection
-  enableHealthChecks: boolean;       // Enable continuous health monitoring
+  gracefulShutdownTimeout: number; // Max time to wait for graceful shutdown
+  healthCheckInterval: number; // Interval for health checks
+  maxRestartAttempts: number; // Max restart attempts for failed services
+  restartDelay: number; // Delay between restart attempts
+  enableMetrics: boolean; // Enable metrics collection
+  enableHealthChecks: boolean; // Enable continuous health monitoring
   fallbackServices: Record<string, string[]>; // Fallback mappings
-  serviceTimeouts: Record<string, number>;    // Per-service timeout overrides
-  logging: LoggingConfig;            // Logging configuration
+  serviceTimeouts: Record<string, number>; // Per-service timeout overrides
+  logging: LoggingConfig; // Logging configuration
 }
 ```
 
@@ -181,7 +202,7 @@ async healthCheck(): Promise<ServiceHealth> {
   try {
     // Perform health check operations
     const responseTime = await this.pingDatabase();
-    
+
     return {
       healthy: true,
       responseTime,
@@ -203,7 +224,7 @@ async healthCheck(): Promise<ServiceHealth> {
 Built-in metrics collection tracks:
 
 - Service initialization time
-- Health check response times  
+- Health check response times
 - Service restart counts
 - Error rates
 - Custom metrics via the metrics interface
@@ -220,16 +241,19 @@ context.metrics.gauge('service.connections.active', connectionCount);
 The ServiceManager provides robust error handling:
 
 ### Restart Attempts
+
 - Failed services are automatically restarted up to `maxRestartAttempts`
 - Exponential backoff between restart attempts
 - Fallback services activated for critical services
 
 ### Fallback Activation
+
 - Fallback services automatically activate when primary services fail
 - Graceful degradation of functionality
 - Transparent switching for client code
 
 ### Graceful Degradation
+
 - Non-critical services can fail without affecting the application
 - Services can run in degraded mode with limited functionality
 - Health monitoring detects and reports degraded states
@@ -237,6 +261,7 @@ The ServiceManager provides robust error handling:
 ## Best Practices
 
 ### Service Design
+
 1. **Single Responsibility**: Each service should have one clear purpose
 2. **Dependency Minimization**: Keep dependencies minimal and well-defined
 3. **Graceful Degradation**: Design services to handle partial failures
@@ -244,13 +269,15 @@ The ServiceManager provides robust error handling:
 5. **Resource Cleanup**: Ensure proper cleanup in shutdown methods
 
 ### Error Handling
+
 1. **Fail Fast**: Detect errors quickly during initialization
 2. **Recovery**: Implement recovery mechanisms where possible
 3. **Logging**: Provide detailed error information
 4. **Fallbacks**: Use fallback services for critical functionality
 
 ### Performance
-1. **Async Operations**: Use async/await for all I/O operations  
+
+1. **Async Operations**: Use async/await for all I/O operations
 2. **Resource Management**: Monitor and limit resource usage
 3. **Metrics**: Track performance metrics for optimization
 4. **Health Monitoring**: Regular but lightweight health checks
@@ -311,7 +338,8 @@ describe('MyService', () => {
 
 ## Migration from Old Architecture
 
-The ServiceManager maintains backward compatibility with the existing architecture:
+The ServiceManager maintains backward compatibility with the existing
+architecture:
 
 ```typescript
 // Old way
@@ -323,26 +351,30 @@ const dbService = serviceManager.getService('DatabaseService');
 const knowledgeDB = dbService.getDatabase();
 ```
 
-The main process exports both the ServiceManager and compatibility exports to ensure existing code continues to work.
+The main process exports both the ServiceManager and compatibility exports to
+ensure existing code continues to work.
 
 ## Troubleshooting
 
 ### Service Won't Start
+
 1. Check dependencies are properly registered
 2. Verify initialization order with `getDependencyOrder()`
 3. Check logs for specific error messages
 4. Verify all required resources are available
 
 ### Health Check Failures
+
 1. Check service-specific health check implementation
 2. Verify external dependencies (database, APIs) are available
 3. Check resource limits and permissions
 4. Review error logs for specific failure reasons
 
 ### Memory Leaks
+
 1. Ensure proper cleanup in shutdown methods
 2. Clear timers and intervals
-3. Close database connections and file handles  
+3. Close database connections and file handles
 4. Remove event listeners
 
 ## Future Enhancements

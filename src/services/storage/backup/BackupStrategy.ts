@@ -1,6 +1,6 @@
 /**
  * Backup Strategy Implementation
- * 
+ *
  * Implements the Strategy pattern for different types of backups:
  * - Full: Complete database backup
  * - Incremental: Only changes since last backup
@@ -74,13 +74,13 @@ export abstract class AbstractBackupStrategy {
   }
 
   abstract execute(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     progress: BackupProgress,
     context?: BackupExecutionContext
   ): Promise<Buffer>;
 
   abstract getRequiredDependencies(): string[];
-  
+
   abstract validatePreconditions(
     adapter: IStorageAdapter,
     context?: BackupExecutionContext
@@ -102,9 +102,9 @@ export abstract class AbstractBackupStrategy {
   }
 
   protected updateProgress(
-    progress: BackupProgress, 
-    phase: string, 
-    percentage: number, 
+    progress: BackupProgress,
+    phase: string,
+    percentage: number,
     bytesProcessed?: number
   ): void {
     progress.phase = phase;
@@ -115,7 +115,7 @@ export abstract class AbstractBackupStrategy {
   }
 
   protected async calculateTableChecksum(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     tableName: string
   ): Promise<string> {
     try {
@@ -148,7 +148,7 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
   }
 
   async execute(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     progress: BackupProgress,
     context?: BackupExecutionContext
   ): Promise<Buffer> {
@@ -165,7 +165,7 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
 
       // Get database file path from adapter
       const dbPath = await this.getDatabasePath(adapter);
-      
+
       // Read entire database
       const dbData = fs.readFileSync(dbPath);
       this.updateProgress(progress, 'calculating_checksums', 50, dbData.length);
@@ -173,7 +173,7 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
       // Calculate table checksums for metadata
       const tableNames = await this.getAllTableNames(adapter);
       const tableChecksums: Record<string, string> = {};
-      
+
       for (let i = 0; i < tableNames.length; i++) {
         const tableName = tableNames[i];
         tableChecksums[tableName] = await this.calculateTableChecksum(adapter, tableName);
@@ -194,7 +194,7 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
         size: dbData.length,
         entryCount,
         tableChecksums,
-        version: await this.getDatabaseVersion(adapter)
+        version: await this.getDatabaseVersion(adapter),
       };
 
       this.updateProgress(progress, 'finalizing', 95);
@@ -204,10 +204,11 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
 
       this.updateProgress(progress, 'completed', 100, backupPackage.length);
 
-      console.log(`✅ Full backup completed: ${this.metadata.id} (${this.formatBytes(dbData.length)})`);
+      console.log(
+        `✅ Full backup completed: ${this.metadata.id} (${this.formatBytes(dbData.length)})`
+      );
 
       return backupPackage;
-
     } catch (error) {
       console.error('❌ Full backup failed:', error);
       throw error;
@@ -244,14 +245,13 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
       if (integrityCheck[0]?.integrity_check !== 'ok') {
         issues.push('Database integrity check failed');
       }
-
     } catch (error) {
       issues.push(`Precondition check failed: ${error.message}`);
     }
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
@@ -260,7 +260,7 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
     if ('getDatabasePath' in adapter) {
       return (adapter as any).getDatabasePath();
     }
-    
+
     // Fallback: try to get from connection string or config
     throw new Error('Cannot determine database path for full backup');
   }
@@ -288,7 +288,7 @@ export class FullBackupStrategy extends AbstractBackupStrategy {
     const metadataJson = JSON.stringify(metadata);
     const separator = Buffer.from('\n---BACKUP-DATA-SEPARATOR---\n');
     const metadataBuffer = Buffer.from(metadataJson, 'utf-8');
-    
+
     return Buffer.concat([metadataBuffer, separator, data]);
   }
 
@@ -311,7 +311,7 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
   }
 
   async execute(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     progress: BackupProgress,
     context?: BackupExecutionContext
   ): Promise<Buffer> {
@@ -349,7 +349,7 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
         entryCount: delta.metadata.totalChanges,
         tableChecksums: await this.calculateAffectedTableChecksums(adapter, delta),
         version: await this.getDatabaseVersion(adapter),
-        dependencies: [context.previousBackupMetadata.id]
+        dependencies: [context.previousBackupMetadata.id],
       };
 
       this.updateProgress(progress, 'finalizing', 95);
@@ -358,10 +358,11 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
 
       this.updateProgress(progress, 'completed', 100, backupPackage.length);
 
-      console.log(`✅ Incremental backup completed: ${this.metadata.id} (${delta.metadata.totalChanges} changes)`);
+      console.log(
+        `✅ Incremental backup completed: ${this.metadata.id} (${delta.metadata.totalChanges} changes)`
+      );
 
       return backupPackage;
-
     } catch (error) {
       console.error('❌ Incremental backup failed:', error);
       throw error;
@@ -386,7 +387,7 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
     try {
       const tables = await this.getAllTableNames(adapter);
       const timestampColumns = await this.checkTimestampColumns(adapter, tables);
-      
+
       if (timestampColumns.length === 0) {
         issues.push('No timestamp columns found for change tracking');
       }
@@ -396,12 +397,12 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
   private async calculateDelta(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     previousMetadata: BackupMetadata
   ): Promise<BackupDelta> {
     const delta: BackupDelta = {
@@ -411,8 +412,8 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
       metadata: {
         totalChanges: 0,
         tablesAffected: [],
-        changeTypes: { added: 0, modified: 0, deleted: 0 }
-      }
+        changeTypes: { added: 0, modified: 0, deleted: 0 },
+      },
     };
 
     const tables = await this.getAllTableNames(adapter);
@@ -422,13 +423,16 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
       try {
         // Check if table has timestamp columns
         const hasTimestamp = await this.tableHasTimestamp(adapter, tableName);
-        
+
         if (hasTimestamp) {
           // Find added/modified records
-          const changes = await adapter.executeSQL(`
+          const changes = await adapter.executeSQL(
+            `
             SELECT * FROM ${tableName}
             WHERE updated_at > ? OR created_at > ?
-          `, [previousTimestamp.toISOString(), previousTimestamp.toISOString()]);
+          `,
+            [previousTimestamp.toISOString(), previousTimestamp.toISOString()]
+          );
 
           if (changes.length > 0) {
             delta.modified.push({ table: tableName, entries: changes });
@@ -453,9 +457,9 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
       }
     }
 
-    delta.metadata.totalChanges = 
-      delta.metadata.changeTypes.added + 
-      delta.metadata.changeTypes.modified + 
+    delta.metadata.totalChanges =
+      delta.metadata.changeTypes.added +
+      delta.metadata.changeTypes.modified +
       delta.metadata.changeTypes.deleted;
 
     return delta;
@@ -470,12 +474,12 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
     const metadataJson = JSON.stringify(metadata);
     const separator = Buffer.from('\n---INCREMENTAL-DATA-SEPARATOR---\n');
     const metadataBuffer = Buffer.from(metadataJson, 'utf-8');
-    
+
     return Buffer.concat([metadataBuffer, separator, data]);
   }
 
   private async checkTimestampColumns(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     tables: string[]
   ): Promise<string[]> {
     const timestampTables: string[] = [];
@@ -493,10 +497,8 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
   private async tableHasTimestamp(adapter: IStorageAdapter, tableName: string): Promise<boolean> {
     try {
       const schema = await adapter.executeSQL(`PRAGMA table_info(${tableName})`);
-      return schema.some(col => 
-        col.name === 'updated_at' || 
-        col.name === 'created_at' || 
-        col.name === 'timestamp'
+      return schema.some(
+        col => col.name === 'updated_at' || col.name === 'created_at' || col.name === 'timestamp'
       );
     } catch {
       return false;
@@ -504,7 +506,7 @@ export class IncrementalBackupStrategy extends AbstractBackupStrategy {
   }
 
   private async calculateAffectedTableChecksums(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     delta: BackupDelta
   ): Promise<Record<string, string>> {
     const checksums: Record<string, string> = {};
@@ -536,7 +538,7 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
   }
 
   async execute(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     progress: BackupProgress,
     context?: BackupExecutionContext
   ): Promise<Buffer> {
@@ -573,7 +575,7 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
         entryCount: delta.metadata.totalChanges,
         tableChecksums: await this.calculateAffectedTableChecksums(adapter, delta),
         version: await this.getDatabaseVersion(adapter),
-        dependencies: [context.lastFullBackupMetadata.id]
+        dependencies: [context.lastFullBackupMetadata.id],
       };
 
       this.updateProgress(progress, 'finalizing', 95);
@@ -582,10 +584,11 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
 
       this.updateProgress(progress, 'completed', 100, backupPackage.length);
 
-      console.log(`✅ Differential backup completed: ${this.metadata.id} (${delta.metadata.totalChanges} changes since full backup)`);
+      console.log(
+        `✅ Differential backup completed: ${this.metadata.id} (${delta.metadata.totalChanges} changes since full backup)`
+      );
 
       return backupPackage;
-
     } catch (error) {
       console.error('❌ Differential backup failed:', error);
       throw error;
@@ -612,12 +615,12 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
 
     return {
       valid: issues.length === 0,
-      issues
+      issues,
     };
   }
 
   private async calculateDifferentialDelta(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     fullBackupMetadata: BackupMetadata
   ): Promise<BackupDelta> {
     const delta: BackupDelta = {
@@ -627,8 +630,8 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
       metadata: {
         totalChanges: 0,
         tablesAffected: [],
-        changeTypes: { added: 0, modified: 0, deleted: 0 }
-      }
+        changeTypes: { added: 0, modified: 0, deleted: 0 },
+      },
     };
 
     const tables = await this.getAllTableNames(adapter);
@@ -642,15 +645,18 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
 
         if (currentChecksum !== fullBackupChecksum) {
           // Table has changes since full backup
-          
+
           // Try to get only changed records if timestamp tracking available
           const hasTimestamp = await this.tableHasTimestamp(adapter, tableName);
-          
+
           if (hasTimestamp) {
-            const changes = await adapter.executeSQL(`
+            const changes = await adapter.executeSQL(
+              `
               SELECT * FROM ${tableName}
               WHERE updated_at > ? OR created_at > ?
-            `, [fullBackupTimestamp.toISOString(), fullBackupTimestamp.toISOString()]);
+            `,
+              [fullBackupTimestamp.toISOString(), fullBackupTimestamp.toISOString()]
+            );
 
             if (changes.length > 0) {
               delta.modified.push({ table: tableName, entries: changes });
@@ -670,9 +676,9 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
       }
     }
 
-    delta.metadata.totalChanges = 
-      delta.metadata.changeTypes.added + 
-      delta.metadata.changeTypes.modified + 
+    delta.metadata.totalChanges =
+      delta.metadata.changeTypes.added +
+      delta.metadata.changeTypes.modified +
       delta.metadata.changeTypes.deleted;
 
     return delta;
@@ -687,17 +693,15 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
     const metadataJson = JSON.stringify(metadata);
     const separator = Buffer.from('\n---DIFFERENTIAL-DATA-SEPARATOR---\n');
     const metadataBuffer = Buffer.from(metadataJson, 'utf-8');
-    
+
     return Buffer.concat([metadataBuffer, separator, data]);
   }
 
   private async tableHasTimestamp(adapter: IStorageAdapter, tableName: string): Promise<boolean> {
     try {
       const schema = await adapter.executeSQL(`PRAGMA table_info(${tableName})`);
-      return schema.some(col => 
-        col.name === 'updated_at' || 
-        col.name === 'created_at' || 
-        col.name === 'timestamp'
+      return schema.some(
+        col => col.name === 'updated_at' || col.name === 'created_at' || col.name === 'timestamp'
       );
     } catch {
       return false;
@@ -705,7 +709,7 @@ export class DifferentialBackupStrategy extends AbstractBackupStrategy {
   }
 
   private async calculateAffectedTableChecksums(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     delta: BackupDelta
   ): Promise<Record<string, string>> {
     const checksums: Record<string, string> = {};
@@ -751,7 +755,7 @@ export class BackupStrategy {
   }
 
   async execute(
-    adapter: IStorageAdapter, 
+    adapter: IStorageAdapter,
     progress: BackupProgress,
     context?: BackupExecutionContext
   ): Promise<Buffer> {
@@ -804,17 +808,19 @@ export function getBackupStrategyDescription(type: BackupStrategyType): string {
 }
 
 export function getRecommendedStrategy(
-  dataSize: number, 
+  dataSize: number,
   changeFrequency: 'low' | 'medium' | 'high',
   storageConstraints: 'none' | 'limited' | 'critical'
 ): BackupStrategyType {
   // Small databases or low change frequency: full backups
-  if (dataSize < 100 * 1024 * 1024 || changeFrequency === 'low') { // < 100MB
+  if (dataSize < 100 * 1024 * 1024 || changeFrequency === 'low') {
+    // < 100MB
     return 'full';
   }
 
   // Large databases with storage constraints: incremental
-  if (dataSize > 1024 * 1024 * 1024 && storageConstraints === 'critical') { // > 1GB
+  if (dataSize > 1024 * 1024 * 1024 && storageConstraints === 'critical') {
+    // > 1GB
     return 'incremental';
   }
 

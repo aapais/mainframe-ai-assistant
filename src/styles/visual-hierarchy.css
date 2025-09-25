@@ -67,32 +67,74 @@
    Z-INDEX UTILITIES
    =============================================== */
 
-.z-behind { z-index: var(--z-index-behind); }
-.z-base { z-index: var(--z-index-base); }
-.z-raised { z-index: var(--z-index-raised); }
-.z-elevated { z-index: var(--z-index-elevated); }
-.z-floating { z-index: var(--z-index-floating); }
-.z-overlay { z-index: var(--z-index-overlay); }
-.z-modal { z-index: var(--z-index-modal); }
-.z-popover { z-index: var(--z-index-popover); }
-.z-tooltip { z-index: var(--z-index-tooltip); }
-.z-toast { z-index: var(--z-index-toast); }
-.z-loading { z-index: var(--z-index-loading); }
-.z-maximum { z-index: var(--z-index-maximum); }
+.z-behind {
+  z-index: var(--z-index-behind);
+}
+.z-base {
+  z-index: var(--z-index-base);
+}
+.z-raised {
+  z-index: var(--z-index-raised);
+}
+.z-elevated {
+  z-index: var(--z-index-elevated);
+}
+.z-floating {
+  z-index: var(--z-index-floating);
+}
+.z-overlay {
+  z-index: var(--z-index-overlay);
+}
+.z-modal {
+  z-index: var(--z-index-modal);
+}
+.z-popover {
+  z-index: var(--z-index-popover);
+}
+.z-tooltip {
+  z-index: var(--z-index-tooltip);
+}
+.z-toast {
+  z-index: var(--z-index-toast);
+}
+.z-loading {
+  z-index: var(--z-index-loading);
+}
+.z-maximum {
+  z-index: var(--z-index-maximum);
+}
 
 /* ===============================================
    SHADOW UTILITIES
    =============================================== */
 
-.shadow-none { box-shadow: none; }
-.shadow-xs { box-shadow: var(--shadow-xs); }
-.shadow-sm { box-shadow: var(--shadow-sm); }
-.shadow { box-shadow: var(--shadow-base); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-.shadow-xl { box-shadow: var(--shadow-xl); }
-.shadow-2xl { box-shadow: var(--shadow-2xl); }
-.shadow-inner { box-shadow: var(--shadow-inner); }
+.shadow-none {
+  box-shadow: none;
+}
+.shadow-xs {
+  box-shadow: var(--shadow-xs);
+}
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+.shadow {
+  box-shadow: var(--shadow-base);
+}
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+.shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
+.shadow-2xl {
+  box-shadow: var(--shadow-2xl);
+}
+.shadow-inner {
+  box-shadow: var(--shadow-inner);
+}
 
 /* ===============================================
    SURFACE UTILITIES
@@ -136,10 +178,18 @@
    BORDER UTILITIES
    =============================================== */
 
-.border-subtle { border-color: var(--border-subtle); }
-.border-default { border-color: var(--border-default); }
-.border-strong { border-color: var(--border-strong); }
-.border-accent { border-color: var(--border-accent); }
+.border-subtle {
+  border-color: var(--border-subtle);
+}
+.border-default {
+  border-color: var(--border-default);
+}
+.border-strong {
+  border-color: var(--border-strong);
+}
+.border-accent {
+  border-color: var(--border-accent);
+}
 
 /* ===============================================
    FOCUS MANAGEMENT
@@ -167,13 +217,13 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-[role="button"]:focus-visible,
-[role="link"]:focus-visible,
+[role='button']:focus-visible,
+[role='link']:focus-visible,
 [tabindex]:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
   box-shadow: 0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset))
-              rgba(59, 130, 246, var(--focus-ring-opacity));
+    rgba(59, 130, 246, var(--focus-ring-opacity));
 }
 
 /* Focus within containers */
@@ -207,19 +257,25 @@ textarea:focus-visible,
 .hover-elevate:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
-  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+  transition:
+    transform 150ms ease-out,
+    box-shadow 150ms ease-out;
 }
 
 .hover-elevate-sm:hover {
   transform: translateY(-0.5px);
   box-shadow: var(--shadow-sm);
-  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+  transition:
+    transform 150ms ease-out,
+    box-shadow 150ms ease-out;
 }
 
 .hover-elevate-lg:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+  transition:
+    transform 150ms ease-out,
+    box-shadow 150ms ease-out;
 }
 
 /* Press down effect */

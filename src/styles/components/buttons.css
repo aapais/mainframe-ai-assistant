@@ -523,7 +523,7 @@ html body .btn:focus {
 }
 
 /* Ensure our styles take precedence over component libraries */
-div[data-component="button"] .btn {
+div[data-component='button'] .btn {
   all: unset;
   display: inline-flex;
   align-items: center;

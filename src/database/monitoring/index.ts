@@ -1,13 +1,13 @@
 /**
  * SQLite Performance Monitoring System
- * 
+ *
  * Comprehensive database monitoring solution with real-time performance tracking,
  * health checks, query analysis, and dashboard integration.
- * 
+ *
  * Usage:
  * ```typescript
  * import { MonitoringSystem } from './database/monitoring';
- * 
+ *
  * const monitoring = new MonitoringSystem(database, {
  *   enableRealTimeAlerts: true,
  *   performanceThresholds: {
@@ -15,9 +15,9 @@
  *     criticalQueryMs: 5000
  *   }
  * });
- * 
+ *
  * await monitoring.initialize();
- * 
+ *
  * // Monitor a query
  * const result = await monitoring.measureQuery(
  *   'search_kb',
@@ -32,11 +32,45 @@ import Database from 'better-sqlite3';
 import { EventEmitter } from 'events';
 
 // Export all monitoring components
-export { PerformanceMonitor, PerformanceMetric, PerformanceThresholds, AlertRule, PerformanceAlert, MonitoringConfig } from './PerformanceMonitor';
-export { MetricsCollector, TimeSeriesDataPoint, AggregationResult, MetricDefinition, AlertThreshold, CollectorConfig } from './MetricsCollector';
-export { HealthCheck, HealthCheckResult, HealthStatus, HealthCheckConfig, IntegrityIssue } from './HealthCheck';
-export { QueryAnalyzer, QueryAnalysis, OptimizationSuggestion, IndexRecommendation, SlowQuery, AnalyzerConfig } from './QueryAnalyzer';
-export { DashboardProvider, DashboardMetrics, TimeSeriesData, AlertSummary, CapacityPlanningData, DashboardConfig } from './DashboardProvider';
+export {
+  PerformanceMonitor,
+  PerformanceMetric,
+  PerformanceThresholds,
+  AlertRule,
+  PerformanceAlert,
+  MonitoringConfig,
+} from './PerformanceMonitor';
+export {
+  MetricsCollector,
+  TimeSeriesDataPoint,
+  AggregationResult,
+  MetricDefinition,
+  AlertThreshold,
+  CollectorConfig,
+} from './MetricsCollector';
+export {
+  HealthCheck,
+  HealthCheckResult,
+  HealthStatus,
+  HealthCheckConfig,
+  IntegrityIssue,
+} from './HealthCheck';
+export {
+  QueryAnalyzer,
+  QueryAnalysis,
+  OptimizationSuggestion,
+  IndexRecommendation,
+  SlowQuery,
+  AnalyzerConfig,
+} from './QueryAnalyzer';
+export {
+  DashboardProvider,
+  DashboardMetrics,
+  TimeSeriesData,
+  AlertSummary,
+  CapacityPlanningData,
+  DashboardConfig,
+} from './DashboardProvider';
 
 // Import components
 import { PerformanceMonitor, MonitoringConfig } from './PerformanceMonitor';
@@ -69,20 +103,20 @@ export interface MonitoringSystemStats {
 
 /**
  * Unified Monitoring System
- * 
+ *
  * Provides a single interface to all monitoring components with
  * automatic integration and cross-component communication.
  */
 export class MonitoringSystem extends EventEmitter {
   private db: Database.Database;
   private config: MonitoringSystemConfig;
-  
+
   private performanceMonitor: PerformanceMonitor;
   private metricsCollector: MetricsCollector;
   private healthCheck: HealthCheck;
   private queryAnalyzer: QueryAnalyzer;
   private dashboardProvider: DashboardProvider;
-  
+
   private isInitialized = false;
   private startTime = Date.now();
 
@@ -93,7 +127,7 @@ export class MonitoringSystem extends EventEmitter {
       enableAllFeatures: true,
       enablePrometheusExport: true,
       enableGrafanaIntegration: false,
-      ...config
+      ...config,
     };
 
     this.initializeComponents();
@@ -126,23 +160,17 @@ export class MonitoringSystem extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Cross-component event handling
-    
+
     // Forward performance metrics to metrics collector
-    this.performanceMonitor.on('metric', (metric) => {
-      this.metricsCollector.recordMetric(
-        'sqlite_query_duration_ms',
-        metric.duration,
-        {
-          operation: metric.operation,
-          connection: metric.connectionId
-        }
-      );
-      
-      this.metricsCollector.recordMetric(
-        'sqlite_memory_usage_bytes',
-        metric.memoryUsage,
-        { connection: metric.connectionId }
-      );
+    this.performanceMonitor.on('metric', metric => {
+      this.metricsCollector.recordMetric('sqlite_query_duration_ms', metric.duration, {
+        operation: metric.operation,
+        connection: metric.connectionId,
+      });
+
+      this.metricsCollector.recordMetric('sqlite_memory_usage_bytes', metric.memoryUsage, {
+        connection: metric.connectionId,
+      });
 
       if (metric.cacheHit) {
         this.metricsCollector.recordMetric('sqlite_cache_hit_ratio', 1);
@@ -152,31 +180,31 @@ export class MonitoringSystem extends EventEmitter {
     });
 
     // Forward performance alerts to dashboard
-    this.performanceMonitor.on('alert', (alert) => {
+    this.performanceMonitor.on('alert', alert => {
       this.emit('performance-alert', alert);
     });
 
     // Forward health check results
-    this.healthCheck.on('health-check-completed', (status) => {
+    this.healthCheck.on('health-check-completed', status => {
       this.emit('health-status-updated', status);
     });
 
     // Forward query analysis results
-    this.queryAnalyzer.on('query-analyzed', (analysis) => {
+    this.queryAnalyzer.on('query-analyzed', analysis => {
       this.emit('query-analyzed', analysis);
     });
 
-    this.queryAnalyzer.on('index-recommendation', (recommendation) => {
+    this.queryAnalyzer.on('index-recommendation', recommendation => {
       this.emit('index-recommendation', recommendation);
     });
 
     // Forward dashboard events
-    this.dashboardProvider.on('alert-triggered', (alert) => {
+    this.dashboardProvider.on('alert-triggered', alert => {
       this.emit('dashboard-alert', alert);
     });
 
     // Forward metrics collector alerts
-    this.metricsCollector.on('alert-triggered', (alert) => {
+    this.metricsCollector.on('alert-triggered', alert => {
       this.emit('metrics-alert', alert);
     });
   }
@@ -200,7 +228,6 @@ export class MonitoringSystem extends EventEmitter {
       this.emit('monitoring-system-initialized');
 
       console.log('🎯 SQLite monitoring system initialized successfully');
-      
     } catch (error) {
       console.error('Failed to initialize monitoring system:', error);
       throw error;
@@ -229,10 +256,9 @@ export class MonitoringSystem extends EventEmitter {
 
       this.isInitialized = false;
       this.removeAllListeners();
-      
+
       this.emit('monitoring-system-shutdown');
       console.log('🔌 SQLite monitoring system shut down');
-      
     } catch (error) {
       console.error('Error during monitoring system shutdown:', error);
       throw error;
@@ -254,7 +280,7 @@ export class MonitoringSystem extends EventEmitter {
     }
   ): Promise<T> {
     const startTime = Date.now();
-    
+
     try {
       // Use performance monitor to measure the operation
       const result = await this.performanceMonitor.measureQuery(
@@ -264,7 +290,7 @@ export class MonitoringSystem extends EventEmitter {
         executor,
         {
           userId: options?.userId,
-          captureQueryPlan: options?.captureQueryPlan
+          captureQueryPlan: options?.captureQueryPlan,
         }
       );
 
@@ -275,7 +301,7 @@ export class MonitoringSystem extends EventEmitter {
         try {
           this.queryAnalyzer.analyzeQuery(query, duration, {
             timestamp: startTime,
-            operationType: operation
+            operationType: operation,
           });
         } catch (analysisError) {
           console.warn('Query analysis failed:', analysisError);
@@ -283,19 +309,14 @@ export class MonitoringSystem extends EventEmitter {
       }
 
       return result;
-      
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       // Record error metric
-      this.metricsCollector.recordMetric(
-        'sqlite_error_count',
-        1,
-        {
-          operation,
-          error_type: error.name
-        }
-      );
+      this.metricsCollector.recordMetric('sqlite_error_count', 1, {
+        operation,
+        error_type: error.name,
+      });
 
       throw error;
     }
@@ -318,18 +339,14 @@ export class MonitoringSystem extends EventEmitter {
     this.performanceMonitor.recordMetric(operation, duration, {
       recordsProcessed: options?.recordsProcessed,
       cacheHit: options?.cacheHit,
-      indexesUsed: options?.indexesUsed
+      indexesUsed: options?.indexesUsed,
     });
 
     // Also record in metrics collector
-    this.metricsCollector.recordMetric(
-      'sqlite_query_duration_ms',
-      duration,
-      {
-        operation,
-        connection: options?.connectionId || 'unknown'
-      }
-    );
+    this.metricsCollector.recordMetric('sqlite_query_duration_ms', duration, {
+      operation,
+      connection: options?.connectionId || 'unknown',
+    });
   }
 
   /**
@@ -346,13 +363,17 @@ export class MonitoringSystem extends EventEmitter {
       totalQueries: queryStats.totalQueries,
       slowQueries: queryStats.slowQueries,
       totalAlerts: 0, // Would aggregate from all sources
-      activeAlerts: performanceStats.activeAlerts.info + 
-                   performanceStats.activeAlerts.warning + 
-                   performanceStats.activeAlerts.critical,
+      activeAlerts:
+        performanceStats.activeAlerts.info +
+        performanceStats.activeAlerts.warning +
+        performanceStats.activeAlerts.critical,
       healthScore: healthStatus?.score || 0,
-      performanceScore: performanceStats.isHealthy ? 100 : 
-                       (performanceStats.activeAlerts.critical > 0 ? 20 : 60),
-      systemStatus: this.getOverallSystemStatus()
+      performanceScore: performanceStats.isHealthy
+        ? 100
+        : performanceStats.activeAlerts.critical > 0
+          ? 20
+          : 60,
+      systemStatus: this.getOverallSystemStatus(),
     };
   }
 
@@ -388,8 +409,8 @@ export class MonitoringSystem extends EventEmitter {
       queries: {
         slow: this.queryAnalyzer.getSlowQueries(10),
         patterns: this.queryAnalyzer.getQueryPatterns(20),
-        recommendations: this.queryAnalyzer.getIndexRecommendations()
-      }
+        recommendations: this.queryAnalyzer.getIndexRecommendations(),
+      },
     };
   }
 
@@ -409,7 +430,7 @@ export class MonitoringSystem extends EventEmitter {
       '',
       collectorMetrics,
       '',
-      dashboardMetrics
+      dashboardMetrics,
     ].join('\n');
   }
 
@@ -448,7 +469,7 @@ export class MonitoringSystem extends EventEmitter {
     return {
       indexes: this.queryAnalyzer.getIndexRecommendations(),
       slowQueries: this.queryAnalyzer.getSlowQueries(),
-      patterns: this.queryAnalyzer.getQueryPatterns()
+      patterns: this.queryAnalyzer.getQueryPatterns(),
     };
   }
 

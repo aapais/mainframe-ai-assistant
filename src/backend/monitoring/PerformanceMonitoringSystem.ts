@@ -133,7 +133,6 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
         details.collectors[name] = collector.isHealthy();
         if (!details.collectors[name]) healthy = false;
       }
-
     } catch (error) {
       healthy = false;
       details.error = (error as Error).message;
@@ -142,7 +141,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
     return {
       healthy,
       details,
-      lastCheck: new Date()
+      lastCheck: new Date(),
     };
   }
 
@@ -154,7 +153,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       success,
       duration,
       timestamp: Date.now(),
-      metadata
+      metadata,
     };
 
     // Store in metrics store
@@ -176,10 +175,10 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       error: {
         name: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       },
       timestamp: Date.now(),
-      metadata
+      metadata,
     };
 
     this.metricsStore.addMetric('errors', errorMetric);
@@ -197,13 +196,15 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       duration,
       threshold: this.config.slowQueryThreshold,
       timestamp: Date.now(),
-      metadata
+      metadata,
     };
 
     this.metricsStore.addMetric('slow_queries', slowQueryMetric);
 
     // Trigger slow query alert
-    this.triggerAlert('slow-query', 'warning',
+    this.triggerAlert(
+      'slow-query',
+      'warning',
       `Slow query detected: ${operation} took ${duration}ms`,
       slowQueryMetric
     );
@@ -218,7 +219,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       name,
       value,
       tags: tags || {},
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.metricsStore.addMetric('custom', metric);
@@ -269,7 +270,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       query: this.sanitizeQuery(query),
       duration,
       rowCount,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.metricsStore.addMetric('database', dbMetric);
@@ -299,7 +300,9 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
     // Check memory alerts
     const percentage = (usage.used / usage.total) * 100;
     if (percentage > this.config.alerts.memoryThreshold) {
-      this.triggerAlert('high-memory', 'warning',
+      this.triggerAlert(
+        'high-memory',
+        'warning',
         `High memory usage: ${percentage.toFixed(2)}%`,
         usage
       );
@@ -310,10 +313,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
     this.recordGauge('system.cpu.percentage', usage);
 
     if (usage > this.config.alerts.cpuThreshold) {
-      this.triggerAlert('high-cpu', 'warning',
-        `High CPU usage: ${usage.toFixed(2)}%`,
-        { usage }
-      );
+      this.triggerAlert('high-cpu', 'warning', `High CPU usage: ${usage.toFixed(2)}%`, { usage });
     }
   }
 
@@ -324,7 +324,9 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
 
     const percentage = (usage.used / usage.total) * 100;
     if (percentage > this.config.alerts.diskThreshold) {
-      this.triggerAlert('high-disk', 'warning',
+      this.triggerAlert(
+        'high-disk',
+        'warning',
         `High disk usage: ${percentage.toFixed(2)}%`,
         usage
       );
@@ -336,7 +338,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
   async getMetrics(timeRange?: TimeRange): Promise<MetricsReport> {
     const range = timeRange || {
       start: new Date(Date.now() - 3600000), // Last hour
-      end: new Date()
+      end: new Date(),
     };
 
     const operationMetrics = await this.metricsStore.getMetrics('operations', range);
@@ -353,12 +355,11 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       summary: {
         totalOperations: operationMetrics.length,
         totalErrors: errorMetrics.length,
-        errorRate: operationMetrics.length > 0
-          ? (errorMetrics.length / operationMetrics.length) * 100
-          : 0,
-        averageResponseTime: this.calculateAverageResponseTime(operationMetrics)
+        errorRate:
+          operationMetrics.length > 0 ? (errorMetrics.length / operationMetrics.length) * 100 : 0,
+        averageResponseTime: this.calculateAverageResponseTime(operationMetrics),
       },
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
   }
 
@@ -373,7 +374,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
         maxDuration: 0,
         errorRate: 0,
         successRate: 0,
-        throughput: 0
+        throughput: 0,
       };
     }
 
@@ -401,7 +402,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       services: await this.getServicesHealth(),
       resources: systemMetrics,
       alerts,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -432,12 +433,10 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       const alertTriggered = await this.evaluateAlertRule(rule);
 
       if (alertTriggered) {
-        const alert = await this.alertManager.triggerAlert(
-          rule.type,
-          rule.severity,
-          rule.message,
-          { ruleId, ...alertTriggered.data }
-        );
+        const alert = await this.alertManager.triggerAlert(rule.type, rule.severity, rule.message, {
+          ruleId,
+          ...alertTriggered.data,
+        });
         activeAlerts.push(alert);
       }
     }
@@ -455,17 +454,14 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
 
   getMetrics(): any {
     const collectorStats = Object.fromEntries(
-      Array.from(this.collectors.entries()).map(([name, collector]) => [
-        name,
-        collector.getStats()
-      ])
+      Array.from(this.collectors.entries()).map(([name, collector]) => [name, collector.getStats()])
     );
 
     return {
       collectors: collectorStats,
       alertRules: this.alertRules.size,
       activeAlerts: this.alertManager.getActiveAlerts(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
     };
   }
 
@@ -479,8 +475,13 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
   private initializeCollectors(): void {
     // Initialize default metric collectors
     const defaultOperations = [
-      'kb.search', 'kb.create', 'kb.update', 'kb.delete',
-      'cache.get', 'cache.set', 'database.query'
+      'kb.search',
+      'kb.create',
+      'kb.update',
+      'kb.delete',
+      'cache.get',
+      'cache.set',
+      'database.query',
     ];
 
     defaultOperations.forEach(operation => {
@@ -499,9 +500,9 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
           metric: 'error_rate',
           operator: '>',
           threshold: 5, // 5%
-          timeWindow: 300000 // 5 minutes
+          timeWindow: 300000, // 5 minutes
         },
-        message: 'Error rate is above 5% in the last 5 minutes'
+        message: 'Error rate is above 5% in the last 5 minutes',
       },
       {
         id: 'slow-response-time',
@@ -512,9 +513,9 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
           metric: 'average_response_time',
           operator: '>',
           threshold: 2000, // 2 seconds
-          timeWindow: 300000
+          timeWindow: 300000,
         },
-        message: 'Average response time is above 2 seconds'
+        message: 'Average response time is above 2 seconds',
       },
       {
         id: 'low-cache-hit-rate',
@@ -525,10 +526,10 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
           metric: 'cache_hit_rate',
           operator: '<',
           threshold: 70, // 70%
-          timeWindow: 600000 // 10 minutes
+          timeWindow: 600000, // 10 minutes
         },
-        message: 'Cache hit rate is below 70%'
-      }
+        message: 'Cache hit rate is below 70%',
+      },
     ];
 
     defaultRules.forEach(rule => this.addAlertRule(rule));
@@ -569,16 +570,16 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       memory: {
         used: memoryUsage.heapUsed,
         total: memoryUsage.heapTotal,
-        percentage: (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100
+        percentage: (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100,
       },
       cpu: {
-        percentage: await this.getCPUUsage()
+        percentage: await this.getCPUUsage(),
       },
       disk: {
         used: 0, // Would implement disk usage check
         total: 0,
-        percentage: 0
-      }
+        percentage: 0,
+      },
     };
 
     this.recordMemoryUsage(systemMetrics.memory);
@@ -603,7 +604,7 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
     const idle = totalIdle / cpus.length;
     const total = totalTick / cpus.length;
 
-    return 100 - (idle / total * 100);
+    return 100 - (idle / total) * 100;
   }
 
   private async performHealthChecks(): Promise<void> {
@@ -612,11 +613,9 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       const health = await this.getSystemHealth();
 
       if (health.overall === 'unhealthy') {
-        this.triggerAlert('system-unhealthy', 'critical',
-          'System health is unhealthy', health);
+        this.triggerAlert('system-unhealthy', 'critical', 'System health is unhealthy', health);
       } else if (health.overall === 'degraded') {
-        this.triggerAlert('system-degraded', 'warning',
-          'System health is degraded', health);
+        this.triggerAlert('system-degraded', 'warning', 'System health is degraded', health);
       }
     } catch (error) {
       this.context.logger?.error('Health check failed', error as Error);
@@ -630,7 +629,9 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
       const stats = collector.getStats();
 
       if (stats.errorRate > this.config.alerts.errorRateThreshold) {
-        this.triggerAlert('high-error-rate', 'critical',
+        this.triggerAlert(
+          'high-error-rate',
+          'critical',
           `High error rate for ${operation}: ${stats.errorRate.toFixed(2)}%`,
           { operation, errorRate: stats.errorRate }
         );
@@ -643,7 +644,12 @@ export class PerformanceMonitor extends EventEmitter implements IPerformanceMoni
     }
   }
 
-  private async triggerAlert(type: string, severity: AlertSeverity, message: string, data?: any): Promise<void> {
+  private async triggerAlert(
+    type: string,
+    severity: AlertSeverity,
+    message: string,
+    data?: any
+  ): Promise<void> {
     try {
       await this.alertManager.triggerAlert(type, severity, message, data);
     } catch (error) {
@@ -729,9 +735,8 @@ class MetricsStore {
 
   async getMetrics(type: string, timeRange: TimeRange): Promise<any[]> {
     const metrics = this.metrics.get(type) || [];
-    return metrics.filter(m =>
-      m.timestamp >= timeRange.start.getTime() &&
-      m.timestamp <= timeRange.end.getTime()
+    return metrics.filter(
+      m => m.timestamp >= timeRange.start.getTime() && m.timestamp <= timeRange.end.getTime()
     );
   }
 
@@ -759,7 +764,12 @@ class AlertManager implements IAlertManager {
     return { healthy: true };
   }
 
-  async triggerAlert(type: string, severity: AlertSeverity, message: string, data?: any): Promise<Alert> {
+  async triggerAlert(
+    type: string,
+    severity: AlertSeverity,
+    message: string,
+    data?: any
+  ): Promise<Alert> {
     const alert: Alert = {
       id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
@@ -767,7 +777,7 @@ class AlertManager implements IAlertManager {
       message,
       data,
       timestamp: new Date(),
-      resolved: false
+      resolved: false,
     };
 
     this.alerts.set(alert.id, alert);
@@ -797,9 +807,8 @@ class AlertManager implements IAlertManager {
   async getAlertHistory(timeRange?: TimeRange): Promise<Alert[]> {
     if (!timeRange) return this.alertHistory;
 
-    return this.alertHistory.filter(alert =>
-      alert.timestamp >= timeRange.start &&
-      alert.timestamp <= timeRange.end
+    return this.alertHistory.filter(
+      alert => alert.timestamp >= timeRange.start && alert.timestamp <= timeRange.end
     );
   }
 
@@ -858,9 +867,10 @@ class MetricCollector {
       errorRate: this.operationCount > 0 ? (this.errorCount / this.operationCount) * 100 : 0,
       successRate: this.operationCount > 0 ? (this.successCount / this.operationCount) * 100 : 0,
       throughput: windowSeconds > 0 ? this.operationCount / windowSeconds : 0,
-      cacheHitRate: (this.cacheHits + this.cacheMisses) > 0
-        ? (this.cacheHits / (this.cacheHits + this.cacheMisses)) * 100
-        : 0
+      cacheHitRate:
+        this.cacheHits + this.cacheMisses > 0
+          ? (this.cacheHits / (this.cacheHits + this.cacheMisses)) * 100
+          : 0,
     };
   }
 
@@ -925,7 +935,7 @@ class HistogramCollector {
       p50: sorted[Math.floor(count * 0.5)],
       p95: sorted[Math.floor(count * 0.95)],
       p99: sorted[Math.floor(count * 0.99)],
-      buckets: Object.fromEntries(this.buckets)
+      buckets: Object.fromEntries(this.buckets),
     };
   }
 }

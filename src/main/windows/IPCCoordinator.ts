@@ -1,13 +1,18 @@
 /**
  * IPC Coordination System for Multi-Window Communication
- * 
- * Secure, efficient inter-process communication coordinator for 
+ *
+ * Secure, efficient inter-process communication coordinator for
  * knowledge-first multi-window architecture with progressive MVP enhancement
  */
 
 import { BrowserWindow, ipcMain, IpcMainEvent } from 'electron';
 import { EventEmitter } from 'events';
-import { WindowType, WindowIPCMessage, WindowIPCResponse, WindowInstance } from './types/WindowTypes';
+import {
+  WindowType,
+  WindowIPCMessage,
+  WindowIPCResponse,
+  WindowInstance,
+} from './types/WindowTypes';
 import { v4 as uuidv4 } from 'uuid';
 
 interface MessageQueueItem {
@@ -22,12 +27,12 @@ interface IPCChannelHandler {
   channel: string;
   handler: (event: IpcMainEvent, ...args: any[]) => Promise<any> | any;
   restricted?: boolean; // Requires authentication
-  mvpLevel?: number;    // Minimum MVP level required
+  mvpLevel?: number; // Minimum MVP level required
 }
 
 /**
  * IPC Coordinator manages secure communication between windows
- * 
+ *
  * Features by MVP:
  * MVP1: Basic main window IPC
  * MVP2: Multi-window messaging, pattern data sync
@@ -37,22 +42,25 @@ interface IPCChannelHandler {
  */
 export class IPCCoordinator extends EventEmitter {
   private messageQueue: Map<string, MessageQueueItem> = new Map();
-  private pendingResponses: Map<string, {
-    resolve: (value: any) => void;
-    reject: (error: Error) => void;
-    timeout: ReturnType<typeof setTimeout>;
-  }> = new Map();
-  
+  private pendingResponses: Map<
+    string,
+    {
+      resolve: (value: any) => void;
+      reject: (error: Error) => void;
+      timeout: ReturnType<typeof setTimeout>;
+    }
+  > = new Map();
+
   private registeredHandlers: Map<string, IPCChannelHandler> = new Map();
   private windowRegistry: Map<string, BrowserWindow> = new Map();
   private channelSubscriptions: Map<string, Set<string>> = new Map(); // channel -> windowIds
-  
+
   private config = {
     maxQueueSize: 1000,
     messageTimeout: 30000,
     maxRetries: 3,
     enableMessageLog: true,
-    requireAuth: false
+    requireAuth: false,
   };
 
   private stats = {
@@ -61,7 +69,7 @@ export class IPCCoordinator extends EventEmitter {
     messagesQueued: 0,
     messagesFailed: 0,
     avgResponseTime: 0,
-    errors: [] as string[]
+    errors: [] as string[],
   };
 
   constructor() {
@@ -73,13 +81,13 @@ export class IPCCoordinator extends EventEmitter {
   async initialize(): Promise<void> {
     // Register core IPC handlers
     this.registerCoreChannels();
-    
+
     // Setup security middleware
     this.setupSecurityMiddleware();
-    
+
     // Start periodic cleanup
     this.startPeriodicCleanup();
-    
+
     this.emit('initialized');
   }
 
@@ -90,13 +98,13 @@ export class IPCCoordinator extends EventEmitter {
       pendingResponse.reject(new Error('IPC Coordinator shutting down'));
     }
     this.pendingResponses.clear();
-    
+
     // Clear queue
     this.messageQueue.clear();
-    
+
     // Unregister all handlers
     this.registeredHandlers.clear();
-    
+
     this.emit('shutdown');
   }
 
@@ -109,7 +117,7 @@ export class IPCCoordinator extends EventEmitter {
         channel: 'ipc:health-check',
         data: { timestamp: Date.now() },
         timestamp: new Date(),
-        priority: 'normal'
+        priority: 'normal',
       };
 
       // Verify message queue is working
@@ -123,7 +131,7 @@ export class IPCCoordinator extends EventEmitter {
   // Window Registration
   registerWindow(windowId: string, window: BrowserWindow): void {
     this.windowRegistry.set(windowId, window);
-    
+
     // Setup window-specific handlers
     window.webContents.on('ipc-message', (event, channel, ...args) => {
       this.handleWindowMessage(windowId, channel, args);
@@ -138,7 +146,7 @@ export class IPCCoordinator extends EventEmitter {
 
   unregisterWindow(windowId: string): void {
     this.windowRegistry.delete(windowId);
-    
+
     // Clean up subscriptions
     for (const [channel, subscribers] of this.channelSubscriptions) {
       subscribers.delete(windowId);
@@ -158,11 +166,13 @@ export class IPCCoordinator extends EventEmitter {
   }
 
   // Message Sending
-  async sendMessage(message: Omit<WindowIPCMessage, 'id' | 'timestamp'>): Promise<WindowIPCResponse | void> {
+  async sendMessage(
+    message: Omit<WindowIPCMessage, 'id' | 'timestamp'>
+  ): Promise<WindowIPCResponse | void> {
     const fullMessage: WindowIPCMessage = {
       id: uuidv4(),
       timestamp: new Date(),
-      ...message
+      ...message,
     };
 
     // Validate message
@@ -196,7 +206,7 @@ export class IPCCoordinator extends EventEmitter {
       channel,
       data,
       timestamp: new Date(),
-      priority: 'normal'
+      priority: 'normal',
     };
 
     if (targetTypes) {
@@ -215,7 +225,7 @@ export class IPCCoordinator extends EventEmitter {
   // Channel Management
   registerHandler(handler: IPCChannelHandler): void {
     this.registeredHandlers.set(handler.channel, handler);
-    
+
     // Register with Electron IPC
     ipcMain.handle(handler.channel, async (event, ...args) => {
       try {
@@ -271,7 +281,7 @@ export class IPCCoordinator extends EventEmitter {
       channel: `notification:${channel}`,
       data,
       timestamp: new Date(),
-      priority: 'normal'
+      priority: 'normal',
     };
 
     for (const windowId of subscribers) {
@@ -289,23 +299,23 @@ export class IPCCoordinator extends EventEmitter {
       activeWindows: this.windowRegistry.size,
       subscriptions: Array.from(this.channelSubscriptions.entries()).map(([channel, subs]) => ({
         channel,
-        subscribers: subs.size
-      }))
+        subscribers: subs.size,
+      })),
     };
   }
 
   // Private Implementation
-  
+
   private setupCoreHandlers(): void {
     // Window management handlers
     this.registerHandler({
       channel: 'ipc:ping',
-      handler: () => ({ pong: Date.now() })
+      handler: () => ({ pong: Date.now() }),
     });
 
     this.registerHandler({
       channel: 'ipc:stats',
-      handler: () => this.getStats()
+      handler: () => this.getStats(),
     });
 
     this.registerHandler({
@@ -317,7 +327,7 @@ export class IPCCoordinator extends EventEmitter {
           return { subscribed: true, channel };
         }
         throw new Error('Unable to identify source window');
-      }
+      },
     });
 
     this.registerHandler({
@@ -329,7 +339,7 @@ export class IPCCoordinator extends EventEmitter {
           return { unsubscribed: true, channel };
         }
         throw new Error('Unable to identify source window');
-      }
+      },
     });
   }
 
@@ -338,59 +348,59 @@ export class IPCCoordinator extends EventEmitter {
     this.registerHandler({
       channel: 'kb:sync-request',
       handler: (event, data) => this.handleKBSync(data),
-      mvpLevel: 1
+      mvpLevel: 1,
     });
 
     // Pattern Detection Sync (MVP2+)
     this.registerHandler({
       channel: 'pattern:new-detection',
       handler: (event, pattern) => this.handlePatternDetection(pattern),
-      mvpLevel: 2
+      mvpLevel: 2,
     });
 
     this.registerHandler({
       channel: 'pattern:alert',
       handler: (event, alert) => this.handlePatternAlert(alert),
-      mvpLevel: 2
+      mvpLevel: 2,
     });
 
     // Code Analysis Sync (MVP3+)
     this.registerHandler({
       channel: 'code:analysis-result',
       handler: (event, result) => this.handleCodeAnalysis(result),
-      mvpLevel: 3
+      mvpLevel: 3,
     });
 
     this.registerHandler({
       channel: 'code:debug-context',
       handler: (event, context) => this.handleDebugContext(context),
-      mvpLevel: 3
+      mvpLevel: 3,
     });
 
     // Project Synchronization (MVP4+)
     this.registerHandler({
       channel: 'project:sync',
       handler: (event, projectData) => this.handleProjectSync(projectData),
-      mvpLevel: 4
+      mvpLevel: 4,
     });
 
     // AI Assistant Communication (MVP5+)
     this.registerHandler({
       channel: 'ai:request',
       handler: (event, request) => this.handleAIRequest(request),
-      mvpLevel: 5
+      mvpLevel: 5,
     });
 
     this.registerHandler({
       channel: 'ai:response',
       handler: (event, response) => this.handleAIResponse(response),
-      mvpLevel: 5
+      mvpLevel: 5,
     });
   }
 
   private async sendDirectMessage(message: WindowIPCMessage): Promise<WindowIPCResponse> {
     const targetWindow = this.windowRegistry.get(message.targetWindowId!);
-    
+
     if (!targetWindow || targetWindow.isDestroyed()) {
       throw new Error(`Target window not found: ${message.targetWindowId}`);
     }
@@ -402,12 +412,15 @@ export class IPCCoordinator extends EventEmitter {
       return {
         messageId: message.id,
         success: true,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
 
-  private async sendMessageWithResponse(window: BrowserWindow, message: WindowIPCMessage): Promise<WindowIPCResponse> {
+  private async sendMessageWithResponse(
+    window: BrowserWindow,
+    message: WindowIPCMessage
+  ): Promise<WindowIPCResponse> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingResponses.delete(message.id);
@@ -415,11 +428,11 @@ export class IPCCoordinator extends EventEmitter {
       }, message.responseTimeout || this.config.messageTimeout);
 
       this.pendingResponses.set(message.id, { resolve, reject, timeout });
-      
+
       window.webContents.send(message.channel, {
         ...message.data,
         _messageId: message.id,
-        _requiresResponse: true
+        _requiresResponse: true,
       });
     });
   }
@@ -477,7 +490,7 @@ export class IPCCoordinator extends EventEmitter {
     if (pending) {
       clearTimeout(pending.timeout);
       this.pendingResponses.delete(response.messageId);
-      
+
       if (response.success) {
         pending.resolve(response);
       } else {
@@ -502,7 +515,7 @@ export class IPCCoordinator extends EventEmitter {
     if (alert.severity === 'critical') {
       this.emit('createAlertWindow', alert);
     }
-    
+
     this.notifySubscribers('alert:new', alert);
     return { processed: true };
   }
@@ -573,7 +586,7 @@ export class IPCCoordinator extends EventEmitter {
 
   private processMessageQueue(): void {
     const now = Date.now();
-    
+
     for (const [messageId, queueItem] of this.messageQueue) {
       if (now > queueItem.expiry.getTime()) {
         // Message expired
@@ -593,7 +606,7 @@ export class IPCCoordinator extends EventEmitter {
       if (this.stats.errors.length > 100) {
         this.stats.errors = this.stats.errors.slice(-50);
       }
-      
+
       // Clean up expired queue items
       this.processMessageQueue();
     }, 60000); // Every minute

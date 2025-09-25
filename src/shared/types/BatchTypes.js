@@ -3,13 +3,13 @@
 export const DASHBOARD_BATCH_CONFIG = {
   maxBatchSize: 10,
   flushInterval: 100,
-  maxRetries: 3
+  maxRetries: 3,
 };
 
 export const SEARCH_BATCH_CONFIG = {
   maxBatchSize: 5,
   flushInterval: 50,
-  maxRetries: 2
+  maxRetries: 2,
 };
 
 export class BatchError extends Error {
@@ -23,10 +23,10 @@ export class BatchError extends Error {
 
 export const BatchConfig = {
   DASHBOARD: DASHBOARD_BATCH_CONFIG,
-  SEARCH: SEARCH_BATCH_CONFIG
+  SEARCH: SEARCH_BATCH_CONFIG,
 };
 
 export const BatchResponsePayload = {
-  success: (data) => ({ success: true, data }),
-  error: (error) => ({ success: false, error })
+  success: data => ({ success: true, data }),
+  error: error => ({ success: false, error }),
 };

@@ -115,7 +115,7 @@ export class MemoryLeakDetector extends EventEmitter {
       external: memoryUsage.external,
       rss: memoryUsage.rss,
       arrayBuffers: memoryUsage.arrayBuffers || 0,
-      processId: process.pid
+      processId: process.pid,
     };
 
     this.snapshots.push(snapshot);
@@ -144,7 +144,7 @@ export class MemoryLeakDetector extends EventEmitter {
       trend,
       targetMet: growthRate <= this.targetGrowthRate,
       detectedLeaks: [...this.detectedLeaks],
-      recommendations: this.generateRecommendations(growthRate, trend)
+      recommendations: this.generateRecommendations(growthRate, trend),
     };
 
     this.emit('memory-analysis', analysis);
@@ -155,7 +155,7 @@ export class MemoryLeakDetector extends EventEmitter {
         type: 'memory-growth-rate',
         value: growthRate,
         target: this.targetGrowthRate,
-        message: `Memory growth rate ${growthRate.toFixed(2)}MB/h exceeds target of ${this.targetGrowthRate}MB/h`
+        message: `Memory growth rate ${growthRate.toFixed(2)}MB/h exceeds target of ${this.targetGrowthRate}MB/h`,
       });
     }
   }
@@ -194,10 +194,10 @@ export class MemoryLeakDetector extends EventEmitter {
 
     // Calculate trend using linear regression
     const n = values.length;
-    const sumX = (n - 1) * n / 2; // Sum of indices 0..n-1
+    const sumX = ((n - 1) * n) / 2; // Sum of indices 0..n-1
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, i) => sum + (i * val), 0);
-    const sumXX = sumX * (2 * n - 1) / 3; // Sum of squares 0^2...(n-1)^2
+    const sumXY = values.reduce((sum, val, i) => sum + i * val, 0);
+    const sumXX = (sumX * (2 * n - 1)) / 3; // Sum of squares 0^2...(n-1)^2
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
 
@@ -253,9 +253,8 @@ export class MemoryLeakDetector extends EventEmitter {
     const newest = recent[recent.length - 1];
 
     // Check if this is a new leak or continuation of existing
-    const existingLeak = this.detectedLeaks.find(leak =>
-      leak.type === 'gradual' &&
-      Date.now() - leak.detected < 3600000 // Within last hour
+    const existingLeak = this.detectedLeaks.find(
+      leak => leak.type === 'gradual' && Date.now() - leak.detected < 3600000 // Within last hour
     );
 
     if (!existingLeak) {
@@ -272,8 +271,8 @@ export class MemoryLeakDetector extends EventEmitter {
           'Closures holding references to large objects',
           'Cache not being cleared periodically',
           'Timers or intervals not being cleared',
-          'DOM nodes not being garbage collected'
-        ]
+          'DOM nodes not being garbage collected',
+        ],
       };
 
       this.detectedLeaks.push(leak);
@@ -293,7 +292,8 @@ export class MemoryLeakDetector extends EventEmitter {
 
     const spike = (current - baseline) / 1024 / 1024; // MB
 
-    if (spike > 50) { // 50MB sudden increase
+    if (spike > 50) {
+      // 50MB sudden increase
       const leak: MemoryLeak = {
         type: 'sudden',
         detected: Date.now(),
@@ -307,8 +307,8 @@ export class MemoryLeakDetector extends EventEmitter {
           'Memory buffer not released',
           'Recursive function causing stack overflow',
           'Large file loaded without streaming',
-          'Memory allocation bug'
-        ]
+          'Memory allocation bug',
+        ],
       };
 
       this.detectedLeaks.push(leak);
@@ -339,11 +339,13 @@ export class MemoryLeakDetector extends EventEmitter {
 
     const oscillationRatio = (peaks + valleys) / values.length;
 
-    if (oscillationRatio > 0.3) { // More than 30% oscillation
+    if (oscillationRatio > 0.3) {
+      // More than 30% oscillation
       const amplitudeRange = Math.max(...values) - Math.min(...values);
       const amplitudeMB = amplitudeRange / 1024 / 1024;
 
-      if (amplitudeMB > 20) { // Significant oscillation
+      if (amplitudeMB > 20) {
+        // Significant oscillation
         const leak: MemoryLeak = {
           type: 'oscillating',
           detected: Date.now(),
@@ -357,8 +359,8 @@ export class MemoryLeakDetector extends EventEmitter {
             'Frequent allocation/deallocation cycles',
             'Memory fragmentation',
             'Inefficient data structure usage',
-            'Object pooling issues'
-          ]
+            'Object pooling issues',
+          ],
         };
 
         this.detectedLeaks.push(leak);
@@ -404,7 +406,9 @@ export class MemoryLeakDetector extends EventEmitter {
 
       case 'stable':
         if (growthRate > 0) {
-          recommendations.push('Memory usage appears stable but with slight growth - monitor closely');
+          recommendations.push(
+            'Memory usage appears stable but with slight growth - monitor closely'
+          );
         }
         break;
     }
@@ -447,7 +451,7 @@ export class MemoryLeakDetector extends EventEmitter {
       trend,
       targetMet: growthRate <= this.targetGrowthRate,
       detectedLeaks: [...this.detectedLeaks],
-      recommendations: this.generateRecommendations(growthRate, trend)
+      recommendations: this.generateRecommendations(growthRate, trend),
     };
   }
 
@@ -469,7 +473,7 @@ export class MemoryLeakDetector extends EventEmitter {
         averageUsageMB: 0,
         growthRate: 0,
         leaksDetected: 0,
-        uptimeHours: 0
+        uptimeHours: 0,
       };
     }
 
@@ -478,7 +482,8 @@ export class MemoryLeakDetector extends EventEmitter {
 
     const currentUsageMB = current.heapUsed / 1024 / 1024;
     const peakUsageMB = Math.max(...heapValues) / 1024 / 1024;
-    const averageUsageMB = heapValues.reduce((sum, val) => sum + val, 0) / heapValues.length / 1024 / 1024;
+    const averageUsageMB =
+      heapValues.reduce((sum, val) => sum + val, 0) / heapValues.length / 1024 / 1024;
     const growthRate = this.calculateGrowthRate();
     const leaksDetected = this.detectedLeaks.length;
     const uptimeHours = (current.timestamp - this.snapshots[0].timestamp) / 1000 / 3600;
@@ -489,7 +494,7 @@ export class MemoryLeakDetector extends EventEmitter {
       averageUsageMB,
       growthRate,
       leaksDetected,
-      uptimeHours
+      uptimeHours,
     };
   }
 
@@ -510,7 +515,7 @@ export class MemoryLeakDetector extends EventEmitter {
    * Clear old leak records
    */
   public clearOldLeaks(olderThanHours = 24): number {
-    const cutoff = Date.now() - (olderThanHours * 60 * 60 * 1000);
+    const cutoff = Date.now() - olderThanHours * 60 * 60 * 1000;
     const initialCount = this.detectedLeaks.length;
 
     this.detectedLeaks = this.detectedLeaks.filter(leak => leak.detected >= cutoff);
@@ -528,9 +533,7 @@ export class MemoryLeakDetector extends EventEmitter {
    */
   public exportData(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
-      const headers = [
-        'timestamp', 'heapUsed', 'heapTotal', 'external', 'rss', 'arrayBuffers'
-      ];
+      const headers = ['timestamp', 'heapUsed', 'heapTotal', 'external', 'rss', 'arrayBuffers'];
 
       const rows = this.snapshots.map(s => [
         s.timestamp,
@@ -538,18 +541,22 @@ export class MemoryLeakDetector extends EventEmitter {
         s.heapTotal,
         s.external,
         s.rss,
-        s.arrayBuffers
+        s.arrayBuffers,
       ]);
 
       return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     }
 
-    return JSON.stringify({
-      snapshots: this.snapshots,
-      detectedLeaks: this.detectedLeaks,
-      analysis: this.getCurrentAnalysis(),
-      summary: this.getMemorySummary()
-    }, null, 2);
+    return JSON.stringify(
+      {
+        snapshots: this.snapshots,
+        detectedLeaks: this.detectedLeaks,
+        analysis: this.getCurrentAnalysis(),
+        summary: this.getMemorySummary(),
+      },
+      null,
+      2
+    );
   }
 
   /**

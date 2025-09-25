@@ -56,7 +56,7 @@ const PLATFORM_MODIFIERS = {
   cmd: navigator.platform.toLowerCase().includes('mac') ? 'cmd' : 'ctrl',
   alt: 'alt',
   shift: 'shift',
-  meta: navigator.platform.toLowerCase().includes('mac') ? 'cmd' : 'meta'
+  meta: navigator.platform.toLowerCase().includes('mac') ? 'cmd' : 'meta',
 };
 
 /**
@@ -72,10 +72,7 @@ function normalizeKeys(keys: string[]): string[] {
 /**
  * Check if key combination matches the current key state
  */
-function matchesShortcut(
-  event: KeyboardEvent,
-  keys: string[]
-): boolean {
+function matchesShortcut(event: KeyboardEvent, keys: string[]): boolean {
   const normalizedKeys = normalizeKeys(keys);
   const eventKeys: string[] = [];
 
@@ -93,8 +90,10 @@ function matchesShortcut(
   }
 
   // Check if all keys match
-  return normalizedKeys.length === eventKeys.length &&
-         normalizedKeys.every(key => eventKeys.includes(key));
+  return (
+    normalizedKeys.length === eventKeys.length &&
+    normalizedKeys.every(key => eventKeys.includes(key))
+  );
 }
 
 /**
@@ -115,7 +114,7 @@ export function useKeyboardShortcuts(
     preventDefault = true,
     stopPropagation = false,
     scope,
-    priority = 0
+    priority = 0,
   } = options;
 
   const shortcutsRef = useRef<KeyboardShortcut[]>([]);
@@ -146,69 +145,72 @@ export function useKeyboardShortcuts(
   }, []);
 
   // Handle keyboard events
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled) return;
 
-    const currentTime = Date.now();
-    const shortcuts = shortcutsRef.current;
+      const currentTime = Date.now();
+      const shortcuts = shortcutsRef.current;
 
-    // Update key sequence
-    keySequence.current.push({
-      key: event.key.toLowerCase(),
-      timestamp: currentTime
-    });
-
-    // Find matching shortcuts
-    const matches: ShortcutMatch[] = shortcuts.map(shortcut => {
-      const matched = matchesShortcut(event, shortcut.keys);
-      return { shortcut, matched };
-    });
-
-    // Find exact matches
-    const exactMatches = matches.filter(m => m.matched);
-
-    if (exactMatches.length > 0) {
-      // Sort by priority (if any)
-      const sortedMatches = exactMatches.sort((a, b) => {
-        const aPriority = (a.shortcut as any).priority || 0;
-        const bPriority = (b.shortcut as any).priority || 0;
-        return bPriority - aPriority;
+      // Update key sequence
+      keySequence.current.push({
+        key: event.key.toLowerCase(),
+        timestamp: currentTime,
       });
 
-      const bestMatch = sortedMatches[0];
-      const { shortcut } = bestMatch;
+      // Find matching shortcuts
+      const matches: ShortcutMatch[] = shortcuts.map(shortcut => {
+        const matched = matchesShortcut(event, shortcut.keys);
+        return { shortcut, matched };
+      });
 
-      // Check if shortcut should be executed
-      if (shortcut.requireFocus && scope && !scope.contains(document.activeElement)) {
-        return;
+      // Find exact matches
+      const exactMatches = matches.filter(m => m.matched);
+
+      if (exactMatches.length > 0) {
+        // Sort by priority (if any)
+        const sortedMatches = exactMatches.sort((a, b) => {
+          const aPriority = (a.shortcut as any).priority || 0;
+          const bPriority = (b.shortcut as any).priority || 0;
+          return bPriority - aPriority;
+        });
+
+        const bestMatch = sortedMatches[0];
+        const { shortcut } = bestMatch;
+
+        // Check if shortcut should be executed
+        if (shortcut.requireFocus && scope && !scope.contains(document.activeElement)) {
+          return;
+        }
+
+        // Prevent default if specified
+        if (preventDefault || shortcut.preventDefault) {
+          event.preventDefault();
+        }
+
+        // Stop propagation if specified
+        if (stopPropagation || shortcut.stopPropagation) {
+          event.stopPropagation();
+        }
+
+        // Execute handler
+        try {
+          shortcut.handler(event);
+          setActiveShortcuts(prev => [...prev, shortcut.id]);
+
+          // Remove from active after short delay
+          setTimeout(() => {
+            setActiveShortcuts(prev => prev.filter(id => id !== shortcut.id));
+          }, 100);
+        } catch (error) {
+          console.error(`Error executing shortcut ${shortcut.id}:`, error);
+        }
       }
 
-      // Prevent default if specified
-      if (preventDefault || shortcut.preventDefault) {
-        event.preventDefault();
-      }
-
-      // Stop propagation if specified
-      if (stopPropagation || shortcut.stopPropagation) {
-        event.stopPropagation();
-      }
-
-      // Execute handler
-      try {
-        shortcut.handler(event);
-        setActiveShortcuts(prev => [...prev, shortcut.id]);
-
-        // Remove from active after short delay
-        setTimeout(() => {
-          setActiveShortcuts(prev => prev.filter(id => id !== shortcut.id));
-        }, 100);
-      } catch (error) {
-        console.error(`Error executing shortcut ${shortcut.id}:`, error);
-      }
-    }
-
-    clearKeySequence();
-  }, [enabled, preventDefault, stopPropagation, scope, clearKeySequence]);
+      clearKeySequence();
+    },
+    [enabled, preventDefault, stopPropagation, scope, clearKeySequence]
+  );
 
   // Attach event listeners
   useEffect(() => {
@@ -255,16 +257,19 @@ export function useKeyboardShortcuts(
   }, []);
 
   // Check if shortcut is currently active
-  const isShortcutActive = useCallback((shortcutId: string): boolean => {
-    return activeShortcuts.includes(shortcutId);
-  }, [activeShortcuts]);
+  const isShortcutActive = useCallback(
+    (shortcutId: string): boolean => {
+      return activeShortcuts.includes(shortcutId);
+    },
+    [activeShortcuts]
+  );
 
   // Get all shortcuts with display text
   const getShortcutsWithDisplay = useCallback(() => {
     return shortcutsRef.current.map(shortcut => ({
       ...shortcut,
       displayText: getShortcutText(shortcut.keys),
-      isActive: activeShortcuts.includes(shortcut.id)
+      isActive: activeShortcuts.includes(shortcut.id),
     }));
   }, [getShortcutText, activeShortcuts]);
 
@@ -272,7 +277,7 @@ export function useKeyboardShortcuts(
     shortcuts: getShortcutsWithDisplay(),
     isShortcutActive,
     getShortcutText,
-    activeShortcuts
+    activeShortcuts,
   };
 }
 
@@ -295,7 +300,7 @@ export function useSearchShortcuts(callbacks: {
       description: 'Focus search input',
       category: 'Search',
       handler: () => callbacks.onFocusSearch?.(),
-      global: true
+      global: true,
     },
     {
       id: 'focus-search-alt',
@@ -303,7 +308,7 @@ export function useSearchShortcuts(callbacks: {
       description: 'Focus search input (alternative)',
       category: 'Search',
       handler: () => callbacks.onFocusSearch?.(),
-      global: true
+      global: true,
     },
     {
       id: 'clear-search',
@@ -311,7 +316,7 @@ export function useSearchShortcuts(callbacks: {
       description: 'Clear search input',
       category: 'Search',
       handler: () => callbacks.onClearSearch?.(),
-      requireFocus: true
+      requireFocus: true,
     },
     {
       id: 'next-result',
@@ -319,7 +324,7 @@ export function useSearchShortcuts(callbacks: {
       description: 'Navigate to next result',
       category: 'Search',
       handler: () => callbacks.onNextResult?.(),
-      requireFocus: true
+      requireFocus: true,
     },
     {
       id: 'prev-result',
@@ -327,7 +332,7 @@ export function useSearchShortcuts(callbacks: {
       description: 'Navigate to previous result',
       category: 'Search',
       handler: () => callbacks.onPrevResult?.(),
-      requireFocus: true
+      requireFocus: true,
     },
     {
       id: 'select-result',
@@ -335,14 +340,14 @@ export function useSearchShortcuts(callbacks: {
       description: 'Select current result',
       category: 'Search',
       handler: () => callbacks.onSelectResult?.(),
-      requireFocus: true
+      requireFocus: true,
     },
     {
       id: 'toggle-filters',
       keys: ['ctrl', 'f'],
       description: 'Toggle search filters',
       category: 'Search',
-      handler: () => callbacks.onToggleFilters?.()
+      handler: () => callbacks.onToggleFilters?.(),
     },
     {
       id: 'open-help',
@@ -350,8 +355,8 @@ export function useSearchShortcuts(callbacks: {
       description: 'Open keyboard shortcuts help',
       category: 'Help',
       handler: () => callbacks.onOpenHelp?.(),
-      global: true
-    }
+      global: true,
+    },
   ];
 
   return useKeyboardShortcuts(shortcuts);

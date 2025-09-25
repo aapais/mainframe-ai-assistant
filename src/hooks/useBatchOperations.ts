@@ -13,7 +13,7 @@ import { KBEntry } from '../database/KnowledgeDB';
 import {
   BatchOperationsService,
   BatchOperationProgress,
-  BatchOperationResult
+  BatchOperationResult,
 } from '../services/BatchOperationsService';
 
 // ========================
@@ -98,9 +98,7 @@ export const useBatchOperations = (
   batchService?: BatchOperationsService
 ): UseBatchOperationsReturn => {
   // State management
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    initialSelectedIds || new Set()
-  );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(initialSelectedIds || new Set());
 
   const [operationState, setOperationState] = useState<BatchOperationState>({
     activeOperation: null,
@@ -108,7 +106,7 @@ export const useBatchOperations = (
     isOperating: false,
     error: null,
     lastResult: null,
-    operationHistory: []
+    operationHistory: [],
   });
 
   // Computed selection state
@@ -122,7 +120,7 @@ export const useBatchOperations = (
       selectedIds,
       allSelected,
       someSelected,
-      selectedCount
+      selectedCount,
     };
   }, [selectedIds, entries.length]);
 
@@ -175,292 +173,303 @@ export const useBatchOperations = (
     });
   }, []);
 
-  const isSelected = useCallback((entryId: string) => {
-    return selectedIds.has(entryId);
-  }, [selectedIds]);
+  const isSelected = useCallback(
+    (entryId: string) => {
+      return selectedIds.has(entryId);
+    },
+    [selectedIds]
+  );
 
   // Operation helpers
   const updateOperationState = useCallback((updates: Partial<BatchOperationState>) => {
     setOperationState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const addToHistory = useCallback((
-    id: string,
-    type: string,
-    success: boolean,
-    itemCount: number,
-    duration: number
-  ) => {
-    setOperationState(prev => ({
-      ...prev,
-      operationHistory: [
-        ...prev.operationHistory.slice(-9), // Keep last 10 operations
-        {
-          id,
-          type,
-          timestamp: new Date(),
-          success,
-          itemCount,
-          duration
-        }
-      ]
-    }));
-  }, []);
+  const addToHistory = useCallback(
+    (id: string, type: string, success: boolean, itemCount: number, duration: number) => {
+      setOperationState(prev => ({
+        ...prev,
+        operationHistory: [
+          ...prev.operationHistory.slice(-9), // Keep last 10 operations
+          {
+            id,
+            type,
+            timestamp: new Date(),
+            success,
+            itemCount,
+            duration,
+          },
+        ],
+      }));
+    },
+    []
+  );
 
   // Batch operations
-  const performBatchUpdate = useCallback(async (
-    updates: Partial<KBEntry> | ((entry: KBEntry) => Partial<KBEntry>),
-    options: any = {}
-  ): Promise<BatchOperationResult> => {
-    if (!batchService) {
-      throw new Error('Batch service not available');
-    }
-
-    const entryIds = Array.from(selectedIds);
-    if (entryIds.length === 0) {
-      throw new Error('No entries selected for update');
-    }
-
-    updateOperationState({
-      activeOperation: 'update',
-      isOperating: true,
-      error: null,
-      progress: null
-    });
-
-    try {
-      const result = await batchService.batchUpdate(entryIds, updates, options);
-
-      updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        lastResult: result,
-        progress: result.progress
-      });
-
-      addToHistory(
-        `update_${Date.now()}`,
-        'update',
-        result.success,
-        entryIds.length,
-        result.duration
-      );
-
-      if (result.success) {
-        // Clear selection after successful update
-        selectNone();
+  const performBatchUpdate = useCallback(
+    async (
+      updates: Partial<KBEntry> | ((entry: KBEntry) => Partial<KBEntry>),
+      options: any = {}
+    ): Promise<BatchOperationResult> => {
+      if (!batchService) {
+        throw new Error('Batch service not available');
       }
 
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Update failed';
-
-      updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        error: errorMessage
-      });
-
-      throw error;
-    }
-  }, [batchService, selectedIds, updateOperationState, addToHistory, selectNone]);
-
-  const performBatchDelete = useCallback(async (
-    options: any = {}
-  ): Promise<BatchOperationResult> => {
-    if (!batchService) {
-      throw new Error('Batch service not available');
-    }
-
-    const entryIds = Array.from(selectedIds);
-    if (entryIds.length === 0) {
-      throw new Error('No entries selected for deletion');
-    }
-
-    updateOperationState({
-      activeOperation: 'delete',
-      isOperating: true,
-      error: null,
-      progress: null
-    });
-
-    try {
-      const result = await batchService.batchDelete(entryIds, options);
-
-      updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        lastResult: result,
-        progress: result.progress
-      });
-
-      addToHistory(
-        `delete_${Date.now()}`,
-        'delete',
-        result.success,
-        entryIds.length,
-        result.duration
-      );
-
-      if (result.success) {
-        // Clear selection after successful deletion
-        selectNone();
+      const entryIds = Array.from(selectedIds);
+      if (entryIds.length === 0) {
+        throw new Error('No entries selected for update');
       }
 
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Delete failed';
-
       updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        error: errorMessage
+        activeOperation: 'update',
+        isOperating: true,
+        error: null,
+        progress: null,
       });
 
-      throw error;
-    }
-  }, [batchService, selectedIds, updateOperationState, addToHistory, selectNone]);
+      try {
+        const result = await batchService.batchUpdate(entryIds, updates, options);
 
-  const performBatchDuplicate = useCallback(async (
-    options: any = {}
-  ): Promise<BatchOperationResult> => {
-    if (!batchService) {
-      throw new Error('Batch service not available');
-    }
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          lastResult: result,
+          progress: result.progress,
+        });
 
-    const entryIds = Array.from(selectedIds);
-    if (entryIds.length === 0) {
-      throw new Error('No entries selected for duplication');
-    }
+        addToHistory(
+          `update_${Date.now()}`,
+          'update',
+          result.success,
+          entryIds.length,
+          result.duration
+        );
 
-    updateOperationState({
-      activeOperation: 'duplicate',
-      isOperating: true,
-      error: null,
-      progress: null
-    });
+        if (result.success) {
+          // Clear selection after successful update
+          selectNone();
+        }
 
-    try {
-      const result = await batchService.batchDuplicate(entryIds, options);
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Update failed';
 
-      updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        lastResult: result,
-        progress: result.progress
-      });
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          error: errorMessage,
+        });
 
-      addToHistory(
-        `duplicate_${Date.now()}`,
-        'duplicate',
-        result.success,
-        entryIds.length,
-        result.duration
-      );
+        throw error;
+      }
+    },
+    [batchService, selectedIds, updateOperationState, addToHistory, selectNone]
+  );
 
-      // Don't clear selection after duplication (user might want to see originals)
+  const performBatchDelete = useCallback(
+    async (options: any = {}): Promise<BatchOperationResult> => {
+      if (!batchService) {
+        throw new Error('Batch service not available');
+      }
 
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Duplication failed';
-
-      updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        error: errorMessage
-      });
-
-      throw error;
-    }
-  }, [batchService, selectedIds, updateOperationState, addToHistory]);
-
-  const performBatchExport = useCallback(async (
-    format: string = 'json',
-    options: any = {}
-  ): Promise<BatchOperationResult> => {
-    if (!batchService) {
-      throw new Error('Batch service not available');
-    }
-
-    const entryIds = Array.from(selectedIds);
-    if (entryIds.length === 0) {
-      throw new Error('No entries selected for export');
-    }
-
-    updateOperationState({
-      activeOperation: 'export',
-      isOperating: true,
-      error: null,
-      progress: null
-    });
-
-    try {
-      const result = await batchService.batchExport(entryIds, format as any, options);
+      const entryIds = Array.from(selectedIds);
+      if (entryIds.length === 0) {
+        throw new Error('No entries selected for deletion');
+      }
 
       updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        lastResult: result,
-        progress: result.progress
+        activeOperation: 'delete',
+        isOperating: true,
+        error: null,
+        progress: null,
       });
 
-      addToHistory(
-        `export_${Date.now()}`,
-        `export_${format}`,
-        result.success,
-        entryIds.length,
-        result.duration
-      );
+      try {
+        const result = await batchService.batchDelete(entryIds, options);
 
-      // Don't clear selection after export (user might want to perform other operations)
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          lastResult: result,
+          progress: result.progress,
+        });
 
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Export failed';
+        addToHistory(
+          `delete_${Date.now()}`,
+          'delete',
+          result.success,
+          entryIds.length,
+          result.duration
+        );
+
+        if (result.success) {
+          // Clear selection after successful deletion
+          selectNone();
+        }
+
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Delete failed';
+
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          error: errorMessage,
+        });
+
+        throw error;
+      }
+    },
+    [batchService, selectedIds, updateOperationState, addToHistory, selectNone]
+  );
+
+  const performBatchDuplicate = useCallback(
+    async (options: any = {}): Promise<BatchOperationResult> => {
+      if (!batchService) {
+        throw new Error('Batch service not available');
+      }
+
+      const entryIds = Array.from(selectedIds);
+      if (entryIds.length === 0) {
+        throw new Error('No entries selected for duplication');
+      }
 
       updateOperationState({
-        activeOperation: null,
-        isOperating: false,
-        error: errorMessage
+        activeOperation: 'duplicate',
+        isOperating: true,
+        error: null,
+        progress: null,
       });
 
-      throw error;
-    }
-  }, [batchService, selectedIds, updateOperationState, addToHistory]);
+      try {
+        const result = await batchService.batchDuplicate(entryIds, options);
 
-  const performBatchOperation = useCallback(async (
-    operation: string,
-    entryIds: string[]
-  ): Promise<void> => {
-    if (!batchService) {
-      throw new Error('Batch service not available');
-    }
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          lastResult: result,
+          progress: result.progress,
+        });
 
-    // Update selection to match provided entry IDs
-    setSelectedIds(new Set(entryIds));
+        addToHistory(
+          `duplicate_${Date.now()}`,
+          'duplicate',
+          result.success,
+          entryIds.length,
+          result.duration
+        );
 
-    switch (operation) {
-      case 'edit':
-      case 'update':
-        await performBatchUpdate({});
-        break;
+        // Don't clear selection after duplication (user might want to see originals)
 
-      case 'delete':
-        await performBatchDelete();
-        break;
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Duplication failed';
 
-      case 'duplicate':
-        await performBatchDuplicate();
-        break;
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          error: errorMessage,
+        });
 
-      case 'export':
-        await performBatchExport('json');
-        break;
+        throw error;
+      }
+    },
+    [batchService, selectedIds, updateOperationState, addToHistory]
+  );
 
-      default:
-        throw new Error(`Unknown batch operation: ${operation}`);
-    }
-  }, [batchService, performBatchUpdate, performBatchDelete, performBatchDuplicate, performBatchExport]);
+  const performBatchExport = useCallback(
+    async (format: string = 'json', options: any = {}): Promise<BatchOperationResult> => {
+      if (!batchService) {
+        throw new Error('Batch service not available');
+      }
+
+      const entryIds = Array.from(selectedIds);
+      if (entryIds.length === 0) {
+        throw new Error('No entries selected for export');
+      }
+
+      updateOperationState({
+        activeOperation: 'export',
+        isOperating: true,
+        error: null,
+        progress: null,
+      });
+
+      try {
+        const result = await batchService.batchExport(entryIds, format as any, options);
+
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          lastResult: result,
+          progress: result.progress,
+        });
+
+        addToHistory(
+          `export_${Date.now()}`,
+          `export_${format}`,
+          result.success,
+          entryIds.length,
+          result.duration
+        );
+
+        // Don't clear selection after export (user might want to perform other operations)
+
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Export failed';
+
+        updateOperationState({
+          activeOperation: null,
+          isOperating: false,
+          error: errorMessage,
+        });
+
+        throw error;
+      }
+    },
+    [batchService, selectedIds, updateOperationState, addToHistory]
+  );
+
+  const performBatchOperation = useCallback(
+    async (operation: string, entryIds: string[]): Promise<void> => {
+      if (!batchService) {
+        throw new Error('Batch service not available');
+      }
+
+      // Update selection to match provided entry IDs
+      setSelectedIds(new Set(entryIds));
+
+      switch (operation) {
+        case 'edit':
+        case 'update':
+          await performBatchUpdate({});
+          break;
+
+        case 'delete':
+          await performBatchDelete();
+          break;
+
+        case 'duplicate':
+          await performBatchDuplicate();
+          break;
+
+        case 'export':
+          await performBatchExport('json');
+          break;
+
+        default:
+          throw new Error(`Unknown batch operation: ${operation}`);
+      }
+    },
+    [
+      batchService,
+      performBatchUpdate,
+      performBatchDelete,
+      performBatchDuplicate,
+      performBatchExport,
+    ]
+  );
 
   // Operation control
   const cancelCurrentOperation = useCallback(async (): Promise<boolean> => {
@@ -477,7 +486,7 @@ export const useBatchOperations = (
           activeOperation: null,
           isOperating: false,
           error: 'Operation cancelled by user',
-          progress: null
+          progress: null,
         });
       }
 
@@ -507,7 +516,7 @@ export const useBatchOperations = (
       updateOperationState({
         activeOperation: null,
         isOperating: false,
-        progress: event.progress
+        progress: event.progress,
       });
     };
 
@@ -516,7 +525,7 @@ export const useBatchOperations = (
         activeOperation: null,
         isOperating: false,
         error: event.error,
-        progress: event.progress
+        progress: event.progress,
       });
     };
 
@@ -525,7 +534,7 @@ export const useBatchOperations = (
         activeOperation: null,
         isOperating: false,
         error: 'Operation cancelled',
-        progress: null
+        progress: null,
       });
     };
 
@@ -580,7 +589,7 @@ export const useBatchOperations = (
     // Operation control
     cancelCurrentOperation,
     clearError,
-    clearHistory
+    clearHistory,
   };
 };
 

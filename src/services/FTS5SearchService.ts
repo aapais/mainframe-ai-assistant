@@ -22,7 +22,7 @@ import {
   FTS5QueryParser,
   ParsedQuery,
   SearchServiceConfig,
-  KBEntry
+  KBEntry,
 } from '../types/services';
 
 export interface FTS5DatabaseSchema {
@@ -84,7 +84,7 @@ export class FTS5SearchService extends EventEmitter {
     total_searches: 0,
     cache_hits: 0,
     avg_response_time: 0,
-    error_count: 0
+    error_count: 0,
   };
 
   // Prepared statements for performance
@@ -108,10 +108,7 @@ export class FTS5SearchService extends EventEmitter {
   /**
    * Main search method with comprehensive FTS5 support
    */
-  async search(
-    query: string,
-    options: FTS5SearchOptions = {}
-  ): Promise<PaginatedSearchResponse> {
+  async search(query: string, options: FTS5SearchOptions = {}): Promise<PaginatedSearchResponse> {
     const startTime = Date.now();
     this.stats.total_searches++;
 
@@ -147,9 +144,8 @@ export class FTS5SearchService extends EventEmitter {
         : [];
 
       // Get suggestions if query has few results
-      const suggestions = searchResults.results.length < 3
-        ? this.queryParser.suggest_corrections(query)
-        : [];
+      const suggestions =
+        searchResults.results.length < 3 ? this.queryParser.suggest_corrections(query) : [];
 
       const totalTime = Date.now() - startTime;
       this.updateAverageResponseTime(totalTime);
@@ -162,9 +158,9 @@ export class FTS5SearchService extends EventEmitter {
           original_query: query,
           parsed_query: parsedQuery.fts5_query,
           execution_time: searchResults.execution_time,
-          total_time: totalTime
+          total_time: totalTime,
         },
-        suggestions: suggestions.length > 0 ? suggestions : undefined
+        suggestions: suggestions.length > 0 ? suggestions : undefined,
       };
 
       // Cache the results
@@ -174,11 +170,10 @@ export class FTS5SearchService extends EventEmitter {
         query,
         options,
         results_count: searchResults.results.length,
-        total_time: totalTime
+        total_time: totalTime,
       });
 
       return response;
-
     } catch (error) {
       this.stats.error_count++;
       this.emit('search:error', { query, options, error: error.message });
@@ -189,10 +184,7 @@ export class FTS5SearchService extends EventEmitter {
   /**
    * Get search suggestions based on partial query
    */
-  async getSuggestions(
-    partialQuery: string,
-    limit: number = 10
-  ): Promise<string[]> {
+  async getSuggestions(partialQuery: string, limit: number = 10): Promise<string[]> {
     if (partialQuery.length < 2) {
       return [];
     }
@@ -244,13 +236,9 @@ export class FTS5SearchService extends EventEmitter {
       });
 
       // Combine and rank suggestions
-      const allSuggestions = [
-        ...historyResults.map(r => r.query),
-        ...Array.from(termSuggestions)
-      ];
+      const allSuggestions = [...historyResults.map(r => r.query), ...Array.from(termSuggestions)];
 
       return Array.from(new Set(allSuggestions)).slice(0, limit);
-
     } catch (error) {
       console.error('Error getting suggestions:', error);
       return [];
@@ -267,13 +255,11 @@ export class FTS5SearchService extends EventEmitter {
     error_rate: number;
     index_stats: any;
   } {
-    const cacheHitRate = this.stats.total_searches > 0
-      ? this.stats.cache_hits / this.stats.total_searches
-      : 0;
+    const cacheHitRate =
+      this.stats.total_searches > 0 ? this.stats.cache_hits / this.stats.total_searches : 0;
 
-    const errorRate = this.stats.total_searches > 0
-      ? this.stats.error_count / this.stats.total_searches
-      : 0;
+    const errorRate =
+      this.stats.total_searches > 0 ? this.stats.error_count / this.stats.total_searches : 0;
 
     // Get FTS5 index statistics
     const indexStats = this.getIndexStats();
@@ -283,7 +269,7 @@ export class FTS5SearchService extends EventEmitter {
       cache_hit_rate: Math.round(cacheHitRate * 100) / 100,
       avg_response_time: Math.round(this.stats.avg_response_time),
       error_rate: Math.round(errorRate * 100) / 100,
-      index_stats: indexStats
+      index_stats: indexStats,
     };
   }
 
@@ -301,7 +287,6 @@ export class FTS5SearchService extends EventEmitter {
       this.db.exec('INSERT INTO kb_fts(kb_fts) VALUES("optimize")');
 
       this.emit('index:rebuild_complete');
-
     } catch (error) {
       this.emit('index:rebuild_error', error);
       throw new Error(`Index rebuild failed: ${error.message}`);
@@ -337,9 +322,10 @@ export class FTS5SearchService extends EventEmitter {
 
   private createFTSSchema(): void {
     // Create FTS5 virtual table if it doesn't exist
-    const tokenizerConfig = this.config.fts.tokenizer === 'porter'
-      ? "tokenize = 'porter'"
-      : `tokenize = '${this.config.fts.tokenizer}'`;
+    const tokenizerConfig =
+      this.config.fts.tokenizer === 'porter'
+        ? "tokenize = 'porter'"
+        : `tokenize = '${this.config.fts.tokenizer}'`;
 
     this.db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS kb_fts USING fts5(
@@ -427,7 +413,7 @@ export class FTS5SearchService extends EventEmitter {
           AVG(usage_count) as avg_usage,
           MAX(created_at) as last_updated
         FROM kb_entries
-      `)
+      `),
     };
   }
 
@@ -455,12 +441,12 @@ export class FTS5SearchService extends EventEmitter {
         title: 2.0,
         problem: 1.5,
         solution: 1.2,
-        tags: 1.8
+        tags: 1.8,
       },
       date_range: options.date_range,
       userId: options.userId,
       sessionId: options.sessionId,
-      userContext: options.userContext
+      userContext: options.userContext,
     };
   }
 
@@ -501,11 +487,14 @@ export class FTS5SearchService extends EventEmitter {
     return {
       results,
       totalResults: total,
-      execution_time: executionTime
+      execution_time: executionTime,
     };
   }
 
-  private buildRankedFTSQuery(parsedQuery: ParsedQuery, options: Required<FTS5SearchOptions>): string {
+  private buildRankedFTSQuery(
+    parsedQuery: ParsedQuery,
+    options: Required<FTS5SearchOptions>
+  ): string {
     let query = parsedQuery.fts5_query;
 
     // Add field-specific boosts if specified
@@ -546,7 +535,9 @@ export class FTS5SearchService extends EventEmitter {
       const fieldMatches = this.analyzeFieldMatches(row, parsedQuery);
 
       // Generate snippet if requested
-      const snippet = options.include_snippets ? this.generateSnippet(row, parsedQuery, options.snippet_length) : undefined;
+      const snippet = options.include_snippets
+        ? this.generateSnippet(row, parsedQuery, options.snippet_length)
+        : undefined;
 
       const result: FTS5SearchResult = {
         entry: {
@@ -560,7 +551,7 @@ export class FTS5SearchService extends EventEmitter {
           updated_at: new Date(row.updated_at),
           usage_count: row.usage_count || 0,
           success_count: row.success_count || 0,
-          failure_count: row.failure_count || 0
+          failure_count: row.failure_count || 0,
         },
         score: enhancedScore,
         rank: index + 1 + (options.offset || 0),
@@ -574,8 +565,8 @@ export class FTS5SearchService extends EventEmitter {
           source: 'fts5',
           confidence: enhancedScore / 100,
           fallback: false,
-          originalQuery: parsedQuery.original
-        }
+          originalQuery: parsedQuery.original,
+        },
       };
 
       // Add debug info if requested
@@ -583,7 +574,7 @@ export class FTS5SearchService extends EventEmitter {
         result.debug_info = {
           query_rewrite: parsedQuery.fts5_query,
           execution_time: 0,
-          cache_hit: false
+          cache_hit: false,
         };
       }
 
@@ -611,7 +602,8 @@ export class FTS5SearchService extends EventEmitter {
     }
 
     // Recency boost
-    const daysSinceCreation = (Date.now() - new Date(row.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceCreation =
+      (Date.now() - new Date(row.created_at).getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceCreation < 30) {
       enhancedScore += weights.recency * (1 - daysSinceCreation / 30) * 10;
     }
@@ -716,7 +708,7 @@ export class FTS5SearchService extends EventEmitter {
       has_next: currentPage < totalPages,
       has_previous: currentPage > 1,
       next_offset: currentPage < totalPages ? offset + limit : undefined,
-      previous_offset: currentPage > 1 ? Math.max(0, offset - limit) : undefined
+      previous_offset: currentPage > 1 ? Math.max(0, offset - limit) : undefined,
     };
   }
 
@@ -736,9 +728,9 @@ export class FTS5SearchService extends EventEmitter {
           values: facetResults.map(r => ({
             value: r.category,
             count: r.count,
-            selected: r.category === options.category
-          }))
-        }
+            selected: r.category === options.category,
+          })),
+        },
       ];
     } catch (error) {
       console.error('Error generating facets:', error);
@@ -753,7 +745,7 @@ export class FTS5SearchService extends EventEmitter {
       offset: options.offset,
       category: options.category,
       sort_by: options.sort_by,
-      sort_order: options.sort_order
+      sort_order: options.sort_order,
     };
 
     return `search:${Buffer.from(JSON.stringify(keyData)).toString('base64')}`;
@@ -781,7 +773,7 @@ export class FTS5SearchService extends EventEmitter {
 
     this.cache.set(key, {
       results,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -798,9 +790,9 @@ export class FTS5SearchService extends EventEmitter {
   }
 
   private updateAverageResponseTime(responseTime: number): void {
-    this.stats.avg_response_time = (
-      (this.stats.avg_response_time * (this.stats.total_searches - 1)) + responseTime
-    ) / this.stats.total_searches;
+    this.stats.avg_response_time =
+      (this.stats.avg_response_time * (this.stats.total_searches - 1) + responseTime) /
+      this.stats.total_searches;
   }
 
   private getIndexStats(): any {
@@ -809,7 +801,7 @@ export class FTS5SearchService extends EventEmitter {
       return {
         total_entries: stats.total_entries || 0,
         avg_usage: Math.round(stats.avg_usage || 0),
-        last_updated: stats.last_updated
+        last_updated: stats.last_updated,
       };
     } catch (error) {
       return { error: error.message };

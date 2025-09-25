@@ -20,13 +20,13 @@ describe('DatabaseManager', () => {
       maxConnections: 5,
       backup: {
         enabled: false, // Disable backups for most tests
-        path: TEST_BACKUP_PATH
+        path: TEST_BACKUP_PATH,
       },
       queryCache: {
         enabled: true,
         maxSize: 100,
-        ttlMs: 60000
-      }
+        ttlMs: 60000,
+      },
     };
 
     dbManager = new DatabaseManager(testConfig);
@@ -46,14 +46,14 @@ describe('DatabaseManager', () => {
   describe('Initialization', () => {
     test('should initialize successfully', async () => {
       await expect(dbManager.initialize()).resolves.not.toThrow();
-      
+
       const health = await dbManager.getHealth();
       expect(health.connected).toBe(true);
     });
 
     test('should fail to initialize twice', async () => {
       await dbManager.initialize();
-      
+
       await expect(dbManager.initialize()).rejects.toThrow('already initialized');
     });
 
@@ -61,7 +61,7 @@ describe('DatabaseManager', () => {
       // Create a manager with invalid configuration
       const invalidConfig: DatabaseConfig = {
         path: '/invalid/path/database.db',
-        maxConnections: 0 // Invalid
+        maxConnections: 0, // Invalid
       };
 
       const invalidManager = new DatabaseManager(invalidConfig);
@@ -97,16 +97,16 @@ describe('DatabaseManager', () => {
       `);
 
       // Insert test data
-      await dbManager.query(
-        'INSERT INTO test_entries (id, title, category) VALUES (?, ?, ?)',
-        ['test-1', 'Test Entry', 'TEST']
-      );
+      await dbManager.query('INSERT INTO test_entries (id, title, category) VALUES (?, ?, ?)', [
+        'test-1',
+        'Test Entry',
+        'TEST',
+      ]);
 
       // Query with parameters
-      const result = await dbManager.query(
-        'SELECT * FROM test_entries WHERE category = ?',
-        ['TEST']
-      );
+      const result = await dbManager.query('SELECT * FROM test_entries WHERE category = ?', [
+        'TEST',
+      ]);
 
       expect(result.data).toHaveLength(1);
       expect(result.data[0].title).toBe('Test Entry');
@@ -128,16 +128,14 @@ describe('DatabaseManager', () => {
 
     test('should handle query errors with retry', async () => {
       // This should fail but be handled gracefully
-      await expect(
-        dbManager.query('SELECT * FROM non_existent_table')
-      ).rejects.toThrow();
+      await expect(dbManager.query('SELECT * FROM non_existent_table')).rejects.toThrow();
     });
   });
 
   describe('Transaction Management', () => {
     beforeEach(async () => {
       await dbManager.initialize();
-      
+
       await dbManager.query(`
         CREATE TABLE test_transactions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,10 +145,10 @@ describe('DatabaseManager', () => {
     });
 
     test('should execute successful transactions', async () => {
-      const result = await dbManager.transaction(async (db) => {
+      const result = await dbManager.transaction(async db => {
         db.prepare('INSERT INTO test_transactions (name) VALUES (?)').run('test1');
         db.prepare('INSERT INTO test_transactions (name) VALUES (?)').run('test2');
-        
+
         return 'transaction completed';
       });
 
@@ -163,9 +161,9 @@ describe('DatabaseManager', () => {
 
     test('should rollback failed transactions', async () => {
       try {
-        await dbManager.transaction(async (db) => {
+        await dbManager.transaction(async db => {
           db.prepare('INSERT INTO test_transactions (name) VALUES (?)').run('test1');
-          
+
           // This will cause the transaction to fail
           throw new Error('Transaction error');
         });
@@ -180,7 +178,7 @@ describe('DatabaseManager', () => {
 
     test('should handle transaction timeouts', async () => {
       const timeoutPromise = dbManager.transaction(
-        async (db) => {
+        async db => {
           // Simulate long-running operation
           await new Promise(resolve => setTimeout(resolve, 100));
           return 'completed';
@@ -211,7 +209,7 @@ describe('DatabaseManager', () => {
       // Create a scenario that would generate warnings
       // This is a simplified test - in practice, you'd need more complex scenarios
       const health = await dbManager.getHealth();
-      
+
       expect(typeof health.connected).toBe('boolean');
       expect(Array.isArray(health.issues)).toBe(true);
     });
@@ -228,7 +226,7 @@ describe('DatabaseManager', () => {
 
     test('should handle shutdown gracefully', async () => {
       await expect(dbManager.shutdown()).resolves.not.toThrow();
-      
+
       // Should not be able to query after shutdown
       await expect(dbManager.query('SELECT 1')).rejects.toThrow('not initialized');
     });
@@ -241,16 +239,16 @@ describe('DatabaseManager', () => {
 
     test('should handle invalid SQL', async () => {
       await dbManager.initialize();
-      
+
       await expect(dbManager.query('INVALID SQL')).rejects.toThrow();
     });
 
     test('should handle connection failures gracefully', async () => {
       await dbManager.initialize();
-      
+
       // Simulate connection failure by shutting down
       await dbManager.shutdown();
-      
+
       await expect(dbManager.query('SELECT 1')).rejects.toThrow();
     });
   });
@@ -270,7 +268,7 @@ describe('DataValidator', () => {
         problem: 'Job fails with VSAM status 35 indicating file not found',
         solution: 'Check if dataset exists and is properly cataloged',
         category: 'VSAM',
-        tags: ['vsam', 'status-35', 'file-not-found']
+        tags: ['vsam', 'status-35', 'file-not-found'],
       };
 
       const result = await validator.validateKBEntry(entry);
@@ -285,7 +283,7 @@ describe('DataValidator', () => {
         title: 'X', // Too short
         problem: 'Short', // Too short
         solution: 'Fix it', // Too short
-        category: 'INVALID_CATEGORY' // Invalid category
+        category: 'INVALID_CATEGORY', // Invalid category
       };
 
       const result = await validator.validateKBEntry(entry);
@@ -300,7 +298,7 @@ describe('DataValidator', () => {
         problem: 'Problem with\n\nextra   whitespace',
         solution: 'Solution with <script>alert("xss")</script> HTML',
         category: 'VSAM',
-        tags: ['  TAG1  ', '  tag2  '] // Whitespace in tags
+        tags: ['  TAG1  ', '  tag2  '], // Whitespace in tags
       };
 
       const result = await validator.validateKBEntry(entry);
@@ -315,7 +313,7 @@ describe('DataValidator', () => {
         title: 'DB2 Error',
         problem: 'Database problem without specific details',
         solution: 'Something needs to be done', // Vague solution
-        category: 'DB2'
+        category: 'DB2',
       };
 
       const result = await validator.validateKBEntry(entry);
@@ -330,7 +328,7 @@ describe('DataValidator', () => {
       const query = {
         query: 'VSAM status',
         category: 'VSAM',
-        limit: 10
+        limit: 10,
       };
 
       const result = await validator.validateSearchQuery(query);
@@ -341,7 +339,7 @@ describe('DataValidator', () => {
 
     test('should detect SQL injection attempts', async () => {
       const query = {
-        query: "'; DROP TABLE users; --"
+        query: "'; DROP TABLE users; --",
       };
 
       const result = await validator.validateSearchQuery(query);
@@ -352,7 +350,7 @@ describe('DataValidator', () => {
 
     test('should warn about short queries', async () => {
       const query = {
-        query: 'XY' // Very short
+        query: 'XY', // Very short
       };
 
       const result = await validator.validateSearchQuery(query);
@@ -372,8 +370,8 @@ describe('QueryBuilder', () => {
       prepare: jest.fn().mockReturnValue({
         all: jest.fn().mockReturnValue([]),
         run: jest.fn().mockReturnValue({ changes: 1, lastInsertRowid: 1 }),
-        get: jest.fn().mockReturnValue({})
-      })
+        get: jest.fn().mockReturnValue({}),
+      }),
     };
 
     queryBuilder = new QueryBuilder(mockDb);
@@ -381,10 +379,7 @@ describe('QueryBuilder', () => {
 
   describe('SELECT Queries', () => {
     test('should build simple SELECT query', () => {
-      const { sql, params } = queryBuilder
-        .select(['id', 'title'])
-        .from('kb_entries')
-        .toSQL();
+      const { sql, params } = queryBuilder.select(['id', 'title']).from('kb_entries').toSQL();
 
       expect(sql).toBe('SELECT id, title FROM kb_entries');
       expect(params).toHaveLength(0);
@@ -437,7 +432,7 @@ describe('QueryBuilder', () => {
         .values({
           id: 'test-id',
           title: 'Test Entry',
-          category: 'TEST'
+          category: 'TEST',
         })
         .toSQL();
 
@@ -477,13 +472,10 @@ describe('QueryBuilder', () => {
   describe('Query Execution', () => {
     test('should execute queries and return results', async () => {
       mockDb.prepare.mockReturnValue({
-        all: jest.fn().mockReturnValue([{ id: 1, name: 'test' }])
+        all: jest.fn().mockReturnValue([{ id: 1, name: 'test' }]),
       });
 
-      const result = await queryBuilder
-        .select(['*'])
-        .from('test_table')
-        .execute();
+      const result = await queryBuilder.select(['*']).from('test_table').execute();
 
       expect(result.data).toEqual([{ id: 1, name: 'test' }]);
       expect(result.fromCache).toBe(false);
@@ -495,9 +487,7 @@ describe('QueryBuilder', () => {
         throw new Error('SQL syntax error');
       });
 
-      await expect(
-        queryBuilder.select(['*']).from('invalid_table').execute()
-      ).rejects.toThrow();
+      await expect(queryBuilder.select(['*']).from('invalid_table').execute()).rejects.toThrow();
     });
   });
 });
@@ -508,23 +498,23 @@ describe('BackupSystem', () => {
 
   beforeEach(() => {
     testDbPath = path.join(__dirname, 'test.db');
-    
+
     backupSystem = new BackupSystem({
       backupPath: TEST_BACKUP_PATH,
       compression: true,
       retentionDays: 7,
-      verifyIntegrity: true
+      verifyIntegrity: true,
     });
   });
 
   afterEach(async () => {
     await backupSystem.shutdown();
-    
+
     // Clean up test files
     if (fs.existsSync(testDbPath)) {
       fs.unlinkSync(testDbPath);
     }
-    
+
     if (fs.existsSync(TEST_BACKUP_PATH)) {
       fs.rmSync(TEST_BACKUP_PATH, { recursive: true, force: true });
     }
@@ -533,7 +523,7 @@ describe('BackupSystem', () => {
   describe('Initialization', () => {
     test('should initialize backup system', async () => {
       await expect(backupSystem.initialize()).resolves.not.toThrow();
-      
+
       expect(fs.existsSync(TEST_BACKUP_PATH)).toBe(true);
     });
   });
@@ -541,7 +531,7 @@ describe('BackupSystem', () => {
   describe('Backup Operations', () => {
     beforeEach(async () => {
       await backupSystem.initialize();
-      
+
       // Create a test database
       const testDb = new Database(testDbPath);
       testDb.exec(`
@@ -554,14 +544,14 @@ describe('BackupSystem', () => {
     test('should create backup successfully', async () => {
       const result = await backupSystem.createBackup(testDbPath, {
         description: 'Test backup',
-        tags: ['test']
+        tags: ['test'],
       });
 
       expect(result.success).toBe(true);
       expect(result.backupId).toBeDefined();
       expect(result.checksum).toBeDefined();
       expect(result.originalSize).toBeGreaterThan(0);
-      
+
       if (result.compressedSize) {
         expect(result.compressionRatio).toBeGreaterThan(0);
       }
@@ -570,12 +560,12 @@ describe('BackupSystem', () => {
     test('should list backups', async () => {
       await backupSystem.createBackup(testDbPath, {
         description: 'Test backup 1',
-        tags: ['test']
+        tags: ['test'],
       });
 
       await backupSystem.createBackup(testDbPath, {
         description: 'Test backup 2',
-        tags: ['test', 'manual']
+        tags: ['test', 'manual'],
       });
 
       const backups = await backupSystem.listBackups();
@@ -583,20 +573,18 @@ describe('BackupSystem', () => {
 
       const filteredBackups = await backupSystem.listBackups({
         tags: ['manual'],
-        limit: 1
+        limit: 1,
       });
       expect(filteredBackups).toHaveLength(1);
     });
 
     test('should restore from backup', async () => {
       const backupResult = await backupSystem.createBackup(testDbPath);
-      
+
       const restorePath = path.join(__dirname, 'restored.db');
-      const restoreResult = await backupSystem.restore(
-        backupResult.backupId,
-        restorePath,
-        { verify: true }
-      );
+      const restoreResult = await backupSystem.restore(backupResult.backupId, restorePath, {
+        verify: true,
+      });
 
       expect(restoreResult.success).toBe(true);
       expect(restoreResult.verificationPassed).toBe(true);
@@ -604,7 +592,9 @@ describe('BackupSystem', () => {
 
       // Verify restored data
       const restoredDb = new Database(restorePath, { readonly: true });
-      const count = restoredDb.prepare('SELECT COUNT(*) as count FROM test_data').get() as { count: number };
+      const count = restoredDb.prepare('SELECT COUNT(*) as count FROM test_data').get() as {
+        count: number;
+      };
       expect(count.count).toBe(3);
       restoredDb.close();
 
@@ -614,9 +604,9 @@ describe('BackupSystem', () => {
 
     test('should delete backup', async () => {
       const backupResult = await backupSystem.createBackup(testDbPath);
-      
+
       await backupSystem.deleteBackup(backupResult.backupId);
-      
+
       const backups = await backupSystem.listBackups();
       expect(backups.find(b => b.id === backupResult.backupId)).toBeUndefined();
     });
@@ -640,15 +630,15 @@ describe('BackupSystem', () => {
     });
 
     test('should handle backup of non-existent file', async () => {
-      await expect(
-        backupSystem.createBackup('/non/existent/file.db')
-      ).rejects.toThrow('Source database not found');
+      await expect(backupSystem.createBackup('/non/existent/file.db')).rejects.toThrow(
+        'Source database not found'
+      );
     });
 
     test('should handle restore of non-existent backup', async () => {
-      await expect(
-        backupSystem.restore('non-existent-id', '/tmp/test.db')
-      ).rejects.toThrow('Backup not found');
+      await expect(backupSystem.restore('non-existent-id', '/tmp/test.db')).rejects.toThrow(
+        'Backup not found'
+      );
     });
   });
 });

@@ -23,7 +23,7 @@ export class PerformanceMonitoringUtils {
         isRegression: false,
         changePercent: 0,
         significance: 'low',
-        confidence: 0
+        confidence: 0,
       };
     }
 
@@ -37,11 +37,12 @@ export class PerformanceMonitoringUtils {
 
     const pooledStd = Math.sqrt(
       ((currentData.length - 1) * Math.pow(currentStd, 2) +
-       (historicalData.length - 1) * Math.pow(historicalStd, 2)) /
-      (currentData.length + historicalData.length - 2)
+        (historicalData.length - 1) * Math.pow(historicalStd, 2)) /
+        (currentData.length + historicalData.length - 2)
     );
 
-    const tStatistic = Math.abs(currentMean - historicalMean) /
+    const tStatistic =
+      Math.abs(currentMean - historicalMean) /
       (pooledStd * Math.sqrt(1 / currentData.length + 1 / historicalData.length));
 
     // Critical values for 95% confidence (approximate)
@@ -59,7 +60,7 @@ export class PerformanceMonitoringUtils {
       isRegression: isSignificant && Math.abs(changePercent) > 5,
       changePercent,
       significance,
-      confidence: Math.min(1, tStatistic / criticalValue)
+      confidence: Math.min(1, tStatistic / criticalValue),
     };
   }
 
@@ -86,7 +87,7 @@ export class PerformanceMonitoringUtils {
 
     return {
       anomalies,
-      threshold: { lower: lowerBound, upper: upperBound }
+      threshold: { lower: lowerBound, upper: upperBound },
     };
   }
 
@@ -128,7 +129,7 @@ export class PerformanceMonitoringUtils {
     return {
       passing,
       utilizationPercent: Math.max(0, utilizationPercent),
-      margin
+      margin,
     };
   }
 
@@ -149,13 +150,16 @@ export class PerformanceMonitoringUtils {
     }
 
     // Group metrics by type
-    const metricGroups = metrics.reduce((groups, metric) => {
-      if (!groups[metric.metric]) {
-        groups[metric.metric] = [];
-      }
-      groups[metric.metric].push(metric.value);
-      return groups;
-    }, {} as Record<string, number[]>);
+    const metricGroups = metrics.reduce(
+      (groups, metric) => {
+        if (!groups[metric.metric]) {
+          groups[metric.metric] = [];
+        }
+        groups[metric.metric].push(metric.value);
+        return groups;
+      },
+      {} as Record<string, number[]>
+    );
 
     Object.entries(metricGroups).forEach(([metricName, values]) => {
       const latest = values[values.length - 1];
@@ -245,7 +249,12 @@ export class PerformanceMonitoringUtils {
     byMetric: Record<string, number>;
     violations: Array<{ metric: string; value: number; threshold: number; timestamp: number }>;
   } {
-    const violations: Array<{ metric: string; value: number; threshold: number; timestamp: number }> = [];
+    const violations: Array<{
+      metric: string;
+      value: number;
+      threshold: number;
+      timestamp: number;
+    }> = [];
     const complianceByMetric: Record<string, number> = {};
 
     Object.keys(slaThresholds).forEach(metricName => {
@@ -264,7 +273,7 @@ export class PerformanceMonitoringUtils {
             metric: m.metric,
             value: m.value,
             threshold,
-            timestamp: m.timestamp
+            timestamp: m.timestamp,
           });
         }
         return isCompliant;
@@ -273,13 +282,14 @@ export class PerformanceMonitoringUtils {
       complianceByMetric[metricName] = (compliantCount / metricData.length) * 100;
     });
 
-    const overall = Object.values(complianceByMetric).reduce((sum, compliance) => sum + compliance, 0) /
-                    Object.values(complianceByMetric).length || 0;
+    const overall =
+      Object.values(complianceByMetric).reduce((sum, compliance) => sum + compliance, 0) /
+        Object.values(complianceByMetric).length || 0;
 
     return {
       overall,
       byMetric: complianceByMetric,
-      violations
+      violations,
     };
   }
 
@@ -399,7 +409,7 @@ export class ReactPerformanceUtils {
       return null;
     }
 
-    const observer = new PerformanceObserver((list) => {
+    const observer = new PerformanceObserver(list => {
       callback(list.getEntries());
     });
 
@@ -424,32 +434,34 @@ export class ReactPerformanceUtils {
   /**
    * Monitor Core Web Vitals
    */
-  static measureWebVitals(callback: (metric: { name: string; value: number; rating: string }) => void): void {
+  static measureWebVitals(
+    callback: (metric: { name: string; value: number; rating: string }) => void
+  ): void {
     // This would integrate with web-vitals library in a real implementation
     if (typeof PerformanceObserver !== 'undefined') {
       // Monitor Largest Contentful Paint
-      new PerformanceObserver((list) => {
+      new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'largest-contentful-paint') {
             const lcp = entry.startTime;
             callback({
               name: 'LCP',
               value: lcp,
-              rating: lcp <= 2500 ? 'good' : lcp <= 4000 ? 'needs-improvement' : 'poor'
+              rating: lcp <= 2500 ? 'good' : lcp <= 4000 ? 'needs-improvement' : 'poor',
             });
           }
         }
       }).observe({ entryTypes: ['largest-contentful-paint'] });
 
       // Monitor First Input Delay
-      new PerformanceObserver((list) => {
+      new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'first-input') {
             const fid = (entry as any).processingStart - entry.startTime;
             callback({
               name: 'FID',
               value: fid,
-              rating: fid <= 100 ? 'good' : fid <= 300 ? 'needs-improvement' : 'poor'
+              rating: fid <= 100 ? 'good' : fid <= 300 ? 'needs-improvement' : 'poor',
             });
           }
         }

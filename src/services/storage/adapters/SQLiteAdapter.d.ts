@@ -1,61 +1,82 @@
-import { IStorageAdapter, StorageTransaction, AdapterHealthStatus, SchemaInfo, AdapterConfig } from './IStorageAdapter';
-import { KBEntry, KBEntryInput, KBEntryUpdate, SearchResult, SearchOptions, ExportFormat, ImportFormat, ExportOptions, ImportOptions, ImportResult, OptimizationResult, DatabaseMetrics } from '../IStorageService';
+import {
+  IStorageAdapter,
+  StorageTransaction,
+  AdapterHealthStatus,
+  SchemaInfo,
+  AdapterConfig,
+} from './IStorageAdapter';
+import {
+  KBEntry,
+  KBEntryInput,
+  KBEntryUpdate,
+  SearchResult,
+  SearchOptions,
+  ExportFormat,
+  ImportFormat,
+  ExportOptions,
+  ImportOptions,
+  ImportResult,
+  OptimizationResult,
+  DatabaseMetrics,
+} from '../IStorageService';
 export declare class SQLiteAdapter implements IStorageAdapter {
-    private db;
-    private config;
-    private isInitialized;
-    private connectionStartTime;
-    private queryCount;
-    private errorCount;
-    constructor(config: AdapterConfig);
-    initialize(): Promise<void>;
-    close(): Promise<void>;
-    createEntry(entry: KBEntryInput): Promise<string>;
-    readEntry(id: string): Promise<KBEntry | null>;
-    updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean>;
-    deleteEntry(id: string): Promise<boolean>;
-    createEntries(entries: KBEntryInput[]): Promise<string[]>;
-    readEntries(ids: string[]): Promise<(KBEntry | null)[]>;
-    updateEntries(updates: Array<{
-        id: string;
-        updates: KBEntryUpdate;
-    }>): Promise<boolean[]>;
-    deleteEntries(ids: string[]): Promise<boolean[]>;
-    searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]>;
-    getPopularEntries(limit?: number): Promise<SearchResult[]>;
-    getRecentEntries(limit?: number): Promise<SearchResult[]>;
-    getSearchSuggestions(query: string, limit?: number): Promise<string[]>;
-    executeSQL(sql: string, params?: any[]): Promise<any>;
-    beginTransaction(): Promise<StorageTransaction>;
-    export(format: ExportFormat, options?: ExportOptions): Promise<string>;
-    import(data: string, format: ImportFormat, options?: ImportOptions): Promise<ImportResult>;
-    getMetrics(): Promise<DatabaseMetrics>;
-    optimize(): Promise<OptimizationResult>;
-    healthCheck(): Promise<AdapterHealthStatus>;
-    getSchemaInfo(): Promise<SchemaInfo>;
-    getConfig(): AdapterConfig;
-    updateConfig(config: Partial<AdapterConfig>): Promise<void>;
-    private ensureInitialized;
-    private applyPragmas;
-    private initializeSchema;
-    private createBaseSchema;
-    private createIndexes;
-    private enableQueryMonitoring;
-    private updateFTSIndex;
-    private updateFTSIndexForUpdate;
-    private mapRowToEntry;
-    private selectSearchStrategy;
-    private executeSearch;
-    private executeExactSearch;
-    private executeFTSSearch;
-    private executeFuzzySearch;
-    private executeCategorySearch;
-    private executeTagSearch;
-    private generateHighlights;
-    private prepareFTSQuery;
-    private updateSingleEntryInTransaction;
-    private getAllEntries;
-    private getTableInfo;
-    private getIndexInfo;
+  private db;
+  private config;
+  private isInitialized;
+  private connectionStartTime;
+  private queryCount;
+  private errorCount;
+  constructor(config: AdapterConfig);
+  initialize(): Promise<void>;
+  close(): Promise<void>;
+  createEntry(entry: KBEntryInput): Promise<string>;
+  readEntry(id: string): Promise<KBEntry | null>;
+  updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean>;
+  deleteEntry(id: string): Promise<boolean>;
+  createEntries(entries: KBEntryInput[]): Promise<string[]>;
+  readEntries(ids: string[]): Promise<(KBEntry | null)[]>;
+  updateEntries(
+    updates: Array<{
+      id: string;
+      updates: KBEntryUpdate;
+    }>
+  ): Promise<boolean[]>;
+  deleteEntries(ids: string[]): Promise<boolean[]>;
+  searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]>;
+  getPopularEntries(limit?: number): Promise<SearchResult[]>;
+  getRecentEntries(limit?: number): Promise<SearchResult[]>;
+  getSearchSuggestions(query: string, limit?: number): Promise<string[]>;
+  executeSQL(sql: string, params?: any[]): Promise<any>;
+  beginTransaction(): Promise<StorageTransaction>;
+  export(format: ExportFormat, options?: ExportOptions): Promise<string>;
+  import(data: string, format: ImportFormat, options?: ImportOptions): Promise<ImportResult>;
+  getMetrics(): Promise<DatabaseMetrics>;
+  optimize(): Promise<OptimizationResult>;
+  healthCheck(): Promise<AdapterHealthStatus>;
+  getSchemaInfo(): Promise<SchemaInfo>;
+  getConfig(): AdapterConfig;
+  updateConfig(config: Partial<AdapterConfig>): Promise<void>;
+  private ensureInitialized;
+  private applyPragmas;
+  private initializeSchema;
+  private createBaseSchema;
+  private createIndexes;
+  private enableQueryMonitoring;
+  private updateFTSIndex;
+  private updateFTSIndexForUpdate;
+  private mapRowToEntry;
+  private selectSearchStrategy;
+  private executeSearch;
+  private executeExactSearch;
+  private executeFTSSearch;
+  private executeFuzzySearch;
+  private executeCategorySearch;
+  private executeTagSearch;
+  private generateHighlights;
+  private prepareFTSQuery;
+  private updateSingleEntryInTransaction;
+  private getAllEntries;
+  private getTableInfo;
+  private getIndexInfo;
 }
 //# sourceMappingURL=SQLiteAdapter.d.ts.map

@@ -67,10 +67,7 @@ export class PerformanceMonitor extends EventEmitter {
   private metricsHistory: PerformanceMetrics[] = [];
   private maxHistorySize = 1440; // 24 hours at 1-minute intervals
 
-  constructor(
-    cacheOrchestrator: CacheOrchestrator,
-    cdnIntegration?: CDNIntegration
-  ) {
+  constructor(cacheOrchestrator: CacheOrchestrator, cdnIntegration?: CDNIntegration) {
     super();
     this.cacheOrchestrator = cacheOrchestrator;
     this.cdnIntegration = cdnIntegration;
@@ -79,7 +76,8 @@ export class PerformanceMonitor extends EventEmitter {
   }
 
   // Start performance monitoring
-  startMonitoring(interval: number = 60000): void { // Default: 1 minute
+  startMonitoring(interval: number = 60000): void {
+    // Default: 1 minute
     if (this.monitoring) {
       console.log('Performance monitoring already started');
       return;
@@ -138,7 +136,9 @@ export class PerformanceMonitor extends EventEmitter {
   // Set performance target
   setPerformanceTarget(target: PerformanceTarget): void {
     this.targets.set(target.metric, target);
-    console.log(`Performance target set: ${target.metric} - Target: ${target.target}${target.unit}`);
+    console.log(
+      `Performance target set: ${target.metric} - Target: ${target.target}${target.unit}`
+    );
   }
 
   // Check if performance targets are met
@@ -162,7 +162,7 @@ export class PerformanceMonitor extends EventEmitter {
         current: number;
         status: 'pass' | 'warning' | 'critical';
         unit: string;
-      }>
+      }>,
     };
 
     for (const [metric, target] of this.targets) {
@@ -185,7 +185,7 @@ export class PerformanceMonitor extends EventEmitter {
         target: target.target,
         current: currentValue,
         status,
-        unit: target.unit
+        unit: target.unit,
       });
     }
 
@@ -209,7 +209,7 @@ export class PerformanceMonitor extends EventEmitter {
   } {
     const hours = timeframe === '1h' ? 1 : timeframe === '24h' ? 24 : 168;
     const history = this.getMetricsHistory(hours);
-    
+
     // Calculate averages
     const avgCacheHitRate = this.calculateAverage(history, 'cache.hitRate');
     const avgResponseTime = this.calculateAverage(history, 'cache.avgResponseTime');
@@ -220,19 +220,17 @@ export class PerformanceMonitor extends EventEmitter {
     const cacheEfficiency = Math.min(100, Math.max(0, avgCacheHitRate));
     const responseTimeGrade = this.calculateResponseTimeGrade(avgResponseTime);
     const availability = Math.max(0, 100 - avgErrorRate);
-    
+
     // Overall score (weighted average)
     const overallScore = Math.round(
-      (cacheEfficiency * 0.3) +
-      (this.gradeToScore(responseTimeGrade) * 0.4) +
-      (availability * 0.3)
+      cacheEfficiency * 0.3 + this.gradeToScore(responseTimeGrade) * 0.4 + availability * 0.3
     );
 
     // Generate recommendations
     const recommendations = this.generateRecommendations({
       cacheHitRate: avgCacheHitRate,
       responseTime: avgResponseTime,
-      errorRate: avgErrorRate
+      errorRate: avgErrorRate,
     });
 
     return {
@@ -240,26 +238,26 @@ export class PerformanceMonitor extends EventEmitter {
         overallScore,
         cacheEfficiency,
         responseTimeGrade,
-        availability
+        availability,
       },
       details: {
         cache: {
           hitRate: avgCacheHitRate,
           responseTime: avgResponseTime,
-          memoryUsage: this.metrics.cache.memoryUsage
+          memoryUsage: this.metrics.cache.memoryUsage,
         },
         performance: {
           apiResponseTime: avgApiResponseTime,
           errorRate: avgErrorRate,
-          totalRequests: this.metrics.application.totalRequests
+          totalRequests: this.metrics.application.totalRequests,
         },
         alerts: {
           active: this.getActiveAlerts().length,
           total: this.getAllAlerts().length,
-          critical: this.getActiveAlerts().filter(a => a.severity === 'critical').length
-        }
+          critical: this.getActiveAlerts().filter(a => a.severity === 'critical').length,
+        },
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -273,12 +271,16 @@ export class PerformanceMonitor extends EventEmitter {
         avgResponseTime: cacheMetrics.overall.avgResponseTime || 0,
         memoryUsage: cacheMetrics.overall.memoryUsage || 0,
         operations: {
-          total: (cacheMetrics.memory?.hits || 0) + (cacheMetrics.memory?.misses || 0) + (cacheMetrics.redis?.hits || 0) + (cacheMetrics.redis?.misses || 0),
+          total:
+            (cacheMetrics.memory?.hits || 0) +
+            (cacheMetrics.memory?.misses || 0) +
+            (cacheMetrics.redis?.hits || 0) +
+            (cacheMetrics.redis?.misses || 0),
           hits: (cacheMetrics.memory?.hits || 0) + (cacheMetrics.redis?.hits || 0),
           misses: (cacheMetrics.memory?.misses || 0) + (cacheMetrics.redis?.misses || 0),
-          sets: (cacheMetrics.redis?.operations?.set || 0),
-          deletes: (cacheMetrics.redis?.operations?.del || 0)
-        }
+          sets: cacheMetrics.redis?.operations?.set || 0,
+          deletes: cacheMetrics.redis?.operations?.del || 0,
+        },
       };
 
       // Collect CDN metrics
@@ -286,10 +288,13 @@ export class PerformanceMonitor extends EventEmitter {
         const cdnMetrics = this.cdnIntegration.getMetrics();
         this.metrics.cdn = {
           enabled: true,
-          hitRate: cdnMetrics.hits > 0 ? (cdnMetrics.hits / (cdnMetrics.hits + cdnMetrics.misses)) * 100 : 0,
+          hitRate:
+            cdnMetrics.hits > 0
+              ? (cdnMetrics.hits / (cdnMetrics.hits + cdnMetrics.misses)) * 100
+              : 0,
           avgResponseTime: cdnMetrics.avgResponseTime,
           bandwidth: cdnMetrics.bandwidth,
-          requests: cdnMetrics.requests
+          requests: cdnMetrics.requests,
         };
       } else {
         this.metrics.cdn.enabled = false;
@@ -306,7 +311,6 @@ export class PerformanceMonitor extends EventEmitter {
       if (this.metricsHistory.length > this.maxHistorySize) {
         this.metricsHistory.shift();
       }
-
     } catch (error) {
       console.error('Error collecting performance metrics:', error);
     }
@@ -318,7 +322,7 @@ export class PerformanceMonitor extends EventEmitter {
       avgPageLoadTime: Math.random() * 2000 + 500, // 500-2500ms
       avgApiResponseTime: Math.random() * 500 + 100, // 100-600ms
       totalRequests: Math.floor(Math.random() * 1000) + this.metrics.application.totalRequests,
-      errorRate: Math.random() * 5 // 0-5%
+      errorRate: Math.random() * 5, // 0-5%
     };
   }
 
@@ -328,7 +332,7 @@ export class PerformanceMonitor extends EventEmitter {
       cpuUsage: Math.random() * 80 + 10, // 10-90%
       memoryUsage: Math.random() * 60 + 30, // 30-90%
       diskUsage: Math.random() * 30 + 50, // 50-80%
-      networkLatency: Math.random() * 50 + 10 // 10-60ms
+      networkLatency: Math.random() * 50 + 10, // 10-60ms
     };
   }
 
@@ -342,7 +346,7 @@ export class PerformanceMonitor extends EventEmitter {
       warning: 80,
       critical: 70,
       message: 'Cache hit rate is below target',
-      type: 'performance'
+      type: 'performance',
     });
 
     // Check response time
@@ -353,7 +357,7 @@ export class PerformanceMonitor extends EventEmitter {
       critical: 1000,
       message: 'Cache response time is above target',
       type: 'performance',
-      inverse: true // Higher values are worse
+      inverse: true, // Higher values are worse
     });
 
     // Check memory usage
@@ -364,7 +368,7 @@ export class PerformanceMonitor extends EventEmitter {
       critical: 90,
       message: 'System memory usage is high',
       type: 'performance',
-      inverse: true
+      inverse: true,
     });
 
     // Check error rate
@@ -375,24 +379,27 @@ export class PerformanceMonitor extends EventEmitter {
       critical: 5,
       message: 'Application error rate is high',
       type: 'error',
-      inverse: true
+      inverse: true,
     });
   }
 
-  private checkAlert(id: string, config: {
-    current: number;
-    target: number;
-    warning: number;
-    critical: number;
-    message: string;
-    type: 'performance' | 'availability' | 'error';
-    inverse?: boolean;
-  }): void {
+  private checkAlert(
+    id: string,
+    config: {
+      current: number;
+      target: number;
+      warning: number;
+      critical: number;
+      message: string;
+      type: 'performance' | 'availability' | 'error';
+      inverse?: boolean;
+    }
+  ): void {
     const { current, warning, critical, message, type, inverse = false } = config;
     const existingAlert = this.alerts.get(id);
-    
+
     let severity: 'low' | 'medium' | 'high' | 'critical' | null = null;
-    
+
     if (inverse) {
       if (current >= critical) severity = 'critical';
       else if (current >= warning) severity = 'high';
@@ -400,7 +407,7 @@ export class PerformanceMonitor extends EventEmitter {
       if (current <= critical) severity = 'critical';
       else if (current <= warning) severity = 'high';
     }
-    
+
     if (severity) {
       if (!existingAlert || existingAlert.resolved) {
         const alert: PerformanceAlert = {
@@ -411,9 +418,9 @@ export class PerformanceMonitor extends EventEmitter {
           threshold: severity === 'critical' ? critical : warning,
           currentValue: current,
           timestamp: Date.now(),
-          resolved: false
+          resolved: false,
         };
-        
+
         this.alerts.set(id, alert);
         this.emit('alert', alert);
         console.warn(`Performance Alert [${severity.toUpperCase()}]: ${message} (${current})`);
@@ -438,28 +445,28 @@ export class PerformanceMonitor extends EventEmitter {
           hits: 0,
           misses: 0,
           sets: 0,
-          deletes: 0
-        }
+          deletes: 0,
+        },
       },
       cdn: {
         enabled: false,
         hitRate: 0,
         avgResponseTime: 0,
         bandwidth: 0,
-        requests: 0
+        requests: 0,
       },
       application: {
         avgPageLoadTime: 0,
         avgApiResponseTime: 0,
         totalRequests: 0,
-        errorRate: 0
+        errorRate: 0,
       },
       system: {
         cpuUsage: 0,
         memoryUsage: 0,
         diskUsage: 0,
-        networkLatency: 0
-      }
+        networkLatency: 0,
+      },
     };
   }
 
@@ -469,7 +476,7 @@ export class PerformanceMonitor extends EventEmitter {
       target: 90,
       warning: 80,
       critical: 70,
-      unit: '%'
+      unit: '%',
     });
 
     this.setPerformanceTarget({
@@ -477,7 +484,7 @@ export class PerformanceMonitor extends EventEmitter {
       target: 100,
       warning: 500,
       critical: 1000,
-      unit: 'ms'
+      unit: 'ms',
     });
 
     this.setPerformanceTarget({
@@ -485,41 +492,41 @@ export class PerformanceMonitor extends EventEmitter {
       target: 200,
       warning: 1000,
       critical: 2000,
-      unit: 'ms'
+      unit: 'ms',
     });
   }
 
   private getMetricValue(metric: string): number {
     const parts = metric.split('.');
     let value: any = this.metrics;
-    
+
     for (const part of parts) {
       value = value?.[part];
       if (value === undefined) return 0;
     }
-    
+
     return typeof value === 'number' ? value : 0;
   }
 
   private calculateAverage(history: PerformanceMetrics[], metric: string): number {
     if (history.length === 0) return 0;
-    
+
     const sum = history.reduce((total, metrics) => {
       return total + this.getMetricValueFromObject(metrics, metric);
     }, 0);
-    
+
     return sum / history.length;
   }
 
   private getMetricValueFromObject(obj: any, metric: string): number {
     const parts = metric.split('.');
     let value = obj;
-    
+
     for (const part of parts) {
       value = value?.[part];
       if (value === undefined) return 0;
     }
-    
+
     return typeof value === 'number' ? value : 0;
   }
 
@@ -533,11 +540,16 @@ export class PerformanceMonitor extends EventEmitter {
 
   private gradeToScore(grade: 'A' | 'B' | 'C' | 'D' | 'F'): number {
     switch (grade) {
-      case 'A': return 95;
-      case 'B': return 85;
-      case 'C': return 75;
-      case 'D': return 65;
-      case 'F': return 50;
+      case 'A':
+        return 95;
+      case 'B':
+        return 85;
+      case 'C':
+        return 75;
+      case 'D':
+        return 65;
+      case 'F':
+        return 50;
     }
   }
 

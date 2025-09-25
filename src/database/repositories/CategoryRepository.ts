@@ -13,7 +13,7 @@ import {
   BulkCategoryOperation,
   BulkOperationResult,
   CategoryAnalytics,
-  HierarchicalSchemaValidator
+  HierarchicalSchemaValidator,
 } from '../schemas/HierarchicalCategories.schema';
 import { AppError, ErrorCode } from '../../core/errors/AppError';
 
@@ -36,14 +36,19 @@ export class CategoryRepository {
 
   private initializePreparedStatements(): void {
     // Basic CRUD operations
-    this.preparedStatements.set('insertCategory', this.db.prepare(`
+    this.preparedStatements.set(
+      'insertCategory',
+      this.db.prepare(`
       INSERT INTO categories (
         id, name, slug, description, parent_id, level, sort_order,
         icon, color, is_active, is_system, created_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('updateCategory', this.db.prepare(`
+    this.preparedStatements.set(
+      'updateCategory',
+      this.db.prepare(`
       UPDATE categories SET
         name = COALESCE(?, name),
         slug = COALESCE(?, slug),
@@ -55,28 +60,43 @@ export class CategoryRepository {
         is_active = COALESCE(?, is_active),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND is_system = FALSE
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('deleteCategory', this.db.prepare(`
+    this.preparedStatements.set(
+      'deleteCategory',
+      this.db.prepare(`
       DELETE FROM categories WHERE id = ? AND is_system = FALSE
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectById', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectById',
+      this.db.prepare(`
       SELECT * FROM v_category_stats WHERE id = ?
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectBySlug', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectBySlug',
+      this.db.prepare(`
       SELECT * FROM v_category_stats WHERE slug = ?
-    `));
+    `)
+    );
 
     // Hierarchy operations
-    this.preparedStatements.set('selectChildren', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectChildren',
+      this.db.prepare(`
       SELECT * FROM v_category_stats
       WHERE parent_id = ? AND is_active = ?
       ORDER BY sort_order ASC, name ASC
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectDescendants', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectDescendants',
+      this.db.prepare(`
       WITH RECURSIVE descendants AS (
         SELECT id, name, slug, parent_id, level, sort_order, is_active
         FROM categories
@@ -92,9 +112,12 @@ export class CategoryRepository {
       SELECT DISTINCT * FROM descendants
       WHERE is_active = ?
       ORDER BY level ASC, sort_order ASC, name ASC
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectAncestors', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectAncestors',
+      this.db.prepare(`
       WITH RECURSIVE ancestors AS (
         SELECT id, name, slug, parent_id, level
         FROM categories
@@ -109,24 +132,34 @@ export class CategoryRepository {
       SELECT * FROM ancestors
       WHERE id != ?
       ORDER BY level ASC
-    `));
+    `)
+    );
 
     // Bulk operations
-    this.preparedStatements.set('updateSortOrder', this.db.prepare(`
+    this.preparedStatements.set(
+      'updateSortOrder',
+      this.db.prepare(`
       UPDATE categories SET sort_order = ? WHERE id = ?
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('moveCategory', this.db.prepare(`
+    this.preparedStatements.set(
+      'moveCategory',
+      this.db.prepare(`
       UPDATE categories SET parent_id = ?, level = ? WHERE id = ?
-    `));
+    `)
+    );
 
     // Analytics
-    this.preparedStatements.set('updateCategoryAnalytics', this.db.prepare(`
+    this.preparedStatements.set(
+      'updateCategoryAnalytics',
+      this.db.prepare(`
       INSERT OR REPLACE INTO category_analytics (
         category_id, entry_count, view_count, search_count,
         success_rate, avg_resolution_time, last_updated
       ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `));
+    `)
+    );
   }
 
   /**
@@ -141,7 +174,9 @@ export class CategoryRepository {
 
       // Calculate level based on parent
       if (validatedData.parent_id) {
-        const parent = this.preparedStatements.get('selectById')!.get(validatedData.parent_id) as any;
+        const parent = this.preparedStatements
+          .get('selectById')!
+          .get(validatedData.parent_id) as any;
         if (!parent) {
           throw new AppError(ErrorCode.VALIDATION_ERROR, 'Parent category not found');
         }
@@ -151,7 +186,10 @@ export class CategoryRepository {
         level = parent.level + 1;
 
         if (level > 5) {
-          throw new AppError(ErrorCode.VALIDATION_ERROR, 'Maximum category depth exceeded (5 levels)');
+          throw new AppError(
+            ErrorCode.VALIDATION_ERROR,
+            'Maximum category depth exceeded (5 levels)'
+          );
         }
       }
 
@@ -162,20 +200,22 @@ export class CategoryRepository {
       }
 
       // Insert category
-      this.preparedStatements.get('insertCategory')!.run(
-        id,
-        validatedData.name,
-        validatedData.slug,
-        validatedData.description || null,
-        validatedData.parent_id || null,
-        level,
-        validatedData.sort_order || 0,
-        validatedData.icon || null,
-        validatedData.color || null,
-        validatedData.is_active !== false,
-        validatedData.is_system === true,
-        userId || 'system'
-      );
+      this.preparedStatements
+        .get('insertCategory')!
+        .run(
+          id,
+          validatedData.name,
+          validatedData.slug,
+          validatedData.description || null,
+          validatedData.parent_id || null,
+          level,
+          validatedData.sort_order || 0,
+          validatedData.icon || null,
+          validatedData.color || null,
+          validatedData.is_active !== false,
+          validatedData.is_system === true,
+          userId || 'system'
+        );
 
       return this.preparedStatements.get('selectById')!.get(id) as CategoryNode;
     });
@@ -207,7 +247,9 @@ export class CategoryRepository {
         }
 
         if (validatedUpdates.parent_id) {
-          const newParent = this.preparedStatements.get('selectById')!.get(validatedUpdates.parent_id) as any;
+          const newParent = this.preparedStatements
+            .get('selectById')!
+            .get(validatedUpdates.parent_id) as any;
           if (!newParent) {
             throw new AppError(ErrorCode.VALIDATION_ERROR, 'New parent category not found');
           }
@@ -228,24 +270,28 @@ export class CategoryRepository {
 
       // Check slug uniqueness if changing
       if (validatedUpdates.slug && validatedUpdates.slug !== existing.slug) {
-        const existingSlug = this.preparedStatements.get('selectBySlug')!.get(validatedUpdates.slug);
+        const existingSlug = this.preparedStatements
+          .get('selectBySlug')!
+          .get(validatedUpdates.slug);
         if (existingSlug) {
           throw new AppError(ErrorCode.VALIDATION_ERROR, 'Category slug already exists');
         }
       }
 
       // Update category
-      this.preparedStatements.get('updateCategory')!.run(
-        validatedUpdates.name,
-        validatedUpdates.slug,
-        validatedUpdates.description,
-        validatedUpdates.parent_id,
-        validatedUpdates.sort_order,
-        validatedUpdates.icon,
-        validatedUpdates.color,
-        validatedUpdates.is_active,
-        id
-      );
+      this.preparedStatements
+        .get('updateCategory')!
+        .run(
+          validatedUpdates.name,
+          validatedUpdates.slug,
+          validatedUpdates.description,
+          validatedUpdates.parent_id,
+          validatedUpdates.sort_order,
+          validatedUpdates.icon,
+          validatedUpdates.color,
+          validatedUpdates.is_active,
+          id
+        );
 
       // Update level if parent changed
       if (newLevel !== existing.level) {
@@ -282,9 +328,9 @@ export class CategoryRepository {
       }
 
       // Check for associated entries
-      const entryCount = this.db.prepare(
-        'SELECT COUNT(*) as count FROM kb_entries WHERE category_id = ?'
-      ).get(id) as any;
+      const entryCount = this.db
+        .prepare('SELECT COUNT(*) as count FROM kb_entries WHERE category_id = ?')
+        .get(id) as any;
 
       if (entryCount.count > 0) {
         throw new AppError(
@@ -296,7 +342,10 @@ export class CategoryRepository {
       // Delete category
       const result = this.preparedStatements.get('deleteCategory')!.run(id);
       if (result.changes === 0) {
-        throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'Category not found or is system category');
+        throw new AppError(
+          ErrorCode.RESOURCE_NOT_FOUND,
+          'Category not found or is system category'
+        );
       }
     });
 
@@ -339,20 +388,29 @@ export class CategoryRepository {
   /**
    * Get category children
    */
-  async getChildren(parentId: string | null, options: CategoryQueryOptions = {}): Promise<CategoryNode[]> {
+  async getChildren(
+    parentId: string | null,
+    options: CategoryQueryOptions = {}
+  ): Promise<CategoryNode[]> {
     const isActive = options.includeInactive ? undefined : true;
 
     if (parentId) {
-      return this.preparedStatements.get('selectChildren')!.all(parentId, isActive) as CategoryNode[];
+      return this.preparedStatements
+        .get('selectChildren')!
+        .all(parentId, isActive) as CategoryNode[];
     } else {
       // Get root categories
-      return this.db.prepare(`
+      return this.db
+        .prepare(
+          `
         SELECT * FROM v_category_stats
         WHERE parent_id IS NULL
         ${!options.includeInactive ? 'AND is_active = TRUE' : ''}
         ${!options.includeSystem ? 'AND is_system = FALSE' : ''}
         ORDER BY sort_order ASC, name ASC
-      `).all() as CategoryNode[];
+      `
+        )
+        .all() as CategoryNode[];
     }
   }
 
@@ -360,7 +418,9 @@ export class CategoryRepository {
    * Get category ancestors (breadcrumb path)
    */
   async getAncestors(categoryId: string): Promise<CategoryNode[]> {
-    return this.preparedStatements.get('selectAncestors')!.all(categoryId, categoryId) as CategoryNode[];
+    return this.preparedStatements
+      .get('selectAncestors')!
+      .all(categoryId, categoryId) as CategoryNode[];
   }
 
   /**
@@ -373,11 +433,9 @@ export class CategoryRepository {
     const maxDepth = options.maxDepth || 5;
     const isActive = options.includeInactive ? undefined : true;
 
-    return this.preparedStatements.get('selectDescendants')!.all(
-      parentId,
-      maxDepth,
-      isActive
-    ) as CategoryNode[];
+    return this.preparedStatements
+      .get('selectDescendants')!
+      .all(parentId, maxDepth, isActive) as CategoryNode[];
   }
 
   /**
@@ -470,7 +528,7 @@ export class CategoryRepository {
       failed: 0,
       errors: [],
       execution_time: 0,
-      transaction_id: transactionId
+      transaction_id: transactionId,
     };
 
     const transaction = this.db.transaction(() => {
@@ -509,7 +567,7 @@ export class CategoryRepository {
           result.errors.push({
             item_id: item.id,
             error: error instanceof Error ? error.message : 'Unknown error',
-            details: { item }
+            details: { item },
           });
         }
       }
@@ -521,10 +579,12 @@ export class CategoryRepository {
       // Transaction failed, all operations rolled back
       result.failed = result.total_items;
       result.successful = 0;
-      result.errors = [{
-        error: error instanceof Error ? error.message : 'Transaction failed',
-        details: { operation }
-      }];
+      result.errors = [
+        {
+          error: error instanceof Error ? error.message : 'Transaction failed',
+          details: { operation },
+        },
+      ];
     }
 
     result.execution_time = Date.now() - startTime;
@@ -535,7 +595,9 @@ export class CategoryRepository {
    * Get category analytics
    */
   async getAnalytics(categoryId: string): Promise<CategoryAnalytics | null> {
-    const analytics = this.db.prepare(`
+    const analytics = this.db
+      .prepare(
+        `
       SELECT
         ca.*,
         (
@@ -556,7 +618,9 @@ export class CategoryRepository {
         ) as top_tags_json
       FROM category_analytics ca
       WHERE ca.category_id = ?
-    `).get(categoryId) as any;
+    `
+      )
+      .get(categoryId) as any;
 
     if (!analytics) return null;
 
@@ -573,7 +637,7 @@ export class CategoryRepository {
     return {
       ...analytics,
       top_tags: topTags,
-      last_updated: new Date(analytics.last_updated)
+      last_updated: new Date(analytics.last_updated),
     };
   }
 
@@ -581,30 +645,39 @@ export class CategoryRepository {
    * Update category analytics
    */
   async updateAnalytics(categoryId: string, analytics: Partial<CategoryAnalytics>): Promise<void> {
-    this.preparedStatements.get('updateCategoryAnalytics')!.run(
-      categoryId,
-      analytics.entry_count || 0,
-      analytics.view_count || 0,
-      analytics.search_count || 0,
-      analytics.success_rate || 0,
-      analytics.avg_resolution_time || null
-    );
+    this.preparedStatements
+      .get('updateCategoryAnalytics')!
+      .run(
+        categoryId,
+        analytics.entry_count || 0,
+        analytics.view_count || 0,
+        analytics.search_count || 0,
+        analytics.success_rate || 0,
+        analytics.avg_resolution_time || null
+      );
   }
 
   /**
    * Private helper methods
    */
   private getRootCategories(options: CategoryQueryOptions): CategoryNode[] {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT * FROM v_category_stats
       WHERE parent_id IS NULL
       ${!options.includeInactive ? 'AND is_active = TRUE' : ''}
       ${!options.includeSystem ? 'AND is_system = FALSE' : ''}
       ORDER BY sort_order ASC, name ASC
-    `).all() as CategoryNode[];
+    `
+      )
+      .all() as CategoryNode[];
   }
 
-  private buildCategoryTrees(categories: CategoryNode[], options: CategoryQueryOptions): CategoryTree[] {
+  private buildCategoryTrees(
+    categories: CategoryNode[],
+    options: CategoryQueryOptions
+  ): CategoryTree[] {
     return categories.map(category => {
       const children = this.getChildren(category.id, options);
       const ancestors = this.getAncestors(category.id);
@@ -616,8 +689,8 @@ export class CategoryRepository {
         breadcrumbs: ancestors.map(a => ({
           id: a.id,
           name: a.name,
-          slug: a.slug
-        }))
+          slug: a.slug,
+        })),
       };
     });
   }
@@ -632,7 +705,9 @@ export class CategoryRepository {
     this.db.prepare('UPDATE categories SET level = ? WHERE id = ?').run(newLevel, rootId);
 
     // Update all descendants
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       WITH RECURSIVE descendants AS (
         SELECT id, level
         FROM categories
@@ -648,7 +723,9 @@ export class CategoryRepository {
         SELECT level FROM descendants WHERE descendants.id = categories.id
       )
       WHERE id IN (SELECT id FROM descendants)
-    `).run(rootId);
+    `
+      )
+      .run(rootId);
   }
 
   /**

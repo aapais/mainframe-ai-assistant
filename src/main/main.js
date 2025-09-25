@@ -4,7 +4,7 @@ const fs = require('fs');
 
 // Error logging
 const logFile = path.join(__dirname, '../../electron-error.log');
-const logError = (msg) => {
+const logError = msg => {
   const timestamp = new Date().toISOString();
   const logMsg = `[${timestamp}] ${msg}\n`;
   console.error(logMsg);
@@ -41,99 +41,99 @@ async function createWindow() {
   try {
     // Create the browser window with Accenture branding
     mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    minWidth: 800,
-    minHeight: 600,
-    icon: path.join(__dirname, '../../build/icon.png'),
-    title: 'Accenture Mainframe AI Assistant',
-    show: false, // Don't show until ready
-    webPreferences: {
-      nodeIntegration: false, // Security best practice
-      contextIsolation: true, // Security best practice
-      enableRemoteModule: false, // Security best practice
-      preload: path.join(__dirname, 'preload.js'), // Secure communication
-      webSecurity: true,
-      allowRunningInsecureContent: false,
-      experimentalFeatures: false
-    },
-    // Professional window styling
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    backgroundColor: '#A100FF', // Accenture purple
-    autoHideMenuBar: false, // Show menu bar
-    frame: true,
-    resizable: true,
-    maximizable: true,
-    minimizable: true,
-    closable: true
-  });
+      width: 1400,
+      height: 900,
+      minWidth: 800,
+      minHeight: 600,
+      icon: path.join(__dirname, '../../build/icon.png'),
+      title: 'Accenture Mainframe AI Assistant',
+      show: false, // Don't show until ready
+      webPreferences: {
+        nodeIntegration: false, // Security best practice
+        contextIsolation: true, // Security best practice
+        enableRemoteModule: false, // Security best practice
+        preload: path.join(__dirname, 'preload.js'), // Secure communication
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
+      },
+      // Professional window styling
+      titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+      backgroundColor: '#A100FF', // Accenture purple
+      autoHideMenuBar: false, // Show menu bar
+      frame: true,
+      resizable: true,
+      maximizable: true,
+      minimizable: true,
+      closable: true,
+    });
 
-  // Load the app - Enhanced loading logic with multiple fallbacks
-  const loadApp = async () => {
-    const possiblePaths = [
-      // First priority: Built React app
-      path.join(__dirname, '../../dist/renderer/index.html'),
-      // Second priority: Development build
-      path.join(__dirname, '../../dist/index.html'),
-      // Third priority: Root index.html
-      path.join(__dirname, '../../index.html'),
-      // Fourth priority: Fallback HTML in main directory
-      path.join(__dirname, 'fallback.html')
-    ];
+    // Load the app - Enhanced loading logic with multiple fallbacks
+    const loadApp = async () => {
+      const possiblePaths = [
+        // First priority: Built React app
+        path.join(__dirname, '../../dist/renderer/index.html'),
+        // Second priority: Development build
+        path.join(__dirname, '../../dist/index.html'),
+        // Third priority: Root index.html
+        path.join(__dirname, '../../index.html'),
+        // Fourth priority: Fallback HTML in main directory
+        path.join(__dirname, 'fallback.html'),
+      ];
 
-    let indexPath = null;
-    let appType = 'unknown';
+      let indexPath = null;
+      let appType = 'unknown';
 
-    for (const testPath of possiblePaths) {
-      if (fs.existsSync(testPath)) {
-        indexPath = testPath;
-        if (testPath.includes('dist/renderer')) {
-          appType = 'React Production Build';
-        } else if (testPath.includes('dist/index.html')) {
-          appType = 'Development Build';
-        } else if (testPath.includes('index.html')) {
-          appType = 'Basic HTML';
-        } else {
-          appType = 'Fallback HTML';
+      for (const testPath of possiblePaths) {
+        if (fs.existsSync(testPath)) {
+          indexPath = testPath;
+          if (testPath.includes('dist/renderer')) {
+            appType = 'React Production Build';
+          } else if (testPath.includes('dist/index.html')) {
+            appType = 'Development Build';
+          } else if (testPath.includes('index.html')) {
+            appType = 'Basic HTML';
+          } else {
+            appType = 'Fallback HTML';
+          }
+          break;
         }
-        break;
       }
-    }
 
-    if (!indexPath) {
-      logError('CRITICAL: No index.html found anywhere! Creating emergency fallback...');
-      await createEmergencyFallback();
-      indexPath = path.join(__dirname, 'emergency.html');
-      appType = 'Emergency Fallback';
-    }
-
-    logError(`Loading ${appType} from: ${indexPath}`);
-
-    try {
-      await mainWindow.loadFile(indexPath);
-      logError(`Successfully loaded ${appType}`);
-
-      // Send app type info to renderer if it's ready
-      setTimeout(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('app-loaded', { type: appType, path: indexPath });
-        }
-      }, 1000);
-    } catch (error) {
-      logError(`Failed to load ${appType}: ${error.message}`);
-      if (appType !== 'Emergency Fallback') {
-        logError('Attempting emergency fallback...');
+      if (!indexPath) {
+        logError('CRITICAL: No index.html found anywhere! Creating emergency fallback...');
         await createEmergencyFallback();
-        await mainWindow.loadFile(path.join(__dirname, 'emergency.html'));
-      } else {
-        throw new Error('All loading attempts failed');
+        indexPath = path.join(__dirname, 'emergency.html');
+        appType = 'Emergency Fallback';
       }
-    }
-  };
 
-  // Create emergency fallback HTML
-  const createEmergencyFallback = async () => {
-    const emergencyHtml = `<!DOCTYPE html>
+      logError(`Loading ${appType} from: ${indexPath}`);
+
+      try {
+        await mainWindow.loadFile(indexPath);
+        logError(`Successfully loaded ${appType}`);
+
+        // Send app type info to renderer if it's ready
+        setTimeout(() => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('app-loaded', { type: appType, path: indexPath });
+          }
+        }, 1000);
+      } catch (error) {
+        logError(`Failed to load ${appType}: ${error.message}`);
+        if (appType !== 'Emergency Fallback') {
+          logError('Attempting emergency fallback...');
+          await createEmergencyFallback();
+          await mainWindow.loadFile(path.join(__dirname, 'emergency.html'));
+        } else {
+          throw new Error('All loading attempts failed');
+        }
+      }
+    };
+
+    // Create emergency fallback HTML
+    const createEmergencyFallback = async () => {
+      const emergencyHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -251,54 +251,54 @@ async function createWindow() {
 </body>
 </html>`;
 
-    try {
-      const emergencyPath = path.join(__dirname, 'emergency.html');
-      fs.writeFileSync(emergencyPath, emergencyHtml);
-      logError('Emergency fallback HTML created');
-    } catch (error) {
-      logError(`Failed to create emergency fallback: ${error.message}`);
-    }
-  };
+      try {
+        const emergencyPath = path.join(__dirname, 'emergency.html');
+        fs.writeFileSync(emergencyPath, emergencyHtml);
+        logError('Emergency fallback HTML created');
+      } catch (error) {
+        logError(`Failed to create emergency fallback: ${error.message}`);
+      }
+    };
 
-  await loadApp();
+    await loadApp();
 
-  // Show window when ready to prevent visual flash
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
+    // Show window when ready to prevent visual flash
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.show();
+      mainWindow.focus();
 
-    // Only open dev tools in development
-    if (isDev) {
-      mainWindow.webContents.openDevTools();
-    }
-  });
+      // Only open dev tools in development
+      if (isDev) {
+        mainWindow.webContents.openDevTools();
+      }
+    });
 
-  // Handle window closed
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+    // Handle window closed
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
 
-  // Handle external links - open in default browser
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
-  });
+    // Handle external links - open in default browser
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
 
-  // Security: Prevent navigation to external sites
-  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-    // Only allow file:// protocol for security
-    if (!navigationUrl.startsWith('file://')) {
+    // Security: Prevent navigation to external sites
+    mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+      // Only allow file:// protocol for security
+      if (!navigationUrl.startsWith('file://')) {
+        event.preventDefault();
+      }
+    });
+
+    // Security: Prevent new window creation
+    mainWindow.webContents.on('new-window', (event, navigationUrl) => {
       event.preventDefault();
-    }
-  });
+      shell.openExternal(navigationUrl);
+    });
 
-  // Security: Prevent new window creation
-  mainWindow.webContents.on('new-window', (event, navigationUrl) => {
-    event.preventDefault();
-    shell.openExternal(navigationUrl);
-  });
-
-  logError('Main window created successfully');
+    logError('Main window created successfully');
   } catch (error) {
     logError(`Failed to create window: ${error.message}\n${error.stack}`);
     throw error;
@@ -381,7 +381,7 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-new-entry');
             }
-          }
+          },
         },
         {
           label: 'Import Data',
@@ -392,14 +392,14 @@ function createApplicationMenu() {
               filters: [
                 { name: 'JSON', extensions: ['json'] },
                 { name: 'CSV', extensions: ['csv'] },
-                { name: 'All Files', extensions: ['*'] }
-              ]
+                { name: 'All Files', extensions: ['*'] },
+              ],
             });
 
             if (!result.canceled && result.filePaths.length > 0) {
               mainWindow.webContents.send('menu-import-file', result.filePaths[0]);
             }
-          }
+          },
         },
         { type: 'separator' },
         {
@@ -407,9 +407,9 @@ function createApplicationMenu() {
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
           click: () => {
             app.quit();
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Edit',
@@ -420,8 +420,8 @@ function createApplicationMenu() {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        { role: 'selectall' }
-      ]
+        { role: 'selectall' },
+      ],
     },
     {
       label: 'View',
@@ -434,8 +434,8 @@ function createApplicationMenu() {
         { role: 'zoomIn' },
         { role: 'zoomOut' },
         { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
+        { role: 'togglefullscreen' },
+      ],
     },
     {
       label: 'Search',
@@ -447,7 +447,7 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-search');
             }
-          }
+          },
         },
         {
           label: 'Advanced Search',
@@ -456,9 +456,9 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-advanced-search');
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Tools',
@@ -469,22 +469,20 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-performance');
             }
-          }
+          },
         },
         {
           label: 'Database Backup',
           click: async () => {
             const result = await dialog.showSaveDialog(mainWindow, {
               defaultPath: `mainframe-backup-${new Date().toISOString().split('T')[0]}.json`,
-              filters: [
-                { name: 'JSON', extensions: ['json'] }
-              ]
+              filters: [{ name: 'JSON', extensions: ['json'] }],
             });
 
             if (!result.canceled) {
               mainWindow.webContents.send('menu-backup', result.filePath);
             }
-          }
+          },
         },
         { type: 'separator' },
         {
@@ -494,7 +492,7 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-api-settings');
             }
-          }
+          },
         },
         {
           label: 'Settings',
@@ -503,9 +501,9 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-settings');
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Help',
@@ -518,24 +516,24 @@ function createApplicationMenu() {
               title: 'About',
               message: 'Accenture Mainframe AI Assistant',
               detail: `Version: ${app.getVersion()}\nEnterprise Knowledge Management & AI-Powered Search\n\n© 2024 Accenture. All rights reserved.`,
-              buttons: ['OK']
+              buttons: ['OK'],
             });
-          }
+          },
         },
         {
           label: 'User Guide',
           click: () => {
             shell.openExternal('https://www.accenture.com/mainframe-ai-assistant/help');
-          }
+          },
         },
         {
           label: 'Report Issue',
           click: () => {
             shell.openExternal('https://www.accenture.com/mainframe-ai-assistant/support');
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   // macOS specific menu adjustments
@@ -551,8 +549,8 @@ function createApplicationMenu() {
         { role: 'hideothers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
-      ]
+        { role: 'quit' },
+      ],
     });
 
     // Edit menu
@@ -560,10 +558,7 @@ function createApplicationMenu() {
       { type: 'separator' },
       {
         label: 'Speech',
-        submenu: [
-          { role: 'startspeaking' },
-          { role: 'stopspeaking' }
-        ]
+        submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }],
       }
     );
 
@@ -575,8 +570,8 @@ function createApplicationMenu() {
         { role: 'minimize' },
         { role: 'zoom' },
         { type: 'separator' },
-        { role: 'front' }
-      ]
+        { role: 'front' },
+      ],
     });
   }
 
@@ -614,13 +609,13 @@ ipcMain.handle('check-for-updates', () => {
 });
 
 // Graceful shutdown
-app.on('before-quit', (event) => {
+app.on('before-quit', event => {
   logError('App is quitting...');
   // Perform cleanup here if needed
 });
 
 // Global error handlers
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logError(`Uncaught Exception: ${error.message}\n${error.stack}`);
 });
 

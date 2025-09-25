@@ -139,7 +139,6 @@ export class CacheService extends EventEmitter {
       }
 
       return null;
-
     } catch (error) {
       console.error('Cache get error:', error);
       this.recordMiss(keyString, performance.now() - startTime);
@@ -150,11 +149,15 @@ export class CacheService extends EventEmitter {
   /**
    * Set cached value with intelligent storage
    */
-  async set<T>(key: CacheKey, value: T, options?: {
-    ttl?: number;
-    priority?: 'low' | 'medium' | 'high' | 'critical';
-    metadata?: Record<string, any>;
-  }): Promise<boolean> {
+  async set<T>(
+    key: CacheKey,
+    value: T,
+    options?: {
+      ttl?: number;
+      priority?: 'low' | 'medium' | 'high' | 'critical';
+      metadata?: Record<string, any>;
+    }
+  ): Promise<boolean> {
     const keyString = this.generateCacheKey(key);
 
     try {
@@ -168,7 +171,6 @@ export class CacheService extends EventEmitter {
 
       this.emit('cache-set', { key: keyString, size: this.estimateSize(value) });
       return success;
-
     } catch (error) {
       console.error('Cache set error:', error);
       return false;
@@ -189,7 +191,6 @@ export class CacheService extends EventEmitter {
       }
 
       return result;
-
     } catch (error) {
       console.error('Cache delete error:', error);
       return false;
@@ -245,18 +246,21 @@ export class CacheService extends EventEmitter {
       const result = await operation;
 
       // Cache the complete result
-      await this.set({
-        type: 'data',
-        id: request.id,
-        params: { query: request.query }
-      }, result, {
-        ttl: 600000, // 10 minutes
-        priority: request.priority,
-        metadata: { incremental: true, size: result.length }
-      });
+      await this.set(
+        {
+          type: 'data',
+          id: request.id,
+          params: { query: request.query },
+        },
+        result,
+        {
+          ttl: 600000, // 10 minutes
+          priority: request.priority,
+          metadata: { incremental: true, size: result.length },
+        }
+      );
 
       return result;
-
     } finally {
       this.activeOperations.delete(operationId);
     }
@@ -265,10 +269,7 @@ export class CacheService extends EventEmitter {
   /**
    * Warm cache with intelligent strategies
    */
-  async warmCache(
-    strategy?: string,
-    userContext?: UserContext
-  ): Promise<any> {
+  async warmCache(strategy?: string, userContext?: UserContext): Promise<any> {
     if (!this.cacheWarmer) {
       throw new Error('Cache warmer not initialized');
     }
@@ -282,7 +283,7 @@ export class CacheService extends EventEmitter {
         hitRate: metrics.overall.cacheHits / metrics.overall.totalRequests,
         avgResponseTime: metrics.overall.averageResponseTime,
         throughput: metrics.overall.throughput,
-        errorRate: 0 // Would be calculated from error tracking
+        errorRate: 0, // Would be calculated from error tracking
       });
     }
   }
@@ -290,11 +291,7 @@ export class CacheService extends EventEmitter {
   /**
    * Record search event for predictive caching
    */
-  recordSearchEvent(
-    sessionId: string,
-    event: SearchEvent,
-    userId?: string
-  ): void {
+  recordSearchEvent(sessionId: string, event: SearchEvent, userId?: string): void {
     if (this.predictiveCache) {
       this.predictiveCache.recordSearchEvent(sessionId, event, userId);
     }
@@ -332,8 +329,7 @@ export class CacheService extends EventEmitter {
     hotKeys: Array<{ key: string; hitCount: number; avgResponseTime: number }>;
     recommendations: string[];
   } {
-    const recentRequests = this.requestHistory
-      .filter(r => Date.now() - r.timestamp < 3600000); // Last hour
+    const recentRequests = this.requestHistory.filter(r => Date.now() - r.timestamp < 3600000); // Last hour
 
     if (recentRequests.length === 0) {
       return {
@@ -342,7 +338,7 @@ export class CacheService extends EventEmitter {
         averageResponseTime: 0,
         throughput: 0,
         hotKeys: [],
-        recommendations: ['No cache activity in the last hour']
+        recommendations: ['No cache activity in the last hour'],
       };
     }
 
@@ -350,20 +346,23 @@ export class CacheService extends EventEmitter {
     const hitRate = hits.length / recentRequests.length;
     const missRate = 1 - hitRate;
 
-    const averageResponseTime = recentRequests
-      .reduce((sum, r) => sum + r.responseTime, 0) / recentRequests.length;
+    const averageResponseTime =
+      recentRequests.reduce((sum, r) => sum + r.responseTime, 0) / recentRequests.length;
 
     const throughput = recentRequests.length / 3600; // requests per second
 
     // Calculate hot keys
-    const keyStats = new Map<string, { hitCount: number; totalResponseTime: number; requests: number }>();
+    const keyStats = new Map<
+      string,
+      { hitCount: number; totalResponseTime: number; requests: number }
+    >();
 
     recentRequests.forEach(r => {
       const current = keyStats.get(r.key) || { hitCount: 0, totalResponseTime: 0, requests: 0 };
       keyStats.set(r.key, {
         hitCount: current.hitCount + (r.hit ? 1 : 0),
         totalResponseTime: current.totalResponseTime + r.responseTime,
-        requests: current.requests + 1
+        requests: current.requests + 1,
       });
     });
 
@@ -371,7 +370,7 @@ export class CacheService extends EventEmitter {
       .map(([key, stats]) => ({
         key,
         hitCount: stats.hitCount,
-        avgResponseTime: stats.totalResponseTime / stats.requests
+        avgResponseTime: stats.totalResponseTime / stats.requests,
       }))
       .sort((a, b) => b.hitCount - a.hitCount)
       .slice(0, 10);
@@ -385,7 +384,7 @@ export class CacheService extends EventEmitter {
       averageResponseTime,
       throughput,
       hotKeys,
-      recommendations
+      recommendations,
     };
   }
 
@@ -429,7 +428,7 @@ export class CacheService extends EventEmitter {
     return {
       actionsPerformed: actions,
       estimatedImprovement,
-      newConfiguration: newConfig
+      newConfiguration: newConfig,
     };
   }
 
@@ -450,7 +449,6 @@ export class CacheService extends EventEmitter {
       this.activeOperations.clear();
 
       console.log('Cache service destroyed');
-
     } catch (error) {
       console.error('Error during cache service destruction:', error);
       throw error;
@@ -466,28 +464,28 @@ export class CacheService extends EventEmitter {
         maxMemoryMB: 100,
         defaultTTL: 300000, // 5 minutes
         evictionPolicy: 'ADAPTIVE',
-        ...config.lru
+        ...config.lru,
       },
       predictive: {
         enableMLPredictions: true,
         maxPredictions: 50,
         confidenceThreshold: 0.7,
         predictionHorizon: 30,
-        ...config.predictive
+        ...config.predictive,
       },
       incremental: {
         defaultChunkSize: 100,
         maxParallelLoads: 3,
         enableAdaptiveChunking: true,
-        ...config.incremental
+        ...config.incremental,
       },
       warming: config.warming || {},
       performance: {
         enableMetrics: true,
         metricsRetentionDays: 7,
         enableAlerts: true,
-        ...config.performance
-      }
+        ...config.performance,
+      },
     };
   }
 
@@ -498,7 +496,7 @@ export class CacheService extends EventEmitter {
       maxMemoryMB: this.config.lru.maxMemoryMB,
       defaultTTL: this.config.lru.defaultTTL,
       evictionPolicy: this.config.lru.evictionPolicy,
-      enableStats: this.config.performance.enableMetrics
+      enableStats: this.config.performance.enableMetrics,
     });
 
     // Initialize predictive cache
@@ -506,7 +504,7 @@ export class CacheService extends EventEmitter {
       enableMLPredictions: this.config.predictive.enableMLPredictions,
       maxPredictions: this.config.predictive.maxPredictions,
       confidenceThreshold: this.config.predictive.confidenceThreshold,
-      predictionHorizon: this.config.predictive.predictionHorizon
+      predictionHorizon: this.config.predictive.predictionHorizon,
     });
 
     // Initialize chunk cache for incremental loader
@@ -517,14 +515,16 @@ export class CacheService extends EventEmitter {
       },
       delete: (key: string) => this.lruCache.delete(`chunk:${key}`),
       clear: () => this.lruCache.clear(),
-      get size() { return 0; } // Approximation
+      get size() {
+        return 0;
+      }, // Approximation
     };
 
     // Initialize incremental loader
     this.incrementalLoader = new IncrementalLoader(chunkCache, {
       defaultChunkSize: this.config.incremental.defaultChunkSize,
       maxParallelLoads: this.config.incremental.maxParallelLoads,
-      enableAdaptiveChunking: this.config.incremental.enableAdaptiveChunking
+      enableAdaptiveChunking: this.config.incremental.enableAdaptiveChunking,
     });
 
     // Initialize cache warmer (would need search service in real implementation)
@@ -537,30 +537,30 @@ export class CacheService extends EventEmitter {
         hitRate: 0,
         size: 0,
         memoryUsage: 0,
-        evictions: 0
+        evictions: 0,
       },
       predictive: {
         totalPredictions: 0,
         successfulPredictions: 0,
-        predictionAccuracy: 0
+        predictionAccuracy: 0,
       },
       incremental: {
         activeLoads: 0,
         averageLoadTime: 0,
-        cacheHitRate: 0
+        cacheHitRate: 0,
       },
       warming: {
         totalWarmed: 0,
         avgHitRateImprovement: 0,
-        successRate: 0
+        successRate: 0,
       },
       overall: {
         totalRequests: 0,
         cacheHits: 0,
         cacheMisses: 0,
         averageResponseTime: 0,
-        throughput: 0
-      }
+        throughput: 0,
+      },
     };
   }
 
@@ -572,7 +572,7 @@ export class CacheService extends EventEmitter {
         hitRate: lruStats.hitRate,
         size: lruStats.size,
         memoryUsage: lruStats.memoryUsage,
-        evictions: lruStats.evictions
+        evictions: lruStats.evictions,
       };
     }
 
@@ -582,7 +582,7 @@ export class CacheService extends EventEmitter {
       this.metrics.predictive = {
         totalPredictions: predictiveStats.totalPredictions,
         successfulPredictions: predictiveStats.successfulPredictions,
-        predictionAccuracy: predictiveStats.predictionAccuracy
+        predictionAccuracy: predictiveStats.predictionAccuracy,
       };
     }
 
@@ -592,7 +592,7 @@ export class CacheService extends EventEmitter {
       this.metrics.incremental = {
         activeLoads: incrementalStats.activeLoads,
         averageLoadTime: incrementalStats.averageLoadTime,
-        cacheHitRate: incrementalStats.cacheHitRate
+        cacheHitRate: incrementalStats.cacheHitRate,
       };
     }
 
@@ -601,8 +601,7 @@ export class CacheService extends EventEmitter {
   }
 
   private updateOverallMetrics(): void {
-    const recentRequests = this.requestHistory
-      .filter(r => Date.now() - r.timestamp < 3600000); // Last hour
+    const recentRequests = this.requestHistory.filter(r => Date.now() - r.timestamp < 3600000); // Last hour
 
     if (recentRequests.length === 0) return;
 
@@ -612,8 +611,9 @@ export class CacheService extends EventEmitter {
       totalRequests: recentRequests.length,
       cacheHits: hits.length,
       cacheMisses: recentRequests.length - hits.length,
-      averageResponseTime: recentRequests.reduce((sum, r) => sum + r.responseTime, 0) / recentRequests.length,
-      throughput: recentRequests.length / 3600 // per second
+      averageResponseTime:
+        recentRequests.reduce((sum, r) => sum + r.responseTime, 0) / recentRequests.length,
+      throughput: recentRequests.length / 3600, // per second
     };
   }
 
@@ -623,7 +623,7 @@ export class CacheService extends EventEmitter {
       hit: true,
       responseTime,
       timestamp: Date.now(),
-      size
+      size,
     });
 
     this.cleanupRequestHistory();
@@ -635,14 +635,14 @@ export class CacheService extends EventEmitter {
       hit: false,
       responseTime,
       timestamp: Date.now(),
-      size: 0
+      size: 0,
     });
 
     this.cleanupRequestHistory();
   }
 
   private cleanupRequestHistory(): void {
-    const cutoff = Date.now() - (this.config.performance.metricsRetentionDays * 24 * 60 * 60 * 1000);
+    const cutoff = Date.now() - this.config.performance.metricsRetentionDays * 24 * 60 * 60 * 1000;
     this.requestHistory = this.requestHistory.filter(r => r.timestamp > cutoff);
   }
 
@@ -681,11 +681,9 @@ export class CacheService extends EventEmitter {
     if (!this.predictiveCache || !key.userContext) return;
 
     try {
-      const predictions = await this.predictiveCache.getPredictions(
-        key.userContext,
-        undefined,
-        { currentKey: key }
-      );
+      const predictions = await this.predictiveCache.getPredictions(key.userContext, undefined, {
+        currentKey: key,
+      });
 
       // Trigger background loading for high-confidence predictions
       for (const prediction of predictions.slice(0, 3)) {
@@ -741,7 +739,7 @@ export class CacheService extends EventEmitter {
       adaptations.lru = {
         ...this.config.lru,
         maxSize: Math.floor(this.config.lru.maxSize * 1.2),
-        defaultTTL: Math.floor(this.config.lru.defaultTTL * 1.1)
+        defaultTTL: Math.floor(this.config.lru.defaultTTL * 1.1),
       };
     }
 
@@ -749,7 +747,7 @@ export class CacheService extends EventEmitter {
     if (stats.averageResponseTime > 500) {
       adaptations.incremental = {
         ...this.config.incremental,
-        defaultChunkSize: Math.floor(this.config.incremental.defaultChunkSize * 0.8)
+        defaultChunkSize: Math.floor(this.config.incremental.defaultChunkSize * 0.8),
       };
     }
 
@@ -779,7 +777,7 @@ export class CacheService extends EventEmitter {
       this.emit('performance-alert', {
         type: 'low-hit-rate',
         value: stats.hitRate,
-        message: 'Cache hit rate is below 50%'
+        message: 'Cache hit rate is below 50%',
       });
     }
 
@@ -787,7 +785,7 @@ export class CacheService extends EventEmitter {
       this.emit('performance-alert', {
         type: 'high-response-time',
         value: stats.averageResponseTime,
-        message: 'Average response time exceeds 2 seconds'
+        message: 'Average response time exceeds 2 seconds',
       });
     }
   }

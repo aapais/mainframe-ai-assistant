@@ -42,7 +42,7 @@ export class StartupManager extends EventEmitter {
   private resourcePreloader: ResourcePreloader;
   private performanceMonitor: PerformanceMonitor;
   private serviceManager: ServiceManager;
-  
+
   private currentPhase = 0;
   private totalPhases = 0;
   private startupStartTime = 0;
@@ -55,14 +55,14 @@ export class StartupManager extends EventEmitter {
       description: 'Show splash screen',
       weight: 1,
       critical: false,
-      parallel: false
+      parallel: false,
     },
     {
       name: 'performance',
       description: 'Initialize performance monitoring',
       weight: 2,
       critical: false,
-      parallel: false
+      parallel: false,
     },
     {
       name: 'services-critical',
@@ -70,7 +70,7 @@ export class StartupManager extends EventEmitter {
       weight: 30,
       critical: true,
       parallel: true,
-      dependencies: ['performance']
+      dependencies: ['performance'],
     },
     {
       name: 'preloading',
@@ -78,7 +78,7 @@ export class StartupManager extends EventEmitter {
       weight: 20,
       critical: false,
       parallel: true,
-      dependencies: ['services-critical']
+      dependencies: ['services-critical'],
     },
     {
       name: 'services-optional',
@@ -86,7 +86,7 @@ export class StartupManager extends EventEmitter {
       weight: 25,
       critical: false,
       parallel: true,
-      dependencies: ['services-critical']
+      dependencies: ['services-critical'],
     },
     {
       name: 'ui-ready',
@@ -94,7 +94,7 @@ export class StartupManager extends EventEmitter {
       weight: 15,
       critical: true,
       parallel: false,
-      dependencies: ['services-critical', 'preloading']
+      dependencies: ['services-critical', 'preloading'],
     },
     {
       name: 'finalization',
@@ -102,8 +102,8 @@ export class StartupManager extends EventEmitter {
       weight: 7,
       critical: true,
       parallel: false,
-      dependencies: ['ui-ready']
-    }
+      dependencies: ['ui-ready'],
+    },
   ];
 
   constructor(
@@ -114,11 +114,11 @@ export class StartupManager extends EventEmitter {
       enablePerformanceMonitoring: true,
       parallelInitialization: true,
       gracefulDegradation: true,
-      maxStartupTime: 10000 // 10 seconds max
+      maxStartupTime: 10000, // 10 seconds max
     }
   ) {
     super();
-    
+
     this.serviceManager = serviceManager;
     this.splashScreen = new SplashScreen();
     this.resourcePreloader = new ResourcePreloader();
@@ -134,7 +134,7 @@ export class StartupManager extends EventEmitter {
   async startup(): Promise<StartupResult> {
     this.startupStartTime = Date.now();
     this.isStartupComplete = false;
-    
+
     console.log('🚀 Starting optimized application startup...');
     this.emit('startup:started');
 
@@ -143,7 +143,7 @@ export class StartupManager extends EventEmitter {
       duration: 0,
       completedPhases: [],
       failedPhases: [],
-      degradedServices: []
+      degradedServices: [],
     };
 
     try {
@@ -157,7 +157,7 @@ export class StartupManager extends EventEmitter {
       }
 
       clearTimeout(startupTimeout);
-      
+
       result.success = true;
       result.duration = Date.now() - this.startupStartTime;
 
@@ -170,11 +170,10 @@ export class StartupManager extends EventEmitter {
       this.emit('startup:completed', result);
 
       return result;
-
     } catch (error) {
       result.success = false;
       result.duration = Date.now() - this.startupStartTime;
-      
+
       console.error('❌ Startup failed:', error);
       this.emit('startup:failed', error, result);
 
@@ -191,7 +190,7 @@ export class StartupManager extends EventEmitter {
    */
   private async executeParallelStartup(result: StartupResult): Promise<void> {
     const phaseGroups = this.groupPhasesByDependencies();
-    
+
     for (let groupIndex = 0; groupIndex < phaseGroups.length; groupIndex++) {
       const group = phaseGroups[groupIndex];
       const groupPromises: Promise<void>[] = [];
@@ -206,10 +205,10 @@ export class StartupManager extends EventEmitter {
       } catch (error) {
         // Handle partial group failure
         if (this.options.gracefulDegradation) {
-          const criticalFailed = group.some(p => 
-            p.critical && result.failedPhases.includes(p.name)
+          const criticalFailed = group.some(
+            p => p.critical && result.failedPhases.includes(p.name)
           );
-          
+
           if (criticalFailed) {
             throw error;
           }
@@ -238,7 +237,9 @@ export class StartupManager extends EventEmitter {
     this.currentPhase++;
 
     try {
-      console.log(`📋 Starting phase: ${phase.description} (${this.currentPhase}/${this.totalPhases})`);
+      console.log(
+        `📋 Starting phase: ${phase.description} (${this.currentPhase}/${this.totalPhases})`
+      );
       this.updateProgress(phase);
 
       switch (phase.name) {
@@ -267,14 +268,13 @@ export class StartupManager extends EventEmitter {
 
       const phaseDuration = Date.now() - phaseStartTime;
       result.completedPhases.push(phase.name);
-      
+
       if (this.options.enablePerformanceMonitoring) {
         this.performanceMonitor.recordPhaseTime(phase.name, phaseDuration);
       }
 
       console.log(`✅ Completed phase: ${phase.description} in ${phaseDuration}ms`);
       this.emit('phase:completed', phase.name, phaseDuration);
-
     } catch (error) {
       const phaseDuration = Date.now() - phaseStartTime;
       result.failedPhases.push(phase.name);
@@ -329,12 +329,14 @@ export class StartupManager extends EventEmitter {
       retryAttempts: 2,
       retryDelay: 1000,
       progressCallback: (serviceName, progress) => {
-        this.splashScreen?.updateStatus(`Starting ${serviceName}...`, 25 + (progress * 0.3));
-      }
+        this.splashScreen?.updateStatus(`Starting ${serviceName}...`, 25 + progress * 0.3);
+      },
     });
 
     if (!result.success) {
-      throw new Error(`Critical services failed to initialize: ${result.failed.map(f => f.name).join(', ')}`);
+      throw new Error(
+        `Critical services failed to initialize: ${result.failed.map(f => f.name).join(', ')}`
+      );
     }
 
     this.splashScreen?.updateStatus('Core services ready', 55);
@@ -347,9 +349,9 @@ export class StartupManager extends EventEmitter {
     if (!this.options.enablePreloading) return;
 
     this.splashScreen?.updateStatus('Preloading resources...', 60);
-    
+
     await this.resourcePreloader.preloadCriticalData();
-    
+
     this.splashScreen?.updateStatus('Resources preloaded', 75);
   }
 
@@ -378,15 +380,16 @@ export class StartupManager extends EventEmitter {
         retryAttempts: 1,
         retryDelay: 500,
         progressCallback: (serviceName, progress) => {
-          this.splashScreen?.updateStatus(`Starting ${serviceName}...`, 65 + (progress * 0.15));
-        }
+          this.splashScreen?.updateStatus(`Starting ${serviceName}...`, 65 + progress * 0.15);
+        },
       });
 
       // Record degraded services but don't fail
       if (result.failed.length > 0) {
-        console.warn(`⚠️ Some optional services failed: ${result.failed.map(f => f.name).join(', ')}`);
+        console.warn(
+          `⚠️ Some optional services failed: ${result.failed.map(f => f.name).join(', ')}`
+        );
       }
-
     } catch (error) {
       console.warn('⚠️ Optional services initialization failed:', error);
       // Don't fail startup for optional services
@@ -408,7 +411,7 @@ export class StartupManager extends EventEmitter {
 
     // Create main window
     await windowService.createMainWindow();
-    
+
     this.splashScreen?.updateStatus('Interface ready', 92);
   }
 
@@ -471,15 +474,15 @@ export class StartupManager extends EventEmitter {
     const completedWeight = this.phases
       .slice(0, this.currentPhase - 1)
       .reduce((sum, p) => sum + p.weight, 0);
-    
+
     const progress = Math.floor((completedWeight / totalWeight) * 100);
-    
+
     this.emit('progress', {
       phase: phase.name,
       description: phase.description,
       progress,
       currentPhase: this.currentPhase,
-      totalPhases: this.totalPhases
+      totalPhases: this.totalPhases,
     });
   }
 
@@ -499,7 +502,10 @@ export class StartupManager extends EventEmitter {
   /**
    * Attempt graceful degradation when startup fails
    */
-  private async attemptGracefulDegradation(result: StartupResult, error: Error): Promise<StartupResult> {
+  private async attemptGracefulDegradation(
+    result: StartupResult,
+    error: Error
+  ): Promise<StartupResult> {
     console.log('⚠️ Attempting graceful degradation...');
     this.splashScreen?.updateStatus('Starting in safe mode...', 50);
 
@@ -521,7 +527,7 @@ export class StartupManager extends EventEmitter {
       await this.serviceManager.initialize({
         parallelInitialization: false,
         failFast: true,
-        enableRetries: false
+        enableRetries: false,
       });
 
       // Create basic window
@@ -541,7 +547,6 @@ export class StartupManager extends EventEmitter {
       this.emit('startup:degraded', result);
 
       return result;
-
     } catch (degradationError) {
       console.error('❌ Graceful degradation also failed:', degradationError);
       result.success = false;
@@ -554,7 +559,7 @@ export class StartupManager extends EventEmitter {
    */
   private setupEventHandlers(): void {
     // Forward progress to splash screen
-    this.on('progress', (progressData) => {
+    this.on('progress', progressData => {
       this.splashScreen?.updateProgress(progressData.progress);
     });
 
@@ -579,7 +584,7 @@ export class StartupManager extends EventEmitter {
       isComplete: this.isStartupComplete,
       currentPhase: this.currentPhase,
       totalPhases: this.totalPhases,
-      duration: this.startupStartTime ? Date.now() - this.startupStartTime : 0
+      duration: this.startupStartTime ? Date.now() - this.startupStartTime : 0,
     };
   }
 

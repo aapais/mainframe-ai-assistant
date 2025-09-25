@@ -21,7 +21,7 @@ class EmbeddingService {
         provider: 'openai',
         apiKey: apiKey,
         model: 'text-embedding-ada-002',
-        client: this.openai
+        client: this.openai,
       };
     } else if (settings) {
       this.initializeFromSettings(settings);
@@ -59,7 +59,7 @@ class EmbeddingService {
         this.openai = new OpenAI({
           apiKey: this.activeModel.apiKey,
           baseURL: `${this.activeModel.azureEndpoint}/openai/deployments`,
-          defaultQuery: { 'api-version': '2023-12-01-preview' }
+          defaultQuery: { 'api-version': '2023-12-01-preview' },
         });
       }
 
@@ -123,12 +123,11 @@ class EmbeddingService {
       // Cache the result
       this.cache.set(cacheKey, {
         embedding,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       console.log(`✅ Generated embedding with ${embedding.length} dimensions`);
       return embedding;
-
     } catch (error) {
       console.error(`❌ Error generating embedding with ${this.activeModel.model}:`, error.message);
 
@@ -163,7 +162,9 @@ class EmbeddingService {
 
     for (let i = 0; i < texts.length; i += batchSize) {
       const batch = texts.slice(i, i + batchSize);
-      console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(texts.length / batchSize)}`);
+      console.log(
+        `📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(texts.length / batchSize)}`
+      );
 
       const batchPromises = batch.map(text => this.generateEmbedding(text, options));
       const batchResults = await Promise.all(batchPromises);
@@ -203,7 +204,7 @@ class EmbeddingService {
     let hash = 0;
     for (let i = 0; i < text.length; i++) {
       const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString(36);
@@ -245,7 +246,7 @@ class EmbeddingService {
       incident.description || '',
       incident.resolution || '',
       incident.technical_area || '',
-      incident.business_area || ''
+      incident.business_area || '',
     ].filter(part => part.trim().length > 0);
 
     return parts.join(' ');
@@ -262,7 +263,7 @@ class EmbeddingService {
       entry.content || '',
       entry.summary || '',
       Array.isArray(entry.tags) ? entry.tags.join(' ') : '',
-      entry.category || ''
+      entry.category || '',
     ].filter(part => part.trim().length > 0);
 
     return parts.join(' ');
@@ -286,8 +287,8 @@ class EmbeddingService {
       entries: Array.from(this.cache.entries()).map(([key, value]) => ({
         key,
         timestamp: new Date(value.timestamp).toISOString(),
-        age: Date.now() - value.timestamp
-      }))
+        age: Date.now() - value.timestamp,
+      })),
     };
   }
 

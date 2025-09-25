@@ -73,9 +73,9 @@ export class WCAGValidator {
     if (this.isRunning) return;
 
     this.isRunning = true;
-    this.observer = new MutationObserver((mutations) => {
+    this.observer = new MutationObserver(mutations => {
       const hasSignificantChanges = mutations.some(
-        (mutation) =>
+        mutation =>
           mutation.type === 'childList' ||
           (mutation.type === 'attributes' && this.isA11yRelevantAttribute(mutation.attributeName))
       );
@@ -148,7 +148,7 @@ export class WCAGValidator {
     ]);
 
     // Aggregate results
-    results.forEach((result) => {
+    results.forEach(result => {
       violations.push(...result.violations);
       passes.push(...result.passes);
       incomplete.push(...result.incomplete);
@@ -171,13 +171,15 @@ export class WCAGValidator {
    * Check color contrast compliance (WCAG 2.1 1.4.3, 1.4.6)
    */
   checkColorContrast(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
 
-      const textElements = document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6, a, button, input, label, li');
+      const textElements = document.querySelectorAll(
+        'p, span, div, h1, h2, h3, h4, h5, h6, a, button, input, label, li'
+      );
 
-      textElements.forEach((element) => {
+      textElements.forEach(element => {
         if (this.isVisibleElement(element as HTMLElement)) {
           const contrastResult = this.calculateColorContrast(element as HTMLElement);
 
@@ -218,15 +220,19 @@ export class WCAGValidator {
   /**
    * Check image accessibility (WCAG 2.1 1.1.1)
    */
-  checkImages(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkImages(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
 
       const images = document.querySelectorAll('img, svg, [role="img"]');
 
-      images.forEach((img) => {
+      images.forEach(img => {
         const alt = img.getAttribute('alt');
         const role = img.getAttribute('role');
         const ariaLabel = img.getAttribute('aria-label');
@@ -299,8 +305,12 @@ export class WCAGValidator {
   /**
    * Check heading structure (WCAG 2.1 1.3.1, 2.4.6)
    */
-  checkHeadings(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkHeadings(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -395,8 +405,12 @@ export class WCAGValidator {
   /**
    * Check form accessibility (WCAG 2.1 1.3.1, 3.3.2, 4.1.2)
    */
-  checkForms(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkForms(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -405,7 +419,7 @@ export class WCAGValidator {
         'input:not([type="hidden"]), select, textarea, [role="textbox"], [role="combobox"], [role="checkbox"], [role="radio"]'
       );
 
-      formControls.forEach((control) => {
+      formControls.forEach(control => {
         const accessibleName = this.getAccessibleName(control as HTMLElement);
         const hasLabel = this.hasLabel(control as HTMLElement);
 
@@ -425,7 +439,8 @@ export class WCAGValidator {
         }
 
         // Check for required fields
-        const required = control.hasAttribute('required') || control.getAttribute('aria-required') === 'true';
+        const required =
+          control.hasAttribute('required') || control.getAttribute('aria-required') === 'true';
         if (required) {
           const hasRequiredIndicator = this.hasRequiredIndicator(control as HTMLElement);
           if (!hasRequiredIndicator) {
@@ -452,15 +467,21 @@ export class WCAGValidator {
   /**
    * Check button accessibility (WCAG 2.1 4.1.2)
    */
-  checkButtons(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkButtons(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
 
-      const buttons = document.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]');
+      const buttons = document.querySelectorAll(
+        'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]'
+      );
 
-      buttons.forEach((button) => {
+      buttons.forEach(button => {
         const accessibleName = this.getAccessibleName(button as HTMLElement);
 
         if (!accessibleName.trim()) {
@@ -486,15 +507,19 @@ export class WCAGValidator {
   /**
    * Check link accessibility (WCAG 2.1 2.4.4, 4.1.2)
    */
-  checkLinks(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkLinks(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
 
       const links = document.querySelectorAll('a[href], [role="link"]');
 
-      links.forEach((link) => {
+      links.forEach(link => {
         const accessibleName = this.getAccessibleName(link as HTMLElement);
 
         if (!accessibleName.trim()) {
@@ -520,8 +545,12 @@ export class WCAGValidator {
   /**
    * Check keyboard navigation (WCAG 2.1 2.1.1, 2.1.2)
    */
-  checkKeyboardNavigation(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkKeyboardNavigation(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -530,7 +559,7 @@ export class WCAGValidator {
         'a, button, input, select, textarea, [tabindex], [role="button"], [role="link"], [role="textbox"], [role="combobox"]'
       );
 
-      interactiveElements.forEach((element) => {
+      interactiveElements.forEach(element => {
         const tabIndex = element.getAttribute('tabindex');
 
         // Check for positive tabindex values (anti-pattern)
@@ -573,8 +602,12 @@ export class WCAGValidator {
   /**
    * Check focus management (WCAG 2.1 2.4.3, 2.4.7)
    */
-  checkFocusManagement(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkFocusManagement(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -584,7 +617,7 @@ export class WCAGValidator {
         'a, button, input, select, textarea, [tabindex="0"], [role="button"], [role="link"]'
       );
 
-      focusableElements.forEach((element) => {
+      focusableElements.forEach(element => {
         // This is a simplified check - in a real implementation, you'd need to
         // simulate focus and check computed styles
         const styles = window.getComputedStyle(element as HTMLElement, ':focus');
@@ -614,8 +647,12 @@ export class WCAGValidator {
   /**
    * Check landmarks (WCAG 2.1 1.3.1)
    */
-  checkLandmarks(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkLandmarks(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -661,15 +698,21 @@ export class WCAGValidator {
   /**
    * Check live regions (WCAG 2.1 4.1.3)
    */
-  checkLiveRegions(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkLiveRegions(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
 
-      const liveRegions = document.querySelectorAll('[aria-live], [role="alert"], [role="status"], [role="log"]');
+      const liveRegions = document.querySelectorAll(
+        '[aria-live], [role="alert"], [role="status"], [role="log"]'
+      );
 
-      liveRegions.forEach((region) => {
+      liveRegions.forEach(region => {
         const ariaLive = region.getAttribute('aria-live');
         if (ariaLive && !['polite', 'assertive', 'off'].includes(ariaLive)) {
           violations.push({
@@ -694,8 +737,12 @@ export class WCAGValidator {
   /**
    * Check language attribute (WCAG 2.1 3.1.1, 3.1.2)
    */
-  checkLanguage(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkLanguage(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -738,8 +785,12 @@ export class WCAGValidator {
   /**
    * Check skip links (WCAG 2.1 2.4.1)
    */
-  checkSkipLinks(): Promise<{ violations: WCAGViolation[]; passes: WCAGViolation[]; incomplete: WCAGViolation[] }> {
-    return new Promise((resolve) => {
+  checkSkipLinks(): Promise<{
+    violations: WCAGViolation[];
+    passes: WCAGViolation[];
+    incomplete: WCAGViolation[];
+  }> {
+    return new Promise(resolve => {
       const violations: WCAGViolation[] = [];
       const passes: WCAGViolation[] = [];
       const incomplete: WCAGViolation[] = [];
@@ -747,7 +798,7 @@ export class WCAGValidator {
       const skipLinks = document.querySelectorAll('a[href^="#"]');
       let hasSkipToMain = false;
 
-      skipLinks.forEach((link) => {
+      skipLinks.forEach(link => {
         const href = link.getAttribute('href');
         const text = this.getAccessibleText(link as HTMLElement).toLowerCase();
 
@@ -798,10 +849,10 @@ export class WCAGValidator {
 
   private validateCurrentPage(): void {
     if (process.env.NODE_ENV === 'development') {
-      this.auditCurrentPage().then((result) => {
+      this.auditCurrentPage().then(result => {
         if (result.violations.length > 0) {
           console.group('🚨 WCAG Violations Detected');
-          result.violations.forEach((violation) => {
+          result.violations.forEach(violation => {
             console.warn(`${violation.id}: ${violation.description}`, violation.element);
           });
           console.groupEnd();
@@ -813,8 +864,18 @@ export class WCAGValidator {
   private isA11yRelevantAttribute(attributeName: string | null): boolean {
     if (!attributeName) return false;
     const relevantAttributes = [
-      'aria-label', 'aria-labelledby', 'aria-describedby', 'role', 'tabindex',
-      'alt', 'title', 'for', 'id', 'disabled', 'hidden', 'aria-hidden'
+      'aria-label',
+      'aria-labelledby',
+      'aria-describedby',
+      'role',
+      'tabindex',
+      'alt',
+      'title',
+      'for',
+      'id',
+      'disabled',
+      'hidden',
+      'aria-hidden',
     ];
     return relevantAttributes.includes(attributeName);
   }
@@ -829,8 +890,9 @@ export class WCAGValidator {
     const foregroundLuminance = this.getLuminance(color);
     const backgroundLuminance = this.getLuminance(backgroundColor || '#ffffff');
 
-    const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
-                  (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+    const ratio =
+      (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+      (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
 
     return {
       ratio,
@@ -849,9 +911,7 @@ export class WCAGValidator {
 
   private isVisibleElement(element: HTMLElement): boolean {
     const styles = window.getComputedStyle(element);
-    return styles.display !== 'none' &&
-           styles.visibility !== 'hidden' &&
-           styles.opacity !== '0';
+    return styles.display !== 'none' && styles.visibility !== 'hidden' && styles.opacity !== '0';
   }
 
   private getAccessibleText(element: HTMLElement): string {
@@ -908,7 +968,8 @@ export class WCAGValidator {
 
   private hasRequiredIndicator(element: HTMLElement): boolean {
     const accessibleName = this.getAccessibleName(element);
-    if (accessibleName.includes('*') || accessibleName.toLowerCase().includes('required')) return true;
+    if (accessibleName.includes('*') || accessibleName.toLowerCase().includes('required'))
+      return true;
 
     const ariaDescription = element.getAttribute('aria-describedby');
     if (ariaDescription) {
@@ -938,7 +999,7 @@ export class WCAGValidator {
       minor: 0,
     };
 
-    violations.forEach((violation) => {
+    violations.forEach(violation => {
       summary[violation.impact]++;
     });
 

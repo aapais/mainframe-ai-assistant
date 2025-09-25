@@ -37,28 +37,28 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
       const { kbService, searchService } = servicesRef.current;
 
       // KB Service events
-      kbService.on('operation-success', (event) => {
+      kbService.on('operation-success', event => {
         console.log('✅ KB Service Success:', event);
       });
 
-      kbService.on('operation-error', (event) => {
+      kbService.on('operation-error', event => {
         console.warn('❌ KB Service Error:', event);
       });
 
-      kbService.on('cache-hit', (event) => {
+      kbService.on('cache-hit', event => {
         console.log('💾 KB Cache Hit:', event);
       });
 
       // Search Service events
-      searchService.on('search-completed', (event) => {
+      searchService.on('search-completed', event => {
         console.log('🔍 Search Completed:', event);
       });
 
-      searchService.on('ai-search-failed', (event) => {
+      searchService.on('ai-search-failed', event => {
         console.warn('🤖❌ AI Search Failed:', event);
       });
 
-      searchService.on('cache-hit', (event) => {
+      searchService.on('cache-hit', event => {
         console.log('💾 Search Cache Hit:', event);
       });
     }
@@ -68,7 +68,7 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
   useEffect(() => {
     return () => {
       if (servicesRef.current) {
-        Object.values(servicesRef.current).forEach((service) => {
+        Object.values(servicesRef.current).forEach(service => {
           if (service instanceof BaseService) {
             service.cleanup();
           }
@@ -86,27 +86,22 @@ export const ServiceProvider: React.FC<ServiceProviderProps> = ({ children }) =>
       Promise.all([
         kbService.preloadData(),
         // Search service doesn't need preloading as history is loaded automatically
-      ]).catch((error) => {
+      ]).catch(error => {
         console.warn('Service preload failed:', error);
       });
 
       // Health check all services
-      Promise.all([
-        kbService.healthCheck(),
-        searchService.healthCheck(),
-      ]).then((results) => {
-        console.log('Service Health Check:', results);
-      }).catch((error) => {
-        console.error('Service health check failed:', error);
-      });
+      Promise.all([kbService.healthCheck(), searchService.healthCheck()])
+        .then(results => {
+          console.log('Service Health Check:', results);
+        })
+        .catch(error => {
+          console.error('Service health check failed:', error);
+        });
     }
   }, []);
 
-  return (
-    <ServiceContext.Provider value={servicesRef.current}>
-      {children}
-    </ServiceContext.Provider>
-  );
+  return <ServiceContext.Provider value={servicesRef.current}>{children}</ServiceContext.Provider>;
 };
 
 // Hook to access services

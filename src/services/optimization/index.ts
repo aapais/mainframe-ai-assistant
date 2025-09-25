@@ -7,22 +7,18 @@ export { OptimizationEngine } from './OptimizationEngine';
 export type {
   OptimizationMetrics,
   OptimizationRecommendation,
-  OptimizationConfig
+  OptimizationConfig,
 } from './OptimizationEngine';
 
 export { AlgorithmTuner } from './AlgorithmTuner';
-export type {
-  SearchMetrics,
-  AlgorithmConfig,
-  TuningRecommendation
-} from './AlgorithmTuner';
+export type { SearchMetrics, AlgorithmConfig, TuningRecommendation } from './AlgorithmTuner';
 
 export { IndexOptimizationAdvisor } from './IndexOptimizationAdvisor';
 export type {
   QueryAnalysis,
   IndexSuggestion,
   IndexStats,
-  TableStats
+  TableStats,
 } from './IndexOptimizationAdvisor';
 
 export { CacheStrategyOptimizer } from './CacheStrategyOptimizer';
@@ -30,7 +26,7 @@ export type {
   CacheMetrics,
   CacheConfig,
   CacheOptimizationRecommendation,
-  CacheAnalysis
+  CacheAnalysis,
 } from './CacheStrategyOptimizer';
 
 export { BottleneckDetector } from './BottleneckDetector';
@@ -38,7 +34,7 @@ export type {
   PerformanceMetric,
   Bottleneck,
   OptimizationSuggestion,
-  ComponentHealth
+  ComponentHealth,
 } from './BottleneckDetector';
 
 export { OptimizationDashboard } from './OptimizationDashboard';
@@ -46,7 +42,7 @@ export type {
   DashboardWidget,
   DashboardAlert,
   OptimizationInsight,
-  PerformanceReport
+  PerformanceReport,
 } from './OptimizationDashboard';
 
 // Factory and utility exports

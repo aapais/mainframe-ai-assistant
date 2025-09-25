@@ -12,7 +12,7 @@ import {
   IImportExportService,
   ServiceConfig,
   DEFAULT_SERVICE_CONFIG,
-  ServiceError
+  ServiceError,
 } from '../types/services';
 
 import KnowledgeBaseService from './KnowledgeBaseService';
@@ -56,7 +56,7 @@ export class ServiceFactory {
     searchService: [], // No dependencies
     cacheService: [], // No dependencies
     metricsService: [], // No dependencies
-    importExportService: ['knowledgeBaseService', 'validationService'] // Depends on KB and Validation
+    importExportService: ['knowledgeBaseService', 'validationService'], // Depends on KB and Validation
   };
 
   constructor(private config: ServiceConfig = DEFAULT_SERVICE_CONFIG) {}
@@ -159,7 +159,7 @@ export class ServiceFactory {
       if (!service) {
         serviceHealth[serviceName] = {
           healthy: false,
-          error: 'Service not initialized'
+          error: 'Service not initialized',
         };
         overallHealthy = false;
         continue;
@@ -176,7 +176,7 @@ export class ServiceFactory {
               title: 'test',
               problem: 'test',
               solution: 'test',
-              category: 'Other'
+              category: 'Other',
             });
             break;
           case 'searchService':
@@ -197,7 +197,7 @@ export class ServiceFactory {
       } catch (error) {
         serviceHealth[serviceName] = {
           healthy: false,
-          error: error.message
+          error: error.message,
         };
         overallHealthy = false;
       }
@@ -205,7 +205,7 @@ export class ServiceFactory {
 
     return {
       healthy: overallHealthy,
-      services: serviceHealth
+      services: serviceHealth,
     };
   }
 
@@ -222,7 +222,7 @@ export class ServiceFactory {
       'cacheService',
       'searchService',
       'validationService',
-      'knowledgeBaseService'
+      'knowledgeBaseService',
     ];
 
     for (const serviceName of closeOrder) {
@@ -233,7 +233,7 @@ export class ServiceFactory {
     }
 
     await Promise.all(closePromises);
-    
+
     this.instances = {};
     this.initialized = false;
     this.initializationPromise = undefined;
@@ -272,7 +272,7 @@ export class ServiceFactory {
       cache: { ...this.config.cache, ...newConfig.cache },
       metrics: { ...this.config.metrics, ...newConfig.metrics },
       validation: { ...this.config.validation, ...newConfig.validation },
-      logging: { ...this.config.logging, ...newConfig.logging }
+      logging: { ...this.config.logging, ...newConfig.logging },
     };
 
     console.info('Service configuration updated');
@@ -293,7 +293,10 @@ export class ServiceFactory {
     serviceInstance: ServiceInstances[T]
   ): void {
     if (this.initialized) {
-      throw new ServiceError('Cannot register services after initialization', 'ALREADY_INITIALIZED');
+      throw new ServiceError(
+        'Cannot register services after initialization',
+        'ALREADY_INITIALIZED'
+      );
     }
 
     this.instances[serviceName] = serviceInstance;
@@ -307,7 +310,7 @@ export class ServiceFactory {
   private async doInitialize(): Promise<void> {
     try {
       console.info('Initializing services...');
-      
+
       // Initialize services in dependency order
       await this.initializeService('validationService');
       await this.initializeService('cacheService');
@@ -320,10 +323,10 @@ export class ServiceFactory {
       console.info('All services initialized successfully');
     } catch (error) {
       console.error('Service initialization failed:', error);
-      
+
       // Cleanup any partially initialized services
       await this.close();
-      
+
       throw new ServiceError(
         `Service initialization failed: ${error.message}`,
         'INITIALIZATION_FAILED',
@@ -410,26 +413,26 @@ export class ServiceFactory {
           cache_size: -128000, // 128MB cache
           mmap_size: 536870912, // 512MB memory mapping
           temp_store: 'MEMORY',
-          optimize: 1
+          optimize: 1,
         },
         backup: {
           enabled: true,
           interval: 1800000, // 30 minutes
           retention: 24, // 24 backups
-          path: './backups/production'
+          path: './backups/production',
         },
         performance: {
           connectionPool: 10,
           busyTimeout: 30000,
-          cacheSize: 128000
-        }
+          cacheSize: 128000,
+        },
       },
       cache: {
         maxSize: 50000, // 50k entries
         ttl: 600000, // 10 minutes
         checkPeriod: 300000, // 5 minutes
         strategy: 'lru',
-        persistent: true
+        persistent: true,
       },
       metrics: {
         enabled: true,
@@ -437,7 +440,7 @@ export class ServiceFactory {
         aggregation: {
           enabled: true,
           interval: 1800000, // 30 minutes
-          batch: 5000
+          batch: 5000,
         },
         alerts: {
           enabled: true,
@@ -445,9 +448,9 @@ export class ServiceFactory {
             searchTime: 2000,
             errorRate: 0.02,
             cacheHitRate: 0.85,
-            dbTime: 500
-          }
-        }
+            dbTime: 500,
+          },
+        },
       },
       validation: {
         strict: false,
@@ -456,17 +459,17 @@ export class ServiceFactory {
           title: 300,
           problem: 10000,
           solution: 20000,
-          tags: 100
+          tags: 100,
         },
         minLength: {
           title: 10,
           problem: 20,
-          solution: 20
+          solution: 20,
         },
         patterns: {
           tag: /^[a-zA-Z0-9\-_\s]+$/,
-          category: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'IMS', 'CICS', 'System', 'Other']
-        }
+          category: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'IMS', 'CICS', 'System', 'Other'],
+        },
       },
       logging: {
         level: 'info',
@@ -474,12 +477,12 @@ export class ServiceFactory {
           enabled: true,
           path: './logs/production',
           maxSize: 52428800, // 50MB
-          maxFiles: 10
+          maxFiles: 10,
         },
         console: false,
-        structured: true
+        structured: true,
       },
-      ...overrides
+      ...overrides,
     };
 
     return new ServiceFactory(productionConfig);
@@ -498,15 +501,15 @@ export class ServiceFactory {
           enabled: true,
           interval: 3600000, // 1 hour
           retention: 5,
-          path: './backups/dev'
-        }
+          path: './backups/dev',
+        },
       },
       cache: {
         maxSize: 1000,
         ttl: 300000, // 5 minutes
         checkPeriod: 600000, // 10 minutes
         strategy: 'lru',
-        persistent: false
+        persistent: false,
       },
       metrics: {
         enabled: true,
@@ -514,19 +517,19 @@ export class ServiceFactory {
         aggregation: {
           enabled: false,
           interval: 3600000,
-          batch: 100
+          batch: 100,
         },
         alerts: {
           enabled: false,
-          thresholds: {}
-        }
+          thresholds: {},
+        },
       },
       validation: {
         strict: false,
         sanitize: true,
         maxLength: DEFAULT_SERVICE_CONFIG.validation.maxLength,
         minLength: DEFAULT_SERVICE_CONFIG.validation.minLength,
-        patterns: DEFAULT_SERVICE_CONFIG.validation.patterns
+        patterns: DEFAULT_SERVICE_CONFIG.validation.patterns,
       },
       logging: {
         level: 'debug',
@@ -534,12 +537,12 @@ export class ServiceFactory {
           enabled: true,
           path: './logs/dev',
           maxSize: 10485760, // 10MB
-          maxFiles: 3
+          maxFiles: 3,
         },
         console: true,
-        structured: false
+        structured: false,
       },
-      ...overrides
+      ...overrides,
     };
 
     return new ServiceFactory(developmentConfig);
@@ -558,15 +561,15 @@ export class ServiceFactory {
           enabled: false,
           interval: 0,
           retention: 0,
-          path: ''
-        }
+          path: '',
+        },
       },
       cache: {
         maxSize: 100,
         ttl: 60000, // 1 minute
         checkPeriod: 10000, // 10 seconds
         strategy: 'lru',
-        persistent: false
+        persistent: false,
       },
       metrics: {
         enabled: false,
@@ -574,12 +577,12 @@ export class ServiceFactory {
         aggregation: {
           enabled: false,
           interval: 0,
-          batch: 0
+          batch: 0,
         },
         alerts: {
           enabled: false,
-          thresholds: {}
-        }
+          thresholds: {},
+        },
       },
       logging: {
         level: 'error',
@@ -587,12 +590,12 @@ export class ServiceFactory {
           enabled: false,
           path: '',
           maxSize: 0,
-          maxFiles: 0
+          maxFiles: 0,
         },
         console: false,
-        structured: false
+        structured: false,
       },
-      ...overrides
+      ...overrides,
     };
 
     return new ServiceFactory(testConfig);

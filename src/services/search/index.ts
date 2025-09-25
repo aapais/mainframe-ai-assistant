@@ -5,7 +5,7 @@
 
 // Core Engine
 export { default as AdvancedSearchEngine } from './AdvancedSearchEngine';
-export type { 
+export type {
   SearchEngineConfig,
   PerformanceConfig,
   FeatureFlags,
@@ -14,25 +14,16 @@ export type {
   SearchMetrics,
   SearchResponse,
   SearchFacet,
-  SearchMetadata 
+  SearchMetadata,
 } from './AdvancedSearchEngine';
 
 // Inverted Index
 export { default as InvertedIndex } from './InvertedIndex';
-export type {
-  IndexedDocument,
-  PostingList,
-  PostingEntry,
-  IndexStats
-} from './InvertedIndex';
+export type { IndexedDocument, PostingList, PostingEntry, IndexStats } from './InvertedIndex';
 
 // Text Processing
 export { default as TextProcessor } from './TextProcessor';
-export type {
-  TokenInfo,
-  TokenType,
-  ProcessingOptions
-} from './TextProcessor';
+export type { TokenInfo, TokenType, ProcessingOptions } from './TextProcessor';
 
 // Query Parser
 export { default as QueryParser } from './QueryParser';
@@ -43,17 +34,12 @@ export type {
   QueryOperator,
   QueryFilter,
   FilterOperator,
-  QueryOptions
+  QueryOptions,
 } from './QueryParser';
 
 // Fuzzy Matching
 export { default as FuzzyMatcher } from './FuzzyMatcher';
-export type {
-  FuzzyMatch,
-  FuzzyAlgorithm,
-  FuzzyOptions,
-  AlgorithmWeights
-} from './FuzzyMatcher';
+export type { FuzzyMatch, FuzzyAlgorithm, FuzzyOptions, AlgorithmWeights } from './FuzzyMatcher';
 
 // Ranking Engine
 export { default as RankingEngine } from './RankingEngine';
@@ -65,7 +51,7 @@ export type {
   BM25Parameters,
   TFIDFParameters,
   CombinationWeights,
-  DocumentCollection
+  DocumentCollection,
 } from './RankingEngine';
 
 // Search Cache
@@ -79,7 +65,7 @@ export type {
   PersistenceConfig,
   CompressionConfig,
   WarmingConfig,
-  WarmingStrategy
+  WarmingStrategy,
 } from './SearchCache';
 
 // Benchmarking
@@ -94,23 +80,16 @@ export type {
   ComplianceReport,
   IndexMetrics,
   CacheMetrics,
-  RankingMetrics
+  RankingMetrics,
 } from './SearchBenchmark';
 
 // FTS5 Full-Text Search Engine
 export { default as FTS5Engine } from './FTS5Engine';
-export type {
-  FTS5Config,
-  FTS5SearchResult,
-  MainframeTokenizerConfig
-} from './FTS5Engine';
+export type { FTS5Config, FTS5SearchResult, MainframeTokenizerConfig } from './FTS5Engine';
 
 // FTS5 Integration Service
 export { default as FTS5Integration } from './FTS5Integration';
-export type {
-  FTS5IntegrationConfig,
-  SearchStrategy
-} from './FTS5Integration';
+export type { FTS5IntegrationConfig, SearchStrategy } from './FTS5Integration';
 
 /**
  * Factory function to create a fully configured search engine
@@ -129,10 +108,7 @@ export function createBenchmark(engine: AdvancedSearchEngine): SearchBenchmark {
 /**
  * Factory function to create an FTS5 search engine
  */
-export function createFTS5Engine(
-  db: any,
-  config?: Partial<any>
-): any {
+export function createFTS5Engine(db: any, config?: Partial<any>): any {
   // Import dynamically to avoid circular dependencies
   const FTS5Engine = require('./FTS5Engine').default;
   return new FTS5Engine(db, config);
@@ -156,22 +132,22 @@ export function createFTS5Integration(
  * Utility function to validate search engine performance
  */
 export async function validatePerformance(
-  engine: AdvancedSearchEngine, 
+  engine: AdvancedSearchEngine,
   quickTest: boolean = true
 ): Promise<{ passed: boolean; details: any }> {
   const benchmark = new SearchBenchmark(engine);
-  
+
   if (quickTest) {
     const result = await benchmark.quickValidation();
     return {
       passed: result.passed,
-      details: result.metrics
+      details: result.metrics,
     };
   } else {
     const result = await benchmark.runBenchmark();
     return {
       passed: result.summary.passed,
-      details: result
+      details: result,
     };
   }
 }
@@ -184,23 +160,23 @@ export const PERFORMANCE_TARGETS = {
   CACHE_HIT_RATE: 0.8,
   ERROR_RATE: 0.01,
   MEMORY_LIMIT_MB: 512,
-  THROUGHPUT_QPS: 10
+  THROUGHPUT_QPS: 10,
 } as const;
 
 export const OPTIMIZATION_LEVELS = {
   FAST: {
     indexing: 'minimal',
     caching: 'aggressive',
-    ranking: 'simple'
+    ranking: 'simple',
   },
   BALANCED: {
     indexing: 'standard',
     caching: 'moderate',
-    ranking: 'bm25'
+    ranking: 'bm25',
   },
   ACCURATE: {
     indexing: 'comprehensive',
     caching: 'conservative',
-    ranking: 'combined'
-  }
+    ranking: 'combined',
+  },
 } as const;

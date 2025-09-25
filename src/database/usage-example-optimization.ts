@@ -161,7 +161,15 @@ async function populateSampleData(db: Database.Database): Promise<void> {
 
   const categories = ['JCL', 'VSAM', 'DB2', 'Batch', 'CICS', 'IMS'];
   const severities = ['critical', 'high', 'medium', 'low'];
-  const sampleTags = ['error', 'performance', 'memory', 'timeout', 'configuration', 'batch', 'online'];
+  const sampleTags = [
+    'error',
+    'performance',
+    'memory',
+    'timeout',
+    'configuration',
+    'batch',
+    'online',
+  ];
 
   // Insert sample entries
   const insertEntry = db.prepare(`
@@ -224,7 +232,7 @@ async function populateSampleData(db: Database.Database): Promise<void> {
     'VSAM configuration',
     'batch timeout',
     'CICS memory issue',
-    'IMS deadlock'
+    'IMS deadlock',
   ];
 
   for (let i = 0; i < 2000; i++) {
@@ -272,7 +280,6 @@ async function demonstrateIndexAnalysis(indexEngine: IndexOptimizationEngine): P
     console.log(`   Would create: ${optimization.created_indexes.length} indexes`);
     console.log(`   Would drop: ${optimization.dropped_indexes.length} indexes`);
     console.log(`   Expected improvement: ${optimization.estimated_improvement}\n`);
-
   } catch (error) {
     console.error('❌ Index analysis failed:', error);
   }
@@ -293,7 +300,7 @@ async function demonstrateQueryOptimization(
     const testQueries = [
       {
         name: 'Simple Category Search',
-        sql: `SELECT id, title, usage_count FROM kb_entries WHERE category = 'JCL' AND archived = FALSE ORDER BY usage_count DESC LIMIT 10`
+        sql: `SELECT id, title, usage_count FROM kb_entries WHERE category = 'JCL' AND archived = FALSE ORDER BY usage_count DESC LIMIT 10`,
       },
       {
         name: 'Complex Multi-Table Join',
@@ -306,7 +313,7 @@ async function demonstrateQueryOptimization(
           GROUP BY e.id
           ORDER BY e.usage_count DESC, e.success_count DESC
           LIMIT 20
-        `
+        `,
       },
       {
         name: 'Analytics Query with Subquery',
@@ -319,8 +326,8 @@ async function demonstrateQueryOptimization(
           GROUP BY category
           HAVING total_entries > 5
           ORDER BY avg_usage DESC
-        `
-      }
+        `,
+      },
     ];
 
     for (const testQuery of testQueries) {
@@ -349,16 +356,12 @@ async function demonstrateQueryOptimization(
 
     // Test optimized query execution
     console.log('🚀 Testing Optimized Query Execution:');
-    const result = await queryService.executeOptimizedQuery(
-      testQueries[0].sql,
-      []
-    );
+    const result = await queryService.executeOptimizedQuery(testQueries[0].sql, []);
 
     console.log(`   Results: ${result.results.length} rows`);
     console.log(`   Execution time: ${result.execution_time_ms}ms`);
     console.log(`   Cache hit: ${result.cache_hit ? 'Yes' : 'No'}`);
     console.log(`   Optimization applied: ${result.optimization_applied ? 'Yes' : 'No'}\n`);
-
   } catch (error) {
     console.error('❌ Query optimization failed:', error);
   }
@@ -367,7 +370,9 @@ async function demonstrateQueryOptimization(
 /**
  * Demonstrate performance monitoring
  */
-async function demonstratePerformanceMonitoring(queryService: QueryOptimizationService): Promise<void> {
+async function demonstratePerformanceMonitoring(
+  queryService: QueryOptimizationService
+): Promise<void> {
   console.log('📊 DEMONSTRATING PERFORMANCE MONITORING');
   console.log('=======================================\n');
 
@@ -375,8 +380,8 @@ async function demonstratePerformanceMonitoring(queryService: QueryOptimizationS
     // Run some queries to generate performance data
     const queries = [
       "SELECT * FROM kb_entries WHERE category = 'JCL' LIMIT 10",
-      "SELECT COUNT(*) FROM kb_entries GROUP BY category",
-      "SELECT * FROM kb_entries WHERE usage_count > 50 ORDER BY last_used DESC LIMIT 5",
+      'SELECT COUNT(*) FROM kb_entries GROUP BY category',
+      'SELECT * FROM kb_entries WHERE usage_count > 50 ORDER BY last_used DESC LIMIT 5',
     ];
 
     console.log('🔄 Executing test queries to generate performance data...');
@@ -410,7 +415,6 @@ async function demonstratePerformanceMonitoring(queryService: QueryOptimizationS
       console.log(`   ${idx + 1}. ${rec}`);
     });
     console.log();
-
   } catch (error) {
     console.error('❌ Performance monitoring failed:', error);
   }
@@ -430,7 +434,9 @@ async function demonstrateAdaptiveIndexing(indexStrategy: AdvancedIndexStrategy)
     console.log(`Found ${metrics.length} indexes to analyze:`);
     metrics.slice(0, 5).forEach((metric, idx) => {
       console.log(`   ${idx + 1}. ${metric.name} (${metric.table})`);
-      console.log(`      Type: ${metric.type}, Usage: ${metric.usage}, Effectiveness: ${(metric.effectiveness * 100).toFixed(1)}%`);
+      console.log(
+        `      Type: ${metric.type}, Usage: ${metric.usage}, Effectiveness: ${(metric.effectiveness * 100).toFixed(1)}%`
+      );
       if (metric.recommendations.length > 0) {
         console.log(`      Recommendations: ${metric.recommendations.join(', ')}`);
       }
@@ -455,7 +461,6 @@ async function demonstrateAdaptiveIndexing(indexStrategy: AdvancedIndexStrategy)
       });
     }
     console.log();
-
   } catch (error) {
     console.error('❌ Adaptive indexing failed:', error);
   }
@@ -476,7 +481,7 @@ async function showPerformanceResults(
     const searchQueries = [
       "SELECT * FROM kb_entries WHERE category = 'JCL' AND archived = FALSE ORDER BY usage_count DESC LIMIT 10",
       "SELECT e.*, GROUP_CONCAT(t.tag) as tags FROM kb_entries e LEFT JOIN kb_tags t ON e.id = t.entry_id WHERE e.category = 'DB2' GROUP BY e.id LIMIT 5",
-      "SELECT category, COUNT(*) FROM kb_entries WHERE archived = FALSE GROUP BY category ORDER BY COUNT(*) DESC"
+      'SELECT category, COUNT(*) FROM kb_entries WHERE archived = FALSE GROUP BY category ORDER BY COUNT(*) DESC',
     ];
 
     console.log('⚡ Performance Test Results:');
@@ -495,7 +500,9 @@ async function showPerformanceResults(
 
         if (executionTime < 1000) subSecondQueries++;
 
-        console.log(`   Query ${i + 1}: ${executionTime}ms (${result.results.length} results) ${executionTime < 100 ? '🟢' : executionTime < 1000 ? '🟡' : '🔴'}`);
+        console.log(
+          `   Query ${i + 1}: ${executionTime}ms (${result.results.length} results) ${executionTime < 100 ? '🟢' : executionTime < 1000 ? '🟡' : '🔴'}`
+        );
       } catch (error) {
         console.log(`   Query ${i + 1}: FAILED 🔴`);
       }
@@ -507,7 +514,9 @@ async function showPerformanceResults(
     console.log('\n📊 Performance Summary:');
     console.log(`   Average Query Time: ${avgTime.toFixed(2)}ms`);
     console.log(`   Sub-1s Query Rate: ${subSecondRate.toFixed(1)}%`);
-    console.log(`   Target Achievement: ${avgTime < 100 ? '✅ EXCELLENT' : avgTime < 1000 ? '✅ GOOD' : '❌ NEEDS IMPROVEMENT'}`);
+    console.log(
+      `   Target Achievement: ${avgTime < 100 ? '✅ EXCELLENT' : avgTime < 1000 ? '✅ GOOD' : '❌ NEEDS IMPROVEMENT'}`
+    );
 
     if (avgTime < 100) {
       console.log('\n🎉 CONGRATULATIONS! Database is optimized for sub-100ms performance!');
@@ -516,7 +525,6 @@ async function showPerformanceResults(
     } else {
       console.log('\n⚠️ Performance target not met. Consider applying recommended optimizations.');
     }
-
   } catch (error) {
     console.error('❌ Performance testing failed:', error);
   }
@@ -535,7 +543,7 @@ export async function demonstrateSpecificOptimizations(): Promise<void> {
 
   // Scenario 1: Large table scan optimization
   console.log('📋 Scenario 1: Optimizing Large Table Scans');
-  console.log('Before: SELECT * FROM kb_entries WHERE category = \'JCL\'');
+  console.log("Before: SELECT * FROM kb_entries WHERE category = 'JCL'");
   console.log('Problem: Full table scan on large table');
   console.log('Solution: CREATE INDEX idx_category_archived ON kb_entries(category, archived);');
   console.log('Expected improvement: 80-95% faster queries\n');
@@ -551,14 +559,18 @@ export async function demonstrateSpecificOptimizations(): Promise<void> {
   console.log('📋 Scenario 3: Optimizing ORDER BY Queries');
   console.log('Before: SELECT * FROM kb_entries ORDER BY usage_count DESC, created_at DESC');
   console.log('Problem: External sorting required');
-  console.log('Solution: CREATE INDEX idx_usage_created ON kb_entries(usage_count DESC, created_at DESC);');
+  console.log(
+    'Solution: CREATE INDEX idx_usage_created ON kb_entries(usage_count DESC, created_at DESC);'
+  );
   console.log('Expected improvement: 60-80% faster sorting\n');
 
   // Scenario 4: Covering index optimization
   console.log('📋 Scenario 4: Implementing Covering Indexes');
   console.log('Before: Index lookup + table lookup for each result');
   console.log('Problem: Double I/O for each row returned');
-  console.log('Solution: CREATE INDEX idx_covering ON kb_entries(category, id, title, usage_count);');
+  console.log(
+    'Solution: CREATE INDEX idx_covering ON kb_entries(category, id, title, usage_count);'
+  );
   console.log('Expected improvement: 40-60% faster queries with no table lookups\n');
 
   db.close();
@@ -576,5 +588,5 @@ if (require.main === module) {
 
 export default {
   demonstrateIndexOptimization,
-  demonstrateSpecificOptimizations
+  demonstrateSpecificOptimizations,
 };

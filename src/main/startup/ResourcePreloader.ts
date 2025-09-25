@@ -31,14 +31,14 @@ export interface PreloadResult {
 export class ResourcePreloader extends EventEmitter {
   private knowledgeDB: KnowledgeDB | null = null;
   private preloadCache = new Map<string, any>();
-  
+
   private readonly options: PreloadOptions = {
     preloadPopularEntries: true,
     preloadSearchIndex: true,
     preloadTemplates: true,
     cacheUserPreferences: true,
     maxEntriesCount: 50,
-    maxCacheSize: 50 // 50MB cache limit
+    maxCacheSize: 50, // 50MB cache limit
   };
 
   constructor(options?: Partial<PreloadOptions>) {
@@ -60,7 +60,7 @@ export class ResourcePreloader extends EventEmitter {
       indexesWarmed: 0,
       templatesLoaded: 0,
       cacheSize: 0,
-      errors: []
+      errors: [],
     };
 
     try {
@@ -95,11 +95,12 @@ export class ResourcePreloader extends EventEmitter {
       result.success = result.errors.length === 0;
 
       console.log(`✅ Resource preloading completed in ${result.duration}ms`);
-      console.log(`📊 Preloaded: ${result.preloadedEntries} entries, ${result.indexesWarmed} indexes, ${result.templatesLoaded} templates`);
-      
+      console.log(
+        `📊 Preloaded: ${result.preloadedEntries} entries, ${result.indexesWarmed} indexes, ${result.templatesLoaded} templates`
+      );
+
       this.emit('preload:completed', result);
       return result;
-
     } catch (error) {
       result.errors.push(`Preloading failed: ${error.message}`);
       result.duration = Date.now() - startTime;
@@ -107,7 +108,7 @@ export class ResourcePreloader extends EventEmitter {
 
       console.error('❌ Resource preloading failed:', error);
       this.emit('preload:failed', error);
-      
+
       return result;
     }
   }
@@ -119,7 +120,7 @@ export class ResourcePreloader extends EventEmitter {
     try {
       const dbPath = join(app.getPath('userData'), 'knowledge.db');
       this.knowledgeDB = createKnowledgeDB(dbPath);
-      
+
       // Test database connection
       await this.knowledgeDB.getMetrics();
       console.log('✅ Database connection established for preloading');
@@ -141,13 +142,13 @@ export class ResourcePreloader extends EventEmitter {
       // Get most popular entries (by usage_count)
       const popularEntries = await this.knowledgeDB.search('', {
         limit: Math.floor(this.options.maxEntriesCount * 0.6),
-        sortBy: 'usage'
+        sortBy: 'usage',
       });
 
       // Get recent entries
       const recentEntries = await this.knowledgeDB.search('', {
         limit: Math.floor(this.options.maxEntriesCount * 0.4),
-        sortBy: 'date'
+        sortBy: 'date',
       });
 
       // Cache popular entries
@@ -156,10 +157,11 @@ export class ResourcePreloader extends EventEmitter {
 
       for (const entry of uniqueEntries) {
         this.preloadCache.set(`kb:${entry.id}`, entry);
-        
+
         // Also preload related searches
         if (entry.tags && entry.tags.length > 0) {
-          for (const tag of entry.tags.slice(0, 3)) { // Top 3 tags
+          for (const tag of entry.tags.slice(0, 3)) {
+            // Top 3 tags
             const tagResults = await this.knowledgeDB.search(tag, { limit: 5 });
             this.preloadCache.set(`search:tag:${tag}`, tagResults);
           }
@@ -168,7 +170,6 @@ export class ResourcePreloader extends EventEmitter {
 
       result.preloadedEntries = uniqueEntries.length;
       console.log(`✅ Preloaded ${uniqueEntries.length} popular KB entries`);
-
     } catch (error) {
       result.errors.push(`Popular entries preload failed: ${error.message}`);
       console.error('❌ Failed to preload popular entries:', error);
@@ -187,8 +188,21 @@ export class ResourcePreloader extends EventEmitter {
 
       // Common search terms to warm up indexes
       const commonSearchTerms = [
-        's0c7', 'vsam', 'jcl', 'db2', 'abend', 'error', 'file', 'dataset',
-        'status', 'code', 'batch', 'cobol', 'system', 'problem', 'solution'
+        's0c7',
+        'vsam',
+        'jcl',
+        'db2',
+        'abend',
+        'error',
+        'file',
+        'dataset',
+        'status',
+        'code',
+        'batch',
+        'cobol',
+        'system',
+        'problem',
+        'solution',
       ];
 
       let warmedIndexes = 0;
@@ -202,9 +216,9 @@ export class ResourcePreloader extends EventEmitter {
           // Warm up category searches
           const categories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional'];
           for (const category of categories) {
-            const categoryResults = await this.knowledgeDB.search('', { 
+            const categoryResults = await this.knowledgeDB.search('', {
               category: category,
-              limit: 10 
+              limit: 10,
             });
             this.preloadCache.set(`search:category:${category}`, categoryResults);
           }
@@ -221,7 +235,6 @@ export class ResourcePreloader extends EventEmitter {
 
       result.indexesWarmed = warmedIndexes;
       console.log(`✅ Warmed up ${warmedIndexes} search indexes`);
-
     } catch (error) {
       result.errors.push(`Index warming failed: ${error.message}`);
       console.error('❌ Failed to warm up search indexes:', error);
@@ -237,7 +250,7 @@ export class ResourcePreloader extends EventEmitter {
       this.emit('preload:progress', 'Loading templates', 50);
 
       const templatesPath = join(__dirname, '../../../assets/kb-templates');
-      
+
       if (!fs.existsSync(templatesPath)) {
         console.log('📁 Templates directory not found, creating sample templates in cache...');
         await this.createSampleTemplates();
@@ -252,7 +265,7 @@ export class ResourcePreloader extends EventEmitter {
         try {
           const filePath = join(templatesPath, file);
           const templateContent = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          
+
           this.preloadCache.set(`template:${file.replace('.json', '')}`, templateContent);
           templatesLoaded++;
         } catch (error) {
@@ -262,7 +275,6 @@ export class ResourcePreloader extends EventEmitter {
 
       result.templatesLoaded = templatesLoaded;
       console.log(`✅ Preloaded ${templatesLoaded} templates`);
-
     } catch (error) {
       result.errors.push(`Template preloading failed: ${error.message}`);
       console.error('❌ Failed to preload templates:', error);
@@ -279,9 +291,9 @@ export class ResourcePreloader extends EventEmitter {
 
       const userDataPath = app.getPath('userData');
       const preferencesPath = join(userDataPath, 'preferences.json');
-      
+
       let preferences = {};
-      
+
       if (fs.existsSync(preferencesPath)) {
         preferences = JSON.parse(fs.readFileSync(preferencesPath, 'utf8'));
       } else {
@@ -298,16 +310,16 @@ export class ResourcePreloader extends EventEmitter {
           shortcuts: {
             newEntry: 'CmdOrCtrl+N',
             search: 'CmdOrCtrl+F',
-            settings: 'CmdOrCtrl+,'
-          }
+            settings: 'CmdOrCtrl+,',
+          },
         };
-        
+
         // Save default preferences
         fs.writeFileSync(preferencesPath, JSON.stringify(preferences, null, 2));
       }
 
       this.preloadCache.set('user:preferences', preferences);
-      
+
       // Preload recent searches if available
       if (preferences.recentSearches && Array.isArray(preferences.recentSearches)) {
         for (const recentSearch of preferences.recentSearches.slice(0, 10)) {
@@ -323,7 +335,6 @@ export class ResourcePreloader extends EventEmitter {
       }
 
       console.log('✅ User preferences loaded and cached');
-
     } catch (error) {
       result.errors.push(`User preferences loading failed: ${error.message}`);
       console.error('❌ Failed to load user preferences:', error);
@@ -345,10 +356,10 @@ export class ResourcePreloader extends EventEmitter {
           solution_steps: [
             'Check for non-numeric data in numeric fields',
             'Verify field initialization',
-            'Add numeric validation before operations'
+            'Add numeric validation before operations',
           ],
-          prevention: 'Initialize all numeric fields and add proper validation'
-        }
+          prevention: 'Initialize all numeric fields and add proper validation',
+        },
       },
       'system-issue': {
         name: 'System Issue Template',
@@ -358,8 +369,8 @@ export class ResourcePreloader extends EventEmitter {
           symptom: 'File access denied',
           impact: 'Jobs failing with status 35',
           root_cause: 'File not cataloged properly',
-          resolution: 'Re-catalog the file using IDCAMS'
-        }
+          resolution: 'Re-catalog the file using IDCAMS',
+        },
       },
       'batch-job': {
         name: 'Batch Job Issue Template',
@@ -369,9 +380,9 @@ export class ResourcePreloader extends EventEmitter {
           step_name: 'STEP010',
           return_code: '12',
           error_message: 'Dataset not found',
-          fix: 'Check dataset name and allocation'
-        }
-      }
+          fix: 'Check dataset name and allocation',
+        },
+      },
     };
 
     for (const [key, template] of Object.entries(sampleTemplates)) {
@@ -398,13 +409,13 @@ export class ResourcePreloader extends EventEmitter {
    */
   private calculateCacheSize(): number {
     let totalSize = 0;
-    
+
     for (const [key, value] of this.preloadCache.entries()) {
       const serialized = JSON.stringify(value);
       totalSize += Buffer.byteLength(serialized, 'utf8');
     }
-    
-    return Math.round(totalSize / (1024 * 1024) * 100) / 100; // MB with 2 decimal places
+
+    return Math.round((totalSize / (1024 * 1024)) * 100) / 100; // MB with 2 decimal places
   }
 
   /**
@@ -422,7 +433,7 @@ export class ResourcePreloader extends EventEmitter {
     if (this.calculateCacheSize() > this.options.maxCacheSize) {
       this.evictOldestEntries();
     }
-    
+
     this.preloadCache.set(key, data);
   }
 
@@ -439,11 +450,11 @@ export class ResourcePreloader extends EventEmitter {
   private evictOldestEntries(): void {
     const entries = Array.from(this.preloadCache.entries());
     const toDelete = Math.floor(entries.length * 0.2); // Remove 20% oldest
-    
+
     for (let i = 0; i < toDelete; i++) {
       this.preloadCache.delete(entries[i][0]);
     }
-    
+
     console.log(`🗑️ Evicted ${toDelete} cache entries to free memory`);
   }
 
@@ -458,7 +469,7 @@ export class ResourcePreloader extends EventEmitter {
     const stats = {
       totalEntries: this.preloadCache.size,
       totalSize: this.calculateCacheSize(),
-      categories: {} as Record<string, number>
+      categories: {} as Record<string, number>,
     };
 
     for (const key of this.preloadCache.keys()) {
@@ -482,12 +493,12 @@ export class ResourcePreloader extends EventEmitter {
    */
   async cleanup(): Promise<void> {
     this.clearCache();
-    
+
     if (this.knowledgeDB) {
       await this.knowledgeDB.close();
       this.knowledgeDB = null;
     }
-    
+
     this.removeAllListeners();
   }
 }

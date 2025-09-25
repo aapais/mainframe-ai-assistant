@@ -107,13 +107,12 @@ class UnifiedHandlerTester {
       results.push(await this.testUnifiedSearch());
       results.push(await this.testStatusTransitions());
       results.push(await this.testBackwardCompatibility());
-
     } catch (error) {
       results.push({
         name: 'Handler Initialization',
         passed: false,
         error: error.message,
-        duration: 0
+        duration: 0,
       });
     }
 
@@ -130,11 +129,15 @@ class UnifiedHandlerTester {
       }
 
       // Check if the table name was detected correctly
-      const tableExists = this.db.prepare(`
+      const tableExists = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM sqlite_master
         WHERE type='table' AND name='entries'
-      `).get() as any;
+      `
+        )
+        .get() as any;
 
       if (tableExists.count === 0) {
         throw new Error('Entries table not found');
@@ -143,14 +146,14 @@ class UnifiedHandlerTester {
       return {
         name: 'Schema Detection',
         passed: true,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     } catch (error) {
       return {
         name: 'Schema Detection',
         passed: false,
         error: error.message,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     }
   }
@@ -172,42 +175,51 @@ class UnifiedHandlerTester {
         category: 'JCL',
         severity: 'medium',
         tags: ['test', 'jcl'],
-        created_by: 'test-user'
+        created_by: 'test-user',
       };
 
       // Create the entry through the handler (would normally go through IPC)
-      const result = await (this.handler as any).createKnowledgeEntryInternal('test-kb-1', testEntry);
+      const result = await (this.handler as any).createKnowledgeEntryInternal(
+        'test-kb-1',
+        testEntry
+      );
 
       if (!result || !result.id) {
         throw new Error('Failed to create knowledge entry');
       }
 
       // Verify the entry was created correctly
-      const createdEntry = this.db.prepare(`
+      const createdEntry = this.db
+        .prepare(
+          `
         SELECT * FROM entries WHERE id = ? AND entry_type = 'knowledge'
-      `).get('test-kb-1');
+      `
+        )
+        .get('test-kb-1');
 
       if (!createdEntry) {
         throw new Error('Knowledge entry not found in database');
       }
 
-      if (createdEntry.title !== testEntry.title ||
-          createdEntry.problem !== testEntry.problem ||
-          createdEntry.solution !== testEntry.solution) {
+      if (
+        createdEntry.title !== testEntry.title ||
+        createdEntry.problem !== testEntry.problem ||
+        createdEntry.solution !== testEntry.solution
+      ) {
         throw new Error('Knowledge entry data mismatch');
       }
 
       return {
         name: 'Knowledge Entry Creation',
         passed: true,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     } catch (error) {
       return {
         name: 'Knowledge Entry Creation',
         passed: false,
         error: error.message,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     }
   }
@@ -231,7 +243,7 @@ class UnifiedHandlerTester {
         priority: 2,
         reporter: 'test-user',
         tags: ['test', 'system'],
-        created_by: 'test-user'
+        created_by: 'test-user',
       };
 
       // Create the incident through the handler
@@ -242,32 +254,38 @@ class UnifiedHandlerTester {
       }
 
       // Verify the incident was created correctly
-      const createdIncident = this.db.prepare(`
+      const createdIncident = this.db
+        .prepare(
+          `
         SELECT * FROM entries WHERE id = ? AND entry_type = 'incident'
-      `).get('test-inc-1');
+      `
+        )
+        .get('test-inc-1');
 
       if (!createdIncident) {
         throw new Error('Incident not found in database');
       }
 
-      if (createdIncident.title !== testIncident.title ||
-          createdIncident.description !== testIncident.description ||
-          createdIncident.status !== testIncident.status ||
-          createdIncident.priority !== testIncident.priority) {
+      if (
+        createdIncident.title !== testIncident.title ||
+        createdIncident.description !== testIncident.description ||
+        createdIncident.status !== testIncident.status ||
+        createdIncident.priority !== testIncident.priority
+      ) {
         throw new Error('Incident data mismatch');
       }
 
       return {
         name: 'Incident Creation',
         passed: true,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     } catch (error) {
       return {
         name: 'Incident Creation',
         passed: false,
         error: error.message,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     }
   }
@@ -283,7 +301,7 @@ class UnifiedHandlerTester {
       // Test unified search across both entry types
       const searchResult = await (this.handler as any).unifiedSearch('Test', {
         entryTypes: ['knowledge', 'incident'],
-        limit: 10
+        limit: 10,
       });
 
       if (!Array.isArray(searchResult)) {
@@ -310,14 +328,14 @@ class UnifiedHandlerTester {
       return {
         name: 'Unified Search',
         passed: true,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     } catch (error) {
       return {
         name: 'Unified Search',
         passed: false,
         error: error.message,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     }
   }
@@ -331,12 +349,21 @@ class UnifiedHandlerTester {
       }
 
       // Test incident status update
-      await (this.handler as any).updateIncidentStatus('test-inc-1', 'em_tratamento', 'Test status change', 'test-user');
+      await (this.handler as any).updateIncidentStatus(
+        'test-inc-1',
+        'em_tratamento',
+        'Test status change',
+        'test-user'
+      );
 
       // Verify status was updated
-      const updatedIncident = this.db.prepare(`
+      const updatedIncident = this.db
+        .prepare(
+          `
         SELECT status FROM entries WHERE id = ? AND entry_type = 'incident'
-      `).get('test-inc-1') as any;
+      `
+        )
+        .get('test-inc-1') as any;
 
       if (!updatedIncident) {
         throw new Error('Incident not found after status update');
@@ -349,14 +376,14 @@ class UnifiedHandlerTester {
       return {
         name: 'Status Transitions',
         passed: true,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     } catch (error) {
       return {
         name: 'Status Transitions',
         passed: false,
         error: error.message,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     }
   }
@@ -393,14 +420,14 @@ class UnifiedHandlerTester {
       return {
         name: 'Backward Compatibility',
         passed: true,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     } catch (error) {
       return {
         name: 'Backward Compatibility',
         passed: false,
         error: error.message,
-        duration: Date.now() - start
+        duration: Date.now() - start,
       };
     }
   }
@@ -457,7 +484,6 @@ async function runUnifiedHandlerTests() {
     } else {
       console.log('⚠️ Some tests failed. Please review the implementation.');
     }
-
   } catch (error) {
     console.error('❌ Test execution failed:', error);
   } finally {

@@ -108,19 +108,19 @@ export class FTS5Integration {
     performance: {
       maxSearchTime: 1000,
       maxInitTime: 5000,
-      enableMonitoring: true
+      enableMonitoring: true,
     },
     cache: {
       enabled: true,
       ttl: 300000, // 5 minutes
-      maxSize: 1000
+      maxSize: 1000,
     },
     features: {
       hybridSearch: true,
       autoComplete: true,
       snippets: true,
-      queryExpansion: false
-    }
+      queryExpansion: false,
+    },
   };
 
   constructor(
@@ -158,7 +158,9 @@ export class FTS5Integration {
 
       // Validate initialization performance
       if (initTime > this.config.performance.maxInitTime) {
-        console.warn(`⚠️ FTS5 initialization took ${initTime}ms (threshold: ${this.config.performance.maxInitTime}ms)`);
+        console.warn(
+          `⚠️ FTS5 initialization took ${initTime}ms (threshold: ${this.config.performance.maxInitTime}ms)`
+        );
       }
 
       this.initialized = true;
@@ -172,7 +174,6 @@ export class FTS5Integration {
       if (this.config.cache.enabled) {
         await this.preWarmCache();
       }
-
     } catch (error) {
       console.error('❌ FTS5 Integration initialization failed:', error);
 
@@ -189,10 +190,7 @@ export class FTS5Integration {
   /**
    * Intelligent search with automatic strategy selection
    */
-  async search(
-    query: string,
-    options: SearchOptions = {}
-  ): Promise<SearchResult[]> {
+  async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
     this.ensureInitialized();
 
     const startTime = Date.now();
@@ -212,13 +210,12 @@ export class FTS5Integration {
       if (this.config.performance.enableMonitoring) {
         console.log(
           `🔍 Search: "${query}" | Strategy: ${strategy.strategy} | ` +
-          `Time: ${executionTime}ms | Results: ${results.length} | ` +
-          `Confidence: ${(strategy.confidence * 100).toFixed(1)}%`
+            `Time: ${executionTime}ms | Results: ${results.length} | ` +
+            `Confidence: ${(strategy.confidence * 100).toFixed(1)}%`
         );
       }
 
       return results;
-
     } catch (error) {
       console.error('❌ Integrated search failed:', error);
 
@@ -253,7 +250,7 @@ export class FTS5Integration {
       // Use hybrid approach for auto-complete
       const [fts5Results, legacyResults] = await Promise.allSettled([
         this.getFTS5AutoComplete(prefix, Math.ceil(limit * 0.7)),
-        this.legacyEngine.suggest(prefix, Math.ceil(limit * 0.3))
+        this.legacyEngine.suggest(prefix, Math.ceil(limit * 0.3)),
       ]);
 
       // Merge results intelligently
@@ -267,7 +264,6 @@ export class FTS5Integration {
       this.addToCache(cacheKey, suggestions);
 
       return suggestions;
-
     } catch (error) {
       console.error('Auto-complete error:', error);
       return await this.legacyEngine.suggest(prefix, limit);
@@ -288,7 +284,7 @@ export class FTS5Integration {
       return {
         averageTime: times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0,
         callCount: times.length,
-        successRate: times.length > 0 ? 1.0 : 0.0 // Simplified - would track failures in production
+        successRate: times.length > 0 ? 1.0 : 0.0, // Simplified - would track failures in production
       };
     };
 
@@ -302,9 +298,10 @@ export class FTS5Integration {
       hybrid: calculateMetrics('hybrid'),
       overall: {
         totalSearches: totalRequests,
-        averageTime: allTimes.length > 0 ? allTimes.reduce((a, b) => a + b, 0) / allTimes.length : 0,
-        cacheHitRate: totalRequests > 0 ? cacheHits / totalRequests : 0
-      }
+        averageTime:
+          allTimes.length > 0 ? allTimes.reduce((a, b) => a + b, 0) / allTimes.length : 0,
+        cacheHitRate: totalRequests > 0 ? cacheHits / totalRequests : 0,
+      },
     };
   }
 
@@ -341,8 +338,9 @@ export class FTS5Integration {
       fts5Available: this.config.enabled && this.initialized,
       legacyAvailable: true, // Legacy engine is always available
       cacheStatus: this.config.cache.enabled ? 'enabled' : 'disabled',
-      performanceStatus: metrics.overall.averageTime < this.config.performance.maxSearchTime ? 'good' : 'degraded',
-      recommendations
+      performanceStatus:
+        metrics.overall.averageTime < this.config.performance.maxSearchTime ? 'good' : 'degraded',
+      recommendations,
     };
   }
 
@@ -365,7 +363,6 @@ export class FTS5Integration {
       // this.performanceMetrics.clear();
 
       console.log('✅ FTS5 integration optimization completed');
-
     } catch (error) {
       console.error('❌ Integration optimization failed:', error);
       throw error;
@@ -385,12 +382,13 @@ export class FTS5Integration {
         reject(new Error(`FTS5 initialization timeout (${this.config.performance.maxInitTime}ms)`));
       }, this.config.performance.maxInitTime);
 
-      this.fts5Engine.initialize()
+      this.fts5Engine
+        .initialize()
         .then(() => {
           clearTimeout(timeout);
           resolve();
         })
-        .catch((error) => {
+        .catch(error => {
           clearTimeout(timeout);
           reject(error);
         });
@@ -410,7 +408,7 @@ export class FTS5Integration {
         strategy: 'legacy',
         reason: 'FTS5 disabled',
         confidence: 1.0,
-        estimatedTime: 200
+        estimatedTime: 200,
       };
     }
 
@@ -420,7 +418,7 @@ export class FTS5Integration {
         strategy: 'legacy',
         reason: 'Query too short for FTS5',
         confidence: 0.9,
-        estimatedTime: 150
+        estimatedTime: 150,
       };
     }
 
@@ -430,7 +428,7 @@ export class FTS5Integration {
         strategy: 'legacy',
         reason: 'Error code pattern detected',
         confidence: 0.95,
-        estimatedTime: 100
+        estimatedTime: 100,
       };
     }
 
@@ -440,7 +438,7 @@ export class FTS5Integration {
         strategy: 'legacy',
         reason: 'Structured query - legacy optimized',
         confidence: 0.8,
-        estimatedTime: 150
+        estimatedTime: 150,
       };
     }
 
@@ -451,21 +449,21 @@ export class FTS5Integration {
         strategy: 'hybrid',
         reason: 'Complex query - hybrid approach',
         confidence: 0.9,
-        estimatedTime: 300
+        estimatedTime: 300,
       };
     }
 
     // Rule 6: Performance-based selection
     const fts5Metrics = this.performanceMetrics.get('fts5') || [];
-    const avgFTS5Time = fts5Metrics.length > 0 ?
-      fts5Metrics.reduce((a, b) => a + b, 0) / fts5Metrics.length : 200;
+    const avgFTS5Time =
+      fts5Metrics.length > 0 ? fts5Metrics.reduce((a, b) => a + b, 0) / fts5Metrics.length : 200;
 
     if (avgFTS5Time > this.config.performance.maxSearchTime) {
       return {
         strategy: 'legacy',
         reason: 'FTS5 performance degraded',
         confidence: 0.7,
-        estimatedTime: 200
+        estimatedTime: 200,
       };
     }
 
@@ -474,7 +472,7 @@ export class FTS5Integration {
       strategy: 'fts5',
       reason: 'General text search - FTS5 optimal',
       confidence: 0.85,
-      estimatedTime: avgFTS5Time || 250
+      estimatedTime: avgFTS5Time || 250,
     };
   }
 
@@ -521,34 +519,34 @@ export class FTS5Integration {
   /**
    * Execute FTS5 search with timeout protection
    */
-  private async executeFTS5Search(
-    query: string,
-    options: SearchOptions
-  ): Promise<SearchResult[]> {
+  private async executeFTS5Search(query: string, options: SearchOptions): Promise<SearchResult[]> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error(`FTS5 search timeout (${this.config.performance.maxSearchTime}ms)`));
       }, this.config.performance.maxSearchTime);
 
-      this.fts5Engine.search(query, options)
-        .then((results) => {
+      this.fts5Engine
+        .search(query, options)
+        .then(results => {
           clearTimeout(timeout);
           // Convert FTS5SearchResult to SearchResult
-          resolve(results.map(r => ({
-            entry: r.entry,
-            score: r.score,
-            matchType: r.matchType,
-            highlights: r.highlights,
-            explanation: `FTS5 BM25 Score: ${r.bm25Score.toFixed(2)}`,
-            metadata: {
-              processingTime: 0, // Would be calculated in production
-              source: 'fts5',
-              confidence: r.bm25Score / 100,
-              fallback: false
-            }
-          })));
+          resolve(
+            results.map(r => ({
+              entry: r.entry,
+              score: r.score,
+              matchType: r.matchType,
+              highlights: r.highlights,
+              explanation: `FTS5 BM25 Score: ${r.bm25Score.toFixed(2)}`,
+              metadata: {
+                processingTime: 0, // Would be calculated in production
+                source: 'fts5',
+                confidence: r.bm25Score / 100,
+                fallback: false,
+              },
+            }))
+          );
         })
-        .catch((error) => {
+        .catch(error => {
           clearTimeout(timeout);
           reject(error);
         });
@@ -567,7 +565,7 @@ export class FTS5Integration {
     // Execute both searches in parallel
     const [fts5Results, legacyResults] = await Promise.allSettled([
       this.executeFTS5Search(query, { ...options, limit: Math.ceil(limit * 0.7) }),
-      this.legacyEngine.search(query, { ...options, limit: Math.ceil(limit * 0.5) })
+      this.legacyEngine.search(query, { ...options, limit: Math.ceil(limit * 0.5) }),
     ]);
 
     // Merge results intelligently
@@ -595,7 +593,7 @@ export class FTS5Integration {
       resultMap.set(result.entry.id!, {
         ...result,
         score: result.score * 1.1, // Slight boost for FTS5 results
-        matchType: 'fts5' as any
+        matchType: 'fts5' as any,
       });
     });
 
@@ -643,7 +641,6 @@ export class FTS5Integration {
       });
 
       return Array.from(suggestions).slice(0, limit);
-
     } catch (error) {
       console.error('FTS5 auto-complete error:', error);
       return [];
@@ -679,7 +676,7 @@ export class FTS5Integration {
       options.category || '',
       options.sortBy || '',
       options.limit || 10,
-      options.offset || 0
+      options.offset || 0,
     ];
     return keyParts.join(':');
   }
@@ -710,7 +707,7 @@ export class FTS5Integration {
 
     this.resultCache.set(key, {
       result,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -746,8 +743,8 @@ export class FTS5Integration {
       const metrics = this.getPerformanceMetrics();
       console.log(
         `📊 Search Performance: FTS5: ${metrics.fts5.averageTime.toFixed(1)}ms ` +
-        `(${metrics.fts5.callCount} calls), Legacy: ${metrics.legacy.averageTime.toFixed(1)}ms ` +
-        `(${metrics.legacy.callCount} calls), Cache hit rate: ${(metrics.overall.cacheHitRate * 100).toFixed(1)}%`
+          `(${metrics.fts5.callCount} calls), Legacy: ${metrics.legacy.averageTime.toFixed(1)}ms ` +
+          `(${metrics.legacy.callCount} calls), Cache hit rate: ${(metrics.overall.cacheHitRate * 100).toFixed(1)}%`
       );
     }, 300000); // 5 minutes
   }
@@ -764,18 +761,17 @@ export class FTS5Integration {
       'CICS transaction',
       'IMS database',
       'batch job failure',
-      'dataset not found'
+      'dataset not found',
     ];
 
     try {
       await Promise.all(
-        commonQueries.map(query =>
-          this.search(query, { limit: 5 }).catch(() => {}) // Ignore errors during pre-warming
+        commonQueries.map(
+          query => this.search(query, { limit: 5 }).catch(() => {}) // Ignore errors during pre-warming
         )
       );
 
       console.log(`✅ Cache pre-warmed with ${commonQueries.length} common queries`);
-
     } catch (error) {
       console.warn('⚠️ Cache pre-warming partially failed:', error);
     }
@@ -794,16 +790,16 @@ export class FTS5Integration {
       minQueryLength: config.minQueryLength ?? defaults.minQueryLength,
       performance: {
         ...defaults.performance,
-        ...config.performance
+        ...config.performance,
       },
       cache: {
         ...defaults.cache,
-        ...config.cache
+        ...config.cache,
       },
       features: {
         ...defaults.features,
-        ...config.features
-      }
+        ...config.features,
+      },
     };
   }
 

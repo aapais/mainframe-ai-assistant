@@ -67,39 +67,39 @@ export class MonitoringOrchestrator extends EventEmitter {
 
     // Configure SLA thresholds
     this.setupSLAMonitoring();
-    
+
     // Configure alerting rules
     this.setupAlertingRules();
-    
+
     // Configure logging
     this.setupLogging();
   }
 
   private setupEventHandlers(): void {
     // Performance monitor events
-    this.performanceMonitor.on('sla_violation', (violation) => {
+    this.performanceMonitor.on('sla_violation', violation => {
       this.logger.logSLAViolation(violation.metric, violation.value, violation.threshold);
       this.emit('sla_violation', violation);
     });
 
-    this.performanceMonitor.on('performance_degradation', (degradation) => {
+    this.performanceMonitor.on('performance_degradation', degradation => {
       this.logger.logPerformanceDegradation(degradation);
       this.emit('performance_degradation', degradation);
     });
 
     // Alerting engine events
-    this.alertingEngine.on('alert_triggered', (alert) => {
+    this.alertingEngine.on('alert_triggered', alert => {
       this.logger.logAlert(alert);
       this.emit('alert_triggered', alert);
     });
 
     // Profiler events
-    this.profiler.on('bottleneck_detected', (bottleneck) => {
+    this.profiler.on('bottleneck_detected', bottleneck => {
       this.logger.logBottleneck(bottleneck);
       this.emit('bottleneck_detected', bottleneck);
     });
 
-    this.profiler.on('session_complete', (session) => {
+    this.profiler.on('session_complete', session => {
       this.logger.logProfilingSession(session);
       this.emit('profiling_session_complete', session);
     });
@@ -114,7 +114,7 @@ export class MonitoringOrchestrator extends EventEmitter {
         threshold: this.config.sla.responseTimeThreshold,
         severity: 'critical' as const,
         channels: this.config.alerting.channels,
-        description: 'Search response time SLA violation'
+        description: 'Search response time SLA violation',
       },
       {
         id: 'error_rate_sla',
@@ -123,7 +123,7 @@ export class MonitoringOrchestrator extends EventEmitter {
         threshold: this.config.sla.errorRateThreshold,
         severity: 'warning' as const,
         channels: this.config.alerting.channels,
-        description: 'Search error rate threshold exceeded'
+        description: 'Search error rate threshold exceeded',
       },
       {
         id: 'cache_hit_rate',
@@ -132,8 +132,8 @@ export class MonitoringOrchestrator extends EventEmitter {
         threshold: this.config.sla.cacheHitRateThreshold,
         severity: 'warning' as const,
         channels: this.config.alerting.channels,
-        description: 'Cache hit rate below threshold'
-      }
+        description: 'Cache hit rate below threshold',
+      },
     ];
 
     rules.forEach(rule => this.alertingEngine.addRule(rule));
@@ -149,7 +149,7 @@ export class MonitoringOrchestrator extends EventEmitter {
         threshold: 100,
         severity: 'info' as const,
         channels: ['console'],
-        description: 'High query volume detected'
+        description: 'High query volume detected',
       },
       {
         id: 'memory_usage_high',
@@ -158,7 +158,7 @@ export class MonitoringOrchestrator extends EventEmitter {
         threshold: 500,
         severity: 'warning' as const,
         channels: this.config.alerting.channels,
-        description: 'High memory usage detected'
+        description: 'High memory usage detected',
       },
       {
         id: 'index_corruption',
@@ -167,8 +167,8 @@ export class MonitoringOrchestrator extends EventEmitter {
         threshold: 95,
         severity: 'critical' as const,
         channels: this.config.alerting.channels,
-        description: 'Potential index corruption detected'
-      }
+        description: 'Potential index corruption detected',
+      },
     ];
 
     additionalRules.forEach(rule => this.alertingEngine.addRule(rule));
@@ -177,7 +177,7 @@ export class MonitoringOrchestrator extends EventEmitter {
   private setupLogging(): void {
     this.logger.setLevel(this.config.logging.level);
     this.logger.enableTrace(this.config.logging.enableTrace);
-    
+
     // Add log destinations
     this.config.logging.destinations.forEach(dest => {
       this.logger.addDestination(dest);
@@ -213,7 +213,6 @@ export class MonitoringOrchestrator extends EventEmitter {
       this.isStarted = true;
       this.logger.info('Monitoring orchestrator started successfully');
       this.emit('started');
-
     } catch (error) {
       this.logger.error('Failed to start monitoring orchestrator', { error });
       throw error;
@@ -275,7 +274,7 @@ export class MonitoringOrchestrator extends EventEmitter {
       cacheHit,
       strategy,
       error: error?.message,
-      indexesUsed
+      indexesUsed,
     });
 
     // Check for alerts
@@ -319,14 +318,14 @@ export class MonitoringOrchestrator extends EventEmitter {
    */
   async getDashboardData(): Promise<any> {
     const performanceData = await this.performanceMonitor.getCurrentMetrics();
-    const profilerData = this.profiler.isSessionActive() 
-      ? await this.profiler.getCurrentStats() 
+    const profilerData = this.profiler.isSessionActive()
+      ? await this.profiler.getCurrentStats()
       : null;
 
     return this.dashboard.getDashboardData({
       performance: performanceData,
       profiler: profilerData,
-      alerts: this.alertingEngine.getActiveAlerts()
+      alerts: this.alertingEngine.getActiveAlerts(),
     });
   }
 
@@ -336,14 +335,14 @@ export class MonitoringOrchestrator extends EventEmitter {
   async generateReport(hours: number = 24): Promise<any> {
     const performanceReport = await this.performanceMonitor.generateReport(hours);
     const profilerReport = await this.profiler.generateReport(hours);
-    
+
     return {
       timestamp: new Date(),
       period: `${hours} hours`,
       performance: performanceReport,
       profiler: profilerReport,
       alerts: this.alertingEngine.getAlertHistory(hours),
-      recommendations: this.generateRecommendations(performanceReport, profilerReport)
+      recommendations: this.generateRecommendations(performanceReport, profilerReport),
     };
   }
 
@@ -362,27 +361,33 @@ export class MonitoringOrchestrator extends EventEmitter {
 
   private startAutoProfiling(): void {
     // Start automatic profiling sessions
-    setInterval(async () => {
-      try {
-        if (!this.profiler.isSessionActive()) {
-          await this.startProfilingSession('auto');
-          
-          // Stop after configured duration
-          setTimeout(async () => {
-            await this.stopProfilingSession();
-          }, this.config.profiling.sessionDuration * 60 * 1000);
+    setInterval(
+      async () => {
+        try {
+          if (!this.profiler.isSessionActive()) {
+            await this.startProfilingSession('auto');
+
+            // Stop after configured duration
+            setTimeout(
+              async () => {
+                await this.stopProfilingSession();
+              },
+              this.config.profiling.sessionDuration * 60 * 1000
+            );
+          }
+        } catch (error) {
+          this.logger.error('Auto-profiling failed', { error });
         }
-      } catch (error) {
-        this.logger.error('Auto-profiling failed', { error });
-      }
-    }, (this.config.profiling.sessionDuration + 5) * 60 * 1000); // 5 min gap between sessions
+      },
+      (this.config.profiling.sessionDuration + 5) * 60 * 1000
+    ); // 5 min gap between sessions
   }
 
   private checkAlerts(duration: number, hasError: boolean, cacheHit: boolean): void {
     const metrics = {
       response_time: duration,
       error_occurred: hasError ? 1 : 0,
-      cache_hit: cacheHit ? 1 : 0
+      cache_hit: cacheHit ? 1 : 0,
     };
 
     this.alertingEngine.checkRules(metrics);
@@ -393,7 +398,9 @@ export class MonitoringOrchestrator extends EventEmitter {
 
     // Response time recommendations
     if (performanceReport.avgResponseTime > this.config.sla.responseTimeThreshold * 0.8) {
-      recommendations.push('Response times approaching SLA threshold - consider query optimization');
+      recommendations.push(
+        'Response times approaching SLA threshold - consider query optimization'
+      );
     }
 
     // Cache recommendations
@@ -417,30 +424,30 @@ export class MonitoringOrchestrator extends EventEmitter {
 // Default configuration
 export const DEFAULT_MONITORING_CONFIG: MonitoringConfig = {
   database: {
-    path: './monitoring.db'
+    path: './monitoring.db',
   },
   sla: {
     responseTimeThreshold: 1000, // 1 second
     errorRateThreshold: 5, // 5%
-    cacheHitRateThreshold: 80 // 80%
+    cacheHitRateThreshold: 80, // 80%
   },
   alerting: {
     enabled: true,
     channels: ['console', 'file'],
-    escalationDelay: 15 // 15 minutes
+    escalationDelay: 15, // 15 minutes
   },
   logging: {
     level: 'info',
     destinations: ['console', 'file'],
-    enableTrace: true
+    enableTrace: true,
   },
   profiling: {
     enabled: true,
     autoProfile: false,
-    sessionDuration: 10 // 10 minutes
+    sessionDuration: 10, // 10 minutes
   },
   dashboard: {
     refreshInterval: 30, // 30 seconds
-    autoStart: true
-  }
+    autoStart: true,
+  },
 };

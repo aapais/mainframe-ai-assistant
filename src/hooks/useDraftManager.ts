@@ -192,7 +192,6 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
 
       localStorage.setItem(STORAGE_KEYS.METADATA, JSON.stringify(metadataList));
       localStorage.setItem(STORAGE_KEYS.ACTIVE, metadata.id);
-
     } catch (error) {
       console.error('Failed to save draft to storage:', error);
       opts.onError(error as Error);
@@ -217,16 +216,19 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
   }, []);
 
   // Create new version
-  const createVersion = useCallback((data: DraftData, autoSave: boolean = false): DraftVersion => {
-    return {
-      id: uuidv4(),
-      timestamp: new Date(),
-      data: { ...data },
-      autoSave,
-      editor: opts.editor,
-      checksum: generateChecksum(data),
-    };
-  }, [opts.editor, generateChecksum]);
+  const createVersion = useCallback(
+    (data: DraftData, autoSave: boolean = false): DraftVersion => {
+      return {
+        id: uuidv4(),
+        timestamp: new Date(),
+        data: { ...data },
+        autoSave,
+        editor: opts.editor,
+        checksum: generateChecksum(data),
+      };
+    },
+    [opts.editor, generateChecksum]
+  );
 
   // Update draft data
   const updateDraft = useCallback((updates: Partial<DraftData>) => {
@@ -281,7 +283,6 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
 
       // Call external save handler
       await opts.onSave(draftData);
-
     } catch (error) {
       console.error('Failed to save draft:', error);
       setSaveState(prev => ({
@@ -323,17 +324,13 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
       }));
 
       lastSavedDataRef.current = currentDataString;
-
     } catch (error) {
       console.error('Auto-save failed:', error);
     }
   }, [draftData, metadata, versions, saveState, opts, createVersion, saveToStorage]);
 
   // Debounced auto-save
-  const debouncedAutoSave = useMemo(
-    () => debounce(autoSave, 2000),
-    [autoSave]
-  );
+  const debouncedAutoSave = useMemo(() => debounce(autoSave, 2000), [autoSave]);
 
   // Set up auto-save interval
   useEffect(() => {
@@ -357,104 +354,116 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
   }, [saveState.hasUnsavedChanges, metadata, opts.autoSaveInterval, autoSave, debouncedAutoSave]);
 
   // Load draft
-  const loadDraft = useCallback(async (draftId: string) => {
-    const loadedMetadata = loadFromStorage(draftId);
-    if (!loadedMetadata) {
-      throw new Error(`Draft ${draftId} not found`);
-    }
+  const loadDraft = useCallback(
+    async (draftId: string) => {
+      const loadedMetadata = loadFromStorage(draftId);
+      if (!loadedMetadata) {
+        throw new Error(`Draft ${draftId} not found`);
+      }
 
-    const latestVersion = loadedMetadata.versions[0];
-    setDraftData(latestVersion.data);
-    setMetadata(loadedMetadata);
-    setVersions(loadedMetadata.versions);
-    setSaveState({
-      status: 'saved',
-      lastSaved: latestVersion.timestamp,
-      hasUnsavedChanges: false,
-      conflictDetected: false,
-    });
+      const latestVersion = loadedMetadata.versions[0];
+      setDraftData(latestVersion.data);
+      setMetadata(loadedMetadata);
+      setVersions(loadedMetadata.versions);
+      setSaveState({
+        status: 'saved',
+        lastSaved: latestVersion.timestamp,
+        hasUnsavedChanges: false,
+        conflictDetected: false,
+      });
 
-    lastSavedDataRef.current = JSON.stringify(latestVersion.data);
-  }, [loadFromStorage]);
+      lastSavedDataRef.current = JSON.stringify(latestVersion.data);
+    },
+    [loadFromStorage]
+  );
 
   // Create new draft
-  const createDraft = useCallback((initialData: Partial<DraftData> = {}) => {
-    const draftId = uuidv4();
-    const now = new Date();
+  const createDraft = useCallback(
+    (initialData: Partial<DraftData> = {}) => {
+      const draftId = uuidv4();
+      const now = new Date();
 
-    const newData: DraftData = {
-      title: '',
-      problem: '',
-      solution: '',
-      category: '',
-      tags: [],
-      ...initialData,
-    };
+      const newData: DraftData = {
+        title: '',
+        problem: '',
+        solution: '',
+        category: '',
+        tags: [],
+        ...initialData,
+      };
 
-    const initialVersion = createVersion(newData, false);
+      const initialVersion = createVersion(newData, false);
 
-    const newMetadata: DraftMetadata = {
-      id: draftId,
-      entryId: initialData.id,
-      created: now,
-      updated: now,
-      versions: [initialVersion],
-      isActive: true,
-      editor: opts.editor,
-      title: newData.title || 'New Draft',
-    };
+      const newMetadata: DraftMetadata = {
+        id: draftId,
+        entryId: initialData.id,
+        created: now,
+        updated: now,
+        versions: [initialVersion],
+        isActive: true,
+        editor: opts.editor,
+        title: newData.title || 'New Draft',
+      };
 
-    setDraftData(newData);
-    setMetadata(newMetadata);
-    setVersions([initialVersion]);
-    setSaveState({
-      status: 'idle',
-      hasUnsavedChanges: false,
-      conflictDetected: false,
-    });
+      setDraftData(newData);
+      setMetadata(newMetadata);
+      setVersions([initialVersion]);
+      setSaveState({
+        status: 'idle',
+        hasUnsavedChanges: false,
+        conflictDetected: false,
+      });
 
-    saveToStorage(newMetadata);
-    lastSavedDataRef.current = JSON.stringify(newData);
-  }, [opts.editor, createVersion, saveToStorage]);
+      saveToStorage(newMetadata);
+      lastSavedDataRef.current = JSON.stringify(newData);
+    },
+    [opts.editor, createVersion, saveToStorage]
+  );
 
   // Delete draft
-  const deleteDraft = useCallback(async (draftId: string) => {
-    try {
-      localStorage.removeItem(`${STORAGE_KEYS.DRAFTS}-${draftId}`);
+  const deleteDraft = useCallback(
+    async (draftId: string) => {
+      try {
+        localStorage.removeItem(`${STORAGE_KEYS.DRAFTS}-${draftId}`);
 
-      const metadataList = getDraftsList().filter(m => m.id !== draftId);
-      localStorage.setItem(STORAGE_KEYS.METADATA, JSON.stringify(metadataList));
+        const metadataList = getDraftsList().filter(m => m.id !== draftId);
+        localStorage.setItem(STORAGE_KEYS.METADATA, JSON.stringify(metadataList));
 
-      if (metadata && metadata.id === draftId) {
-        setMetadata(null);
-        setDraftData({
-          title: '',
-          problem: '',
-          solution: '',
-          category: '',
-          tags: [],
-        });
-        setVersions([]);
-        setSaveState({
-          status: 'idle',
-          hasUnsavedChanges: false,
-          conflictDetected: false,
-        });
+        if (metadata && metadata.id === draftId) {
+          setMetadata(null);
+          setDraftData({
+            title: '',
+            problem: '',
+            solution: '',
+            category: '',
+            tags: [],
+          });
+          setVersions([]);
+          setSaveState({
+            status: 'idle',
+            hasUnsavedChanges: false,
+            conflictDetected: false,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to delete draft:', error);
+        opts.onError(error as Error);
       }
-    } catch (error) {
-      console.error('Failed to delete draft:', error);
-      opts.onError(error as Error);
-    }
-  }, [metadata, getDraftsList, opts]);
+    },
+    [metadata, getDraftsList, opts]
+  );
 
   // Restore version
-  const restoreVersion = useCallback((versionId: string) => {
-    const version = versions.find(v => v.id === versionId);
-    if (!version) return;
+  const restoreVersion = useCallback(
+    (versionId: string) => {
+      const version = versions.find(v => v.id === versionId);
+      if (!version) return;
 
-    setDraftData(version.data);
-    setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
-  }, [versions]);
+      setDraftData(version.data);
+      setSaveState(prev => ({ ...prev, hasUnsavedChanges: true }));
+    },
+    [versions]
+  );
 
   // Resolve conflict
   const resolveConflict = useCallback((resolution: 'local' | 'remote' | 'merge') => {
@@ -514,43 +523,50 @@ export const useDraftManager = (options: UseDraftManagerOptions = {}): UseDraftM
   const exportDraft = useCallback((): string => {
     if (!metadata) throw new Error('No active draft to export');
 
-    return JSON.stringify({
-      metadata,
-      versions,
-      currentData: draftData,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        metadata,
+        versions,
+        currentData: draftData,
+      },
+      null,
+      2
+    );
   }, [metadata, versions, draftData]);
 
   // Import draft from JSON
-  const importDraft = useCallback((jsonData: string) => {
-    try {
-      const imported = JSON.parse(jsonData);
-      const importedMetadata = {
-        ...imported.metadata,
-        id: uuidv4(), // Generate new ID
-        created: new Date(imported.metadata.created),
-        updated: new Date(imported.metadata.updated),
-        versions: imported.versions.map((v: any) => ({
-          ...v,
-          timestamp: new Date(v.timestamp),
-        })),
-      };
+  const importDraft = useCallback(
+    (jsonData: string) => {
+      try {
+        const imported = JSON.parse(jsonData);
+        const importedMetadata = {
+          ...imported.metadata,
+          id: uuidv4(), // Generate new ID
+          created: new Date(imported.metadata.created),
+          updated: new Date(imported.metadata.updated),
+          versions: imported.versions.map((v: any) => ({
+            ...v,
+            timestamp: new Date(v.timestamp),
+          })),
+        };
 
-      setMetadata(importedMetadata);
-      setVersions(importedMetadata.versions);
-      setDraftData(imported.currentData);
-      setSaveState({
-        status: 'idle',
-        hasUnsavedChanges: true,
-        conflictDetected: false,
-      });
+        setMetadata(importedMetadata);
+        setVersions(importedMetadata.versions);
+        setDraftData(imported.currentData);
+        setSaveState({
+          status: 'idle',
+          hasUnsavedChanges: true,
+          conflictDetected: false,
+        });
 
-      saveToStorage(importedMetadata);
-    } catch (error) {
-      console.error('Failed to import draft:', error);
-      opts.onError(error as Error);
-    }
-  }, [saveToStorage, opts]);
+        saveToStorage(importedMetadata);
+      } catch (error) {
+        console.error('Failed to import draft:', error);
+        opts.onError(error as Error);
+      }
+    },
+    [saveToStorage, opts]
+  );
 
   // Load active draft on mount
   useEffect(() => {

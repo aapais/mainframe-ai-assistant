@@ -76,13 +76,13 @@ export class SearchFilterEngine {
       cacheTimeout: 300000, // 5 minutes
       hierarchicalFilters: ['category', 'tags'],
       customFilters: [],
-      ...config
+      ...config,
     };
 
     this.filterState = {
       activeFilters: new Map(),
       availableFilters: [],
-      filterHistory: []
+      filterHistory: [],
     };
 
     this.prepareStatements();
@@ -113,7 +113,7 @@ export class SearchFilterEngine {
         this.generateCategoryFacet(query, options).then(f => f && facets.push(f)),
         this.generateTagsFacet(query, options).then(f => f && facets.push(f)),
         this.generateDateFacet(query, options).then(f => f && facets.push(f)),
-        this.generateUsageFacet(query, options).then(f => f && facets.push(f))
+        this.generateUsageFacet(query, options).then(f => f && facets.push(f)),
       ]);
 
       // Generate custom facets
@@ -128,7 +128,6 @@ export class SearchFilterEngine {
       this.setFacetsInCache(cacheKey, facets);
 
       return facets;
-
     } catch (error) {
       console.error('Error generating facets:', error);
       return [];
@@ -170,7 +169,7 @@ export class SearchFilterEngine {
     return {
       modifiedQuery,
       additionalWhereClause: whereClauses.length > 0 ? whereClauses.join(' AND ') : '',
-      parameters
+      parameters,
     };
   }
 
@@ -181,12 +180,14 @@ export class SearchFilterEngine {
     query: string,
     currentFilters: Map<string, any>,
     resultCount: number
-  ): Promise<Array<{
-    filter: string;
-    suggestedValue: any;
-    expectedReduction: number;
-    reason: string;
-  }>> {
+  ): Promise<
+    Array<{
+      filter: string;
+      suggestedValue: any;
+      expectedReduction: number;
+      reason: string;
+    }>
+  > {
     const suggestions = [];
 
     try {
@@ -207,7 +208,6 @@ export class SearchFilterEngine {
       suggestions.push(...popularSuggestions);
 
       return suggestions.slice(0, 5); // Limit to top 5 suggestions
-
     } catch (error) {
       console.error('Error generating filter suggestions:', error);
       return [];
@@ -225,7 +225,7 @@ export class SearchFilterEngine {
     this.filterState.filterHistory.push({
       timestamp: new Date(),
       filters: new Map(filters),
-      resultCount
+      resultCount,
     });
 
     // Keep only recent history (last 50 filter states)
@@ -249,7 +249,7 @@ export class SearchFilterEngine {
     return {
       mostUsedFilters,
       filterEffectiveness,
-      filterCombinations
+      filterCombinations,
     };
   }
 
@@ -322,7 +322,7 @@ export class SearchFilterEngine {
         GROUP BY t.tag
         ORDER BY count DESC
         LIMIT ?
-      `)
+      `),
     };
   }
 
@@ -343,8 +343,8 @@ export class SearchFilterEngine {
         values: results.map(r => ({
           value: r.category,
           count: r.count,
-          selected: options.category === r.category
-        }))
+          selected: options.category === r.category,
+        })),
       };
     } catch (error) {
       console.error('Error generating category facet:', error);
@@ -369,8 +369,8 @@ export class SearchFilterEngine {
         values: results.map(r => ({
           value: r.tag,
           count: r.count,
-          selected: options.tags?.includes(r.tag) || false
-        }))
+          selected: options.tags?.includes(r.tag) || false,
+        })),
       };
     } catch (error) {
       console.error('Error generating tags facet:', error);
@@ -383,11 +383,13 @@ export class SearchFilterEngine {
     options: FTS5SearchOptions
   ): Promise<SearchFacet | null> {
     try {
-      const dateRange = this.statements.getDateRanges.get(query) as {
-        min_date: string;
-        max_date: string;
-        total_count: number;
-      } | undefined;
+      const dateRange = this.statements.getDateRanges.get(query) as
+        | {
+            min_date: string;
+            max_date: string;
+            total_count: number;
+          }
+        | undefined;
 
       if (!dateRange || dateRange.total_count === 0) return null;
 
@@ -403,8 +405,8 @@ export class SearchFilterEngine {
         values: buckets.map(bucket => ({
           value: bucket.label,
           count: bucket.count,
-          selected: false // Would need to check against date_range filter
-        }))
+          selected: false, // Would need to check against date_range filter
+        })),
       };
     } catch (error) {
       console.error('Error generating date facet:', error);
@@ -417,11 +419,13 @@ export class SearchFilterEngine {
     options: FTS5SearchOptions
   ): Promise<SearchFacet | null> {
     try {
-      const usageRange = this.statements.getNumericRanges.get(query) as {
-        min_usage: number;
-        max_usage: number;
-        avg_usage: number;
-      } | undefined;
+      const usageRange = this.statements.getNumericRanges.get(query) as
+        | {
+            min_usage: number;
+            max_usage: number;
+            avg_usage: number;
+          }
+        | undefined;
 
       if (!usageRange) return null;
 
@@ -431,19 +435,19 @@ export class SearchFilterEngine {
         { label: 'Low usage (1-5)', min: 1, max: 5 },
         { label: 'Medium usage (6-20)', min: 6, max: 20 },
         { label: 'High usage (21-50)', min: 21, max: 50 },
-        { label: 'Very high usage (50+)', min: 51, max: Number.MAX_SAFE_INTEGER }
+        { label: 'Very high usage (50+)', min: 51, max: Number.MAX_SAFE_INTEGER },
       ];
 
       // Get counts for each bucket (simplified - would need separate queries)
       const values = buckets.map(bucket => ({
         value: bucket.label,
         count: 0, // Would be calculated with actual queries
-        selected: false
+        selected: false,
       }));
 
       return {
         field: 'usage_level',
-        values
+        values,
       };
     } catch (error) {
       console.error('Error generating usage facet:', error);
@@ -461,11 +465,7 @@ export class SearchFilterEngine {
     return null;
   }
 
-  private buildFilterClause(
-    filterName: string,
-    value: any,
-    parameters: any[]
-  ): string | null {
+  private buildFilterClause(filterName: string, value: any, parameters: any[]): string | null {
     switch (filterName) {
       case 'category':
         parameters.push(value);
@@ -544,7 +544,7 @@ export class SearchFilterEngine {
       return [
         { label: 'Last 7 days', count: 0 },
         { label: 'Last 30 days', count: 0 },
-        { label: 'Older', count: 0 }
+        { label: 'Older', count: 0 },
       ];
     } else if (daysDiff <= 365) {
       return [
@@ -552,13 +552,13 @@ export class SearchFilterEngine {
         { label: 'Last 3 months', count: 0 },
         { label: 'Last 6 months', count: 0 },
         { label: 'This year', count: 0 },
-        { label: 'Older', count: 0 }
+        { label: 'Older', count: 0 },
       ];
     } else {
       return [
         { label: 'Last year', count: 0 },
         { label: 'Last 2 years', count: 0 },
-        { label: 'Older', count: 0 }
+        { label: 'Older', count: 0 },
       ];
     }
   }
@@ -566,12 +566,14 @@ export class SearchFilterEngine {
   private async generateNarrowingSuggestions(
     query: string,
     currentFilters: Map<string, any>
-  ): Promise<Array<{
-    filter: string;
-    suggestedValue: any;
-    expectedReduction: number;
-    reason: string;
-  }>> {
+  ): Promise<
+    Array<{
+      filter: string;
+      suggestedValue: any;
+      expectedReduction: number;
+      reason: string;
+    }>
+  > {
     const suggestions = [];
 
     // Suggest category filter if not already applied
@@ -587,7 +589,7 @@ export class SearchFilterEngine {
           filter: 'category',
           suggestedValue: topCategory.category,
           expectedReduction: 0.7, // Estimated
-          reason: `Most results are in ${topCategory.category} category`
+          reason: `Most results are in ${topCategory.category} category`,
         });
       }
     }
@@ -605,7 +607,7 @@ export class SearchFilterEngine {
           filter: 'tags',
           suggestedValue: topTag.tag,
           expectedReduction: 0.5, // Estimated
-          reason: `Many results are tagged with "${topTag.tag}"`
+          reason: `Many results are tagged with "${topTag.tag}"`,
         });
       }
     }
@@ -613,14 +615,14 @@ export class SearchFilterEngine {
     return suggestions;
   }
 
-  private async generateBroadeninSuggestions(
-    currentFilters: Map<string, any>
-  ): Promise<Array<{
-    filter: string;
-    suggestedValue: any;
-    expectedReduction: number;
-    reason: string;
-  }>> {
+  private async generateBroadeninSuggestions(currentFilters: Map<string, any>): Promise<
+    Array<{
+      filter: string;
+      suggestedValue: any;
+      expectedReduction: number;
+      reason: string;
+    }>
+  > {
     const suggestions = [];
 
     // Suggest removing restrictive filters
@@ -629,7 +631,7 @@ export class SearchFilterEngine {
         filter: filterName,
         suggestedValue: null, // null means remove the filter
         expectedReduction: -0.5, // Negative means increase results
-        reason: `Remove ${filterName} filter to see more results`
+        reason: `Remove ${filterName} filter to see more results`,
       });
     });
 
@@ -639,12 +641,14 @@ export class SearchFilterEngine {
   private async generatePopularFilterSuggestions(
     query: string,
     currentFilters: Map<string, any>
-  ): Promise<Array<{
-    filter: string;
-    suggestedValue: any;
-    expectedReduction: number;
-    reason: string;
-  }>> {
+  ): Promise<
+    Array<{
+      filter: string;
+      suggestedValue: any;
+      expectedReduction: number;
+      reason: string;
+    }>
+  > {
     // This would analyze historical filter usage patterns
     // For now, return empty array
     return [];
@@ -654,7 +658,7 @@ export class SearchFilterEngine {
     const keyData = {
       query,
       category: options.category,
-      tags: options.tags
+      tags: options.tags,
     };
     return `facets:${Buffer.from(JSON.stringify(keyData)).toString('base64')}`;
   }
@@ -680,7 +684,7 @@ export class SearchFilterEngine {
 
     this.filterCache.set(key, {
       facets,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -707,7 +711,7 @@ export class SearchFilterEngine {
 
     return Array.from(effectiveness.entries()).map(([filter, reductions]) => ({
       filter,
-      avgReduction: reductions.reduce((a, b) => a + b, 0) / reductions.length
+      avgReduction: reductions.reduce((a, b) => a + b, 0) / reductions.length,
     }));
   }
 
@@ -726,7 +730,7 @@ export class SearchFilterEngine {
       .slice(0, 10)
       .map(([combo, frequency]) => ({
         combination: combo.split(','),
-        frequency
+        frequency,
       }));
   }
 

@@ -17,7 +17,7 @@ import {
   BulkOperation,
   StatusTransition,
   IncidentComment,
-  IncidentMetrics
+  IncidentMetrics,
 } from '../../../types/incident';
 
 interface UnifiedEntry {
@@ -94,11 +94,15 @@ export class UnifiedHandler {
   private detectUnifiedTableName(): string {
     try {
       // Check for unified_entries table first
-      const unifiedExists = this.db.prepare(`
+      const unifiedExists = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM sqlite_master
         WHERE type='table' AND name='unified_entries'
-      `).get() as any;
+      `
+        )
+        .get() as any;
 
       if (unifiedExists.count > 0) {
         console.log('📊 Using table: unified_entries');
@@ -106,11 +110,15 @@ export class UnifiedHandler {
       }
 
       // Check for entries table
-      const entriesExists = this.db.prepare(`
+      const entriesExists = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM sqlite_master
         WHERE type='table' AND name='entries'
-      `).get() as any;
+      `
+        )
+        .get() as any;
 
       if (entriesExists.count > 0) {
         console.log('📊 Using table: entries');
@@ -388,7 +396,7 @@ export class UnifiedHandler {
       }
     });
 
-    ipcMain.handle('incident:getSLABreaches', async (event) => {
+    ipcMain.handle('incident:getSLABreaches', async event => {
       try {
         return await this.getSLABreaches();
       } catch (error) {
@@ -487,7 +495,11 @@ export class UnifiedHandler {
     }
   }
 
-  private async updateUnifiedEntry(id: string, updates: any, auditInfo?: any): Promise<{ success: boolean; auditId?: string }> {
+  private async updateUnifiedEntry(
+    id: string,
+    updates: any,
+    auditInfo?: any
+  ): Promise<{ success: boolean; auditId?: string }> {
     // Get existing entry to determine type
     const existingEntry = await this.getUnifiedEntry(id);
     if (!existingEntry) {
@@ -571,7 +583,11 @@ export class UnifiedHandler {
     return await this.updateKnowledgeEntryInternal(id, updates);
   }
 
-  private async updateKnowledgeEntryInternal(id: string, updates: any, auditInfo?: any): Promise<{ success: boolean; auditId?: string }> {
+  private async updateKnowledgeEntryInternal(
+    id: string,
+    updates: any,
+    auditInfo?: any
+  ): Promise<{ success: boolean; auditId?: string }> {
     const updateFields: string[] = [];
     const updateValues: any[] = [];
 
@@ -725,9 +741,10 @@ export class UnifiedHandler {
     const incidents = this.db.prepare(query).all(params);
 
     // Get total count for pagination
-    const countQuery = query.replace(/SELECT \* FROM/, 'SELECT COUNT(*) as total FROM')
-                           .replace(/ORDER BY.*$/, '')
-                           .replace(/LIMIT.*$/, '');
+    const countQuery = query
+      .replace(/SELECT \* FROM/, 'SELECT COUNT(*) as total FROM')
+      .replace(/ORDER BY.*$/, '')
+      .replace(/LIMIT.*$/, '');
     const countParams = params.slice(0, -2); // Remove limit and offset
     const totalResult = this.db.prepare(countQuery).get(countParams) as any;
     const totalCount = totalResult.total;
@@ -738,7 +755,7 @@ export class UnifiedHandler {
       page,
       page_size: pageSize,
       has_more: offset + pageSize < totalCount,
-      filters_applied: filters || {}
+      filters_applied: filters || {},
     };
   }
 
@@ -811,11 +828,9 @@ export class UnifiedHandler {
       WHERE id = ? AND entry_type = 'incident'
     `;
 
-    const result = this.db.prepare(updateQuery).run(
-      newStatus,
-      new Date().toISOString(),
-      incidentId
-    );
+    const result = this.db
+      .prepare(updateQuery)
+      .run(newStatus, new Date().toISOString(), incidentId);
 
     if (result.changes === 0) {
       throw new Error(`Incident with id ${incidentId} not found`);
@@ -823,7 +838,12 @@ export class UnifiedHandler {
 
     // Add status change comment
     if (reason) {
-      await this.addComment(incidentId, `Status changed to ${newStatus}: ${reason}`, changedBy || 'system', true);
+      await this.addComment(
+        incidentId,
+        `Status changed to ${newStatus}: ${reason}`,
+        changedBy || 'system',
+        true
+      );
     }
   }
 
@@ -937,15 +957,9 @@ export class UnifiedHandler {
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
-    this.db.prepare(sql).run(
-      id,
-      entryId,
-      content,
-      author,
-      isInternal ? 1 : 0,
-      'comment',
-      new Date().toISOString()
-    );
+    this.db
+      .prepare(sql)
+      .run(id, entryId, content, author, isInternal ? 1 : 0, 'comment', new Date().toISOString());
 
     return { id };
   }
@@ -968,7 +982,7 @@ export class UnifiedHandler {
       created_at: new Date(comment.created_at),
       rating: comment.rating,
       successful: comment.successful !== null ? Boolean(comment.successful) : undefined,
-      resolution_time: comment.resolution_time
+      resolution_time: comment.resolution_time,
     }));
   }
 
@@ -988,7 +1002,7 @@ export class UnifiedHandler {
       changed_by: transition.author,
       change_reason: transition.content,
       timestamp: new Date(transition.created_at),
-      metadata: transition.metadata ? JSON.parse(transition.metadata) : undefined
+      metadata: transition.metadata ? JSON.parse(transition.metadata) : undefined,
     }));
   }
 
@@ -1030,7 +1044,7 @@ export class UnifiedHandler {
         P1: metrics.p1_count || 0,
         P2: metrics.p2_count || 0,
         P3: metrics.p3_count || 0,
-        P4: metrics.p4_count || 0
+        P4: metrics.p4_count || 0,
       },
       status_distribution: {
         aberto: metrics.total_open || 0,
@@ -1038,9 +1052,9 @@ export class UnifiedHandler {
         em_revisao: 0,
         resolvido: metrics.total_resolved_today || 0,
         fechado: 0,
-        reaberto: 0
+        reaberto: 0,
       },
-      recent_incidents: recentIncidents.map(this.transformIncident)
+      recent_incidents: recentIncidents.map(this.transformIncident),
     };
   }
 
@@ -1114,7 +1128,11 @@ export class UnifiedHandler {
     return await this.updateIncidentInternal(incidentId, changes, auditInfo);
   }
 
-  private async updateIncidentInternal(id: string, changes: any, auditInfo?: any): Promise<{ success: boolean; auditId?: string }> {
+  private async updateIncidentInternal(
+    id: string,
+    changes: any,
+    auditInfo?: any
+  ): Promise<{ success: boolean; auditId?: string }> {
     const updateFields: string[] = [];
     const updateValues: any[] = [];
 
@@ -1244,23 +1262,14 @@ export class UnifiedHandler {
       WHERE id = ? AND entry_type = 'incident'
     `;
 
-    const result = this.db.prepare(query).run(
-      newDeadline,
-      new Date().toISOString(),
-      incidentId
-    );
+    const result = this.db.prepare(query).run(newDeadline, new Date().toISOString(), incidentId);
 
     if (result.changes === 0) {
       throw new Error(`Incident with id ${incidentId} not found`);
     }
 
     // Log SLA change
-    await this.addComment(
-      incidentId,
-      `SLA deadline updated: ${reason}`,
-      updatedBy,
-      true
-    );
+    await this.addComment(incidentId, `SLA deadline updated: ${reason}`, updatedBy, true);
   }
 
   private async getIncidentTrends(timeframe: string): Promise<any> {
@@ -1268,7 +1277,7 @@ export class UnifiedHandler {
     return {
       resolution_time_trend: [],
       volume_trend: [],
-      sla_compliance_trend: []
+      sla_compliance_trend: [],
     };
   }
 
@@ -1279,39 +1288,51 @@ export class UnifiedHandler {
     // but route to the unified implementation
 
     // Status update with user ID (legacy format)
-    ipcMain.handle('incident:updateStatus', async (_, id: string, status: string, userId: string) => {
-      try {
-        if (!id || !status || !userId) {
-          return { success: false, error: 'ID, status e usuário são obrigatórios' };
-        }
+    ipcMain.handle(
+      'incident:updateStatus',
+      async (_, id: string, status: string, userId: string) => {
+        try {
+          if (!id || !status || !userId) {
+            return { success: false, error: 'ID, status e usuário são obrigatórios' };
+          }
 
-        const validStatuses = ['em_revisao', 'aberto', 'em_tratamento', 'resolvido', 'fechado'];
-        if (!validStatuses.includes(status)) {
-          return { success: false, error: 'Status inválido' };
-        }
+          const validStatuses = ['em_revisao', 'aberto', 'em_tratamento', 'resolvido', 'fechado'];
+          if (!validStatuses.includes(status)) {
+            return { success: false, error: 'Status inválido' };
+          }
 
-        await this.updateIncidentStatus(id, status, undefined, userId);
-        return { success: true, message: 'Status do incidente atualizado com sucesso' };
-      } catch (error) {
-        console.error('Incident status update error:', error);
-        return { success: false, error: 'Erro ao atualizar status do incidente: ' + error.message };
+          await this.updateIncidentStatus(id, status, undefined, userId);
+          return { success: true, message: 'Status do incidente atualizado com sucesso' };
+        } catch (error) {
+          console.error('Incident status update error:', error);
+          return {
+            success: false,
+            error: 'Erro ao atualizar status do incidente: ' + error.message,
+          };
+        }
       }
-    });
+    );
 
     // Assignment with legacy format
-    ipcMain.handle('incident:assign', async (_, id: string, assignedTo: string, assignedBy: string) => {
-      try {
-        if (!id || !assignedTo || !assignedBy) {
-          return { success: false, error: 'ID, usuário atribuído e usuário responsável pela atribuição são obrigatórios' };
-        }
+    ipcMain.handle(
+      'incident:assign',
+      async (_, id: string, assignedTo: string, assignedBy: string) => {
+        try {
+          if (!id || !assignedTo || !assignedBy) {
+            return {
+              success: false,
+              error: 'ID, usuário atribuído e usuário responsável pela atribuição são obrigatórios',
+            };
+          }
 
-        await this.assignIncident(id, assignedTo, assignedBy);
-        return { success: true, message: 'Incidente atribuído com sucesso' };
-      } catch (error) {
-        console.error('Incident assignment error:', error);
-        return { success: false, error: 'Erro ao atribuir incidente: ' + error.message };
+          await this.assignIncident(id, assignedTo, assignedBy);
+          return { success: true, message: 'Incidente atribuído com sucesso' };
+        } catch (error) {
+          console.error('Incident assignment error:', error);
+          return { success: false, error: 'Erro ao atribuir incidente: ' + error.message };
+        }
       }
-    });
+    );
 
     // Additional legacy channels that need special handling
     this.registerAICompatibilityChannels();
@@ -1341,13 +1362,15 @@ export class UnifiedHandler {
       }
     });
 
-    ipcMain.handle('incident:acceptSolution', async (_, entryId: string, userId: string, rating?: number) => {
-      try {
-        if (!entryId || !userId) {
-          return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
-        }
+    ipcMain.handle(
+      'incident:acceptSolution',
+      async (_, entryId: string, userId: string, rating?: number) => {
+        try {
+          if (!entryId || !userId) {
+            return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
+          }
 
-        const updateQuery = `
+          const updateQuery = `
           UPDATE ${this.tableName}
           SET status = 'resolvido',
               resolved_at = ?,
@@ -1355,47 +1378,56 @@ export class UnifiedHandler {
           WHERE id = ? AND entry_type = 'incident'
         `;
 
-        const now = new Date().toISOString();
-        this.db.prepare(updateQuery).run(now, now, entryId);
+          const now = new Date().toISOString();
+          this.db.prepare(updateQuery).run(now, now, entryId);
 
-        // Add acceptance comment with rating if provided
-        if (rating) {
-          await this.addComment(entryId, `Solution accepted with rating: ${rating}`, userId, false);
+          // Add acceptance comment with rating if provided
+          if (rating) {
+            await this.addComment(
+              entryId,
+              `Solution accepted with rating: ${rating}`,
+              userId,
+              false
+            );
+          }
+
+          return { success: true, message: 'Solução aceita e incidente resolvido com sucesso' };
+        } catch (error) {
+          console.error('Accept solution error:', error);
+          return { success: false, error: 'Erro ao aceitar solução: ' + error.message };
         }
-
-        return { success: true, message: 'Solução aceita e incidente resolvido com sucesso' };
-      } catch (error) {
-        console.error('Accept solution error:', error);
-        return { success: false, error: 'Erro ao aceitar solução: ' + error.message };
       }
-    });
+    );
 
-    ipcMain.handle('incident:rejectSolution', async (_, entryId: string, userId: string, reason?: string) => {
-      try {
-        if (!entryId || !userId) {
-          return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
-        }
+    ipcMain.handle(
+      'incident:rejectSolution',
+      async (_, entryId: string, userId: string, reason?: string) => {
+        try {
+          if (!entryId || !userId) {
+            return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
+          }
 
-        // Reset AI processing flags
-        const updateQuery = `
+          // Reset AI processing flags
+          const updateQuery = `
           UPDATE ${this.tableName}
           SET ai_processed = FALSE, updated_at = ?
           WHERE id = ? AND entry_type = 'incident'
         `;
 
-        this.db.prepare(updateQuery).run(new Date().toISOString(), entryId);
+          this.db.prepare(updateQuery).run(new Date().toISOString(), entryId);
 
-        // Add rejection comment with reason if provided
-        if (reason) {
-          await this.addComment(entryId, `Solution rejected: ${reason}`, userId, false);
+          // Add rejection comment with reason if provided
+          if (reason) {
+            await this.addComment(entryId, `Solution rejected: ${reason}`, userId, false);
+          }
+
+          return { success: true, message: 'Solução rejeitada com sucesso' };
+        } catch (error) {
+          console.error('Reject solution error:', error);
+          return { success: false, error: 'Erro ao rejeitar solução: ' + error.message };
         }
-
-        return { success: true, message: 'Solução rejeitada com sucesso' };
-      } catch (error) {
-        console.error('Reject solution error:', error);
-        return { success: false, error: 'Erro ao rejeitar solução: ' + error.message };
       }
-    });
+    );
   }
 
   // ===== UTILITY METHODS =====
@@ -1458,7 +1490,7 @@ export class UnifiedHandler {
       tags: row.tags,
       custom_fields: row.custom_fields,
       attachments: row.attachments,
-      archived: Boolean(row.archived)
+      archived: Boolean(row.archived),
     };
   }
 
@@ -1490,9 +1522,10 @@ export class UnifiedHandler {
       business_impact: row.severity, // Map severity to business impact
       customer_impact: row.severity === 'critical',
       escalation_level: 'none',
-      sla_deadline: row.sla_target_resolution_hours ?
-        new Date(Date.now() + (row.sla_target_resolution_hours * 60 * 60 * 1000)) : undefined,
-      last_status_change: row.updated_at ? new Date(row.updated_at) : undefined
+      sla_deadline: row.sla_target_resolution_hours
+        ? new Date(Date.now() + row.sla_target_resolution_hours * 60 * 60 * 1000)
+        : undefined,
+      last_status_change: row.updated_at ? new Date(row.updated_at) : undefined,
     };
   }
 
@@ -1508,15 +1541,15 @@ export class UnifiedHandler {
 
   private calculateSLADeadline(priority: number): Date {
     const slaHours = {
-      1: 1,     // P1: 1 hour
-      2: 4,     // P2: 4 hours
-      3: 8,     // P3: 8 hours
-      4: 24,    // P4: 24 hours
-      5: 72     // P5: 72 hours
+      1: 1, // P1: 1 hour
+      2: 4, // P2: 4 hours
+      3: 8, // P3: 8 hours
+      4: 24, // P4: 24 hours
+      5: 72, // P5: 72 hours
     };
 
     const hours = slaHours[priority as keyof typeof slaHours] || 8;
-    return new Date(Date.now() + (hours * 60 * 60 * 1000));
+    return new Date(Date.now() + hours * 60 * 60 * 1000);
   }
 
   private getSLAResponseTime(priority: number): number {

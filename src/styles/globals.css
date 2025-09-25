@@ -29,7 +29,15 @@
 
 html {
   height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -207,7 +215,7 @@ body {
   user-select: none;
 }
 
-.ai-toggle input[type="checkbox"] {
+.ai-toggle input[type='checkbox'] {
   margin: 0;
 }
 
@@ -447,13 +455,21 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .error-message {
@@ -539,7 +555,8 @@ body {
   flex-shrink: 0;
 }
 
-.status-left, .status-right {
+.status-left,
+.status-right {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -757,8 +774,13 @@ body {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 /* ===========================
@@ -776,11 +798,13 @@ body {
 /* ===========================
    FORM ELEMENTS
    =========================== */
-input, textarea, select {
+input,
+textarea,
+select {
   accent-color: var(--brand-primary, var(--accent-primary));
 }
 
-input[type="file"]::-webkit-file-upload-button {
+input[type='file']::-webkit-file-upload-button {
   background: var(--gradient-primary);
   border: none;
   border-radius: var(--radius-md);
@@ -791,7 +815,7 @@ input[type="file"]::-webkit-file-upload-button {
   transition: all var(--duration-fast) ease-out;
 }
 
-input[type="file"]::-webkit-file-upload-button:hover {
+input[type='file']::-webkit-file-upload-button:hover {
   transform: scale(1.05);
   box-shadow: var(--shadow-md);
 }
@@ -863,7 +887,9 @@ input[type="file"]::-webkit-file-upload-button:hover {
     overflow: visible;
   }
 
-  .glass, .glass-panel, .modern-card {
+  .glass,
+  .glass-panel,
+  .modern-card {
     background: white !important;
     border: 1px solid #ccc !important;
   }
@@ -884,7 +910,8 @@ input[type="file"]::-webkit-file-upload-button:hover {
     --glass-border: rgba(0, 0, 0, 0.5);
   }
 
-  .glass, .glass-panel {
+  .glass,
+  .glass-panel {
     border-width: 2px;
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Monitoring Dashboard for Search Performance
- * 
+ *
  * Real-time dashboard for monitoring search service performance,
  * ensuring <1s response time SLA compliance and providing
  * actionable insights for optimization.
@@ -58,25 +58,25 @@ export class MonitoringDashboard extends EventEmitter {
   private searchMonitor: SearchPerformanceMonitor;
   private performanceMonitor: PerformanceMonitor;
   private cacheMonitor: CachePerformanceMonitor;
-  
+
   private config: DashboardConfig;
   private currentData: DashboardData | null = null;
   private refreshTimer?: ReturnType<typeof setTimeout>;
-  
+
   constructor(
     searchMonitor: SearchPerformanceMonitor,
     performanceMonitor: PerformanceMonitor,
     cacheMonitor: CachePerformanceMonitor
   ) {
     super();
-    
+
     this.searchMonitor = searchMonitor;
     this.performanceMonitor = performanceMonitor;
     this.cacheMonitor = cacheMonitor;
-    
+
     this.config = this.createDefaultConfig();
     this.setupEventListeners();
-    
+
     console.log('📊 Monitoring dashboard initialized');
   }
 
@@ -88,7 +88,7 @@ export class MonitoringDashboard extends EventEmitter {
     this.refreshTimer = setInterval(() => {
       this.refreshData();
     }, this.config.refreshInterval);
-    
+
     console.log('🚀 Dashboard started with refresh interval:', this.config.refreshInterval);
   }
 
@@ -115,12 +115,12 @@ export class MonitoringDashboard extends EventEmitter {
    */
   updateConfig(config: Partial<DashboardConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     if (config.refreshInterval && this.refreshTimer) {
       this.stop();
       this.start();
     }
-    
+
     this.emit('config-updated', this.config);
   }
 
@@ -138,7 +138,7 @@ export class MonitoringDashboard extends EventEmitter {
     if (!this.currentData) {
       throw new Error('No dashboard data available');
     }
-    
+
     if (format === 'json') {
       return JSON.stringify(this.currentData, null, 2);
     } else {
@@ -160,49 +160,49 @@ export class MonitoringDashboard extends EventEmitter {
         overall: 'warning',
         score: 0,
         issues: ['No monitoring data available'],
-        recommendations: ['Check monitoring services']
+        recommendations: ['Check monitoring services'],
       };
     }
-    
+
     const { summary } = this.currentData;
     const issues: string[] = [];
     const recommendations: string[] = [];
     let score = 100;
-    
+
     // SLA compliance check
     if (summary.slaCompliance < 0.95) {
       issues.push(`SLA compliance: ${(summary.slaCompliance * 100).toFixed(1)}%`);
       recommendations.push('Investigate slow queries and optimize performance');
       score -= 30;
     }
-    
+
     // Response time check
     if (summary.avgResponseTime > 800) {
       issues.push(`High average response time: ${summary.avgResponseTime}ms`);
       recommendations.push('Optimize query execution and caching');
       score -= 20;
     }
-    
+
     if (summary.p95ResponseTime > 1500) {
       issues.push(`P95 response time: ${summary.p95ResponseTime}ms`);
       recommendations.push('Address outlier performance issues');
       score -= 15;
     }
-    
+
     // Cache performance check
     if (summary.cacheHitRate < 0.8) {
       issues.push(`Low cache hit rate: ${(summary.cacheHitRate * 100).toFixed(1)}%`);
       recommendations.push('Review cache strategy and TTL settings');
       score -= 10;
     }
-    
+
     // Active alerts check
     if (summary.activeAlerts > 0) {
       issues.push(`${summary.activeAlerts} active alerts`);
       recommendations.push('Review and resolve active alerts');
       score -= 5;
     }
-    
+
     let overall: 'healthy' | 'warning' | 'critical';
     if (score >= 85) {
       overall = 'healthy';
@@ -211,12 +211,12 @@ export class MonitoringDashboard extends EventEmitter {
     } else {
       overall = 'critical';
     }
-    
+
     return {
       overall,
       score: Math.max(0, score),
       issues,
-      recommendations
+      recommendations,
     };
   }
 
@@ -225,13 +225,13 @@ export class MonitoringDashboard extends EventEmitter {
   private async refreshData(): Promise<void> {
     try {
       const timestamp = new Date();
-      
+
       // Collect data from all monitors
       const searchMetrics = this.searchMonitor.getCurrentMetrics();
       const searchDashboard = this.searchMonitor.getDashboardData();
       const performanceStatus = this.performanceMonitor.getRealTimeStatus();
       const cacheMetrics = this.cacheMonitor.getCurrentMetrics();
-      
+
       // Build summary
       const summary = {
         slaCompliance: searchMetrics?.slaCompliance || 0,
@@ -239,9 +239,9 @@ export class MonitoringDashboard extends EventEmitter {
         p95ResponseTime: searchMetrics?.p95ResponseTime || 0,
         queriesPerSecond: searchMetrics?.queriesPerSecond || 0,
         cacheHitRate: searchMetrics?.cacheHitRate || 0,
-        activeAlerts: searchDashboard.activeAlerts.length
+        activeAlerts: searchDashboard.activeAlerts.length,
       };
-      
+
       // Build widget data
       const widgets = {
         slaGauge: this.buildSLAGaugeWidget(summary),
@@ -251,26 +251,25 @@ export class MonitoringDashboard extends EventEmitter {
         topQueries: this.buildTopQueriesWidget(searchDashboard.topQueries),
         slowQueries: this.buildSlowQueriesWidget(searchDashboard.slowQueries),
         alertsTable: this.buildAlertsTableWidget(searchDashboard.activeAlerts),
-        systemHealth: this.buildSystemHealthWidget(performanceStatus)
+        systemHealth: this.buildSystemHealthWidget(performanceStatus),
       };
-      
+
       // Build trends data
       const trends = {
         responseTime: searchDashboard.recentTrends?.responseTime || [],
         throughput: searchDashboard.recentTrends?.throughput || [],
-        slaCompliance: searchDashboard.recentTrends?.slaCompliance || []
+        slaCompliance: searchDashboard.recentTrends?.slaCompliance || [],
       };
-      
+
       this.currentData = {
         timestamp,
         summary,
         widgets,
         alerts: searchDashboard.activeAlerts,
-        trends
+        trends,
       };
-      
+
       this.emit('data-updated', this.currentData);
-      
     } catch (error) {
       console.error('Error refreshing dashboard data:', error);
       this.emit('refresh-error', error);
@@ -279,7 +278,7 @@ export class MonitoringDashboard extends EventEmitter {
 
   private buildSLAGaugeWidget(summary: any): DashboardWidget {
     const compliance = summary.slaCompliance * 100;
-    
+
     return {
       id: 'sla_gauge',
       title: 'SLA Compliance',
@@ -294,13 +293,13 @@ export class MonitoringDashboard extends EventEmitter {
         ranges: [
           { from: 0, to: 90, color: 'red', label: 'Critical' },
           { from: 90, to: 95, color: 'yellow', label: 'Warning' },
-          { from: 95, to: 100, color: 'green', label: 'Healthy' }
-        ]
+          { from: 95, to: 100, color: 'green', label: 'Healthy' },
+        ],
       },
       thresholds: {
         warning: 95,
-        critical: 90
-      }
+        critical: 90,
+      },
     };
   }
 
@@ -316,42 +315,43 @@ export class MonitoringDashboard extends EventEmitter {
         series: [
           {
             name: 'Average',
-            data: trends?.responseTime?.map((point: any) => ({
-              x: point.time,
-              y: point.avg
-            })) || [],
-            color: 'blue'
+            data:
+              trends?.responseTime?.map((point: any) => ({
+                x: point.time,
+                y: point.avg,
+              })) || [],
+            color: 'blue',
           },
           {
             name: 'P95',
-            data: trends?.responseTime?.map((point: any) => ({
-              x: point.time,
-              y: point.p95
-            })) || [],
-            color: 'orange'
+            data:
+              trends?.responseTime?.map((point: any) => ({
+                x: point.time,
+                y: point.p95,
+              })) || [],
+            color: 'orange',
           },
           {
             name: 'P99',
-            data: trends?.responseTime?.map((point: any) => ({
-              x: point.time,
-              y: point.p99
-            })) || [],
-            color: 'red'
-          }
+            data:
+              trends?.responseTime?.map((point: any) => ({
+                x: point.time,
+                y: point.p99,
+              })) || [],
+            color: 'red',
+          },
         ],
         xAxis: { type: 'datetime' },
-        yAxis: { 
+        yAxis: {
           title: 'Response Time (ms)',
           min: 0,
-          plotLines: [
-            { value: 1000, color: 'red', width: 2, label: 'SLA Threshold' }
-          ]
-        }
+          plotLines: [{ value: 1000, color: 'red', width: 2, label: 'SLA Threshold' }],
+        },
       },
       thresholds: {
         warning: 800,
-        critical: 1000
-      }
+        critical: 1000,
+      },
     };
   }
 
@@ -368,9 +368,9 @@ export class MonitoringDashboard extends EventEmitter {
         format: '0.1f',
         trend: {
           direction: 'neutral', // Would need historical data to calculate
-          percentage: 0
-        }
-      }
+          percentage: 0,
+        },
+      },
     };
   }
 
@@ -387,26 +387,26 @@ export class MonitoringDashboard extends EventEmitter {
             label: 'Hit Rate',
             value: cacheMetrics?.overallHitRate * 100 || 0,
             format: '0.1f%',
-            color: (cacheMetrics?.overallHitRate || 0) >= 0.8 ? 'green' : 'yellow'
+            color: (cacheMetrics?.overallHitRate || 0) >= 0.8 ? 'green' : 'yellow',
           },
           {
             label: 'Memory Usage',
             value: cacheMetrics?.memoryUsage || 0,
             format: 'bytes',
-            color: 'blue'
+            color: 'blue',
           },
           {
             label: 'Efficiency',
             value: cacheMetrics?.memoryEfficiency * 100 || 0,
             format: '0.1f%',
-            color: 'purple'
-          }
-        ]
+            color: 'purple',
+          },
+        ],
       },
       thresholds: {
         warning: 80,
-        critical: 70
-      }
+        critical: 70,
+      },
     };
   }
 
@@ -421,14 +421,14 @@ export class MonitoringDashboard extends EventEmitter {
         columns: [
           { field: 'query', title: 'Query', width: '60%' },
           { field: 'executions', title: 'Count', width: '20%' },
-          { field: 'avgTime', title: 'Avg Time (ms)', width: '20%', format: '0.0f' }
+          { field: 'avgTime', title: 'Avg Time (ms)', width: '20%', format: '0.0f' },
         ],
         rows: topQueries.slice(0, 5).map(q => ({
           query: q.normalizedQuery.substring(0, 50) + (q.normalizedQuery.length > 50 ? '...' : ''),
           executions: q.executions,
-          avgTime: q.avgTime
-        }))
-      }
+          avgTime: q.avgTime,
+        })),
+      },
     };
   }
 
@@ -443,19 +443,19 @@ export class MonitoringDashboard extends EventEmitter {
         columns: [
           { field: 'query', title: 'Query', width: '60%' },
           { field: 'avgTime', title: 'Avg Time (ms)', width: '25%', format: '0.0f' },
-          { field: 'executions', title: 'Count', width: '15%' }
+          { field: 'executions', title: 'Count', width: '15%' },
         ],
         rows: slowQueries.slice(0, 5).map(q => ({
           query: q.normalizedQuery.substring(0, 50) + (q.normalizedQuery.length > 50 ? '...' : ''),
           avgTime: q.avgTime,
           executions: q.executions,
-          color: q.avgTime > 1000 ? 'red' : 'orange'
-        }))
+          color: q.avgTime > 1000 ? 'red' : 'orange',
+        })),
       },
       thresholds: {
         warning: 500,
-        critical: 1000
-      }
+        critical: 1000,
+      },
     };
   }
 
@@ -473,9 +473,9 @@ export class MonitoringDashboard extends EventEmitter {
           message: alert.message,
           metric: alert.metric,
           timestamp: alert.timestamp,
-          age: this.formatAge(alert.timestamp)
-        }))
-      }
+          age: this.formatAge(alert.timestamp),
+        })),
+      },
     };
   }
 
@@ -492,15 +492,15 @@ export class MonitoringDashboard extends EventEmitter {
           {
             label: 'Memory Usage',
             value: performanceStatus.memoryUsage,
-            format: 'bytes'
+            format: 'bytes',
           },
           {
             label: 'Current Load',
             value: performanceStatus.currentLoad,
-            format: '0'
-          }
-        ]
-      }
+            format: '0',
+          },
+        ],
+      },
     };
   }
 
@@ -512,34 +512,36 @@ export class MonitoringDashboard extends EventEmitter {
       alerts: {
         enabled: true,
         soundEnabled: false,
-        notificationTypes: ['critical', 'warning']
-      }
+        notificationTypes: ['critical', 'warning'],
+      },
     };
   }
 
   private setupEventListeners(): void {
     // Listen for search alerts
-    this.searchMonitor.on('search-alert', (alert) => {
+    this.searchMonitor.on('search-alert', alert => {
       this.emit('alert-received', alert);
-      
-      if (this.config.alerts.enabled && 
-          this.config.alerts.notificationTypes.includes(alert.level)) {
+
+      if (
+        this.config.alerts.enabled &&
+        this.config.alerts.notificationTypes.includes(alert.level)
+      ) {
         this.emit('notification', {
           type: 'alert',
           level: alert.level,
           message: alert.message,
-          timestamp: alert.timestamp
+          timestamp: alert.timestamp,
         });
       }
     });
-    
+
     // Listen for performance alerts
-    this.performanceMonitor.on('alert', (alert) => {
+    this.performanceMonitor.on('alert', alert => {
       this.emit('performance-alert', alert);
     });
-    
+
     // Listen for cache alerts
-    this.cacheMonitor.on('performance-alert', (alert) => {
+    this.cacheMonitor.on('performance-alert', alert => {
       this.emit('cache-alert', alert);
     });
   }
@@ -548,13 +550,13 @@ export class MonitoringDashboard extends EventEmitter {
     const now = new Date();
     const diffMs = now.getTime() - timestamp.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours}h ago`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d ago`;
   }
@@ -567,9 +569,9 @@ export class MonitoringDashboard extends EventEmitter {
       'P95 Response Time',
       'Queries Per Second',
       'Cache Hit Rate',
-      'Active Alerts'
+      'Active Alerts',
     ];
-    
+
     const row = [
       data.timestamp.toISOString(),
       data.summary.slaCompliance.toFixed(3),
@@ -577,9 +579,9 @@ export class MonitoringDashboard extends EventEmitter {
       data.summary.p95ResponseTime.toFixed(1),
       data.summary.queriesPerSecond.toFixed(2),
       data.summary.cacheHitRate.toFixed(3),
-      data.summary.activeAlerts.toString()
+      data.summary.activeAlerts.toString(),
     ];
-    
+
     return headers.join(',') + '\n' + row.join(',');
   }
 }
@@ -600,7 +602,7 @@ export const DashboardUtils = {
         return value.toString();
     }
   },
-  
+
   formatBytes: (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -608,19 +610,22 @@ export const DashboardUtils = {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   },
-  
+
   getStatusColor: (value: number, thresholds: { warning: number; critical: number }): string => {
     if (value < thresholds.critical) return 'red';
     if (value < thresholds.warning) return 'yellow';
     return 'green';
   },
-  
-  calculateTrend: (current: number, previous: number): { direction: string; percentage: number } => {
+
+  calculateTrend: (
+    current: number,
+    previous: number
+  ): { direction: string; percentage: number } => {
     if (previous === 0) return { direction: 'neutral', percentage: 0 };
-    
+
     const change = ((current - previous) / previous) * 100;
     const direction = change > 5 ? 'up' : change < -5 ? 'down' : 'neutral';
-    
+
     return { direction, percentage: Math.abs(change) };
-  }
+  },
 };

@@ -85,10 +85,10 @@ export interface VerificationResult {
 
 /**
  * Advanced Backup & Restore System
- * 
+ *
  * Provides comprehensive backup functionality with compression,
  * integrity verification, scheduled backups, and point-in-time recovery.
- * 
+ *
  * @example
  * ```typescript
  * const backupSystem = new BackupSystem({
@@ -98,18 +98,18 @@ export interface VerificationResult {
  *   intervalHours: 6,
  *   verifyIntegrity: true
  * });
- * 
+ *
  * await backupSystem.initialize();
- * 
+ *
  * // Create manual backup
  * const result = await backupSystem.createBackup('./knowledge.db', {
  *   description: 'Pre-migration backup',
  *   tags: ['migration', 'manual']
  * });
- * 
+ *
  * // Restore from backup
  * await backupSystem.restore(result.backupId, './restored.db');
- * 
+ *
  * // Start automatic backups
  * await backupSystem.startScheduler();
  * ```
@@ -123,7 +123,7 @@ export class BackupSystem extends EventEmitter {
 
   constructor(config: BackupConfig) {
     super();
-    
+
     this.config = {
       backupPath: config.backupPath,
       compression: config.compression ?? true,
@@ -131,7 +131,7 @@ export class BackupSystem extends EventEmitter {
       intervalHours: config.intervalHours ?? 6,
       verifyIntegrity: config.verifyIntegrity ?? true,
       maxBackups: config.maxBackups ?? 100,
-      namePattern: config.namePattern ?? 'backup_{timestamp}_{id}'
+      namePattern: config.namePattern ?? 'backup_{timestamp}_{id}',
     };
 
     this.setupErrorHandling();
@@ -150,7 +150,7 @@ export class BackupSystem extends EventEmitter {
       // Initialize metadata database
       const metadataPath = path.join(this.config.backupPath, 'backup_metadata.db');
       this.metadataDb = new Database(metadataPath);
-      
+
       await this.initializeMetadataDb();
       await this.cleanupExpiredBackups();
 
@@ -158,7 +158,6 @@ export class BackupSystem extends EventEmitter {
       this.emit('initialized');
 
       console.log('✅ BackupSystem initialized successfully');
-
     } catch (error) {
       console.error('❌ Failed to initialize BackupSystem:', error);
       throw error;
@@ -184,7 +183,7 @@ export class BackupSystem extends EventEmitter {
     const startTime = Date.now();
     const backupId = this.generateBackupId();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    
+
     const filename = this.config.namePattern
       .replace('{timestamp}', timestamp)
       .replace('{id}', backupId.substring(0, 8));
@@ -201,10 +200,10 @@ export class BackupSystem extends EventEmitter {
       }
 
       const sourceStats = fs.statSync(dbPath);
-      
+
       // Create backup copy
       let backupData: Buffer;
-      
+
       // Use SQLite backup API if source is currently open
       try {
         const sourceDb = new Database(dbPath, { readonly: true });
@@ -218,7 +217,7 @@ export class BackupSystem extends EventEmitter {
       // Compress if enabled
       let finalData = backupData;
       let compressedSize: number | undefined;
-      
+
       if (options.compress ?? this.config.compression) {
         finalData = await gzipAsync(backupData);
         compressedSize = finalData.length;
@@ -253,14 +252,15 @@ export class BackupSystem extends EventEmitter {
         version: await this.getDatabaseVersion(dbPath),
         entryCount,
         description: options.description,
-        tags: options.tags
+        tags: options.tags,
       };
 
       await this.storeBackupMetadata(metadata);
 
       const duration = Date.now() - startTime;
-      const compressionRatio = compressedSize ? 
-        ((sourceStats.size - compressedSize) / sourceStats.size) * 100 : undefined;
+      const compressionRatio = compressedSize
+        ? ((sourceStats.size - compressedSize) / sourceStats.size) * 100
+        : undefined;
 
       const result: BackupResult = {
         success: true,
@@ -270,7 +270,7 @@ export class BackupSystem extends EventEmitter {
         originalSize: sourceStats.size,
         compressedSize,
         compressionRatio,
-        checksum
+        checksum,
       };
 
       this.emit('backup-created', result);
@@ -281,7 +281,6 @@ export class BackupSystem extends EventEmitter {
       }
 
       return result;
-
     } catch (error) {
       // Cleanup on failure
       if (fs.existsSync(backupPath)) {
@@ -295,11 +294,11 @@ export class BackupSystem extends EventEmitter {
         duration: Date.now() - startTime,
         originalSize: 0,
         checksum: '',
-        error: error.message
+        error: error.message,
       };
 
       this.emit('backup-failed', result);
-      
+
       console.error(`❌ Backup failed: ${error.message}`);
       throw error;
     }
@@ -358,9 +357,11 @@ export class BackupSystem extends EventEmitter {
       if (options.verify ?? this.config.verifyIntegrity) {
         const verification = await this.verifyBackupData(backupData, metadata.checksum);
         verificationPassed = verification.valid;
-        
+
         if (!verificationPassed) {
-          throw new Error(`Backup integrity verification failed: ${verification.errors.join(', ')}`);
+          throw new Error(
+            `Backup integrity verification failed: ${verification.errors.join(', ')}`
+          );
         }
       }
 
@@ -383,7 +384,7 @@ export class BackupSystem extends EventEmitter {
         success: true,
         restoredPath: targetPath,
         duration,
-        verificationPassed
+        verificationPassed,
       };
 
       this.emit('restore-completed', result);
@@ -391,18 +392,17 @@ export class BackupSystem extends EventEmitter {
       console.log(`✅ Database restored from backup ${backupId} (${duration}ms)`);
 
       return result;
-
     } catch (error) {
       const result: RestoreResult = {
         success: false,
         restoredPath: targetPath,
         duration: Date.now() - startTime,
         verificationPassed: false,
-        error: error.message
+        error: error.message,
       };
 
       this.emit('restore-failed', result);
-      
+
       console.error(`❌ Restore failed: ${error.message}`);
       throw error;
     }
@@ -451,11 +451,11 @@ export class BackupSystem extends EventEmitter {
     }
 
     const rows = this.metadataDb.prepare(query).all(params) as any[];
-    
+
     return rows.map(row => ({
       ...row,
       created: new Date(row.created),
-      tags: row.tags ? JSON.parse(row.tags) : undefined
+      tags: row.tags ? JSON.parse(row.tags) : undefined,
     }));
   }
 
@@ -504,7 +504,7 @@ export class BackupSystem extends EventEmitter {
       try {
         await this.createBackup(targetPath, {
           description: 'Automatic backup',
-          tags: ['auto', 'scheduled']
+          tags: ['auto', 'scheduled'],
         });
       } catch (error) {
         console.error('❌ Scheduled backup failed:', error);
@@ -534,21 +534,20 @@ export class BackupSystem extends EventEmitter {
   async verifyBackup(backupPath: string, expectedChecksum?: string): Promise<VerificationResult> {
     try {
       let backupData = fs.readFileSync(backupPath);
-      
+
       // Handle compressed backups
       if (backupPath.endsWith('.gz')) {
         backupData = await gunzipAsync(backupData);
       }
 
       return await this.verifyBackupData(backupData, expectedChecksum);
-
     } catch (error) {
       return {
         valid: false,
         checksum: '',
         expectedChecksum: expectedChecksum || '',
         corruptionDetected: true,
-        errors: [`Verification failed: ${error.message}`]
+        errors: [`Verification failed: ${error.message}`],
       };
     }
   }
@@ -568,7 +567,9 @@ export class BackupSystem extends EventEmitter {
       throw new Error('BackupSystem not initialized');
     }
 
-    const stats = this.metadataDb.prepare(`
+    const stats = this.metadataDb
+      .prepare(
+        `
       SELECT 
         COUNT(*) as totalBackups,
         SUM(size) as totalSize,
@@ -577,12 +578,18 @@ export class BackupSystem extends EventEmitter {
         MAX(created) as newestBackup,
         SUM(CASE WHEN compressed THEN size ELSE 0 END) as compressedOriginalSize
       FROM backups
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     // Calculate compression savings
-    const compressedBackups = this.metadataDb.prepare(`
+    const compressedBackups = this.metadataDb
+      .prepare(
+        `
       SELECT filePath FROM backups WHERE compressed = 1
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     let totalCompressedSize = 0;
     for (const backup of compressedBackups) {
@@ -591,8 +598,11 @@ export class BackupSystem extends EventEmitter {
       }
     }
 
-    const compressionSavings = stats.compressedOriginalSize > 0 ? 
-      ((stats.compressedOriginalSize - totalCompressedSize) / stats.compressedOriginalSize) * 100 : 0;
+    const compressionSavings =
+      stats.compressedOriginalSize > 0
+        ? ((stats.compressedOriginalSize - totalCompressedSize) / stats.compressedOriginalSize) *
+          100
+        : 0;
 
     return {
       totalBackups: stats.totalBackups || 0,
@@ -600,7 +610,7 @@ export class BackupSystem extends EventEmitter {
       averageSize: stats.averageSize || 0,
       oldestBackup: stats.oldestBackup ? new Date(stats.oldestBackup) : null,
       newestBackup: stats.newestBackup ? new Date(stats.newestBackup) : null,
-      compressionSavings
+      compressionSavings,
     };
   }
 
@@ -616,12 +626,16 @@ export class BackupSystem extends EventEmitter {
     cutoffDate.setDate(cutoffDate.getDate() - this.config.retentionDays);
 
     // Get expired backups
-    const expiredBackups = this.metadataDb.prepare(`
+    const expiredBackups = this.metadataDb
+      .prepare(
+        `
       SELECT id, filePath FROM backups 
       WHERE created < ? OR (
         SELECT COUNT(*) FROM backups b2 WHERE b2.created > backups.created
       ) >= ?
-    `).all(cutoffDate.toISOString(), this.config.maxBackups) as any[];
+    `
+      )
+      .all(cutoffDate.toISOString(), this.config.maxBackups) as any[];
 
     let cleanedCount = 0;
 
@@ -631,11 +645,10 @@ export class BackupSystem extends EventEmitter {
         if (fs.existsSync(backup.filePath)) {
           fs.unlinkSync(backup.filePath);
         }
-        
+
         // Remove from metadata
         this.metadataDb.prepare('DELETE FROM backups WHERE id = ?').run(backup.id);
         cleanedCount++;
-        
       } catch (error) {
         console.error(`Failed to cleanup backup ${backup.id}:`, error);
       }
@@ -654,7 +667,7 @@ export class BackupSystem extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     this.stopScheduler();
-    
+
     if (this.metadataDb) {
       this.metadataDb.close();
     }
@@ -699,12 +712,12 @@ export class BackupSystem extends EventEmitter {
   }
 
   private async verifyBackupData(
-    data: Buffer, 
+    data: Buffer,
     expectedChecksum?: string
   ): Promise<VerificationResult> {
     const errors: string[] = [];
     const checksum = this.calculateChecksum(data);
-    
+
     // Check checksum if provided
     let checksumValid = true;
     if (expectedChecksum && checksum !== expectedChecksum) {
@@ -717,13 +730,12 @@ export class BackupSystem extends EventEmitter {
     try {
       const tempPath = path.join(this.config.backupPath, `temp_verify_${Date.now()}.db`);
       fs.writeFileSync(tempPath, data);
-      
+
       const testDb = new Database(tempPath, { readonly: true });
       testDb.prepare('SELECT COUNT(*) FROM sqlite_master').get();
       testDb.close();
-      
+
       fs.unlinkSync(tempPath);
-      
     } catch (error) {
       dbValid = false;
       errors.push(`Database validation failed: ${error.message}`);
@@ -734,49 +746,59 @@ export class BackupSystem extends EventEmitter {
       checksum,
       expectedChecksum: expectedChecksum || '',
       corruptionDetected: !dbValid,
-      errors
+      errors,
     };
   }
 
   private async storeBackupMetadata(metadata: BackupMetadata): Promise<void> {
-    this.metadataDb.prepare(`
+    this.metadataDb
+      .prepare(
+        `
       INSERT INTO backups (
         id, filePath, originalPath, created, size, compressed, 
         checksum, version, entryCount, description, tags
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      metadata.id,
-      metadata.filePath,
-      metadata.originalPath,
-      metadata.created.toISOString(),
-      metadata.size,
-      metadata.compressed,
-      metadata.checksum,
-      metadata.version,
-      metadata.entryCount,
-      metadata.description,
-      metadata.tags ? JSON.stringify(metadata.tags) : null
-    );
+    `
+      )
+      .run(
+        metadata.id,
+        metadata.filePath,
+        metadata.originalPath,
+        metadata.created.toISOString(),
+        metadata.size,
+        metadata.compressed,
+        metadata.checksum,
+        metadata.version,
+        metadata.entryCount,
+        metadata.description,
+        metadata.tags ? JSON.stringify(metadata.tags) : null
+      );
   }
 
   private async getBackupMetadata(backupId: string): Promise<BackupMetadata | null> {
-    const row = this.metadataDb.prepare(`
+    const row = this.metadataDb
+      .prepare(
+        `
       SELECT * FROM backups WHERE id = ?
-    `).get(backupId) as any;
+    `
+      )
+      .get(backupId) as any;
 
     if (!row) return null;
 
     return {
       ...row,
       created: new Date(row.created),
-      tags: row.tags ? JSON.parse(row.tags) : undefined
+      tags: row.tags ? JSON.parse(row.tags) : undefined,
     };
   }
 
   private async getDatabaseEntryCount(dbPath: string): Promise<number> {
     try {
       const db = new Database(dbPath, { readonly: true });
-      const result = db.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as { count: number };
+      const result = db.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as {
+        count: number;
+      };
       db.close();
       return result.count;
     } catch {
@@ -796,7 +818,7 @@ export class BackupSystem extends EventEmitter {
   }
 
   private setupErrorHandling(): void {
-    this.on('error', (error) => {
+    this.on('error', error => {
       console.error('BackupSystem error:', error);
     });
 

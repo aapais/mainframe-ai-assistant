@@ -50,7 +50,7 @@
 }
 
 .btn:disabled,
-.btn[aria-disabled="true"] {
+.btn[aria-disabled='true'] {
   opacity: 0.6;
   cursor: not-allowed;
   pointer-events: none;
@@ -218,7 +218,7 @@
 }
 
 .btn-loading::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -594,7 +594,7 @@
 }
 
 .breadcrumb-item::after {
-  content: "/";
+  content: '/';
   margin-left: var(--space-4);
   color: var(--color-text-tertiary);
 }

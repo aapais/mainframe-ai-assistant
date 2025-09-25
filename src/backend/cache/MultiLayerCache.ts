@@ -182,7 +182,6 @@ export class MultiLayerCache extends EventEmitter {
       // Cache miss across all layers
       this.metrics.recordMiss('ALL', Date.now() - startTime);
       return null;
-
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error);
       this.metrics.recordError(sourceLayer || 'UNKNOWN', Date.now() - startTime);
@@ -193,12 +192,21 @@ export class MultiLayerCache extends EventEmitter {
   /**
    * Set value in cache with intelligent layer selection
    */
-  async set<T = any>(key: string, value: T, ttl?: number, options: CacheOptions = {}): Promise<void> {
+  async set<T = any>(
+    key: string,
+    value: T,
+    ttl?: number,
+    options: CacheOptions = {}
+  ): Promise<void> {
     const startTime = Date.now();
 
     try {
       const resolvedOptions = this.resolveOptions(options, value);
-      const entry = await this.createCacheEntry(value, resolvedOptions.ttl, resolvedOptions.compress);
+      const entry = await this.createCacheEntry(
+        value,
+        resolvedOptions.ttl,
+        resolvedOptions.compress
+      );
 
       // Store in selected layer(s)
       const targetLayer = resolvedOptions.layer;
@@ -221,16 +229,14 @@ export class MultiLayerCache extends EventEmitter {
 
       this.metrics.recordSet(targetLayer, Date.now() - startTime);
       this.emit('cache:set', { key, layer: targetLayer, size: entry.size });
-
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error);
       this.metrics.recordError('SET', Date.now() - startTime);
-      throw new AppError(
-        'Cache operation failed',
-        'CACHE_ERROR',
-        500,
-        { operation: 'set', key, error: error.message }
-      );
+      throw new AppError('Cache operation failed', 'CACHE_ERROR', 500, {
+        operation: 'set',
+        key,
+        error: error.message,
+      });
     }
   }
 
@@ -246,7 +252,7 @@ export class MultiLayerCache extends EventEmitter {
       const [l0Deleted, l1Deleted, l2Deleted] = await Promise.allSettled([
         this.deleteFromL0(key),
         this.isL1Available ? this.deleteFromL1(key) : Promise.resolve(false),
-        this.isL2Available ? this.deleteFromL2(key) : Promise.resolve(false)
+        this.isL2Available ? this.deleteFromL2(key) : Promise.resolve(false),
       ]);
 
       deleted = [l0Deleted, l1Deleted, l2Deleted].some(
@@ -257,7 +263,6 @@ export class MultiLayerCache extends EventEmitter {
       this.emit('cache:delete', { key, deleted });
 
       return deleted;
-
     } catch (error) {
       console.error(`Cache delete error for key ${key}:`, error);
       this.metrics.recordError('DELETE', Date.now() - startTime);
@@ -275,12 +280,11 @@ export class MultiLayerCache extends EventEmitter {
       await Promise.allSettled([
         this.l0Cache.clear(),
         this.isL1Available ? this.l1Cache.flushdb() : Promise.resolve(),
-        this.isL2Available ? this.l2Cache.clear() : Promise.resolve()
+        this.isL2Available ? this.l2Cache.clear() : Promise.resolve(),
       ]);
 
       this.metrics.recordClear(Date.now() - startTime);
       this.emit('cache:clear');
-
     } catch (error) {
       console.error('Cache clear error:', error);
       this.metrics.recordError('CLEAR', Date.now() - startTime);
@@ -301,7 +305,7 @@ export class MultiLayerCache extends EventEmitter {
   async warmCache(keys: string[], warmupData: Map<string, any>): Promise<void> {
     console.log(`Warming cache with ${keys.length} entries...`);
 
-    const promises = keys.map(async (key) => {
+    const promises = keys.map(async key => {
       const data = warmupData.get(key);
       if (data) {
         await this.set(key, data, 3600, { layer: 'auto' }); // 1 hour TTL
@@ -317,15 +321,11 @@ export class MultiLayerCache extends EventEmitter {
    */
   async close(): Promise<void> {
     try {
-      await Promise.allSettled([
-        this.l1Cache.quit(),
-        this.l2Cache.close()
-      ]);
+      await Promise.allSettled([this.l1Cache.quit(), this.l2Cache.close()]);
 
       this.l0Cache.clear();
       this.metrics.stop();
       this.emit('cache:closed');
-
     } catch (error) {
       console.error('Cache close error:', error);
     }
@@ -372,7 +372,6 @@ export class MultiLayerCache extends EventEmitter {
       }
 
       return this.decompressValue(entry) as T;
-
     } catch (error) {
       this.handleL1Error(error);
       return null;
@@ -430,8 +429,8 @@ export class MultiLayerCache extends EventEmitter {
     this.l0Cache = new LRUCache<string, CacheEntry>({
       max: this.config.l0.maxItems,
       maxSize: this.config.l0.maxSizeBytes,
-      sizeCalculation: (entry) => entry.size,
-      ttl: this.config.l0.ttlSeconds * 1000
+      sizeCalculation: entry => entry.size,
+      ttl: this.config.l0.ttlSeconds * 1000,
     });
   }
 
@@ -443,10 +442,10 @@ export class MultiLayerCache extends EventEmitter {
       db: this.config.l1.db,
       retryDelayOnFailover: this.config.l1.retryDelayOnFailover,
       maxRetriesPerRequest: this.config.l1.maxRetries,
-      lazyConnect: true
+      lazyConnect: true,
     });
 
-    this.l1Cache.on('error', (error) => this.handleL1Error(error));
+    this.l1Cache.on('error', error => this.handleL1Error(error));
     this.l1Cache.on('connect', () => {
       this.isL1Available = true;
       this.emit('l1:connected');
@@ -460,7 +459,7 @@ export class MultiLayerCache extends EventEmitter {
   private initializeL2(): void {
     this.l2Cache = new DatabaseCache(this.config.l2);
 
-    this.l2Cache.on('error', (error) => this.handleL2Error(error));
+    this.l2Cache.on('error', error => this.handleL2Error(error));
     this.l2Cache.on('ready', () => {
       this.isL2Available = true;
       this.emit('l2:ready');
@@ -490,7 +489,6 @@ export class MultiLayerCache extends EventEmitter {
       if (stats.overall.avgResponseTime > this.config.monitoring.alertThresholds.latencyAbove) {
         this.emit('alert:high-latency', stats.overall.avgResponseTime);
       }
-
     }, this.config.monitoring.metricsInterval);
   }
 
@@ -516,7 +514,7 @@ export class MultiLayerCache extends EventEmitter {
       ttl,
       size,
       compressed,
-      layer: 'L0' // Will be updated based on storage location
+      layer: 'L0', // Will be updated based on storage location
     };
   }
 
@@ -524,8 +522,9 @@ export class MultiLayerCache extends EventEmitter {
     return {
       layer: options.layer || this.selectOptimalLayer(value),
       ttl: options.ttl || 300, // 5 minutes default
-      compress: options.compress ?? (JSON.stringify(value).length > this.config.compression.threshold),
-      priority: options.priority || 1
+      compress:
+        options.compress ?? JSON.stringify(value).length > this.config.compression.threshold,
+      priority: options.priority || 1,
     };
   }
 
@@ -538,7 +537,7 @@ export class MultiLayerCache extends EventEmitter {
   }
 
   private isExpired(entry: CacheEntry): boolean {
-    return Date.now() > (entry.timestamp + entry.ttl * 1000);
+    return Date.now() > entry.timestamp + entry.ttl * 1000;
   }
 
   private decompressValue<T>(entry: CacheEntry<T>): T {

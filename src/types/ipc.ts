@@ -1,12 +1,19 @@
 /**
  * Comprehensive IPC Type Definitions
- * 
+ *
  * This file contains all TypeScript interfaces and types for secure,
  * type-safe IPC communication between main and renderer processes.
  */
 
 import { z } from 'zod';
-import type { KBEntry, KBEntryInput, KBEntryUpdate, SearchResult, SearchQuery, KBCategory } from './index';
+import type {
+  KBEntry,
+  KBEntryInput,
+  KBEntryUpdate,
+  SearchResult,
+  SearchQuery,
+  KBCategory,
+} from './index';
 
 // ===========================
 // Core IPC Types
@@ -80,7 +87,7 @@ export interface PerformanceMetrics {
 /**
  * All available IPC channels with type constraints
  */
-export type IPCChannel = 
+export type IPCChannel =
   // Knowledge Base Operations
   | 'kb:search:local'
   | 'kb:search:ai'
@@ -90,26 +97,26 @@ export type IPCChannel =
   | 'kb:entry:delete'
   | 'kb:feedback:rate'
   | 'kb:templates:load'
-  
+
   // System Operations
   | 'system:metrics:get'
   | 'system:database:status'
   | 'system:cache:invalidate'
   | 'system:health:check'
   | 'system:performance:report'
-  
+
   // Import/Export Operations (MVP4)
   | 'io:export:kb'
   | 'io:import:kb'
   | 'io:project:import'
   | 'io:project:export'
-  
+
   // Pattern Detection Operations (MVP2)
   | 'patterns:detect:run'
   | 'patterns:incidents:import'
   | 'patterns:alerts:get'
   | 'patterns:rootcause:analyze'
-  
+
   // Window Management
   | 'window:state:get'
   | 'window:state:update'
@@ -117,7 +124,7 @@ export type IPCChannel =
   | 'window:control:maximize'
   | 'window:control:restore'
   | 'window:control:close'
-  
+
   // Application Lifecycle
   | 'app:version:get'
   | 'app:theme:get'
@@ -152,30 +159,30 @@ export enum IPCErrorCode {
   MALICIOUS_INPUT = 'IPC_MALICIOUS_INPUT',
   INSUFFICIENT_PERMISSIONS = 'IPC_INSUFFICIENT_PERMISSIONS',
   INVALID_REQUEST_FORMAT = 'IPC_INVALID_REQUEST_FORMAT',
-  
+
   // Server Errors (5xx equivalent)
   HANDLER_NOT_FOUND = 'IPC_HANDLER_NOT_FOUND',
   HANDLER_ERROR = 'IPC_HANDLER_ERROR',
   DATABASE_ERROR = 'IPC_DATABASE_ERROR',
   CACHE_ERROR = 'IPC_CACHE_ERROR',
   EXTERNAL_SERVICE_ERROR = 'IPC_EXTERNAL_SERVICE_ERROR',
-  
+
   // System Errors
   UNHANDLED_REJECTION = 'IPC_UNHANDLED_REJECTION',
   TIMEOUT = 'IPC_TIMEOUT',
   MEMORY_ERROR = 'IPC_MEMORY_ERROR',
   NETWORK_ERROR = 'IPC_NETWORK_ERROR',
-  
+
   // Business Logic Errors
   ENTRY_NOT_FOUND = 'KB_ENTRY_NOT_FOUND',
   DUPLICATE_ENTRY = 'KB_DUPLICATE_ENTRY',
   INVALID_SEARCH_QUERY = 'KB_INVALID_SEARCH_QUERY',
   TEMPLATE_LOAD_FAILED = 'KB_TEMPLATE_LOAD_FAILED',
-  
+
   // Pattern Detection Errors
   PATTERN_DETECTION_FAILED = 'PATTERNS_DETECTION_FAILED',
   INCIDENT_IMPORT_FAILED = 'PATTERNS_INCIDENT_IMPORT_FAILED',
-  
+
   // Import/Export Errors
   EXPORT_FAILED = 'IO_EXPORT_FAILED',
   IMPORT_FAILED = 'IO_IMPORT_FAILED',
@@ -190,7 +197,7 @@ export enum IPCErrorCode {
   AUTO_APPROVAL_CHECK_FAILED = 'AUTH_AUTO_APPROVAL_CHECK_FAILED',
   STATS_RETRIEVAL_FAILED = 'AUTH_STATS_RETRIEVAL_FAILED',
   SESSION_CLEAR_FAILED = 'AUTH_SESSION_CLEAR_FAILED',
-  INVALID_REQUEST_DATA = 'AUTH_INVALID_REQUEST_DATA'
+  INVALID_REQUEST_DATA = 'AUTH_INVALID_REQUEST_DATA',
 }
 
 // ===========================
@@ -366,7 +373,7 @@ export interface SystemMetrics {
       percentage: number;
     };
   };
-  
+
   ipc: {
     totalRequests: number;
     totalResponses: number;
@@ -375,7 +382,7 @@ export interface SystemMetrics {
     errorRate: number;
     channelMetrics: Record<string, ChannelMetrics>;
   };
-  
+
   cache: {
     memoryUsage: number;
     hitRate: number;
@@ -383,7 +390,7 @@ export interface SystemMetrics {
     evictionRate: number;
     totalKeys: number;
   };
-  
+
   performance: {
     cpuUsage: number;
     memoryUsage: {
@@ -623,10 +630,12 @@ export interface RealTimeMetrics {
 export interface PerformanceReport {
   timestamp: number;
   realTimeMetrics: RealTimeMetrics;
-  channelReports: Array<{
-    channel: string;
-    healthScore: number;
-  } & ChannelMetrics>;
+  channelReports: Array<
+    {
+      channel: string;
+      healthScore: number;
+    } & ChannelMetrics
+  >;
   systemHealth: number; // 0-100
   recommendations: string[];
 }
@@ -645,23 +654,27 @@ export const IPCSchemas = {
     timestamp: z.number().int().positive(),
     channel: z.string().min(1),
     version: z.string().regex(/^\d+\.\d+\.\d+$/),
-    userId: z.string().optional()
+    userId: z.string().optional(),
   }),
 
   // Knowledge Base schemas
   KBSearch: z.object({
     query: z.string().min(1).max(1000),
-    options: z.object({
-      limit: z.number().int().min(1).max(100).optional(),
-      offset: z.number().int().min(0).optional(),
-      categories: z.array(z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'])).optional(),
-      tags: z.array(z.string().max(50)).max(20).optional(),
-      includeArchived: z.boolean().optional(),
-      sortBy: z.enum(['relevance', 'date', 'usage', 'rating']).optional(),
-      sortOrder: z.enum(['asc', 'desc']).optional(),
-      minConfidence: z.number().min(0).max(1).optional(),
-      useSemanticSearch: z.boolean().optional()
-    }).optional()
+    options: z
+      .object({
+        limit: z.number().int().min(1).max(100).optional(),
+        offset: z.number().int().min(0).optional(),
+        categories: z
+          .array(z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other']))
+          .optional(),
+        tags: z.array(z.string().max(50)).max(20).optional(),
+        includeArchived: z.boolean().optional(),
+        sortBy: z.enum(['relevance', 'date', 'usage', 'rating']).optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
+        minConfidence: z.number().min(0).max(1).optional(),
+        useSemanticSearch: z.boolean().optional(),
+      })
+      .optional(),
   }),
 
   KBEntryCreate: z.object({
@@ -670,14 +683,16 @@ export const IPCSchemas = {
       problem: z.string().min(1).max(10000),
       solution: z.string().min(1).max(10000),
       category: z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other']),
-      tags: z.array(z.string().max(50)).max(20).optional()
+      tags: z.array(z.string().max(50)).max(20).optional(),
     }),
-    options: z.object({
-      validate: z.boolean().optional(),
-      duplicateCheck: z.boolean().optional(),
-      autoTags: z.boolean().optional(),
-      notifyUsers: z.boolean().optional()
-    }).optional()
+    options: z
+      .object({
+        validate: z.boolean().optional(),
+        duplicateCheck: z.boolean().optional(),
+        autoTags: z.boolean().optional(),
+        notifyUsers: z.boolean().optional(),
+      })
+      .optional(),
   }),
 
   KBEntryUpdate: z.object({
@@ -687,44 +702,50 @@ export const IPCSchemas = {
       problem: z.string().min(1).max(10000).optional(),
       solution: z.string().min(1).max(10000).optional(),
       category: z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other']).optional(),
-      tags: z.array(z.string().max(50)).max(20).optional()
+      tags: z.array(z.string().max(50)).max(20).optional(),
     }),
-    options: z.object({
-      validate: z.boolean().optional(),
-      createRevision: z.boolean().optional(),
-      notifyUsers: z.boolean().optional(),
-      reason: z.string().max(500).optional()
-    }).optional()
+    options: z
+      .object({
+        validate: z.boolean().optional(),
+        createRevision: z.boolean().optional(),
+        notifyUsers: z.boolean().optional(),
+        reason: z.string().max(500).optional(),
+      })
+      .optional(),
   }),
 
   // System schemas
   SystemMetrics: z.object({
     scope: z.enum(['all', 'database', 'cache', 'performance', 'ipc']).optional(),
-    timeRange: z.object({
-      start: z.number().int().positive(),
-      end: z.number().int().positive()
-    }).optional(),
-    aggregation: z.enum(['raw', 'hourly', 'daily']).optional()
+    timeRange: z
+      .object({
+        start: z.number().int().positive(),
+        end: z.number().int().positive(),
+      })
+      .optional(),
+    aggregation: z.enum(['raw', 'hourly', 'daily']).optional(),
   }),
 
   // Pattern detection schemas
   PatternDetection: z.object({
-    options: z.object({
-      timeWindow: z.number().int().min(1).max(168).optional(), // 1 hour to 1 week
-      minIncidents: z.number().int().min(2).max(100).optional(),
-      categories: z.array(z.string()).optional(),
-      confidenceThreshold: z.number().min(0).max(1).optional()
-    }).optional()
+    options: z
+      .object({
+        timeWindow: z.number().int().min(1).max(168).optional(), // 1 hour to 1 week
+        minIncidents: z.number().int().min(2).max(100).optional(),
+        categories: z.array(z.string()).optional(),
+        confidenceThreshold: z.number().min(0).max(1).optional(),
+      })
+      .optional(),
   }),
 
   // General validation
   EntityId: z.object({
-    id: z.string().uuid()
+    id: z.string().uuid(),
   }),
 
   EntityIds: z.object({
-    ids: z.array(z.string().uuid()).min(1).max(100)
-  })
+    ids: z.array(z.string().uuid()).min(1).max(100),
+  }),
 } as const;
 
 // ===========================
@@ -734,31 +755,50 @@ export const IPCSchemas = {
 /**
  * Extract the request type for a specific channel
  */
-export type IPCRequestForChannel<T extends IPCChannel> = 
-  T extends 'kb:search:local' | 'kb:search:ai' ? KBSearchRequest :
-  T extends 'kb:entry:create' ? KBEntryCreateRequest :
-  T extends 'kb:entry:get' ? KBEntryGetRequest :
-  T extends 'kb:entry:update' ? KBEntryUpdateRequest :
-  T extends 'kb:entry:delete' ? KBEntryDeleteRequest :
-  T extends 'system:metrics:get' ? SystemMetricsRequest :
-  T extends 'system:database:status' ? DatabaseStatusRequest :
-  T extends 'system:health:check' ? HealthCheckRequest :
-  T extends 'patterns:detect:run' ? PatternDetectionRequest :
-  BaseIPCRequest;
+export type IPCRequestForChannel<T extends IPCChannel> = T extends
+  | 'kb:search:local'
+  | 'kb:search:ai'
+  ? KBSearchRequest
+  : T extends 'kb:entry:create'
+    ? KBEntryCreateRequest
+    : T extends 'kb:entry:get'
+      ? KBEntryGetRequest
+      : T extends 'kb:entry:update'
+        ? KBEntryUpdateRequest
+        : T extends 'kb:entry:delete'
+          ? KBEntryDeleteRequest
+          : T extends 'system:metrics:get'
+            ? SystemMetricsRequest
+            : T extends 'system:database:status'
+              ? DatabaseStatusRequest
+              : T extends 'system:health:check'
+                ? HealthCheckRequest
+                : T extends 'patterns:detect:run'
+                  ? PatternDetectionRequest
+                  : BaseIPCRequest;
 
 /**
  * Extract the response type for a specific channel
  */
-export type IPCResponseForChannel<T extends IPCChannel> = 
-  T extends 'kb:search:local' | 'kb:search:ai' ? KBSearchResponse :
-  T extends 'kb:entry:create' ? KBEntryCreateResponse :
-  T extends 'kb:entry:get' ? KBEntryGetResponse :
-  T extends 'kb:entry:update' ? KBEntryUpdateResponse :
-  T extends 'system:metrics:get' ? SystemMetricsResponse :
-  T extends 'system:database:status' ? DatabaseStatusResponse :
-  T extends 'system:health:check' ? HealthCheckResponse :
-  T extends 'patterns:detect:run' ? PatternDetectionResponse :
-  BaseIPCResponse;
+export type IPCResponseForChannel<T extends IPCChannel> = T extends
+  | 'kb:search:local'
+  | 'kb:search:ai'
+  ? KBSearchResponse
+  : T extends 'kb:entry:create'
+    ? KBEntryCreateResponse
+    : T extends 'kb:entry:get'
+      ? KBEntryGetResponse
+      : T extends 'kb:entry:update'
+        ? KBEntryUpdateResponse
+        : T extends 'system:metrics:get'
+          ? SystemMetricsResponse
+          : T extends 'system:database:status'
+            ? DatabaseStatusResponse
+            : T extends 'system:health:check'
+              ? HealthCheckResponse
+              : T extends 'patterns:detect:run'
+                ? PatternDetectionResponse
+                : BaseIPCResponse;
 
 /**
  * Type-safe IPC handler function
@@ -777,12 +817,12 @@ export interface IPCHandlerConfig {
   batchDelay?: number;
   streamable?: boolean;
   streamChunkSize?: number;
-  
+
   // Caching options
   cacheable?: boolean;
   cacheTTL?: number;
   cacheStrategy?: Partial<CacheStrategy>;
-  
+
   // Security options
   requireAuth?: boolean;
   allowedRoles?: string[];
@@ -790,12 +830,12 @@ export interface IPCHandlerConfig {
     requests: number;
     windowMs: number;
   };
-  
+
   // Validation options
   validateInput?: boolean;
   sanitizeInput?: boolean;
   schema?: z.ZodSchema;
-  
+
   // Monitoring options
   trackMetrics?: boolean;
   logRequests?: boolean;
@@ -812,7 +852,7 @@ export type {
   KBEntryUpdate,
   SearchResult,
   SearchQuery,
-  KBCategory
+  KBCategory,
 } from './index';
 
 // ===========================
@@ -825,7 +865,7 @@ export type {
 export interface IPCEvents {
   'request:start': { channel: string; requestId: string };
   'request:complete': { channel: string; requestId: string; success: boolean; duration: number };
-  'error': { error: IPCError; channel: string; requestId: string };
+  error: { error: IPCError; channel: string; requestId: string };
   'cache:hit': { channel: string; key: string };
   'cache:miss': { channel: string; key: string };
   'cache:invalidate': { pattern: string; keysInvalidated: number };

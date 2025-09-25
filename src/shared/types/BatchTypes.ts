@@ -83,39 +83,39 @@ export const DASHBOARD_BATCH_CONFIG: BatchConfig = {
       method: 'system:get-metrics',
       description: 'Database metrics',
       cacheable: true,
-      timeout: 1000
+      timeout: 1000,
     },
     {
       method: 'system:get-performance-metrics',
       description: 'Performance metrics',
       cacheable: true,
-      timeout: 1000
+      timeout: 1000,
     },
     {
       method: 'system:get-health-status',
       description: 'System health',
       cacheable: true,
-      timeout: 500
+      timeout: 500,
     },
     {
       method: 'kb:get-stats',
       description: 'KB statistics',
       cacheable: true,
-      timeout: 800
+      timeout: 800,
     },
     {
       method: 'search:get-recent-queries',
       description: 'Recent search queries',
       cacheable: true,
-      timeout: 300
+      timeout: 300,
     },
     {
       method: 'system:get-storage-info',
       description: 'Storage information',
       cacheable: true,
-      timeout: 200
-    }
-  ]
+      timeout: 200,
+    },
+  ],
 };
 
 // Search batch configuration
@@ -130,21 +130,21 @@ export const SEARCH_BATCH_CONFIG: BatchConfig = {
       method: 'search:execute',
       description: 'Execute search query',
       cacheable: true,
-      timeout: 2000
+      timeout: 2000,
     },
     {
       method: 'search:get-suggestions',
       description: 'Get search suggestions',
       cacheable: true,
-      timeout: 500
+      timeout: 500,
     },
     {
       method: 'search:record-query',
       description: 'Record search query',
       cacheable: false,
-      timeout: 100
-    }
-  ]
+      timeout: 100,
+    },
+  ],
 };
 
 // Batch error types
@@ -154,7 +154,7 @@ export enum BatchError {
   INVALID_REQUEST = 'INVALID_REQUEST',
   PARTIAL_FAILURE = 'PARTIAL_FAILURE',
   SERIALIZATION_ERROR = 'SERIALIZATION_ERROR',
-  HANDLER_NOT_FOUND = 'HANDLER_NOT_FOUND'
+  HANDLER_NOT_FOUND = 'HANDLER_NOT_FOUND',
 }
 
 export interface BatchStats {

@@ -3,7 +3,14 @@
  * Generates comprehensive performance reports and analytics
  */
 
-import { MetricsCollector, PerformanceMetric, QueryMetrics, CacheMetrics, SLAMetrics, PercentileMetrics } from './MetricsCollector';
+import {
+  MetricsCollector,
+  PerformanceMetric,
+  QueryMetrics,
+  CacheMetrics,
+  SLAMetrics,
+  PercentileMetrics,
+} from './MetricsCollector';
 
 export interface PerformanceReport {
   id: string;
@@ -198,14 +205,14 @@ export class PerformanceReportGenerator {
         queries: await this.generateQueryReport(currentMetrics.query),
         sla: await this.generateSLAReport(currentMetrics.sla),
         trends: await this.generateTrendAnalysis(currentMetrics),
-        recommendations: await this.generateRecommendations(currentMetrics)
+        recommendations: await this.generateRecommendations(currentMetrics),
       },
       metadata: {
         generatedBy: 'PerformanceReportGenerator v1.0',
         version: '1.0.0',
         reportType: type,
-        exportFormats: ['pdf', 'json', 'csv', 'html']
-      }
+        exportFormats: ['pdf', 'json', 'csv', 'html'],
+      },
     };
 
     return report;
@@ -219,33 +226,33 @@ export class PerformanceReportGenerator {
       return {
         start: customPeriod.start,
         end: customPeriod.end,
-        duration: customPeriod.end - customPeriod.start
+        duration: customPeriod.end - customPeriod.start,
       };
     }
 
     const now = Date.now();
     const durations = {
-      hourly: 3600000,    // 1 hour
-      daily: 86400000,    // 24 hours
-      weekly: 604800000,  // 7 days
-      monthly: 2592000000 // 30 days
+      hourly: 3600000, // 1 hour
+      daily: 86400000, // 24 hours
+      weekly: 604800000, // 7 days
+      monthly: 2592000000, // 30 days
     };
 
     const duration = durations[type];
     return {
       start: now - duration,
       end: now,
-      duration
+      duration,
     };
   }
 
   private generateSummary(metrics: any) {
-    const slaCompliance = (
-      (metrics.sla.availability * 100) +
-      (metrics.responseTime.p95 <= 500 ? 100 : 0) +
-      (metrics.query.errorRate <= 0.01 ? 100 : 0) +
-      (metrics.cache.hitRate >= 0.8 ? 100 : 0)
-    ) / 4;
+    const slaCompliance =
+      (metrics.sla.availability * 100 +
+        (metrics.responseTime.p95 <= 500 ? 100 : 0) +
+        (metrics.query.errorRate <= 0.01 ? 100 : 0) +
+        (metrics.cache.hitRate >= 0.8 ? 100 : 0)) /
+      4;
 
     return {
       totalRequests: metrics.responseTime.count,
@@ -254,7 +261,7 @@ export class PerformanceReportGenerator {
       errorRate: metrics.query.errorRate,
       cacheHitRate: metrics.cache.hitRate,
       slaCompliance: slaCompliance / 100,
-      availability: metrics.sla.availability
+      availability: metrics.sla.availability,
     };
   }
 
@@ -265,27 +272,47 @@ export class PerformanceReportGenerator {
       {
         name: 'Response Time (P95)',
         value: `${metrics.responseTime.p95.toFixed(0)}ms`,
-        status: metrics.responseTime.p95 <= 500 ? 'good' : metrics.responseTime.p95 <= 1000 ? 'warning' : 'critical',
-        trend: 'stable' as const
+        status:
+          metrics.responseTime.p95 <= 500
+            ? 'good'
+            : metrics.responseTime.p95 <= 1000
+              ? 'warning'
+              : 'critical',
+        trend: 'stable' as const,
       },
       {
         name: 'Error Rate',
         value: `${(metrics.query.errorRate * 100).toFixed(2)}%`,
-        status: metrics.query.errorRate <= 0.01 ? 'good' : metrics.query.errorRate <= 0.05 ? 'warning' : 'critical',
-        trend: 'stable' as const
+        status:
+          metrics.query.errorRate <= 0.01
+            ? 'good'
+            : metrics.query.errorRate <= 0.05
+              ? 'warning'
+              : 'critical',
+        trend: 'stable' as const,
       },
       {
         name: 'Cache Hit Rate',
         value: `${(metrics.cache.hitRate * 100).toFixed(1)}%`,
-        status: metrics.cache.hitRate >= 0.8 ? 'good' : metrics.cache.hitRate >= 0.6 ? 'warning' : 'critical',
-        trend: 'stable' as const
+        status:
+          metrics.cache.hitRate >= 0.8
+            ? 'good'
+            : metrics.cache.hitRate >= 0.6
+              ? 'warning'
+              : 'critical',
+        trend: 'stable' as const,
       },
       {
         name: 'Availability',
         value: `${(metrics.sla.availability * 100).toFixed(2)}%`,
-        status: metrics.sla.availability >= 0.999 ? 'good' : metrics.sla.availability >= 0.99 ? 'warning' : 'critical',
-        trend: 'stable' as const
-      }
+        status:
+          metrics.sla.availability >= 0.999
+            ? 'good'
+            : metrics.sla.availability >= 0.99
+              ? 'warning'
+              : 'critical',
+        trend: 'stable' as const,
+      },
     ];
 
     const criticalIssues = [];
@@ -314,26 +341,32 @@ export class PerformanceReportGenerator {
       healthScore,
       keyMetrics,
       criticalIssues,
-      achievements
+      achievements,
     };
   }
 
   private calculateHealthScore(metrics: any): number {
     const scores = [
       // Response Time Score (0-25 points)
-      Math.max(0, 25 - (metrics.responseTime.p95 / 20)),
+      Math.max(0, 25 - metrics.responseTime.p95 / 20),
 
       // Error Rate Score (0-25 points)
-      Math.max(0, 25 - (metrics.query.errorRate * 2500)),
+      Math.max(0, 25 - metrics.query.errorRate * 2500),
 
       // Cache Hit Rate Score (0-25 points)
       metrics.cache.hitRate * 25,
 
       // Availability Score (0-25 points)
-      (metrics.sla.availability - 0.95) * 500
+      (metrics.sla.availability - 0.95) * 500,
     ];
 
-    return Math.max(0, Math.min(100, scores.reduce((a, b) => a + b, 0)));
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        scores.reduce((a, b) => a + b, 0)
+      )
+    );
   }
 
   private async generatePerformanceAnalysis(metrics: any): Promise<PerformanceAnalysis> {
@@ -344,12 +377,12 @@ export class PerformanceReportGenerator {
       responseTime: {
         percentiles: metrics.responseTime,
         distribution,
-        trends: [] // Would be populated with historical data
+        trends: [], // Would be populated with historical data
       },
       throughput: {
         average: metrics.sla.throughputActual,
         peak: metrics.sla.throughputActual * 1.5, // Estimated
-        trends: []
+        trends: [],
       },
       errorAnalysis: {
         totalErrors: Math.floor(metrics.responseTime.count * metrics.query.errorRate),
@@ -357,10 +390,10 @@ export class PerformanceReportGenerator {
         errorTypes: [
           { type: '5xx Server Errors', count: 0, percentage: 0 },
           { type: '4xx Client Errors', count: 0, percentage: 0 },
-          { type: 'Timeout Errors', count: 0, percentage: 0 }
+          { type: 'Timeout Errors', count: 0, percentage: 0 },
         ],
-        trends: []
-      }
+        trends: [],
+      },
     };
   }
 
@@ -370,14 +403,14 @@ export class PerformanceReportGenerator {
       { range: '100-500ms', min: 100, max: 500 },
       { range: '500ms-1s', min: 500, max: 1000 },
       { range: '1s-5s', min: 1000, max: 5000 },
-      { range: '5s+', min: 5000, max: Infinity }
+      { range: '5s+', min: 5000, max: Infinity },
     ];
 
     // Simplified distribution calculation
     return ranges.map(range => ({
       range: range.range,
       count: Math.floor(responseTimeMetrics.count * 0.2), // Mock distribution
-      percentage: 20
+      percentage: 20,
     }));
   }
 
@@ -387,7 +420,7 @@ export class PerformanceReportGenerator {
       downtime: 1 - metrics.sla.availability,
       incidents: [], // Would be populated from incident tracking
       mttr: 5, // 5 minutes average
-      mtbf: 720 // 12 hours average
+      mtbf: 720, // 12 hours average
     };
   }
 
@@ -396,18 +429,18 @@ export class PerformanceReportGenerator {
       effectiveness: {
         hitRate: cacheMetrics.hitRate,
         missRate: cacheMetrics.missRate,
-        totalRequests: cacheMetrics.totalRequests
+        totalRequests: cacheMetrics.totalRequests,
       },
       performance: {
         avgHitTime: 5, // Estimated 5ms for cache hits
         avgMissTime: 100, // Estimated 100ms for cache misses
-        sizeTrends: []
+        sizeTrends: [],
       },
       optimization: {
         evictionRate: cacheMetrics.evictions / Math.max(1, cacheMetrics.totalRequests),
         hotKeys: [], // Would need to track most accessed keys
-        recommendations: this.generateCacheRecommendations(cacheMetrics)
-      }
+        recommendations: this.generateCacheRecommendations(cacheMetrics),
+      },
     };
   }
 
@@ -435,11 +468,11 @@ export class PerformanceReportGenerator {
           query: q.query,
           avgDuration: q.duration,
           count: 1,
-          impact: q.duration
+          impact: q.duration,
         })),
         queryPatterns: [], // Would need query pattern analysis
-        optimizationOpportunities: this.generateQueryOptimizations(queryMetrics)
-      }
+        optimizationOpportunities: this.generateQueryOptimizations(queryMetrics),
+      },
     };
   }
 
@@ -465,20 +498,20 @@ export class PerformanceReportGenerator {
         metric: 'Response Time',
         count: slaMetrics.violations.filter(v => v.type === 'response_time').length,
         totalDuration: 0,
-        impact: 'medium' as const
+        impact: 'medium' as const,
       },
       {
         metric: 'Error Rate',
         count: slaMetrics.violations.filter(v => v.type === 'error_rate').length,
         totalDuration: 0,
-        impact: 'high' as const
+        impact: 'high' as const,
       },
       {
         metric: 'Throughput',
         count: slaMetrics.violations.filter(v => v.type === 'throughput').length,
         totalDuration: 0,
-        impact: 'low' as const
-      }
+        impact: 'low' as const,
+      },
     ];
 
     return {
@@ -486,8 +519,8 @@ export class PerformanceReportGenerator {
       violations,
       trends: {
         complianceHistory: [],
-        violationTrends: []
-      }
+        violationTrends: [],
+      },
     };
   }
 
@@ -497,23 +530,23 @@ export class PerformanceReportGenerator {
         responseTime: 'stable',
         throughput: 'stable',
         errorRate: 'stable',
-        cacheHitRate: 'stable'
+        cacheHitRate: 'stable',
       },
       seasonality: {
         dailyPatterns: [],
-        weeklyPatterns: []
+        weeklyPatterns: [],
       },
       forecasting: {
         expectedLoad: metrics.sla.throughputActual * 1.2,
         capacityRecommendations: [
           'Monitor resource utilization during peak hours',
-          'Consider horizontal scaling for increased load'
+          'Consider horizontal scaling for increased load',
         ],
         growthProjections: [
           { period: 'Next Month', expectedIncrease: 20 },
-          { period: 'Next Quarter', expectedIncrease: 60 }
-        ]
-      }
+          { period: 'Next Quarter', expectedIncrease: 60 },
+        ],
+      },
     };
   }
 
@@ -535,8 +568,8 @@ export class PerformanceReportGenerator {
           'Analyze slow query log',
           'Add database indexes',
           'Implement query optimization',
-          'Add response caching where appropriate'
-        ]
+          'Add response caching where appropriate',
+        ],
       });
     }
 
@@ -555,8 +588,8 @@ export class PerformanceReportGenerator {
           'Review cache key strategies',
           'Adjust TTL settings',
           'Implement cache warming',
-          'Add caching for frequently accessed data'
-        ]
+          'Add caching for frequently accessed data',
+        ],
       });
     }
 
@@ -575,8 +608,8 @@ export class PerformanceReportGenerator {
           'Implement comprehensive error logging',
           'Add circuit breakers for external services',
           'Improve input validation',
-          'Add automated error recovery'
-        ]
+          'Add automated error recovery',
+        ],
       });
     }
 
@@ -586,7 +619,10 @@ export class PerformanceReportGenerator {
   /**
    * Export report to different formats
    */
-  async exportReport(report: PerformanceReport, format: 'json' | 'csv' | 'html' | 'pdf'): Promise<string> {
+  async exportReport(
+    report: PerformanceReport,
+    format: 'json' | 'csv' | 'html' | 'pdf'
+  ): Promise<string> {
     switch (format) {
       case 'json':
         return JSON.stringify(report, null, 2);
@@ -618,7 +654,7 @@ export class PerformanceReportGenerator {
       ['Error Rate', `${(report.summary.errorRate * 100).toFixed(2)}%`, ''],
       ['Cache Hit Rate', `${(report.summary.cacheHitRate * 100).toFixed(1)}%`, ''],
       ['SLA Compliance', `${(report.summary.slaCompliance * 100).toFixed(1)}%`, ''],
-      ['Availability', `${(report.summary.availability * 100).toFixed(2)}%`, '']
+      ['Availability', `${(report.summary.availability * 100).toFixed(2)}%`, ''],
     ];
 
     return rows.map(row => row.join(',')).join('\n');
@@ -665,7 +701,9 @@ export class PerformanceReportGenerator {
         </div>
 
         <h2>Recommendations</h2>
-        ${report.sections.recommendations.map(rec => `
+        ${report.sections.recommendations
+          .map(
+            rec => `
             <div class="metric ${rec.priority}">
                 <h4>${rec.title}</h4>
                 <p><strong>Priority:</strong> ${rec.priority}</p>
@@ -673,7 +711,9 @@ export class PerformanceReportGenerator {
                 <p>${rec.description}</p>
                 <p><strong>Impact:</strong> ${rec.impact}</p>
             </div>
-        `).join('')}
+        `
+          )
+          .join('')}
     </body>
     </html>`;
   }

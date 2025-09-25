@@ -48,15 +48,15 @@ export class ContrastTester {
   static getContrastRatio(color1: string, color2: string): number {
     const rgb1 = this.hexToRgb(color1);
     const rgb2 = this.hexToRgb(color2);
-    
+
     if (!rgb1 || !rgb2) return 0;
 
     const l1 = this.getRelativeLuminance(rgb1.r, rgb1.g, rgb1.b);
     const l2 = this.getRelativeLuminance(rgb2.r, rgb2.g, rgb2.b);
-    
+
     const lighter = Math.max(l1, l2);
     const darker = Math.min(l1, l2);
-    
+
     return (lighter + 0.05) / (darker + 0.05);
   }
 
@@ -65,11 +65,13 @@ export class ContrastTester {
    */
   private static hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null;
   }
 
   /**
@@ -79,7 +81,7 @@ export class ContrastTester {
     const computed = window.getComputedStyle(element);
     return {
       color: computed.color,
-      backgroundColor: computed.backgroundColor
+      backgroundColor: computed.backgroundColor,
     };
   }
 
@@ -87,13 +89,13 @@ export class ContrastTester {
    * Check if contrast ratio meets WCAG standards
    */
   static meetsContrastRequirement(
-    ratio: number, 
-    level: 'AA' | 'AAA' = 'AA', 
+    ratio: number,
+    level: 'AA' | 'AAA' = 'AA',
     size: 'normal' | 'large' = 'normal'
   ): boolean {
     const requirements = {
       AA: { normal: 4.5, large: 3 },
-      AAA: { normal: 7, large: 4.5 }
+      AAA: { normal: 7, large: 4.5 },
     };
     return ratio >= requirements[level][size];
   }
@@ -114,7 +116,7 @@ export class KeyboardTester {
       'input:not([type="hidden"]):not([disabled])',
       'select:not([disabled])',
       '[tabindex]:not([tabindex="-1"])',
-      '[contenteditable="true"]'
+      '[contenteditable="true"]',
     ].join(', ');
 
     return Array.from(container.querySelectorAll(focusableSelectors)) as HTMLElement[];
@@ -126,15 +128,15 @@ export class KeyboardTester {
   static testTabOrder(container: HTMLElement = document.body): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
     const focusableElements = this.getFocusableElements(container);
-    
+
     // Check if elements have logical tab order
     for (let i = 0; i < focusableElements.length - 1; i++) {
       const current = focusableElements[i];
       const next = focusableElements[i + 1];
-      
+
       const currentRect = current.getBoundingClientRect();
       const nextRect = next.getBoundingClientRect();
-      
+
       // Simple heuristic: next element should be to the right or below
       if (nextRect.top < currentRect.top - 10 && nextRect.left < currentRect.right) {
         results.push({
@@ -144,7 +146,7 @@ export class KeyboardTester {
           element: current,
           message: 'Tab order may not follow visual layout',
           impact: 'moderate',
-          howToFix: 'Ensure tab order follows logical reading order'
+          howToFix: 'Ensure tab order follows logical reading order',
         });
       }
     }
@@ -158,7 +160,7 @@ export class KeyboardTester {
   static testKeyboardTraps(container: HTMLElement = document.body): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
     const focusableElements = this.getFocusableElements(container);
-    
+
     // Check for elements that might create keyboard traps
     focusableElements.forEach(element => {
       if (element.hasAttribute('onkeydown') || element.hasAttribute('onkeyup')) {
@@ -171,7 +173,7 @@ export class KeyboardTester {
             element,
             message: 'Element may create a keyboard trap',
             impact: 'serious',
-            howToFix: 'Ensure users can navigate away using keyboard only'
+            howToFix: 'Ensure users can navigate away using keyboard only',
           });
         }
       }
@@ -190,14 +192,16 @@ export class ARIATester {
    */
   static testARIALabels(container: HTMLElement = document.body): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
-    
+
     // Elements that should have accessible names
-    const elementsNeedingLabels = container.querySelectorAll('button, input, textarea, select, [role="button"], [role="textbox"]');
-    
+    const elementsNeedingLabels = container.querySelectorAll(
+      'button, input, textarea, select, [role="button"], [role="textbox"]'
+    );
+
     elementsNeedingLabels.forEach(element => {
       const el = element as HTMLElement;
       const hasLabel = this.hasAccessibleName(el);
-      
+
       if (!hasLabel) {
         results.push({
           rule: 'aria-accessible-name',
@@ -206,7 +210,7 @@ export class ARIATester {
           element: el,
           message: 'Interactive element lacks accessible name',
           impact: 'serious',
-          howToFix: 'Add aria-label, aria-labelledby, or proper label element'
+          howToFix: 'Add aria-label, aria-labelledby, or proper label element',
         });
       }
     });
@@ -220,26 +224,26 @@ export class ARIATester {
   private static hasAccessibleName(element: HTMLElement): boolean {
     // Check aria-label
     if (element.getAttribute('aria-label')) return true;
-    
+
     // Check aria-labelledby
     const labelledBy = element.getAttribute('aria-labelledby');
     if (labelledBy && document.getElementById(labelledBy)) return true;
-    
+
     // Check associated label
     if (element.id) {
       const label = document.querySelector(`label[for="${element.id}"]`);
       if (label && label.textContent?.trim()) return true;
     }
-    
+
     // Check if wrapped in label
     const parentLabel = element.closest('label');
     if (parentLabel && parentLabel.textContent?.trim()) return true;
-    
+
     // Check text content for buttons
     if (element.tagName.toLowerCase() === 'button' && element.textContent?.trim()) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -248,8 +252,10 @@ export class ARIATester {
    */
   static testHeadingStructure(container: HTMLElement = document.body): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
-    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6')) as HTMLElement[];
-    
+    const headings = Array.from(
+      container.querySelectorAll('h1, h2, h3, h4, h5, h6')
+    ) as HTMLElement[];
+
     if (headings.length === 0) {
       results.push({
         rule: 'heading-structure',
@@ -257,7 +263,7 @@ export class ARIATester {
         status: 'warning',
         message: 'No headings found - consider adding page structure',
         impact: 'moderate',
-        howToFix: 'Add heading elements to structure your content'
+        howToFix: 'Add heading elements to structure your content',
       });
       return results;
     }
@@ -272,7 +278,7 @@ export class ARIATester {
         element: firstHeading,
         message: 'Page should start with h1 heading',
         impact: 'moderate',
-        howToFix: 'Use h1 for the main page heading'
+        howToFix: 'Use h1 for the main page heading',
       });
     }
 
@@ -280,7 +286,7 @@ export class ARIATester {
     for (let i = 1; i < headings.length; i++) {
       const current = parseInt(headings[i].tagName.slice(1));
       const previous = parseInt(headings[i - 1].tagName.slice(1));
-      
+
       if (current > previous + 1) {
         results.push({
           rule: 'heading-structure',
@@ -289,7 +295,7 @@ export class ARIATester {
           element: headings[i],
           message: `Heading level skipped from h${previous} to h${current}`,
           impact: 'moderate',
-          howToFix: 'Don\'t skip heading levels - use sequential order'
+          howToFix: "Don't skip heading levels - use sequential order",
         });
       }
     }
@@ -303,11 +309,11 @@ export class ARIATester {
   static testFormLabels(container: HTMLElement = document.body): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
     const formControls = container.querySelectorAll('input:not([type="hidden"]), textarea, select');
-    
+
     formControls.forEach(control => {
       const el = control as HTMLElement;
       const hasLabel = this.hasAccessibleName(el);
-      
+
       if (!hasLabel) {
         results.push({
           rule: 'form-label',
@@ -316,7 +322,7 @@ export class ARIATester {
           element: el,
           message: 'Form control lacks proper label',
           impact: 'serious',
-          howToFix: 'Associate label with form control using for/id or aria-label'
+          howToFix: 'Associate label with form control using for/id or aria-label',
         });
       }
     });
@@ -346,9 +352,9 @@ export class AccessibilityValidator {
             description: 'Ensure text has sufficient contrast against background',
             level: 'AA',
             category: 'perceivable',
-            test: (container = document.body) => this.testTextContrast(container)
-          }
-        ]
+            test: (container = document.body) => this.testTextContrast(container),
+          },
+        ],
       },
       {
         name: 'Keyboard Navigation',
@@ -359,16 +365,16 @@ export class AccessibilityValidator {
             description: 'Check logical keyboard navigation order',
             level: 'A',
             category: 'operable',
-            test: (container = document.body) => KeyboardTester.testTabOrder(container)
+            test: (container = document.body) => KeyboardTester.testTabOrder(container),
           },
           {
             name: 'Keyboard Traps',
             description: 'Detect potential keyboard traps',
             level: 'A',
             category: 'operable',
-            test: (container = document.body) => KeyboardTester.testKeyboardTraps(container)
-          }
-        ]
+            test: (container = document.body) => KeyboardTester.testKeyboardTraps(container),
+          },
+        ],
       },
       {
         name: 'ARIA and Semantics',
@@ -379,24 +385,24 @@ export class AccessibilityValidator {
             description: 'Check for proper ARIA labeling',
             level: 'A',
             category: 'perceivable',
-            test: (container = document.body) => ARIATester.testARIALabels(container)
+            test: (container = document.body) => ARIATester.testARIALabels(container),
           },
           {
             name: 'Heading Structure',
             description: 'Validate heading hierarchy',
             level: 'AA',
             category: 'perceivable',
-            test: (container = document.body) => ARIATester.testHeadingStructure(container)
+            test: (container = document.body) => ARIATester.testHeadingStructure(container),
           },
           {
             name: 'Form Labels',
             description: 'Check form control labeling',
             level: 'A',
             category: 'perceivable',
-            test: (container = document.body) => ARIATester.testFormLabels(container)
-          }
-        ]
-      }
+            test: (container = document.body) => ARIATester.testFormLabels(container),
+          },
+        ],
+      },
     ];
   }
 
@@ -405,27 +411,35 @@ export class AccessibilityValidator {
    */
   private testTextContrast(container: HTMLElement): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
-    const textElements = container.querySelectorAll('p, span, a, button, label, h1, h2, h3, h4, h5, h6, li, td, th');
-    
+    const textElements = container.querySelectorAll(
+      'p, span, a, button, label, h1, h2, h3, h4, h5, h6, li, td, th'
+    );
+
     textElements.forEach(element => {
       const el = element as HTMLElement;
       const computed = window.getComputedStyle(el);
       const color = computed.color;
       const backgroundColor = computed.backgroundColor;
-      
+
       // Skip if transparent or not visible
       if (color === 'rgba(0, 0, 0, 0)' || backgroundColor === 'rgba(0, 0, 0, 0)') {
         return;
       }
-      
+
       try {
         const ratio = ContrastTester.getContrastRatio(color, backgroundColor);
         const fontSize = parseFloat(computed.fontSize);
         const fontWeight = computed.fontWeight;
-        const isLarge = fontSize >= 18 || (fontSize >= 14 && (fontWeight === 'bold' || parseInt(fontWeight) >= 700));
-        
-        const meetsAA = ContrastTester.meetsContrastRequirement(ratio, 'AA', isLarge ? 'large' : 'normal');
-        
+        const isLarge =
+          fontSize >= 18 ||
+          (fontSize >= 14 && (fontWeight === 'bold' || parseInt(fontWeight) >= 700));
+
+        const meetsAA = ContrastTester.meetsContrastRequirement(
+          ratio,
+          'AA',
+          isLarge ? 'large' : 'normal'
+        );
+
         if (!meetsAA) {
           results.push({
             rule: 'color-contrast',
@@ -434,14 +448,14 @@ export class AccessibilityValidator {
             element: el,
             message: `Color contrast ratio ${ratio.toFixed(2)}:1 is insufficient`,
             impact: 'serious',
-            howToFix: `Increase contrast to at least ${isLarge ? '3:1' : '4.5:1'}`
+            howToFix: `Increase contrast to at least ${isLarge ? '3:1' : '4.5:1'}`,
           });
         }
       } catch (error) {
         // Skip elements where contrast can't be calculated
       }
     });
-    
+
     return results;
   }
 
@@ -450,23 +464,26 @@ export class AccessibilityValidator {
    */
   runAllTests(container?: HTMLElement): AccessibilityTestResult[] {
     const allResults: AccessibilityTestResult[] = [];
-    
+
     this.testSuites.forEach(suite => {
       suite.tests.forEach(test => {
         const results = test.test(container);
         allResults.push(...results);
       });
     });
-    
+
     return allResults;
   }
 
   /**
    * Run tests by category
    */
-  runTestsByCategory(category: 'perceivable' | 'operable' | 'understandable' | 'robust', container?: HTMLElement): AccessibilityTestResult[] {
+  runTestsByCategory(
+    category: 'perceivable' | 'operable' | 'understandable' | 'robust',
+    container?: HTMLElement
+  ): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
-    
+
     this.testSuites.forEach(suite => {
       suite.tests
         .filter(test => test.category === category)
@@ -475,7 +492,7 @@ export class AccessibilityValidator {
           results.push(...testResults);
         });
     });
-    
+
     return results;
   }
 
@@ -484,7 +501,7 @@ export class AccessibilityValidator {
    */
   runTestsByLevel(level: 'A' | 'AA' | 'AAA', container?: HTMLElement): AccessibilityTestResult[] {
     const results: AccessibilityTestResult[] = [];
-    
+
     this.testSuites.forEach(suite => {
       suite.tests
         .filter(test => test.level === level)
@@ -493,7 +510,7 @@ export class AccessibilityValidator {
           results.push(...testResults);
         });
     });
-    
+
     return results;
   }
 
@@ -522,9 +539,9 @@ export class AccessibilityValidator {
         critical: results.filter(r => r.impact === 'critical').length,
         serious: results.filter(r => r.impact === 'serious').length,
         moderate: results.filter(r => r.impact === 'moderate').length,
-        low: results.filter(r => r.impact === 'low').length
+        low: results.filter(r => r.impact === 'low').length,
       },
-      results
+      results,
     };
   }
 }
@@ -537,10 +554,10 @@ export const runA11yTest = (container?: HTMLElement): void => {
   if (process.env.NODE_ENV === 'development') {
     const results = accessibilityValidator.runAllTests(container);
     const report = accessibilityValidator.generateReport(results);
-    
+
     console.group('🔍 Accessibility Test Results');
     console.log('Summary:', report.summary);
-    
+
     if (report.results.length > 0) {
       console.group('Issues Found:');
       report.results.forEach(result => {
@@ -554,7 +571,7 @@ export const runA11yTest = (container?: HTMLElement): void => {
     } else {
       console.log('✅ All tests passed!');
     }
-    
+
     console.groupEnd();
   }
 };

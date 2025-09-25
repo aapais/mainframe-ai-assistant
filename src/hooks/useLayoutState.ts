@@ -443,166 +443,190 @@ export const useLayoutState = (options: LayoutStateOptions = {}): UseLayoutState
   }, []);
 
   // Save layout
-  const saveLayout = useCallback(async (layoutToSave?: LayoutConfig): Promise<void> => {
-    const targetLayout = layoutToSave || layout;
-    if (!targetLayout) return;
+  const saveLayout = useCallback(
+    async (layoutToSave?: LayoutConfig): Promise<void> => {
+      const targetLayout = layoutToSave || layout;
+      if (!targetLayout) return;
 
-    try {
-      const updatedLayout: LayoutConfig = {
-        ...targetLayout,
-        modifiedAt: Date.now(),
-      };
+      try {
+        const updatedLayout: LayoutConfig = {
+          ...targetLayout,
+          modifiedAt: Date.now(),
+        };
 
-      // Save to storage
-      const key = getStorageKey(storageKey, targetLayout.id);
-      saveToStorage(key, updatedLayout, compress);
+        // Save to storage
+        const key = getStorageKey(storageKey, targetLayout.id);
+        saveToStorage(key, updatedLayout, compress);
 
-      // Update state
-      if (targetLayout === layout) {
-        setLayout(updatedLayout);
-        setHasUnsavedChanges(false);
-      }
-
-      // Update saved layouts list
-      setSavedLayouts(prev => {
-        const filtered = prev.filter(l => l.id !== updatedLayout.id);
-        const updated = [updatedLayout, ...filtered];
-
-        // Limit number of saved layouts
-        if (updated.length > maxLayouts) {
-          const toRemove = updated.slice(maxLayouts);
-          toRemove.forEach(l => {
-            const key = getStorageKey(storageKey, l.id);
-            removeFromStorage(key);
-          });
-          return updated.slice(0, maxLayouts);
+        // Update state
+        if (targetLayout === layout) {
+          setLayout(updatedLayout);
+          setHasUnsavedChanges(false);
         }
 
-        return updated;
-      });
+        // Update saved layouts list
+        setSavedLayouts(prev => {
+          const filtered = prev.filter(l => l.id !== updatedLayout.id);
+          const updated = [updatedLayout, ...filtered];
 
-      onSaveRef.current?.(updatedLayout);
-    } catch (error) {
-      const errorMsg = `Failed to save layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      setError(errorMsg);
-      console.error(errorMsg, error);
-    }
-  }, [layout, storageKey, compress, maxLayouts]);
+          // Limit number of saved layouts
+          if (updated.length > maxLayouts) {
+            const toRemove = updated.slice(maxLayouts);
+            toRemove.forEach(l => {
+              const key = getStorageKey(storageKey, l.id);
+              removeFromStorage(key);
+            });
+            return updated.slice(0, maxLayouts);
+          }
+
+          return updated;
+        });
+
+        onSaveRef.current?.(updatedLayout);
+      } catch (error) {
+        const errorMsg = `Failed to save layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        setError(errorMsg);
+        console.error(errorMsg, error);
+      }
+    },
+    [layout, storageKey, compress, maxLayouts]
+  );
 
   // Load layout
-  const loadLayout = useCallback(async (layoutId: string): Promise<LayoutConfig | null> => {
-    try {
-      const key = getStorageKey(storageKey, layoutId);
-      const stored = loadFromStorage(key, compress);
+  const loadLayout = useCallback(
+    async (layoutId: string): Promise<LayoutConfig | null> => {
+      try {
+        const key = getStorageKey(storageKey, layoutId);
+        const stored = loadFromStorage(key, compress);
 
-      if (stored && validator(stored)) {
-        // Apply migrations if needed
-        let migratedLayout = stored;
-        if (stored.version !== CURRENT_VERSION && migrations[stored.version]) {
-          migratedLayout = migrations[stored.version](stored);
+        if (stored && validator(stored)) {
+          // Apply migrations if needed
+          let migratedLayout = stored;
+          if (stored.version !== CURRENT_VERSION && migrations[stored.version]) {
+            migratedLayout = migrations[stored.version](stored);
+          }
+
+          setLayout(migratedLayout);
+          setHasUnsavedChanges(false);
+          onLoadRef.current?.(migratedLayout);
+
+          return migratedLayout;
         }
 
-        setLayout(migratedLayout);
-        setHasUnsavedChanges(false);
-        onLoadRef.current?.(migratedLayout);
-
-        return migratedLayout;
+        throw new Error('Invalid layout data');
+      } catch (error) {
+        const errorMsg = `Failed to load layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        setError(errorMsg);
+        console.error(errorMsg, error);
+        return null;
       }
-
-      throw new Error('Invalid layout data');
-    } catch (error) {
-      const errorMsg = `Failed to load layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      setError(errorMsg);
-      console.error(errorMsg, error);
-      return null;
-    }
-  }, [storageKey, compress, validator, migrations]);
+    },
+    [storageKey, compress, validator, migrations]
+  );
 
   // Delete layout
-  const deleteLayout = useCallback(async (layoutId: string): Promise<void> => {
-    try {
-      const key = getStorageKey(storageKey, layoutId);
-      removeFromStorage(key);
+  const deleteLayout = useCallback(
+    async (layoutId: string): Promise<void> => {
+      try {
+        const key = getStorageKey(storageKey, layoutId);
+        removeFromStorage(key);
 
-      setSavedLayouts(prev => prev.filter(l => l.id !== layoutId));
+        setSavedLayouts(prev => prev.filter(l => l.id !== layoutId));
 
-      // If current layout was deleted, reset
-      if (layout?.id === layoutId) {
-        setLayout(null);
-        setHasUnsavedChanges(false);
+        // If current layout was deleted, reset
+        if (layout?.id === layoutId) {
+          setLayout(null);
+          setHasUnsavedChanges(false);
+        }
+      } catch (error) {
+        const errorMsg = `Failed to delete layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        setError(errorMsg);
+        console.error(errorMsg, error);
       }
-    } catch (error) {
-      const errorMsg = `Failed to delete layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      setError(errorMsg);
-      console.error(errorMsg, error);
-    }
-  }, [layout, storageKey]);
+    },
+    [layout, storageKey]
+  );
 
   // Duplicate layout
-  const duplicateLayout = useCallback(async (layoutId: string, newName: string): Promise<LayoutConfig> => {
-    const sourceLayout = savedLayouts.find(l => l.id === layoutId);
-    if (!sourceLayout) {
-      throw new Error('Source layout not found');
-    }
+  const duplicateLayout = useCallback(
+    async (layoutId: string, newName: string): Promise<LayoutConfig> => {
+      const sourceLayout = savedLayouts.find(l => l.id === layoutId);
+      if (!sourceLayout) {
+        throw new Error('Source layout not found');
+      }
 
-    const duplicated = createLayout(newName, `Copy of ${sourceLayout.name}`);
-    Object.assign(duplicated, {
-      ...sourceLayout,
-      id: duplicated.id,
-      name: newName,
-      description: `Copy of ${sourceLayout.name}`,
-      createdAt: duplicated.createdAt,
-      modifiedAt: duplicated.modifiedAt,
-    });
+      const duplicated = createLayout(newName, `Copy of ${sourceLayout.name}`);
+      Object.assign(duplicated, {
+        ...sourceLayout,
+        id: duplicated.id,
+        name: newName,
+        description: `Copy of ${sourceLayout.name}`,
+        createdAt: duplicated.createdAt,
+        modifiedAt: duplicated.modifiedAt,
+      });
 
-    await saveLayout(duplicated);
-    return duplicated;
-  }, [savedLayouts, createLayout, saveLayout]);
+      await saveLayout(duplicated);
+      return duplicated;
+    },
+    [savedLayouts, createLayout, saveLayout]
+  );
 
   // Update layout
-  const updateLayout = useCallback((updates: Partial<LayoutConfig>) => {
-    if (!layout) return;
+  const updateLayout = useCallback(
+    (updates: Partial<LayoutConfig>) => {
+      if (!layout) return;
 
-    const updatedLayout = { ...layout, ...updates };
-    setLayout(updatedLayout);
-    setHasUnsavedChanges(true);
+      const updatedLayout = { ...layout, ...updates };
+      setLayout(updatedLayout);
+      setHasUnsavedChanges(true);
 
-    onChangeRef.current?.(updatedLayout);
-    debouncedAutoSave(updatedLayout);
-  }, [layout, debouncedAutoSave]);
+      onChangeRef.current?.(updatedLayout);
+      debouncedAutoSave(updatedLayout);
+    },
+    [layout, debouncedAutoSave]
+  );
 
   // Update panel
-  const updatePanel = useCallback((panelId: string, updates: Partial<PanelConfig>) => {
-    if (!layout) return;
+  const updatePanel = useCallback(
+    (panelId: string, updates: Partial<PanelConfig>) => {
+      if (!layout) return;
 
-    const updatedPanels = layout.panels.map(panel =>
-      panel.id === panelId ? { ...panel, ...updates } : panel
-    );
+      const updatedPanels = layout.panels.map(panel =>
+        panel.id === panelId ? { ...panel, ...updates } : panel
+      );
 
-    updateLayout({ panels: updatedPanels });
-  }, [layout, updateLayout]);
+      updateLayout({ panels: updatedPanels });
+    },
+    [layout, updateLayout]
+  );
 
   // Add panel
-  const addPanel = useCallback((panel: Omit<PanelConfig, 'id'> & { id?: string }) => {
-    if (!layout) return;
+  const addPanel = useCallback(
+    (panel: Omit<PanelConfig, 'id'> & { id?: string }) => {
+      if (!layout) return;
 
-    const newPanel: PanelConfig = {
-      id: panel.id || generateId(),
-      ...panel,
-    };
+      const newPanel: PanelConfig = {
+        id: panel.id || generateId(),
+        ...panel,
+      };
 
-    updateLayout({
-      panels: [...layout.panels, newPanel],
-    });
-  }, [layout, updateLayout]);
+      updateLayout({
+        panels: [...layout.panels, newPanel],
+      });
+    },
+    [layout, updateLayout]
+  );
 
   // Remove panel
-  const removePanel = useCallback((panelId: string) => {
-    if (!layout) return;
+  const removePanel = useCallback(
+    (panelId: string) => {
+      if (!layout) return;
 
-    const updatedPanels = layout.panels.filter(panel => panel.id !== panelId);
-    updateLayout({ panels: updatedPanels });
-  }, [layout, updateLayout]);
+      const updatedPanels = layout.panels.filter(panel => panel.id !== panelId);
+      updateLayout({ panels: updatedPanels });
+    },
+    [layout, updateLayout]
+  );
 
   // Reset layout
   const resetLayout = useCallback(() => {
@@ -618,42 +642,46 @@ export const useLayoutState = (options: LayoutStateOptions = {}): UseLayoutState
   }, [defaultLayout, createLayout]);
 
   // Export layout
-  const exportLayout = useCallback((layoutId?: string): string => {
-    const targetLayout = layoutId
-      ? savedLayouts.find(l => l.id === layoutId)
-      : layout;
+  const exportLayout = useCallback(
+    (layoutId?: string): string => {
+      const targetLayout = layoutId ? savedLayouts.find(l => l.id === layoutId) : layout;
 
-    if (!targetLayout) {
-      throw new Error('No layout to export');
-    }
-
-    return JSON.stringify(targetLayout, null, 2);
-  }, [layout, savedLayouts]);
-
-  // Import layout
-  const importLayout = useCallback(async (json: string): Promise<LayoutConfig> => {
-    try {
-      const parsed = JSON.parse(json);
-
-      if (!validator(parsed)) {
-        throw new Error('Invalid layout format');
+      if (!targetLayout) {
+        throw new Error('No layout to export');
       }
 
-      // Generate new ID to avoid conflicts
-      const imported: LayoutConfig = {
-        ...parsed,
-        id: generateId(),
-        createdAt: Date.now(),
-        modifiedAt: Date.now(),
-      };
+      return JSON.stringify(targetLayout, null, 2);
+    },
+    [layout, savedLayouts]
+  );
 
-      await saveLayout(imported);
-      return imported;
-    } catch (error) {
-      const errorMsg = `Failed to import layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      throw new Error(errorMsg);
-    }
-  }, [validator, saveLayout]);
+  // Import layout
+  const importLayout = useCallback(
+    async (json: string): Promise<LayoutConfig> => {
+      try {
+        const parsed = JSON.parse(json);
+
+        if (!validator(parsed)) {
+          throw new Error('Invalid layout format');
+        }
+
+        // Generate new ID to avoid conflicts
+        const imported: LayoutConfig = {
+          ...parsed,
+          id: generateId(),
+          createdAt: Date.now(),
+          modifiedAt: Date.now(),
+        };
+
+        await saveLayout(imported);
+        return imported;
+      } catch (error) {
+        const errorMsg = `Failed to import layout: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        throw new Error(errorMsg);
+      }
+    },
+    [validator, saveLayout]
+  );
 
   // Clear all layouts
   const clearAllLayouts = useCallback(async (): Promise<void> => {

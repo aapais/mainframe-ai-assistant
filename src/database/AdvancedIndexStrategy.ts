@@ -1,6 +1,6 @@
 /**
  * Advanced Database Indexing Strategy for Sub-1s Search Performance
- * 
+ *
  * This module implements sophisticated indexing strategies to ensure
  * all search operations complete in under 1 second, even with large datasets.
  */
@@ -50,9 +50,18 @@ export class AdvancedIndexStrategy {
         name: 'idx_search_covering_primary',
         table: 'kb_entries',
         keyColumns: ['category', 'usage_count'],
-        includedColumns: ['id', 'title', 'problem', 'solution', 'success_count', 'failure_count', 'last_used'],
+        includedColumns: [
+          'id',
+          'title',
+          'problem',
+          'solution',
+          'success_count',
+          'failure_count',
+          'last_used',
+        ],
         whereClause: 'archived = FALSE',
-        rationale: 'Primary search covering index - eliminates table lookups for category+popularity queries'
+        rationale:
+          'Primary search covering index - eliminates table lookups for category+popularity queries',
       },
       {
         name: 'idx_search_covering_success',
@@ -60,7 +69,7 @@ export class AdvancedIndexStrategy {
         keyColumns: ['success_count', 'failure_count'],
         includedColumns: ['id', 'title', 'category', 'usage_count', 'last_used'],
         whereClause: 'archived = FALSE AND (success_count + failure_count) > 0',
-        rationale: 'Success rate covering index - fast access to most effective entries'
+        rationale: 'Success rate covering index - fast access to most effective entries',
       },
       {
         name: 'idx_search_covering_recent',
@@ -68,7 +77,7 @@ export class AdvancedIndexStrategy {
         keyColumns: ['last_used', 'created_at'],
         includedColumns: ['id', 'title', 'category', 'usage_count', 'success_count'],
         whereClause: 'archived = FALSE',
-        rationale: 'Temporal covering index - fast access to recent and new entries'
+        rationale: 'Temporal covering index - fast access to recent and new entries',
       },
       {
         name: 'idx_search_covering_hybrid',
@@ -76,21 +85,21 @@ export class AdvancedIndexStrategy {
         keyColumns: ['category', 'severity', 'usage_count', 'success_count'],
         includedColumns: ['id', 'title', 'problem', 'solution', 'created_at', 'last_used'],
         whereClause: 'archived = FALSE',
-        rationale: 'Hybrid search covering index - optimized for complex multi-criteria searches'
+        rationale: 'Hybrid search covering index - optimized for complex multi-criteria searches',
       },
       {
         name: 'idx_tags_covering_fast',
         table: 'kb_tags',
         keyColumns: ['tag', 'entry_id'],
         includedColumns: ['created_at'],
-        rationale: 'Tag lookup covering index - eliminates joins for tag-based searches'
+        rationale: 'Tag lookup covering index - eliminates joins for tag-based searches',
       },
       {
         name: 'idx_tags_popularity_covering',
         table: 'kb_tags',
         keyColumns: ['tag', 'entry_id'],
         includedColumns: [],
-        rationale: 'Tag popularity covering index - faster tag-based result ranking'
+        rationale: 'Tag popularity covering index - faster tag-based result ranking',
       },
       {
         name: 'idx_usage_analytics_covering',
@@ -98,7 +107,7 @@ export class AdvancedIndexStrategy {
         keyColumns: ['timestamp', 'action'],
         includedColumns: ['entry_id', 'user_id', 'session_id'],
         whereClause: 'timestamp > datetime("now", "-30 days")',
-        rationale: 'Analytics covering index - fast analytics without table scans'
+        rationale: 'Analytics covering index - fast analytics without table scans',
       },
       {
         name: 'idx_search_frequency_covering',
@@ -106,8 +115,8 @@ export class AdvancedIndexStrategy {
         keyColumns: ['query', 'timestamp'],
         includedColumns: ['results_count', 'search_time_ms', 'user_id'],
         whereClause: 'timestamp > datetime("now", "-7 days")',
-        rationale: 'Search frequency covering index - optimize popular query routing'
-      }
+        rationale: 'Search frequency covering index - optimize popular query routing',
+      },
     ];
 
     // Create covering indexes
@@ -132,7 +141,7 @@ export class AdvancedIndexStrategy {
       // SQLite doesn't have INCLUDE syntax, so we add all columns to the index
       const allColumns = [...config.keyColumns, ...config.includedColumns];
       const whereClause = config.whereClause ? `WHERE ${config.whereClause}` : '';
-      
+
       const sql = `
         CREATE INDEX IF NOT EXISTS ${config.name}
         ON ${config.table}(${allColumns.join(', ')})
@@ -156,7 +165,7 @@ export class AdvancedIndexStrategy {
         name: 'idx_category_severity_usage',
         sql: `CREATE INDEX IF NOT EXISTS idx_category_severity_usage 
               ON kb_entries(category, severity, usage_count DESC, success_count DESC) 
-              WHERE archived = FALSE`
+              WHERE archived = FALSE`,
       },
       {
         name: 'idx_search_popularity',
@@ -166,19 +175,19 @@ export class AdvancedIndexStrategy {
                 THEN CAST(success_count AS REAL) / (success_count + failure_count) 
                 ELSE 0 END DESC,
                 usage_count DESC
-              ) WHERE archived = FALSE`
+              ) WHERE archived = FALSE`,
       },
       {
         name: 'idx_temporal_clustering',
         sql: `CREATE INDEX IF NOT EXISTS idx_temporal_clustering 
               ON usage_metrics(date(timestamp), action, entry_id)
-              WHERE timestamp > datetime('now', '-7 days')`
+              WHERE timestamp > datetime('now', '-7 days')`,
       },
       {
         name: 'idx_tag_frequency',
         sql: `CREATE INDEX IF NOT EXISTS idx_tag_frequency 
               ON kb_tags(tag COLLATE NOCASE, entry_id)
-              WHERE length(tag) >= 3`
+              WHERE length(tag) >= 3`,
       },
       {
         name: 'idx_search_pattern_optimization',
@@ -188,18 +197,18 @@ export class AdvancedIndexStrategy {
                 CASE WHEN usage_count > 50 THEN 1 ELSE 0 END,
                 success_count DESC,
                 created_at DESC
-              ) WHERE archived = FALSE`
+              ) WHERE archived = FALSE`,
       },
       {
         name: 'idx_multi_criteria_search',
         sql: `CREATE INDEX IF NOT EXISTS idx_multi_criteria_search
               ON kb_entries(category, severity, usage_count DESC, last_used DESC)
-              WHERE archived = FALSE AND usage_count > 0`
+              WHERE archived = FALSE AND usage_count > 0`,
       },
       {
         name: 'idx_tag_entry_join_optimized',
         sql: `CREATE INDEX IF NOT EXISTS idx_tag_entry_join_optimized
-              ON kb_tags(entry_id, tag, created_at DESC)`
+              ON kb_tags(entry_id, tag, created_at DESC)`,
       },
       {
         name: 'idx_search_analytics_fast',
@@ -209,7 +218,7 @@ export class AdvancedIndexStrategy {
                 query_type,
                 results_count,
                 search_time_ms
-              ) WHERE timestamp > datetime('now', '-30 days')`
+              ) WHERE timestamp > datetime('now', '-30 days')`,
       },
       {
         name: 'idx_usage_trending',
@@ -219,14 +228,14 @@ export class AdvancedIndexStrategy {
                 action,
                 date(timestamp)
               ) WHERE timestamp > datetime('now', '-14 days')
-                AND action IN ('view', 'rate_success', 'rate_failure')`
+                AND action IN ('view', 'rate_success', 'rate_failure')`,
       },
       {
         name: 'idx_performance_monitoring',
         sql: `CREATE INDEX IF NOT EXISTS idx_performance_monitoring
               ON search_history(search_time_ms DESC, query, timestamp DESC)
-              WHERE search_time_ms > 100`
-      }
+              WHERE search_time_ms > 100`,
+      },
     ];
 
     compositeIndexes.forEach(({ name, sql }) => {
@@ -252,13 +261,13 @@ export class AdvancedIndexStrategy {
                  THEN CAST(success_count AS REAL) / (success_count + failure_count) 
                  ELSE 0.0 END) DESC,
                 usage_count DESC
-              ) WHERE archived = FALSE AND (success_count + failure_count) > 0`
+              ) WHERE archived = FALSE AND (success_count + failure_count) > 0`,
       },
       {
         name: 'idx_content_length',
         sql: `CREATE INDEX IF NOT EXISTS idx_content_length 
               ON kb_entries(length(problem) + length(solution), category)
-              WHERE archived = FALSE`
+              WHERE archived = FALSE`,
       },
       {
         name: 'idx_recency_score',
@@ -266,8 +275,8 @@ export class AdvancedIndexStrategy {
               ON kb_entries(
                 julianday('now') - julianday(COALESCE(last_used, created_at)) DESC,
                 usage_count DESC
-              ) WHERE archived = FALSE`
-      }
+              ) WHERE archived = FALSE`,
+      },
     ];
 
     expressionIndexes.forEach(({ name, sql }) => {
@@ -286,30 +295,30 @@ export class AdvancedIndexStrategy {
   private setupUsageTracking(): void {
     // Monitor query plans to track index usage
     const originalPrepare = this.db.prepare.bind(this.db);
-    
+
     this.db.prepare = (sql: string, ...args: any[]) => {
       const stmt = originalPrepare(sql, ...args);
-      
+
       // Track when statement is executed
       const originalRun = stmt.run.bind(stmt);
       const originalGet = stmt.get.bind(stmt);
       const originalAll = stmt.all.bind(stmt);
-      
+
       stmt.run = (...params: any[]) => {
         this.trackIndexUsage(sql);
         return originalRun(...params);
       };
-      
+
       stmt.get = (...params: any[]) => {
         this.trackIndexUsage(sql);
         return originalGet(...params);
       };
-      
+
       stmt.all = (...params: any[]) => {
         this.trackIndexUsage(sql);
         return originalAll(...params);
       };
-      
+
       return stmt;
     };
   }
@@ -320,16 +329,13 @@ export class AdvancedIndexStrategy {
   private trackIndexUsage(sql: string): void {
     try {
       const plan = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all();
-      
+
       plan.forEach((step: any) => {
         if (step.detail && step.detail.includes('USING INDEX')) {
           const indexMatch = step.detail.match(/USING INDEX (\w+)/);
           if (indexMatch) {
             const indexName = indexMatch[1];
-            this.indexUsageStats.set(
-              indexName, 
-              (this.indexUsageStats.get(indexName) || 0) + 1
-            );
+            this.indexUsageStats.set(indexName, (this.indexUsageStats.get(indexName) || 0) + 1);
           }
         }
       });
@@ -342,7 +348,9 @@ export class AdvancedIndexStrategy {
    * Analyze index effectiveness and provide recommendations
    */
   analyzeIndexEffectiveness(): IndexMetrics[] {
-    const indexes = this.db.prepare(`
+    const indexes = this.db
+      .prepare(
+        `
       SELECT 
         name,
         tbl_name as table_name,
@@ -351,7 +359,9 @@ export class AdvancedIndexStrategy {
       WHERE type = 'index' 
         AND name NOT LIKE 'sqlite_%'
         AND sql IS NOT NULL
-    `).all() as Array<{ name: string; table_name: string; sql: string }>;
+    `
+      )
+      .all() as Array<{ name: string; table_name: string; sql: string }>;
 
     return indexes.map(index => {
       const usage = this.indexUsageStats.get(index.name) || 0;
@@ -368,7 +378,7 @@ export class AdvancedIndexStrategy {
         size,
         usage,
         effectiveness,
-        recommendations
+        recommendations,
       };
     });
   }
@@ -387,7 +397,7 @@ export class AdvancedIndexStrategy {
 
     // Analyze search history to identify patterns
     const searchPatterns = this.analyzeSearchPatterns();
-    
+
     // Create missing indexes for common patterns
     searchPatterns.missingIndexes.forEach(pattern => {
       const indexName = `idx_auto_${pattern.type}_${Date.now()}`;
@@ -420,7 +430,9 @@ export class AdvancedIndexStrategy {
     console.log('🔄 Creating adaptive indexes based on usage patterns...');
 
     // Analyze last 30 days of search history
-    const queryPatterns = this.db.prepare(`
+    const queryPatterns = this.db
+      .prepare(
+        `
       SELECT 
         query,
         query_type,
@@ -432,7 +444,9 @@ export class AdvancedIndexStrategy {
       GROUP BY query, query_type
       HAVING frequency > 5 OR slow_queries > 0
       ORDER BY frequency DESC, avg_time DESC
-    `).all();
+    `
+      )
+      .all();
 
     // Create indexes for slow or frequent queries
     queryPatterns.forEach((pattern: any, index: number) => {
@@ -449,7 +463,7 @@ export class AdvancedIndexStrategy {
    */
   private createPatternSpecificIndex(pattern: any, index: number): void {
     const indexName = `idx_adaptive_${index}_${Date.now()}`;
-    
+
     try {
       if (pattern.query_type === 'category') {
         // Category-specific optimization
@@ -474,7 +488,7 @@ export class AdvancedIndexStrategy {
           WHERE archived = FALSE AND title LIKE '%${pattern.query.substring(0, 10)}%'
         `);
       }
-      
+
       console.log(`✅ Created adaptive index: ${indexName} for pattern: ${pattern.query}`);
     } catch (error) {
       console.error(`❌ Failed to create adaptive index for pattern ${pattern.query}:`, error);
@@ -498,12 +512,16 @@ export class AdvancedIndexStrategy {
     }> = [];
 
     // Check for missing category+text combination indexes
-    const categoryQueries = this.db.prepare(`
+    const categoryQueries = this.db
+      .prepare(
+        `
       SELECT DISTINCT query
       FROM search_history
       WHERE query LIKE 'category:%'
         AND timestamp > datetime('now', '-7 days')
-    `).all();
+    `
+      )
+      .all();
 
     if (categoryQueries.length > 0) {
       missingIndexes.push({
@@ -511,7 +529,7 @@ export class AdvancedIndexStrategy {
         description: 'Category-specific text search index',
         sql: `CREATE INDEX idx_category_text_search 
               ON kb_entries(category, title, problem) 
-              WHERE archived = FALSE`
+              WHERE archived = FALSE`,
       });
     }
 
@@ -522,10 +540,14 @@ export class AdvancedIndexStrategy {
    * Identify indexes that are rarely or never used
    */
   private identifyUnusedIndexes(): string[] {
-    const allIndexes = this.db.prepare(`
+    const allIndexes = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
-    `).all() as Array<{ name: string }>;
+    `
+      )
+      .all() as Array<{ name: string }>;
 
     return allIndexes
       .filter(index => (this.indexUsageStats.get(index.name) || 0) < 5)
@@ -539,10 +561,14 @@ export class AdvancedIndexStrategy {
     const recommendations: string[] = [];
 
     // Check table statistics freshness
-    const analyzeAge = this.db.prepare(`
+    const analyzeAge = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'table' AND name = 'sqlite_stat1'
-    `).get();
+    `
+      )
+      .get();
 
     if (!analyzeAge) {
       recommendations.push('Run ANALYZE to update query planner statistics');
@@ -550,9 +576,13 @@ export class AdvancedIndexStrategy {
 
     // Check FTS index health
     try {
-      const ftsCount = this.db.prepare('SELECT count(*) as count FROM kb_fts').get() as { count: number };
-      const entriesCount = this.db.prepare('SELECT count(*) as count FROM kb_entries').get() as { count: number };
-      
+      const ftsCount = this.db.prepare('SELECT count(*) as count FROM kb_fts').get() as {
+        count: number;
+      };
+      const entriesCount = this.db.prepare('SELECT count(*) as count FROM kb_entries').get() as {
+        count: number;
+      };
+
       if (Math.abs(ftsCount.count - entriesCount.count) > 5) {
         recommendations.push('FTS index is out of sync - consider rebuilding');
       }
@@ -582,12 +612,12 @@ export class AdvancedIndexStrategy {
   private calculateIndexEffectiveness(indexName: string): number {
     const usage = this.indexUsageStats.get(indexName) || 0;
     const baseScore = Math.min(usage / 100, 1.0); // Max score at 100 uses
-    
+
     // Boost score for critical indexes
     if (indexName.includes('fts') || indexName.includes('covering')) {
       return Math.min(baseScore * 1.5, 1.0);
     }
-    
+
     return baseScore;
   }
 
@@ -648,12 +678,12 @@ export class AdvancedIndexStrategy {
     const totalRecommendations = metrics.reduce((sum, m) => sum + m.recommendations.length, 0);
 
     const actions: string[] = [];
-    
+
     // Generate action items
     if (avgEffectiveness < 0.5) {
       actions.push('Overall index effectiveness is low - review index strategy');
     }
-    
+
     if (usedIndexes / metrics.length < 0.7) {
       actions.push('Many unused indexes detected - cleanup recommended');
     }
@@ -663,10 +693,10 @@ export class AdvancedIndexStrategy {
         totalIndexes: metrics.length,
         usedIndexes,
         effectiveness: Math.round(avgEffectiveness * 100),
-        recommendations: totalRecommendations
+        recommendations: totalRecommendations,
       },
       details: metrics,
-      actions
+      actions,
     };
   }
 }

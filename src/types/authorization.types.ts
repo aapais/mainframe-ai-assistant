@@ -530,5 +530,5 @@ export type {
   AIDataContext as DataContext,
   AIOperationEstimates as Estimates,
   DialogState,
-  DialogTab
+  DialogTab,
 };

@@ -25,7 +25,7 @@ import type {
   KBEntryInput,
   DatabaseMetrics,
   SearchResult,
-  SearchQuery
+  SearchQuery,
 } from '../../shared/types/';
 
 // =====================
@@ -120,16 +120,16 @@ export class OptimizedIPCHandler {
       maxBatchSize: 6,
       batchTimeoutMs: 100, // Very aggressive for <1s target
       cacheConfigs: {
-        search: { ttl: 30000, maxSize: 100 },    // 30s TTL
-        metrics: { ttl: 5000, maxSize: 50 },     // 5s TTL
-        entries: { ttl: 60000, maxSize: 200 }    // 1min TTL
+        search: { ttl: 30000, maxSize: 100 }, // 30s TTL
+        metrics: { ttl: 5000, maxSize: 50 }, // 5s TTL
+        entries: { ttl: 60000, maxSize: 200 }, // 1min TTL
       },
       performance: {
-        targetResponseTime: 1000,    // <1s target
-        alertThreshold: 1500,        // Alert at 1.5s
-        slowQueryThreshold: 800      // Slow query at 800ms
+        targetResponseTime: 1000, // <1s target
+        alertThreshold: 1500, // Alert at 1.5s
+        slowQueryThreshold: 800, // Slow query at 800ms
       },
-      ...config
+      ...config,
     };
 
     this.initializeHandler();
@@ -146,7 +146,7 @@ export class OptimizedIPCHandler {
         cache: this.cacheManager,
         databaseManager: this.databaseManager,
         maxConcurrentRequests: this.config.maxBatchSize,
-        defaultTimeout: this.config.batchTimeoutMs
+        defaultTimeout: this.config.batchTimeoutMs,
       });
 
       // Initialize performance monitoring
@@ -156,8 +156,8 @@ export class OptimizedIPCHandler {
           alertThresholds: {
             responseTime: this.config.performance.alertThreshold,
             errorRate: 5, // 5% error rate threshold
-            memoryUsage: 80 // 80% memory usage threshold
-          }
+            memoryUsage: 80, // 80% memory usage threshold
+          },
         });
       }
 
@@ -174,7 +174,6 @@ export class OptimizedIPCHandler {
 
       this.initialized = true;
       console.log('✅ OptimizedIPCHandler initialized with all optimizations');
-
     } catch (error) {
       console.error('❌ Failed to initialize OptimizedIPCHandler:', error);
       throw error;
@@ -186,20 +185,50 @@ export class OptimizedIPCHandler {
     ipcMain.handle('ipc:batch-process', this.handleBatchProcess.bind(this));
 
     // Individual optimized handlers with performance tracking
-    ipcMain.handle('kb:search', this.withPerformanceTracking('search', this.handleSearch.bind(this)));
-    ipcMain.handle('kb:add-entry', this.withPerformanceTracking('addEntry', this.handleAddEntry.bind(this)));
-    ipcMain.handle('kb:update-entry', this.withPerformanceTracking('updateEntry', this.handleUpdateEntry.bind(this)));
-    ipcMain.handle('kb:delete-entry', this.withPerformanceTracking('deleteEntry', this.handleDeleteEntry.bind(this)));
-    ipcMain.handle('kb:get-entry', this.withPerformanceTracking('getEntry', this.handleGetEntry.bind(this)));
-    ipcMain.handle('kb:rate-entry', this.withPerformanceTracking('rateEntry', this.handleRateEntry.bind(this)));
+    ipcMain.handle(
+      'kb:search',
+      this.withPerformanceTracking('search', this.handleSearch.bind(this))
+    );
+    ipcMain.handle(
+      'kb:add-entry',
+      this.withPerformanceTracking('addEntry', this.handleAddEntry.bind(this))
+    );
+    ipcMain.handle(
+      'kb:update-entry',
+      this.withPerformanceTracking('updateEntry', this.handleUpdateEntry.bind(this))
+    );
+    ipcMain.handle(
+      'kb:delete-entry',
+      this.withPerformanceTracking('deleteEntry', this.handleDeleteEntry.bind(this))
+    );
+    ipcMain.handle(
+      'kb:get-entry',
+      this.withPerformanceTracking('getEntry', this.handleGetEntry.bind(this))
+    );
+    ipcMain.handle(
+      'kb:rate-entry',
+      this.withPerformanceTracking('rateEntry', this.handleRateEntry.bind(this))
+    );
 
     // System handlers
-    ipcMain.handle('system:get-metrics', this.withPerformanceTracking('getMetrics', this.handleGetMetrics.bind(this)));
-    ipcMain.handle('system:get-health', this.withPerformanceTracking('getHealth', this.handleGetHealth.bind(this)));
-    ipcMain.handle('system:get-performance', this.withPerformanceTracking('getPerformance', this.handleGetPerformance.bind(this)));
+    ipcMain.handle(
+      'system:get-metrics',
+      this.withPerformanceTracking('getMetrics', this.handleGetMetrics.bind(this))
+    );
+    ipcMain.handle(
+      'system:get-health',
+      this.withPerformanceTracking('getHealth', this.handleGetHealth.bind(this))
+    );
+    ipcMain.handle(
+      'system:get-performance',
+      this.withPerformanceTracking('getPerformance', this.handleGetPerformance.bind(this))
+    );
 
     // Dashboard batch operations
-    ipcMain.handle('dashboard:load', this.withPerformanceTracking('dashboardLoad', this.handleDashboardLoad.bind(this)));
+    ipcMain.handle(
+      'dashboard:load',
+      this.withPerformanceTracking('dashboardLoad', this.handleDashboardLoad.bind(this))
+    );
 
     console.log('✅ All IPC handlers registered with performance tracking');
   }
@@ -248,7 +277,7 @@ export class OptimizedIPCHandler {
         errorRate: 0,
         cacheHitRate: 0,
         batchProcessed: 0,
-        recentLatencies: []
+        recentLatencies: [],
       };
     }
 
@@ -261,7 +290,8 @@ export class OptimizedIPCHandler {
       metrics.recentLatencies.shift();
     }
 
-    metrics.averageLatency = metrics.recentLatencies.reduce((a, b) => a + b, 0) / metrics.recentLatencies.length;
+    metrics.averageLatency =
+      metrics.recentLatencies.reduce((a, b) => a + b, 0) / metrics.recentLatencies.length;
     metrics.minLatency = Math.min(metrics.minLatency, latency);
     metrics.maxLatency = Math.max(metrics.maxLatency, latency);
     metrics.errorRate = (metrics.errorCount / metrics.totalCalls) * 100;
@@ -278,7 +308,7 @@ export class OptimizedIPCHandler {
           operation: operationName,
           latency,
           threshold: this.config.performance.alertThreshold,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
     }
@@ -302,7 +332,9 @@ export class OptimizedIPCHandler {
     }
 
     const startTime = performance.now();
-    console.log(`📦 Processing batch ${batchPayload.batchId} with ${batchPayload.requests.length} requests`);
+    console.log(
+      `📦 Processing batch ${batchPayload.batchId} with ${batchPayload.requests.length} requests`
+    );
 
     try {
       const response = await this.batchProcessor.processBatch(batchPayload);
@@ -318,9 +350,11 @@ export class OptimizedIPCHandler {
         maxLatency: 0,
         errorCount: 0,
         errorRate: 0,
-        cacheHitRate: response.metadata?.cacheHits ? (response.metadata.cacheHits / batchPayload.requests.length) * 100 : 0,
+        cacheHitRate: response.metadata?.cacheHits
+          ? (response.metadata.cacheHits / batchPayload.requests.length) * 100
+          : 0,
         batchProcessed: 0,
-        recentLatencies: []
+        recentLatencies: [],
       };
 
       batchMetrics.batchProcessed++;
@@ -330,11 +364,12 @@ export class OptimizedIPCHandler {
 
       // Check if batch met performance target
       if (processingTime > this.config.performance.targetResponseTime) {
-        console.warn(`⚠️  Batch processing exceeded target: ${processingTime}ms > ${this.config.performance.targetResponseTime}ms`);
+        console.warn(
+          `⚠️  Batch processing exceeded target: ${processingTime}ms > ${this.config.performance.targetResponseTime}ms`
+        );
       }
 
       return response;
-
     } catch (error) {
       console.error(`❌ Batch processing failed for ${batchPayload.batchId}:`, error);
       throw error;
@@ -372,10 +407,7 @@ export class OptimizedIPCHandler {
     return await this.databaseManager.searchEntries(query, options);
   }
 
-  private async handleAddEntry(
-    event: IpcMainInvokeEvent,
-    entry: KBEntryInput
-  ): Promise<string> {
+  private async handleAddEntry(event: IpcMainInvokeEvent, entry: KBEntryInput): Promise<string> {
     const entryId = await this.databaseManager.addEntry(entry);
 
     // Invalidate related caches
@@ -401,10 +433,7 @@ export class OptimizedIPCHandler {
     }
   }
 
-  private async handleDeleteEntry(
-    event: IpcMainInvokeEvent,
-    id: string
-  ): Promise<void> {
+  private async handleDeleteEntry(event: IpcMainInvokeEvent, id: string): Promise<void> {
     await this.databaseManager.deleteEntry(id);
 
     // Invalidate related caches
@@ -415,10 +444,7 @@ export class OptimizedIPCHandler {
     }
   }
 
-  private async handleGetEntry(
-    event: IpcMainInvokeEvent,
-    id: string
-  ): Promise<KBEntry | null> {
+  private async handleGetEntry(event: IpcMainInvokeEvent, id: string): Promise<KBEntry | null> {
     if (this.config.enableCaching) {
       const cacheKey = `entry:${id}`;
       const cached = await this.cacheManager.get(cacheKey);
@@ -480,23 +506,23 @@ export class OptimizedIPCHandler {
         responsive: true,
         handlersActive: this.metrics.size,
         averageLatency: this.calculateAverageLatency(),
-        errorRate: this.calculateErrorRate()
+        errorRate: this.calculateErrorRate(),
       },
       database: {
         connected: await this.databaseManager.isHealthy(),
         responseTime: await this.measureDatabaseResponseTime(),
-        poolSize: this.databaseManager.getPoolSize?.() || 1
+        poolSize: this.databaseManager.getPoolSize?.() || 1,
       },
       cache: {
         active: this.config.enableCaching,
         hitRate: await this.cacheManager.getHitRate(),
-        memoryUsage: await this.cacheManager.getMemoryUsage?.() || 0
+        memoryUsage: (await this.cacheManager.getMemoryUsage?.()) || 0,
       },
       batching: {
         active: this.config.enableBatching,
         averageBatchSize: this.calculateAverageBatchSize(),
-        processingTime: this.calculateBatchProcessingTime()
-      }
+        processingTime: this.calculateBatchProcessingTime(),
+      },
     };
 
     return health;
@@ -507,7 +533,7 @@ export class OptimizedIPCHandler {
       metrics: Object.fromEntries(this.metrics),
       config: this.config,
       health: await this.handleGetHealth(event),
-      recommendations: this.generatePerformanceRecommendations()
+      recommendations: this.generatePerformanceRecommendations(),
     };
   }
 
@@ -521,19 +547,15 @@ export class OptimizedIPCHandler {
 
     try {
       // Execute all dashboard operations in parallel
-      const [
-        metrics,
-        recentEntries,
-        popularEntries,
-        searchStats,
-        systemHealth
-      ] = await Promise.all([
-        this.handleGetMetrics(event),
-        this.databaseManager.getRecentEntries(10),
-        this.databaseManager.getPopularEntries(10),
-        this.databaseManager.getSearchStats?.() || {},
-        this.handleGetHealth(event)
-      ]);
+      const [metrics, recentEntries, popularEntries, searchStats, systemHealth] = await Promise.all(
+        [
+          this.handleGetMetrics(event),
+          this.databaseManager.getRecentEntries(10),
+          this.databaseManager.getPopularEntries(10),
+          this.databaseManager.getSearchStats?.() || {},
+          this.handleGetHealth(event),
+        ]
+      );
 
       const dashboardData = {
         metrics,
@@ -541,13 +563,12 @@ export class OptimizedIPCHandler {
         popularEntries,
         searchStats,
         systemHealth,
-        loadTime: performance.now() - startTime
+        loadTime: performance.now() - startTime,
       };
 
       console.log(`📊 Dashboard loaded in ${dashboardData.loadTime.toFixed(2)}ms`);
 
       return dashboardData;
-
     } catch (error) {
       console.error('❌ Dashboard load failed:', error);
       throw error;
@@ -576,8 +597,17 @@ export class OptimizedIPCHandler {
 
   private initializeMetrics(): void {
     const handlers = [
-      'search', 'addEntry', 'updateEntry', 'deleteEntry', 'getEntry', 'rateEntry',
-      'getMetrics', 'getHealth', 'getPerformance', 'dashboardLoad', 'batch'
+      'search',
+      'addEntry',
+      'updateEntry',
+      'deleteEntry',
+      'getEntry',
+      'rateEntry',
+      'getMetrics',
+      'getHealth',
+      'getPerformance',
+      'dashboardLoad',
+      'batch',
     ];
 
     handlers.forEach(handler => {
@@ -592,7 +622,7 @@ export class OptimizedIPCHandler {
           errorRate: 0,
           cacheHitRate: 0,
           batchProcessed: 0,
-          recentLatencies: []
+          recentLatencies: [],
         });
       }
     });
@@ -625,7 +655,6 @@ export class OptimizedIPCHandler {
       if (health.ipc.averageLatency > this.config.performance.slowQueryThreshold) {
         console.warn(`⚠️  High average IPC latency: ${health.ipc.averageLatency.toFixed(2)}ms`);
       }
-
     } catch (error) {
       console.error('❌ Health check failed:', error);
     }
@@ -640,10 +669,10 @@ export class OptimizedIPCHandler {
         errorRate: this.calculateErrorRate(),
         activeRequests: this.activeRequests.size,
         performanceTarget: this.config.performance.targetResponseTime,
-        targetsMet: this.calculateTargetsMet()
+        targetsMet: this.calculateTargetsMet(),
       },
       handlers: Object.fromEntries(this.metrics),
-      recommendations: this.generatePerformanceRecommendations()
+      recommendations: this.generatePerformanceRecommendations(),
     };
 
     console.log('📊 Performance Report:', JSON.stringify(report, null, 2));
@@ -683,7 +712,9 @@ export class OptimizedIPCHandler {
 
   private calculateTargetsMet(): number {
     const metrics = Array.from(this.metrics.values());
-    const targetMet = metrics.filter(m => m.averageLatency < this.config.performance.targetResponseTime).length;
+    const targetMet = metrics.filter(
+      m => m.averageLatency < this.config.performance.targetResponseTime
+    ).length;
     return metrics.length > 0 ? (targetMet / metrics.length) * 100 : 100;
   }
 
@@ -703,7 +734,9 @@ export class OptimizedIPCHandler {
     const errorRate = this.calculateErrorRate();
 
     if (avgLatency > this.config.performance.targetResponseTime) {
-      recommendations.push(`Average response time ${avgLatency.toFixed(0)}ms exceeds target ${this.config.performance.targetResponseTime}ms`);
+      recommendations.push(
+        `Average response time ${avgLatency.toFixed(0)}ms exceeds target ${this.config.performance.targetResponseTime}ms`
+      );
     }
 
     if (errorRate > 2) {

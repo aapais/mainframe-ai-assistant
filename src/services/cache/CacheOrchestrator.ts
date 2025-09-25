@@ -48,15 +48,18 @@ export class CacheOrchestrator {
     this.setupMetricsCollection();
   }
 
-  async get<T>(key: string, options?: {
-    layers?: string[];
-    fallback?: () => Promise<T>;
-    ttl?: number;
-    tags?: string[];
-  }): Promise<T | null> {
+  async get<T>(
+    key: string,
+    options?: {
+      layers?: string[];
+      fallback?: () => Promise<T>;
+      ttl?: number;
+      tags?: string[];
+    }
+  ): Promise<T | null> {
     const startTime = Date.now();
     const layers = options?.layers || ['memory', 'redis'];
-    
+
     try {
       // Try memory cache first (L1)
       if (layers.includes('memory')) {
@@ -99,12 +102,7 @@ export class CacheOrchestrator {
     }
   }
 
-  async set<T>(
-    key: string, 
-    value: T, 
-    ttl?: number, 
-    tags?: string[]
-  ): Promise<boolean> {
+  async set<T>(key: string, value: T, ttl?: number, tags?: string[]): Promise<boolean> {
     const operations: Promise<boolean>[] = [];
 
     try {
@@ -115,7 +113,10 @@ export class CacheOrchestrator {
       }
 
       // Write to Redis cache
-      if (this.config.layers.find(l => l.name === 'redis')?.enabled && this.redisManager.isReady()) {
+      if (
+        this.config.layers.find(l => l.name === 'redis')?.enabled &&
+        this.redisManager.isReady()
+      ) {
         operations.push(this.redisManager.set(key, value, ttl, tags));
       }
 
@@ -155,7 +156,7 @@ export class CacheOrchestrator {
 
     // Add to invalidation queue for write-behind processing
     this.invalidationQueue.add(tag);
-    
+
     return totalInvalidated;
   }
 
@@ -170,7 +171,7 @@ export class CacheOrchestrator {
     }
 
     const cacheKey = this.generateQueryCacheKey(queryKey);
-    
+
     // Try to get from cache first
     const cached = await this.get<T>(cacheKey);
     if (cached !== null) {
@@ -180,29 +181,31 @@ export class CacheOrchestrator {
     // Execute query and cache result
     const result = await executor();
     const queryTTL = ttl || this.config.queryCache.defaultTTL;
-    
+
     await this.set(cacheKey, result, queryTTL, [queryKey.type, queryKey.operation]);
-    
+
     return result;
   }
 
   // Cache warming strategies
-  async warmCache(entries: Array<{
-    key: string;
-    fetcher: () => Promise<any>;
-    ttl?: number;
-    tags?: string[];
-    priority?: number;
-  }>): Promise<void> {
+  async warmCache(
+    entries: Array<{
+      key: string;
+      fetcher: () => Promise<any>;
+      ttl?: number;
+      tags?: string[];
+      priority?: number;
+    }>
+  ): Promise<void> {
     console.log(`Starting cache warming for ${entries.length} entries`);
-    
+
     // Sort by priority (higher first)
     const sortedEntries = entries.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-    
+
     const batchSize = 10;
     for (let i = 0; i < sortedEntries.length; i += batchSize) {
       const batch = sortedEntries.slice(i, i + batchSize);
-      
+
       await Promise.allSettled(
         batch.map(async ({ key, fetcher, ttl, tags }) => {
           try {
@@ -214,7 +217,7 @@ export class CacheOrchestrator {
         })
       );
     }
-    
+
     console.log('Cache warming completed');
   }
 
@@ -222,17 +225,18 @@ export class CacheOrchestrator {
   getMetrics() {
     const memoryStats = this.memoryCache.getStats();
     const redisMetrics = this.redisManager.getMetrics();
-    
+
     return {
       memory: memoryStats,
       redis: redisMetrics,
       overall: {
         hitRate: (memoryStats.hitRate + redisMetrics.hitRate) / 2,
-        totalRequests: memoryStats.hits + memoryStats.misses + redisMetrics.hits + redisMetrics.misses,
+        totalRequests:
+          memoryStats.hits + memoryStats.misses + redisMetrics.hits + redisMetrics.misses,
         avgResponseTime: (redisMetrics.avgResponseTime + 5) / 2, // Memory cache ~5ms
-        memoryUsage: memoryStats.memoryUsage + redisMetrics.memoryUsage
+        memoryUsage: memoryStats.memoryUsage + redisMetrics.memoryUsage,
       },
-      invalidationQueue: this.invalidationQueue.size
+      invalidationQueue: this.invalidationQueue.size,
     };
   }
 
@@ -244,12 +248,12 @@ export class CacheOrchestrator {
   }> {
     const layers = {
       memory: true, // Memory cache is always available
-      redis: this.redisManager.isReady()
+      redis: this.redisManager.isReady(),
     };
 
     const healthyLayers = Object.values(layers).filter(Boolean).length;
     const totalLayers = Object.keys(layers).length;
-    
+
     let status: 'healthy' | 'degraded' | 'unhealthy';
     if (healthyLayers === totalLayers) {
       status = 'healthy';
@@ -262,7 +266,7 @@ export class CacheOrchestrator {
     return {
       status,
       layers,
-      metrics: this.getMetrics()
+      metrics: this.getMetrics(),
     };
   }
 
@@ -305,7 +309,7 @@ export class CacheOrchestrator {
       },
       recordMiss: (layer: string, time: number) => {
         console.debug(`Cache MISS [${layer}] - ${time}ms`);
-      }
+      },
     };
   }
 

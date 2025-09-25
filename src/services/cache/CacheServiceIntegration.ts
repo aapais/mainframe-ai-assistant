@@ -9,23 +9,23 @@ import {
   PerformanceMonitor,
   createCacheConfig,
   type CacheOrchestratorConfig,
-  type CDNConfig
+  type CDNConfig,
 } from './index';
 import { CacheConfig, ICacheService } from '../../types/services';
 
 export interface AdvancedCacheConfig {
   // Existing cache service configuration
   legacyCache?: CacheConfig;
-  
+
   // New advanced caching configuration
   multiLayer?: Partial<CacheOrchestratorConfig>;
   cdn?: CDNConfig;
-  
+
   // Integration settings
   hybridMode?: boolean;
   fallbackToLegacy?: boolean;
   migrationStrategy?: 'immediate' | 'gradual' | 'manual';
-  
+
   // Performance monitoring
   monitoring?: {
     enabled: boolean;
@@ -36,7 +36,7 @@ export interface AdvancedCacheConfig {
       errorRate: number;
     };
   };
-  
+
   // Cache warming
   warming?: {
     enabled: boolean;
@@ -57,14 +57,14 @@ export class CacheServiceIntegration extends EventEmitter {
   private invalidationService?: CacheInvalidationService;
   private cdnIntegration?: CDNIntegration;
   private performanceMonitor?: PerformanceMonitor;
-  
+
   private config: AdvancedCacheConfig;
   private initialized = false;
   private migrationStatus = {
     started: false,
     completed: false,
     progress: 0,
-    errors: [] as string[]
+    errors: [] as string[],
   };
 
   constructor(config: AdvancedCacheConfig = {}) {
@@ -79,15 +79,15 @@ export class CacheServiceIntegration extends EventEmitter {
         alertThresholds: {
           hitRate: 80,
           responseTime: 1000,
-          errorRate: 5
-        }
+          errorRate: 5,
+        },
       },
       warming: {
         enabled: true,
         onStartup: true,
-        strategies: ['popular', 'recent', 'critical']
+        strategies: ['popular', 'recent', 'critical'],
       },
-      ...config
+      ...config,
     };
   }
 
@@ -127,7 +127,6 @@ export class CacheServiceIntegration extends EventEmitter {
       this.initialized = true;
       this.emit('initialized');
       console.log('Advanced cache service integration initialized successfully');
-
     } catch (error) {
       console.error('Cache service initialization failed:', error);
       throw error;
@@ -135,23 +134,26 @@ export class CacheServiceIntegration extends EventEmitter {
   }
 
   // Unified cache interface methods
-  async get<T>(key: string, options?: {
-    fallback?: () => Promise<T>;
-    ttl?: number;
-    tags?: string[];
-    useAdvanced?: boolean;
-  }): Promise<T | null> {
+  async get<T>(
+    key: string,
+    options?: {
+      fallback?: () => Promise<T>;
+      ttl?: number;
+      tags?: string[];
+      useAdvanced?: boolean;
+    }
+  ): Promise<T | null> {
     const useAdvanced = options?.useAdvanced ?? true;
-    
+
     try {
       // Try advanced cache first if available and enabled
       if (useAdvanced && this.orchestrator) {
         const result = await this.orchestrator.get<T>(key, {
           fallback: options?.fallback,
           ttl: options?.ttl,
-          tags: options?.tags
+          tags: options?.tags,
         });
-        
+
         if (result !== null) {
           return result;
         }
@@ -160,7 +162,7 @@ export class CacheServiceIntegration extends EventEmitter {
       // Fallback to legacy cache if enabled
       if (this.config.fallbackToLegacy && this.legacyCache) {
         const result = await this.legacyCache.get<T>(key);
-        
+
         if (result !== null) {
           // Optionally migrate to advanced cache
           if (this.orchestrator && this.shouldMigrate(key)) {
@@ -220,12 +222,12 @@ export class CacheServiceIntegration extends EventEmitter {
 
     // Delete from advanced cache
     if (this.orchestrator) {
-      deleted = await this.orchestrator.del(key) || deleted;
+      deleted = (await this.orchestrator.del(key)) || deleted;
     }
 
     // Delete from legacy cache
     if (this.legacyCache) {
-      deleted = await this.legacyCache.delete(key) || deleted;
+      deleted = (await this.legacyCache.delete(key)) || deleted;
     }
 
     return deleted;
@@ -246,19 +248,14 @@ export class CacheServiceIntegration extends EventEmitter {
     ttl?: number
   ): Promise<T> {
     if (this.queryCache) {
-      return this.queryCache.executeSearchQuery(
-        query,
-        filters,
-        { execute: executor },
-        ttl
-      );
+      return this.queryCache.executeSearchQuery(query, filters, { execute: executor }, ttl);
     }
-    
+
     // Fallback to regular caching
     const cacheKey = `search:${this.hashQuery(query, filters)}`;
     const cached = await this.get<T>(cacheKey);
     if (cached) return cached;
-    
+
     const result = await executor();
     await this.set(cacheKey, result, ttl, ['search']);
     return result;
@@ -271,19 +268,14 @@ export class CacheServiceIntegration extends EventEmitter {
     ttl?: number
   ): Promise<T> {
     if (this.queryCache) {
-      return this.queryCache.executeDbQuery(
-        sql,
-        params,
-        { execute: executor },
-        ttl
-      );
+      return this.queryCache.executeDbQuery(sql, params, { execute: executor }, ttl);
     }
-    
+
     // Fallback to regular caching
     const cacheKey = `db:${this.hashQuery(sql, params)}`;
     const cached = await this.get<T>(cacheKey);
     if (cached) return cached;
-    
+
     const result = await executor();
     await this.set(cacheKey, result, ttl, ['database']);
     return result;
@@ -309,15 +301,15 @@ export class CacheServiceIntegration extends EventEmitter {
     if (this.performanceMonitor) {
       return this.performanceMonitor.getMetrics();
     }
-    
+
     // Return legacy cache stats if available
     if (this.legacyCache) {
       return {
         legacy: this.legacyCache.stats(),
-        advanced: null
+        advanced: null,
       };
     }
-    
+
     return null;
   }
 
@@ -330,7 +322,7 @@ export class CacheServiceIntegration extends EventEmitter {
       legacy: null as any,
       advanced: null as any,
       migration: this.migrationStatus,
-      overall: 'healthy' as 'healthy' | 'degraded' | 'unhealthy'
+      overall: 'healthy' as 'healthy' | 'degraded' | 'unhealthy',
     };
 
     // Check legacy cache
@@ -339,7 +331,7 @@ export class CacheServiceIntegration extends EventEmitter {
         const stats = this.legacyCache.stats();
         status.legacy = {
           status: stats.hitRate > 0.5 ? 'healthy' : 'degraded',
-          stats
+          stats,
         };
       } catch (error) {
         status.legacy = { status: 'unhealthy', error: error.message };
@@ -352,16 +344,12 @@ export class CacheServiceIntegration extends EventEmitter {
     }
 
     // Determine overall status
-    const hasHealthyCache = 
-      (status.legacy?.status === 'healthy') ||
-      (status.advanced?.status === 'healthy');
-    
+    const hasHealthyCache =
+      status.legacy?.status === 'healthy' || status.advanced?.status === 'healthy';
+
     if (!hasHealthyCache) {
       status.overall = 'unhealthy';
-    } else if (
-      (status.legacy?.status === 'degraded') ||
-      (status.advanced?.status === 'degraded')
-    ) {
+    } else if (status.legacy?.status === 'degraded' || status.advanced?.status === 'degraded') {
       status.overall = 'degraded';
     }
 
@@ -388,7 +376,7 @@ export class CacheServiceIntegration extends EventEmitter {
       // Export data from legacy cache
       const exportData = await this.legacyCache.export();
       const backup = JSON.parse(exportData);
-      
+
       const totalEntries = backup.entries.length;
       let migratedEntries = 0;
 
@@ -396,16 +384,11 @@ export class CacheServiceIntegration extends EventEmitter {
       const batchSize = 100;
       for (let i = 0; i < backup.entries.length; i += batchSize) {
         const batch = backup.entries.slice(i, i + batchSize);
-        
+
         await Promise.allSettled(
           batch.map(async (entry: any) => {
             try {
-              await this.orchestrator!.set(
-                entry.key,
-                entry.value,
-                entry.ttl,
-                ['migrated']
-              );
+              await this.orchestrator!.set(entry.key, entry.value, entry.ttl, ['migrated']);
               migratedEntries++;
             } catch (error) {
               this.migrationStatus.errors.push(
@@ -414,7 +397,7 @@ export class CacheServiceIntegration extends EventEmitter {
             }
           })
         );
-        
+
         this.migrationStatus.progress = (migratedEntries / totalEntries) * 100;
         this.emit('migration-progress', this.migrationStatus);
       }
@@ -422,7 +405,6 @@ export class CacheServiceIntegration extends EventEmitter {
       this.migrationStatus.completed = true;
       this.emit('migration-completed', this.migrationStatus);
       console.log(`Migration completed: ${migratedEntries}/${totalEntries} entries migrated`);
-
     } catch (error) {
       this.migrationStatus.errors.push(error.message);
       this.emit('migration-error', error);
@@ -433,15 +415,15 @@ export class CacheServiceIntegration extends EventEmitter {
   // Cleanup and shutdown
   async flush(): Promise<void> {
     const tasks = [];
-    
+
     if (this.orchestrator) {
       tasks.push(this.orchestrator.flush());
     }
-    
+
     if (this.legacyCache) {
       tasks.push(this.legacyCache.clear());
     }
-    
+
     await Promise.allSettled(tasks);
     this.emit('cache-flushed');
   }
@@ -462,15 +444,15 @@ export class CacheServiceIntegration extends EventEmitter {
     }
 
     const cleanupTasks = [];
-    
+
     if (this.orchestrator) {
       cleanupTasks.push(this.orchestrator.destroy());
     }
-    
+
     if (this.legacyCache) {
       cleanupTasks.push(this.legacyCache.close());
     }
-    
+
     await Promise.allSettled(cleanupTasks);
 
     this.initialized = false;
@@ -484,7 +466,7 @@ export class CacheServiceIntegration extends EventEmitter {
 
     const cacheConfig = {
       ...createCacheConfig(),
-      ...this.config.multiLayer
+      ...this.config.multiLayer,
     };
 
     this.orchestrator = new CacheOrchestrator(cacheConfig);
@@ -502,10 +484,7 @@ export class CacheServiceIntegration extends EventEmitter {
   private setupPerformanceMonitoring(): void {
     if (!this.orchestrator) return;
 
-    this.performanceMonitor = new PerformanceMonitor(
-      this.orchestrator,
-      this.cdnIntegration
-    );
+    this.performanceMonitor = new PerformanceMonitor(this.orchestrator, this.cdnIntegration);
 
     this.performanceMonitor.startMonitoring(this.config.monitoring!.interval);
 
@@ -516,10 +495,10 @@ export class CacheServiceIntegration extends EventEmitter {
       target: thresholds.hitRate,
       warning: thresholds.hitRate * 0.8,
       critical: thresholds.hitRate * 0.6,
-      unit: '%'
+      unit: '%',
     });
 
-    this.performanceMonitor.on('alert', (alert) => {
+    this.performanceMonitor.on('alert', alert => {
       console.warn('Performance Alert:', alert);
       this.emit('performance-alert', alert);
     });
@@ -531,15 +510,15 @@ export class CacheServiceIntegration extends EventEmitter {
     if (!this.warmingService) return;
 
     const strategies = this.config.warming!.strategies;
-    
+
     if (strategies.includes('popular')) {
       this.warmingService.registerPopularSearches();
     }
-    
+
     if (strategies.includes('recent')) {
       this.warmingService.registerKnowledgeBaseWarming();
     }
-    
+
     if (strategies.includes('critical')) {
       this.warmingService.registerUserPreferencesWarming();
     }

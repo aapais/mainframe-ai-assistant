@@ -24,7 +24,7 @@
   --primary-200: #bfe3fd;
   --primary-300: #93d2fb;
   --primary-400: #60b8f7;
-  --primary-500: #3b9df0;   /* Main brand color */
+  --primary-500: #3b9df0; /* Main brand color */
   --primary-600: #2b7de4;
   --primary-700: #2565d1;
   --primary-800: #2551aa;
@@ -247,7 +247,11 @@
 :root {
   /* === BRAND GRADIENTS === */
   --gradient-brand-primary: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
-  --gradient-brand-secondary: linear-gradient(135deg, var(--secondary-500) 0%, var(--secondary-600) 100%);
+  --gradient-brand-secondary: linear-gradient(
+    135deg,
+    var(--secondary-500) 0%,
+    var(--secondary-600) 100%
+  );
   --gradient-brand-hero: linear-gradient(135deg, var(--primary-400) 0%, var(--secondary-500) 100%);
   --gradient-brand-subtle: linear-gradient(135deg, var(--primary-50) 0%, var(--secondary-50) 100%);
 
@@ -262,14 +266,35 @@
   --gradient-neutral-dark: linear-gradient(135deg, var(--neutral-700) 0%, var(--neutral-800) 100%);
 
   /* === MAINFRAME GRADIENTS === */
-  --gradient-mainframe-matrix: linear-gradient(135deg, var(--terminal-black) 0%, var(--mainframe-green-darker) 100%);
-  --gradient-mainframe-glow: radial-gradient(circle, var(--mainframe-green-bright) 0%, transparent 70%);
-  --gradient-mainframe-scan: linear-gradient(90deg, transparent 0%, var(--mainframe-green-bright) 50%, transparent 100%);
+  --gradient-mainframe-matrix: linear-gradient(
+    135deg,
+    var(--terminal-black) 0%,
+    var(--mainframe-green-darker) 100%
+  );
+  --gradient-mainframe-glow: radial-gradient(
+    circle,
+    var(--mainframe-green-bright) 0%,
+    transparent 70%
+  );
+  --gradient-mainframe-scan: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--mainframe-green-bright) 50%,
+    transparent 100%
+  );
 
   /* === OVERLAY GRADIENTS === */
-  --gradient-overlay-light: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  --gradient-overlay-light: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.7)
+  );
   --gradient-overlay-dark: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
-  --gradient-overlay-brand: linear-gradient(to bottom, rgba(59, 157, 240, 0.9), rgba(59, 157, 240, 0.7));
+  --gradient-overlay-brand: linear-gradient(
+    to bottom,
+    rgba(59, 157, 240, 0.9),
+    rgba(59, 157, 240, 0.7)
+  );
 }
 
 /* ==========================================
@@ -277,7 +302,7 @@
    Sophisticated dark mode colors
    ========================================== */
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* === ENHANCED DARK SURFACES === */
   --surface-primary: var(--neutral-900);
   --surface-secondary: var(--neutral-800);
@@ -363,13 +388,29 @@
 
   /* === ENHANCED DARK GRADIENTS === */
   --gradient-brand-primary: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-500) 100%);
-  --gradient-brand-secondary: linear-gradient(135deg, var(--secondary-600) 0%, var(--secondary-500) 100%);
+  --gradient-brand-secondary: linear-gradient(
+    135deg,
+    var(--secondary-600) 0%,
+    var(--secondary-500) 100%
+  );
   --gradient-brand-hero: linear-gradient(135deg, var(--primary-500) 0%, var(--secondary-600) 100%);
-  --gradient-brand-subtle: linear-gradient(135deg, var(--primary-950) 0%, var(--secondary-950) 100%);
+  --gradient-brand-subtle: linear-gradient(
+    135deg,
+    var(--primary-950) 0%,
+    var(--secondary-950) 100%
+  );
 
-  --gradient-overlay-light: linear-gradient(to bottom, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.7));
+  --gradient-overlay-light: linear-gradient(
+    to bottom,
+    rgba(10, 10, 10, 0.9),
+    rgba(10, 10, 10, 0.7)
+  );
   --gradient-overlay-dark: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
-  --gradient-overlay-brand: linear-gradient(to bottom, rgba(59, 157, 240, 0.3), rgba(59, 157, 240, 0.1));
+  --gradient-overlay-brand: linear-gradient(
+    to bottom,
+    rgba(59, 157, 240, 0.3),
+    rgba(59, 157, 240, 0.1)
+  );
 }
 
 /* ==========================================
@@ -377,8 +418,8 @@
    WCAG AAA compliance support
    ========================================== */
 
-[data-theme="light-hc"],
-[data-theme="dark-hc"],
+[data-theme='light-hc'],
+[data-theme='dark-hc'],
 @media (prefers-contrast: high) {
   :root {
     /* Enhanced contrast ratios */
@@ -407,7 +448,7 @@
     --border-info: #0066cc;
   }
 
-  [data-theme="dark-hc"] {
+  [data-theme='dark-hc'] {
     --text-primary: #ffffff;
     --text-secondary: #ffffff;
     --text-on-brand: #000000;
@@ -431,8 +472,9 @@
   *:focus-visible {
     outline: 3px solid var(--border-focus);
     outline-offset: 2px;
-    box-shadow: 0 0 0 1px var(--surface-primary),
-                0 0 0 4px var(--border-focus-shadow);
+    box-shadow:
+      0 0 0 1px var(--surface-primary),
+      0 0 0 4px var(--border-focus-shadow);
   }
 }
 
@@ -456,16 +498,12 @@
   --transition-border-slow: border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
   --transition-all-colors:
-    color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    color 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
   --transition-theme:
-    color 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 300ms cubic-bezier(0.4, 0, 0.2, 1), background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
     opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -492,28 +530,54 @@
    Runtime color manipulation utilities
    ========================================== */
 
-.color-blend-multiply { mix-blend-mode: multiply; }
-.color-blend-screen { mix-blend-mode: screen; }
-.color-blend-overlay { mix-blend-mode: overlay; }
-.color-blend-darken { mix-blend-mode: darken; }
-.color-blend-lighten { mix-blend-mode: lighten; }
-.color-blend-color-dodge { mix-blend-mode: color-dodge; }
-.color-blend-color-burn { mix-blend-mode: color-burn; }
+.color-blend-multiply {
+  mix-blend-mode: multiply;
+}
+.color-blend-screen {
+  mix-blend-mode: screen;
+}
+.color-blend-overlay {
+  mix-blend-mode: overlay;
+}
+.color-blend-darken {
+  mix-blend-mode: darken;
+}
+.color-blend-lighten {
+  mix-blend-mode: lighten;
+}
+.color-blend-color-dodge {
+  mix-blend-mode: color-dodge;
+}
+.color-blend-color-burn {
+  mix-blend-mode: color-burn;
+}
 
 /* Color animation effects */
 @keyframes color-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes mainframe-glow {
-  0%, 100% {
+  0%,
+  100% {
     text-shadow: 0 0 5px var(--mainframe-green-bright);
     box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
   }
@@ -524,12 +588,16 @@
 }
 
 /* Utility classes for animations */
-.animate-color-pulse { animation: color-pulse 2s infinite; }
+.animate-color-pulse {
+  animation: color-pulse 2s infinite;
+}
 .animate-gradient-shift {
   background-size: 200% 200%;
   animation: gradient-shift 3s ease infinite;
 }
-.animate-mainframe-glow { animation: mainframe-glow 2s ease-in-out infinite; }
+.animate-mainframe-glow {
+  animation: mainframe-glow 2s ease-in-out infinite;
+}
 
 /* ==========================================
    ACCESSIBILITY ENHANCEMENTS
@@ -579,7 +647,7 @@
     --surface-secondary: #ffffff !important;
   }
 
-  [data-theme="dark"] {
+  [data-theme='dark'] {
     --text-primary: #000000 !important;
     --text-secondary: #333333 !important;
     --surface-primary: #ffffff !important;
@@ -599,7 +667,7 @@
    ========================================== */
 
 /* Debug mode - shows color values */
-[data-debug="colors"] *::before {
+[data-debug='colors'] *::before {
   content: attr(data-color-debug);
   position: absolute;
   top: -20px;
@@ -619,7 +687,7 @@
 }
 
 .color-contrast-warning::after {
-  content: "⚠";
+  content: '⚠';
   position: absolute;
   top: 0;
   right: 0;

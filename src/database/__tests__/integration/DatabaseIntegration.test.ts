@@ -37,16 +37,19 @@ describe('Database Integration Tests', () => {
         enabled: true,
         intervalHours: 1,
         retentionDays: 7,
-        path: path.join(__dirname, '..', 'temp', 'backups')
-      }
+        path: path.join(__dirname, '..', 'temp', 'backups'),
+      },
     });
 
     kb = new KnowledgeDB(testDbPath);
-    migrationManager = new MigrationManager(dbManager.getConnection(), path.join(__dirname, '..', 'temp', 'migrations'));
+    migrationManager = new MigrationManager(
+      dbManager.getConnection(),
+      path.join(__dirname, '..', 'temp', 'migrations')
+    );
     backupManager = new BackupManager(testDbPath, {
       backupDir: path.join(__dirname, '..', 'temp', 'backups'),
       retentionDays: 7,
-      compression: true
+      compression: true,
     });
   });
 
@@ -97,7 +100,7 @@ describe('Database Integration Tests', () => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           );
         `,
-        down: 'DROP TABLE kb_entries;'
+        down: 'DROP TABLE kb_entries;',
       };
 
       const migration2 = {
@@ -111,7 +114,7 @@ describe('Database Integration Tests', () => {
             FOREIGN KEY (entry_id) REFERENCES kb_entries(id) ON DELETE CASCADE
           );
         `,
-        down: 'DROP TABLE kb_tags;'
+        down: 'DROP TABLE kb_tags;',
       };
 
       // Write migration files
@@ -126,7 +129,7 @@ describe('Database Integration Tests', () => {
 
       // Execute migrations
       const results = await migrationManager.runPendingMigrations();
-      
+
       expect(results).toHaveLength(2);
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(true);
@@ -150,19 +153,19 @@ describe('Database Integration Tests', () => {
 
     it('should handle migration failures and maintain consistency', async () => {
       const migrationsDir = path.join(__dirname, '..', 'temp', 'migrations');
-      
+
       const validMigration = {
         version: 1,
         description: 'valid-migration',
         up: 'CREATE TABLE valid_table (id INTEGER);',
-        down: 'DROP TABLE valid_table;'
+        down: 'DROP TABLE valid_table;',
       };
 
       const invalidMigration = {
         version: 2,
         description: 'invalid-migration',
         up: 'INVALID SQL STATEMENT;',
-        down: 'SELECT 1;'
+        down: 'SELECT 1;',
       };
 
       fs.writeFileSync(
@@ -175,7 +178,7 @@ describe('Database Integration Tests', () => {
       );
 
       const results = await migrationManager.runPendingMigrations();
-      
+
       expect(results).toHaveLength(2);
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(false);
@@ -229,7 +232,7 @@ describe('Database Integration Tests', () => {
 
       // Create first backup
       const backup1Path = await backupManager.createBackup();
-      
+
       // Add more data
       const additionalEntries = TestDatabaseFactory.createTestKBEntries().slice(3, 5);
       for (const entry of additionalEntries) {
@@ -242,17 +245,17 @@ describe('Database Integration Tests', () => {
 
       // Verify backup contains all data
       await backupManager.restoreBackup(backup2Path);
-      
+
       kb.close();
       kb = new KnowledgeDB(testDbPath);
-      
+
       expect(await kb.getEntryCount()).toBe(5);
     });
 
     it('should perform automatic scheduled backups', async () => {
       // This test would typically require time manipulation or mocking
       // For now, we'll test the backup configuration and manual trigger
-      
+
       const config = backupManager.getConfiguration();
       expect(config.retentionDays).toBe(7);
       expect(config.compression).toBe(true);
@@ -275,30 +278,30 @@ describe('Database Integration Tests', () => {
         // Database operations
         () => dbManager.execute('SELECT 1 as test'),
         () => dbManager.execute('SELECT COUNT(*) FROM sqlite_master'),
-        
+
         // KB operations
         async () => {
           const entry = TestDatabaseFactory.createTestKBEntries()[0];
           return await kb.addEntry(entry, 'test-user');
         },
         () => kb.search('test'),
-        
+
         // Migration operations (safe ones)
         () => migrationManager.getCurrentVersion(),
-        () => migrationManager.getMigrationHistory()
+        () => migrationManager.getMigrationHistory(),
       ];
 
       const loadTestConfig = {
         concurrentUsers: 10,
         duration: 15, // 15 seconds
         rampUpTime: 3,
-        operations
+        operations,
       };
 
       const results = await performanceHelper.runLoadTest(loadTestConfig);
-      
+
       const successRate = results.filter(r => r.success).length / results.length;
-      expect(successRate).toBeGreaterThan(0.90); // 90% success rate
+      expect(successRate).toBeGreaterThan(0.9); // 90% success rate
 
       // Verify system is still functional
       const healthCheck = await dbManager.getHealth();
@@ -334,14 +337,14 @@ describe('Database Integration Tests', () => {
         performanceResults.push({
           size,
           addTime: addDataResult.metrics.executionTime,
-          searchTime: searchResult.metrics.executionTime
+          searchTime: searchResult.metrics.executionTime,
         });
       }
 
       // Performance should scale reasonably
       const firstResult = performanceResults[0];
       const lastResult = performanceResults[performanceResults.length - 1];
-      
+
       // Allow up to 5x increase in time for 10x increase in data
       expect(lastResult.searchTime).toBeLessThan(firstResult.searchTime * 5);
     });
@@ -358,14 +361,14 @@ describe('Database Integration Tests', () => {
         'data exception',
         'JCL dataset',
         'DB2 resource',
-        'COBOL compile'
+        'COBOL compile',
       ];
 
       // Measure initial query performance (cache misses)
       const initialResults = await performanceHelper.compareImplementations(
         queries.map(query => ({
           name: `initial-${query}`,
-          fn: () => kb.search(query)
+          fn: () => kb.search(query),
         })),
         10
       );
@@ -374,17 +377,23 @@ describe('Database Integration Tests', () => {
       const cachedResults = await performanceHelper.compareImplementations(
         queries.map(query => ({
           name: `cached-${query}`,
-          fn: () => kb.search(query)
+          fn: () => kb.search(query),
         })),
         50
       );
 
       // Cached queries should be faster on average
-      const initialAvgTime = Object.values(initialResults)
-        .reduce((sum, result) => sum + result.metrics.executionTime, 0) / queries.length;
-      
-      const cachedAvgTime = Object.values(cachedResults)
-        .reduce((sum, result) => sum + result.metrics.executionTime, 0) / queries.length;
+      const initialAvgTime =
+        Object.values(initialResults).reduce(
+          (sum, result) => sum + result.metrics.executionTime,
+          0
+        ) / queries.length;
+
+      const cachedAvgTime =
+        Object.values(cachedResults).reduce(
+          (sum, result) => sum + result.metrics.executionTime,
+          0
+        ) / queries.length;
 
       expect(cachedAvgTime).toBeLessThan(initialAvgTime);
     });
@@ -397,15 +406,19 @@ describe('Database Integration Tests', () => {
         // Add KB entry
         const entry = TestDatabaseFactory.createTestKBEntries()[0];
         const entryId = await kb.addEntry(entry, 'test-user');
-        
+
         // Record usage
         await kb.recordUsage(entryId, 'view', 'test-user');
-        
+
         // Update entry
-        await kb.updateEntry(entryId, {
-          ...entry,
-          solution: 'Updated solution'
-        }, 'test-user');
+        await kb.updateEntry(
+          entryId,
+          {
+            ...entry,
+            solution: 'Updated solution',
+          },
+          'test-user'
+        );
       });
 
       // Verify all operations completed
@@ -422,7 +435,7 @@ describe('Database Integration Tests', () => {
           // Add entry
           const entry = TestDatabaseFactory.createTestKBEntries()[0];
           await kb.addEntry(entry, 'test-user');
-          
+
           // Cause an error
           throw new Error('Simulated transaction error');
         });
@@ -443,7 +456,7 @@ describe('Database Integration Tests', () => {
         await dbManager.transaction(async () => {
           const entry2 = TestDatabaseFactory.createTestKBEntries()[1];
           const entryId2 = await kb.addEntry(entry2, 'test-user');
-          
+
           // Both should be committed
           await kb.recordUsage(entryId1, 'view', 'test-user');
           await kb.recordUsage(entryId2, 'view', 'test-user');
@@ -469,7 +482,7 @@ describe('Database Integration Tests', () => {
       }
 
       const health = await dbManager.getHealth();
-      
+
       expect(health).toHaveProperty('status');
       expect(health).toHaveProperty('connections');
       expect(health).toHaveProperty('performance');
@@ -523,16 +536,16 @@ describe('Database Integration Tests', () => {
           await dbManager.execute('SELECT * FROM kb_entries');
         },
         5000, // 5 seconds
-        250   // Check every 250ms
+        250 // Check every 250ms
       );
 
       expect(metrics.length).toBeGreaterThan(10);
-      
+
       // Memory usage should be stable
       const maxMemory = Math.max(...metrics.map(m => m.memoryUsage.heapUsed));
       const minMemory = Math.min(...metrics.map(m => m.memoryUsage.heapUsed));
       const memoryVariation = (maxMemory - minMemory) / minMemory;
-      
+
       expect(memoryVariation).toBeLessThan(2); // Less than 200% variation
     });
   });
@@ -542,7 +555,7 @@ describe('Database Integration Tests', () => {
       // Add data
       const entries = TestDatabaseFactory.createTestKBEntries();
       const entryIds: string[] = [];
-      
+
       for (const entry of entries) {
         const id = await kb.addEntry(entry, 'test-user');
         entryIds.push(id);
@@ -561,13 +574,13 @@ describe('Database Integration Tests', () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
         enableWAL: true,
-        enableForeignKeys: true
+        enableForeignKeys: true,
       });
       kb = new KnowledgeDB(testDbPath);
 
       // Verify data persistence
       expect(await kb.getEntryCount()).toBe(initialCount);
-      
+
       const restoredSearchResults = await kb.search('VSAM');
       expect(restoredSearchResults.length).toBe(initialSearchResults.length);
 
@@ -588,7 +601,7 @@ describe('Database Integration Tests', () => {
       // Just reinitialize components
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
-        enableWAL: true
+        enableWAL: true,
       });
       kb = new KnowledgeDB(testDbPath);
 

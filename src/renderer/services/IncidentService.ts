@@ -11,7 +11,7 @@ import {
   StatusTransition,
   IncidentComment,
   IncidentMetrics,
-  IncidentListResponse
+  IncidentListResponse,
 } from '../../types/incident';
 
 export class IncidentService {
@@ -39,7 +39,7 @@ export class IncidentService {
         filters,
         sort,
         page,
-        pageSize
+        pageSize,
       });
       return result;
     } catch (error) {
@@ -65,8 +65,8 @@ export class IncidentService {
    * Update incident status
    */
   async updateStatus(
-    incidentId: string, 
-    newStatus: string, 
+    incidentId: string,
+    newStatus: string,
     reason?: string,
     changedBy?: string
   ): Promise<void> {
@@ -75,7 +75,7 @@ export class IncidentService {
         incidentId,
         newStatus,
         reason,
-        changedBy
+        changedBy,
       });
     } catch (error) {
       console.error('Error updating incident status:', error);
@@ -86,16 +86,12 @@ export class IncidentService {
   /**
    * Assign incident to user
    */
-  async assignIncident(
-    incidentId: string, 
-    assignedTo: string,
-    assignedBy?: string
-  ): Promise<void> {
+  async assignIncident(incidentId: string, assignedTo: string, assignedBy?: string): Promise<void> {
     try {
       await window.api.invoke('incident:assign', {
         incidentId,
         assignedTo,
-        assignedBy
+        assignedBy,
       });
     } catch (error) {
       console.error('Error assigning incident:', error);
@@ -107,7 +103,7 @@ export class IncidentService {
    * Update incident priority
    */
   async updatePriority(
-    incidentId: string, 
+    incidentId: string,
     priority: string,
     changedBy?: string,
     reason?: string
@@ -117,7 +113,7 @@ export class IncidentService {
         incidentId,
         priority,
         changedBy,
-        reason
+        reason,
       });
     } catch (error) {
       console.error('Error updating incident priority:', error);
@@ -153,7 +149,7 @@ export class IncidentService {
         content,
         author,
         isInternal,
-        attachments
+        attachments,
       });
       return result.id;
     } catch (error) {
@@ -168,7 +164,7 @@ export class IncidentService {
   async getComments(incidentId: string): Promise<IncidentComment[]> {
     try {
       const result = await window.api.invoke('incident:getComments', {
-        incidentId
+        incidentId,
       });
       return result;
     } catch (error) {
@@ -183,7 +179,7 @@ export class IncidentService {
   async getStatusHistory(incidentId: string): Promise<StatusTransition[]> {
     try {
       const result = await window.api.invoke('incident:getStatusHistory', {
-        incidentId
+        incidentId,
       });
       return result;
     } catch (error) {
@@ -198,7 +194,7 @@ export class IncidentService {
   async getMetrics(timeframe = '24h'): Promise<IncidentMetrics> {
     try {
       const result = await window.api.invoke('incident:getMetrics', {
-        timeframe
+        timeframe,
       });
       return result;
     } catch (error) {
@@ -221,7 +217,7 @@ export class IncidentService {
         incidentId,
         escalationLevel,
         reason,
-        escalatedBy
+        escalatedBy,
       });
     } catch (error) {
       console.error('Error escalating incident:', error);
@@ -241,7 +237,7 @@ export class IncidentService {
       await window.api.invoke('incident:resolve', {
         incidentId,
         resolvedBy,
-        resolutionNotes
+        resolutionNotes,
       });
     } catch (error) {
       console.error('Error resolving incident:', error);
@@ -264,7 +260,7 @@ export class IncidentService {
         priority,
         assignedTo,
         reporter,
-        status: kbEntryData.status || 'aberto'
+        status: kbEntryData.status || 'aberto',
       });
       return result.id;
     } catch (error) {
@@ -276,7 +272,9 @@ export class IncidentService {
   /**
    * Bulk create incidents (for file imports)
    */
-  async bulkCreateIncidents(incidents: Partial<IncidentKBEntry>[]): Promise<{ successful: number; failed: number; errors: string[] }> {
+  async bulkCreateIncidents(
+    incidents: Partial<IncidentKBEntry>[]
+  ): Promise<{ successful: number; failed: number; errors: string[] }> {
     try {
       const result = await window.api.invoke('incident:bulkCreate', { incidents });
       return result;
@@ -298,7 +296,7 @@ export class IncidentService {
       const result = await window.api.invoke('incident:search', {
         query,
         filters,
-        sort
+        sort,
       });
       return result;
     } catch (error) {
@@ -334,7 +332,7 @@ export class IncidentService {
         incidentId,
         newDeadline: newDeadline.toISOString(),
         reason,
-        updatedBy
+        updatedBy,
       });
     } catch (error) {
       console.error('Error updating SLA deadline:', error);
@@ -348,7 +346,7 @@ export class IncidentService {
   async getTrends(timeframe = '30d'): Promise<any> {
     try {
       const result = await window.api.invoke('incident:getTrends', {
-        timeframe
+        timeframe,
       });
       return result;
     } catch (error) {
@@ -362,13 +360,13 @@ export class IncidentService {
    */
   isValidStatusTransition(fromStatus: string, toStatus: string): boolean {
     const validTransitions: Record<string, string[]> = {
-      'open': ['assigned', 'in_progress', 'resolved', 'closed'],
-      'assigned': ['in_progress', 'open', 'resolved', 'closed'],
-      'in_progress': ['pending_review', 'resolved', 'assigned', 'open'],
-      'pending_review': ['resolved', 'in_progress', 'assigned'],
-      'resolved': ['closed', 'reopened'],
-      'closed': ['reopened'],
-      'reopened': ['assigned', 'in_progress', 'resolved']
+      open: ['assigned', 'in_progress', 'resolved', 'closed'],
+      assigned: ['in_progress', 'open', 'resolved', 'closed'],
+      in_progress: ['pending_review', 'resolved', 'assigned', 'open'],
+      pending_review: ['resolved', 'in_progress', 'assigned'],
+      resolved: ['closed', 'reopened'],
+      closed: ['reopened'],
+      reopened: ['assigned', 'in_progress', 'resolved'],
     };
 
     return validTransitions[fromStatus]?.includes(toStatus) || false;
@@ -379,14 +377,14 @@ export class IncidentService {
    */
   calculateSLADeadline(priority: string, createdAt: Date): Date {
     const slaMinutes = {
-      'P1': 60,     // 1 hour
-      'P2': 240,    // 4 hours
-      'P3': 480,    // 8 hours
-      'P4': 1440    // 24 hours
+      P1: 60, // 1 hour
+      P2: 240, // 4 hours
+      P3: 480, // 8 hours
+      P4: 1440, // 24 hours
     };
 
     const minutes = slaMinutes[priority as keyof typeof slaMinutes] || 480;
-    return new Date(createdAt.getTime() + (minutes * 60 * 1000));
+    return new Date(createdAt.getTime() + minutes * 60 * 1000);
   }
 
   /**
@@ -394,10 +392,10 @@ export class IncidentService {
    */
   getPriorityInfo(priority: string) {
     const priorityMap = {
-      'P1': { label: 'Critical', color: '#ef4444' },
-      'P2': { label: 'High', color: '#f97316' },
-      'P3': { label: 'Medium', color: '#eab308' },
-      'P4': { label: 'Low', color: '#22c55e' }
+      P1: { label: 'Critical', color: '#ef4444' },
+      P2: { label: 'High', color: '#f97316' },
+      P3: { label: 'Medium', color: '#eab308' },
+      P4: { label: 'Low', color: '#22c55e' },
     };
 
     return priorityMap[priority as keyof typeof priorityMap] || priorityMap['P3'];
@@ -408,12 +406,12 @@ export class IncidentService {
    */
   getStatusInfo(status: string) {
     const statusMap = {
-      'aberto': { label: 'Aberto', color: '#6b7280' },
-      'em_tratamento': { label: 'Em Tratamento', color: '#f59e0b' },
-      'em_revisao': { label: 'Em Revisão', color: '#8b5cf6' },
-      'resolvido': { label: 'Resolvido', color: '#10b981' },
-      'fechado': { label: 'Fechado', color: '#6b7280' },
-      'reaberto': { label: 'Reaberto', color: '#ef4444' }
+      aberto: { label: 'Aberto', color: '#6b7280' },
+      em_tratamento: { label: 'Em Tratamento', color: '#f59e0b' },
+      em_revisao: { label: 'Em Revisão', color: '#8b5cf6' },
+      resolvido: { label: 'Resolvido', color: '#10b981' },
+      fechado: { label: 'Fechado', color: '#6b7280' },
+      reaberto: { label: 'Reaberto', color: '#ef4444' },
     };
 
     return statusMap[status as keyof typeof statusMap] || statusMap['aberto'];

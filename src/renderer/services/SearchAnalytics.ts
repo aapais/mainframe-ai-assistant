@@ -106,7 +106,7 @@ const DEFAULT_OPTIONS: Required<AnalyticsOptions> = {
   enableOptimizations: true,
   hashQueries: false, // Keep readable for internal analytics
   trackUserAgent: true,
-  sessionTimeout: 30
+  sessionTimeout: 30,
 };
 
 /**
@@ -123,7 +123,7 @@ function hashString(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return hash.toString(36);
@@ -201,9 +201,9 @@ export class SearchAnalyticsService {
       userAgent: this.options.trackUserAgent ? navigator.userAgent : undefined,
       viewport: {
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
       },
-      locale: navigator.language
+      locale: navigator.language,
     };
 
     this.events.push(event);
@@ -216,13 +216,16 @@ export class SearchAnalyticsService {
   /**
    * Track user interaction with search results
    */
-  trackInteraction(eventId: string, params: {
-    clicked: boolean;
-    clickedPosition?: number;
-    timeToClick?: number;
-    refinedQuery?: string;
-    abandoned?: boolean;
-  }): void {
+  trackInteraction(
+    eventId: string,
+    params: {
+      clicked: boolean;
+      clickedPosition?: number;
+      timeToClick?: number;
+      refinedQuery?: string;
+      abandoned?: boolean;
+    }
+  ): void {
     if (!this.options.enableTracking) return;
 
     const event = this.events.find(e => e.id === eventId);
@@ -245,8 +248,8 @@ export class SearchAnalyticsService {
     let filteredEvents = this.events;
 
     if (timeRange) {
-      filteredEvents = this.events.filter(event =>
-        event.timestamp >= timeRange.start && event.timestamp <= timeRange.end
+      filteredEvents = this.events.filter(
+        event => event.timestamp >= timeRange.start && event.timestamp <= timeRange.end
       );
     }
 
@@ -264,14 +267,17 @@ export class SearchAnalyticsService {
     const zeroResultEvents = filteredEvents.filter(e => e.resultCount === 0);
 
     // Performance metrics
-    const avgExecutionTime = filteredEvents.reduce((sum, e) => sum + e.executionTime, 0) / totalSearches;
-    const avgResultCount = filteredEvents.reduce((sum, e) => sum + e.resultCount, 0) / totalSearches;
+    const avgExecutionTime =
+      filteredEvents.reduce((sum, e) => sum + e.executionTime, 0) / totalSearches;
+    const avgResultCount =
+      filteredEvents.reduce((sum, e) => sum + e.resultCount, 0) / totalSearches;
 
     // User behavior
     const clickThroughRate = clickedEvents.length / totalSearches;
-    const avgTimeToClick = clickedEvents.length > 0
-      ? clickedEvents.reduce((sum, e) => sum + (e.timeToClick || 0), 0) / clickedEvents.length
-      : 0;
+    const avgTimeToClick =
+      clickedEvents.length > 0
+        ? clickedEvents.reduce((sum, e) => sum + (e.timeToClick || 0), 0) / clickedEvents.length
+        : 0;
 
     // Categories analysis
     const categoryMap = new Map<string, { count: number; successes: number }>();
@@ -280,16 +286,18 @@ export class SearchAnalyticsService {
         const current = categoryMap.get(event.category) || { count: 0, successes: 0 };
         categoryMap.set(event.category, {
           count: current.count + 1,
-          successes: current.successes + (event.successful ? 1 : 0)
+          successes: current.successes + (event.successful ? 1 : 0),
         });
       }
     });
 
-    const popularCategories = Array.from(categoryMap.entries()).map(([category, data]) => ({
-      category,
-      count: data.count,
-      successRate: data.successes / data.count
-    })).sort((a, b) => b.count - a.count);
+    const popularCategories = Array.from(categoryMap.entries())
+      .map(([category, data]) => ({
+        category,
+        count: data.count,
+        successRate: data.successes / data.count,
+      }))
+      .sort((a, b) => b.count - a.count);
 
     // Query analysis
     const queryMap = new Map<string, { count: number; totalResults: number }>();
@@ -298,7 +306,7 @@ export class SearchAnalyticsService {
       const current = queryMap.get(query) || { count: 0, totalResults: 0 };
       queryMap.set(query, {
         count: current.count + 1,
-        totalResults: current.totalResults + event.resultCount
+        totalResults: current.totalResults + event.resultCount,
       });
     });
 
@@ -307,7 +315,7 @@ export class SearchAnalyticsService {
       .map(([query, data]) => ({
         query,
         count: data.count,
-        avgResults: data.totalResults / data.count
+        avgResults: data.totalResults / data.count,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 20);
@@ -319,7 +327,7 @@ export class SearchAnalyticsService {
       const current = hourlyMap.get(hour) || { count: 0, totalTime: 0 };
       hourlyMap.set(hour, {
         count: current.count + 1,
-        totalTime: current.totalTime + event.executionTime
+        totalTime: current.totalTime + event.executionTime,
       });
     });
 
@@ -328,7 +336,7 @@ export class SearchAnalyticsService {
       return {
         hour,
         count: data.count,
-        performance: data.count > 0 ? data.totalTime / data.count : 0
+        performance: data.count > 0 ? data.totalTime / data.count : 0,
       };
     });
 
@@ -354,7 +362,7 @@ export class SearchAnalyticsService {
         return {
           query,
           successRate: successCount / events.length,
-          clickRate: clickCount / events.length
+          clickRate: clickCount / events.length,
         };
       })
       .filter(item => item.successRate > 0.8 && queryMap.get(item.query)!.count > 2)
@@ -363,10 +371,11 @@ export class SearchAnalyticsService {
 
     // Duplicate detection
     const duplicateSearches = filteredEvents.filter(event => {
-      const sameQuery = filteredEvents.filter(e =>
-        e.query === event.query &&
-        e.sessionId === event.sessionId &&
-        Math.abs(e.timestamp.getTime() - event.timestamp.getTime()) < 5 * 60 * 1000 // Within 5 minutes
+      const sameQuery = filteredEvents.filter(
+        e =>
+          e.query === event.query &&
+          e.sessionId === event.sessionId &&
+          Math.abs(e.timestamp.getTime() - event.timestamp.getTime()) < 5 * 60 * 1000 // Within 5 minutes
       );
       return sameQuery.length > 1;
     });
@@ -402,7 +411,7 @@ export class SearchAnalyticsService {
 
       // Performance insights
       slowQueries,
-      topPerformers
+      topPerformers,
     };
   }
 
@@ -423,12 +432,13 @@ export class SearchAnalyticsService {
         title: 'Improve Search Performance',
         description: `Average search time is ${analytics.avgExecutionTime}ms, which exceeds the 1-second target.`,
         impact: 'Reduce user frustration and improve search experience',
-        implementation: 'Optimize database indexes, implement better caching, or reduce result set size',
+        implementation:
+          'Optimize database indexes, implement better caching, or reduce result set size',
         metrics: {
           currentAvgTime: analytics.avgExecutionTime,
           targetTime: 800,
-          potentialImprovement: analytics.avgExecutionTime - 800
-        }
+          potentialImprovement: analytics.avgExecutionTime - 800,
+        },
       });
     }
 
@@ -443,8 +453,8 @@ export class SearchAnalyticsService {
         metrics: {
           currentCacheRate: analytics.cacheHitRate,
           targetCacheRate: 0.5,
-          potentialSpeedup: 1.5
-        }
+          potentialSpeedup: 1.5,
+        },
       });
     }
 
@@ -456,12 +466,13 @@ export class SearchAnalyticsService {
         title: 'Improve Search Relevance',
         description: `Click-through rate is ${(analytics.clickThroughRate * 100).toFixed(1)}%, indicating poor result relevance`,
         impact: 'Increase user satisfaction and task completion rates',
-        implementation: 'Improve ranking algorithm, add more contextual factors, or enhance result presentation',
+        implementation:
+          'Improve ranking algorithm, add more contextual factors, or enhance result presentation',
         metrics: {
           currentCTR: analytics.clickThroughRate,
           targetCTR: 0.7,
-          affectedSearches: Math.round(analytics.totalSearches * (1 - analytics.clickThroughRate))
-        }
+          affectedSearches: Math.round(analytics.totalSearches * (1 - analytics.clickThroughRate)),
+        },
       });
     }
 
@@ -472,12 +483,15 @@ export class SearchAnalyticsService {
         title: 'Reduce Search Abandonment',
         description: `${(analytics.abandonmentRate * 100).toFixed(1)}% of searches are abandoned without interaction`,
         impact: 'Improve user engagement and reduce search frustration',
-        implementation: 'Add search suggestions, improve zero-result handling, or provide search guidance',
+        implementation:
+          'Add search suggestions, improve zero-result handling, or provide search guidance',
         metrics: {
           currentAbandonmentRate: analytics.abandonmentRate,
           targetAbandonmentRate: 0.2,
-          recoveredSearches: Math.round(analytics.totalSearches * (analytics.abandonmentRate - 0.2))
-        }
+          recoveredSearches: Math.round(
+            analytics.totalSearches * (analytics.abandonmentRate - 0.2)
+          ),
+        },
       });
     }
 
@@ -493,8 +507,8 @@ export class SearchAnalyticsService {
         metrics: {
           currentZeroResultRate: analytics.zeroResultRate,
           targetZeroResultRate: 0.1,
-          affectedUsers: Math.round(analytics.totalSearches * analytics.zeroResultRate)
-        }
+          affectedUsers: Math.round(analytics.totalSearches * analytics.zeroResultRate),
+        },
       });
     }
 
@@ -505,12 +519,13 @@ export class SearchAnalyticsService {
         title: 'Reduce Duplicate Searches',
         description: `${(analytics.duplicateSearchRate * 100).toFixed(1)}% of searches are duplicates, indicating user confusion`,
         impact: 'Improve search efficiency and reduce server load',
-        implementation: 'Implement better search history, add query suggestions, or improve result presentation',
+        implementation:
+          'Implement better search history, add query suggestions, or improve result presentation',
         metrics: {
           currentDuplicateRate: analytics.duplicateSearchRate,
           targetDuplicateRate: 0.15,
-          wastedSearches: Math.round(analytics.totalSearches * analytics.duplicateSearchRate)
-        }
+          wastedSearches: Math.round(analytics.totalSearches * analytics.duplicateSearchRate),
+        },
       });
     }
 
@@ -526,8 +541,8 @@ export class SearchAnalyticsService {
         metrics: {
           currentAIUsage: analytics.aiUsageRate,
           targetAIUsage: 0.3,
-          potentialSuccessImprovement: 0.15
-        }
+          potentialSuccessImprovement: 0.15,
+        },
       });
     }
 
@@ -550,15 +565,15 @@ export class SearchAnalyticsService {
       sessionInfo: {
         sessionId: this.sessionId,
         sessionStart: this.sessionStartTime.toISOString(),
-        totalEvents: this.events.length
+        totalEvents: this.events.length,
       },
       analytics,
       recommendations,
       summary: {
         dataQuality: this.assessDataQuality(),
         keyInsights: this.generateKeyInsights(analytics),
-        actionItems: recommendations.filter(r => r.priority === 'high')
-      }
+        actionItems: recommendations.filter(r => r.priority === 'high'),
+      },
     };
 
     return JSON.stringify(exportData, null, 2);
@@ -583,7 +598,7 @@ export class SearchAnalyticsService {
         const parsed = JSON.parse(stored);
         this.events = parsed.map((event: any) => ({
           ...event,
-          timestamp: new Date(event.timestamp)
+          timestamp: new Date(event.timestamp),
         }));
         this.cleanupOldEvents();
       }
@@ -597,7 +612,7 @@ export class SearchAnalyticsService {
     try {
       const serializable = this.events.map(event => ({
         ...event,
-        timestamp: event.timestamp.toISOString()
+        timestamp: event.timestamp.toISOString(),
       }));
       localStorage.setItem(this.storageKey, JSON.stringify(serializable));
     } catch (error) {
@@ -627,25 +642,33 @@ export class SearchAnalyticsService {
     }, 60000); // Check every minute
   }
 
-  private analyzeFailurePatterns(events: SearchEvent[]): Array<{ pattern: string; count: number; examples: string[] }> {
+  private analyzeFailurePatterns(
+    events: SearchEvent[]
+  ): Array<{ pattern: string; count: number; examples: string[] }> {
     const patternMap = new Map<string, string[]>();
 
-    events.filter(e => !e.successful).forEach(event => {
-      const pattern = categorizeQuery(event.query);
-      if (!patternMap.has(pattern)) {
-        patternMap.set(pattern, []);
-      }
-      patternMap.get(pattern)!.push(event.query);
-    });
+    events
+      .filter(e => !e.successful)
+      .forEach(event => {
+        const pattern = categorizeQuery(event.query);
+        if (!patternMap.has(pattern)) {
+          patternMap.set(pattern, []);
+        }
+        patternMap.get(pattern)!.push(event.query);
+      });
 
-    return Array.from(patternMap.entries()).map(([pattern, queries]) => ({
-      pattern,
-      count: queries.length,
-      examples: [...new Set(queries)].slice(0, 5) // Unique examples, max 5
-    })).sort((a, b) => b.count - a.count);
+    return Array.from(patternMap.entries())
+      .map(([pattern, queries]) => ({
+        pattern,
+        count: queries.length,
+        examples: [...new Set(queries)].slice(0, 5), // Unique examples, max 5
+      }))
+      .sort((a, b) => b.count - a.count);
   }
 
-  private calculateSearchTrends(events: SearchEvent[]): Array<{ period: string; count: number; avgPerformance: number }> {
+  private calculateSearchTrends(
+    events: SearchEvent[]
+  ): Array<{ period: string; count: number; avgPerformance: number }> {
     const trendMap = new Map<string, { count: number; totalTime: number }>();
 
     events.forEach(event => {
@@ -653,18 +676,22 @@ export class SearchAnalyticsService {
       const current = trendMap.get(period) || { count: 0, totalTime: 0 };
       trendMap.set(period, {
         count: current.count + 1,
-        totalTime: current.totalTime + event.executionTime
+        totalTime: current.totalTime + event.executionTime,
       });
     });
 
-    return Array.from(trendMap.entries()).map(([period, data]) => ({
-      period,
-      count: data.count,
-      avgPerformance: data.totalTime / data.count
-    })).sort((a, b) => a.period.localeCompare(b.period));
+    return Array.from(trendMap.entries())
+      .map(([period, data]) => ({
+        period,
+        count: data.count,
+        avgPerformance: data.totalTime / data.count,
+      }))
+      .sort((a, b) => a.period.localeCompare(b.period));
   }
 
-  private calculateWeeklyTrends(events: SearchEvent[]): Array<{ day: string; count: number; successRate: number }> {
+  private calculateWeeklyTrends(
+    events: SearchEvent[]
+  ): Array<{ day: string; count: number; successRate: number }> {
     const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const weekMap = new Map<number, { count: number; successes: number }>();
 
@@ -673,7 +700,7 @@ export class SearchAnalyticsService {
       const current = weekMap.get(dayOfWeek) || { count: 0, successes: 0 };
       weekMap.set(dayOfWeek, {
         count: current.count + 1,
-        successes: current.successes + (event.successful ? 1 : 0)
+        successes: current.successes + (event.successful ? 1 : 0),
       });
     });
 
@@ -682,7 +709,7 @@ export class SearchAnalyticsService {
       return {
         day,
         count: data.count,
-        successRate: data.count > 0 ? data.successes / data.count : 0
+        successRate: data.count > 0 ? data.successes / data.count : 0,
       };
     });
   }
@@ -705,10 +732,22 @@ export class SearchAnalyticsService {
       commonQueries: [],
       searchTrends: [],
       failurePatterns: [],
-      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, performance: 0 })),
-      weeklyTrends: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => ({ day, count: 0, successRate: 0 })),
+      hourlyDistribution: Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        count: 0,
+        performance: 0,
+      })),
+      weeklyTrends: [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ].map(day => ({ day, count: 0, successRate: 0 })),
       slowQueries: [],
-      topPerformers: []
+      topPerformers: [],
     };
   }
 
@@ -721,8 +760,8 @@ export class SearchAnalyticsService {
       score -= 30;
     }
 
-    const recentEvents = this.events.filter(e =>
-      Date.now() - e.timestamp.getTime() < 7 * 24 * 60 * 60 * 1000
+    const recentEvents = this.events.filter(
+      e => Date.now() - e.timestamp.getTime() < 7 * 24 * 60 * 60 * 1000
     );
 
     if (recentEvents.length / this.events.length < 0.3) {

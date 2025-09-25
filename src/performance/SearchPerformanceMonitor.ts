@@ -57,7 +57,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
       searchType,
       filters,
       cacheHit: false,
-      errorOccurred: false
+      errorOccurred: false,
     };
 
     this.activeSearches.set(searchId, searchMetrics);
@@ -100,7 +100,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
       searchType: searchData.searchType || 'basic',
       filters: searchData.filters || {},
       errorOccurred: !!error,
-      errorMessage: error
+      errorMessage: error,
     };
 
     this.activeSearches.delete(searchId);
@@ -115,7 +115,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
         query: metrics.query,
         responseTime: metrics.responseTime,
         target: this.targetResponseTime,
-        message: `Search "${metrics.query}" took ${responseTime.toFixed(2)}ms, exceeding target of ${this.targetResponseTime}ms`
+        message: `Search "${metrics.query}" took ${responseTime.toFixed(2)}ms, exceeding target of ${this.targetResponseTime}ms`,
       });
     }
 
@@ -123,7 +123,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
       this.emit('search-error', {
         query: metrics.query,
         error: metrics.errorMessage,
-        responseTime: metrics.responseTime
+        responseTime: metrics.responseTime,
       });
     }
 
@@ -193,21 +193,24 @@ export class SearchPerformanceMonitor extends EventEmitter {
         cacheHitRate: 0,
         errorRate: 0,
         slowestQuery: null,
-        fastestQuery: null
+        fastestQuery: null,
       };
     }
 
     const totalSearches = this.metrics.length;
-    const averageResponseTime = this.metrics.reduce((sum, m) => sum + m.responseTime, 0) / totalSearches;
+    const averageResponseTime =
+      this.metrics.reduce((sum, m) => sum + m.responseTime, 0) / totalSearches;
     const targetMeets = this.metrics.filter(m => m.isTargetMet).length;
     const cacheHits = this.metrics.filter(m => m.cacheHit).length;
     const errors = this.metrics.filter(m => m.errorOccurred).length;
 
     const slowestQuery = this.metrics.reduce((slowest, current) =>
-      !slowest || current.responseTime > slowest.responseTime ? current : slowest);
+      !slowest || current.responseTime > slowest.responseTime ? current : slowest
+    );
 
     const fastestQuery = this.metrics.reduce((fastest, current) =>
-      !fastest || current.responseTime < fastest.responseTime ? current : fastest);
+      !fastest || current.responseTime < fastest.responseTime ? current : fastest
+    );
 
     return {
       totalSearches,
@@ -216,14 +219,16 @@ export class SearchPerformanceMonitor extends EventEmitter {
       cacheHitRate: cacheHits / totalSearches,
       errorRate: errors / totalSearches,
       slowestQuery,
-      fastestQuery
+      fastestQuery,
     };
   }
 
   /**
    * Get metrics by search type
    */
-  public getMetricsByType(searchType: 'basic' | 'advanced' | 'fuzzy' | 'semantic'): SearchPerformanceMetrics[] {
+  public getMetricsByType(
+    searchType: 'basic' | 'advanced' | 'fuzzy' | 'semantic'
+  ): SearchPerformanceMetrics[] {
     return this.metrics.filter(m => m.searchType === searchType);
   }
 
@@ -256,13 +261,15 @@ export class SearchPerformanceMonitor extends EventEmitter {
     const cacheHits = this.metrics.filter(m => m.cacheHit);
     const cacheMisses = this.metrics.filter(m => !m.cacheHit);
 
-    const averageCacheHitTime = cacheHits.length > 0
-      ? cacheHits.reduce((sum, m) => sum + m.responseTime, 0) / cacheHits.length
-      : 0;
+    const averageCacheHitTime =
+      cacheHits.length > 0
+        ? cacheHits.reduce((sum, m) => sum + m.responseTime, 0) / cacheHits.length
+        : 0;
 
-    const averageCacheMissTime = cacheMisses.length > 0
-      ? cacheMisses.reduce((sum, m) => sum + m.responseTime, 0) / cacheMisses.length
-      : 0;
+    const averageCacheMissTime =
+      cacheMisses.length > 0
+        ? cacheMisses.reduce((sum, m) => sum + m.responseTime, 0) / cacheMisses.length
+        : 0;
 
     return {
       totalQueries,
@@ -270,7 +277,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
       cacheMisses: cacheMisses.length,
       hitRate: totalQueries > 0 ? cacheHits.length / totalQueries : 0,
       averageCacheHitTime,
-      averageCacheMissTime
+      averageCacheMissTime,
     };
   }
 
@@ -296,7 +303,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
         queryMap.set(m.query, {
           count: 1,
           totalTime: m.responseTime,
-          times: [m.responseTime]
+          times: [m.responseTime],
         });
       }
     });
@@ -306,7 +313,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
       .map(([query, data]) => ({
         query,
         count: data.count,
-        averageTime: data.totalTime / data.count
+        averageTime: data.totalTime / data.count,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
@@ -316,7 +323,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
     const queryLengthDistribution = {
       min: Math.min(...queryLengths),
       max: Math.max(...queryLengths),
-      average: queryLengths.reduce((sum, length) => sum + length, 0) / queryLengths.length
+      average: queryLengths.reduce((sum, length) => sum + length, 0) / queryLengths.length,
     };
 
     // Performance by query length
@@ -335,7 +342,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
     const performanceByQueryLength = Array.from(lengthGroups.entries())
       .map(([length, data]) => ({
         length,
-        averageTime: data.totalTime / data.count
+        averageTime: data.totalTime / data.count,
       }))
       .sort((a, b) => a.length - b.length);
 
@@ -343,7 +350,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
       totalUniqueQueries: queryMap.size,
       mostFrequentQueries,
       queryLengthDistribution,
-      performanceByQueryLength
+      performanceByQueryLength,
     };
   }
 
@@ -353,8 +360,16 @@ export class SearchPerformanceMonitor extends EventEmitter {
   public exportData(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
       const headers = [
-        'query', 'startTime', 'endTime', 'responseTime', 'resultCount',
-        'isTargetMet', 'cacheHit', 'searchType', 'errorOccurred', 'errorMessage'
+        'query',
+        'startTime',
+        'endTime',
+        'responseTime',
+        'resultCount',
+        'isTargetMet',
+        'cacheHit',
+        'searchType',
+        'errorOccurred',
+        'errorMessage',
       ];
 
       const rows = this.metrics.map(m => [
@@ -367,18 +382,22 @@ export class SearchPerformanceMonitor extends EventEmitter {
         m.cacheHit,
         m.searchType,
         m.errorOccurred,
-        m.errorMessage ? `"${m.errorMessage.replace(/"/g, '""')}"` : ''
+        m.errorMessage ? `"${m.errorMessage.replace(/"/g, '""')}"` : '',
       ]);
 
       return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     }
 
-    return JSON.stringify({
-      metrics: this.metrics,
-      summary: this.getSummary(),
-      cachePerformance: this.getCachePerformance(),
-      queryAnalysis: this.getQueryAnalysis()
-    }, null, 2);
+    return JSON.stringify(
+      {
+        metrics: this.metrics,
+        summary: this.getSummary(),
+        cachePerformance: this.getCachePerformance(),
+        queryAnalysis: this.getQueryAnalysis(),
+      },
+      null,
+      2
+    );
   }
 
   /**

@@ -11,7 +11,7 @@ import {
   BatchRequest,
   BatchResponse,
   BatchError,
-  BatchStats
+  BatchStats,
 } from '../../shared/types/BatchTypes';
 import { DatabaseManager } from '../../database/DatabaseManager';
 import { MultiLayerCacheManager } from '../../caching/MultiLayerCacheManager';
@@ -34,19 +34,21 @@ export class BatchProcessor {
     averageExecutionTime: 0,
     cacheHitRate: 0,
     errorRate: 0,
-    timesSaved: 0
+    timesSaved: 0,
   };
 
   private debugMode = process.env.NODE_ENV === 'development';
   private maxConcurrentRequests = 10;
   private defaultTimeout = 5000;
 
-  constructor(options: {
-    cache?: MultiLayerCacheManager;
-    databaseManager?: DatabaseManager;
-    maxConcurrentRequests?: number;
-    defaultTimeout?: number;
-  } = {}) {
+  constructor(
+    options: {
+      cache?: MultiLayerCacheManager;
+      databaseManager?: DatabaseManager;
+      maxConcurrentRequests?: number;
+      defaultTimeout?: number;
+    } = {}
+  ) {
     this.cache = options.cache;
     this.databaseManager = options.databaseManager;
     this.maxConcurrentRequests = options.maxConcurrentRequests || 10;
@@ -58,7 +60,12 @@ export class BatchProcessor {
   private registerDefaultHandlers() {
     // System handlers
     this.registerHandler('system:get-metrics', this.getSystemMetrics.bind(this), true, 1000);
-    this.registerHandler('system:get-performance-metrics', this.getPerformanceMetrics.bind(this), true, 1000);
+    this.registerHandler(
+      'system:get-performance-metrics',
+      this.getPerformanceMetrics.bind(this),
+      true,
+      1000
+    );
     this.registerHandler('system:get-health-status', this.getHealthStatus.bind(this), true, 500);
     this.registerHandler('system:get-storage-info', this.getStorageInfo.bind(this), true, 200);
 
@@ -75,12 +82,17 @@ export class BatchProcessor {
     this.registerHandler('search:record-query', this.recordSearchQuery.bind(this), false, 100);
   }
 
-  public registerHandler(method: string, handler: (...args: any[]) => Promise<any>, cacheable = true, timeout = 5000) {
+  public registerHandler(
+    method: string,
+    handler: (...args: any[]) => Promise<any>,
+    cacheable = true,
+    timeout = 5000
+  ) {
     this.handlers.set(method, {
       method,
       handler,
       cacheable,
-      timeout
+      timeout,
     });
   }
 
@@ -98,7 +110,9 @@ export class BatchProcessor {
     let errors = 0;
 
     if (this.debugMode) {
-      console.log(`[BatchProcessor] Processing batch ${payload.batchId} with ${payload.requests.length} requests`);
+      console.log(
+        `[BatchProcessor] Processing batch ${payload.batchId} with ${payload.requests.length} requests`
+      );
     }
 
     try {
@@ -106,7 +120,7 @@ export class BatchProcessor {
       const chunks = this.chunkArray(payload.requests, this.maxConcurrentRequests);
 
       for (const chunk of chunks) {
-        const chunkPromises = chunk.map(async (request) => {
+        const chunkPromises = chunk.map(async request => {
           return this.processRequest(request);
         });
 
@@ -132,9 +146,12 @@ export class BatchProcessor {
               success: false,
               error: {
                 code: BatchError.HANDLER_NOT_FOUND,
-                message: result.reason instanceof Error ? result.reason.message : 'Request processing failed',
-                details: result.reason
-              }
+                message:
+                  result.reason instanceof Error
+                    ? result.reason.message
+                    : 'Request processing failed',
+                details: result.reason,
+              },
             });
           }
         });
@@ -151,8 +168,8 @@ export class BatchProcessor {
           totalExecutionTime: Date.now() - startTime,
           cacheHits,
           errors,
-          processed: responses.length
-        }
+          processed: responses.length,
+        },
       };
     } catch (error) {
       console.error('[BatchProcessor] Batch processing failed:', error);
@@ -170,8 +187,8 @@ export class BatchProcessor {
         success: false,
         error: {
           code: BatchError.HANDLER_NOT_FOUND,
-          message: `Handler not found for method: ${request.method}`
-        }
+          message: `Handler not found for method: ${request.method}`,
+        },
       };
     }
 
@@ -189,15 +206,19 @@ export class BatchProcessor {
             metadata: {
               cached: true,
               executionTime: Date.now() - startTime,
-              fromBatch: true
-            }
+              fromBatch: true,
+            },
           };
         }
       }
 
       // Execute the handler with timeout
       const timeoutMs = request.timeout || handler.timeout || this.defaultTimeout;
-      const result = await this.executeWithTimeout(handler.handler, request.params || [], timeoutMs);
+      const result = await this.executeWithTimeout(
+        handler.handler,
+        request.params || [],
+        timeoutMs
+      );
 
       // Cache the result if cacheable
       if (handler.cacheable && this.cache) {
@@ -212,8 +233,8 @@ export class BatchProcessor {
         metadata: {
           cached: false,
           executionTime: Date.now() - startTime,
-          fromBatch: true
-        }
+          fromBatch: true,
+        },
       };
     } catch (error) {
       console.error(`[BatchProcessor] Request ${request.id} (${request.method}) failed:`, error);
@@ -224,13 +245,13 @@ export class BatchProcessor {
         error: {
           code: 'EXECUTION_ERROR',
           message: error instanceof Error ? error.message : 'Unknown error',
-          details: error
+          details: error,
         },
         metadata: {
           cached: false,
           executionTime: Date.now() - startTime,
-          fromBatch: true
-        }
+          fromBatch: true,
+        },
       };
     }
   }
@@ -244,7 +265,7 @@ export class BatchProcessor {
       handler(...params),
       new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs);
-      })
+      }),
     ]);
   }
 
@@ -261,19 +282,31 @@ export class BatchProcessor {
     return chunks;
   }
 
-  private updateStats(payload: BatchRequestPayload, executionTime: number, cacheHits: number, errors: number) {
+  private updateStats(
+    payload: BatchRequestPayload,
+    executionTime: number,
+    cacheHits: number,
+    errors: number
+  ) {
     this.stats.totalBatches++;
     this.stats.totalRequests += payload.requests.length;
     this.stats.averageBatchSize = this.stats.totalRequests / this.stats.totalBatches;
     this.stats.averageExecutionTime =
-      (this.stats.averageExecutionTime * (this.stats.totalBatches - 1) + executionTime) / this.stats.totalBatches;
+      (this.stats.averageExecutionTime * (this.stats.totalBatches - 1) + executionTime) /
+      this.stats.totalBatches;
     this.stats.cacheHitRate =
-      (this.stats.cacheHitRate * (this.stats.totalBatches - 1) + cacheHits / payload.requests.length) / this.stats.totalBatches;
+      (this.stats.cacheHitRate * (this.stats.totalBatches - 1) +
+        cacheHits / payload.requests.length) /
+      this.stats.totalBatches;
     this.stats.errorRate =
-      (this.stats.errorRate * (this.stats.totalBatches - 1) + errors / payload.requests.length) / this.stats.totalBatches;
+      (this.stats.errorRate * (this.stats.totalBatches - 1) + errors / payload.requests.length) /
+      this.stats.totalBatches;
 
     // Estimate time saved (assuming sequential execution would take sum of all timeouts)
-    const estimatedSequentialTime = payload.requests.reduce((sum, req) => sum + (req.timeout || 1000), 0);
+    const estimatedSequentialTime = payload.requests.reduce(
+      (sum, req) => sum + (req.timeout || 1000),
+      0
+    );
     const timeSaved = Math.max(0, estimatedSequentialTime - executionTime);
     this.stats.timesSaved += timeSaved;
   }
@@ -289,7 +322,7 @@ export class BatchProcessor {
       searches_today: await this.databaseManager.getSearchCountToday(),
       avg_response_time: await this.databaseManager.getAverageResponseTime(),
       cache_hit_rate: this.cache ? await this.cache.getHitRate() : 0,
-      storage_used_mb: await this.databaseManager.getDatabaseSize()
+      storage_used_mb: await this.databaseManager.getDatabaseSize(),
     };
   }
 
@@ -302,11 +335,11 @@ export class BatchProcessor {
         heapUsed: memUsage.heapUsed,
         heapTotal: memUsage.heapTotal,
         external: memUsage.external,
-        rss: memUsage.rss
+        rss: memUsage.rss,
       },
       uptime,
       eventLoopDelay: 0, // Would need to implement this
-      activeRequests: 0 // Would need to track this
+      activeRequests: 0, // Would need to track this
     };
   }
 
@@ -320,7 +353,7 @@ export class BatchProcessor {
       cache: cacheHealthy,
       connections: true,
       performance: true,
-      issues: []
+      issues: [],
     };
   }
 
@@ -332,7 +365,7 @@ export class BatchProcessor {
     return {
       size: await this.databaseManager.getDatabaseSize(),
       available: 1000, // Would need OS-specific implementation
-      usage_percent: 10 // Mock value
+      usage_percent: 10, // Mock value
     };
   }
 
@@ -388,7 +421,7 @@ export class BatchProcessor {
     // Mock implementation - would use actual suggestion logic
     return [
       { suggestion: `${query} error`, category: 'error', score: 0.9 },
-      { suggestion: `${query} solution`, category: 'solution', score: 0.8 }
+      { suggestion: `${query} solution`, category: 'solution', score: 0.8 },
     ].slice(0, limit);
   }
 
@@ -413,7 +446,7 @@ export class BatchProcessor {
       averageExecutionTime: 0,
       cacheHitRate: 0,
       errorRate: 0,
-      timesSaved: 0
+      timesSaved: 0,
     };
   }
 }

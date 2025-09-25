@@ -44,12 +44,12 @@ export interface KBEntryUpdate {
 }
 
 /** Knowledge Base Categories - Mainframe specific */
-export type KBCategory = 
-  | 'JCL' 
-  | 'VSAM' 
-  | 'DB2' 
-  | 'Batch' 
-  | 'Functional' 
+export type KBCategory =
+  | 'JCL'
+  | 'VSAM'
+  | 'DB2'
+  | 'Batch'
+  | 'Functional'
   | 'IMS'
   | 'CICS'
   | 'System'
@@ -221,16 +221,16 @@ export interface ElectronAPI {
   updateKBEntry: (id: string, entry: Partial<KBEntry>) => Promise<void>;
   deleteKBEntry: (id: string) => Promise<void>;
   rateEntry: (id: string, successful: boolean, comment?: string) => Promise<void>;
-  
+
   // Search operations
   searchLocal: (query: string, options?: SearchQuery) => Promise<SearchResult[]>;
   searchWithAI: (query: string, options?: SearchQuery) => Promise<SearchResult[]>;
-  
+
   // System operations
   getMetrics: () => Promise<DatabaseMetrics>;
   exportKB: (path: string) => Promise<void>;
   importKB: (path: string) => Promise<number>;
-  
+
   // Application lifecycle
   openDevTools: () => void;
   getAppVersion: () => Promise<string>;
@@ -357,7 +357,7 @@ export interface FilterConfig {
 // ===========================
 
 /** Application Error Types */
-export type AppErrorType = 
+export type AppErrorType =
   | 'DATABASE_ERROR'
   | 'AI_SERVICE_ERROR'
   | 'NETWORK_ERROR'
@@ -426,7 +426,7 @@ export {
   isValidIncident,
   isValidKnowledge,
   mapRowToUnifiedEntry,
-  mapUnifiedEntryToRow
+  mapUnifiedEntryToRow,
 } from './unified';
 
 // ===========================

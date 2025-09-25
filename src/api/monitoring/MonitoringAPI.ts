@@ -4,8 +4,8 @@
  */
 
 import { Request, Response } from 'express';
-import { metricsCollector } from '../../services/metrics/MetricsCollector';
-import { PerformanceReportGenerator } from '../../services/metrics/PerformanceReportGenerator';
+import { metricsCollector } from '@/services/metrics/MetricsCollector';
+import { PerformanceReportGenerator } from '@/services/metrics/PerformanceReportGenerator';
 
 export class MonitoringAPI {
   private reportGenerator: PerformanceReportGenerator;
@@ -23,13 +23,13 @@ export class MonitoringAPI {
       res.json({
         success: true,
         data: metrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve metrics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -43,13 +43,13 @@ export class MonitoringAPI {
       res.json({
         success: true,
         data: queryMetrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve query metrics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -63,13 +63,13 @@ export class MonitoringAPI {
       res.json({
         success: true,
         data: cacheMetrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve cache metrics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -83,13 +83,13 @@ export class MonitoringAPI {
       res.json({
         success: true,
         data: responseMetrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve response time metrics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -104,19 +104,19 @@ export class MonitoringAPI {
       const slaMetrics = metricsCollector.getSLAMetrics({
         responseTime: Number(responseTime),
         errorRate: Number(errorRate),
-        throughput: Number(throughput)
+        throughput: Number(throughput),
       });
 
       res.json({
         success: true,
         data: slaMetrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve SLA metrics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -131,7 +131,7 @@ export class MonitoringAPI {
       if (!query || duration === undefined || success === undefined) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: query, duration, success'
+          error: 'Missing required fields: query, duration, success',
         });
       }
 
@@ -139,13 +139,13 @@ export class MonitoringAPI {
 
       res.json({
         success: true,
-        message: 'Query metric recorded successfully'
+        message: 'Query metric recorded successfully',
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to record query metric',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -160,7 +160,7 @@ export class MonitoringAPI {
       if (!key || hit === undefined) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: key, hit'
+          error: 'Missing required fields: key, hit',
         });
       }
 
@@ -168,13 +168,13 @@ export class MonitoringAPI {
 
       res.json({
         success: true,
-        message: 'Cache event recorded successfully'
+        message: 'Cache event recorded successfully',
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to record cache event',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -189,7 +189,7 @@ export class MonitoringAPI {
       if (!endpoint || !method || duration === undefined || !statusCode) {
         return res.status(400).json({
           success: false,
-          error: 'Missing required fields: endpoint, method, duration, statusCode'
+          error: 'Missing required fields: endpoint, method, duration, statusCode',
         });
       }
 
@@ -197,13 +197,13 @@ export class MonitoringAPI {
 
       res.json({
         success: true,
-        message: 'Response time metric recorded successfully'
+        message: 'Response time metric recorded successfully',
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to record response time metric',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -225,7 +225,7 @@ export class MonitoringAPI {
         } catch {
           return res.status(400).json({
             success: false,
-            error: 'Invalid customPeriod format'
+            error: 'Invalid customPeriod format',
           });
         }
       }
@@ -235,7 +235,7 @@ export class MonitoringAPI {
       if (exportFormat === 'json') {
         res.json({
           success: true,
-          data: report
+          data: report,
         });
       } else {
         const exportedReport = await this.reportGenerator.exportReport(report, exportFormat);
@@ -243,18 +243,21 @@ export class MonitoringAPI {
         const contentTypes = {
           csv: 'text/csv',
           html: 'text/html',
-          pdf: 'application/pdf'
+          pdf: 'application/pdf',
         };
 
         res.setHeader('Content-Type', contentTypes[exportFormat]);
-        res.setHeader('Content-Disposition', `attachment; filename="performance-report-${report.id}.${exportFormat}"`);
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="performance-report-${report.id}.${exportFormat}"`
+        );
         res.send(exportedReport);
       }
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to generate report',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -273,30 +276,34 @@ export class MonitoringAPI {
           responseTime: {
             status: currentMetrics.responseTime.p95 <= 500 ? 'healthy' : 'unhealthy',
             value: `${currentMetrics.responseTime.p95.toFixed(0)}ms`,
-            threshold: '500ms'
+            threshold: '500ms',
           },
           errorRate: {
             status: currentMetrics.query.errorRate <= 0.01 ? 'healthy' : 'unhealthy',
             value: `${(currentMetrics.query.errorRate * 100).toFixed(2)}%`,
-            threshold: '1%'
+            threshold: '1%',
           },
           cacheHitRate: {
             status: currentMetrics.cache.hitRate >= 0.8 ? 'healthy' : 'degraded',
             value: `${(currentMetrics.cache.hitRate * 100).toFixed(1)}%`,
-            threshold: '80%'
+            threshold: '80%',
           },
           availability: {
             status: currentMetrics.sla.availability >= 0.99 ? 'healthy' : 'unhealthy',
             value: `${(currentMetrics.sla.availability * 100).toFixed(2)}%`,
-            threshold: '99%'
-          }
+            threshold: '99%',
+          },
         },
-        violations: currentMetrics.sla.violations
+        violations: currentMetrics.sla.violations,
       };
 
       // Determine overall status
-      const unhealthyChecks = Object.values(health.checks).filter(check => check.status === 'unhealthy');
-      const degradedChecks = Object.values(health.checks).filter(check => check.status === 'degraded');
+      const unhealthyChecks = Object.values(health.checks).filter(
+        check => check.status === 'unhealthy'
+      );
+      const degradedChecks = Object.values(health.checks).filter(
+        check => check.status === 'degraded'
+      );
 
       if (unhealthyChecks.length > 0) {
         health.status = 'unhealthy';
@@ -306,13 +313,13 @@ export class MonitoringAPI {
 
       res.json({
         success: true,
-        data: health
+        data: health,
       });
     } catch (error) {
       res.status(503).json({
         success: false,
         error: 'Health check failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };
@@ -326,26 +333,26 @@ export class MonitoringAPI {
         metricsCollected: {
           total: 0, // Would need to track this
           lastHour: 0,
-          lastDay: 0
+          lastDay: 0,
         },
         activeSubscriptions: 0, // Would track WebSocket connections
         reportGeneration: {
           totalReports: 0,
-          lastGenerated: null
+          lastGenerated: null,
         },
         systemUptime: process.uptime(),
-        memoryUsage: process.memoryUsage()
+        memoryUsage: process.memoryUsage(),
       };
 
       res.json({
         success: true,
-        data: stats
+        data: stats,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve monitoring statistics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   };

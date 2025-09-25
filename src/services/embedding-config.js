@@ -23,21 +23,21 @@ class EmbeddingConfig {
             name: 'text-embedding-ada-002',
             dimensions: 1536,
             maxTokens: 8191,
-            cost: 0.0001 // per 1K tokens
+            cost: 0.0001, // per 1K tokens
           },
           '3-small': {
             name: 'text-embedding-3-small',
             dimensions: 1536,
             maxTokens: 8191,
-            cost: 0.00002
+            cost: 0.00002,
           },
           '3-large': {
             name: 'text-embedding-3-large',
             dimensions: 3072,
             maxTokens: 8191,
-            cost: 0.00013
-          }
-        }
+            cost: 0.00013,
+          },
+        },
       },
 
       // Google Gemini Configuration
@@ -48,9 +48,9 @@ class EmbeddingConfig {
             name: 'models/embedding-001',
             dimensions: 768,
             maxTokens: 2048,
-            cost: 0.00001 // Estimated
-          }
-        }
+            cost: 0.00001, // Estimated
+          },
+        },
       },
 
       // Azure OpenAI Configuration
@@ -64,9 +64,9 @@ class EmbeddingConfig {
             name: 'text-embedding-ada-002',
             dimensions: 1536,
             maxTokens: 8191,
-            cost: 0.0001
-          }
-        }
+            cost: 0.0001,
+          },
+        },
       },
 
       // Database Schema Compatibility
@@ -74,7 +74,7 @@ class EmbeddingConfig {
         // Current PostgreSQL schema supports 1536 dimensions
         supported: [1536],
         // Would need schema change for these
-        needsSchemaUpdate: [768, 3072]
+        needsSchemaUpdate: [768, 3072],
       },
 
       // Performance settings
@@ -82,8 +82,8 @@ class EmbeddingConfig {
         cacheTimeout: 24 * 60 * 60 * 1000, // 24 hours
         batchSize: 10,
         rateLimitDelay: 1000, // 1 second between batches
-        maxRetries: 3
-      }
+        maxRetries: 3,
+      },
     };
   }
 
@@ -147,7 +147,7 @@ class EmbeddingConfig {
             name: modelInfo.name,
             dimensions: modelInfo.dimensions,
             cost: modelInfo.cost,
-            maxTokens: modelInfo.maxTokens
+            maxTokens: modelInfo.maxTokens,
           });
         }
       }
@@ -205,7 +205,7 @@ class EmbeddingConfig {
       errors,
       warnings,
       configured,
-      compatible: compatible.length
+      compatible: compatible.length,
     };
   }
 

@@ -35,7 +35,7 @@ export class QuerySuggestionEngine {
       children: new Map(),
       isEndOfWord: false,
       frequency: 0,
-      suggestions: []
+      suggestions: [],
     };
   }
 
@@ -129,7 +129,7 @@ export class QuerySuggestionEngine {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash);
@@ -149,7 +149,7 @@ export class QuerySuggestionEngine {
           pattern,
           frequency: 0,
           success_rate: 0.8, // Mock success rate
-          context: words
+          context: words,
         });
       }
 
@@ -174,8 +174,8 @@ export class QuerySuggestionEngine {
         learningRate: 0.001,
         batchSize: 32,
         epochs: 100,
-        hiddenLayers: [128, 64, 32]
-      }
+        hiddenLayers: [128, 64, 32],
+      },
     };
   }
 
@@ -187,11 +187,11 @@ export class QuerySuggestionEngine {
       recall: 0.88,
       f1Score: 0.85,
       featureImportance: {
-        'query_prefix': 0.35,
-        'user_context': 0.25,
-        'popularity': 0.20,
-        'semantic_similarity': 0.20
-      }
+        query_prefix: 0.35,
+        user_context: 0.25,
+        popularity: 0.2,
+        semantic_similarity: 0.2,
+      },
     };
   }
 
@@ -216,7 +216,11 @@ export class QuerySuggestionEngine {
 
     // Get personalized suggestions if user context available
     if (userId) {
-      const personalizedSuggestions = this.getPersonalizedSuggestions(partialQuery, userId, maxSuggestions);
+      const personalizedSuggestions = this.getPersonalizedSuggestions(
+        partialQuery,
+        userId,
+        maxSuggestions
+      );
       suggestions.push(...personalizedSuggestions);
     }
 
@@ -256,7 +260,7 @@ export class QuerySuggestionEngine {
         query: currentQuery,
         confidence: Math.min(0.9, node.frequency / 100),
         source: 'historical',
-        metadata: { frequency: node.frequency, type: 'completion' }
+        metadata: { frequency: node.frequency, type: 'completion' },
       });
     }
 
@@ -283,7 +287,7 @@ export class QuerySuggestionEngine {
               query: suggestion,
               confidence: Math.min(0.8, frequency / 50),
               source: 'ml',
-              metadata: { type: 'ngram', frequency }
+              metadata: { type: 'ngram', frequency },
             });
           }
         });
@@ -292,7 +296,10 @@ export class QuerySuggestionEngine {
     return suggestions;
   }
 
-  private async getSemanticSuggestions(partialQuery: string, maxSuggestions: number): Promise<QuerySuggestion[]> {
+  private async getSemanticSuggestions(
+    partialQuery: string,
+    maxSuggestions: number
+  ): Promise<QuerySuggestion[]> {
     const suggestions: QuerySuggestion[] = [];
     const queryEmbedding = this.generateSimpleEmbedding(partialQuery);
 
@@ -316,7 +323,7 @@ export class QuerySuggestionEngine {
           query,
           confidence: similarity * 0.9,
           source: 'ml',
-          metadata: { type: 'semantic', similarity }
+          metadata: { type: 'semantic', similarity },
         });
       });
 
@@ -331,7 +338,11 @@ export class QuerySuggestionEngine {
     return dotProduct / (magnitudeA * magnitudeB);
   }
 
-  private getPersonalizedSuggestions(partialQuery: string, userId: string, maxSuggestions: number): QuerySuggestion[] {
+  private getPersonalizedSuggestions(
+    partialQuery: string,
+    userId: string,
+    maxSuggestions: number
+  ): QuerySuggestion[] {
     const suggestions: QuerySuggestion[] = [];
     const userContext = this.userContexts.get(userId) || [];
 
@@ -344,14 +355,17 @@ export class QuerySuggestionEngine {
           query,
           confidence: 0.75,
           source: 'ml',
-          metadata: { type: 'personalized', userId }
+          metadata: { type: 'personalized', userId },
         });
       });
 
     return suggestions;
   }
 
-  private rankAndDeduplicate(suggestions: QuerySuggestion[], maxSuggestions: number): QuerySuggestion[] {
+  private rankAndDeduplicate(
+    suggestions: QuerySuggestion[],
+    maxSuggestions: number
+  ): QuerySuggestion[] {
     // Remove duplicates
     const uniqueSuggestions = new Map<string, QuerySuggestion>();
 
@@ -398,7 +412,7 @@ export class QuerySuggestionEngine {
       ngramModel: Array.from(this.ngramModel.entries()),
       queryEmbeddings: Array.from(this.queryEmbeddings.entries()),
       popularQueries: this.popularQueries,
-      userContexts: Array.from(this.userContexts.entries())
+      userContexts: Array.from(this.userContexts.entries()),
     };
 
     // In real implementation, save to file system or database

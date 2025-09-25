@@ -1,6 +1,6 @@
 /**
  * IPC Main Process Setup
- * 
+ *
  * Main process IPC initialization with comprehensive handler registration,
  * security integration, performance monitoring, and error handling.
  */
@@ -13,13 +13,13 @@ import { SearchHandler } from './handlers/SearchHandler';
 import { MetricsHandler } from './handlers/MetricsHandler';
 import { DatabaseManager } from '../../database/DatabaseManager';
 import { MultiLayerCacheManager } from '../../caching/MultiLayerCacheManager';
-import { 
-  IPCChannel, 
-  BaseIPCRequest, 
-  BaseIPCResponse, 
+import {
+  IPCChannel,
+  BaseIPCRequest,
+  BaseIPCResponse,
   IPCErrorCode,
   IPCEvents,
-  IPCEventEmitter
+  IPCEventEmitter,
 } from '../../types/ipc';
 import { AppError } from '../../backend/core/errors/AppError';
 import { EventEmitter } from 'events';
@@ -37,7 +37,7 @@ interface IPCMainProcessConfig {
 
 /**
  * Main IPC Process Manager
- * 
+ *
  * Coordinates all IPC operations with full security, monitoring, and error handling.
  */
 export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
@@ -48,7 +48,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
   private knowledgeBaseHandler: KnowledgeBaseHandler;
   private searchHandler: SearchHandler;
   private metricsHandler: MetricsHandler;
-  
+
   private isInitialized = false;
   private shutdownInProgress = false;
   private activeRequests = new Map<string, { startTime: number; channel: string }>();
@@ -56,7 +56,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
 
   constructor(config: IPCMainProcessConfig) {
     super();
-    
+
     this.config = {
       databasePath: config.databasePath,
       enablePerformanceMonitoring: config.enablePerformanceMonitoring ?? true,
@@ -64,7 +64,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
       enableRequestLogging: config.enableRequestLogging ?? false,
       geminiApiKey: config.geminiApiKey,
       maxConcurrentRequests: config.maxConcurrentRequests ?? 100,
-      requestTimeoutMs: config.requestTimeoutMs ?? 30000
+      requestTimeoutMs: config.requestTimeoutMs ?? 30000,
     };
 
     this.setupErrorHandling();
@@ -83,13 +83,13 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
 
       // Initialize core components
       await this.initializeCore();
-      
+
       // Initialize handlers
       await this.initializeHandlers();
-      
+
       // Register IPC channels
       this.registerIPCChannels();
-      
+
       // Start monitoring
       if (this.config.enablePerformanceMonitoring) {
         this.startPerformanceMonitoring();
@@ -103,7 +103,6 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
 
       console.log('✅ IPC Main Process initialized successfully');
       this.logSystemInfo();
-
     } catch (error) {
       console.error('❌ Failed to initialize IPC Main Process:', error);
       await this.cleanup();
@@ -150,7 +149,6 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
       this.emit('shutdown');
 
       console.log('✅ IPC Main Process shut down successfully');
-
     } catch (error) {
       console.error('❌ Error during IPC shutdown:', error);
       throw error;
@@ -175,7 +173,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
         totalHandlers: 0,
         uptime: 0,
         performance: null,
-        health: null
+        health: null,
       };
     }
 
@@ -188,7 +186,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
       totalHandlers: realTimeMetrics.totalHandlers,
       uptime: process.uptime(),
       performance: realTimeMetrics,
-      health: performanceReport
+      health: performanceReport,
     };
   }
 
@@ -205,13 +203,13 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
       backup: {
         enabled: true,
         intervalHours: 6,
-        retentionDays: 30
+        retentionDays: 30,
       },
       queryCache: {
         enabled: true,
         maxSize: 1000,
-        ttlMs: 300000
-      }
+        ttlMs: 300000,
+      },
     });
 
     await this.databaseManager.initialize();
@@ -220,14 +218,14 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     this.cacheManager = new MultiLayerCacheManager({
       memory: {
         maxSize: 100 * 1024 * 1024, // 100MB
-        maxAge: 30 * 60 * 1000 // 30 minutes
+        maxAge: 30 * 60 * 1000, // 30 minutes
       },
       persistent: {
         enabled: true,
         path: path.join(path.dirname(this.config.databasePath), 'cache'),
         maxSize: 500 * 1024 * 1024, // 500MB
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      }
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      },
     });
 
     await this.cacheManager.initialize();
@@ -240,22 +238,19 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
       enableSchemaValidation: this.config.enableSecurityValidation,
       logSecurityEvents: this.config.enableRequestLogging,
       maxRequestSize: 10 * 1024 * 1024, // 10MB
-      requestTimeoutMs: this.config.requestTimeoutMs
+      requestTimeoutMs: this.config.requestTimeoutMs,
     });
 
     // Initialize handler registry
     this.registry = new IPCHandlerRegistry(this.securityManager);
-    
+
     // Connect registry events
     this.setupRegistryEvents();
   }
 
   private async initializeHandlers(): Promise<void> {
     // Initialize Knowledge Base handler
-    this.knowledgeBaseHandler = new KnowledgeBaseHandler(
-      this.databaseManager,
-      this.cacheManager
-    );
+    this.knowledgeBaseHandler = new KnowledgeBaseHandler(this.databaseManager, this.cacheManager);
 
     // Initialize Search handler
     this.searchHandler = new SearchHandler(
@@ -279,120 +274,80 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     console.log('📡 Registering IPC channels...');
 
     // Knowledge Base channels
-    this.registry.register(
-      'kb:search:local',
-      this.knowledgeBaseHandler.handleLocalSearch,
-      {
-        cacheable: true,
-        cacheTTL: 300000, // 5 minutes
-        rateLimitConfig: { requests: 100, windowMs: 60000 },
-        trackMetrics: true,
-        logRequests: this.config.enableRequestLogging
-      }
-    );
+    this.registry.register('kb:search:local', this.knowledgeBaseHandler.handleLocalSearch, {
+      cacheable: true,
+      cacheTTL: 300000, // 5 minutes
+      rateLimitConfig: { requests: 100, windowMs: 60000 },
+      trackMetrics: true,
+      logRequests: this.config.enableRequestLogging,
+    });
 
-    this.registry.register(
-      'kb:entry:create',
-      this.knowledgeBaseHandler.handleEntryCreate,
-      {
-        validateInput: true,
-        sanitizeInput: true,
-        rateLimitConfig: { requests: 10, windowMs: 60000 },
-        trackMetrics: true,
-        alertOnErrors: true
-      }
-    );
+    this.registry.register('kb:entry:create', this.knowledgeBaseHandler.handleEntryCreate, {
+      validateInput: true,
+      sanitizeInput: true,
+      rateLimitConfig: { requests: 10, windowMs: 60000 },
+      trackMetrics: true,
+      alertOnErrors: true,
+    });
 
-    this.registry.register(
-      'kb:entry:get',
-      this.knowledgeBaseHandler.handleEntryGet,
-      {
-        cacheable: true,
-        cacheTTL: 600000, // 10 minutes
-        rateLimitConfig: { requests: 200, windowMs: 60000 },
-        trackMetrics: true
-      }
-    );
+    this.registry.register('kb:entry:get', this.knowledgeBaseHandler.handleEntryGet, {
+      cacheable: true,
+      cacheTTL: 600000, // 10 minutes
+      rateLimitConfig: { requests: 200, windowMs: 60000 },
+      trackMetrics: true,
+    });
 
-    this.registry.register(
-      'kb:entry:update',
-      this.knowledgeBaseHandler.handleEntryUpdate,
-      {
-        validateInput: true,
-        sanitizeInput: true,
-        rateLimitConfig: { requests: 20, windowMs: 60000 },
-        trackMetrics: true,
-        alertOnErrors: true
-      }
-    );
+    this.registry.register('kb:entry:update', this.knowledgeBaseHandler.handleEntryUpdate, {
+      validateInput: true,
+      sanitizeInput: true,
+      rateLimitConfig: { requests: 20, windowMs: 60000 },
+      trackMetrics: true,
+      alertOnErrors: true,
+    });
 
-    this.registry.register(
-      'kb:entry:delete',
-      this.knowledgeBaseHandler.handleEntryDelete,
-      {
-        requireAuth: true,
-        rateLimitConfig: { requests: 5, windowMs: 60000 },
-        trackMetrics: true,
-        alertOnErrors: true
-      }
-    );
+    this.registry.register('kb:entry:delete', this.knowledgeBaseHandler.handleEntryDelete, {
+      requireAuth: true,
+      rateLimitConfig: { requests: 5, windowMs: 60000 },
+      trackMetrics: true,
+      alertOnErrors: true,
+    });
 
-    this.registry.register(
-      'kb:feedback:rate',
-      this.knowledgeBaseHandler.handleFeedback,
-      {
-        rateLimitConfig: { requests: 50, windowMs: 60000 },
-        trackMetrics: true
-      }
-    );
+    this.registry.register('kb:feedback:rate', this.knowledgeBaseHandler.handleFeedback, {
+      rateLimitConfig: { requests: 50, windowMs: 60000 },
+      trackMetrics: true,
+    });
 
     // Search channels
-    this.registry.register(
-      'kb:search:ai',
-      this.searchHandler.handleAISearch,
-      {
-        cacheable: true,
-        cacheTTL: 600000, // 10 minutes
-        rateLimitConfig: { requests: 30, windowMs: 60000 },
-        trackMetrics: true,
-        logRequests: this.config.enableRequestLogging,
-        alertOnErrors: true
-      }
-    );
+    this.registry.register('kb:search:ai', this.searchHandler.handleAISearch, {
+      cacheable: true,
+      cacheTTL: 600000, // 10 minutes
+      rateLimitConfig: { requests: 30, windowMs: 60000 },
+      trackMetrics: true,
+      logRequests: this.config.enableRequestLogging,
+      alertOnErrors: true,
+    });
 
     // System channels
-    this.registry.register(
-      'system:metrics:get',
-      this.metricsHandler.handleSystemMetrics,
-      {
-        cacheable: true,
-        cacheTTL: 30000, // 30 seconds
-        rateLimitConfig: { requests: 60, windowMs: 60000 },
-        trackMetrics: true
-      }
-    );
+    this.registry.register('system:metrics:get', this.metricsHandler.handleSystemMetrics, {
+      cacheable: true,
+      cacheTTL: 30000, // 30 seconds
+      rateLimitConfig: { requests: 60, windowMs: 60000 },
+      trackMetrics: true,
+    });
 
-    this.registry.register(
-      'system:database:status',
-      this.metricsHandler.handleDatabaseStatus,
-      {
-        cacheable: true,
-        cacheTTL: 60000, // 1 minute
-        rateLimitConfig: { requests: 30, windowMs: 60000 },
-        trackMetrics: true
-      }
-    );
+    this.registry.register('system:database:status', this.metricsHandler.handleDatabaseStatus, {
+      cacheable: true,
+      cacheTTL: 60000, // 1 minute
+      rateLimitConfig: { requests: 30, windowMs: 60000 },
+      trackMetrics: true,
+    });
 
-    this.registry.register(
-      'system:health:check',
-      this.metricsHandler.handleHealthCheck,
-      {
-        cacheable: true,
-        cacheTTL: 30000, // 30 seconds
-        rateLimitConfig: { requests: 30, windowMs: 60000 },
-        trackMetrics: true
-      }
-    );
+    this.registry.register('system:health:check', this.metricsHandler.handleHealthCheck, {
+      cacheable: true,
+      cacheTTL: 30000, // 30 seconds
+      rateLimitConfig: { requests: 30, windowMs: 60000 },
+      trackMetrics: true,
+    });
 
     // Register the actual IPC handlers
     this.setupIPCListeners();
@@ -404,29 +359,35 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     // Main IPC message handler
     ipcMain.handle('ipc-request', async (event, channel: IPCChannel, request: BaseIPCRequest) => {
       return await this.handleIPCRequest(channel, request, {
-        webContentsId: event.sender.id
+        webContentsId: event.sender.id,
       });
     });
 
     // Batch request handler
-    ipcMain.handle('ipc-batch-request', async (event, requests: Array<{ channel: IPCChannel; request: BaseIPCRequest }>) => {
-      const results = await Promise.allSettled(
-        requests.map(({ channel, request }) => 
-          this.handleIPCRequest(channel, request, { webContentsId: event.sender.id })
-        )
-      );
-      
-      return results.map((result, index) => ({
-        requestId: requests[index].request.requestId,
-        success: result.status === 'fulfilled',
-        data: result.status === 'fulfilled' ? result.value : undefined,
-        error: result.status === 'rejected' ? { 
-          code: IPCErrorCode.HANDLER_ERROR,
-          message: String(result.reason),
-          severity: 'medium'
-        } : undefined
-      }));
-    });
+    ipcMain.handle(
+      'ipc-batch-request',
+      async (event, requests: Array<{ channel: IPCChannel; request: BaseIPCRequest }>) => {
+        const results = await Promise.allSettled(
+          requests.map(({ channel, request }) =>
+            this.handleIPCRequest(channel, request, { webContentsId: event.sender.id })
+          )
+        );
+
+        return results.map((result, index) => ({
+          requestId: requests[index].request.requestId,
+          success: result.status === 'fulfilled',
+          data: result.status === 'fulfilled' ? result.value : undefined,
+          error:
+            result.status === 'rejected'
+              ? {
+                  code: IPCErrorCode.HANDLER_ERROR,
+                  message: String(result.reason),
+                  severity: 'medium',
+                }
+              : undefined,
+        }));
+      }
+    );
 
     // Stream request handler
     ipcMain.handle('ipc-stream-request', async (event, channel: IPCChannel, request: any) => {
@@ -437,7 +398,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
   }
 
   private async handleIPCRequest(
-    channel: IPCChannel, 
+    channel: IPCChannel,
     request: BaseIPCRequest,
     context?: { webContentsId?: number; userId?: string }
   ): Promise<BaseIPCResponse> {
@@ -462,7 +423,7 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
       const response = await this.registry.execute(channel, request, {
         userId: context?.userId,
         sessionId: `session_${context?.webContentsId || 'unknown'}`,
-        clientInfo: { webContentsId: context?.webContentsId }
+        clientInfo: { webContentsId: context?.webContentsId },
       });
 
       // Log successful request
@@ -470,15 +431,14 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
         console.log(`📥 IPC Request completed [${channel}]:`, {
           requestId,
           duration: Date.now() - startTime,
-          success: response.success
+          success: response.success,
         });
       }
 
       return response;
-
     } catch (error) {
       console.error(`❌ IPC Request failed [${channel}]:`, error);
-      
+
       return this.createErrorResponse(
         requestId,
         startTime,
@@ -486,7 +446,6 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
         `Request failed: ${error instanceof Error ? error.message : String(error)}`,
         { originalError: error }
       );
-
     } finally {
       this.activeRequests.delete(requestId);
     }
@@ -494,32 +453,32 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
 
   private setupRegistryEvents(): void {
     // Forward registry events
-    this.registry.on('request:start', (data) => this.emit('request:start', data));
-    this.registry.on('request:complete', (data) => this.emit('request:complete', data));
-    this.registry.on('error', (data) => this.emit('error', data));
-    this.registry.on('cache:hit', (data) => this.emit('cache:hit', data));
-    this.registry.on('cache:miss', (data) => this.emit('cache:miss', data));
-    this.registry.on('metrics:updated', (data) => this.emit('metrics:updated', data));
+    this.registry.on('request:start', data => this.emit('request:start', data));
+    this.registry.on('request:complete', data => this.emit('request:complete', data));
+    this.registry.on('error', data => this.emit('error', data));
+    this.registry.on('cache:hit', data => this.emit('cache:hit', data));
+    this.registry.on('cache:miss', data => this.emit('cache:miss', data));
+    this.registry.on('metrics:updated', data => this.emit('metrics:updated', data));
 
     // Handle registry errors
-    this.registry.on('error', (errorData) => {
+    this.registry.on('error', errorData => {
       console.error('Registry error:', errorData);
-      
+
       // Emit to main application for handling
       this.emit('ipc-error', {
         timestamp: Date.now(),
         channel: errorData.channel,
-        error: errorData.error
+        error: errorData.error,
       });
     });
   }
 
   private setupLifecycleHandlers(): void {
     // Handle app quit
-    app.on('before-quit', async (event) => {
+    app.on('before-quit', async event => {
       if (!this.shutdownInProgress && this.isInitialized) {
         event.preventDefault();
-        
+
         try {
           await this.shutdown();
           app.quit();
@@ -539,17 +498,17 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     });
 
     // Handle application errors
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       console.error('Uncaught exception in IPC main process:', error);
       this.emit('error', {
         error: {
           code: IPCErrorCode.UNHANDLED_REJECTION,
           message: error.message,
           details: { stack: error.stack },
-          severity: 'critical'
+          severity: 'critical',
         },
         channel: 'system',
-        requestId: 'uncaught-exception'
+        requestId: 'uncaught-exception',
       });
     });
 
@@ -560,16 +519,16 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
           code: IPCErrorCode.UNHANDLED_REJECTION,
           message: String(reason),
           details: { promise },
-          severity: 'critical'
+          severity: 'critical',
         },
         channel: 'system',
-        requestId: 'unhandled-rejection'
+        requestId: 'unhandled-rejection',
       });
     });
   }
 
   private setupErrorHandling(): void {
-    this.on('error', (errorData) => {
+    this.on('error', errorData => {
       // Log critical errors
       if (errorData.error.severity === 'critical') {
         console.error('🚨 Critical IPC Error:', errorData);
@@ -581,36 +540,35 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     // Monitor system performance every 60 seconds
     setInterval(() => {
       if (!this.isInitialized) return;
-      
+
       const metrics = this.registry.getRealTimeMetrics();
-      
+
       // Emit performance metrics
       this.emit('performance-update', {
         timestamp: Date.now(),
         activeRequests: this.activeRequests.size,
-        systemMetrics: metrics
+        systemMetrics: metrics,
       });
-      
+
       // Check for performance issues
       if (metrics.errorRate > 0.1) {
         console.warn(`⚠️ High IPC error rate: ${(metrics.errorRate * 100).toFixed(1)}%`);
       }
-      
+
       if (metrics.averageResponseTime > 5000) {
         console.warn(`⚠️ Slow IPC response time: ${metrics.averageResponseTime}ms`);
       }
-      
     }, 60000);
   }
 
   private async waitForActiveRequests(timeoutMs: number): Promise<void> {
     const startTime = Date.now();
-    
-    while (this.activeRequests.size > 0 && (Date.now() - startTime) < timeoutMs) {
+
+    while (this.activeRequests.size > 0 && Date.now() - startTime < timeoutMs) {
       console.log(`⏳ Waiting for ${this.activeRequests.size} active requests...`);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
+
     if (this.activeRequests.size > 0) {
       console.warn(`⚠️ Forcing shutdown with ${this.activeRequests.size} active requests`);
     }
@@ -620,13 +578,12 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     try {
       // Clear active requests
       this.activeRequests.clear();
-      
+
       // Remove all listeners
       this.removeAllListeners();
-      
+
       // Remove IPC listeners
       ipcMain.removeAllListeners();
-      
     } catch (error) {
       console.error('Error during IPC cleanup:', error);
     }
@@ -636,10 +593,14 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
     console.log('📊 IPC System Information:');
     console.log(`   • Database: ${this.config.databasePath}`);
     console.log(`   • Security: ${this.config.enableSecurityValidation ? 'Enabled' : 'Disabled'}`);
-    console.log(`   • Monitoring: ${this.config.enablePerformanceMonitoring ? 'Enabled' : 'Disabled'}`);
+    console.log(
+      `   • Monitoring: ${this.config.enablePerformanceMonitoring ? 'Enabled' : 'Disabled'}`
+    );
     console.log(`   • Max Concurrent: ${this.config.maxConcurrentRequests}`);
     console.log(`   • Request Timeout: ${this.config.requestTimeoutMs}ms`);
-    console.log(`   • AI Integration: ${this.config.geminiApiKey ? 'Available' : 'Not configured'}`);
+    console.log(
+      `   • AI Integration: ${this.config.geminiApiKey ? 'Available' : 'Not configured'}`
+    );
   }
 
   private generateRequestId(): string {
@@ -663,8 +624,8 @@ export class IPCMainProcess extends EventEmitter implements IPCEventEmitter {
         message,
         details,
         severity: 'medium',
-        retryable: false
-      }
+        retryable: false,
+      },
     };
   }
 }

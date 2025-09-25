@@ -18,21 +18,21 @@
 
 :root {
   /* Fluid Breakpoints with Container Queries Support */
-  --breakpoint-xs: 320px;    /* Small mobile */
-  --breakpoint-sm: 640px;    /* Large mobile */
-  --breakpoint-md: 768px;    /* Tablet */
-  --breakpoint-lg: 1024px;   /* Small desktop */
-  --breakpoint-xl: 1280px;   /* Desktop */
-  --breakpoint-2xl: 1536px;  /* Large desktop */
-  --breakpoint-3xl: 1920px;  /* Ultra-wide */
+  --breakpoint-xs: 320px; /* Small mobile */
+  --breakpoint-sm: 640px; /* Large mobile */
+  --breakpoint-md: 768px; /* Tablet */
+  --breakpoint-lg: 1024px; /* Small desktop */
+  --breakpoint-xl: 1280px; /* Desktop */
+  --breakpoint-2xl: 1536px; /* Large desktop */
+  --breakpoint-3xl: 1920px; /* Ultra-wide */
 
   /* Container Query Sizes */
-  --container-xs: 20rem;     /* 320px */
-  --container-sm: 40rem;     /* 640px */
-  --container-md: 48rem;     /* 768px */
-  --container-lg: 64rem;     /* 1024px */
-  --container-xl: 80rem;     /* 1280px */
-  --container-2xl: 96rem;    /* 1536px */
+  --container-xs: 20rem; /* 320px */
+  --container-sm: 40rem; /* 640px */
+  --container-md: 48rem; /* 768px */
+  --container-lg: 64rem; /* 1024px */
+  --container-xl: 80rem; /* 1280px */
+  --container-2xl: 96rem; /* 1536px */
 
   /* Fluid Typography Scale */
   --fluid-text-xs: clamp(0.7rem, 0.66rem + 0.2vw, 0.75rem);
@@ -136,11 +136,21 @@
 }
 
 /* Dynamic Grid Columns */
-.responsive-grid--auto-xs { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.responsive-grid--auto-sm { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-.responsive-grid--auto-md { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.responsive-grid--auto-lg { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
-.responsive-grid--auto-xl { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+.responsive-grid--auto-xs {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.responsive-grid--auto-sm {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+.responsive-grid--auto-md {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+.responsive-grid--auto-lg {
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+}
+.responsive-grid--auto-xl {
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
 
 /* Subgrid Support */
 @supports (display: subgrid) {
@@ -181,12 +191,16 @@
 .responsive-card {
   padding: var(--fluid-space-lg);
   border-radius: clamp(0.5rem, 0.4rem + 0.5vw, 1rem);
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1);
   transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .responsive-card:hover {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 /* Navigation Components */
@@ -352,14 +366,22 @@
 
 /* Small Mobile (320px+) */
 @media (min-width: 320px) {
-  .responsive-show-xs { display: block; }
-  .responsive-hide-xs { display: none; }
+  .responsive-show-xs {
+    display: block;
+  }
+  .responsive-hide-xs {
+    display: none;
+  }
 }
 
 /* Large Mobile (640px+) */
 @media (min-width: 640px) {
-  .responsive-show-sm { display: block; }
-  .responsive-hide-sm { display: none; }
+  .responsive-show-sm {
+    display: block;
+  }
+  .responsive-hide-sm {
+    display: none;
+  }
 
   :root {
     --grid-gap-md: 1.5rem;
@@ -372,8 +394,12 @@
 
 /* Tablet (768px+) */
 @media (min-width: 768px) {
-  .responsive-show-md { display: block; }
-  .responsive-hide-md { display: none; }
+  .responsive-show-md {
+    display: block;
+  }
+  .responsive-hide-md {
+    display: none;
+  }
 
   :root {
     --grid-gap-md: 2rem;
@@ -387,8 +413,12 @@
 
 /* Small Desktop (1024px+) */
 @media (min-width: 1024px) {
-  .responsive-show-lg { display: block; }
-  .responsive-hide-lg { display: none; }
+  .responsive-show-lg {
+    display: block;
+  }
+  .responsive-hide-lg {
+    display: none;
+  }
 
   .responsive-columns-3\@lg {
     columns: 3;
@@ -398,8 +428,12 @@
 
 /* Desktop (1280px+) */
 @media (min-width: 1280px) {
-  .responsive-show-xl { display: block; }
-  .responsive-hide-xl { display: none; }
+  .responsive-show-xl {
+    display: block;
+  }
+  .responsive-hide-xl {
+    display: none;
+  }
 
   .responsive-columns-4\@xl {
     columns: 4;
@@ -409,8 +443,12 @@
 
 /* Large Desktop (1536px+) */
 @media (min-width: 1536px) {
-  .responsive-show-2xl { display: block; }
-  .responsive-hide-2xl { display: none; }
+  .responsive-show-2xl {
+    display: block;
+  }
+  .responsive-hide-2xl {
+    display: none;
+  }
 
   :root {
     --grid-gap-md: 2.5rem;
@@ -419,8 +457,12 @@
 
 /* Ultra-wide (1920px+) */
 @media (min-width: 1920px) {
-  .responsive-show-3xl { display: block; }
-  .responsive-hide-3xl { display: none; }
+  .responsive-show-3xl {
+    display: block;
+  }
+  .responsive-hide-3xl {
+    display: none;
+  }
 
   .responsive-max-width-container {
     max-width: 1400px;
@@ -436,7 +478,9 @@
 @media (hover: hover) and (pointer: fine) {
   .responsive-hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    box-shadow:
+      0 20px 25px -5px rgb(0 0 0 / 0.1),
+      0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
   .responsive-hover-scale:hover {
@@ -551,15 +595,29 @@
    =========================== */
 
 /* Aspect Ratios */
-.aspect-square { aspect-ratio: 1 / 1; }
-.aspect-video { aspect-ratio: 16 / 9; }
-.aspect-photo { aspect-ratio: 4 / 3; }
-.aspect-golden { aspect-ratio: 1.618 / 1; }
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+.aspect-photo {
+  aspect-ratio: 4 / 3;
+}
+.aspect-golden {
+  aspect-ratio: 1.618 / 1;
+}
 
 /* Object Fit */
-.object-cover { object-fit: cover; }
-.object-contain { object-fit: contain; }
-.object-fill { object-fit: fill; }
+.object-cover {
+  object-fit: cover;
+}
+.object-contain {
+  object-fit: contain;
+}
+.object-fill {
+  object-fit: fill;
+}
 
 /* Truncation */
 .truncate {
@@ -590,8 +648,12 @@
 }
 
 /* Text Wrap */
-.text-balance { text-wrap: balance; }
-.text-pretty { text-wrap: pretty; }
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
 
 /* ===========================
    COMPONENT INTEGRATION

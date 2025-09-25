@@ -14,7 +14,11 @@
 
 import { EventEmitter } from 'events';
 import { DebouncedIPCWrapper } from '../utils/DebouncedIPCWrapper';
-import { differentialStateManager, StateChange, DifferentialStateManager } from '../../shared/utils/DifferentialStateManager';
+import {
+  differentialStateManager,
+  StateChange,
+  DifferentialStateManager,
+} from '../../shared/utils/DifferentialStateManager';
 import { BatchProcessor } from '../../main/ipc/BatchProcessor';
 import type {
   KBEntry,
@@ -24,7 +28,7 @@ import type {
   SearchQuery,
   DatabaseMetrics,
   BatchRequestPayload,
-  BatchResponsePayload
+  BatchResponsePayload,
 } from '../../types';
 
 // =====================
@@ -121,32 +125,39 @@ export class OptimizedIPCService extends EventEmitter {
         enabled: true,
         maxBatchSize: 6,
         maxWaitTime: 100, // Aggressive batching for <1s target
-        batchableOperations: ['getMetrics', 'getKBStats', 'getSystemInfo', 'getRecentEntries', 'getPopularEntries', 'getSearchStats']
+        batchableOperations: [
+          'getMetrics',
+          'getKBStats',
+          'getSystemInfo',
+          'getRecentEntries',
+          'getPopularEntries',
+          'getSearchStats',
+        ],
       },
       debouncing: {
         enabled: true,
         searchDelay: 200, // Reduced for responsiveness
         metricsDelay: 500,
-        formDelay: 300
+        formDelay: 300,
       },
       differential: {
         enabled: true,
         maxDiffSize: 50 * 1024, // 50KB
         compressionThreshold: 1024, // 1KB
-        stateKeys: ['dashboard', 'metrics', 'entries', 'searchResults']
+        stateKeys: ['dashboard', 'metrics', 'entries', 'searchResults'],
       },
       caching: {
         enabled: true,
         searchTTL: 30000, // 30s
-        metricsTTL: 5000,  // 5s
-        entryTTL: 60000    // 1min
+        metricsTTL: 5000, // 5s
+        entryTTL: 60000, // 1min
       },
       performance: {
         targetResponseTime: 1000, // <1s target
         enableMonitoring: true,
-        alertThreshold: 1500 // Alert if >1.5s
+        alertThreshold: 1500, // Alert if >1.5s
       },
-      ...config
+      ...config,
     };
 
     this.initializeServices();
@@ -164,29 +175,29 @@ export class OptimizedIPCService extends EventEmitter {
           search: {
             local: this.config.debouncing.searchDelay,
             ai: this.config.debouncing.searchDelay + 100,
-            suggestions: this.config.debouncing.searchDelay - 50
+            suggestions: this.config.debouncing.searchDelay - 50,
           },
           metrics: {
             basic: this.config.debouncing.metricsDelay,
             realtime: this.config.debouncing.metricsDelay,
-            batch: 100 // Fast batching
+            batch: 100, // Fast batching
           },
           forms: {
             validation: this.config.debouncing.formDelay,
             autosave: this.config.debouncing.formDelay * 2,
-            autocomplete: this.config.debouncing.formDelay
-          }
+            autocomplete: this.config.debouncing.formDelay,
+          },
         },
         batching: {
           enabled: this.config.batching.enabled,
           maxBatchSize: this.config.batching.maxBatchSize,
           maxWaitTime: this.config.batching.maxWaitTime,
-          batchableOperations: this.config.batching.batchableOperations
+          batchableOperations: this.config.batching.batchableOperations,
         },
         enablePerformanceMonitoring: this.config.performance.enableMonitoring,
         enableDeduplication: true,
         enableCaching: this.config.caching.enabled,
-        logLevel: 'info'
+        logLevel: 'info',
       });
 
       // Initialize differential state manager
@@ -198,7 +209,7 @@ export class OptimizedIPCService extends EventEmitter {
           this.differentialManager.subscribe(key, this.handleDifferentialUpdate.bind(this), {
             immediate: false,
             throttleMs: 50, // Fast updates for responsiveness
-            maxDiffSize: this.config.differential.maxDiffSize
+            maxDiffSize: this.config.differential.maxDiffSize,
           });
         });
       }
@@ -215,7 +226,6 @@ export class OptimizedIPCService extends EventEmitter {
       this.emit('initialized');
 
       console.log('✅ OptimizedIPCService initialized with all optimizations enabled');
-
     } catch (error) {
       console.error('❌ Failed to initialize OptimizedIPCService:', error);
       this.emit('error', error);
@@ -231,7 +241,7 @@ export class OptimizedIPCService extends EventEmitter {
       'entry.delete',
       'metrics.refresh',
       'system.health',
-      'batch.process'
+      'batch.process',
     ];
 
     operations.forEach(op => {
@@ -244,7 +254,7 @@ export class OptimizedIPCService extends EventEmitter {
         successRate: 100,
         optimizationReduction: 0,
         targetMet: true,
-        recentCalls: []
+        recentCalls: [],
       });
     });
   }
@@ -270,7 +280,7 @@ export class OptimizedIPCService extends EventEmitter {
           { method: 'getRecentEntries', params: [10] },
           { method: 'getPopularEntries', params: [10] },
           { method: 'getSearchStats', params: [] },
-          { method: 'getSystemHealth', params: [] }
+          { method: 'getSystemHealth', params: [] },
         ];
 
         const batchResponse = await this.executeBatch('dashboard', batchRequests);
@@ -282,7 +292,7 @@ export class OptimizedIPCService extends EventEmitter {
           recentEntries: batchResponse.responses[2]?.data || [],
           popularEntries: batchResponse.responses[3]?.data || [],
           searchStats: batchResponse.responses[4]?.data || {},
-          systemHealth: batchResponse.responses[5]?.data || {}
+          systemHealth: batchResponse.responses[5]?.data || {},
         };
 
         // Update differential state
@@ -292,7 +302,6 @@ export class OptimizedIPCService extends EventEmitter {
 
         this.endPerformanceTracking(operationId, startTime, true);
         return dashboardData;
-
       } else {
         // Fallback to individual calls
         const [metrics, kbStats, recentEntries, popularEntries, searchStats, systemHealth] =
@@ -302,10 +311,17 @@ export class OptimizedIPCService extends EventEmitter {
             this.getRecentEntries(10),
             this.getPopularEntries(10),
             this.getSearchStats(),
-            this.getSystemHealth()
+            this.getSystemHealth(),
           ]);
 
-        const dashboardData = { metrics, kbStats, recentEntries, popularEntries, searchStats, systemHealth };
+        const dashboardData = {
+          metrics,
+          kbStats,
+          recentEntries,
+          popularEntries,
+          searchStats,
+          systemHealth,
+        };
         this.endPerformanceTracking(operationId, startTime, true);
         return dashboardData;
       }
@@ -332,13 +348,12 @@ export class OptimizedIPCService extends EventEmitter {
         await this.differentialManager.setState('searchResults', {
           query,
           results,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
       this.endPerformanceTracking(operationId, startTime, true);
       return results;
-
     } catch (error) {
       this.endPerformanceTracking(operationId, startTime, false);
       throw error;
@@ -363,7 +378,6 @@ export class OptimizedIPCService extends EventEmitter {
 
       this.endPerformanceTracking(operationId, startTime, true);
       return entryId;
-
     } catch (error) {
       this.endPerformanceTracking(operationId, startTime, false);
       throw error;
@@ -387,7 +401,6 @@ export class OptimizedIPCService extends EventEmitter {
 
       this.endPerformanceTracking(operationId, startTime, true);
       return metrics;
-
     } catch (error) {
       this.endPerformanceTracking(operationId, startTime, false);
       throw error;
@@ -405,13 +418,13 @@ export class OptimizedIPCService extends EventEmitter {
         id: `${batchId}-req-${index}`,
         method: req.method,
         params: req.params,
-        timeout: 1000 // 1s timeout per request
+        timeout: 1000, // 1s timeout per request
       })),
       options: {
         parallel: true,
         maxConcurrency: 6,
-        failFast: false
-      }
+        failFast: false,
+      },
     };
 
     try {
@@ -421,10 +434,14 @@ export class OptimizedIPCService extends EventEmitter {
       // Log batch performance
       if (response.metadata) {
         const batchTime = response.metadata.totalExecutionTime;
-        console.log(`📊 Batch ${batchId} completed in ${batchTime}ms (${requests.length} operations)`);
+        console.log(
+          `📊 Batch ${batchId} completed in ${batchTime}ms (${requests.length} operations)`
+        );
 
         if (batchTime > this.config.performance.targetResponseTime) {
-          console.warn(`⚠️  Batch ${batchId} exceeded target time: ${batchTime}ms > ${this.config.performance.targetResponseTime}ms`);
+          console.warn(
+            `⚠️  Batch ${batchId} exceeded target time: ${batchTime}ms > ${this.config.performance.targetResponseTime}ms`
+          );
         }
       }
 
@@ -439,9 +456,7 @@ export class OptimizedIPCService extends EventEmitter {
     return new Promise((resolve, reject) => {
       // Mock IPC implementation - replace with actual IPC bridge
       if (window.electronAPI?.processBatch) {
-        window.electronAPI.processBatch(batchPayload)
-          .then(resolve)
-          .catch(reject);
+        window.electronAPI.processBatch(batchPayload).then(resolve).catch(reject);
       } else {
         // Fallback: simulate batch processing
         setTimeout(() => {
@@ -452,8 +467,8 @@ export class OptimizedIPCService extends EventEmitter {
             metadata: {
               cached: false,
               executionTime: Math.random() * 200 + 50,
-              fromBatch: true
-            }
+              fromBatch: true,
+            },
           }));
 
           resolve({
@@ -464,8 +479,8 @@ export class OptimizedIPCService extends EventEmitter {
               totalExecutionTime: Math.random() * 300 + 200,
               cacheHits: 0,
               errors: 0,
-              processed: responses.length
-            }
+              processed: responses.length,
+            },
           });
         }, 150); // Simulate fast batch processing
       }
@@ -481,12 +496,14 @@ export class OptimizedIPCService extends EventEmitter {
       stateKey: change.metadata.source,
       change,
       compressionRatio: change.compressionRatio,
-      estimatedSavings: change.metadata.estimatedSavings
+      estimatedSavings: change.metadata.estimatedSavings,
     });
 
     // Log significant compressions
     if (change.compressionRatio > 0.5) {
-      console.log(`📈 Differential update achieved ${Math.round(change.compressionRatio * 100)}% compression for ${change.metadata.source}`);
+      console.log(
+        `📈 Differential update achieved ${Math.round(change.compressionRatio * 100)}% compression for ${change.metadata.source}`
+      );
     }
   }
 
@@ -525,16 +542,24 @@ export class OptimizedIPCService extends EventEmitter {
     }
 
     // Calculate statistics
-    metrics.averageResponseTime = metrics.recentCalls.reduce((a, b) => a + b, 0) / metrics.recentCalls.length;
+    metrics.averageResponseTime =
+      metrics.recentCalls.reduce((a, b) => a + b, 0) / metrics.recentCalls.length;
     metrics.minResponseTime = Math.min(metrics.minResponseTime, duration);
     metrics.maxResponseTime = Math.max(metrics.maxResponseTime, duration);
     metrics.targetMet = metrics.averageResponseTime < this.config.performance.targetResponseTime;
-    metrics.successRate = (metrics.successRate * (metrics.callCount - 1) + (success ? 100 : 0)) / metrics.callCount;
+    metrics.successRate =
+      (metrics.successRate * (metrics.callCount - 1) + (success ? 100 : 0)) / metrics.callCount;
 
     // Alert if performance target not met
     if (duration > this.config.performance.alertThreshold) {
-      console.warn(`🚨 Performance alert: ${operationId} took ${duration.toFixed(2)}ms (target: ${this.config.performance.targetResponseTime}ms)`);
-      this.emit('performanceAlert', { operationId, duration, target: this.config.performance.targetResponseTime });
+      console.warn(
+        `🚨 Performance alert: ${operationId} took ${duration.toFixed(2)}ms (target: ${this.config.performance.targetResponseTime}ms)`
+      );
+      this.emit('performanceAlert', {
+        operationId,
+        duration,
+        target: this.config.performance.targetResponseTime,
+      });
     }
 
     // Log successful fast operations
@@ -561,19 +586,19 @@ export class OptimizedIPCService extends EventEmitter {
       ipc: {
         responsive: true,
         averageLatency: 0,
-        errorRate: 0
+        errorRate: 0,
       },
       optimization: {
         batchingActive: this.config.batching.enabled,
         debouncingActive: this.config.debouncing.enabled,
         differentialActive: this.config.differential.enabled,
-        reductionAchieved: 0
+        reductionAchieved: 0,
       },
       performance: {
         targetsMetAcross: 0,
         criticalOperations: [],
-        alerts: []
-      }
+        alerts: [],
+      },
     };
 
     try {
@@ -593,7 +618,7 @@ export class OptimizedIPCService extends EventEmitter {
 
       // Calculate error rates
       const totalSuccessRate = metrics.reduce((sum, m) => sum + m.successRate, 0);
-      health.ipc.errorRate = 100 - (totalSuccessRate / metrics.length);
+      health.ipc.errorRate = 100 - totalSuccessRate / metrics.length;
 
       // Calculate optimization reduction
       const debouncedStats = this.debouncedIPC.getPerformanceStats();
@@ -610,13 +635,13 @@ export class OptimizedIPCService extends EventEmitter {
       health.optimization.reductionAchieved = sampleCount > 0 ? totalReduction / sampleCount : 0;
 
       // Overall health assessment
-      health.overall = health.performance.targetsMetAcross >= 80 &&
-                     health.ipc.errorRate < 5 &&
-                     health.optimization.reductionAchieved > 50;
+      health.overall =
+        health.performance.targetsMetAcross >= 80 &&
+        health.ipc.errorRate < 5 &&
+        health.optimization.reductionAchieved > 50;
 
       this.emit('healthCheck', health);
       return health;
-
     } catch (error) {
       console.error('Health check failed:', error);
       health.overall = false;
@@ -633,14 +658,20 @@ export class OptimizedIPCService extends EventEmitter {
    * Get comprehensive performance statistics
    */
   getPerformanceReport(): any {
-    const metrics = Array.from(this.performanceMetrics.entries()).reduce((report, [key, metrics]) => {
-      report[key] = {
-        ...metrics,
-        performance: metrics.targetMet ? 'EXCELLENT' :
-                   metrics.averageResponseTime < this.config.performance.alertThreshold ? 'GOOD' : 'POOR'
-      };
-      return report;
-    }, {} as any);
+    const metrics = Array.from(this.performanceMetrics.entries()).reduce(
+      (report, [key, metrics]) => {
+        report[key] = {
+          ...metrics,
+          performance: metrics.targetMet
+            ? 'EXCELLENT'
+            : metrics.averageResponseTime < this.config.performance.alertThreshold
+              ? 'GOOD'
+              : 'POOR',
+        };
+        return report;
+      },
+      {} as any
+    );
 
     const debouncingStats = this.debouncedIPC.getPerformanceStats();
     const differentialMetrics = this.differentialManager.getMetrics();
@@ -653,17 +684,17 @@ export class OptimizedIPCService extends EventEmitter {
           batching: this.config.batching.enabled,
           debouncing: this.config.debouncing.enabled,
           differential: this.config.differential.enabled,
-          caching: this.config.caching.enabled
+          caching: this.config.caching.enabled,
         },
         targetResponseTime: this.config.performance.targetResponseTime,
-        alertThreshold: this.config.performance.alertThreshold
+        alertThreshold: this.config.performance.alertThreshold,
       },
       operations: metrics,
       optimizations: {
         debouncing: Object.fromEntries(debouncingStats),
-        differential: differentialMetrics
+        differential: differentialMetrics,
       },
-      recommendations: this.generatePerformanceRecommendations()
+      recommendations: this.generatePerformanceRecommendations(),
     };
   }
 
@@ -696,7 +727,9 @@ export class OptimizedIPCService extends EventEmitter {
     // Check for slow operations
     const slowOps = metrics.filter(m => !m.targetMet);
     if (slowOps.length > 0) {
-      recommendations.push(`Consider optimizing: ${slowOps.map(op => op.operationName).join(', ')}`);
+      recommendations.push(
+        `Consider optimizing: ${slowOps.map(op => op.operationName).join(', ')}`
+      );
     }
 
     // Check optimization usage
@@ -709,7 +742,8 @@ export class OptimizedIPCService extends EventEmitter {
     }
 
     // Check performance trends
-    const avgResponseTime = metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length;
+    const avgResponseTime =
+      metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length;
     if (avgResponseTime > this.config.performance.targetResponseTime * 0.8) {
       recommendations.push('Consider reducing debounce delays or increasing cache TTL');
     }
@@ -723,9 +757,13 @@ export class OptimizedIPCService extends EventEmitter {
       getMetrics: { entries: 150, searches: 45, uptime: 3600 },
       getKBStats: { total: 150, categories: 5, avgRating: 4.2 },
       getRecentEntries: Array.from({ length: 10 }, (_, i) => ({ id: i, title: `Entry ${i}` })),
-      getPopularEntries: Array.from({ length: 10 }, (_, i) => ({ id: i, title: `Popular ${i}`, usage: 100 - i * 5 })),
+      getPopularEntries: Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        title: `Popular ${i}`,
+        usage: 100 - i * 5,
+      })),
       getSearchStats: { queries: 120, avgTime: 250 },
-      getSystemHealth: { status: 'healthy', cpu: 45, memory: 62 }
+      getSystemHealth: { status: 'healthy', cpu: 45, memory: 62 },
     };
 
     return mockData[method as keyof typeof mockData] || {};

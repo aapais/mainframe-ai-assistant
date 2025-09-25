@@ -1,6 +1,6 @@
 /**
  * Query Analyzer for SQLite Performance Optimization
- * 
+ *
  * Provides comprehensive query analysis, optimization suggestions,
  * and automatic index recommendations for optimal database performance.
  */
@@ -102,7 +102,7 @@ export class QueryAnalyzer extends EventEmitter {
       maxQueryHistory: 1000,
       autoIndexCreation: false, // Keep false for safety
       indexCreationThreshold: 20, // 20% improvement minimum
-      ...config
+      ...config,
     };
   }
 
@@ -185,20 +185,24 @@ export class QueryAnalyzer extends EventEmitter {
   private loadTableSchemas(): void {
     try {
       // Get all table information
-      const tables = this.db.prepare(`
+      const tables = this.db
+        .prepare(
+          `
         SELECT name FROM sqlite_master 
         WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-      `).all();
+      `
+        )
+        .all();
 
       tables.forEach((table: any) => {
         try {
           const schema = this.db.prepare(`PRAGMA table_info(${table.name})`).all();
           const indexes = this.db.prepare(`PRAGMA index_list(${table.name})`).all();
-          
+
           this.tableSchemas.set(table.name, {
             name: table.name,
             columns: schema,
-            indexes: indexes
+            indexes: indexes,
           });
         } catch (error) {
           console.error(`Failed to load schema for table ${table.name}:`, error);
@@ -211,7 +215,9 @@ export class QueryAnalyzer extends EventEmitter {
 
   private loadQueryHistory(): void {
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT 
           query_hash,
           query,
@@ -224,7 +230,9 @@ export class QueryAnalyzer extends EventEmitter {
         GROUP BY query_hash
         ORDER BY avg_duration DESC
         LIMIT ?
-      `).all(this.config.maxQueryHistory);
+      `
+        )
+        .all(this.config.maxQueryHistory);
 
       results.forEach((row: any) => {
         this.queryHistory.set(row.query_hash, {
@@ -234,7 +242,7 @@ export class QueryAnalyzer extends EventEmitter {
           totalDuration: row.total_duration,
           avgDuration: row.avg_duration,
           maxDuration: row.max_duration,
-          lastSeen: row.last_seen
+          lastSeen: row.last_seen,
         });
       });
     } catch (error) {
@@ -242,11 +250,15 @@ export class QueryAnalyzer extends EventEmitter {
     }
   }
 
-  public analyzeQuery(query: string, duration: number, metadata?: {
-    timestamp?: number;
-    operationType?: string;
-    recordsAffected?: number;
-  }): QueryAnalysis {
+  public analyzeQuery(
+    query: string,
+    duration: number,
+    metadata?: {
+      timestamp?: number;
+      operationType?: string;
+      recordsAffected?: number;
+    }
+  ): QueryAnalysis {
     if (!this.config.enabled) {
       throw new Error('Query analyzer is disabled');
     }
@@ -269,7 +281,7 @@ export class QueryAnalyzer extends EventEmitter {
 
     // Perform full analysis
     const analysis = this.performFullAnalysis(query, queryHash, timestamp);
-    
+
     // Store analysis
     this.analyzedQueries.set(queryHash, analysis);
     this.storeAnalysis(analysis);
@@ -301,15 +313,15 @@ export class QueryAnalyzer extends EventEmitter {
         indexesUsed: [],
         indexesAvailable: [],
         tablesScanned: [],
-        scanType: 'table_scan'
+        scanType: 'table_scan',
       },
       performance: {
         estimatedCost: 1,
         estimatedRows: 0,
-        complexity: 'low'
+        complexity: 'low',
       },
       optimizationSuggestions: [],
-      timestamp
+      timestamp,
     };
   }
 
@@ -317,16 +329,19 @@ export class QueryAnalyzer extends EventEmitter {
     try {
       // Get execution plan
       const executionPlan = this.getExecutionPlan(query);
-      
+
       // Analyze index usage
       const indexUsage = this.analyzeIndexUsage(executionPlan);
-      
+
       // Calculate performance metrics
       const performance = this.calculatePerformanceMetrics(executionPlan, query);
-      
+
       // Generate optimization suggestions
       const optimizationSuggestions = this.generateOptimizationSuggestions(
-        query, executionPlan, indexUsage, performance
+        query,
+        executionPlan,
+        indexUsage,
+        performance
       );
 
       return {
@@ -337,9 +352,8 @@ export class QueryAnalyzer extends EventEmitter {
         indexUsage,
         performance,
         optimizationSuggestions,
-        timestamp
+        timestamp,
       };
-
     } catch (error) {
       console.error('Failed to perform full query analysis:', error);
       return this.createBasicAnalysis(query, queryHash, timestamp);
@@ -351,12 +365,12 @@ export class QueryAnalyzer extends EventEmitter {
       // Use EXPLAIN QUERY PLAN to get execution plan
       const planStmt = this.db.prepare(`EXPLAIN QUERY PLAN ${query}`);
       const plan = planStmt.all();
-      
+
       return plan.map((step: any) => ({
         id: step.id,
         parent: step.parent,
         notused: step.notused,
-        detail: step.detail
+        detail: step.detail,
       }));
     } catch (error) {
       console.error('Failed to get execution plan:', error);
@@ -378,7 +392,7 @@ export class QueryAnalyzer extends EventEmitter {
 
     executionPlan.forEach(step => {
       const detail = step.detail.toLowerCase();
-      
+
       // Extract table names
       const tableMatch = detail.match(/(?:table|scan|using)\s+(\w+)/);
       if (tableMatch) {
@@ -431,11 +445,14 @@ export class QueryAnalyzer extends EventEmitter {
       indexesUsed,
       indexesAvailable,
       tablesScanned,
-      scanType
+      scanType,
     };
   }
 
-  private calculatePerformanceMetrics(executionPlan: QueryPlan[], query: string): {
+  private calculatePerformanceMetrics(
+    executionPlan: QueryPlan[],
+    query: string
+  ): {
     estimatedCost: number;
     estimatedRows: number;
     complexity: 'low' | 'medium' | 'high' | 'very_high';
@@ -449,7 +466,7 @@ export class QueryAnalyzer extends EventEmitter {
     let complexityScore = 0;
 
     // Table scans increase complexity
-    const scanSteps = executionPlan.filter(step => 
+    const scanSteps = executionPlan.filter(step =>
       step.detail.toLowerCase().includes('scan table')
     );
     complexityScore += scanSteps.length * 2;
@@ -500,7 +517,7 @@ export class QueryAnalyzer extends EventEmitter {
     return {
       estimatedCost: Math.max(1, estimatedCost),
       estimatedRows,
-      complexity
+      complexity,
     };
   }
 
@@ -520,7 +537,7 @@ export class QueryAnalyzer extends EventEmitter {
         description: 'Table scan detected - consider adding indexes',
         impact: 'Significant performance improvement for queries on this table',
         implementation: `Analyze query WHERE clauses and JOIN conditions to identify optimal index columns`,
-        estimatedImprovement: 70
+        estimatedImprovement: 70,
       });
     }
 
@@ -533,7 +550,7 @@ export class QueryAnalyzer extends EventEmitter {
         description: 'Inefficient JOIN detected - missing indexes on join columns',
         impact: 'Major performance improvement for JOIN operations',
         implementation: 'Create indexes on columns used in JOIN conditions',
-        estimatedImprovement: 80
+        estimatedImprovement: 80,
       });
     }
 
@@ -546,7 +563,7 @@ export class QueryAnalyzer extends EventEmitter {
         description: 'WHERE clause not using indexes efficiently',
         impact: 'Moderate to significant performance improvement',
         implementation: 'Create indexes on columns used in WHERE conditions',
-        estimatedImprovement: 50
+        estimatedImprovement: 50,
       });
     }
 
@@ -558,7 +575,7 @@ export class QueryAnalyzer extends EventEmitter {
         description: 'SELECT * detected - consider selecting only needed columns',
         impact: 'Reduced memory usage and network traffic',
         implementation: 'Specify only the columns you actually need',
-        estimatedImprovement: 20
+        estimatedImprovement: 20,
       });
     }
 
@@ -570,7 +587,7 @@ export class QueryAnalyzer extends EventEmitter {
         description: 'ORDER BY without LIMIT - consider pagination',
         impact: 'Reduced memory usage for large result sets',
         implementation: 'Add LIMIT clause if not all results are needed',
-        estimatedImprovement: 30
+        estimatedImprovement: 30,
       });
     }
 
@@ -583,29 +600,36 @@ export class QueryAnalyzer extends EventEmitter {
         description: 'Complex subqueries detected - consider JOIN or WITH clause',
         impact: 'Better query plan and performance',
         implementation: 'Rewrite subqueries as JOINs or use WITH clause for better optimization',
-        estimatedImprovement: 40
+        estimatedImprovement: 40,
       });
     }
 
     return suggestions;
   }
 
-  private getQueryType(query: string): 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'CREATE' | 'DROP' | 'OTHER' {
+  private getQueryType(
+    query: string
+  ): 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'CREATE' | 'DROP' | 'OTHER' {
     const queryLower = query.toLowerCase().trim();
-    
+
     if (queryLower.startsWith('select')) return 'SELECT';
     if (queryLower.startsWith('insert')) return 'INSERT';
     if (queryLower.startsWith('update')) return 'UPDATE';
     if (queryLower.startsWith('delete')) return 'DELETE';
     if (queryLower.startsWith('create')) return 'CREATE';
     if (queryLower.startsWith('drop')) return 'DROP';
-    
+
     return 'OTHER';
   }
 
-  private updateQueryHistory(queryHash: string, query: string, duration: number, timestamp: number): void {
+  private updateQueryHistory(
+    queryHash: string,
+    query: string,
+    duration: number,
+    timestamp: number
+  ): void {
     let slowQuery = this.queryHistory.get(queryHash);
-    
+
     if (slowQuery) {
       slowQuery.occurrences++;
       slowQuery.totalDuration += duration;
@@ -620,7 +644,7 @@ export class QueryAnalyzer extends EventEmitter {
         totalDuration: duration,
         avgDuration: duration,
         maxDuration: duration,
-        lastSeen: timestamp
+        lastSeen: timestamp,
       };
       this.queryHistory.set(queryHash, slowQuery);
     }
@@ -631,23 +655,25 @@ export class QueryAnalyzer extends EventEmitter {
     }
   }
 
-  private logSlowQuery(query: string, queryHash: string, duration: number, timestamp: number): void {
+  private logSlowQuery(
+    query: string,
+    queryHash: string,
+    duration: number,
+    timestamp: number
+  ): void {
     try {
       const tables = this.extractTableNames(query);
       const operationType = this.getQueryType(query);
 
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO slow_query_log (
           query_hash, query, duration, timestamp, table_names, operation_type
         ) VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        queryHash,
-        query,
-        duration,
-        timestamp,
-        JSON.stringify(tables),
-        operationType
-      );
+      `
+        )
+        .run(queryHash, query, duration, timestamp, JSON.stringify(tables), operationType);
     } catch (error) {
       console.error('Failed to log slow query:', error);
     }
@@ -655,21 +681,25 @@ export class QueryAnalyzer extends EventEmitter {
 
   private storeAnalysis(analysis: QueryAnalysis): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO query_analyses (
           query_hash, query, query_type, execution_plan, index_usage,
           performance_metrics, optimization_suggestions, analysis_timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        analysis.queryHash,
-        analysis.query,
-        analysis.queryType,
-        JSON.stringify(analysis.executionPlan),
-        JSON.stringify(analysis.indexUsage),
-        JSON.stringify(analysis.performance),
-        JSON.stringify(analysis.optimizationSuggestions),
-        analysis.timestamp
-      );
+      `
+        )
+        .run(
+          analysis.queryHash,
+          analysis.query,
+          analysis.queryType,
+          JSON.stringify(analysis.executionPlan),
+          JSON.stringify(analysis.indexUsage),
+          JSON.stringify(analysis.performance),
+          JSON.stringify(analysis.optimizationSuggestions),
+          analysis.timestamp
+        );
     } catch (error) {
       console.error('Failed to store query analysis:', error);
     }
@@ -678,7 +708,7 @@ export class QueryAnalyzer extends EventEmitter {
   private generateOptimizationRecommendations(analysis: QueryAnalysis): void {
     // Generate index recommendations based on the analysis
     const indexRecommendations = this.generateIndexRecommendations(analysis);
-    
+
     indexRecommendations.forEach(recommendation => {
       this.addIndexRecommendation(recommendation);
     });
@@ -686,12 +716,12 @@ export class QueryAnalyzer extends EventEmitter {
 
   private generateIndexRecommendations(analysis: QueryAnalysis): IndexRecommendation[] {
     const recommendations: IndexRecommendation[] = [];
-    
+
     if (analysis.indexUsage.scanType === 'table_scan') {
       analysis.indexUsage.tablesScanned.forEach(tableName => {
         // Extract column names from WHERE clause
         const whereColumns = this.extractWhereColumns(analysis.query, tableName);
-        
+
         if (whereColumns.length > 0) {
           recommendations.push({
             tableName,
@@ -701,7 +731,7 @@ export class QueryAnalyzer extends EventEmitter {
             estimatedImpact: 70,
             queryPatterns: [analysis.query],
             creationSQL: `CREATE INDEX idx_${tableName}_${whereColumns.join('_')} ON ${tableName} (${whereColumns.join(', ')});`,
-            priority: 'high'
+            priority: 'high',
           });
         }
       });
@@ -713,7 +743,7 @@ export class QueryAnalyzer extends EventEmitter {
   private extractTableNames(query: string): string[] {
     const tables: string[] = [];
     const queryLower = query.toLowerCase();
-    
+
     // Simple regex to extract table names (would need improvement for complex queries)
     const fromMatches = queryLower.match(/from\s+(\w+)/g);
     if (fromMatches) {
@@ -741,13 +771,15 @@ export class QueryAnalyzer extends EventEmitter {
   private extractWhereColumns(query: string, tableName: string): string[] {
     const columns: string[] = [];
     const queryLower = query.toLowerCase();
-    
+
     // Extract WHERE clause
-    const whereMatch = queryLower.match(/where\s+(.*?)(?:\s+order\s+by|\s+group\s+by|\s+having|\s+limit|$)/);
+    const whereMatch = queryLower.match(
+      /where\s+(.*?)(?:\s+order\s+by|\s+group\s+by|\s+having|\s+limit|$)/
+    );
     if (!whereMatch) return columns;
-    
+
     const whereClause = whereMatch[1];
-    
+
     // Simple column extraction (would need improvement for complex conditions)
     const columnMatches = whereClause.match(/(\w+)\s*[=<>!]/g);
     if (columnMatches) {
@@ -765,7 +797,7 @@ export class QueryAnalyzer extends EventEmitter {
   private isValidColumn(tableName: string, columnName: string): boolean {
     const schema = this.tableSchemas.get(tableName);
     if (!schema) return false;
-    
+
     return schema.columns.some((col: any) => col.name === columnName);
   }
 
@@ -775,36 +807,48 @@ export class QueryAnalyzer extends EventEmitter {
 
     try {
       // Update or insert query pattern
-      const existingPattern = this.db.prepare(`
+      const existingPattern = this.db
+        .prepare(
+          `
         SELECT * FROM query_patterns WHERE pattern_hash = ?
-      `).get(patternHash);
+      `
+        )
+        .get(patternHash);
 
       if (existingPattern) {
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           UPDATE query_patterns SET
             occurrence_count = occurrence_count + 1,
             total_duration = total_duration + ?,
             avg_duration = (total_duration + ?) / (occurrence_count + 1),
             last_seen = ?
           WHERE pattern_hash = ?
-        `).run(duration, duration, timestamp, patternHash);
+        `
+          )
+          .run(duration, duration, timestamp, patternHash);
       } else {
         const tableNames = this.extractTableNames(query);
-        
-        this.db.prepare(`
+
+        this.db
+          .prepare(
+            `
           INSERT INTO query_patterns (
             pattern_hash, pattern_template, occurrence_count, total_duration,
             avg_duration, table_names, first_seen, last_seen
           ) VALUES (?, ?, 1, ?, ?, ?, ?, ?)
-        `).run(
-          patternHash,
-          patternTemplate,
-          duration,
-          duration,
-          JSON.stringify(tableNames),
-          timestamp,
-          timestamp
-        );
+        `
+          )
+          .run(
+            patternHash,
+            patternTemplate,
+            duration,
+            duration,
+            JSON.stringify(tableNames),
+            timestamp,
+            timestamp
+          );
       }
     } catch (error) {
       console.error('Failed to track query pattern:', error);
@@ -824,27 +868,35 @@ export class QueryAnalyzer extends EventEmitter {
   private addIndexRecommendation(recommendation: IndexRecommendation): void {
     try {
       // Check if similar recommendation already exists
-      const existing = this.db.prepare(`
+      const existing = this.db
+        .prepare(
+          `
         SELECT id FROM index_recommendations 
         WHERE table_name = ? AND columns = ? AND status = 'pending'
-      `).get(recommendation.tableName, JSON.stringify(recommendation.columns));
+      `
+        )
+        .get(recommendation.tableName, JSON.stringify(recommendation.columns));
 
       if (!existing) {
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO index_recommendations (
             table_name, columns, index_type, rationale, estimated_impact,
             query_patterns, creation_sql, priority
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          recommendation.tableName,
-          JSON.stringify(recommendation.columns),
-          recommendation.indexType,
-          recommendation.rationale,
-          recommendation.estimatedImpact,
-          JSON.stringify(recommendation.queryPatterns),
-          recommendation.creationSQL,
-          recommendation.priority
-        );
+        `
+          )
+          .run(
+            recommendation.tableName,
+            JSON.stringify(recommendation.columns),
+            recommendation.indexType,
+            recommendation.rationale,
+            recommendation.estimatedImpact,
+            JSON.stringify(recommendation.queryPatterns),
+            recommendation.creationSQL,
+            recommendation.priority
+          );
 
         this.indexRecommendations.push(recommendation);
         this.emit('index-recommendation', recommendation);
@@ -859,7 +911,7 @@ export class QueryAnalyzer extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < query.length; i++) {
       const char = query.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString(36);
@@ -877,7 +929,9 @@ export class QueryAnalyzer extends EventEmitter {
     return this.analyzedQueries.get(queryHash) || null;
   }
 
-  public getIndexRecommendations(priority?: 'low' | 'medium' | 'high' | 'critical'): IndexRecommendation[] {
+  public getIndexRecommendations(
+    priority?: 'low' | 'medium' | 'high' | 'critical'
+  ): IndexRecommendation[] {
     try {
       let query = 'SELECT * FROM index_recommendations WHERE status = ?';
       const params: any[] = ['pending'];
@@ -890,7 +944,7 @@ export class QueryAnalyzer extends EventEmitter {
       query += ' ORDER BY estimated_impact DESC';
 
       const results = this.db.prepare(query).all(...params);
-      
+
       return results.map((row: any) => ({
         tableName: row.table_name,
         columns: JSON.parse(row.columns),
@@ -899,7 +953,7 @@ export class QueryAnalyzer extends EventEmitter {
         estimatedImpact: row.estimated_impact,
         queryPatterns: JSON.parse(row.query_patterns),
         creationSQL: row.creation_sql,
-        priority: row.priority
+        priority: row.priority,
       }));
     } catch (error) {
       console.error('Failed to get index recommendations:', error);
@@ -915,21 +969,25 @@ export class QueryAnalyzer extends EventEmitter {
     lastSeen: number;
   }> {
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT 
           pattern_template, occurrence_count, avg_duration,
           table_names, last_seen
         FROM query_patterns 
         ORDER BY occurrence_count DESC 
         LIMIT ?
-      `).all(limit);
+      `
+        )
+        .all(limit);
 
       return results.map((row: any) => ({
         pattern: row.pattern_template,
         occurrences: row.occurrence_count,
         avgDuration: row.avg_duration,
         tableNames: JSON.parse(row.table_names || '[]'),
-        lastSeen: row.last_seen
+        lastSeen: row.last_seen,
       }));
     } catch (error) {
       console.error('Failed to get query patterns:', error);
@@ -937,15 +995,22 @@ export class QueryAnalyzer extends EventEmitter {
     }
   }
 
-  public implementIndexRecommendation(recommendationId: string, execute = false): {
+  public implementIndexRecommendation(
+    recommendationId: string,
+    execute = false
+  ): {
     success: boolean;
     error?: string;
     sql?: string;
   } {
     try {
-      const recommendation = this.db.prepare(`
+      const recommendation = this.db
+        .prepare(
+          `
         SELECT * FROM index_recommendations WHERE id = ?
-      `).get(recommendationId);
+      `
+        )
+        .get(recommendationId);
 
       if (!recommendation) {
         return { success: false, error: 'Recommendation not found' };
@@ -958,24 +1023,27 @@ export class QueryAnalyzer extends EventEmitter {
       if (execute) {
         // Execute the index creation
         this.db.exec(recommendation.creation_sql);
-        
+
         // Mark as implemented
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           UPDATE index_recommendations 
           SET status = 'created', implemented_at = ?
           WHERE id = ?
-        `).run(Date.now(), recommendationId);
+        `
+          )
+          .run(Date.now(), recommendationId);
       }
 
       return {
         success: true,
-        sql: recommendation.creation_sql
+        sql: recommendation.creation_sql,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -989,14 +1057,17 @@ export class QueryAnalyzer extends EventEmitter {
     avgAnalysisTime: number;
   } {
     try {
-      const totalQueries = this.db.prepare('SELECT COUNT(*) as count FROM slow_query_log').get()?.count || 0;
+      const totalQueries =
+        this.db.prepare('SELECT COUNT(*) as count FROM slow_query_log').get()?.count || 0;
       const analyzedQueries = this.analyzedQueries.size;
-      const pendingRecommendations = this.db.prepare(
-        'SELECT COUNT(*) as count FROM index_recommendations WHERE status = ?'
-      ).get('pending')?.count || 0;
-      const implementedRecommendations = this.db.prepare(
-        'SELECT COUNT(*) as count FROM index_recommendations WHERE status = ?'
-      ).get('created')?.count || 0;
+      const pendingRecommendations =
+        this.db
+          .prepare('SELECT COUNT(*) as count FROM index_recommendations WHERE status = ?')
+          .get('pending')?.count || 0;
+      const implementedRecommendations =
+        this.db
+          .prepare('SELECT COUNT(*) as count FROM index_recommendations WHERE status = ?')
+          .get('created')?.count || 0;
 
       return {
         totalQueries,
@@ -1004,7 +1075,7 @@ export class QueryAnalyzer extends EventEmitter {
         analyzedQueries,
         pendingRecommendations,
         implementedRecommendations,
-        avgAnalysisTime: 0 // Would calculate from timing data
+        avgAnalysisTime: 0, // Would calculate from timing data
       };
     } catch (error) {
       console.error('Failed to get analyzer stats:', error);
@@ -1014,7 +1085,7 @@ export class QueryAnalyzer extends EventEmitter {
         analyzedQueries: 0,
         pendingRecommendations: 0,
         implementedRecommendations: 0,
-        avgAnalysisTime: 0
+        avgAnalysisTime: 0,
       };
     }
   }

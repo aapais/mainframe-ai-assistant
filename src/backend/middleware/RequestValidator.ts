@@ -44,7 +44,7 @@ export class RequestValidator {
     /(\-\-|\;|\||\*)/,
     /(0x[0-9a-fA-F]+)/,
     /(CHAR\(|VARCHAR\()/i,
-    /(CAST\(|CONVERT\()/i
+    /(CAST\(|CONVERT\()/i,
   ];
 
   private readonly xssPatterns = [
@@ -52,59 +52,70 @@ export class RequestValidator {
     /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
     /javascript:/gi,
     /on\w+\s*=/gi,
-    /<img[^>]+src[^>]*>/gi
+    /<img[^>]+src[^>]*>/gi,
   ];
 
   // Validation schemas
   private readonly searchRequestSchema = z.object({
-    query: z.string()
+    query: z
+      .string()
       .min(1, 'Query is required')
       .max(this.maxQueryLength, `Query must be less than ${this.maxQueryLength} characters`)
       .transform(str => str.trim()),
-    options: z.object({
-      limit: z.number().int().min(1).max(100).optional(),
-      offset: z.number().int().min(0).optional(),
-      category: z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'] as const).optional(),
-      includeArchived: z.boolean().optional(),
-      fuzzyThreshold: z.number().min(0.1).max(1.0).optional(),
-      useAI: z.boolean().optional()
-    }).optional(),
-    context: z.object({
-      userId: z.string().uuid().optional(),
-      sessionId: z.string().optional(),
-      userAgent: z.string().max(500).optional()
-    }).optional()
+    options: z
+      .object({
+        limit: z.number().int().min(1).max(100).optional(),
+        offset: z.number().int().min(0).optional(),
+        category: z
+          .enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'] as const)
+          .optional(),
+        includeArchived: z.boolean().optional(),
+        fuzzyThreshold: z.number().min(0.1).max(1.0).optional(),
+        useAI: z.boolean().optional(),
+      })
+      .optional(),
+    context: z
+      .object({
+        userId: z.string().uuid().optional(),
+        sessionId: z.string().optional(),
+        userAgent: z.string().max(500).optional(),
+      })
+      .optional(),
   });
 
   private readonly autocompleteRequestSchema = z.object({
-    q: z.string()
+    q: z
+      .string()
       .min(1, 'Query parameter "q" is required')
       .max(100, 'Query must be less than 100 characters')
       .transform(str => str.trim()),
-    limit: z.string()
+    limit: z
+      .string()
       .transform(str => parseInt(str, 10))
       .pipe(z.number().int().min(1).max(20))
       .optional(),
-    category: z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'] as const).optional()
+    category: z.enum(['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'] as const).optional(),
   });
 
   private readonly historyRequestSchema = z.object({
     userId: z.string().uuid().optional(),
-    limit: z.string()
+    limit: z
+      .string()
       .transform(str => parseInt(str, 10))
       .pipe(z.number().int().min(1).max(200))
       .optional(),
-    offset: z.string()
+    offset: z
+      .string()
       .transform(str => parseInt(str, 10))
       .pipe(z.number().int().min(0))
       .optional(),
-    timeframe: z.enum(['1h', '6h', '12h', '1d', '3d', '7d', '30d']).optional()
+    timeframe: z.enum(['1h', '6h', '12h', '1d', '3d', '7d', '30d']).optional(),
   });
 
   private readonly metricsRequestSchema = z.object({
     timeframe: z.enum(['1h', '6h', '1d', '7d', '30d']).optional(),
     granularity: z.enum(['5m', '15m', '1h', '1d']).optional(),
-    userId: z.string().uuid().optional()
+    userId: z.string().uuid().optional(),
   });
 
   /**
@@ -123,15 +134,16 @@ export class RequestValidator {
 
       // Additional business logic validation
       this.validateBusinessRules(result.data);
-
     } catch (error) {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError('Search request validation failed', [{
-        field: 'request',
-        message: error.message || 'Unknown validation error'
-      }]);
+      throw new ValidationError('Search request validation failed', [
+        {
+          field: 'request',
+          message: error.message || 'Unknown validation error',
+        },
+      ]);
     }
   }
 
@@ -151,15 +163,16 @@ export class RequestValidator {
 
       // Rate limiting validation (autocomplete should be fast and frequent)
       this.validateAutocompleteRateLimit(result.data);
-
     } catch (error) {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError('Autocomplete request validation failed', [{
-        field: 'request',
-        message: error.message || 'Unknown validation error'
-      }]);
+      throw new ValidationError('Autocomplete request validation failed', [
+        {
+          field: 'request',
+          message: error.message || 'Unknown validation error',
+        },
+      ]);
     }
   }
 
@@ -176,15 +189,16 @@ export class RequestValidator {
       if (!result.success) {
         this.throwValidationError('Invalid history request', result.error.issues);
       }
-
     } catch (error) {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError('History request validation failed', [{
-        field: 'request',
-        message: error.message || 'Unknown validation error'
-      }]);
+      throw new ValidationError('History request validation failed', [
+        {
+          field: 'request',
+          message: error.message || 'Unknown validation error',
+        },
+      ]);
     }
   }
 
@@ -201,15 +215,16 @@ export class RequestValidator {
       if (!result.success) {
         this.throwValidationError('Invalid metrics request', result.error.issues);
       }
-
     } catch (error) {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError('Metrics request validation failed', [{
-        field: 'request',
-        message: error.message || 'Unknown validation error'
-      }]);
+      throw new ValidationError('Metrics request validation failed', [
+        {
+          field: 'request',
+          message: error.message || 'Unknown validation error',
+        },
+      ]);
     }
   }
 
@@ -253,23 +268,18 @@ export class RequestValidator {
       errors.push({
         field: 'file.size',
         message: 'File size exceeds 10MB limit',
-        value: file.size
+        value: file.size,
       });
     }
 
     // File type validation
-    const allowedTypes = [
-      'application/json',
-      'text/csv',
-      'application/csv',
-      'text/plain'
-    ];
+    const allowedTypes = ['application/json', 'text/csv', 'application/csv', 'text/plain'];
 
     if (!allowedTypes.includes(file.mimetype)) {
       errors.push({
         field: 'file.mimetype',
         message: 'File type not allowed',
-        value: file.mimetype
+        value: file.mimetype,
       });
     }
 
@@ -278,7 +288,7 @@ export class RequestValidator {
       errors.push({
         field: 'file.originalname',
         message: 'Invalid filename',
-        value: file.originalname
+        value: file.originalname,
       });
     }
 
@@ -302,27 +312,33 @@ export class RequestValidator {
    */
   validateSearchQuery(query: string): string {
     if (!query || typeof query !== 'string') {
-      throw new ValidationError('Invalid query', [{
-        field: 'query',
-        message: 'Query must be a non-empty string'
-      }]);
+      throw new ValidationError('Invalid query', [
+        {
+          field: 'query',
+          message: 'Query must be a non-empty string',
+        },
+      ]);
     }
 
     const trimmed = query.trim();
 
     if (trimmed.length === 0) {
-      throw new ValidationError('Empty query', [{
-        field: 'query',
-        message: 'Query cannot be empty'
-      }]);
+      throw new ValidationError('Empty query', [
+        {
+          field: 'query',
+          message: 'Query cannot be empty',
+        },
+      ]);
     }
 
     if (trimmed.length > this.maxQueryLength) {
-      throw new ValidationError('Query too long', [{
-        field: 'query',
-        message: `Query must be less than ${this.maxQueryLength} characters`,
-        value: trimmed.length
-      }]);
+      throw new ValidationError('Query too long', [
+        {
+          field: 'query',
+          message: `Query must be less than ${this.maxQueryLength} characters`,
+          value: trimmed.length,
+        },
+      ]);
     }
 
     // Security validation
@@ -348,23 +364,28 @@ export class RequestValidator {
     this.checkForPathTraversal(jsonString);
 
     // Check for excessively large payloads
-    if (jsonString.length > 10000) { // 10KB limit
-      throw new ValidationError('Request too large', [{
-        field: 'request',
-        message: 'Request payload exceeds size limit',
-        value: jsonString.length
-      }]);
+    if (jsonString.length > 10000) {
+      // 10KB limit
+      throw new ValidationError('Request too large', [
+        {
+          field: 'request',
+          message: 'Request payload exceeds size limit',
+          value: jsonString.length,
+        },
+      ]);
     }
   }
 
   private checkForSQLInjection(input: string): void {
     for (const pattern of this.sqlInjectionPatterns) {
       if (pattern.test(input)) {
-        throw new ValidationError('Potential SQL injection detected', [{
-          field: 'input',
-          message: 'Input contains potentially malicious SQL patterns',
-          code: 'SQL_INJECTION'
-        }]);
+        throw new ValidationError('Potential SQL injection detected', [
+          {
+            field: 'input',
+            message: 'Input contains potentially malicious SQL patterns',
+            code: 'SQL_INJECTION',
+          },
+        ]);
       }
     }
   }
@@ -372,30 +393,29 @@ export class RequestValidator {
   private checkForXSS(input: string): void {
     for (const pattern of this.xssPatterns) {
       if (pattern.test(input)) {
-        throw new ValidationError('Potential XSS detected', [{
-          field: 'input',
-          message: 'Input contains potentially malicious script patterns',
-          code: 'XSS_DETECTED'
-        }]);
+        throw new ValidationError('Potential XSS detected', [
+          {
+            field: 'input',
+            message: 'Input contains potentially malicious script patterns',
+            code: 'XSS_DETECTED',
+          },
+        ]);
       }
     }
   }
 
   private checkForPathTraversal(input: string): void {
-    const pathTraversalPatterns = [
-      /\.\.\//g,
-      /\.\.\\/g,
-      /%2e%2e%2f/gi,
-      /%2e%2e%5c/gi
-    ];
+    const pathTraversalPatterns = [/\.\.\//g, /\.\.\\/g, /%2e%2e%2f/gi, /%2e%2e%5c/gi];
 
     for (const pattern of pathTraversalPatterns) {
       if (pattern.test(input)) {
-        throw new ValidationError('Path traversal attempt detected', [{
-          field: 'input',
-          message: 'Input contains path traversal patterns',
-          code: 'PATH_TRAVERSAL'
-        }]);
+        throw new ValidationError('Path traversal attempt detected', [
+          {
+            field: 'input',
+            message: 'Input contains path traversal patterns',
+            code: 'PATH_TRAVERSAL',
+          },
+        ]);
       }
     }
   }
@@ -403,38 +423,44 @@ export class RequestValidator {
   private sanitizeString(str: string): string {
     if (typeof str !== 'string') return str;
 
-    return str
-      // Remove potential HTML/XML tags
-      .replace(/<[^>]*>/g, '')
-      // Remove potential script injections
-      .replace(/javascript:/gi, '')
-      // Remove SQL comment markers
-      .replace(/--/g, '')
-      // Remove excessive whitespace
-      .replace(/\s+/g, ' ')
-      // Trim
-      .trim();
+    return (
+      str
+        // Remove potential HTML/XML tags
+        .replace(/<[^>]*>/g, '')
+        // Remove potential script injections
+        .replace(/javascript:/gi, '')
+        // Remove SQL comment markers
+        .replace(/--/g, '')
+        // Remove excessive whitespace
+        .replace(/\s+/g, ' ')
+        // Trim
+        .trim()
+    );
   }
 
   private validateBusinessRules(data: any): void {
     // Custom business rule validations
     if (data.options?.category && !this.allowedCategories.includes(data.options.category)) {
-      throw new ValidationError('Invalid category', [{
-        field: 'options.category',
-        message: `Category must be one of: ${this.allowedCategories.join(', ')}`,
-        value: data.options.category
-      }]);
+      throw new ValidationError('Invalid category', [
+        {
+          field: 'options.category',
+          message: `Category must be one of: ${this.allowedCategories.join(', ')}`,
+          value: data.options.category,
+        },
+      ]);
     }
 
     // Validate fuzzy threshold range
     if (data.options?.fuzzyThreshold !== undefined) {
       const threshold = data.options.fuzzyThreshold;
       if (threshold < 0.1 || threshold > 1.0) {
-        throw new ValidationError('Invalid fuzzy threshold', [{
-          field: 'options.fuzzyThreshold',
-          message: 'Fuzzy threshold must be between 0.1 and 1.0',
-          value: threshold
-        }]);
+        throw new ValidationError('Invalid fuzzy threshold', [
+          {
+            field: 'options.fuzzyThreshold',
+            message: 'Fuzzy threshold must be between 0.1 and 1.0',
+            value: threshold,
+          },
+        ]);
       }
     }
 
@@ -442,11 +468,13 @@ export class RequestValidator {
     if (data.options?.limit && data.options?.offset) {
       const maxResults = 1000; // Prevent excessive result sets
       if (data.options.limit + data.options.offset > maxResults) {
-        throw new ValidationError('Result set too large', [{
-          field: 'options',
-          message: `Limit + offset cannot exceed ${maxResults}`,
-          value: data.options.limit + data.options.offset
-        }]);
+        throw new ValidationError('Result set too large', [
+          {
+            field: 'options',
+            message: `Limit + offset cannot exceed ${maxResults}`,
+            value: data.options.limit + data.options.offset,
+          },
+        ]);
       }
     }
   }
@@ -454,20 +482,24 @@ export class RequestValidator {
   private validateAutocompleteRateLimit(data: any): void {
     // Autocomplete specific validations
     if (data.q.length > 50) {
-      throw new ValidationError('Autocomplete query too long', [{
-        field: 'q',
-        message: 'Autocomplete queries should be short for performance',
-        value: data.q.length
-      }]);
+      throw new ValidationError('Autocomplete query too long', [
+        {
+          field: 'q',
+          message: 'Autocomplete queries should be short for performance',
+          value: data.q.length,
+        },
+      ]);
     }
 
     // Prevent autocomplete abuse with very short queries
     if (data.q.length === 1 && /[^a-zA-Z0-9]/.test(data.q)) {
-      throw new ValidationError('Invalid autocomplete query', [{
-        field: 'q',
-        message: 'Single character queries must be alphanumeric',
-        value: data.q
-      }]);
+      throw new ValidationError('Invalid autocomplete query', [
+        {
+          field: 'q',
+          message: 'Single character queries must be alphanumeric',
+          value: data.q,
+        },
+      ]);
     }
   }
 
@@ -482,7 +514,7 @@ export class RequestValidator {
       field: issue.path?.join('.') || 'unknown',
       message: issue.message,
       value: issue.received,
-      code: issue.code
+      code: issue.code,
     }));
 
     throw new ValidationError(message, details);
@@ -505,8 +537,8 @@ export function createValidationMiddleware(validator: RequestValidator) {
             error: {
               message: error.message,
               code: error.code,
-              details: error.details
-            }
+              details: error.details,
+            },
           });
         } else {
           next(error);
@@ -525,8 +557,8 @@ export function createValidationMiddleware(validator: RequestValidator) {
             error: {
               message: error.message,
               code: error.code,
-              details: error.details
-            }
+              details: error.details,
+            },
           });
         } else {
           next(error);
@@ -545,8 +577,8 @@ export function createValidationMiddleware(validator: RequestValidator) {
             error: {
               message: error.message,
               code: error.code,
-              details: error.details
-            }
+              details: error.details,
+            },
           });
         } else {
           next(error);
@@ -565,14 +597,14 @@ export function createValidationMiddleware(validator: RequestValidator) {
             error: {
               message: error.message,
               code: error.code,
-              details: error.details
-            }
+              details: error.details,
+            },
           });
         } else {
           next(error);
         }
       }
-    }
+    },
   };
 }
 
@@ -599,13 +631,16 @@ export class SecuritySanitizer {
    */
   static sanitizeUserId(userId: string): string {
     // UUID format validation and sanitization
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidPattern.test(userId)) {
-      throw new ValidationError('Invalid user ID format', [{
-        field: 'userId',
-        message: 'User ID must be a valid UUID',
-        value: userId
-      }]);
+      throw new ValidationError('Invalid user ID format', [
+        {
+          field: 'userId',
+          message: 'User ID must be a valid UUID',
+          value: userId,
+        },
+      ]);
     }
     return userId.toLowerCase();
   }
@@ -616,11 +651,13 @@ export class SecuritySanitizer {
   static sanitizeCategory(category: string): string {
     const allowedCategories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'];
     if (!allowedCategories.includes(category)) {
-      throw new ValidationError('Invalid category', [{
-        field: 'category',
-        message: `Category must be one of: ${allowedCategories.join(', ')}`,
-        value: category
-      }]);
+      throw new ValidationError('Invalid category', [
+        {
+          field: 'category',
+          message: `Category must be one of: ${allowedCategories.join(', ')}`,
+          value: category,
+        },
+      ]);
     }
     return category;
   }

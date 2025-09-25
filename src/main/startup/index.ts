@@ -7,17 +7,8 @@ export { SplashScreen } from './SplashScreen';
 export { ResourcePreloader } from './ResourcePreloader';
 
 // Re-export types for convenience
-export type {
-  StartupPhase,
-  StartupOptions,
-  StartupResult
-} from './StartupManager';
+export type { StartupPhase, StartupOptions, StartupResult } from './StartupManager';
 
-export type {
-  SplashScreenOptions
-} from './SplashScreen';
+export type { SplashScreenOptions } from './SplashScreen';
 
-export type {
-  PreloadOptions,
-  PreloadResult
-} from './ResourcePreloader';
+export type { PreloadOptions, PreloadResult } from './ResourcePreloader';

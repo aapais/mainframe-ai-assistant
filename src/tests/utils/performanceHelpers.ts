@@ -36,13 +36,13 @@ export class PerformanceMeasurer {
 
   private setupPerformanceObserver() {
     if (typeof PerformanceObserver !== 'undefined') {
-      this.observer = new PerformanceObserver((list) => {
+      this.observer = new PerformanceObserver(list => {
         const entries = list.getEntries();
-        entries.forEach((entry) => {
+        entries.forEach(entry => {
           if (entry.entryType === 'measure') {
             this.measurements.set(entry.name, {
               duration: entry.duration,
-              breakdown: { [entry.name]: entry.duration }
+              breakdown: { [entry.name]: entry.duration },
             });
           }
         });
@@ -79,7 +79,7 @@ export class PerformanceMeasurer {
     const metrics: PerformanceMetrics = {
       duration,
       memory: this.getMemoryUsage(),
-      breakdown: { [name]: duration }
+      breakdown: { [name]: duration },
     };
 
     this.measurements.set(name, metrics);
@@ -94,7 +94,7 @@ export class PerformanceMeasurer {
       return {
         used: memory.usedJSHeapSize,
         peak: memory.totalJSHeapSize,
-        allocated: memory.totalJSHeapSize
+        allocated: memory.totalJSHeapSize,
       };
     }
     return undefined;
@@ -168,7 +168,7 @@ export class Benchmark {
       iterations,
       warmupRuns = Math.min(5, Math.floor(iterations * 0.1)),
       timeout = 30000,
-      memoryProfiling = false
+      memoryProfiling = false,
     } = config;
 
     // Warmup runs
@@ -218,9 +218,10 @@ export class Benchmark {
     const minDuration = Math.min(...durations);
     const maxDuration = Math.max(...durations);
 
-    const variance = durations.reduce((sum, d) => {
-      return sum + Math.pow(d - averageDuration, 2);
-    }, 0) / iterations;
+    const variance =
+      durations.reduce((sum, d) => {
+        return sum + Math.pow(d - averageDuration, 2);
+      }, 0) / iterations;
 
     const standardDeviation = Math.sqrt(variance);
     const operationsPerSecond = 1000 / averageDuration;
@@ -234,12 +235,14 @@ export class Benchmark {
       maxDuration,
       standardDeviation,
       operationsPerSecond,
-      memoryUsage: memoryProfiling ? {
-        initial: initialMemory,
-        peak: peakMemory,
-        final: finalMemory,
-        leaked: leakedMemory
-      } : undefined
+      memoryUsage: memoryProfiling
+        ? {
+            initial: initialMemory,
+            peak: peakMemory,
+            final: finalMemory,
+            leaked: leakedMemory,
+          }
+        : undefined,
     };
   }
 
@@ -249,9 +252,7 @@ export class Benchmark {
   ): Promise<any> {
     return Promise.race([
       Promise.resolve(operation()),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Operation timeout')), timeout)
-      )
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Operation timeout')), timeout)),
     ]);
   }
 
@@ -280,13 +281,7 @@ export interface LargeDatasetConfig {
 }
 
 export const createLargeDataset = (config: LargeDatasetConfig) => {
-  const {
-    entryCount,
-    tagCount,
-    categoryCount,
-    maxTagsPerEntry,
-    complexity = 'medium'
-  } = config;
+  const { entryCount, tagCount, categoryCount, maxTagsPerEntry, complexity = 'medium' } = config;
 
   // Generate realistic categories
   const categories = Array.from({ length: categoryCount }, (_, i) => ({
@@ -296,45 +291,78 @@ export const createLargeDataset = (config: LargeDatasetConfig) => {
     icon: ['📁', '🗂️', '📋', '📊', '⚙️'][i % 5],
     is_system: i < categoryCount * 0.3,
     entry_count: Math.floor(Math.random() * 50) + 1,
-    parent_id: complexity === 'complex' && Math.random() > 0.7 && i > 10
-      ? `cat-${Math.floor(Math.random() * Math.min(i, 10)).toString().padStart(4, '0')}`
-      : null,
-    trending_score: Math.random() * 100
+    parent_id:
+      complexity === 'complex' && Math.random() > 0.7 && i > 10
+        ? `cat-${Math.floor(Math.random() * Math.min(i, 10))
+            .toString()
+            .padStart(4, '0')}`
+        : null,
+    trending_score: Math.random() * 100,
   }));
 
   // Generate realistic tags
   const tagPrefixes = [
-    'error', 'fix', 'issue', 'problem', 'solution', 'handle', 'process',
-    'data', 'file', 'system', 'config', 'setup', 'install', 'update',
-    'performance', 'memory', 'cpu', 'disk', 'network', 'security'
+    'error',
+    'fix',
+    'issue',
+    'problem',
+    'solution',
+    'handle',
+    'process',
+    'data',
+    'file',
+    'system',
+    'config',
+    'setup',
+    'install',
+    'update',
+    'performance',
+    'memory',
+    'cpu',
+    'disk',
+    'network',
+    'security',
   ];
 
   const tagSuffixes = [
-    'handling', 'management', 'processing', 'validation', 'optimization',
-    'monitoring', 'analysis', 'recovery', 'backup', 'maintenance',
-    'debugging', 'testing', 'deployment', 'configuration', 'integration'
+    'handling',
+    'management',
+    'processing',
+    'validation',
+    'optimization',
+    'monitoring',
+    'analysis',
+    'recovery',
+    'backup',
+    'maintenance',
+    'debugging',
+    'testing',
+    'deployment',
+    'configuration',
+    'integration',
   ];
 
   const tags = Array.from({ length: tagCount }, (_, i) => {
     const prefix = tagPrefixes[Math.floor(Math.random() * tagPrefixes.length)];
     const suffix = tagSuffixes[Math.floor(Math.random() * tagSuffixes.length)];
-    const name = complexity === 'simple'
-      ? `tag-${i}`
-      : `${prefix}-${suffix}-${i}`.toLowerCase();
+    const name = complexity === 'simple' ? `tag-${i}` : `${prefix}-${suffix}-${i}`.toLowerCase();
 
     return {
       id: `tag-${i.toString().padStart(4, '0')}`,
       name,
       description: `Generated tag for ${name}`,
       usage_count: Math.floor(Math.random() * 1000),
-      category: Math.random() > 0.6 ? categories[Math.floor(Math.random() * categories.length)].name : null,
+      category:
+        Math.random() > 0.6 ? categories[Math.floor(Math.random() * categories.length)].name : null,
       is_system: Math.random() > 0.8,
       auto_suggest: Math.random() > 0.3,
-      related_tags: complexity === 'complex'
-        ? Array.from({ length: Math.floor(Math.random() * 3) }, () =>
-            tags[Math.floor(Math.random() * Math.min(i, tagCount - 1))]?.name
-          ).filter(Boolean)
-        : []
+      related_tags:
+        complexity === 'complex'
+          ? Array.from(
+              { length: Math.floor(Math.random() * 3) },
+              () => tags[Math.floor(Math.random() * Math.min(i, tagCount - 1))]?.name
+            ).filter(Boolean)
+          : [],
     };
   });
 
@@ -349,7 +377,7 @@ export const createLargeDataset = (config: LargeDatasetConfig) => {
     'Memory allocation error in {module} during {process}',
     'Network connectivity issue between {source} and {target}',
     'Permission denied when accessing {resource} from {location}',
-    'Database query performance issue with {table} and {condition}'
+    'Database query performance issue with {table} and {condition}',
   ];
 
   const solutionTemplates = [
@@ -357,30 +385,46 @@ export const createLargeDataset = (config: LargeDatasetConfig) => {
     '1. Validate {input} parameters\n2. Update {config} settings\n3. Test {functionality}',
     '1. Monitor {system} performance\n2. Optimize {process} settings\n3. Scale {resource} if needed',
     '1. Review {log} files for errors\n2. Check {dependency} status\n3. Apply {fix} as needed',
-    '1. Backup {data} before changes\n2. Apply {update} to {component}\n3. Verify {functionality} works'
+    '1. Backup {data} before changes\n2. Apply {update} to {component}\n3. Verify {functionality} works',
   ];
 
   const entries = Array.from({ length: entryCount }, (_, i) => {
     const category = categories[Math.floor(Math.random() * categories.length)];
     const numTags = Math.floor(Math.random() * maxTagsPerEntry) + 1;
-    const entryTags = Array.from({ length: numTags }, () =>
-      tags[Math.floor(Math.random() * tags.length)].name
+    const entryTags = Array.from(
+      { length: numTags },
+      () => tags[Math.floor(Math.random() * tags.length)].name
     ).filter((tag, index, array) => array.indexOf(tag) === index);
 
     const problemTemplate = problemTemplates[Math.floor(Math.random() * problemTemplates.length)];
-    const solutionTemplate = solutionTemplates[Math.floor(Math.random() * solutionTemplates.length)];
+    const solutionTemplate =
+      solutionTemplates[Math.floor(Math.random() * solutionTemplates.length)];
 
     // Replace placeholders with realistic values
     const replacements = {
-      operation: ['backup', 'restore', 'update', 'synchronization', 'validation'][Math.floor(Math.random() * 5)],
-      component: ['database', 'file system', 'network', 'application', 'service'][Math.floor(Math.random() * 5)],
+      operation: ['backup', 'restore', 'update', 'synchronization', 'validation'][
+        Math.floor(Math.random() * 5)
+      ],
+      component: ['database', 'file system', 'network', 'application', 'service'][
+        Math.floor(Math.random() * 5)
+      ],
       action: ['connect', 'read', 'write', 'delete', 'update'][Math.floor(Math.random() * 5)],
-      resource: ['file', 'database', 'service', 'endpoint', 'configuration'][Math.floor(Math.random() * 5)],
-      error: ['timeout', 'permission denied', 'not found', 'invalid format', 'connection failed'][Math.floor(Math.random() * 5)],
-      process: ['synchronization', 'validation', 'processing', 'analysis', 'computation'][Math.floor(Math.random() * 5)],
-      system: ['authentication', 'authorization', 'logging', 'monitoring', 'backup'][Math.floor(Math.random() * 5)],
-      issue: ['slowdown', 'failure', 'error', 'inconsistency', 'corruption'][Math.floor(Math.random() * 5)],
-      error_code: ['E001', 'E002', 'E003', 'E004', 'E005'][Math.floor(Math.random() * 5)]
+      resource: ['file', 'database', 'service', 'endpoint', 'configuration'][
+        Math.floor(Math.random() * 5)
+      ],
+      error: ['timeout', 'permission denied', 'not found', 'invalid format', 'connection failed'][
+        Math.floor(Math.random() * 5)
+      ],
+      process: ['synchronization', 'validation', 'processing', 'analysis', 'computation'][
+        Math.floor(Math.random() * 5)
+      ],
+      system: ['authentication', 'authorization', 'logging', 'monitoring', 'backup'][
+        Math.floor(Math.random() * 5)
+      ],
+      issue: ['slowdown', 'failure', 'error', 'inconsistency', 'corruption'][
+        Math.floor(Math.random() * 5)
+      ],
+      error_code: ['E001', 'E002', 'E003', 'E004', 'E005'][Math.floor(Math.random() * 5)],
     };
 
     let problem = problemTemplate;
@@ -404,7 +448,7 @@ export const createLargeDataset = (config: LargeDatasetConfig) => {
       success_count: Math.floor(Math.random() * 80),
       failure_count: Math.floor(Math.random() * 20),
       success_rate: Math.random(),
-      trending_score: Math.random() * 100
+      trending_score: Math.random() * 100,
     };
   });
 
@@ -433,28 +477,39 @@ export class PerformanceValidator {
     const failures: string[] = [];
 
     if (thresholds.maxDuration && result.averageDuration > thresholds.maxDuration) {
-      failures.push(`Average duration ${result.averageDuration.toFixed(2)}ms exceeds threshold ${thresholds.maxDuration}ms`);
+      failures.push(
+        `Average duration ${result.averageDuration.toFixed(2)}ms exceeds threshold ${thresholds.maxDuration}ms`
+      );
     }
 
-    if (thresholds.minOperationsPerSecond && result.operationsPerSecond < thresholds.minOperationsPerSecond) {
-      failures.push(`Operations per second ${result.operationsPerSecond.toFixed(2)} below threshold ${thresholds.minOperationsPerSecond}`);
+    if (
+      thresholds.minOperationsPerSecond &&
+      result.operationsPerSecond < thresholds.minOperationsPerSecond
+    ) {
+      failures.push(
+        `Operations per second ${result.operationsPerSecond.toFixed(2)} below threshold ${thresholds.minOperationsPerSecond}`
+      );
     }
 
     if (thresholds.maxMemoryUsage && result.memoryUsage) {
       if (result.memoryUsage.peak > thresholds.maxMemoryUsage) {
-        failures.push(`Peak memory usage ${(result.memoryUsage.peak / 1024 / 1024).toFixed(2)}MB exceeds threshold ${(thresholds.maxMemoryUsage / 1024 / 1024).toFixed(2)}MB`);
+        failures.push(
+          `Peak memory usage ${(result.memoryUsage.peak / 1024 / 1024).toFixed(2)}MB exceeds threshold ${(thresholds.maxMemoryUsage / 1024 / 1024).toFixed(2)}MB`
+        );
       }
     }
 
     if (thresholds.maxMemoryLeak && result.memoryUsage) {
       if (result.memoryUsage.leaked > thresholds.maxMemoryLeak) {
-        failures.push(`Memory leak ${(result.memoryUsage.leaked / 1024 / 1024).toFixed(2)}MB exceeds threshold ${(thresholds.maxMemoryLeak / 1024 / 1024).toFixed(2)}MB`);
+        failures.push(
+          `Memory leak ${(result.memoryUsage.leaked / 1024 / 1024).toFixed(2)}MB exceeds threshold ${(thresholds.maxMemoryLeak / 1024 / 1024).toFixed(2)}MB`
+        );
       }
     }
 
     return {
       passed: failures.length === 0,
-      failures
+      failures,
     };
   }
 
@@ -468,24 +523,30 @@ export class PerformanceValidator {
     const failures: string[] = [];
 
     if (thresholds.maxDuration && metrics.duration > thresholds.maxDuration) {
-      failures.push(`Duration ${metrics.duration.toFixed(2)}ms exceeds threshold ${thresholds.maxDuration}ms`);
+      failures.push(
+        `Duration ${metrics.duration.toFixed(2)}ms exceeds threshold ${thresholds.maxDuration}ms`
+      );
     }
 
     if (thresholds.maxMemoryUsage && metrics.memory) {
       if (metrics.memory.peak > thresholds.maxMemoryUsage) {
-        failures.push(`Memory usage ${(metrics.memory.peak / 1024 / 1024).toFixed(2)}MB exceeds threshold ${(thresholds.maxMemoryUsage / 1024 / 1024).toFixed(2)}MB`);
+        failures.push(
+          `Memory usage ${(metrics.memory.peak / 1024 / 1024).toFixed(2)}MB exceeds threshold ${(thresholds.maxMemoryUsage / 1024 / 1024).toFixed(2)}MB`
+        );
       }
     }
 
     if (thresholds.minOperationsPerSecond && metrics.operations) {
       if (metrics.operations.rate < thresholds.minOperationsPerSecond) {
-        failures.push(`Operations per second ${metrics.operations.rate.toFixed(2)} below threshold ${thresholds.minOperationsPerSecond}`);
+        failures.push(
+          `Operations per second ${metrics.operations.rate.toFixed(2)} below threshold ${thresholds.minOperationsPerSecond}`
+        );
       }
     }
 
     return {
       passed: failures.length === 0,
-      failures
+      failures,
     };
   }
 }
@@ -522,12 +583,7 @@ export interface StressTestResult {
 
 export class StressTest {
   async run(config: StressTestConfig): Promise<StressTestResult> {
-    const {
-      maxConcurrency,
-      duration,
-      rampUpTime = duration * 0.1,
-      operations
-    } = config;
+    const { maxConcurrency, duration, rampUpTime = duration * 0.1, operations } = config;
 
     const startTime = performance.now();
     const endTime = startTime + duration;
@@ -574,12 +630,12 @@ export class StressTest {
         errors.push({
           operation: operation.name,
           error: error instanceof Error ? error.message : String(error),
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
       const opEnd = performance.now();
-      totalResponseTime += (opEnd - opStart);
+      totalResponseTime += opEnd - opStart;
       activePromises--;
     };
 
@@ -620,7 +676,7 @@ export class StressTest {
       averageResponseTime,
       operationsPerSecond,
       concurrencyLevels,
-      errors
+      errors,
     };
   }
 }

@@ -10,49 +10,49 @@ export enum ErrorCode {
   // General errors
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
-  
+
   // Validation errors
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   INVALID_INPUT = 'INVALID_INPUT',
   MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD',
-  
+
   // Resource errors
   RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
   RESOURCE_ALREADY_EXISTS = 'RESOURCE_ALREADY_EXISTS',
   RESOURCE_CONFLICT = 'RESOURCE_CONFLICT',
-  
+
   // Database errors
   DATABASE_ERROR = 'DATABASE_ERROR',
   DATABASE_CONNECTION_ERROR = 'DATABASE_CONNECTION_ERROR',
   DATABASE_CONSTRAINT_ERROR = 'DATABASE_CONSTRAINT_ERROR',
-  
+
   // Cache errors
   CACHE_ERROR = 'CACHE_ERROR',
   CACHE_CONNECTION_ERROR = 'CACHE_CONNECTION_ERROR',
-  
+
   // Search errors
   SEARCH_ERROR = 'SEARCH_ERROR',
   INDEX_ERROR = 'INDEX_ERROR',
-  
+
   // Authentication/Authorization errors
   UNAUTHORIZED = 'UNAUTHORIZED',
   FORBIDDEN = 'FORBIDDEN',
-  
+
   // Rate limiting
   RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
-  
+
   // File/IO errors
   FILE_NOT_FOUND = 'FILE_NOT_FOUND',
   FILE_READ_ERROR = 'FILE_READ_ERROR',
   FILE_WRITE_ERROR = 'FILE_WRITE_ERROR',
-  
+
   // Network errors
   NETWORK_ERROR = 'NETWORK_ERROR',
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
-  
+
   // Service errors
   SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
-  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR'
+  EXTERNAL_SERVICE_ERROR = 'EXTERNAL_SERVICE_ERROR',
 }
 
 /**
@@ -77,7 +77,10 @@ export class AppError extends Error {
     let statusCode: number;
     let errorDetails: Record<string, any> | undefined;
 
-    if (typeof messageOrCode === 'string' && Object.values(ErrorCode).includes(messageOrCode as ErrorCode)) {
+    if (
+      typeof messageOrCode === 'string' &&
+      Object.values(ErrorCode).includes(messageOrCode as ErrorCode)
+    ) {
       // New signature: AppError(ErrorCode, message, statusCode?, details?)
       code = messageOrCode;
       message = typeof codeOrStatusCode === 'string' ? codeOrStatusCode : messageOrCode;
@@ -87,23 +90,27 @@ export class AppError extends Error {
       // Legacy signature: AppError(message, code?, statusCode?, details?)
       message = messageOrCode;
       code = typeof codeOrStatusCode === 'string' ? codeOrStatusCode : ErrorCode.UNKNOWN_ERROR;
-      statusCode = typeof codeOrStatusCode === 'number' ? codeOrStatusCode : 
-                   typeof statusCodeOrDetails === 'number' ? statusCodeOrDetails : 500;
+      statusCode =
+        typeof codeOrStatusCode === 'number'
+          ? codeOrStatusCode
+          : typeof statusCodeOrDetails === 'number'
+            ? statusCodeOrDetails
+            : 500;
       errorDetails = typeof statusCodeOrDetails === 'object' ? statusCodeOrDetails : details;
     }
 
     super(message);
-    
+
     this.name = 'AppError';
     this.code = code;
     this.statusCode = statusCode;
     this.isOperational = true;
     this.timestamp = new Date();
     this.details = errorDetails;
-    
+
     // Maintain proper prototype chain
     Object.setPrototypeOf(this, AppError.prototype);
-    
+
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, AppError);
@@ -122,7 +129,7 @@ export class AppError extends Error {
       isOperational: this.isOperational,
       timestamp: this.timestamp.toISOString(),
       details: this.details,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 
@@ -143,7 +150,10 @@ export class AppError extends Error {
   /**
    * Create an internal server error
    */
-  static internalServer(message = 'Internal server error', details?: Record<string, any>): AppError {
+  static internalServer(
+    message = 'Internal server error',
+    details?: Record<string, any>
+  ): AppError {
     return new AppError(message, ErrorCode.INTERNAL_ERROR, 500, details);
   }
 
@@ -185,7 +195,10 @@ export class AppError extends Error {
   /**
    * Create a service unavailable error
    */
-  static serviceUnavailable(message = 'Service unavailable', details?: Record<string, any>): AppError {
+  static serviceUnavailable(
+    message = 'Service unavailable',
+    details?: Record<string, any>
+  ): AppError {
     return new AppError(message, ErrorCode.SERVICE_UNAVAILABLE, 503, details);
   }
 
@@ -225,26 +238,19 @@ export class ErrorUtils {
     if (error instanceof AppError) {
       return error;
     }
-    
+
     if (error instanceof Error) {
-      return new AppError(
-        error.message || defaultMessage,
-        ErrorCode.UNKNOWN_ERROR,
-        500,
-        { originalError: error.name, stack: error.stack }
-      );
+      return new AppError(error.message || defaultMessage, ErrorCode.UNKNOWN_ERROR, 500, {
+        originalError: error.name,
+        stack: error.stack,
+      });
     }
-    
+
     if (typeof error === 'string') {
       return new AppError(error, ErrorCode.UNKNOWN_ERROR, 500);
     }
-    
-    return new AppError(
-      defaultMessage,
-      ErrorCode.UNKNOWN_ERROR,
-      500,
-      { originalError: error }
-    );
+
+    return new AppError(defaultMessage, ErrorCode.UNKNOWN_ERROR, 500, { originalError: error });
   }
 
   /**
@@ -274,7 +280,7 @@ export class ErrorUtils {
     const baseInfo = {
       message: error.message,
       name: error.name,
-      stack: error.stack
+      stack: error.stack,
     };
 
     if (error instanceof AppError) {
@@ -284,7 +290,7 @@ export class ErrorUtils {
         statusCode: error.statusCode,
         isOperational: error.isOperational,
         timestamp: error.timestamp,
-        details: error.details
+        details: error.details,
       };
     }
 
@@ -305,7 +311,7 @@ export class ErrorUtils {
     const message = `Database constraint violation: ${constraintName}`;
     return new AppError(message, ErrorCode.DATABASE_CONSTRAINT_ERROR, 400, {
       constraint: constraintName,
-      ...details
+      ...details,
     });
   }
 
@@ -317,17 +323,19 @@ export class ErrorUtils {
     return new AppError(message, ErrorCode.VALIDATION_ERROR, 400, {
       field,
       reason,
-      value
+      value,
     });
   }
 
   /**
    * Aggregate multiple validation errors
    */
-  static aggregateValidationErrors(errors: Array<{ field: string; reason: string; value?: any }>): AppError {
+  static aggregateValidationErrors(
+    errors: Array<{ field: string; reason: string; value?: any }>
+  ): AppError {
     const message = `Validation failed for ${errors.length} field(s)`;
     return new AppError(message, ErrorCode.VALIDATION_ERROR, 400, {
-      errors
+      errors,
     });
   }
 }

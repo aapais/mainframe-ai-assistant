@@ -105,7 +105,11 @@ export class WindowOperationTracker extends EventEmitter {
   /**
    * Start tracking a window operation
    */
-  public startOperation(operation: string, windowId: number, metadata?: Record<string, any>): string {
+  public startOperation(
+    operation: string,
+    windowId: number,
+    metadata?: Record<string, any>
+  ): string {
     const operationId = `${operation}-${windowId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const startTime = performance.now();
 
@@ -117,7 +121,7 @@ export class WindowOperationTracker extends EventEmitter {
       windowId,
       startTime,
       windowState,
-      metadata
+      metadata,
     };
 
     this.activeOperations.set(operationId, operationData);
@@ -146,7 +150,7 @@ export class WindowOperationTracker extends EventEmitter {
       duration,
       isTargetMet: duration <= this.targetDuration,
       windowState: operationData.windowState || this.getDefaultWindowState(),
-      metadata: operationData.metadata
+      metadata: operationData.metadata,
     };
 
     this.activeOperations.delete(operationId);
@@ -162,7 +166,7 @@ export class WindowOperationTracker extends EventEmitter {
         windowId: operation.windowId,
         duration: operation.duration,
         target: this.targetDuration,
-        message: `Window operation "${operation.operation}" took ${duration.toFixed(2)}ms, exceeding target of ${this.targetDuration}ms`
+        message: `Window operation "${operation.operation}" took ${duration.toFixed(2)}ms, exceeding target of ${this.targetDuration}ms`,
       });
     }
 
@@ -368,7 +372,7 @@ export class WindowOperationTracker extends EventEmitter {
       isVisible: window.isVisible(),
       isMinimized: window.isMinimized(),
       isMaximized: window.isMaximized(),
-      isFullScreen: window.isFullScreen()
+      isFullScreen: window.isFullScreen(),
     };
   }
 
@@ -384,7 +388,7 @@ export class WindowOperationTracker extends EventEmitter {
       isVisible: false,
       isMinimized: false,
       isMaximized: false,
-      isFullScreen: false
+      isFullScreen: false,
     };
   }
 
@@ -429,19 +433,22 @@ export class WindowOperationTracker extends EventEmitter {
         slowestOperation: null,
         fastestOperation: null,
         operationCounts: {},
-        operationAverages: {}
+        operationAverages: {},
       };
     }
 
     const totalOperations = this.operations.length;
-    const averageDuration = this.operations.reduce((sum, op) => sum + op.duration, 0) / totalOperations;
+    const averageDuration =
+      this.operations.reduce((sum, op) => sum + op.duration, 0) / totalOperations;
     const targetMeets = this.operations.filter(op => op.isTargetMet).length;
 
     const slowestOperation = this.operations.reduce((slowest, current) =>
-      !slowest || current.duration > slowest.duration ? current : slowest);
+      !slowest || current.duration > slowest.duration ? current : slowest
+    );
 
     const fastestOperation = this.operations.reduce((fastest, current) =>
-      !fastest || current.duration < fastest.duration ? current : fastest);
+      !fastest || current.duration < fastest.duration ? current : fastest
+    );
 
     // Calculate operation counts and averages
     const operationStats = new Map<string, { count: number; totalDuration: number }>();
@@ -471,7 +478,7 @@ export class WindowOperationTracker extends EventEmitter {
       slowestOperation,
       fastestOperation,
       operationCounts,
-      operationAverages
+      operationAverages,
     };
   }
 
@@ -493,12 +500,13 @@ export class WindowOperationTracker extends EventEmitter {
         totalOperations: 0,
         averageDuration: 0,
         targetMeetRate: 0,
-        operationBreakdown: {}
+        operationBreakdown: {},
       };
     }
 
     const totalOperations = windowOperations.length;
-    const averageDuration = windowOperations.reduce((sum, op) => sum + op.duration, 0) / totalOperations;
+    const averageDuration =
+      windowOperations.reduce((sum, op) => sum + op.duration, 0) / totalOperations;
     const targetMeets = windowOperations.filter(op => op.isTargetMet).length;
 
     const operationBreakdown: Record<string, { count: number; averageDuration: number }> = {};
@@ -512,7 +520,8 @@ export class WindowOperationTracker extends EventEmitter {
 
     Object.keys(operationBreakdown).forEach(operation => {
       const ops = windowOperations.filter(op => op.operation === operation);
-      operationBreakdown[operation].averageDuration = ops.reduce((sum, op) => sum + op.duration, 0) / ops.length;
+      operationBreakdown[operation].averageDuration =
+        ops.reduce((sum, op) => sum + op.duration, 0) / ops.length;
     });
 
     return {
@@ -520,7 +529,7 @@ export class WindowOperationTracker extends EventEmitter {
       totalOperations,
       averageDuration,
       targetMeetRate: targetMeets / totalOperations,
-      operationBreakdown
+      operationBreakdown,
     };
   }
 
@@ -530,9 +539,20 @@ export class WindowOperationTracker extends EventEmitter {
   public exportData(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
       const headers = [
-        'operation', 'windowId', 'startTime', 'endTime', 'duration',
-        'isTargetMet', 'windowWidth', 'windowHeight', 'windowX', 'windowY',
-        'isVisible', 'isMinimized', 'isMaximized', 'isFullScreen'
+        'operation',
+        'windowId',
+        'startTime',
+        'endTime',
+        'duration',
+        'isTargetMet',
+        'windowWidth',
+        'windowHeight',
+        'windowX',
+        'windowY',
+        'isVisible',
+        'isMinimized',
+        'isMaximized',
+        'isFullScreen',
       ];
 
       const rows = this.operations.map(op => [
@@ -549,17 +569,21 @@ export class WindowOperationTracker extends EventEmitter {
         op.windowState.isVisible,
         op.windowState.isMinimized,
         op.windowState.isMaximized,
-        op.windowState.isFullScreen
+        op.windowState.isFullScreen,
       ]);
 
       return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     }
 
-    return JSON.stringify({
-      operations: this.operations,
-      summary: this.getPerformanceSummary(),
-      trackedWindows: Array.from(this.trackedWindows)
-    }, null, 2);
+    return JSON.stringify(
+      {
+        operations: this.operations,
+        summary: this.getPerformanceSummary(),
+        trackedWindows: Array.from(this.trackedWindows),
+      },
+      null,
+      2
+    );
   }
 
   /**

@@ -6,7 +6,10 @@
  */
 
 import { EventEmitter } from 'events';
-import { SearchPerformanceDashboard, PerformanceAlert } from '../monitoring/SearchPerformanceDashboard';
+import {
+  SearchPerformanceDashboard,
+  PerformanceAlert,
+} from '../monitoring/SearchPerformanceDashboard';
 import { SearchService } from '../services/SearchService';
 
 interface OptimizationRule {
@@ -93,7 +96,9 @@ export class SearchPipelineOptimizer extends EventEmitter {
 
           if (result.success) {
             this.appliedOptimizations.add(rule.id);
-            console.log(`✅ Successfully applied: ${rule.name} (${result.improvement.toFixed(1)}% improvement)`);
+            console.log(
+              `✅ Successfully applied: ${rule.name} (${result.improvement.toFixed(1)}% improvement)`
+            );
           } else {
             console.log(`❌ Failed to apply: ${rule.name} - ${result.error}`);
           }
@@ -105,12 +110,13 @@ export class SearchPipelineOptimizer extends EventEmitter {
 
       this.optimizationHistory.push(...results);
       this.emit('optimization-complete', results);
-
     } finally {
       this.isOptimizing = false;
     }
 
-    console.log(`🎯 Optimization complete: ${results.filter(r => r.success).length}/${results.length} successful`);
+    console.log(
+      `🎯 Optimization complete: ${results.filter(r => r.success).length}/${results.length} successful`
+    );
     return results;
   }
 
@@ -132,9 +138,12 @@ export class SearchPipelineOptimizer extends EventEmitter {
       recommendations.push({
         rule,
         applicable,
-        reason: applicable ? 'Performance metrics indicate this optimization would be beneficial' :
-                this.appliedOptimizations.has(rule.id) ? 'Already applied' : 'Not needed at current performance levels',
-        estimatedImprovement: this.estimateImprovement(rule, metrics)
+        reason: applicable
+          ? 'Performance metrics indicate this optimization would be beneficial'
+          : this.appliedOptimizations.has(rule.id)
+            ? 'Already applied'
+            : 'Not needed at current performance levels',
+        estimatedImprovement: this.estimateImprovement(rule, metrics),
       });
     }
 
@@ -184,11 +193,14 @@ export class SearchPipelineOptimizer extends EventEmitter {
       isOptimizing: this.isOptimizing,
       appliedOptimizations: Array.from(this.appliedOptimizations),
       totalOptimizations: this.optimizationHistory.length,
-      successRate: this.optimizationHistory.length > 0 ? successful / this.optimizationHistory.length : 0,
-      lastOptimization: this.optimizationHistory.length > 0 ?
-        Math.max(...this.optimizationHistory.map(r => r.timestamp.getTime())) ?
-        new Date(Math.max(...this.optimizationHistory.map(r => r.timestamp.getTime()))) :
-        undefined : undefined
+      successRate:
+        this.optimizationHistory.length > 0 ? successful / this.optimizationHistory.length : 0,
+      lastOptimization:
+        this.optimizationHistory.length > 0
+          ? Math.max(...this.optimizationHistory.map(r => r.timestamp.getTime()))
+            ? new Date(Math.max(...this.optimizationHistory.map(r => r.timestamp.getTime())))
+            : undefined
+          : undefined,
     };
   }
 
@@ -199,91 +211,96 @@ export class SearchPipelineOptimizer extends EventEmitter {
     this.optimizationRules.set('increase-cache-ttl', {
       id: 'increase-cache-ttl',
       name: 'Increase Cache TTL',
-      condition: (metrics) => metrics.components.cache.hitRate < 0.8 && metrics.components.search.p95ResponseTime > 500,
+      condition: metrics =>
+        metrics.components.cache.hitRate < 0.8 && metrics.components.search.p95ResponseTime > 500,
       apply: async () => this.increaseCacheTTL(),
       impact: 'medium',
       risk: 'low',
-      description: 'Increases cache time-to-live to improve hit rates and reduce search time'
+      description: 'Increases cache time-to-live to improve hit rates and reduce search time',
     });
 
     this.optimizationRules.set('enable-query-batching', {
       id: 'enable-query-batching',
       name: 'Enable Query Batching',
-      condition: (metrics) => metrics.components.search.throughput > 5 && metrics.components.search.p95ResponseTime > 800,
+      condition: metrics =>
+        metrics.components.search.throughput > 5 && metrics.components.search.p95ResponseTime > 800,
       apply: async () => this.enableQueryBatching(),
       impact: 'high',
       risk: 'medium',
-      description: 'Batches similar queries together to reduce database load'
+      description: 'Batches similar queries together to reduce database load',
     });
 
     this.optimizationRules.set('optimize-fts-queries', {
       id: 'optimize-fts-queries',
       name: 'Optimize FTS Queries',
-      condition: (metrics) => metrics.components.database.queryTime > 200,
+      condition: metrics => metrics.components.database.queryTime > 200,
       apply: async () => this.optimizeFTSQueries(),
       impact: 'high',
       risk: 'low',
-      description: 'Optimizes full-text search queries for better performance'
+      description: 'Optimizes full-text search queries for better performance',
     });
 
     this.optimizationRules.set('implement-result-streaming', {
       id: 'implement-result-streaming',
       name: 'Implement Result Streaming',
-      condition: (metrics) => metrics.components.ui.renderTime > 150,
+      condition: metrics => metrics.components.ui.renderTime > 150,
       apply: async () => this.implementResultStreaming(),
       impact: 'medium',
       risk: 'medium',
-      description: 'Streams search results to improve perceived performance'
+      description: 'Streams search results to improve perceived performance',
     });
 
     this.optimizationRules.set('reduce-ai-timeout', {
       id: 'reduce-ai-timeout',
       name: 'Reduce AI Timeout',
-      condition: (metrics) => metrics.components.network.aiApiLatency > 3000 && metrics.components.network.aiApiErrorRate < 0.1,
+      condition: metrics =>
+        metrics.components.network.aiApiLatency > 3000 &&
+        metrics.components.network.aiApiErrorRate < 0.1,
       apply: async () => this.reduceAITimeout(),
       impact: 'low',
       risk: 'low',
-      description: 'Reduces AI API timeout to fail faster and fallback to local search'
+      description: 'Reduces AI API timeout to fail faster and fallback to local search',
     });
 
     this.optimizationRules.set('preload-common-queries', {
       id: 'preload-common-queries',
       name: 'Preload Common Queries',
-      condition: (metrics) => metrics.components.cache.hitRate < 0.7,
+      condition: metrics => metrics.components.cache.hitRate < 0.7,
       apply: async () => this.preloadCommonQueries(),
       impact: 'medium',
       risk: 'low',
-      description: 'Preloads results for common queries to improve cache hit rates'
+      description: 'Preloads results for common queries to improve cache hit rates',
     });
 
     this.optimizationRules.set('compress-search-results', {
       id: 'compress-search-results',
       name: 'Compress Search Results',
-      condition: (metrics) => metrics.components.ui.memoryUsage > 200 * 1024 * 1024,
+      condition: metrics => metrics.components.ui.memoryUsage > 200 * 1024 * 1024,
       apply: async () => this.compressSearchResults(),
       impact: 'low',
       risk: 'low',
-      description: 'Compresses large search result sets to reduce memory usage'
+      description: 'Compresses large search result sets to reduce memory usage',
     });
 
     this.optimizationRules.set('enable-virtual-scrolling', {
       id: 'enable-virtual-scrolling',
       name: 'Enable Virtual Scrolling',
-      condition: (metrics) => metrics.components.ui.renderTime > 100 && metrics.components.search.avgResponseTime > 0,
+      condition: metrics =>
+        metrics.components.ui.renderTime > 100 && metrics.components.search.avgResponseTime > 0,
       apply: async () => this.enableVirtualScrolling(),
       impact: 'high',
       risk: 'medium',
-      description: 'Enables virtual scrolling for large result sets to improve UI performance'
+      description: 'Enables virtual scrolling for large result sets to improve UI performance',
     });
 
     this.optimizationRules.set('optimize-database-indexes', {
       id: 'optimize-database-indexes',
       name: 'Optimize Database Indexes',
-      condition: (metrics) => metrics.components.database.queryTime > 300,
+      condition: metrics => metrics.components.database.queryTime > 300,
       apply: async () => this.optimizeDatabaseIndexes(),
       impact: 'high',
       risk: 'medium',
-      description: 'Optimizes database indexes for better search performance'
+      description: 'Optimizes database indexes for better search performance',
     });
 
     console.log(`📋 Initialized ${this.optimizationRules.size} optimization rules`);
@@ -324,7 +341,7 @@ export class SearchPipelineOptimizer extends EventEmitter {
           ruleId: rule.id,
           success: true,
           improvement,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
       } else {
         return {
@@ -332,7 +349,7 @@ export class SearchPipelineOptimizer extends EventEmitter {
           success: false,
           improvement: 0,
           error: 'Optimization rule returned false',
-          timestamp: new Date()
+          timestamp: new Date(),
         };
       }
     } catch (error) {
@@ -341,7 +358,7 @@ export class SearchPipelineOptimizer extends EventEmitter {
         success: false,
         improvement: 0,
         error: error.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
     }
   }
@@ -350,18 +367,34 @@ export class SearchPipelineOptimizer extends EventEmitter {
     switch (rule.id) {
       case 'increase-cache-ttl':
       case 'preload-common-queries':
-        return ((after.components.cache.hitRate - before.components.cache.hitRate) / before.components.cache.hitRate) * 100;
+        return (
+          ((after.components.cache.hitRate - before.components.cache.hitRate) /
+            before.components.cache.hitRate) *
+          100
+        );
 
       case 'optimize-fts-queries':
       case 'enable-query-batching':
-        return ((before.components.search.p95ResponseTime - after.components.search.p95ResponseTime) / before.components.search.p95ResponseTime) * 100;
+        return (
+          ((before.components.search.p95ResponseTime - after.components.search.p95ResponseTime) /
+            before.components.search.p95ResponseTime) *
+          100
+        );
 
       case 'implement-result-streaming':
       case 'enable-virtual-scrolling':
-        return ((before.components.ui.renderTime - after.components.ui.renderTime) / before.components.ui.renderTime) * 100;
+        return (
+          ((before.components.ui.renderTime - after.components.ui.renderTime) /
+            before.components.ui.renderTime) *
+          100
+        );
 
       case 'compress-search-results':
-        return ((before.components.ui.memoryUsage - after.components.ui.memoryUsage) / before.components.ui.memoryUsage) * 100;
+        return (
+          ((before.components.ui.memoryUsage - after.components.ui.memoryUsage) /
+            before.components.ui.memoryUsage) *
+          100
+        );
 
       default:
         return 5; // Default 5% improvement estimate
@@ -464,7 +497,7 @@ export class SearchPipelineOptimizer extends EventEmitter {
         's0c7 data exception',
         'jcl error',
         'db2 sqlcode',
-        'cobol abend'
+        'cobol abend',
       ];
 
       // Preload these queries to warm the cache

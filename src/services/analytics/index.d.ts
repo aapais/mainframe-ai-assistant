@@ -1,177 +1,281 @@
 export { ResultEffectivenessTracker } from './ResultEffectivenessTracker';
-export type { ClickEvent, ImpressionEvent, EngagementEvent, CTRMetrics, EngagementMetrics, PositionAnalysis } from './ResultEffectivenessTracker';
+export type {
+  ClickEvent,
+  ImpressionEvent,
+  EngagementEvent,
+  CTRMetrics,
+  EngagementMetrics,
+  PositionAnalysis,
+} from './ResultEffectivenessTracker';
 export { RelevanceScorer } from './RelevanceScorer';
-export type { RelevanceSignal, ScoringResult, RelevanceMetrics, UserFeedback, ContextualFactors } from './RelevanceScorer';
+export type {
+  RelevanceSignal,
+  ScoringResult,
+  RelevanceMetrics,
+  UserFeedback,
+  ContextualFactors,
+} from './RelevanceScorer';
 export { UserSatisfactionMetrics } from './UserSatisfactionMetrics';
-export type { SatisfactionSurvey, ImplicitFeedback, SatisfactionMetrics, UserJourney, PredictiveInsights } from './UserSatisfactionMetrics';
+export type {
+  SatisfactionSurvey,
+  ImplicitFeedback,
+  SatisfactionMetrics,
+  UserJourney,
+  PredictiveInsights,
+} from './UserSatisfactionMetrics';
 export { ConversionTracker } from './ConversionTracker';
-export type { ConversionGoal, ConversionEvent, Conversion, ConversionMetrics, FunnelStage, ConversionFunnel, AttributionModel } from './ConversionTracker';
+export type {
+  ConversionGoal,
+  ConversionEvent,
+  Conversion,
+  ConversionMetrics,
+  FunnelStage,
+  ConversionFunnel,
+  AttributionModel,
+} from './ConversionTracker';
 export { ABTestingFramework } from './ABTestingFramework';
-export type { ABTestConfig, ABTestVariant, ABTestAssignment, ABTestEvent, ABTestResults, BayesianAnalysis, MultiArmedBanditConfig } from './ABTestingFramework';
+export type {
+  ABTestConfig,
+  ABTestVariant,
+  ABTestAssignment,
+  ABTestEvent,
+  ABTestResults,
+  BayesianAnalysis,
+  MultiArmedBanditConfig,
+} from './ABTestingFramework';
 export { QueryAnalyzer } from './QueryAnalyzer';
-export type { QueryPattern, QueryCluster, QueryAnalysisReport, PatternMatch, ClusteringResult } from './QueryAnalyzer';
+export type {
+  QueryPattern,
+  QueryCluster,
+  QueryAnalysisReport,
+  PatternMatch,
+  ClusteringResult,
+} from './QueryAnalyzer';
 export { SearchIntentClassifier } from './SearchIntentClassifier';
-export type { SearchIntent, IntentClassification, IntentFeatures, IntentLearningData, ClassificationResult } from './SearchIntentClassifier';
+export type {
+  SearchIntent,
+  IntentClassification,
+  IntentFeatures,
+  IntentLearningData,
+  ClassificationResult,
+} from './SearchIntentClassifier';
 export { QueryComplexityAnalyzer } from './QueryComplexityAnalyzer';
-export type { ComplexityDimension, ComplexityScore, ComplexityFactor, ComplexityAnalysisReport } from './QueryComplexityAnalyzer';
+export type {
+  ComplexityDimension,
+  ComplexityScore,
+  ComplexityFactor,
+  ComplexityAnalysisReport,
+} from './QueryComplexityAnalyzer';
 export { FailedSearchDetector } from './FailedSearchDetector';
-export type { FailedSearch, FailureType, FailureReason, FailureAnalysisReport, ResolutionSuggestion } from './FailedSearchDetector';
+export type {
+  FailedSearch,
+  FailureType,
+  FailureReason,
+  FailureAnalysisReport,
+  ResolutionSuggestion,
+} from './FailedSearchDetector';
 export { UserBehaviorTracker } from './UserBehaviorTracker';
-export type { UserSession, BehaviorPattern, BehaviorAnalysisReport, SessionAnalytics, PatternType } from './UserBehaviorTracker';
+export type {
+  UserSession,
+  BehaviorPattern,
+  BehaviorAnalysisReport,
+  SessionAnalytics,
+  PatternType,
+} from './UserBehaviorTracker';
 export { AnalyticsOrchestrator } from './AnalyticsOrchestrator';
 export type { AnalyticsConfig, UnifiedAnalytics, SearchExperience } from './AnalyticsOrchestrator';
 export { default as EffectivenessDashboard } from '../components/analytics/EffectivenessDashboard';
 export { default as QueryAnalyticsDashboard } from '../components/analytics/QueryAnalyticsDashboard';
-export declare function createAnalyticsOrchestrator(config?: Partial<import('./AnalyticsOrchestrator').AnalyticsConfig>): any;
+export declare function createAnalyticsOrchestrator(
+  config?: Partial<import('./AnalyticsOrchestrator').AnalyticsConfig>
+): any;
 export declare function createDevelopmentAnalyticsOrchestrator(): any;
 export declare function createProductionAnalyticsOrchestrator(): any;
 export declare const defaultAnalyticsConfig: import('./AnalyticsOrchestrator').AnalyticsConfig;
 export declare const developmentAnalyticsConfig: import('./AnalyticsOrchestrator').AnalyticsConfig;
 export declare const analyticsUtils: {
-    calculateSignificance(controlMean: number, controlStdDev: number, controlSize: number, variantMean: number, variantStdDev: number, variantSize: number): {
-        pValue: number;
-        isSignificant: boolean;
-        confidenceLevel: number;
-    };
-    calculateProportionConfidenceInterval(successes: number, trials: number, confidenceLevel?: number): [number, number];
-    calculateRequiredSampleSize(baselineRate: number, minimumDetectableEffect: number, alpha?: number, beta?: number): number;
-    detectAnomalies(values: number[], threshold?: number): Array<{
-        index: number;
-        value: number;
-        zscore: number;
-        isAnomaly: boolean;
-    }>;
-    calculateCorrelation(x: number[], y: number[]): number;
+  calculateSignificance(
+    controlMean: number,
+    controlStdDev: number,
+    controlSize: number,
+    variantMean: number,
+    variantStdDev: number,
+    variantSize: number
+  ): {
+    pValue: number;
+    isSignificant: boolean;
+    confidenceLevel: number;
+  };
+  calculateProportionConfidenceInterval(
+    successes: number,
+    trials: number,
+    confidenceLevel?: number
+  ): [number, number];
+  calculateRequiredSampleSize(
+    baselineRate: number,
+    minimumDetectableEffect: number,
+    alpha?: number,
+    beta?: number
+  ): number;
+  detectAnomalies(
+    values: number[],
+    threshold?: number
+  ): Array<{
+    index: number;
+    value: number;
+    zscore: number;
+    isAnomaly: boolean;
+  }>;
+  calculateCorrelation(x: number[], y: number[]): number;
 };
 export declare const AnalyticsEventTypes: {
-    readonly SEARCH_PERFORMED: "search_performed";
-    readonly SEARCH_RESULTS_DISPLAYED: "search_results_displayed";
-    readonly SEARCH_REFINED: "search_refined";
-    readonly RESULT_CLICKED: "result_clicked";
-    readonly RESULT_HOVERED: "result_hovered";
-    readonly RESULT_BOOKMARKED: "result_bookmarked";
-    readonly RESULT_SHARED: "result_shared";
-    readonly PAGE_VIEWED: "page_viewed";
-    readonly TIME_SPENT: "time_spent";
-    readonly SCROLL_DEPTH: "scroll_depth";
-    readonly FORM_SUBMITTED: "form_submitted";
-    readonly GOAL_COMPLETED: "goal_completed";
-    readonly CONVERSION: "conversion";
-    readonly PURCHASE: "purchase";
-    readonly SIGNUP: "signup";
-    readonly FEEDBACK_SUBMITTED: "feedback_submitted";
-    readonly RATING_GIVEN: "rating_given";
-    readonly SURVEY_COMPLETED: "survey_completed";
-    readonly VARIANT_ASSIGNED: "variant_assigned";
-    readonly EXPERIMENT_EXPOSED: "experiment_exposed";
-    readonly EXPERIMENT_CONVERTED: "experiment_converted";
+  readonly SEARCH_PERFORMED: 'search_performed';
+  readonly SEARCH_RESULTS_DISPLAYED: 'search_results_displayed';
+  readonly SEARCH_REFINED: 'search_refined';
+  readonly RESULT_CLICKED: 'result_clicked';
+  readonly RESULT_HOVERED: 'result_hovered';
+  readonly RESULT_BOOKMARKED: 'result_bookmarked';
+  readonly RESULT_SHARED: 'result_shared';
+  readonly PAGE_VIEWED: 'page_viewed';
+  readonly TIME_SPENT: 'time_spent';
+  readonly SCROLL_DEPTH: 'scroll_depth';
+  readonly FORM_SUBMITTED: 'form_submitted';
+  readonly GOAL_COMPLETED: 'goal_completed';
+  readonly CONVERSION: 'conversion';
+  readonly PURCHASE: 'purchase';
+  readonly SIGNUP: 'signup';
+  readonly FEEDBACK_SUBMITTED: 'feedback_submitted';
+  readonly RATING_GIVEN: 'rating_given';
+  readonly SURVEY_COMPLETED: 'survey_completed';
+  readonly VARIANT_ASSIGNED: 'variant_assigned';
+  readonly EXPERIMENT_EXPOSED: 'experiment_exposed';
+  readonly EXPERIMENT_CONVERTED: 'experiment_converted';
 };
 export declare const MetricCalculators: {
+  calculateCTR(clicks: number, impressions: number): number;
+  calculateConversionRate(conversions: number, visitors: number): number;
+  calculateBounceRate(singlePageSessions: number, totalSessions: number): number;
+  calculateAvgSessionDuration(sessionDurations: number[]): number;
+  calculatePrecisionAtK(relevantResults: boolean[], k: number): number;
+  calculateNDCG(relevanceScores: number[], k?: number): number;
+};
+export declare const QueryAnalyticsEventTypes: {
+  readonly QUERY_ANALYZED: 'query_analyzed';
+  readonly PATTERN_DETECTED: 'pattern_detected';
+  readonly CLUSTER_UPDATED: 'cluster_updated';
+  readonly INTENT_CLASSIFIED: 'intent_classified';
+  readonly INTENT_CONFIDENCE_LOW: 'intent_confidence_low';
+  readonly INTENT_LEARNING_UPDATE: 'intent_learning_update';
+  readonly COMPLEXITY_ANALYZED: 'complexity_analyzed';
+  readonly HIGH_COMPLEXITY_DETECTED: 'high_complexity_detected';
+  readonly COMPLEXITY_THRESHOLD_EXCEEDED: 'complexity_threshold_exceeded';
+  readonly FAILURE_DETECTED: 'failure_detected';
+  readonly FAILURE_PREDICTED: 'failure_predicted';
+  readonly FAILURE_PATTERN_IDENTIFIED: 'failure_pattern_identified';
+  readonly BEHAVIOR_PATTERN_DETECTED: 'behavior_pattern_detected';
+  readonly USER_JOURNEY_ANALYZED: 'user_journey_analyzed';
+  readonly ANOMALY_DETECTED: 'anomaly_detected';
+};
+declare const _default: {
+  ResultEffectivenessTracker: any;
+  RelevanceScorer: any;
+  UserSatisfactionMetrics: any;
+  ConversionTracker: any;
+  ABTestingFramework: any;
+  QueryAnalyzer: any;
+  SearchIntentClassifier: any;
+  QueryComplexityAnalyzer: any;
+  FailedSearchDetector: any;
+  UserBehaviorTracker: any;
+  AnalyticsOrchestrator: any;
+  createAnalyticsOrchestrator: typeof createAnalyticsOrchestrator;
+  EffectivenessDashboard: any;
+  QueryAnalyticsDashboard: any;
+  defaultAnalyticsConfig: import('./AnalyticsOrchestrator').AnalyticsConfig;
+  developmentAnalyticsConfig: import('./AnalyticsOrchestrator').AnalyticsConfig;
+  analyticsUtils: {
+    calculateSignificance(
+      controlMean: number,
+      controlStdDev: number,
+      controlSize: number,
+      variantMean: number,
+      variantStdDev: number,
+      variantSize: number
+    ): {
+      pValue: number;
+      isSignificant: boolean;
+      confidenceLevel: number;
+    };
+    calculateProportionConfidenceInterval(
+      successes: number,
+      trials: number,
+      confidenceLevel?: number
+    ): [number, number];
+    calculateRequiredSampleSize(
+      baselineRate: number,
+      minimumDetectableEffect: number,
+      alpha?: number,
+      beta?: number
+    ): number;
+    detectAnomalies(
+      values: number[],
+      threshold?: number
+    ): Array<{
+      index: number;
+      value: number;
+      zscore: number;
+      isAnomaly: boolean;
+    }>;
+    calculateCorrelation(x: number[], y: number[]): number;
+  };
+  AnalyticsEventTypes: {
+    readonly SEARCH_PERFORMED: 'search_performed';
+    readonly SEARCH_RESULTS_DISPLAYED: 'search_results_displayed';
+    readonly SEARCH_REFINED: 'search_refined';
+    readonly RESULT_CLICKED: 'result_clicked';
+    readonly RESULT_HOVERED: 'result_hovered';
+    readonly RESULT_BOOKMARKED: 'result_bookmarked';
+    readonly RESULT_SHARED: 'result_shared';
+    readonly PAGE_VIEWED: 'page_viewed';
+    readonly TIME_SPENT: 'time_spent';
+    readonly SCROLL_DEPTH: 'scroll_depth';
+    readonly FORM_SUBMITTED: 'form_submitted';
+    readonly GOAL_COMPLETED: 'goal_completed';
+    readonly CONVERSION: 'conversion';
+    readonly PURCHASE: 'purchase';
+    readonly SIGNUP: 'signup';
+    readonly FEEDBACK_SUBMITTED: 'feedback_submitted';
+    readonly RATING_GIVEN: 'rating_given';
+    readonly SURVEY_COMPLETED: 'survey_completed';
+    readonly VARIANT_ASSIGNED: 'variant_assigned';
+    readonly EXPERIMENT_EXPOSED: 'experiment_exposed';
+    readonly EXPERIMENT_CONVERTED: 'experiment_converted';
+  };
+  QueryAnalyticsEventTypes: {
+    readonly QUERY_ANALYZED: 'query_analyzed';
+    readonly PATTERN_DETECTED: 'pattern_detected';
+    readonly CLUSTER_UPDATED: 'cluster_updated';
+    readonly INTENT_CLASSIFIED: 'intent_classified';
+    readonly INTENT_CONFIDENCE_LOW: 'intent_confidence_low';
+    readonly INTENT_LEARNING_UPDATE: 'intent_learning_update';
+    readonly COMPLEXITY_ANALYZED: 'complexity_analyzed';
+    readonly HIGH_COMPLEXITY_DETECTED: 'high_complexity_detected';
+    readonly COMPLEXITY_THRESHOLD_EXCEEDED: 'complexity_threshold_exceeded';
+    readonly FAILURE_DETECTED: 'failure_detected';
+    readonly FAILURE_PREDICTED: 'failure_predicted';
+    readonly FAILURE_PATTERN_IDENTIFIED: 'failure_pattern_identified';
+    readonly BEHAVIOR_PATTERN_DETECTED: 'behavior_pattern_detected';
+    readonly USER_JOURNEY_ANALYZED: 'user_journey_analyzed';
+    readonly ANOMALY_DETECTED: 'anomaly_detected';
+  };
+  MetricCalculators: {
     calculateCTR(clicks: number, impressions: number): number;
     calculateConversionRate(conversions: number, visitors: number): number;
     calculateBounceRate(singlePageSessions: number, totalSessions: number): number;
     calculateAvgSessionDuration(sessionDurations: number[]): number;
     calculatePrecisionAtK(relevantResults: boolean[], k: number): number;
     calculateNDCG(relevanceScores: number[], k?: number): number;
-};
-export declare const QueryAnalyticsEventTypes: {
-    readonly QUERY_ANALYZED: "query_analyzed";
-    readonly PATTERN_DETECTED: "pattern_detected";
-    readonly CLUSTER_UPDATED: "cluster_updated";
-    readonly INTENT_CLASSIFIED: "intent_classified";
-    readonly INTENT_CONFIDENCE_LOW: "intent_confidence_low";
-    readonly INTENT_LEARNING_UPDATE: "intent_learning_update";
-    readonly COMPLEXITY_ANALYZED: "complexity_analyzed";
-    readonly HIGH_COMPLEXITY_DETECTED: "high_complexity_detected";
-    readonly COMPLEXITY_THRESHOLD_EXCEEDED: "complexity_threshold_exceeded";
-    readonly FAILURE_DETECTED: "failure_detected";
-    readonly FAILURE_PREDICTED: "failure_predicted";
-    readonly FAILURE_PATTERN_IDENTIFIED: "failure_pattern_identified";
-    readonly BEHAVIOR_PATTERN_DETECTED: "behavior_pattern_detected";
-    readonly USER_JOURNEY_ANALYZED: "user_journey_analyzed";
-    readonly ANOMALY_DETECTED: "anomaly_detected";
-};
-declare const _default: {
-    ResultEffectivenessTracker: any;
-    RelevanceScorer: any;
-    UserSatisfactionMetrics: any;
-    ConversionTracker: any;
-    ABTestingFramework: any;
-    QueryAnalyzer: any;
-    SearchIntentClassifier: any;
-    QueryComplexityAnalyzer: any;
-    FailedSearchDetector: any;
-    UserBehaviorTracker: any;
-    AnalyticsOrchestrator: any;
-    createAnalyticsOrchestrator: typeof createAnalyticsOrchestrator;
-    EffectivenessDashboard: any;
-    QueryAnalyticsDashboard: any;
-    defaultAnalyticsConfig: import("./AnalyticsOrchestrator").AnalyticsConfig;
-    developmentAnalyticsConfig: import("./AnalyticsOrchestrator").AnalyticsConfig;
-    analyticsUtils: {
-        calculateSignificance(controlMean: number, controlStdDev: number, controlSize: number, variantMean: number, variantStdDev: number, variantSize: number): {
-            pValue: number;
-            isSignificant: boolean;
-            confidenceLevel: number;
-        };
-        calculateProportionConfidenceInterval(successes: number, trials: number, confidenceLevel?: number): [number, number];
-        calculateRequiredSampleSize(baselineRate: number, minimumDetectableEffect: number, alpha?: number, beta?: number): number;
-        detectAnomalies(values: number[], threshold?: number): Array<{
-            index: number;
-            value: number;
-            zscore: number;
-            isAnomaly: boolean;
-        }>;
-        calculateCorrelation(x: number[], y: number[]): number;
-    };
-    AnalyticsEventTypes: {
-        readonly SEARCH_PERFORMED: "search_performed";
-        readonly SEARCH_RESULTS_DISPLAYED: "search_results_displayed";
-        readonly SEARCH_REFINED: "search_refined";
-        readonly RESULT_CLICKED: "result_clicked";
-        readonly RESULT_HOVERED: "result_hovered";
-        readonly RESULT_BOOKMARKED: "result_bookmarked";
-        readonly RESULT_SHARED: "result_shared";
-        readonly PAGE_VIEWED: "page_viewed";
-        readonly TIME_SPENT: "time_spent";
-        readonly SCROLL_DEPTH: "scroll_depth";
-        readonly FORM_SUBMITTED: "form_submitted";
-        readonly GOAL_COMPLETED: "goal_completed";
-        readonly CONVERSION: "conversion";
-        readonly PURCHASE: "purchase";
-        readonly SIGNUP: "signup";
-        readonly FEEDBACK_SUBMITTED: "feedback_submitted";
-        readonly RATING_GIVEN: "rating_given";
-        readonly SURVEY_COMPLETED: "survey_completed";
-        readonly VARIANT_ASSIGNED: "variant_assigned";
-        readonly EXPERIMENT_EXPOSED: "experiment_exposed";
-        readonly EXPERIMENT_CONVERTED: "experiment_converted";
-    };
-    QueryAnalyticsEventTypes: {
-        readonly QUERY_ANALYZED: "query_analyzed";
-        readonly PATTERN_DETECTED: "pattern_detected";
-        readonly CLUSTER_UPDATED: "cluster_updated";
-        readonly INTENT_CLASSIFIED: "intent_classified";
-        readonly INTENT_CONFIDENCE_LOW: "intent_confidence_low";
-        readonly INTENT_LEARNING_UPDATE: "intent_learning_update";
-        readonly COMPLEXITY_ANALYZED: "complexity_analyzed";
-        readonly HIGH_COMPLEXITY_DETECTED: "high_complexity_detected";
-        readonly COMPLEXITY_THRESHOLD_EXCEEDED: "complexity_threshold_exceeded";
-        readonly FAILURE_DETECTED: "failure_detected";
-        readonly FAILURE_PREDICTED: "failure_predicted";
-        readonly FAILURE_PATTERN_IDENTIFIED: "failure_pattern_identified";
-        readonly BEHAVIOR_PATTERN_DETECTED: "behavior_pattern_detected";
-        readonly USER_JOURNEY_ANALYZED: "user_journey_analyzed";
-        readonly ANOMALY_DETECTED: "anomaly_detected";
-    };
-    MetricCalculators: {
-        calculateCTR(clicks: number, impressions: number): number;
-        calculateConversionRate(conversions: number, visitors: number): number;
-        calculateBounceRate(singlePageSessions: number, totalSessions: number): number;
-        calculateAvgSessionDuration(sessionDurations: number[]): number;
-        calculatePrecisionAtK(relevantResults: boolean[], k: number): number;
-        calculateNDCG(relevanceScores: number[], k?: number): number;
-    };
+  };
 };
 export default _default;
 //# sourceMappingURL=index.d.ts.map

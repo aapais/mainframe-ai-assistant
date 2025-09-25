@@ -111,7 +111,6 @@ export class SearchBackendService {
 
       this.status = 'ready';
       console.log('✅ Search Backend Service initialized successfully');
-
     } catch (error) {
       this.status = 'error';
       console.error('❌ Failed to initialize Search Backend Service:', error);
@@ -119,12 +118,9 @@ export class SearchBackendService {
 
       // Proper error handling for unknown type
       const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new AppError(
-        'Backend initialization failed',
-        'BACKEND_INIT_ERROR',
-        500,
-        { originalError: errorMessage }
-      );
+      throw new AppError('Backend initialization failed', 'BACKEND_INIT_ERROR', 500, {
+        originalError: errorMessage,
+      });
     }
   }
 
@@ -141,20 +137,20 @@ export class SearchBackendService {
         cache: await this.getCacheStatus(),
         search: this.searchEngine ? 'ready' : 'error',
         metrics: this.metricsCollector ? 'collecting' : 'stopped',
-        ipc: this.ipcHandlers ? 'listening' : 'stopped'
+        ipc: this.ipcHandlers ? 'listening' : 'stopped',
       },
       performance: {
         totalRequests: this.totalRequests,
         avgResponseTime: this.totalRequests > 0 ? this.totalResponseTime / this.totalRequests : 0,
         errorRate: this.totalRequests > 0 ? this.errorCount / this.totalRequests : 0,
-        uptime: Date.now() - this.startTime
+        uptime: Date.now() - this.startTime,
       },
       resources: {
         memoryUsage: memUsage.heapUsed,
         cpuUsage: process.cpuUsage().user,
         cacheMemoryUsage: await this.getCacheMemoryUsage(),
-        dbSize: await this.getDatabaseSize()
-      }
+        dbSize: await this.getDatabaseSize(),
+      },
     };
   }
 
@@ -168,7 +164,7 @@ export class SearchBackendService {
 
     return this.metricsCollector.getMetrics({
       timeframe,
-      granularity: '5m'
+      granularity: '5m',
     });
   }
 
@@ -188,7 +184,7 @@ export class SearchBackendService {
         this.database.prepare('SELECT 1').get();
         details['database'] = {
           status: 'healthy',
-          responseTime: Date.now() - dbStart
+          responseTime: Date.now() - dbStart,
         };
       } else {
         details['database'] = { status: 'unavailable', message: 'Database not initialized' };
@@ -197,7 +193,7 @@ export class SearchBackendService {
       details['database'] = {
         status: 'unhealthy',
         message: (error as Error).message,
-        responseTime: Date.now() - dbStart
+        responseTime: Date.now() - dbStart,
       };
     }
 
@@ -208,7 +204,7 @@ export class SearchBackendService {
         const stats = this.cache.getStats();
         details['cache'] = {
           status: stats.overall.errorRate < 0.1 ? 'healthy' : 'degraded',
-          responseTime: Date.now() - cacheStart
+          responseTime: Date.now() - cacheStart,
         };
       } else {
         details['cache'] = { status: 'unavailable', message: 'Cache not initialized' };
@@ -217,7 +213,7 @@ export class SearchBackendService {
       details['cache'] = {
         status: 'unhealthy',
         message: (error as Error).message,
-        responseTime: Date.now() - cacheStart
+        responseTime: Date.now() - cacheStart,
       };
     }
 
@@ -232,11 +228,11 @@ export class SearchBackendService {
           offset: 0,
           includeArchived: false,
           fuzzyThreshold: 0.8,
-          useAI: false
+          useAI: false,
         });
         details['search'] = {
           status: 'healthy',
-          responseTime: Date.now() - searchStart
+          responseTime: Date.now() - searchStart,
         };
       } else {
         details['search'] = { status: 'unavailable', message: 'Search engine not initialized' };
@@ -245,13 +241,13 @@ export class SearchBackendService {
       details['search'] = {
         status: 'unhealthy',
         message: (error as Error).message,
-        responseTime: Date.now() - searchStart
+        responseTime: Date.now() - searchStart,
       };
     }
 
     // Overall health determination
-    const healthy = Object.values(details).every(detail =>
-      detail.status === 'healthy' || detail.status === 'degraded'
+    const healthy = Object.values(details).every(
+      detail => detail.status === 'healthy' || detail.status === 'degraded'
     );
 
     return { healthy, details };
@@ -275,7 +271,6 @@ export class SearchBackendService {
 
       this.status = 'stopped';
       console.log('✅ Search Backend Service shut down successfully');
-
     } catch (error) {
       console.error('❌ Error during shutdown:', error);
       throw error;
@@ -309,7 +304,6 @@ export class SearchBackendService {
       }
 
       console.log('Service recovery completed');
-
     } catch (error) {
       console.error('Service recovery failed:', error);
       throw error;
@@ -324,7 +318,7 @@ export class SearchBackendService {
     try {
       this.database = new (Database as any)(this.config.database.path, {
         ...this.config.database.options,
-        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined
+        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined,
       });
 
       // Test connection
@@ -357,7 +351,6 @@ export class SearchBackendService {
         await this.cache.delete('test');
       }
       console.log('✅ Multi-layer cache initialized');
-
     } catch (error) {
       console.error('❌ Cache initialization failed:', error);
       throw error;
@@ -379,7 +372,7 @@ export class SearchBackendService {
           searchTimeout: this.config.search.defaultTimeout,
           maxConcurrentSearches: 10,
           memoryThreshold: 512 * 1024 * 1024, // 512MB
-          optimizationLevel: 'balanced'
+          optimizationLevel: 'balanced',
         },
         features: {
           semanticSearch: this.config.search.enableAI,
@@ -387,12 +380,11 @@ export class SearchBackendService {
           spellCorrection: false,
           queryExpansion: true,
           resultClustering: false,
-          personalizedRanking: true
-        }
+          personalizedRanking: true,
+        },
       });
 
       console.log('✅ Search engine initialized');
-
     } catch (error) {
       console.error('❌ Search engine initialization failed:', error);
       throw error;
@@ -426,7 +418,6 @@ export class SearchBackendService {
       );
 
       console.log('✅ Backend services initialized');
-
     } catch (error) {
       console.error('❌ Backend services initialization failed:', error);
       throw error;
@@ -436,7 +427,12 @@ export class SearchBackendService {
   private async initializeIPC(): Promise<void> {
     console.log('Initializing IPC handlers...');
 
-    if (!this.searchApiService || !this.historyService || !this.autocompleteService || !this.cache) {
+    if (
+      !this.searchApiService ||
+      !this.historyService ||
+      !this.autocompleteService ||
+      !this.cache
+    ) {
       throw new Error('Services not initialized for IPC');
     }
 
@@ -446,11 +442,10 @@ export class SearchBackendService {
         this.historyService,
         this.autocompleteService,
         this.metricsCollector!,
-        this.cache!  // Non-null assertion since we check above
+        this.cache! // Non-null assertion since we check above
       );
 
       console.log('✅ IPC handlers initialized');
-
     } catch (error) {
       console.error('❌ IPC handlers initialization failed:', error);
       throw error;
@@ -472,7 +467,6 @@ export class SearchBackendService {
             console.error('Automatic recovery failed:', recoveryError);
           }
         }
-
       } catch (error) {
         console.error('Health check error:', error);
       }
@@ -534,10 +528,14 @@ export class SearchBackendService {
     if (!this.database) return 0;
 
     try {
-      const result = this.database.prepare(`
+      const result = this.database
+        .prepare(
+          `
         SELECT page_count * page_size as size
         FROM pragma_page_count(), pragma_page_size()
-      `).get() as { size: number };
+      `
+        )
+        .get() as { size: number };
 
       return result.size;
     } catch {
@@ -566,7 +564,7 @@ export class SearchBackendService {
       historyService: this.historyService,
       autocompleteService: this.autocompleteService,
       metricsCollector: this.metricsCollector,
-      ipcHandlers: this.ipcHandlers
+      ipcHandlers: this.ipcHandlers,
     };
   }
 
@@ -591,31 +589,31 @@ export function createSearchBackend(config?: Partial<SearchBackendConfig>): Sear
     database: {
       path: './data/search.db',
       options: {
-        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined
-      }
+        verbose: process.env['NODE_ENV'] === 'development' ? console.log : undefined,
+      },
     },
     cache: {
       l0: {
         maxItems: 100,
         maxSizeBytes: 10 * 1024 * 1024, // 10MB
-        ttlSeconds: 300
+        ttlSeconds: 300,
       },
       l1: {
         host: 'localhost',
         port: 6379,
         db: 0,
         maxRetries: 3,
-        retryDelayOnFailover: 100
+        retryDelayOnFailover: 100,
       },
       l2: {
         maxItems: 10000,
         cleanupIntervalMinutes: 60,
-        compressionThreshold: 1024
+        compressionThreshold: 1024,
       },
       compression: {
         enabled: true,
         algorithm: 'gzip',
-        threshold: 1024
+        threshold: 1024,
       },
       monitoring: {
         enabled: true,
@@ -623,21 +621,21 @@ export function createSearchBackend(config?: Partial<SearchBackendConfig>): Sear
         alertThresholds: {
           hitRateBelow: 0.7,
           errorRateAbove: 0.05,
-          latencyAbove: 1000
-        }
-      }
+          latencyAbove: 1000,
+        },
+      },
     },
     search: {
       maxResults: 100,
       defaultTimeout: 5000,
       enableAI: true,
-      geminiApiKey: process.env['GEMINI_API_KEY']
+      geminiApiKey: process.env['GEMINI_API_KEY'],
     },
     performance: {
       enableMetrics: true,
       metricsRetentionDays: 30,
-      historyRetentionDays: 90
-    }
+      historyRetentionDays: 90,
+    },
   };
 
   const finalConfig = {
@@ -646,7 +644,7 @@ export function createSearchBackend(config?: Partial<SearchBackendConfig>): Sear
     database: { ...defaultConfig.database, ...config?.database },
     cache: { ...defaultConfig.cache, ...config?.cache },
     search: { ...defaultConfig.search, ...config?.search },
-    performance: { ...defaultConfig.performance, ...config?.performance }
+    performance: { ...defaultConfig.performance, ...config?.performance },
   };
 
   return new SearchBackendService(finalConfig);

@@ -35,10 +35,14 @@ export class RollbackManager extends EventEmitter {
   /**
    * Create a rollback point before migration
    */
-  async createRollbackPoint(version: number, description: string, rollbackSql?: string): Promise<string> {
+  async createRollbackPoint(
+    version: number,
+    description: string,
+    rollbackSql?: string
+  ): Promise<string> {
     const rollbackId = `rollback_${version}_${Date.now()}`;
     const backupPath = await this.createDatabaseBackup(version);
-    
+
     const rollbackPoint: RollbackPoint = {
       id: rollbackId,
       version,
@@ -46,7 +50,7 @@ export class RollbackManager extends EventEmitter {
       backupPath,
       description,
       rollbackSql: rollbackSql || '',
-      checksum: this.calculateDatabaseChecksum()
+      checksum: this.calculateDatabaseChecksum(),
     };
 
     this.rollbackPoints.set(version, rollbackPoint);
@@ -67,7 +71,7 @@ export class RollbackManager extends EventEmitter {
       stepsExecuted: 0,
       errors: [],
       warnings: [],
-      duration: 0
+      duration: 0,
     };
 
     try {
@@ -75,7 +79,7 @@ export class RollbackManager extends EventEmitter {
 
       // Get rollback points to execute
       const rollbackSteps = this.getRollbackSteps(targetVersion);
-      
+
       if (rollbackSteps.length === 0) {
         throw new Error(`No rollback path found to version ${targetVersion}`);
       }
@@ -87,14 +91,16 @@ export class RollbackManager extends EventEmitter {
         try {
           await this.executeRollbackStep(step);
           result.stepsExecuted++;
-          
+
           this.emit('rollbackStepCompleted', { version: step.version });
         } catch (error) {
           result.errors.push(`Rollback step ${step.version} failed: ${error.message}`);
-          
+
           // Try to restore from backup if SQL rollback failed
           if (step.backupPath && fs.existsSync(step.backupPath)) {
-            result.warnings.push(`SQL rollback failed for version ${step.version}, attempting backup restore`);
+            result.warnings.push(
+              `SQL rollback failed for version ${step.version}, attempting backup restore`
+            );
             await this.restoreFromBackup(step.backupPath);
             result.stepsExecuted++;
           } else {
@@ -105,9 +111,8 @@ export class RollbackManager extends EventEmitter {
 
       result.success = true;
       result.rolledBackToVersion = targetVersion;
-      
-      this.emit('rollbackCompleted', { targetVersion, stepsExecuted: result.stepsExecuted });
 
+      this.emit('rollbackCompleted', { targetVersion, stepsExecuted: result.stepsExecuted });
     } catch (error) {
       result.errors.push(`Rollback failed: ${error.message}`);
       this.emit('rollbackFailed', { error: error.message, result });
@@ -128,14 +133,18 @@ export class RollbackManager extends EventEmitter {
       stepsExecuted: 0,
       errors: [],
       warnings: [],
-      duration: 0
+      duration: 0,
     };
 
     try {
       // Get rollback SQL from migration record
-      const rollbackSql = this.db.prepare(`
+      const rollbackSql = this.db
+        .prepare(
+          `
         SELECT rollback_sql FROM schema_migrations WHERE version = ?
-      `).get(version) as { rollback_sql: string } | undefined;
+      `
+        )
+        .get(version) as { rollback_sql: string } | undefined;
 
       if (!rollbackSql?.rollback_sql) {
         throw new Error(`No rollback SQL found for migration ${version}`);
@@ -147,7 +156,7 @@ export class RollbackManager extends EventEmitter {
       // Execute rollback SQL
       this.db.transaction(() => {
         this.db.exec(rollbackSql.rollback_sql);
-        
+
         // Remove migration record
         this.db.prepare(`DELETE FROM schema_migrations WHERE version = ?`).run(version);
       })();
@@ -155,7 +164,6 @@ export class RollbackManager extends EventEmitter {
       result.success = true;
       result.stepsExecuted = 1;
       result.rolledBackToVersion = version - 1;
-
     } catch (error) {
       result.errors.push(`Single migration rollback failed: ${error.message}`);
     }
@@ -186,7 +194,6 @@ export class RollbackManager extends EventEmitter {
       this.db = new Database(currentDbPath);
 
       this.emit('restoreCompleted', { backupPath });
-
     } catch (error) {
       this.emit('restoreFailed', { backupPath, error: error.message });
       throw error;
@@ -196,26 +203,32 @@ export class RollbackManager extends EventEmitter {
   /**
    * Validate rollback capability
    */
-  async validateRollbackCapability(fromVersion: number, toVersion: number): Promise<{
+  async validateRollbackCapability(
+    fromVersion: number,
+    toVersion: number
+  ): Promise<{
     canRollback: boolean;
     missingRollbackSql: number[];
     missingBackups: number[];
     warnings: string[];
   }> {
-    
     const result = {
       canRollback: true,
       missingRollbackSql: [] as number[],
       missingBackups: [] as number[],
-      warnings: [] as string[]
+      warnings: [] as string[],
     };
 
     // Check each version between fromVersion and toVersion
     for (let version = fromVersion; version > toVersion; version--) {
       // Check rollback SQL
-      const migration = this.db.prepare(`
+      const migration = this.db
+        .prepare(
+          `
         SELECT rollback_sql FROM schema_migrations WHERE version = ?
-      `).get(version) as { rollback_sql: string } | undefined;
+      `
+        )
+        .get(version) as { rollback_sql: string } | undefined;
 
       if (!migration?.rollback_sql || migration.rollback_sql.trim() === '') {
         result.missingRollbackSql.push(version);
@@ -237,8 +250,7 @@ export class RollbackManager extends EventEmitter {
    * List available rollback points
    */
   getAvailableRollbackPoints(): RollbackPoint[] {
-    return Array.from(this.rollbackPoints.values())
-      .sort((a, b) => b.version - a.version);
+    return Array.from(this.rollbackPoints.values()).sort((a, b) => b.version - a.version);
   }
 
   /**
@@ -248,13 +260,12 @@ export class RollbackManager extends EventEmitter {
     cleaned: number;
     errors: string[];
   }> {
-    
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-    
+
     const result = {
       cleaned: 0,
-      errors: [] as string[]
+      errors: [] as string[],
     };
 
     for (const [version, rollbackPoint] of this.rollbackPoints.entries()) {
@@ -272,9 +283,10 @@ export class RollbackManager extends EventEmitter {
           this.rollbackPoints.delete(version);
 
           result.cleaned++;
-          
         } catch (error) {
-          result.errors.push(`Failed to cleanup rollback point ${rollbackPoint.id}: ${error.message}`);
+          result.errors.push(
+            `Failed to cleanup rollback point ${rollbackPoint.id}: ${error.message}`
+          );
         }
       }
     }
@@ -286,13 +298,15 @@ export class RollbackManager extends EventEmitter {
   /**
    * Test rollback on a copy of the database
    */
-  async testRollback(fromVersion: number, toVersion: number): Promise<{
+  async testRollback(
+    fromVersion: number,
+    toVersion: number
+  ): Promise<{
     success: boolean;
     steps: number;
     duration: number;
     errors: string[];
   }> {
-    
     // Create temporary database copy
     const tempDbPath = path.join(path.dirname(this.db.name), `test_rollback_${Date.now()}.db`);
     fs.copyFileSync(this.db.name, tempDbPath);
@@ -301,7 +315,7 @@ export class RollbackManager extends EventEmitter {
       success: false,
       steps: 0,
       duration: 0,
-      errors: [] as string[]
+      errors: [] as string[],
     };
 
     try {
@@ -314,14 +328,13 @@ export class RollbackManager extends EventEmitter {
 
       // Execute test rollback
       const rollbackResult = await tempRollbackManager.rollbackToVersion(toVersion);
-      
+
       result.success = rollbackResult.success;
       result.steps = rollbackResult.stepsExecuted;
       result.duration = rollbackResult.duration;
       result.errors = rollbackResult.errors;
 
       tempDb.close();
-
     } catch (error) {
       result.errors.push(`Test rollback failed: ${error.message}`);
     } finally {
@@ -352,9 +365,13 @@ export class RollbackManager extends EventEmitter {
       `);
 
       // Load existing rollback points
-      const points = this.db.prepare(`
+      const points = this.db
+        .prepare(
+          `
         SELECT * FROM rollback_points ORDER BY version DESC
-      `).all() as any[];
+      `
+        )
+        .all() as any[];
 
       for (const point of points) {
         this.rollbackPoints.set(point.version, {
@@ -364,27 +381,30 @@ export class RollbackManager extends EventEmitter {
           backupPath: point.backup_path,
           description: point.description,
           rollbackSql: point.rollback_sql,
-          checksum: point.checksum
+          checksum: point.checksum,
         });
       }
-
     } catch (error) {
       console.warn('Failed to load rollback points:', error.message);
     }
   }
 
   private async saveRollbackPoint(rollbackPoint: RollbackPoint): Promise<void> {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO rollback_points (id, version, backup_path, description, rollback_sql, checksum)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      rollbackPoint.id,
-      rollbackPoint.version,
-      rollbackPoint.backupPath,
-      rollbackPoint.description,
-      rollbackPoint.rollbackSql,
-      rollbackPoint.checksum
-    );
+    `
+      )
+      .run(
+        rollbackPoint.id,
+        rollbackPoint.version,
+        rollbackPoint.backupPath,
+        rollbackPoint.description,
+        rollbackPoint.rollbackSql,
+        rollbackPoint.checksum
+      );
   }
 
   private async removeRollbackPoint(rollbackId: string): Promise<void> {
@@ -401,10 +421,14 @@ export class RollbackManager extends EventEmitter {
     this.db.backup(backupPath);
 
     // Record backup in log table
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO backup_log (backup_path, backup_type, entries_count)
       VALUES (?, 'rollback', (SELECT COUNT(*) FROM kb_entries))
-    `).run(backupPath);
+    `
+      )
+      .run(backupPath);
 
     return backupPath;
   }
@@ -419,9 +443,13 @@ export class RollbackManager extends EventEmitter {
         steps.push(rollbackPoint);
       } else {
         // Create rollback point from migration record if not exists
-        const migration = this.db.prepare(`
+        const migration = this.db
+          .prepare(
+            `
           SELECT rollback_sql, description FROM schema_migrations WHERE version = ?
-        `).get(version) as { rollback_sql: string; description: string } | undefined;
+        `
+          )
+          .get(version) as { rollback_sql: string; description: string } | undefined;
 
         if (migration?.rollback_sql) {
           steps.push({
@@ -430,7 +458,7 @@ export class RollbackManager extends EventEmitter {
             createdAt: new Date(),
             description: migration.description || `Auto-rollback for migration ${version}`,
             rollbackSql: migration.rollback_sql,
-            checksum: ''
+            checksum: '',
           });
         }
       }
@@ -451,17 +479,22 @@ export class RollbackManager extends EventEmitter {
 
         // Remove migration record
         this.db.prepare(`DELETE FROM schema_migrations WHERE version = ?`).run(step.version);
-
       } catch (error) {
-        throw new Error(`Rollback SQL execution failed for version ${step.version}: ${error.message}`);
+        throw new Error(
+          `Rollback SQL execution failed for version ${step.version}: ${error.message}`
+        );
       }
     })();
   }
 
   private getCurrentVersion(): number {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations
-    `).get() as { version: number };
+    `
+      )
+      .get() as { version: number };
 
     return result.version;
   }
@@ -473,23 +506,34 @@ export class RollbackManager extends EventEmitter {
       const hash = crypto.createHash('sha256');
 
       // Hash schema
-      const schema = this.db.prepare(`
+      const schema = this.db
+        .prepare(
+          `
         SELECT sql FROM sqlite_master WHERE type IN ('table', 'index') ORDER BY name
-      `).all().map((row: any) => row.sql).join('');
+      `
+        )
+        .all()
+        .map((row: any) => row.sql)
+        .join('');
       hash.update(schema);
 
       // Hash critical data counts
-      const tables = this.db.prepare(`
+      const tables = this.db
+        .prepare(
+          `
         SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-      `).all() as Array<{ name: string }>;
+      `
+        )
+        .all() as Array<{ name: string }>;
 
       for (const table of tables) {
-        const count = this.db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as { count: number };
+        const count = this.db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as {
+          count: number;
+        };
         hash.update(`${table.name}:${count.count}`);
       }
 
       return hash.digest('hex');
-
     } catch (error) {
       return 'checksum_error';
     }
@@ -506,13 +550,16 @@ export class RollbackManager extends EventEmitter {
     versionsWithRollback: number[];
     versionsWithoutRollback: number[];
   } {
-    
     const points = Array.from(this.rollbackPoints.values());
-    
+
     // Get all migration versions
-    const migrations = this.db.prepare(`
+    const migrations = this.db
+      .prepare(
+        `
       SELECT version FROM schema_migrations ORDER BY version
-    `).all() as Array<{ version: number }>;
+    `
+      )
+      .all() as Array<{ version: number }>;
 
     const allVersions = migrations.map(m => m.version);
     const versionsWithRollback = points.map(p => p.version);
@@ -533,11 +580,17 @@ export class RollbackManager extends EventEmitter {
 
     return {
       totalRollbackPoints: points.length,
-      oldestRollbackPoint: points.length > 0 ? new Date(Math.min(...points.map(p => p.createdAt.getTime()))) : undefined,
-      newestRollbackPoint: points.length > 0 ? new Date(Math.max(...points.map(p => p.createdAt.getTime()))) : undefined,
+      oldestRollbackPoint:
+        points.length > 0
+          ? new Date(Math.min(...points.map(p => p.createdAt.getTime())))
+          : undefined,
+      newestRollbackPoint:
+        points.length > 0
+          ? new Date(Math.max(...points.map(p => p.createdAt.getTime())))
+          : undefined,
       totalBackupSize,
       versionsWithRollback: versionsWithRollback.sort((a, b) => a - b),
-      versionsWithoutRollback: versionsWithoutRollback.sort((a, b) => a - b)
+      versionsWithoutRollback: versionsWithoutRollback.sort((a, b) => a - b),
     };
   }
 }

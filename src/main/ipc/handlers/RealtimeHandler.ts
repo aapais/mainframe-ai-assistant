@@ -9,7 +9,7 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import { DatabaseManager } from '../../../database/DatabaseManager';
 import { MultiLayerCacheManager } from '../../../caching/MultiLayerCacheManager';
@@ -19,11 +19,22 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Real-time Event Types
 export type RealtimeEventType =
-  | 'category_created' | 'category_updated' | 'category_deleted' | 'category_moved'
-  | 'tag_created' | 'tag_updated' | 'tag_deleted' | 'tag_associated' | 'tag_dissociated'
-  | 'kb_entry_created' | 'kb_entry_updated' | 'kb_entry_deleted'
-  | 'search_performed' | 'bulk_operation_completed'
-  | 'system_status' | 'cache_invalidated';
+  | 'category_created'
+  | 'category_updated'
+  | 'category_deleted'
+  | 'category_moved'
+  | 'tag_created'
+  | 'tag_updated'
+  | 'tag_deleted'
+  | 'tag_associated'
+  | 'tag_dissociated'
+  | 'kb_entry_created'
+  | 'kb_entry_updated'
+  | 'kb_entry_deleted'
+  | 'search_performed'
+  | 'bulk_operation_completed'
+  | 'system_status'
+  | 'cache_invalidated';
 
 export interface RealtimeEvent {
   id: string;
@@ -151,7 +162,9 @@ export class RealtimeHandler extends EventEmitter {
   /**
    * Subscribe to real-time events
    */
-  handleSubscribe: IPCHandlerFunction<'realtime:subscribe'> = async (request: RealtimeSubscribeRequest) => {
+  handleSubscribe: IPCHandlerFunction<'realtime:subscribe'> = async (
+    request: RealtimeSubscribeRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -163,11 +176,22 @@ export class RealtimeHandler extends EventEmitter {
 
       // Validate event types
       const supportedEventTypes: RealtimeEventType[] = [
-        'category_created', 'category_updated', 'category_deleted', 'category_moved',
-        'tag_created', 'tag_updated', 'tag_deleted', 'tag_associated', 'tag_dissociated',
-        'kb_entry_created', 'kb_entry_updated', 'kb_entry_deleted',
-        'search_performed', 'bulk_operation_completed',
-        'system_status', 'cache_invalidated'
+        'category_created',
+        'category_updated',
+        'category_deleted',
+        'category_moved',
+        'tag_created',
+        'tag_updated',
+        'tag_deleted',
+        'tag_associated',
+        'tag_dissociated',
+        'kb_entry_created',
+        'kb_entry_updated',
+        'kb_entry_deleted',
+        'search_performed',
+        'bulk_operation_completed',
+        'system_status',
+        'cache_invalidated',
       ];
 
       const requestedTypes = subscription.event_types || supportedEventTypes;
@@ -191,7 +215,7 @@ export class RealtimeHandler extends EventEmitter {
         options: subscription.options || {},
         created_at: new Date(),
         last_activity: new Date(),
-        event_count: 0
+        event_count: 0,
       };
 
       this.subscriptions.set(subscriptionId, newSubscription);
@@ -211,18 +235,15 @@ export class RealtimeHandler extends EventEmitter {
         }, 100);
       }
 
-      console.log(`🔄 New real-time subscription: ${subscriptionId} (${requestedTypes.length} event types)`);
+      console.log(
+        `🔄 New real-time subscription: ${subscriptionId} (${requestedTypes.length} event types)`
+      );
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        {
-          subscription_id: subscriptionId,
-          active_subscriptions: this.subscriptions.size,
-          supported_events: supportedEventTypes
-        }
-      ) as RealtimeSubscribeResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        subscription_id: subscriptionId,
+        active_subscriptions: this.subscriptions.size,
+        supported_events: supportedEventTypes,
+      }) as RealtimeSubscribeResponse;
     } catch (error) {
       console.error('Real-time subscription error:', error);
       return HandlerUtils.createErrorResponse(
@@ -237,7 +258,9 @@ export class RealtimeHandler extends EventEmitter {
   /**
    * Unsubscribe from real-time events
    */
-  handleUnsubscribe: IPCHandlerFunction<'realtime:unsubscribe'> = async (request: RealtimeUnsubscribeRequest) => {
+  handleUnsubscribe: IPCHandlerFunction<'realtime:unsubscribe'> = async (
+    request: RealtimeUnsubscribeRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -255,19 +278,15 @@ export class RealtimeHandler extends EventEmitter {
       const subscription = this.subscriptions.get(subscription_id)!;
       this.subscriptions.delete(subscription_id);
 
-      console.log(`🛑 Unsubscribed: ${subscription_id} (processed ${subscription.event_count} events)`);
-
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          unsubscribed: true,
-          events_processed: subscription.event_count,
-          active_subscriptions: this.subscriptions.size
-        }
+      console.log(
+        `🛑 Unsubscribed: ${subscription_id} (processed ${subscription.event_count} events)`
       );
 
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        unsubscribed: true,
+        events_processed: subscription.event_count,
+        active_subscriptions: this.subscriptions.size,
+      });
     } catch (error) {
       console.error('Real-time unsubscription error:', error);
       return HandlerUtils.createErrorResponse(
@@ -282,7 +301,9 @@ export class RealtimeHandler extends EventEmitter {
   /**
    * Broadcast event to subscribers
    */
-  handleBroadcast: IPCHandlerFunction<'realtime:broadcast'> = async (request: RealtimeBroadcastRequest) => {
+  handleBroadcast: IPCHandlerFunction<'realtime:broadcast'> = async (
+    request: RealtimeBroadcastRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -292,7 +313,7 @@ export class RealtimeHandler extends EventEmitter {
       const completeEvent: RealtimeEvent = {
         id: uuidv4(),
         timestamp: new Date(),
-        ...event
+        ...event,
       };
 
       // Validate event
@@ -315,17 +336,11 @@ export class RealtimeHandler extends EventEmitter {
 
       this.eventCounter++;
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          event_id: completeEvent.id,
-          subscribers_notified: broadcastCount,
-          timestamp: completeEvent.timestamp
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        event_id: completeEvent.id,
+        subscribers_notified: broadcastCount,
+        timestamp: completeEvent.timestamp,
+      });
     } catch (error) {
       console.error('Real-time broadcast error:', error);
       return HandlerUtils.createErrorResponse(
@@ -340,7 +355,9 @@ export class RealtimeHandler extends EventEmitter {
   /**
    * Get event history
    */
-  handleGetEvents: IPCHandlerFunction<'realtime:events'> = async (request: RealtimeGetEventsRequest) => {
+  handleGetEvents: IPCHandlerFunction<'realtime:events'> = async (
+    request: RealtimeGetEventsRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -367,16 +384,11 @@ export class RealtimeHandler extends EventEmitter {
       const paginatedEvents = events.slice(offset, offset + limit);
       const hasMore = offset + limit < totalCount;
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        {
-          events: paginatedEvents,
-          total_count: totalCount,
-          has_more: hasMore
-        }
-      ) as RealtimeGetEventsResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        events: paginatedEvents,
+        total_count: totalCount,
+        has_more: hasMore,
+      }) as RealtimeGetEventsResponse;
     } catch (error) {
       console.error('Get events error:', error);
       return HandlerUtils.createErrorResponse(
@@ -399,11 +411,13 @@ export class RealtimeHandler extends EventEmitter {
 
       const uptime = Date.now() - this.startTime;
       const activeSubscriptions = this.subscriptions.size;
-      const connectedClients = new Set(Array.from(this.subscriptions.values()).map(s => s.client_id)).size;
+      const connectedClients = new Set(
+        Array.from(this.subscriptions.values()).map(s => s.client_id)
+      ).size;
 
       let stats;
       if (include_stats) {
-        const eventsPerMinute = Math.round((this.eventCounter / (uptime / 60000)) || 0);
+        const eventsPerMinute = Math.round(this.eventCounter / (uptime / 60000) || 0);
         const eventTypeCounts = new Map<RealtimeEventType, number>();
 
         this.eventHistory.forEach(event => {
@@ -418,23 +432,18 @@ export class RealtimeHandler extends EventEmitter {
         stats = {
           events_per_minute: eventsPerMinute,
           most_active_event_types: mostActiveEventTypes,
-          memory_usage: process.memoryUsage().heapUsed
+          memory_usage: process.memoryUsage().heapUsed,
         };
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        {
-          status: activeSubscriptions > 0 ? 'active' : 'inactive',
-          active_subscriptions: activeSubscriptions,
-          connected_clients: connectedClients,
-          events_processed: this.eventCounter,
-          uptime: uptime,
-          stats
-        }
-      ) as RealtimeStatusResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        status: activeSubscriptions > 0 ? 'active' : 'inactive',
+        active_subscriptions: activeSubscriptions,
+        connected_clients: connectedClients,
+        events_processed: this.eventCounter,
+        uptime: uptime,
+        stats,
+      }) as RealtimeStatusResponse;
     } catch (error) {
       console.error('Status error:', error);
       return HandlerUtils.createErrorResponse(
@@ -458,7 +467,7 @@ export class RealtimeHandler extends EventEmitter {
       timestamp: new Date(),
       source: 'system',
       data,
-      metadata
+      metadata,
     };
 
     this.addToHistory(event);
@@ -515,7 +524,7 @@ export class RealtimeHandler extends EventEmitter {
     // For now, we'll emit it as a Node.js event that can be listened to
     this.emit('subscription_event', {
       subscription_id: subscriptionId,
-      event
+      event,
     });
 
     // Log for debugging
@@ -525,7 +534,8 @@ export class RealtimeHandler extends EventEmitter {
   private passesFilters(event: RealtimeEvent, filters: any): boolean {
     // Category filter
     if (filters.categories && filters.categories.length > 0) {
-      const eventCategories = event.metadata?.affected_entities?.filter(id => id.startsWith('category_')) || [];
+      const eventCategories =
+        event.metadata?.affected_entities?.filter(id => id.startsWith('category_')) || [];
       if (eventCategories.length > 0) {
         const hasMatchingCategory = eventCategories.some(cat => filters.categories.includes(cat));
         if (!hasMatchingCategory) return false;
@@ -534,7 +544,8 @@ export class RealtimeHandler extends EventEmitter {
 
     // Tag filter
     if (filters.tags && filters.tags.length > 0) {
-      const eventTags = event.metadata?.affected_entities?.filter(id => id.startsWith('tag_')) || [];
+      const eventTags =
+        event.metadata?.affected_entities?.filter(id => id.startsWith('tag_')) || [];
       if (eventTags.length > 0) {
         const hasMatchingTag = eventTags.some(tag => filters.tags.includes(tag));
         if (!hasMatchingTag) return false;
@@ -574,17 +585,20 @@ export class RealtimeHandler extends EventEmitter {
 
   private setupCleanupInterval(): void {
     // Clean up inactive subscriptions every 5 minutes
-    setInterval(() => {
-      const now = Date.now();
-      const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
+    setInterval(
+      () => {
+        const now = Date.now();
+        const inactiveThreshold = 30 * 60 * 1000; // 30 minutes
 
-      this.subscriptions.forEach((subscription, subscriptionId) => {
-        if (now - subscription.last_activity.getTime() > inactiveThreshold) {
-          console.log(`🧹 Cleaning up inactive subscription: ${subscriptionId}`);
-          this.subscriptions.delete(subscriptionId);
-        }
-      });
-    }, 5 * 60 * 1000);
+        this.subscriptions.forEach((subscription, subscriptionId) => {
+          if (now - subscription.last_activity.getTime() > inactiveThreshold) {
+            console.log(`🧹 Cleaning up inactive subscription: ${subscriptionId}`);
+            this.subscriptions.delete(subscriptionId);
+          }
+        });
+      },
+      5 * 60 * 1000
+    );
   }
 }
 
@@ -592,13 +606,13 @@ export class RealtimeHandler extends EventEmitter {
 export const realtimeHandlerConfigs = {
   'realtime:subscribe': {
     ...HandlerConfigs.SYSTEM_OPERATIONS,
-    rateLimitConfig: { requests: 10, windowMs: 60000 }
+    rateLimitConfig: { requests: 10, windowMs: 60000 },
   },
   'realtime:unsubscribe': HandlerConfigs.SYSTEM_OPERATIONS,
   'realtime:broadcast': {
     ...HandlerConfigs.SYSTEM_OPERATIONS,
-    rateLimitConfig: { requests: 100, windowMs: 60000 } // Higher limit for broadcasts
+    rateLimitConfig: { requests: 100, windowMs: 60000 }, // Higher limit for broadcasts
   },
   'realtime:events': HandlerConfigs.READ_HEAVY,
-  'realtime:status': HandlerConfigs.SYSTEM_OPERATIONS
+  'realtime:status': HandlerConfigs.SYSTEM_OPERATIONS,
 } as const;

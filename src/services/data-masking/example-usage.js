@@ -10,7 +10,7 @@ const maskingService = new MaskingService({
   encryptionKey: 'secure-256-bit-encryption-key-for-banking-data',
   tokenSalt: 'unique-salt-for-banking-tokens',
   enableAuditLog: true,
-  defaultPolicy: 'strict'
+  defaultPolicy: 'strict',
 });
 
 async function demonstrateMasking() {
@@ -51,7 +51,7 @@ async function demonstrateMasking() {
   const externalResult = await maskingService.maskSensitiveData(incidentData, {
     area: 'external',
     severity: 'critical',
-    userRole: 'external'
+    userRole: 'external',
   });
 
   console.log('Policy applied:', externalResult.policy);
@@ -66,7 +66,7 @@ async function demonstrateMasking() {
   const supportResult = await maskingService.maskSensitiveData(incidentData, {
     area: 'support',
     severity: 'medium',
-    userRole: 'operator'
+    userRole: 'operator',
   });
 
   console.log('Policy applied:', supportResult.policy);
@@ -78,7 +78,7 @@ async function demonstrateMasking() {
   // 3. Development Environment (Reversible Masking)
   console.log('💻 Scenario 3: Development Environment (Reversible Masking)');
   const devResult = await maskingService.maskSensitiveData(incidentData, {
-    area: 'development'
+    area: 'development',
   });
 
   console.log('Policy applied:', devResult.policy);
@@ -109,7 +109,9 @@ async function demonstrateMasking() {
   const auditLog = maskingService.getAuditLog();
   console.log('\\nRecent audit entries:');
   auditLog.slice(-3).forEach((entry, index) => {
-    console.log(`${index + 1}. ${entry.timestamp} - Policy: ${entry.policy} - Detected: ${entry.detectedCount} items`);
+    console.log(
+      `${index + 1}. ${entry.timestamp} - Policy: ${entry.policy} - Detected: ${entry.detectedCount} items`
+    );
   });
 
   console.log('\\n' + '='.repeat(80) + '\\n');
@@ -122,13 +124,15 @@ async function demonstrateMasking() {
     { value: '111.111.111-11', type: 'cpf', description: 'Invalid CPF (all same digits)' },
     { value: '4532123456789012', type: 'creditCard', description: 'Valid credit card (Luhn)' },
     { value: '1234567890123456', type: 'creditCard', description: 'Invalid credit card' },
-    { value: 'user@example.com', type: 'email', description: 'Valid email' }
+    { value: 'user@example.com', type: 'email', description: 'Valid email' },
   ];
 
   console.log('Pattern validation results:');
   testCases.forEach(testCase => {
     const isValid = require('./patterns').validateDetection(testCase.value, testCase.type);
-    console.log(`- ${testCase.description}: ${testCase.value} → ${isValid ? '✅ Valid' : '❌ Invalid'}`);
+    console.log(
+      `- ${testCase.description}: ${testCase.value} → ${isValid ? '✅ Valid' : '❌ Invalid'}`
+    );
   });
 
   console.log('\\n' + '='.repeat(80) + '\\n');
@@ -153,11 +157,11 @@ async function demonstrateMasking() {
 }
 
 // Event listeners for monitoring
-maskingService.on('maskingCompleted', (event) => {
+maskingService.on('maskingCompleted', event => {
   console.log(`🔍 Masking completed: ${event.detectedData.length} items processed`);
 });
 
-maskingService.on('maskingError', (event) => {
+maskingService.on('maskingError', event => {
   console.error(`❌ Masking error: ${event.error.message}`);
 });
 

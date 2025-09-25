@@ -10,7 +10,11 @@
   padding: 24px;
   min-height: 100vh;
   background: #f8fafc;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 /* Dashboard Header */
@@ -46,7 +50,7 @@
   cursor: pointer;
 }
 
-.auto-refresh input[type="checkbox"] {
+.auto-refresh input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: #2563eb;
@@ -482,8 +486,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .dashboard-loading p {

@@ -1,6 +1,6 @@
 /**
  * Failed Search Detector and Analysis System
- * 
+ *
  * Advanced detection and analysis of unsuccessful search queries including:
  * - Real-time failure detection
  * - Failure pattern analysis
@@ -8,7 +8,7 @@
  * - Automated improvement suggestions
  * - Success recovery tracking
  * - Content gap identification
- * 
+ *
  * @version 1.0.0
  */
 
@@ -34,14 +34,14 @@ export interface FailedSearch {
   resolutionTime?: number;
 }
 
-export type FailureType = 
-  | 'zero_results'        // No results returned
-  | 'poor_relevance'      // Results returned but not relevant
-  | 'timeout'             // Search timed out
-  | 'error'               // System error occurred
-  | 'incomplete_results'  // Partial results due to system limits
-  | 'user_abandoned'      // User abandoned search
-  | 'refinement_loop';    // User stuck in refinement loop
+export type FailureType =
+  | 'zero_results' // No results returned
+  | 'poor_relevance' // Results returned but not relevant
+  | 'timeout' // Search timed out
+  | 'error' // System error occurred
+  | 'incomplete_results' // Partial results due to system limits
+  | 'user_abandoned' // User abandoned search
+  | 'refinement_loop'; // User stuck in refinement loop
 
 export interface FailureReason {
   type: FailureReasonType;
@@ -53,16 +53,16 @@ export interface FailureReason {
 }
 
 export type FailureReasonType =
-  | 'content_gap'         // Missing content in knowledge base
-  | 'query_complexity'    // Query too complex or malformed
+  | 'content_gap' // Missing content in knowledge base
+  | 'query_complexity' // Query too complex or malformed
   | 'terminology_mismatch' // User terminology doesn't match content
-  | 'scope_too_broad'     // Query too general
-  | 'scope_too_narrow'    // Query too specific
-  | 'spelling_error'      // Typos in query
-  | 'syntax_error'        // Invalid search syntax
-  | 'index_issue'         // Search index problems
-  | 'system_performance'  // Performance bottlenecks
-  | 'user_expectation';   // Mismatch in user expectations
+  | 'scope_too_broad' // Query too general
+  | 'scope_too_narrow' // Query too specific
+  | 'spelling_error' // Typos in query
+  | 'syntax_error' // Invalid search syntax
+  | 'index_issue' // Search index problems
+  | 'system_performance' // Performance bottlenecks
+  | 'user_expectation'; // Mismatch in user expectations
 
 export interface SearchContext {
   previousQueries: string[];
@@ -196,13 +196,16 @@ export class FailedSearchDetector {
   private failurePatterns: Map<string, FailurePattern> = new Map();
   private contentGaps: Map<string, ContentGap> = new Map();
   private resolutionStrategies: Map<ResolutionMethod, ResolutionStrategy[]> = new Map();
-  private userSessions: Map<string, {
-    queries: string[];
-    failures: string[];
-    startTime: number;
-    lastActivity: number;
-  }> = new Map();
-  
+  private userSessions: Map<
+    string,
+    {
+      queries: string[];
+      failures: string[];
+      startTime: number;
+      lastActivity: number;
+    }
+  > = new Map();
+
   private readonly config: {
     failureThresholds: {
       zeroResults: number;
@@ -225,18 +228,18 @@ export class FailedSearchDetector {
         zeroResults: 0,
         lowRelevance: 0.3,
         timeoutMs: 30000,
-        abandonmentMs: 180000
+        abandonmentMs: 180000,
       },
       patternDetection: {
         minFrequency: 3,
-        confidenceThreshold: 0.7
+        confidenceThreshold: 0.7,
       },
       realTimeAnalysis: true,
       autoResolution: true,
       maxHistorySize: 10000,
-      ...config
+      ...config,
     };
-    
+
     this.initializeFailurePatterns();
     this.initializeResolutionStrategies();
   }
@@ -260,11 +263,11 @@ export class FailedSearchDetector {
   } {
     // Determine if search failed
     const failureType = this.determineFailureType(results, processingTime, query);
-    
+
     if (!failureType) {
       return { isFailed: false };
     }
-    
+
     // Create failed search record
     const failedSearch = this.createFailedSearchRecord(
       query,
@@ -275,58 +278,54 @@ export class FailedSearchDetector {
       results,
       processingTime
     );
-    
+
     // Store the failure
     this.failedSearches.set(failedSearch.id, failedSearch);
-    
+
     // Update session tracking
     this.updateSessionTracking(sessionId || 'anonymous', query, failedSearch.id);
-    
+
     // Analyze failure reasons
     const failureReasons = this.analyzeFailureReasons(failedSearch, results);
     failedSearch.failureReasons = failureReasons;
-    
+
     // Generate suggestions
     const suggestions = this.generateFailureSuggestions(failedSearch);
-    
+
     // Attempt auto-resolution
     let autoResolution: ResolutionMethod | undefined;
     if (this.config.autoResolution) {
       autoResolution = this.attemptAutoResolution(failedSearch);
     }
-    
+
     // Real-time pattern detection
     if (this.config.realTimeAnalysis) {
       this.updateFailurePatterns(failedSearch);
     }
-    
+
     return {
       isFailed: true,
       failedSearch,
       suggestions,
-      autoResolution
+      autoResolution,
     };
   }
 
   /**
    * Record user action related to a failed search
    */
-  public recordUserAction(
-    failureId: string,
-    action: UserActionType,
-    details: any
-  ): void {
+  public recordUserAction(failureId: string, action: UserActionType, details: any): void {
     const failedSearch = this.failedSearches.get(failureId);
     if (!failedSearch) return;
-    
+
     const userAction: UserAction = {
       type: action,
       timestamp: Date.now(),
-      details
+      details,
     };
-    
+
     failedSearch.userActions.push(userAction);
-    
+
     // Check if this action resolves the failure
     if (this.isResolutionAction(action, details)) {
       this.markAsResolved(failureId, this.getResolutionMethod(action, details));
@@ -343,11 +342,11 @@ export class FailedSearchDetector {
   ): void {
     const failedSearch = this.failedSearches.get(failureId);
     if (!failedSearch) return;
-    
+
     failedSearch.resolved = true;
     failedSearch.resolutionMethod = resolutionMethod;
-    failedSearch.resolutionTime = resolutionTime || (Date.now() - failedSearch.timestamp);
-    
+    failedSearch.resolutionTime = resolutionTime || Date.now() - failedSearch.timestamp;
+
     // Update resolution effectiveness
     this.updateResolutionEffectiveness(resolutionMethod, true);
   }
@@ -355,40 +354,38 @@ export class FailedSearchDetector {
   /**
    * Generate comprehensive failure analysis report
    */
-  public generateFailureReport(
-    timeRange?: { from: number; to: number }
-  ): FailureAnalysisReport {
+  public generateFailureReport(timeRange?: { from: number; to: number }): FailureAnalysisReport {
     const failures = this.getFailuresInRange(timeRange);
-    
+
     if (failures.length === 0) {
       return this.getEmptyReport(timeRange);
     }
-    
+
     // Calculate summary statistics
     const summary = this.calculateSummaryStats(failures);
-    
+
     // Calculate distributions
     const failureDistribution = this.calculateFailureDistribution(failures);
     const reasonDistribution = this.calculateReasonDistribution(failures);
-    
+
     // Identify patterns
     const topFailurePatterns = this.getTopFailurePatterns();
-    
+
     // Identify content gaps
     const contentGaps = this.identifyContentGaps(failures);
-    
+
     // Identify system issues
     const systemIssues = this.identifySystemIssues(failures);
-    
+
     // Analyze user behavior
     const userBehaviorInsights = this.analyzeUserBehavior(failures);
-    
+
     // Generate recommendations
     const recommendations = this.generateRecommendations(failures);
-    
+
     // Calculate trends
     const trends = this.calculateFailureTrends(failures);
-    
+
     return {
       timeRange: timeRange || { from: 0, to: Date.now() },
       summary,
@@ -399,7 +396,7 @@ export class FailedSearchDetector {
       systemIssues,
       userBehaviorInsights,
       recommendations,
-      trends
+      trends,
     };
   }
 
@@ -422,7 +419,7 @@ export class FailedSearchDetector {
       confidence: number;
       effort: 'low' | 'medium' | 'high';
     }> = [];
-    
+
     // Check for similar past failures and their resolutions
     const similarFailures = this.findSimilarFailures(query, failureType);
     for (const failure of similarFailures) {
@@ -433,22 +430,27 @@ export class FailedSearchDetector {
             type: failure.resolutionMethod,
             suggestion: strategy.description,
             confidence: strategy.effectiveness,
-            effort: strategy.automationLevel === 'automatic' ? 'low' : 
-                   strategy.automationLevel === 'semi-automatic' ? 'medium' : 'high'
+            effort:
+              strategy.automationLevel === 'automatic'
+                ? 'low'
+                : strategy.automationLevel === 'semi-automatic'
+                  ? 'medium'
+                  : 'high',
           });
         }
       }
     }
-    
+
     // Add general suggestions based on failure type
     const generalSuggestions = this.getGeneralRecoverySuggestions(failureType, query);
     suggestions.push(...generalSuggestions);
-    
+
     // Sort by confidence and remove duplicates
     return suggestions
       .sort((a, b) => b.confidence - a.confidence)
-      .filter((suggestion, index, arr) => 
-        index === arr.findIndex(s => s.suggestion === suggestion.suggestion)
+      .filter(
+        (suggestion, index, arr) =>
+          index === arr.findIndex(s => s.suggestion === suggestion.suggestion)
       )
       .slice(0, 5);
   }
@@ -466,12 +468,12 @@ export class FailedSearchDetector {
       failures: Array.from(this.failedSearches.values()),
       patterns: Array.from(this.failurePatterns.values()),
       contentGaps: Array.from(this.contentGaps.values()),
-      report: this.generateFailureReport()
+      report: this.generateFailureReport(),
     };
   }
 
   // Private Methods
-  
+
   private initializeFailurePatterns(): void {
     // Common failure patterns
     const patterns: FailurePattern[] = [
@@ -482,14 +484,16 @@ export class FailedSearchDetector {
         commonReasons: ['syntax_error'],
         frequency: 0,
         successRate: 0,
-        resolutionStrategies: [{
-          method: 'user_guidance',
-          description: 'Prompt user to enter search terms',
-          effectiveness: 0.9,
-          automationLevel: 'automatic',
-          requiredResources: ['UI guidance']
-        }],
-        examples: ['', ' ', '  ']
+        resolutionStrategies: [
+          {
+            method: 'user_guidance',
+            description: 'Prompt user to enter search terms',
+            effectiveness: 0.9,
+            automationLevel: 'automatic',
+            requiredResources: ['UI guidance'],
+          },
+        ],
+        examples: ['', ' ', '  '],
       },
       {
         id: 'single-letter',
@@ -498,14 +502,16 @@ export class FailedSearchDetector {
         commonReasons: ['scope_too_broad'],
         frequency: 0,
         successRate: 0.1,
-        resolutionStrategies: [{
-          method: 'query_suggestion',
-          description: 'Suggest completing the term or using more specific keywords',
-          effectiveness: 0.7,
-          automationLevel: 'automatic',
-          requiredResources: ['Autocomplete system']
-        }],
-        examples: ['a', 'j', 'c']
+        resolutionStrategies: [
+          {
+            method: 'query_suggestion',
+            description: 'Suggest completing the term or using more specific keywords',
+            effectiveness: 0.7,
+            automationLevel: 'automatic',
+            requiredResources: ['Autocomplete system'],
+          },
+        ],
+        examples: ['a', 'j', 'c'],
       },
       {
         id: 'all-caps-technical',
@@ -514,52 +520,69 @@ export class FailedSearchDetector {
         commonReasons: ['terminology_mismatch'],
         frequency: 0,
         successRate: 0.3,
-        resolutionStrategies: [{
-          method: 'query_suggestion',
-          description: 'Suggest expanded acronym or related terms',
-          effectiveness: 0.8,
-          automationLevel: 'semi-automatic',
-          requiredResources: ['Acronym dictionary']
-        }],
-        examples: ['JCL', 'COBOL', 'VSAM']
-      }
+        resolutionStrategies: [
+          {
+            method: 'query_suggestion',
+            description: 'Suggest expanded acronym or related terms',
+            effectiveness: 0.8,
+            automationLevel: 'semi-automatic',
+            requiredResources: ['Acronym dictionary'],
+          },
+        ],
+        examples: ['JCL', 'COBOL', 'VSAM'],
+      },
     ];
-    
+
     for (const pattern of patterns) {
       this.failurePatterns.set(pattern.id, pattern);
     }
   }
-  
+
   private initializeResolutionStrategies(): void {
     const strategies: Array<[ResolutionMethod, ResolutionStrategy[]]> = [
-      ['query_suggestion', [{
-        method: 'query_suggestion',
-        description: 'Provide alternative query suggestions',
-        effectiveness: 0.75,
-        automationLevel: 'automatic',
-        requiredResources: ['Query suggestion engine']
-      }]],
-      ['content_creation', [{
-        method: 'content_creation',
-        description: 'Create missing content based on user demand',
-        effectiveness: 0.9,
-        automationLevel: 'manual',
-        requiredResources: ['Subject matter experts', 'Content management system']
-      }]],
-      ['user_guidance', [{
-        method: 'user_guidance',
-        description: 'Provide contextual help and search tips',
-        effectiveness: 0.6,
-        automationLevel: 'automatic',
-        requiredResources: ['Help system', 'UI components']
-      }]]
+      [
+        'query_suggestion',
+        [
+          {
+            method: 'query_suggestion',
+            description: 'Provide alternative query suggestions',
+            effectiveness: 0.75,
+            automationLevel: 'automatic',
+            requiredResources: ['Query suggestion engine'],
+          },
+        ],
+      ],
+      [
+        'content_creation',
+        [
+          {
+            method: 'content_creation',
+            description: 'Create missing content based on user demand',
+            effectiveness: 0.9,
+            automationLevel: 'manual',
+            requiredResources: ['Subject matter experts', 'Content management system'],
+          },
+        ],
+      ],
+      [
+        'user_guidance',
+        [
+          {
+            method: 'user_guidance',
+            description: 'Provide contextual help and search tips',
+            effectiveness: 0.6,
+            automationLevel: 'automatic',
+            requiredResources: ['Help system', 'UI components'],
+          },
+        ],
+      ],
     ];
-    
+
     for (const [method, strategyList] of strategies) {
       this.resolutionStrategies.set(method, strategyList);
     }
   }
-  
+
   private determineFailureType(
     results: SearchResult[],
     processingTime: number,
@@ -569,26 +592,26 @@ export class FailedSearchDetector {
     if (results.length === 0) {
       return 'zero_results';
     }
-    
+
     // Timeout
     if (processingTime > this.config.failureThresholds.timeoutMs) {
       return 'timeout';
     }
-    
+
     // Poor relevance (low average score)
     const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
     if (avgScore < this.config.failureThresholds.lowRelevance) {
       return 'poor_relevance';
     }
-    
+
     // Check for other failure indicators
     if (query.trim().length === 0) {
       return 'zero_results';
     }
-    
+
     return null; // No failure detected
   }
-  
+
   private createFailedSearchRecord(
     query: string,
     parsedQuery: ParsedQuery,
@@ -599,7 +622,7 @@ export class FailedSearchDetector {
     processingTime: number = 0
   ): FailedSearch {
     const id = this.generateFailureId();
-    
+
     return {
       id,
       query,
@@ -612,50 +635,50 @@ export class FailedSearchDetector {
       context: this.buildSearchContext(userId, sessionId, processingTime),
       attemptedSolutions: [],
       userActions: [],
-      resolved: false
+      resolved: false,
     };
   }
-  
+
   private buildSearchContext(
     userId?: string,
     sessionId?: string,
     processingTime: number = 0
   ): SearchContext {
     const session = sessionId ? this.userSessions.get(sessionId) : undefined;
-    
+
     return {
       previousQueries: session?.queries.slice(-5) || [],
       searchSession: {
         startTime: session?.startTime || Date.now(),
         queryCount: session?.queries.length || 1,
         refinementCount: 0, // Would be calculated based on query similarity
-        clickThroughRate: 0 // Would be calculated from user actions
+        clickThroughRate: 0, // Would be calculated from user actions
       },
       userProfile: userId ? this.getUserProfile(userId) : undefined,
       systemState: {
         indexHealth: 0.95, // Would come from system monitoring
         responseTime: processingTime,
-        errorRate: 0.02 // Would come from error tracking
-      }
+        errorRate: 0.02, // Would come from error tracking
+      },
     };
   }
-  
+
   private analyzeFailureReasons(
     failedSearch: FailedSearch,
     results: SearchResult[]
   ): FailureReason[] {
     const reasons: FailureReason[] = [];
-    
+
     // Analyze based on failure type
     switch (failedSearch.failureType) {
       case 'zero_results':
         reasons.push(...this.analyzeZeroResultsReasons(failedSearch));
         break;
-        
+
       case 'poor_relevance':
         reasons.push(...this.analyzePoorRelevanceReasons(failedSearch, results));
         break;
-        
+
       case 'timeout':
         reasons.push({
           type: 'system_performance',
@@ -663,21 +686,21 @@ export class FailedSearchDetector {
           confidence: 0.9,
           impact: 'high',
           actionable: true,
-          suggestedFix: 'Optimize query or improve system performance'
+          suggestedFix: 'Optimize query or improve system performance',
         });
         break;
     }
-    
+
     // Check for common issues
     reasons.push(...this.checkCommonIssues(failedSearch));
-    
+
     return reasons.sort((a, b) => b.confidence - a.confidence);
   }
-  
+
   private analyzeZeroResultsReasons(failedSearch: FailedSearch): FailureReason[] {
     const reasons: FailureReason[] = [];
     const query = failedSearch.query.toLowerCase().trim();
-    
+
     // Empty or very short query
     if (query.length === 0) {
       reasons.push({
@@ -686,7 +709,7 @@ export class FailedSearchDetector {
         confidence: 1.0,
         impact: 'low',
         actionable: true,
-        suggestedFix: 'Enter search terms'
+        suggestedFix: 'Enter search terms',
       });
     } else if (query.length < 3) {
       reasons.push({
@@ -695,10 +718,10 @@ export class FailedSearchDetector {
         confidence: 0.8,
         impact: 'medium',
         actionable: true,
-        suggestedFix: 'Use more specific terms'
+        suggestedFix: 'Use more specific terms',
       });
     }
-    
+
     // Check for potential spelling errors
     if (this.hasPotentialSpellingErrors(query)) {
       reasons.push({
@@ -707,10 +730,10 @@ export class FailedSearchDetector {
         confidence: 0.7,
         impact: 'medium',
         actionable: true,
-        suggestedFix: 'Check spelling or use alternative terms'
+        suggestedFix: 'Check spelling or use alternative terms',
       });
     }
-    
+
     // Check for overly specific technical terms
     if (this.isOverlySpecific(query)) {
       reasons.push({
@@ -719,10 +742,10 @@ export class FailedSearchDetector {
         confidence: 0.6,
         impact: 'medium',
         actionable: true,
-        suggestedFix: 'Try broader or alternative terms'
+        suggestedFix: 'Try broader or alternative terms',
       });
     }
-    
+
     // Check for content gap
     if (this.indicatesContentGap(query)) {
       reasons.push({
@@ -731,22 +754,22 @@ export class FailedSearchDetector {
         confidence: 0.8,
         impact: 'high',
         actionable: true,
-        suggestedFix: 'Consider creating content for this topic'
+        suggestedFix: 'Consider creating content for this topic',
       });
     }
-    
+
     return reasons;
   }
-  
+
   private analyzePoorRelevanceReasons(
     failedSearch: FailedSearch,
     results: SearchResult[]
   ): FailureReason[] {
     const reasons: FailureReason[] = [];
-    
+
     // Analyze result relevance scores
     const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
-    
+
     if (avgScore < 0.2) {
       reasons.push({
         type: 'terminology_mismatch',
@@ -754,10 +777,10 @@ export class FailedSearchDetector {
         confidence: 0.8,
         impact: 'high',
         actionable: true,
-        suggestedFix: 'Use synonym expansion or query reformulation'
+        suggestedFix: 'Use synonym expansion or query reformulation',
       });
     }
-    
+
     // Check for query complexity issues
     if (failedSearch.parsedQuery.terms.length > 10) {
       reasons.push({
@@ -766,16 +789,16 @@ export class FailedSearchDetector {
         confidence: 0.7,
         impact: 'medium',
         actionable: true,
-        suggestedFix: 'Simplify query or break into multiple searches'
+        suggestedFix: 'Simplify query or break into multiple searches',
       });
     }
-    
+
     return reasons;
   }
-  
+
   private checkCommonIssues(failedSearch: FailedSearch): FailureReason[] {
     const reasons: FailureReason[] = [];
-    
+
     // Check for syntax errors
     if (this.hasSyntaxErrors(failedSearch.query)) {
       reasons.push({
@@ -784,10 +807,10 @@ export class FailedSearchDetector {
         confidence: 0.9,
         impact: 'medium',
         actionable: true,
-        suggestedFix: 'Correct search syntax or use simpler terms'
+        suggestedFix: 'Correct search syntax or use simpler terms',
       });
     }
-    
+
     // Check system performance indicators
     if (failedSearch.context.systemState.responseTime > 5000) {
       reasons.push({
@@ -796,23 +819,23 @@ export class FailedSearchDetector {
         confidence: 0.8,
         impact: 'medium',
         actionable: false,
-        suggestedFix: 'System optimization needed'
+        suggestedFix: 'System optimization needed',
       });
     }
-    
+
     return reasons;
   }
-  
+
   private generateFailureSuggestions(failedSearch: FailedSearch): string[] {
     const suggestions: string[] = [];
-    
+
     // Generate suggestions based on failure reasons
     for (const reason of failedSearch.failureReasons) {
       if (reason.suggestedFix) {
         suggestions.push(reason.suggestedFix);
       }
     }
-    
+
     // Add type-specific suggestions
     switch (failedSearch.failureType) {
       case 'zero_results':
@@ -822,7 +845,7 @@ export class FailedSearchDetector {
           'Check spelling and try alternatives'
         );
         break;
-        
+
       case 'poor_relevance':
         suggestions.push(
           'Use more specific terms',
@@ -831,10 +854,10 @@ export class FailedSearchDetector {
         );
         break;
     }
-    
+
     return [...new Set(suggestions)]; // Remove duplicates
   }
-  
+
   private attemptAutoResolution(failedSearch: FailedSearch): ResolutionMethod | undefined {
     // Simple auto-resolution logic
     for (const reason of failedSearch.failureReasons) {
@@ -849,38 +872,34 @@ export class FailedSearchDetector {
         }
       }
     }
-    
+
     return undefined;
   }
-  
-  private updateSessionTracking(
-    sessionId: string,
-    query: string,
-    failureId: string
-  ): void {
+
+  private updateSessionTracking(sessionId: string, query: string, failureId: string): void {
     let session = this.userSessions.get(sessionId);
     if (!session) {
       session = {
         queries: [],
         failures: [],
         startTime: Date.now(),
-        lastActivity: Date.now()
+        lastActivity: Date.now(),
       };
     }
-    
+
     session.queries.push(query);
     session.failures.push(failureId);
     session.lastActivity = Date.now();
-    
+
     this.userSessions.set(sessionId, session);
   }
-  
+
   private updateFailurePatterns(failedSearch: FailedSearch): void {
     // Check if this failure matches existing patterns
     for (const pattern of this.failurePatterns.values()) {
       if (this.matchesPattern(failedSearch.query, pattern.pattern)) {
         pattern.frequency++;
-        
+
         // Update success rate if resolved
         if (failedSearch.resolved) {
           pattern.successRate = (pattern.successRate + 1) / 2;
@@ -889,65 +908,67 @@ export class FailedSearchDetector {
       }
     }
   }
-  
+
   // Utility methods
-  
+
   private hasPotentialSpellingErrors(query: string): boolean {
     // Simple heuristic for potential spelling errors
     const words = query.split(/\s+/);
     const suspiciousPatterns = [
-      /[a-z]{3,}[0-9]/,     // Mixed letters and numbers
-      /[a-z]*[aeiou]{3,}/,  // Too many vowels
-      /[bcdfghjklmnpqrstvwxyz]{4,}/ // Too many consonants
+      /[a-z]{3,}[0-9]/, // Mixed letters and numbers
+      /[a-z]*[aeiou]{3,}/, // Too many vowels
+      /[bcdfghjklmnpqrstvwxyz]{4,}/, // Too many consonants
     ];
-    
-    return words.some(word => 
-      suspiciousPatterns.some(pattern => pattern.test(word.toLowerCase()))
-    );
+
+    return words.some(word => suspiciousPatterns.some(pattern => pattern.test(word.toLowerCase())));
   }
-  
+
   private isOverlySpecific(query: string): boolean {
     // Check for very specific technical terms or version numbers
     const specificPatterns = [
-      /v\d+\.\d+\.\d+/,        // Version numbers
-      /\b[A-Z]{2,}\d+\b/,      // Technical codes
-      /\b\w+\.exe\b/,          // File names
+      /v\d+\.\d+\.\d+/, // Version numbers
+      /\b[A-Z]{2,}\d+\b/, // Technical codes
+      /\b\w+\.exe\b/, // File names
     ];
-    
+
     return specificPatterns.some(pattern => pattern.test(query));
   }
-  
+
   private indicatesContentGap(query: string): boolean {
     // Heuristics for identifying potential content gaps
     const contentGapIndicators = [
-      'tutorial', 'guide', 'how to', 'example', 'sample',
-      'documentation', 'manual', 'reference'
+      'tutorial',
+      'guide',
+      'how to',
+      'example',
+      'sample',
+      'documentation',
+      'manual',
+      'reference',
     ];
-    
-    return contentGapIndicators.some(indicator => 
-      query.toLowerCase().includes(indicator)
-    );
+
+    return contentGapIndicators.some(indicator => query.toLowerCase().includes(indicator));
   }
-  
+
   private hasSyntaxErrors(query: string): boolean {
     // Check for common syntax errors
     const syntaxErrors = [
-      /\(\)/,                  // Empty parentheses
-      /\"\s*\"/,             // Empty quotes
-      /[()]{3,}/,             // Multiple parentheses
-      /["']{3,}/              // Multiple quotes
+      /\(\)/, // Empty parentheses
+      /\"\s*\"/, // Empty quotes
+      /[()]{3,}/, // Multiple parentheses
+      /["']{3,}/, // Multiple quotes
     ];
-    
+
     return syntaxErrors.some(pattern => pattern.test(query));
   }
-  
+
   private matchesPattern(query: string, pattern: string | RegExp): boolean {
     if (pattern instanceof RegExp) {
       return pattern.test(query);
     }
     return query.toLowerCase().includes(pattern.toLowerCase());
   }
-  
+
   private isResolutionAction(action: UserActionType, details: any): boolean {
     switch (action) {
       case 'result_clicked':
@@ -960,7 +981,7 @@ export class FailedSearchDetector {
         return false;
     }
   }
-  
+
   private getResolutionMethod(action: UserActionType, details: any): ResolutionMethod {
     switch (action) {
       case 'query_refinement':
@@ -973,11 +994,8 @@ export class FailedSearchDetector {
         return 'manual_intervention';
     }
   }
-  
-  private updateResolutionEffectiveness(
-    method: ResolutionMethod,
-    successful: boolean
-  ): void {
+
+  private updateResolutionEffectiveness(method: ResolutionMethod, successful: boolean): void {
     const strategies = this.resolutionStrategies.get(method);
     if (strategies) {
       for (const strategy of strategies) {
@@ -989,52 +1007,50 @@ export class FailedSearchDetector {
       }
     }
   }
-  
+
   private getUserProfile(userId: string): SearchContext['userProfile'] {
     // Simplified user profile retrieval
     return {
       expertise: 'intermediate',
       frequentTopics: [],
-      successfulPatterns: []
+      successfulPatterns: [],
     };
   }
-  
-  private getFailuresInRange(
-    timeRange?: { from: number; to: number }
-  ): FailedSearch[] {
+
+  private getFailuresInRange(timeRange?: { from: number; to: number }): FailedSearch[] {
     const failures = Array.from(this.failedSearches.values());
-    
+
     if (!timeRange) return failures;
-    
+
     return failures.filter(
       failure => failure.timestamp >= timeRange.from && failure.timestamp <= timeRange.to
     );
   }
-  
+
   private calculateSummaryStats(failures: FailedSearch[]): FailureAnalysisReport['summary'] {
     const totalFailures = failures.length;
     const uniqueFailures = new Set(failures.map(f => f.query)).size;
     const resolvedFailures = failures.filter(f => f.resolved).length;
     const resolutionRate = totalFailures > 0 ? resolvedFailures / totalFailures : 0;
-    
+
     const resolutionTimes = failures
       .filter(f => f.resolved && f.resolutionTime)
       .map(f => f.resolutionTime!);
-    
-    const avgResolutionTime = resolutionTimes.length > 0 ?
-      resolutionTimes.reduce((sum, time) => sum + time, 0) / resolutionTimes.length : 0;
-    
+
+    const avgResolutionTime =
+      resolutionTimes.length > 0
+        ? resolutionTimes.reduce((sum, time) => sum + time, 0) / resolutionTimes.length
+        : 0;
+
     return {
       totalFailures,
       uniqueFailures,
       resolutionRate,
-      avgResolutionTime
+      avgResolutionTime,
     };
   }
-  
-  private calculateFailureDistribution(
-    failures: FailedSearch[]
-  ): Record<FailureType, number> {
+
+  private calculateFailureDistribution(failures: FailedSearch[]): Record<FailureType, number> {
     const distribution: Record<FailureType, number> = {
       zero_results: 0,
       poor_relevance: 0,
@@ -1042,19 +1058,17 @@ export class FailedSearchDetector {
       error: 0,
       incomplete_results: 0,
       user_abandoned: 0,
-      refinement_loop: 0
+      refinement_loop: 0,
     };
-    
+
     for (const failure of failures) {
       distribution[failure.failureType]++;
     }
-    
+
     return distribution;
   }
-  
-  private calculateReasonDistribution(
-    failures: FailedSearch[]
-  ): Record<FailureReasonType, number> {
+
+  private calculateReasonDistribution(failures: FailedSearch[]): Record<FailureReasonType, number> {
     const distribution: Record<FailureReasonType, number> = {
       content_gap: 0,
       query_complexity: 0,
@@ -1065,32 +1079,32 @@ export class FailedSearchDetector {
       syntax_error: 0,
       index_issue: 0,
       system_performance: 0,
-      user_expectation: 0
+      user_expectation: 0,
     };
-    
+
     for (const failure of failures) {
       for (const reason of failure.failureReasons) {
         distribution[reason.type]++;
       }
     }
-    
+
     return distribution;
   }
-  
+
   private getTopFailurePatterns(): FailurePattern[] {
     return Array.from(this.failurePatterns.values())
       .sort((a, b) => b.frequency - a.frequency)
       .slice(0, 10);
   }
-  
+
   private identifyContentGaps(failures: FailedSearch[]): ContentGap[] {
     const gaps = new Map<string, ContentGap>();
-    
+
     for (const failure of failures) {
       if (failure.failureReasons.some(r => r.type === 'content_gap')) {
         const topic = this.extractTopic(failure.query);
         const existing = gaps.get(topic);
-        
+
         if (existing) {
           existing.queries.push(failure.query);
           existing.frequency++;
@@ -1102,19 +1116,18 @@ export class FailedSearchDetector {
             userDemand: 1,
             priority: 'medium',
             suggestedContent: [`Create content about ${topic}`],
-            relatedTopics: []
+            relatedTopics: [],
           });
         }
       }
     }
-    
-    return Array.from(gaps.values())
-      .sort((a, b) => b.frequency - a.frequency);
+
+    return Array.from(gaps.values()).sort((a, b) => b.frequency - a.frequency);
   }
-  
+
   private identifySystemIssues(failures: FailedSearch[]): SystemIssue[] {
     const issues: SystemIssue[] = [];
-    
+
     // Check for performance issues
     const timeoutFailures = failures.filter(f => f.failureType === 'timeout');
     if (timeoutFailures.length > failures.length * 0.1) {
@@ -1124,40 +1137,41 @@ export class FailedSearchDetector {
         impact: 0.8,
         frequency: timeoutFailures.length,
         affectedQueries: timeoutFailures.map(f => f.query),
-        recommendedFix: 'Optimize search algorithms and infrastructure'
+        recommendedFix: 'Optimize search algorithms and infrastructure',
       });
     }
-    
+
     return issues;
   }
-  
+
   private analyzeUserBehavior(failures: FailedSearch[]): UserBehaviorInsight[] {
     const insights: UserBehaviorInsight[] = [];
-    
+
     // Analyze common user patterns
-    const refinementPatterns = failures.filter(f => 
+    const refinementPatterns = failures.filter(f =>
       f.userActions.some(a => a.type === 'query_refinement')
     );
-    
+
     if (refinementPatterns.length > failures.length * 0.3) {
       insights.push({
         pattern: 'High refinement rate',
         description: 'Users frequently need to refine their queries',
         prevalence: refinementPatterns.length / failures.length,
         impact: 'negative',
-        recommendation: 'Improve initial query suggestions and search guidance'
+        recommendation: 'Improve initial query suggestions and search guidance',
       });
     }
-    
+
     return insights;
   }
-  
+
   private generateRecommendations(failures: FailedSearch[]): FailureRecommendation[] {
     const recommendations: FailureRecommendation[] = [];
-    
+
     // Analyze common failure patterns for recommendations
-    const zeroResultsRate = failures.filter(f => f.failureType === 'zero_results').length / failures.length;
-    
+    const zeroResultsRate =
+      failures.filter(f => f.failureType === 'zero_results').length / failures.length;
+
     if (zeroResultsRate > 0.3) {
       recommendations.push({
         type: 'immediate',
@@ -1165,13 +1179,13 @@ export class FailedSearchDetector {
         description: 'Implement better query suggestion system',
         priority: 0.9,
         estimatedImpact: 0.8,
-        requiredEffort: 'medium'
+        requiredEffort: 'medium',
       });
     }
-    
+
     return recommendations.sort((a, b) => b.priority - a.priority);
   }
-  
+
   private calculateFailureTrends(failures: FailedSearch[]): FailureTrend[] {
     // Simplified trend calculation
     return [
@@ -1180,39 +1194,37 @@ export class FailedSearchDetector {
         direction: 'stable',
         rate: 0.02,
         significance: 0.6,
-        timeframe: '30 days'
-      }
+        timeframe: '30 days',
+      },
     ];
   }
-  
-  private findSimilarFailures(
-    query: string,
-    failureType: FailureType
-  ): FailedSearch[] {
+
+  private findSimilarFailures(query: string, failureType: FailureType): FailedSearch[] {
     return Array.from(this.failedSearches.values())
-      .filter(failure => 
-        failure.failureType === failureType &&
-        this.calculateQuerySimilarity(query, failure.query) > 0.7
+      .filter(
+        failure =>
+          failure.failureType === failureType &&
+          this.calculateQuerySimilarity(query, failure.query) > 0.7
       )
       .slice(0, 5);
   }
-  
+
   private calculateQuerySimilarity(query1: string, query2: string): number {
     // Simple Jaccard similarity
     const tokens1 = new Set(query1.toLowerCase().split(/\s+/));
     const tokens2 = new Set(query2.toLowerCase().split(/\s+/));
-    
+
     const intersection = new Set([...tokens1].filter(x => tokens2.has(x)));
     const union = new Set([...tokens1, ...tokens2]);
-    
+
     return intersection.size / union.size;
   }
-  
+
   private getResolutionStrategy(method: ResolutionMethod): ResolutionStrategy | undefined {
     const strategies = this.resolutionStrategies.get(method);
     return strategies?.[0];
   }
-  
+
   private getGeneralRecoverySuggestions(
     failureType: FailureType,
     query: string
@@ -1228,39 +1240,52 @@ export class FailedSearchDetector {
       confidence: number;
       effort: 'low' | 'medium' | 'high';
     }> = [];
-    
+
     switch (failureType) {
       case 'zero_results':
         suggestions.push({
           type: 'query_suggestion',
           suggestion: 'Try using broader or alternative keywords',
           confidence: 0.7,
-          effort: 'low'
+          effort: 'low',
         });
         break;
-        
+
       case 'poor_relevance':
         suggestions.push({
           type: 'query_suggestion',
           suggestion: 'Use more specific terms or exact phrases',
           confidence: 0.6,
-          effort: 'low'
+          effort: 'low',
         });
         break;
     }
-    
+
     return suggestions;
   }
-  
+
   private extractTopic(query: string): string {
     // Simple topic extraction (in practice, would use NLP)
     const words = query.toLowerCase().split(/\s+/);
-    const stopWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'];
+    const stopWords = [
+      'the',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+    ];
     const meaningfulWords = words.filter(word => !stopWords.includes(word) && word.length > 2);
-    
+
     return meaningfulWords.slice(0, 3).join(' ') || 'unknown';
   }
-  
+
   private getEmptyReport(timeRange?: { from: number; to: number }): FailureAnalysisReport {
     return {
       timeRange: timeRange || { from: 0, to: Date.now() },
@@ -1268,7 +1293,7 @@ export class FailedSearchDetector {
         totalFailures: 0,
         uniqueFailures: 0,
         resolutionRate: 0,
-        avgResolutionTime: 0
+        avgResolutionTime: 0,
       },
       failureDistribution: {
         zero_results: 0,
@@ -1277,7 +1302,7 @@ export class FailedSearchDetector {
         error: 0,
         incomplete_results: 0,
         user_abandoned: 0,
-        refinement_loop: 0
+        refinement_loop: 0,
       },
       reasonDistribution: {
         content_gap: 0,
@@ -1289,17 +1314,17 @@ export class FailedSearchDetector {
         syntax_error: 0,
         index_issue: 0,
         system_performance: 0,
-        user_expectation: 0
+        user_expectation: 0,
       },
       topFailurePatterns: [],
       contentGaps: [],
       systemIssues: [],
       userBehaviorInsights: [],
       recommendations: [],
-      trends: []
+      trends: [],
     };
   }
-  
+
   private generateFailureId(): string {
     return `failure-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }

@@ -75,19 +75,19 @@ const setupIntegrationTest = async (): Promise<TestContext> => {
       title: 'VSAM File Access Issue',
       category: 'VSAM',
       tags: ['data-validation', 'error-handling'],
-      success_rate: 0.85
+      success_rate: 0.85,
     }),
     createMockKBEntry('entry2', {
       title: 'DB2 Query Optimization',
       category: 'DB2',
       tags: ['performance', 'troubleshooting'],
-      success_rate: 0.92
+      success_rate: 0.92,
     }),
     createMockKBEntry('entry3', {
       title: 'JCL Parameter Error',
       category: 'JCL',
       tags: ['error-handling'],
-      success_rate: 0.78
+      success_rate: 0.78,
     }),
   ];
 
@@ -99,7 +99,7 @@ const createPerformanceTestData = () => {
     entryCount: 1000,
     tagCount: 200,
     categoryCount: 50,
-    maxTagsPerEntry: 8
+    maxTagsPerEntry: 8,
   });
 };
 
@@ -156,7 +156,7 @@ describe('Category-Tag System Integration', () => {
           expect.objectContaining({
             title: 'Test Integration Entry',
             category: 'VSAM',
-            tags: expect.arrayContaining(['data-validation', 'error-handling'])
+            tags: expect.arrayContaining(['data-validation', 'error-handling']),
           })
         );
       });
@@ -211,7 +211,7 @@ describe('Category-Tag System Integration', () => {
             children: [],
             depth: 0,
             path: [cat.name],
-            parent: null
+            parent: null,
           }))}
           enableDragDrop={true}
           onNodeMove={mockOnMove}
@@ -252,7 +252,7 @@ describe('Category-Tag System Integration', () => {
             children: [],
             depth: 0,
             path: [cat.name],
-            parent: null
+            parent: null,
           }))}
           onNodeDelete={mockOnDelete}
         />
@@ -282,8 +282,8 @@ describe('Category-Tag System Integration', () => {
           tag: createMockTag('sug1', 'performance-tuning'),
           score: 0.92,
           source: 'ai',
-          reasoning: 'Based on similar DB2 entries'
-        }
+          reasoning: 'Based on similar DB2 entries',
+        },
       ]);
 
       render(
@@ -317,7 +317,7 @@ describe('Category-Tag System Integration', () => {
         isValid: false,
         errors: ['Duplicate tag detected'],
         warnings: ['Tag rarely used in this category'],
-        suggestions: ['Consider using "data-processing" instead']
+        suggestions: ['Consider using "data-processing" instead'],
       });
 
       render(
@@ -356,7 +356,7 @@ describe('Category-Tag System Integration', () => {
           errors: [{ itemId: 'entry1', error: 'Tag already exists' }],
           warnings: [],
           duration: 1200,
-          canUndo: true
+          canUndo: true,
         };
         return operationResult;
       });
@@ -411,7 +411,7 @@ describe('Category-Tag System Integration', () => {
         errors: [],
         warnings: [],
         duration: 800,
-        canUndo: true
+        canUndo: true,
       });
 
       const mockOnUndo = jest.fn().mockResolvedValue(true);
@@ -449,7 +449,7 @@ describe('Category-Tag System Integration', () => {
 
       const mockOnExecute = jest.fn().mockImplementation(async () => {
         // Simulate long-running operation
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           setTimeout(() => {
             if (!operationCancelled) {
               resolve({
@@ -461,7 +461,7 @@ describe('Category-Tag System Integration', () => {
                 errors: [],
                 warnings: [],
                 duration: 5000,
-                canUndo: true
+                canUndo: true,
               });
             }
           }, 100);
@@ -527,7 +527,7 @@ describe('Performance Integration Tests', () => {
           suggestions={largeDataset.tags.map(tag => ({
             tag,
             score: Math.random(),
-            source: 'existing'
+            source: 'existing',
           }))}
         />
       );
@@ -569,7 +569,7 @@ describe('Performance Integration Tests', () => {
             children: [],
             depth: Math.floor(Math.random() * 3),
             path: [cat.name],
-            parent: null
+            parent: null,
           }))}
           height={600}
           enableVirtualScrolling={true}
@@ -648,9 +648,9 @@ describe('Accessibility Integration Tests', () => {
           children: [],
           depth: 0,
           path: [cat.name],
-          parent: null
+          parent: null,
         }))}
-        ariaLabel="Knowledge base categories"
+        ariaLabel='Knowledge base categories'
         announceChanges={true}
       />
     );
@@ -664,7 +664,7 @@ describe('Accessibility Integration Tests', () => {
       <EnhancedTagInput
         value={context.tags}
         onChange={jest.fn()}
-        ariaLabel="Entry tags"
+        ariaLabel='Entry tags'
         announceChanges={true}
       />
     );
@@ -679,7 +679,7 @@ describe('Accessibility Integration Tests', () => {
         selectedEntries={context.entries}
         availableTags={context.tags}
         availableCategories={context.categories}
-        ariaLabel="Bulk operations panel"
+        ariaLabel='Bulk operations panel'
         announceProgress={true}
       />
     );
@@ -699,14 +699,11 @@ describe('Accessibility Integration Tests', () => {
             children: [],
             depth: 0,
             path: [cat.name],
-            parent: null
+            parent: null,
           }))}
           enableKeyboardNavigation={true}
         />
-        <EnhancedTagInput
-          value={[]}
-          onChange={jest.fn()}
-        />
+        <EnhancedTagInput value={[]} onChange={jest.fn()} />
       </div>
     );
 
@@ -732,13 +729,7 @@ describe('Accessibility Integration Tests', () => {
   test('should announce important changes to screen readers', async () => {
     const { user } = context;
 
-    render(
-      <EnhancedTagInput
-        value={[]}
-        onChange={jest.fn()}
-        announceChanges={true}
-      />
-    );
+    render(<EnhancedTagInput value={[]} onChange={jest.fn()} announceChanges={true} />);
 
     // Add tag
     const input = screen.getByRole('textbox');
@@ -761,14 +752,12 @@ describe('Accessibility Integration Tests', () => {
             children: [],
             depth: 0,
             path: [cat.name],
-            parent: null
+            parent: null,
           }))}
-          ariaLabel="Category hierarchy"
-          ariaDescribedBy="category-help"
+          ariaLabel='Category hierarchy'
+          ariaDescribedBy='category-help'
         />
-        <div id="category-help">
-          Use arrow keys to navigate, Enter to select, F2 to rename
-        </div>
+        <div id='category-help'>Use arrow keys to navigate, Enter to select, F2 to rename</div>
       </div>
     );
 
@@ -795,7 +784,7 @@ describe('Error Handling Integration Tests', () => {
     // Mock failed API calls
     const mockFailingService = {
       searchTags: jest.fn().mockRejectedValue(new Error('API Error')),
-      suggestTags: jest.fn().mockRejectedValue(new Error('Service Unavailable'))
+      suggestTags: jest.fn().mockRejectedValue(new Error('Service Unavailable')),
     };
 
     render(
@@ -875,7 +864,7 @@ describe('Error Handling Integration Tests', () => {
             children: [],
             depth: 0,
             path: [cat.name],
-            parent: null
+            parent: null,
           }))}
           onNodeDelete={mockOnCategoryDelete}
         />
@@ -925,18 +914,18 @@ describe('Cross-Component Integration', () => {
           children: [],
           depth: 0,
           path: [cat.name],
-          parent: null
+          parent: null,
         }))}
         selectedIds={sharedSelection}
-        onSelectionChange={(ids) => { sharedSelection = ids; }}
+        onSelectionChange={ids => {
+          sharedSelection = ids;
+        }}
       />
     );
 
     const BulkComponent = () => (
       <BulkOperationsPanel
-        selectedEntries={context.entries.filter(entry =>
-          sharedSelection.includes(entry.category)
-        )}
+        selectedEntries={context.entries.filter(entry => sharedSelection.includes(entry.category))}
         availableTags={context.tags}
         availableCategories={context.categories}
       />
@@ -1008,16 +997,11 @@ describe('Cross-Component Integration', () => {
     ];
 
     let currentTags = [...context.tags];
-    const mockOnChange = jest.fn((newTags) => {
+    const mockOnChange = jest.fn(newTags => {
       currentTags = newTags;
     });
 
-    const { rerender } = render(
-      <EnhancedTagInput
-        value={currentTags}
-        onChange={mockOnChange}
-      />
-    );
+    const { rerender } = render(<EnhancedTagInput value={currentTags} onChange={mockOnChange} />);
 
     // Execute operations concurrently
     const promises = operations.map(async (op, index) => {

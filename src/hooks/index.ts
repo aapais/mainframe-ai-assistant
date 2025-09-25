@@ -98,20 +98,22 @@ export {
  * Combined responsive layout hook
  * Provides comprehensive layout utilities
  */
-export const useResponsiveLayout = (options: {
-  /** Enable grid layout management */
-  enableGrid?: boolean;
-  /** Enable density management */
-  enableDensity?: boolean;
-  /** Enable layout persistence */
-  enablePersistence?: boolean;
-  /** Grid configuration */
-  gridConfig?: any;
-  /** Density options */
-  densityOptions?: any;
-  /** Layout state options */
-  layoutOptions?: any;
-} = {}) => {
+export const useResponsiveLayout = (
+  options: {
+    /** Enable grid layout management */
+    enableGrid?: boolean;
+    /** Enable density management */
+    enableDensity?: boolean;
+    /** Enable layout persistence */
+    enablePersistence?: boolean;
+    /** Grid configuration */
+    gridConfig?: any;
+    /** Density options */
+    densityOptions?: any;
+    /** Layout state options */
+    layoutOptions?: any;
+  } = {}
+) => {
   const {
     enableGrid = true,
     enableDensity = true,
@@ -170,12 +172,14 @@ export const checkHookSupport = () => {
   return {
     ...support,
     allSupported,
-    warnings: allSupported ? [] : [
-      !support.mediaQueries && 'MediaQuery API not supported',
-      !support.resizeObserver && 'ResizeObserver API not supported',
-      !support.localStorage && 'localStorage not available',
-      !support.devicePixelRatio && 'devicePixelRatio not available',
-    ].filter(Boolean),
+    warnings: allSupported
+      ? []
+      : [
+          !support.mediaQueries && 'MediaQuery API not supported',
+          !support.resizeObserver && 'ResizeObserver API not supported',
+          !support.localStorage && 'localStorage not available',
+          !support.devicePixelRatio && 'devicePixelRatio not available',
+        ].filter(Boolean),
   };
 };
 

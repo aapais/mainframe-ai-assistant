@@ -87,11 +87,14 @@ export class SearchIPCHandlers {
   private rateLimiter: RateLimiter;
 
   // Performance tracking
-  private requestMetrics = new Map<string, {
-    startTime: number;
-    operation: string;
-    requestId: string;
-  }>();
+  private requestMetrics = new Map<
+    string,
+    {
+      startTime: number;
+      operation: string;
+      requestId: string;
+    }
+  >();
 
   constructor(
     searchService: SearchApiService,
@@ -109,7 +112,7 @@ export class SearchIPCHandlers {
     this.rateLimiter = new RateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 200, // 200 requests per minute per renderer
-      keyGenerator: (req: any) => `renderer:${req.sessionId || 'default'}`
+      keyGenerator: (req: any) => `renderer:${req.sessionId || 'default'}`,
     });
 
     this.registerHandlers();
@@ -174,7 +177,7 @@ export class SearchIPCHandlers {
         fuzzyThreshold: sanitizedRequest.options?.fuzzyThreshold || 0.7,
         useAI: sanitizedRequest.options?.useAI !== false,
         userId: sanitizedRequest.context?.userId,
-        sessionId: sanitizedRequest.context?.sessionId || event.sender.id.toString()
+        sessionId: sanitizedRequest.context?.sessionId || event.sender.id.toString(),
       };
 
       const result = await this.searchService.executeSearch(searchParams);
@@ -191,7 +194,7 @@ export class SearchIPCHandlers {
         useAI: searchParams.useAI,
         category: searchParams.category,
         userId: searchParams.userId,
-        sessionId: searchParams.sessionId
+        sessionId: searchParams.sessionId,
       });
 
       return {
@@ -200,10 +203,9 @@ export class SearchIPCHandlers {
         metadata: {
           responseTime,
           requestId,
-          cacheHit: false
-        }
+          cacheHit: false,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'search', Date.now() - startTime);
     }
@@ -227,7 +229,7 @@ export class SearchIPCHandlers {
       this.validator.validateAutocompleteRequest({
         q: request.query,
         limit: request.limit?.toString(),
-        category: request.category
+        category: request.category,
       });
 
       // Get suggestions
@@ -235,7 +237,7 @@ export class SearchIPCHandlers {
         query: request.query,
         limit: request.limit || 10,
         category: request.category,
-        userId: request.userId
+        userId: request.userId,
       });
 
       const responseTime = Date.now() - startTime;
@@ -247,7 +249,7 @@ export class SearchIPCHandlers {
         responseTime,
         resultCount: suggestions.length,
         cacheHit: false,
-        userId: request.userId
+        userId: request.userId,
       });
 
       return {
@@ -255,10 +257,9 @@ export class SearchIPCHandlers {
         data: { suggestions },
         metadata: {
           responseTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'autocomplete', Date.now() - startTime);
     }
@@ -281,7 +282,10 @@ export class SearchIPCHandlers {
 
       switch (request.type) {
         case 'trending':
-          suggestions = await this.autocompleteService.getTrendingSuggestions('', request.limit || 10);
+          suggestions = await this.autocompleteService.getTrendingSuggestions(
+            '',
+            request.limit || 10
+          );
           break;
         case 'popular':
           // Get popular searches from history
@@ -291,7 +295,7 @@ export class SearchIPCHandlers {
             type: 'query',
             frequency: q.count,
             relevanceScore: q.count * 10,
-            source: 'system'
+            source: 'system',
           }));
           break;
         case 'personalized':
@@ -310,10 +314,9 @@ export class SearchIPCHandlers {
         data: { suggestions: suggestions.slice(0, request.limit || 10) },
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'suggestions', Date.now() - startTime);
     }
@@ -336,7 +339,7 @@ export class SearchIPCHandlers {
         userId: request.userId,
         limit: request.limit?.toString(),
         offset: request.offset?.toString(),
-        timeframe: request.timeframe
+        timeframe: request.timeframe,
       });
 
       const historyParams = {
@@ -345,7 +348,7 @@ export class SearchIPCHandlers {
         offset: request.offset || 0,
         timeframe: this.parseTimeframe(request.timeframe || '7d'),
         category: request.category,
-        successful: request.successful
+        successful: request.successful,
       };
 
       const history = await this.historyService.getHistory(historyParams);
@@ -355,10 +358,9 @@ export class SearchIPCHandlers {
         data: history,
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'history', Date.now() - startTime);
     }
@@ -386,10 +388,9 @@ export class SearchIPCHandlers {
         data: { removed: result.removed },
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'history-clear', Date.now() - startTime);
     }
@@ -413,7 +414,7 @@ export class SearchIPCHandlers {
       const metrics = await this.metricsCollector.getMetrics({
         timeframe: request.timeframe || '1d',
         granularity: request.granularity || '1h',
-        userId: request.userId
+        userId: request.userId,
       });
 
       return {
@@ -421,10 +422,9 @@ export class SearchIPCHandlers {
         data: metrics,
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'metrics', Date.now() - startTime);
     }
@@ -433,9 +433,7 @@ export class SearchIPCHandlers {
   /**
    * Handle get dashboard data
    */
-  private async handleGetDashboard(
-    event: IpcMainInvokeEvent
-  ): Promise<IPCResponse> {
+  private async handleGetDashboard(event: IpcMainInvokeEvent): Promise<IPCResponse> {
     const requestId = this.generateRequestId();
     const startTime = Date.now();
 
@@ -449,10 +447,9 @@ export class SearchIPCHandlers {
         data: dashboard,
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'dashboard', Date.now() - startTime);
     }
@@ -461,9 +458,7 @@ export class SearchIPCHandlers {
   /**
    * Handle get cache stats
    */
-  private async handleGetCacheStats(
-    event: IpcMainInvokeEvent
-  ): Promise<IPCResponse> {
+  private async handleGetCacheStats(event: IpcMainInvokeEvent): Promise<IPCResponse> {
     const requestId = this.generateRequestId();
 
     try {
@@ -476,10 +471,9 @@ export class SearchIPCHandlers {
         data: stats,
         metadata: {
           responseTime: Date.now(),
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'cache-stats', 0);
     }
@@ -510,10 +504,9 @@ export class SearchIPCHandlers {
         data: { message: 'Cache cleared successfully' },
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'cache-clear', Date.now() - startTime);
     }
@@ -538,13 +531,14 @@ export class SearchIPCHandlers {
 
       // Warm cache by executing searches for common queries
       const warmupData = new Map<string, any>();
-      for (const query of request.queries.slice(0, 20)) { // Limit to 20 queries
+      for (const query of request.queries.slice(0, 20)) {
+        // Limit to 20 queries
         try {
           const result = await this.searchService.executeSearch({
             query,
             limit: 10,
             offset: 0,
-            useAI: false // Use faster non-AI search for warmup
+            useAI: false, // Use faster non-AI search for warmup
           });
           warmupData.set(`search:${query}:10:0`, result);
         } catch (error) {
@@ -560,10 +554,9 @@ export class SearchIPCHandlers {
         data: { warmed: warmupData.size },
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'cache-warm', Date.now() - startTime);
     }
@@ -572,9 +565,7 @@ export class SearchIPCHandlers {
   /**
    * Handle system health check
    */
-  private async handleSystemHealth(
-    event: IpcMainInvokeEvent
-  ): Promise<IPCResponse> {
+  private async handleSystemHealth(event: IpcMainInvokeEvent): Promise<IPCResponse> {
     const requestId = this.generateRequestId();
     const startTime = Date.now();
 
@@ -582,7 +573,7 @@ export class SearchIPCHandlers {
       const [cacheStats, rateLimiterStats, dashboardData] = await Promise.all([
         this.cache.getStats(),
         this.rateLimiter.getStats(),
-        this.metricsCollector.getDashboardData()
+        this.metricsCollector.getDashboardData(),
       ]);
 
       const health = {
@@ -590,17 +581,17 @@ export class SearchIPCHandlers {
         cache: {
           operational: true,
           hitRate: cacheStats.overall.overallHitRate,
-          memoryUsage: cacheStats.overall.memoryUsage
+          memoryUsage: cacheStats.overall.memoryUsage,
         },
         rateLimiter: {
           operational: true,
-          activeKeys: rateLimiterStats.storeStats.totalKeys
+          activeKeys: rateLimiterStats.storeStats.totalKeys,
         },
         performance: {
           avgResponseTime: dashboardData.avgResponseTime,
           errorRate: dashboardData.errorRate,
-          currentRPS: dashboardData.currentRPS
-        }
+          currentRPS: dashboardData.currentRPS,
+        },
       };
 
       return {
@@ -608,10 +599,9 @@ export class SearchIPCHandlers {
         data: health,
         metadata: {
           responseTime: Date.now() - startTime,
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'system-health', Date.now() - startTime);
     }
@@ -620,9 +610,7 @@ export class SearchIPCHandlers {
   /**
    * Handle system statistics
    */
-  private async handleSystemStats(
-    event: IpcMainInvokeEvent
-  ): Promise<IPCResponse> {
+  private async handleSystemStats(event: IpcMainInvokeEvent): Promise<IPCResponse> {
     const requestId = this.generateRequestId();
 
     try {
@@ -634,16 +622,16 @@ export class SearchIPCHandlers {
           heapUsed: memUsage.heapUsed,
           heapTotal: memUsage.heapTotal,
           external: memUsage.external,
-          rss: memUsage.rss
+          rss: memUsage.rss,
         },
         cpu: {
           user: cpuUsage.user,
-          system: cpuUsage.system
+          system: cpuUsage.system,
         },
         uptime: process.uptime(),
         nodeVersion: process.version,
         platform: process.platform,
-        arch: process.arch
+        arch: process.arch,
       };
 
       return {
@@ -651,10 +639,9 @@ export class SearchIPCHandlers {
         data: stats,
         metadata: {
           responseTime: Date.now(),
-          requestId
-        }
+          requestId,
+        },
       };
-
     } catch (error) {
       return this.handleError(error, requestId, 'system-stats', 0);
     }
@@ -671,9 +658,9 @@ export class SearchIPCHandlers {
       ip: '127.0.0.1',
       headers: {
         'x-session-id': event.sender.id.toString(),
-        'user-agent': 'Electron'
+        'user-agent': 'Electron',
       },
-      connection: { remoteAddress: '127.0.0.1' }
+      connection: { remoteAddress: '127.0.0.1' },
     } as any;
 
     try {
@@ -682,14 +669,11 @@ export class SearchIPCHandlers {
       if (error.name === 'RateLimitError') {
         console.warn(`Rate limit exceeded for IPC operation: ${operation}`, {
           sessionId: event.sender.id,
-          operation
+          operation,
         });
-        throw new AppError(
-          'Too many requests',
-          'RATE_LIMIT_EXCEEDED',
-          429,
-          { retryAfter: error.retryAfter }
-        );
+        throw new AppError('Too many requests', 'RATE_LIMIT_EXCEEDED', 429, {
+          retryAfter: error.retryAfter,
+        });
       }
       throw error;
     }
@@ -707,7 +691,7 @@ export class SearchIPCHandlers {
       '1d': 24,
       '3d': 72,
       '7d': 168,
-      '30d': 720
+      '30d': 720,
     };
 
     return timeframes[timeframe] || 168; // Default to 7 days
@@ -722,7 +706,7 @@ export class SearchIPCHandlers {
     console.error(`IPC ${operation} error [${requestId}]:`, {
       message: error.message,
       stack: error.stack,
-      code: error.code
+      code: error.code,
     });
 
     // Record error metrics
@@ -731,7 +715,7 @@ export class SearchIPCHandlers {
         requestId,
         operation,
         error: error.message,
-        responseTime
+        responseTime,
       });
     } catch (metricsError) {
       console.error('Failed to record error metrics:', metricsError);
@@ -744,12 +728,12 @@ export class SearchIPCHandlers {
         error: {
           message: error.message,
           code: error.code,
-          details: error.details
+          details: error.details,
         },
         metadata: {
           responseTime,
-          requestId
-        }
+          requestId,
+        },
       };
     }
 
@@ -758,12 +742,12 @@ export class SearchIPCHandlers {
       error: {
         message: error.message || 'Unknown error occurred',
         code: error.code || 'UNKNOWN_ERROR',
-        details: error.details
+        details: error.details,
       },
       metadata: {
         responseTime,
-        requestId
-      }
+        requestId,
+      },
     };
   }
 
@@ -778,7 +762,7 @@ export class SearchIPCHandlers {
         this.cache.close(),
         this.rateLimiter.close(),
         this.historyService.close(),
-        this.metricsCollector.close()
+        this.metricsCollector.close(),
       ]);
 
       // Remove all IPC handlers
@@ -796,7 +780,6 @@ export class SearchIPCHandlers {
       ipcMain.removeHandler('search:system:stats');
 
       console.log('Search IPC Handlers closed successfully');
-
     } catch (error) {
       console.error('Error closing Search IPC Handlers:', error);
     }

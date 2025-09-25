@@ -29,16 +29,8 @@ export interface DebounceOptions {
 /**
  * Hook for debouncing values with advanced options
  */
-export function useDebounce<T>(
-  value: T,
-  options: DebounceOptions = {}
-): [T, boolean] {
-  const {
-    delay = 300,
-    maxWait = 1000,
-    leading = false,
-    trailing = true
-  } = options;
+export function useDebounce<T>(value: T, options: DebounceOptions = {}): [T, boolean] {
+  const { delay = 300, maxWait = 1000, leading = false, trailing = true } = options;
 
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   const [isDebouncing, setIsDebouncing] = useState(false);
@@ -116,12 +108,7 @@ export function useDebouncedCallback<TArgs extends any[]>(
   callback: (...args: TArgs) => void,
   options: DebounceOptions = {}
 ): [(...args: TArgs) => void, () => void, boolean] {
-  const {
-    delay = 300,
-    maxWait = 1000,
-    leading = false,
-    trailing = true
-  } = options;
+  const { delay = 300, maxWait = 1000, leading = false, trailing = true } = options;
 
   const [isDebouncing, setIsDebouncing] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
@@ -161,36 +148,39 @@ export function useDebouncedCallback<TArgs extends any[]>(
   }, [cleanup]);
 
   // Debounced function
-  const debouncedCallback = useCallback((...args: TArgs) => {
-    lastArgs.current = args;
+  const debouncedCallback = useCallback(
+    (...args: TArgs) => {
+      lastArgs.current = args;
 
-    // Handle leading edge execution
-    if (leading && !timeoutRef.current && !maxTimeoutRef.current) {
-      callbackRef.current(...args);
-      setIsDebouncing(true);
-    } else {
-      setIsDebouncing(true);
-    }
+      // Handle leading edge execution
+      if (leading && !timeoutRef.current && !maxTimeoutRef.current) {
+        callbackRef.current(...args);
+        setIsDebouncing(true);
+      } else {
+        setIsDebouncing(true);
+      }
 
-    // Setup maxWait timeout if specified
-    if (maxWait > 0 && !maxTimeoutRef.current) {
-      maxTimeoutRef.current = setTimeout(() => {
-        execute();
-      }, maxWait);
-    }
+      // Setup maxWait timeout if specified
+      if (maxWait > 0 && !maxTimeoutRef.current) {
+        maxTimeoutRef.current = setTimeout(() => {
+          execute();
+        }, maxWait);
+      }
 
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-    // Setup new timeout
-    if (trailing) {
-      timeoutRef.current = setTimeout(() => {
-        execute();
-      }, delay);
-    }
-  }, [delay, maxWait, leading, trailing, execute]);
+      // Setup new timeout
+      if (trailing) {
+        timeoutRef.current = setTimeout(() => {
+          execute();
+        }, delay);
+      }
+    },
+    [delay, maxWait, leading, trailing, execute]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -216,40 +206,37 @@ export function useDebouncedAsync<T, TArgs extends any[]>(
   const [error, setError] = useState<Error | null>(null);
   const abortController = useRef<AbortController>();
 
-  const [debouncedExecute, cancel] = useDebouncedCallback(
-    async (...args: TArgs) => {
-      // Cancel previous request if still pending
-      if (abortController.current) {
-        abortController.current.abort();
+  const [debouncedExecute, cancel] = useDebouncedCallback(async (...args: TArgs) => {
+    // Cancel previous request if still pending
+    if (abortController.current) {
+      abortController.current.abort();
+    }
+
+    // Create new abort controller
+    abortController.current = new AbortController();
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await asyncFn(...args);
+
+      // Check if request was aborted
+      if (!abortController.current?.signal.aborted) {
+        return result;
       }
-
-      // Create new abort controller
-      abortController.current = new AbortController();
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await asyncFn(...args);
-
-        // Check if request was aborted
-        if (!abortController.current?.signal.aborted) {
-          return result;
-        }
-      } catch (err) {
-        if (!abortController.current?.signal.aborted) {
-          const error = err instanceof Error ? err : new Error('Unknown error');
-          setError(error);
-          throw error;
-        }
-      } finally {
-        if (!abortController.current?.signal.aborted) {
-          setIsLoading(false);
-        }
+    } catch (err) {
+      if (!abortController.current?.signal.aborted) {
+        const error = err instanceof Error ? err : new Error('Unknown error');
+        setError(error);
+        throw error;
       }
-    },
-    options
-  );
+    } finally {
+      if (!abortController.current?.signal.aborted) {
+        setIsLoading(false);
+      }
+    }
+  }, options);
 
   const cancelAll = useCallback(() => {
     cancel();
@@ -271,6 +258,6 @@ export function useDebouncedAsync<T, TArgs extends any[]>(
     execute: debouncedExecute,
     cancel: cancelAll,
     isLoading,
-    error
+    error,
   };
 }

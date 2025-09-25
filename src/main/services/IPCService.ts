@@ -17,14 +17,14 @@ export class IPCService implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
   private startTime?: Date;
 
   async initialize(context: ServiceContext): Promise<void> {
     context.logger.info('Initializing IPC Service...');
     this.startTime = new Date();
-    
+
     try {
       await this.setupIPCHandlers(context);
 
@@ -32,7 +32,7 @@ export class IPCService implements Service {
         status: 'running',
         startTime: this.startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('IPC Service initialized successfully');
@@ -42,9 +42,9 @@ export class IPCService implements Service {
         status: 'error',
         lastError: error,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
-      
+
       context.logger.error('IPC Service initialization failed', error);
       context.metrics.increment('service.ipc.initialization_failed');
       throw error;
@@ -60,7 +60,7 @@ export class IPCService implements Service {
 
     this.status = {
       ...this.status,
-      status: 'stopped'
+      status: 'stopped',
     };
   }
 
@@ -73,23 +73,23 @@ export class IPCService implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       return {
         healthy: true,
         details: {
           registeredHandlers: this.registeredHandlers.length,
-          handlers: this.registeredHandlers
+          handlers: this.registeredHandlers,
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
@@ -107,13 +107,16 @@ export class IPCService implements Service {
 
     this.registerHandler('db:searchWithAI', async (_, query: string, options?: any) => {
       if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
-      
+
       // Try AI-enhanced search first
       if (aiService && aiService.isAvailable()) {
         try {
           const allEntries = await dbService.getDatabase().getRecent(50);
-          const aiResults = await aiService.findSimilar(query, allEntries.map((r: any) => r.entry));
-          
+          const aiResults = await aiService.findSimilar(
+            query,
+            allEntries.map((r: any) => r.entry)
+          );
+
           if (aiResults.length > 0) {
             context.metrics.increment('ipc.search.ai_success');
             return aiResults;
@@ -123,7 +126,7 @@ export class IPCService implements Service {
           context.metrics.increment('ipc.search.ai_fallback');
         }
       }
-      
+
       // Fallback to local search
       return dbService.search(query, options);
     });
@@ -153,10 +156,13 @@ export class IPCService implements Service {
       return dbService.getDatabase().getRecent(limit);
     });
 
-    this.registerHandler('db:recordUsage', async (_, entryId: string, successful: boolean, userId?: string) => {
-      if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
-      return dbService.getDatabase().recordUsage(entryId, successful, userId);
-    });
+    this.registerHandler(
+      'db:recordUsage',
+      async (_, entryId: string, successful: boolean, userId?: string) => {
+        if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
+        return dbService.getDatabase().recordUsage(entryId, successful, userId);
+      }
+    );
 
     this.registerHandler('db:getStats', async () => {
       if (!dbService) throw new Error('Database not initialized');
@@ -179,10 +185,13 @@ export class IPCService implements Service {
       return dbService.getDatabase().exportToJSON(outputPath);
     });
 
-    this.registerHandler('db:importFromJSON', async (_, jsonPath: string, mergeMode: boolean = false) => {
-      if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
-      return dbService.getDatabase().importFromJSON(jsonPath, mergeMode);
-    });
+    this.registerHandler(
+      'db:importFromJSON',
+      async (_, jsonPath: string, mergeMode: boolean = false) => {
+        if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
+        return dbService.getDatabase().importFromJSON(jsonPath, mergeMode);
+      }
+    );
 
     // Configuration
     this.registerHandler('config:get', async (_, key: string) => {
@@ -190,10 +199,13 @@ export class IPCService implements Service {
       return dbService.getDatabase().getConfig(key);
     });
 
-    this.registerHandler('config:set', async (_, key: string, value: string, type?: string, description?: string) => {
-      if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
-      return dbService.getDatabase().setConfig(key, value, type, description);
-    });
+    this.registerHandler(
+      'config:set',
+      async (_, key: string, value: string, type?: string, description?: string) => {
+        if (!dbService || !dbService.getDatabase()) throw new Error('Database not initialized');
+        return dbService.getDatabase().setConfig(key, value, type, description);
+      }
+    );
 
     // AI operations
     this.registerHandler('ai:explainError', async (_, errorCode: string) => {
@@ -228,7 +240,7 @@ export class IPCService implements Service {
         version: app.getVersion(),
         electronVersion: process.versions.electron,
         nodeVersion: process.versions.node,
-        dataPath: app.getPath('userData')
+        dataPath: app.getPath('userData'),
       };
     });
 
@@ -236,20 +248,20 @@ export class IPCService implements Service {
     this.registerHandler('services:getStatus', async () => {
       const serviceManager = context.getService('ServiceManager');
       if (!serviceManager) return {};
-      
+
       // Return status of all services (this would need to be implemented in ServiceManager)
       return {
         services: ['DatabaseService', 'WindowService', 'AIService', 'IPCService'].map(name => ({
           name,
-          status: context.getService(name)?.getStatus?.() || { status: 'unknown' }
-        }))
+          status: context.getService(name)?.getStatus?.() || { status: 'unknown' },
+        })),
       };
     });
 
     this.registerHandler('services:healthCheck', async () => {
       const serviceManager = context.getService('ServiceManager');
       if (!serviceManager) return {};
-      
+
       // Return health status of all services
       const services = ['DatabaseService', 'WindowService', 'AIService'];
       const healthChecks = await Promise.allSettled(
@@ -283,7 +295,7 @@ export class IPCService implements Service {
         throw error;
       }
     });
-    
+
     this.registeredHandlers.push(channel);
   }
 }

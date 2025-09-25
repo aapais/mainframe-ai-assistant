@@ -67,7 +67,13 @@ export interface ComponentPerformanceData extends BasePerformanceMetric {
 // Performance Alert Interface
 export interface PerformanceAlert {
   id: string;
-  type: 'high_latency' | 'high_error_rate' | 'cache_miss_spike' | 'memory_pressure' | 'cpu_spike' | 'budget_exceeded';
+  type:
+    | 'high_latency'
+    | 'high_error_rate'
+    | 'cache_miss_spike'
+    | 'memory_pressure'
+    | 'cpu_spike'
+    | 'budget_exceeded';
   metricId?: string;
   threshold: number;
   currentValue: number;
@@ -274,5 +280,7 @@ export function isSearchPerformanceMetrics(metric: any): metric is SearchPerform
 }
 
 export function isComponentPerformanceData(metric: any): metric is ComponentPerformanceData {
-  return metric && typeof metric.componentName === 'string' && typeof metric.renderTime === 'number';
+  return (
+    metric && typeof metric.componentName === 'string' && typeof metric.renderTime === 'number'
+  );
 }

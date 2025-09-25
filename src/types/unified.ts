@@ -17,12 +17,12 @@ export type KBCategory =
   | 'Other';
 
 export type IncidentStatus =
-  | 'aberto'          // open
-  | 'em_tratamento'   // in_progress (covers both assigned and in_progress)
-  | 'em_revisao'      // pending_review (bulk/API imports)
-  | 'resolvido'       // resolved
-  | 'fechado'         // closed
-  | 'reaberto';       // reopened
+  | 'aberto' // open
+  | 'em_tratamento' // in_progress (covers both assigned and in_progress)
+  | 'em_revisao' // pending_review (bulk/API imports)
+  | 'resolvido' // resolved
+  | 'fechado' // closed
+  | 'reaberto'; // reopened
 
 export type IncidentPriority = 'P1' | 'P2' | 'P3' | 'P4';
 
@@ -130,7 +130,13 @@ export interface IncidentEntry extends BaseUnifiedEntry {
   incident_metadata?: {
     severity?: 'critical' | 'high' | 'medium' | 'low';
     root_cause?: string;
-    resolution_type?: 'fixed' | 'workaround' | 'duplicate' | 'cannot_reproduce' | 'invalid' | 'wont_fix';
+    resolution_type?:
+      | 'fixed'
+      | 'workaround'
+      | 'duplicate'
+      | 'cannot_reproduce'
+      | 'invalid'
+      | 'wont_fix';
     escalation_count?: number;
     reopen_count?: number;
     sla_breach?: boolean;
@@ -182,11 +188,7 @@ export function isValidIncident(entry: UnifiedEntry): entry is IncidentEntry {
  * Type guard with additional runtime validation for knowledge entries
  */
 export function isValidKnowledge(entry: UnifiedEntry): entry is KnowledgeBaseEntry {
-  return (
-    isKnowledge(entry) &&
-    entry.status === undefined &&
-    entry.priority === undefined
-  );
+  return isKnowledge(entry) && entry.status === undefined && entry.priority === undefined;
 }
 
 // ===========================
@@ -441,7 +443,9 @@ export function mapRowToUnifiedEntry(row: UnifiedEntryRow): UnifiedEntry {
 /**
  * Utility function to convert UnifiedEntry to database row
  */
-export function mapUnifiedEntryToRow(entry: UnifiedEntry): Omit<UnifiedEntryRow, 'id' | 'created_at' | 'updated_at' | 'version'> {
+export function mapUnifiedEntryToRow(
+  entry: UnifiedEntry
+): Omit<UnifiedEntryRow, 'id' | 'created_at' | 'updated_at' | 'version'> {
   const baseRow = {
     title: entry.title,
     problem: entry.problem,
@@ -488,12 +492,15 @@ export function mapUnifiedEntryToRow(entry: UnifiedEntry): Omit<UnifiedEntryRow,
       last_status_change: entry.last_status_change?.toISOString(),
       affected_systems: entry.affected_systems ? JSON.stringify(entry.affected_systems) : undefined,
       business_impact: entry.business_impact,
-      customer_impact: entry.customer_impact !== undefined ? (entry.customer_impact ? 1 : 0) : undefined,
+      customer_impact:
+        entry.customer_impact !== undefined ? (entry.customer_impact ? 1 : 0) : undefined,
       reporter: entry.reporter,
       resolver: entry.resolver,
       incident_number: entry.incident_number,
       external_ticket_id: entry.external_ticket_id,
-      incident_metadata: entry.incident_metadata ? JSON.stringify(entry.incident_metadata) : undefined,
+      incident_metadata: entry.incident_metadata
+        ? JSON.stringify(entry.incident_metadata)
+        : undefined,
       kb_metadata: undefined,
     };
   }
@@ -506,23 +513,26 @@ export function mapUnifiedEntryToRow(entry: UnifiedEntry): Omit<UnifiedEntryRow,
 /**
  * Extract specific entry type from UnifiedEntry
  */
-export type ExtractEntryType<T extends UnifiedEntry['entry_type']> =
-  T extends 'knowledge' ? KnowledgeBaseEntry :
-  T extends 'incident' ? IncidentEntry :
-  never;
+export type ExtractEntryType<T extends UnifiedEntry['entry_type']> = T extends 'knowledge'
+  ? KnowledgeBaseEntry
+  : T extends 'incident'
+    ? IncidentEntry
+    : never;
 
 /**
  * Get input type for specific entry type
  */
-export type ExtractInputType<T extends UnifiedEntry['entry_type']> =
-  T extends 'knowledge' ? KnowledgeEntryInput :
-  T extends 'incident' ? IncidentEntryInput :
-  never;
+export type ExtractInputType<T extends UnifiedEntry['entry_type']> = T extends 'knowledge'
+  ? KnowledgeEntryInput
+  : T extends 'incident'
+    ? IncidentEntryInput
+    : never;
 
 /**
  * Get update type for specific entry type
  */
-export type ExtractUpdateType<T extends UnifiedEntry['entry_type']> =
-  T extends 'knowledge' ? KnowledgeEntryUpdate :
-  T extends 'incident' ? IncidentEntryUpdate :
-  never;
+export type ExtractUpdateType<T extends UnifiedEntry['entry_type']> = T extends 'knowledge'
+  ? KnowledgeEntryUpdate
+  : T extends 'incident'
+    ? IncidentEntryUpdate
+    : never;

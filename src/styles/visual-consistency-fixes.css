@@ -27,12 +27,24 @@
   /* Let design system tokens take precedence */
 }
 
-.search-interface h1 { font-size: var(--font-size-3xl); }
-.search-interface h2 { font-size: var(--font-size-2xl); }
-.search-interface h3 { font-size: var(--font-size-xl); }
-.search-interface h4 { font-size: var(--font-size-lg); }
-.search-interface h5 { font-size: var(--font-size-base); }
-.search-interface h6 { font-size: var(--font-size-sm); }
+.search-interface h1 {
+  font-size: var(--font-size-3xl);
+}
+.search-interface h2 {
+  font-size: var(--font-size-2xl);
+}
+.search-interface h3 {
+  font-size: var(--font-size-xl);
+}
+.search-interface h4 {
+  font-size: var(--font-size-lg);
+}
+.search-interface h5 {
+  font-size: var(--font-size-base);
+}
+.search-interface h6 {
+  font-size: var(--font-size-sm);
+}
 
 /* Fix line height inconsistencies */
 .form-field__label,
@@ -44,14 +56,18 @@
 /* Standardize button text sizing */
 .btn,
 .button,
-[role="button"] {
+[role='button'] {
   font-size: var(--font-size-sm);
   line-height: var(--line-height-tight);
   font-weight: var(--font-weight-medium);
 }
 
-.btn--large { font-size: var(--font-size-base); }
-.btn--small { font-size: var(--font-size-xs); }
+.btn--large {
+  font-size: var(--font-size-base);
+}
+.btn--small {
+  font-size: var(--font-size-xs);
+}
 
 /* ===============================================
    SPACING CONSISTENCY FIXES

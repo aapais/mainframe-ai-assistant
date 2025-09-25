@@ -99,7 +99,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
     const event: ClickEvent = {
       ...clickEvent,
       id: this.generateEventId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (!this.clickEvents.has(event.sessionId)) {
@@ -120,7 +120,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
     const event: ImpressionEvent = {
       ...impressionEvent,
       id: this.generateEventId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (!this.impressionEvents.has(event.sessionId)) {
@@ -141,7 +141,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
     const event: EngagementEvent = {
       ...engagementEvent,
       id: this.generateEventId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (!this.engagementEvents.has(event.sessionId)) {
@@ -211,7 +211,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       byResultType,
       byTimeRange,
       confidence,
-      sampleSize: totalImpressions
+      sampleSize: totalImpressions,
     };
 
     this.setCachedMetrics(cacheKey, metrics);
@@ -232,18 +232,17 @@ export class ResultEffectivenessTracker extends EventEmitter {
     const { clicks, impressions, engagements } = this.getFilteredEvents(filters);
 
     // Average time on results (for clicked results)
-    const timeOnResults = clicks
-      .filter(click => click.timeToClick)
-      .map(click => click.timeToClick);
+    const timeOnResults = clicks.filter(click => click.timeToClick).map(click => click.timeToClick);
 
-    const averageTimeOnResults = timeOnResults.length > 0
-      ? timeOnResults.reduce((sum, time) => sum + time, 0) / timeOnResults.length
-      : 0;
+    const averageTimeOnResults =
+      timeOnResults.length > 0
+        ? timeOnResults.reduce((sum, time) => sum + time, 0) / timeOnResults.length
+        : 0;
 
     // Bounce rate (sessions with no clicks)
     const sessionIds = new Set([
       ...impressions.map(imp => imp.sessionId),
-      ...clicks.map(click => click.sessionId)
+      ...clicks.map(click => click.sessionId),
     ]);
 
     const sessionsWithClicks = new Set(clicks.map(click => click.sessionId));
@@ -281,7 +280,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       interactionRate,
       deepEngagementRate,
       conversionRate,
-      returnUserRate
+      returnUserRate,
     };
 
     this.setCachedMetrics(cacheKey, metrics);
@@ -292,12 +291,15 @@ export class ResultEffectivenessTracker extends EventEmitter {
    * Analyze position effectiveness
    */
   calculatePositionStats(clicks: ClickEvent[], impressions: ImpressionEvent[]): PositionAnalysis[] {
-    const positionData: Map<number, {
-      impressions: number;
-      clicks: number;
-      totalTimeToClick: number;
-      engagementScore: number;
-    }> = new Map();
+    const positionData: Map<
+      number,
+      {
+        impressions: number;
+        clicks: number;
+        totalTimeToClick: number;
+        engagementScore: number;
+      }
+    > = new Map();
 
     // Count impressions by position
     impressions.forEach(impression => {
@@ -307,7 +309,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
             impressions: 0,
             clicks: 0,
             totalTimeToClick: 0,
-            engagementScore: 0
+            engagementScore: 0,
           });
         }
         positionData.get(i)!.impressions++;
@@ -331,7 +333,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       clicks: data.clicks,
       ctr: data.impressions > 0 ? data.clicks / data.impressions : 0,
       averageTimeToClick: data.clicks > 0 ? data.totalTimeToClick / data.clicks : 0,
-      engagementScore: this.calculatePositionEngagementScore(position, data)
+      engagementScore: this.calculatePositionEngagementScore(position, data),
     }));
   }
 
@@ -360,13 +362,13 @@ export class ResultEffectivenessTracker extends EventEmitter {
     }>;
   }> {
     const now = Date.now();
-    const oneHourAgo = now - (60 * 60 * 1000);
+    const oneHourAgo = now - 60 * 60 * 1000;
 
     const recentFilters = { timeRange: [oneHourAgo, now] as [number, number] };
 
     const [ctrMetrics, engagementMetrics] = await Promise.all([
       this.calculateCTRMetrics(recentFilters),
-      this.calculateEngagementMetrics(recentFilters)
+      this.calculateEngagementMetrics(recentFilters),
     ]);
 
     const recentEvents = this.getFilteredEvents(recentFilters);
@@ -375,23 +377,26 @@ export class ResultEffectivenessTracker extends EventEmitter {
       currentCTR: ctrMetrics.overall,
       activeUsers: new Set([
         ...recentEvents.clicks.map(c => c.userId),
-        ...recentEvents.impressions.map(i => i.userId)
+        ...recentEvents.impressions.map(i => i.userId),
       ]).size,
       totalClicks: recentEvents.clicks.length,
-      totalImpressions: recentEvents.impressions.reduce((sum, imp) => sum + imp.totalResults, 0)
+      totalImpressions: recentEvents.impressions.reduce((sum, imp) => sum + imp.totalResults, 0),
     };
 
     const trends = {
       ctrTrend: this.generateTimeTrend('ctr', 24), // 24 hours
-      engagementTrend: this.generateTimeTrend('engagement', 24)
+      engagementTrend: this.generateTimeTrend('engagement', 24),
     };
 
-    const positionStats = this.calculatePositionStats(recentEvents.clicks, recentEvents.impressions);
+    const positionStats = this.calculatePositionStats(
+      recentEvents.clicks,
+      recentEvents.impressions
+    );
     const topQueries = this.getTopQueries(recentEvents.clicks, recentEvents.impressions);
 
     const topPerforming = {
       positions: positionStats.sort((a, b) => b.ctr - a.ctr).slice(0, 10),
-      queries: topQueries.slice(0, 10)
+      queries: topQueries.slice(0, 10),
     };
 
     const alerts = this.generateAlerts(ctrMetrics, engagementMetrics);
@@ -400,7 +405,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       realtimeMetrics,
       trends,
       topPerforming,
-      alerts
+      alerts,
     };
   }
 
@@ -425,8 +430,12 @@ export class ResultEffectivenessTracker extends EventEmitter {
       if (filters.timeRange) {
         const [start, end] = filters.timeRange;
         clicks = clicks.filter(event => event.timestamp >= start && event.timestamp <= end);
-        impressions = impressions.filter(event => event.timestamp >= start && event.timestamp <= end);
-        engagements = engagements.filter(event => event.timestamp >= start && event.timestamp <= end);
+        impressions = impressions.filter(
+          event => event.timestamp >= start && event.timestamp <= end
+        );
+        engagements = engagements.filter(
+          event => event.timestamp >= start && event.timestamp <= end
+        );
       }
 
       if (filters.resultType) {
@@ -479,21 +488,26 @@ export class ResultEffectivenessTracker extends EventEmitter {
     });
 
     // Calculate return rate
-    const returnUsers = Array.from(allUserSessions.values()).filter(sessions => sessions.size > 1).length;
+    const returnUsers = Array.from(allUserSessions.values()).filter(
+      sessions => sessions.size > 1
+    ).length;
     const totalUsers = allUserSessions.size;
 
     return totalUsers > 0 ? returnUsers / totalUsers : 0;
   }
 
   private groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-    return array.reduce((groups, item) => {
-      const groupKey = String(item[key]);
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push(item);
-      return groups;
-    }, {} as Record<string, T[]>);
+    return array.reduce(
+      (groups, item) => {
+        const groupKey = String(item[key]);
+        if (!groups[groupKey]) {
+          groups[groupKey] = [];
+        }
+        groups[groupKey].push(item);
+        return groups;
+      },
+      {} as Record<string, T[]>
+    );
   }
 
   private groupByTimeRange(
@@ -526,25 +540,34 @@ export class ResultEffectivenessTracker extends EventEmitter {
     return data;
   }
 
-  private generateTimeTrend(metric: 'ctr' | 'engagement', hours: number): Array<{ time: string; value: number }> {
+  private generateTimeTrend(
+    metric: 'ctr' | 'engagement',
+    hours: number
+  ): Array<{ time: string; value: number }> {
     const now = Date.now();
     const trend: Array<{ time: string; value: number }> = [];
 
     for (let i = hours; i >= 0; i--) {
-      const time = now - (i * 60 * 60 * 1000);
+      const time = now - i * 60 * 60 * 1000;
       const timeKey = new Date(time).toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
 
       // Calculate metric for this hour
       const hourData = this.getFilteredEvents({
-        timeRange: [time - 3600000, time] // 1 hour window
+        timeRange: [time - 3600000, time], // 1 hour window
       });
 
       let value = 0;
       if (metric === 'ctr') {
-        const totalImpressions = hourData.impressions.reduce((sum, imp) => sum + imp.totalResults, 0);
+        const totalImpressions = hourData.impressions.reduce(
+          (sum, imp) => sum + imp.totalResults,
+          0
+        );
         value = totalImpressions > 0 ? hourData.clicks.length / totalImpressions : 0;
       } else {
-        const sessions = new Set([...hourData.clicks.map(c => c.sessionId), ...hourData.impressions.map(i => i.sessionId)]);
+        const sessions = new Set([
+          ...hourData.clicks.map(c => c.sessionId),
+          ...hourData.impressions.map(i => i.sessionId),
+        ]);
         const engagedSessions = new Set(hourData.engagements.map(e => e.sessionId));
         value = sessions.size > 0 ? engagedSessions.size / sessions.size : 0;
       }
@@ -555,7 +578,10 @@ export class ResultEffectivenessTracker extends EventEmitter {
     return trend;
   }
 
-  private getTopQueries(clicks: ClickEvent[], impressions: ImpressionEvent[]): Array<{ query: string; ctr: number; volume: number }> {
+  private getTopQueries(
+    clicks: ClickEvent[],
+    impressions: ImpressionEvent[]
+  ): Array<{ query: string; ctr: number; volume: number }> {
     const queryStats: Map<string, { clicks: number; impressions: number }> = new Map();
 
     clicks.forEach(click => {
@@ -576,17 +602,24 @@ export class ResultEffectivenessTracker extends EventEmitter {
       .map(([query, stats]) => ({
         query,
         ctr: stats.impressions > 0 ? stats.clicks / stats.impressions : 0,
-        volume: stats.impressions
+        volume: stats.impressions,
       }))
       .sort((a, b) => b.ctr - a.ctr);
   }
 
-  private generateAlerts(ctrMetrics: CTRMetrics, engagementMetrics: EngagementMetrics): Array<{
+  private generateAlerts(
+    ctrMetrics: CTRMetrics,
+    engagementMetrics: EngagementMetrics
+  ): Array<{
     type: 'warning' | 'info' | 'error';
     message: string;
     timestamp: number;
   }> {
-    const alerts: Array<{ type: 'warning' | 'info' | 'error'; message: string; timestamp: number }> = [];
+    const alerts: Array<{
+      type: 'warning' | 'info' | 'error';
+      message: string;
+      timestamp: number;
+    }> = [];
     const now = Date.now();
 
     // CTR alerts
@@ -594,7 +627,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       alerts.push({
         type: 'warning',
         message: `Low CTR detected: ${(ctrMetrics.overall * 100).toFixed(2)}%`,
-        timestamp: now
+        timestamp: now,
       });
     }
 
@@ -602,7 +635,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       alerts.push({
         type: 'info',
         message: `Low confidence in CTR metrics (${(ctrMetrics.confidence * 100).toFixed(1)}%) - need more data`,
-        timestamp: now
+        timestamp: now,
       });
     }
 
@@ -611,7 +644,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       alerts.push({
         type: 'error',
         message: `High bounce rate: ${(engagementMetrics.bounceRate * 100).toFixed(1)}%`,
-        timestamp: now
+        timestamp: now,
       });
     }
 
@@ -619,7 +652,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
       alerts.push({
         type: 'warning',
         message: `Low interaction rate: ${(engagementMetrics.interactionRate * 100).toFixed(1)}%`,
-        timestamp: now
+        timestamp: now,
       });
     }
 
@@ -637,7 +670,7 @@ export class ResultEffectivenessTracker extends EventEmitter {
   private setCachedMetrics(key: string, data: any): void {
     this.metricsCache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -650,11 +683,14 @@ export class ResultEffectivenessTracker extends EventEmitter {
   }
 
   private startPeriodicAnalysis(): void {
-    setInterval(() => {
-      this.emit('periodicAnalysis', {
-        timestamp: Date.now(),
-        summary: 'Periodic analysis completed'
-      });
-    }, 5 * 60 * 1000); // Every 5 minutes
+    setInterval(
+      () => {
+        this.emit('periodicAnalysis', {
+          timestamp: Date.now(),
+          summary: 'Periodic analysis completed',
+        });
+      },
+      5 * 60 * 1000
+    ); // Every 5 minutes
   }
 }

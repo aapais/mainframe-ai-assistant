@@ -1,635 +1,629 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.MultiLayerCacheManager = void 0;
-const events_1 = require("events");
-const QueryCache_1 = require("../database/QueryCache");
+const events_1 = require('events');
+const QueryCache_1 = require('../database/QueryCache');
 class MultiLayerCacheManager extends events_1.EventEmitter {
-    instantCache = new Map();
-    hotCache = new Map();
-    warmCache = new Map();
-    distributedCache;
-    persistentCache;
-    metrics;
-    warmingStrategies = new Map();
-    mvpLevel;
-    config = {
-        instantCacheSize: 50,
-        hotCacheSize: 100,
-        warmCacheSize: 1000,
-        instantCacheTTL: 2 * 60 * 1000,
-        hotCacheTTL: 5 * 60 * 1000,
-        warmCacheTTL: 30 * 60 * 1000,
-        maxMemoryMB: 256,
-        enablePredictiveCaching: true,
-        enableDistributedCache: false,
-        compressionThreshold: 1024
+  instantCache = new Map();
+  hotCache = new Map();
+  warmCache = new Map();
+  distributedCache;
+  persistentCache;
+  metrics;
+  warmingStrategies = new Map();
+  mvpLevel;
+  config = {
+    instantCacheSize: 50,
+    hotCacheSize: 100,
+    warmCacheSize: 1000,
+    instantCacheTTL: 2 * 60 * 1000,
+    hotCacheTTL: 5 * 60 * 1000,
+    warmCacheTTL: 30 * 60 * 1000,
+    maxMemoryMB: 256,
+    enablePredictiveCaching: true,
+    enableDistributedCache: false,
+    compressionThreshold: 1024,
+  };
+  constructor(database, mvpLevel = 1, options) {
+    super();
+    this.mvpLevel = mvpLevel;
+    this.config = { ...this.config, ...options };
+    this.persistentCache = new QueryCache_1.QueryCache(database, {
+      maxSize: 5000,
+      defaultTTL: 24 * 60 * 60 * 1000,
+      maxMemoryMB: 100,
+      persistToDisk: true,
+      compressionEnabled: true,
+    });
+    if (mvpLevel >= 5 && this.config.enableDistributedCache) {
+      this.distributedCache = new RedisCache();
+    }
+    this.initializeMetrics();
+    this.setupWarmingStrategies();
+    this.startMaintenanceProcesses();
+    console.log(`🚀 Multi-layer cache initialized for MVP${mvpLevel}`);
+  }
+  async get(key, computeFn, options) {
+    const startTime = performance.now();
+    const cacheKey = this.generateCacheKey(key, options?.tags, options?.userContext);
+    if (options?.bypassCache) {
+      return this.computeAndDistribute(cacheKey, computeFn, options);
+    }
+    try {
+      const instantResult = this.getFromInstantCache(cacheKey);
+      if (instantResult !== null) {
+        this.recordCacheHit('instant', performance.now() - startTime);
+        return instantResult;
+      }
+      const hotResult = this.getFromHotCache(cacheKey);
+      if (hotResult !== null) {
+        if (hotResult.entry.accessCount >= 5) {
+          this.promoteToInstantCache(cacheKey, hotResult.value, hotResult.entry);
+        }
+        this.recordCacheHit('hot', performance.now() - startTime);
+        return hotResult.value;
+      }
+      const warmResult = this.getFromWarmCache(cacheKey);
+      if (warmResult !== null) {
+        if (warmResult.entry.accessCount >= 3) {
+          this.promoteToHotCache(cacheKey, warmResult.value, warmResult.entry);
+        }
+        this.recordCacheHit('warm', performance.now() - startTime);
+        return warmResult.value;
+      }
+      if (this.distributedCache) {
+        const distributedResult = await this.distributedCache.get(cacheKey);
+        if (distributedResult !== null) {
+          this.setInWarmCache(cacheKey, distributedResult, options);
+          this.recordCacheHit('distributed', performance.now() - startTime);
+          return distributedResult;
+        }
+      }
+      const persistentResult = await this.persistentCache.get(cacheKey, () => null, {
+        forceRefresh: false,
+      });
+      if (persistentResult !== null) {
+        this.setInWarmCache(cacheKey, persistentResult, options);
+        this.recordCacheHit('persistent', performance.now() - startTime);
+        return persistentResult;
+      }
+      this.recordCacheMiss(performance.now() - startTime);
+      return this.computeAndDistribute(cacheKey, computeFn, options);
+    } catch (error) {
+      console.error('Cache retrieval error:', error);
+      this.recordCacheMiss(performance.now() - startTime);
+      return computeFn();
+    }
+  }
+  async warmCache(strategy) {
+    console.log('🔥 Starting intelligent cache warming...');
+    const startTime = performance.now();
+    let warmedEntries = 0;
+    const strategiesToRun = strategy
+      ? [this.warmingStrategies.get(strategy)].filter(Boolean)
+      : Array.from(this.warmingStrategies.values());
+    for (const warmingStrategy of strategiesToRun) {
+      if (!warmingStrategy) continue;
+      try {
+        const strategyEntries = await this.executeWarmingStrategy(warmingStrategy);
+        warmedEntries += strategyEntries;
+      } catch (error) {
+        console.error(`Cache warming strategy '${warmingStrategy.name}' failed:`, error);
+      }
+    }
+    const duration = performance.now() - startTime;
+    console.log(
+      `✅ Cache warming completed: ${warmedEntries} entries in ${Math.round(duration)}ms`
+    );
+    this.emit('cache-warmed', { entriesWarmed: warmedEntries, duration });
+    return warmedEntries;
+  }
+  async predictiveCache(userContext) {
+    if (!this.config.enablePredictiveCaching) return 0;
+    const predictions = await this.generateCachePredictions(userContext);
+    let cached = 0;
+    for (const prediction of predictions) {
+      try {
+        await this.get(prediction.key, prediction.computeFn, {
+          priority: 'low',
+          ttl: prediction.ttl,
+          tags: prediction.tags,
+          userContext,
+        });
+        cached++;
+      } catch (error) {
+        console.error('Predictive caching failed for:', prediction.key, error);
+      }
+    }
+    console.log(`🔮 Predictive caching: ${cached} entries pre-cached`);
+    return cached;
+  }
+  async invalidate(pattern, tags, cascade = true) {
+    let totalInvalidated = 0;
+    totalInvalidated += this.invalidateLayer(this.instantCache, pattern, tags);
+    totalInvalidated += this.invalidateLayer(this.hotCache, pattern, tags);
+    totalInvalidated += this.invalidateLayer(this.warmCache, pattern, tags);
+    if (this.distributedCache && cascade) {
+      totalInvalidated += await this.distributedCache.invalidate(pattern, tags);
+    }
+    if (cascade) {
+      totalInvalidated += await this.persistentCache.invalidate(pattern, tags);
+    }
+    console.log(`🗑️ Cache invalidation: ${totalInvalidated} entries invalidated`);
+    this.emit('cache-invalidated', { pattern, tags, count: totalInvalidated });
+    return totalInvalidated;
+  }
+  getMetrics() {
+    const layers = [
+      {
+        name: 'Instant Cache (L0)',
+        level: 0,
+        enabled: true,
+        hitRate: this.calculateLayerHitRate('instant'),
+        avgResponseTime: this.calculateLayerAvgTime('instant'),
+        memoryUsage: this.calculateMemoryUsage(this.instantCache),
+        size: this.instantCache.size,
+      },
+      {
+        name: 'Hot Cache (L1)',
+        level: 1,
+        enabled: true,
+        hitRate: this.calculateLayerHitRate('hot'),
+        avgResponseTime: this.calculateLayerAvgTime('hot'),
+        memoryUsage: this.calculateMemoryUsage(this.hotCache),
+        size: this.hotCache.size,
+      },
+      {
+        name: 'Warm Cache (L2)',
+        level: 2,
+        enabled: true,
+        hitRate: this.calculateLayerHitRate('warm'),
+        avgResponseTime: this.calculateLayerAvgTime('warm'),
+        memoryUsage: this.calculateMemoryUsage(this.warmCache),
+        size: this.warmCache.size,
+      },
+    ];
+    if (this.distributedCache) {
+      layers.push({
+        name: 'Distributed Cache (L3)',
+        level: 3,
+        enabled: true,
+        hitRate: this.calculateLayerHitRate('distributed'),
+        avgResponseTime: this.calculateLayerAvgTime('distributed'),
+        memoryUsage: 0,
+        size: 0,
+      });
+    }
+    layers.push({
+      name: 'Persistent Cache (L4)',
+      level: 4,
+      enabled: true,
+      hitRate: this.calculateLayerHitRate('persistent'),
+      avgResponseTime: this.calculateLayerAvgTime('persistent'),
+      memoryUsage: 0,
+      size: 0,
+    });
+    return {
+      ...this.metrics,
+      layers,
+      overallHitRate:
+        this.metrics.totalRequests > 0 ? this.metrics.totalHits / this.metrics.totalRequests : 0,
     };
-    constructor(database, mvpLevel = 1, options) {
-        super();
-        this.mvpLevel = mvpLevel;
-        this.config = { ...this.config, ...options };
-        this.persistentCache = new QueryCache_1.QueryCache(database, {
-            maxSize: 5000,
-            defaultTTL: 24 * 60 * 60 * 1000,
-            maxMemoryMB: 100,
-            persistToDisk: true,
-            compressionEnabled: true
-        });
-        if (mvpLevel >= 5 && this.config.enableDistributedCache) {
-            this.distributedCache = new RedisCache();
-        }
-        this.initializeMetrics();
-        this.setupWarmingStrategies();
-        this.startMaintenanceProcesses();
-        console.log(`🚀 Multi-layer cache initialized for MVP${mvpLevel}`);
+  }
+  getOptimizationSuggestions() {
+    const suggestions = [];
+    const metrics = this.getMetrics();
+    if (metrics.overallHitRate < 0.8) {
+      suggestions.push('Consider increasing cache TTL or improving warming strategies');
     }
-    async get(key, computeFn, options) {
-        const startTime = performance.now();
-        const cacheKey = this.generateCacheKey(key, options?.tags, options?.userContext);
-        if (options?.bypassCache) {
-            return this.computeAndDistribute(cacheKey, computeFn, options);
-        }
-        try {
-            const instantResult = this.getFromInstantCache(cacheKey);
-            if (instantResult !== null) {
-                this.recordCacheHit('instant', performance.now() - startTime);
-                return instantResult;
-            }
-            const hotResult = this.getFromHotCache(cacheKey);
-            if (hotResult !== null) {
-                if (hotResult.entry.accessCount >= 5) {
-                    this.promoteToInstantCache(cacheKey, hotResult.value, hotResult.entry);
-                }
-                this.recordCacheHit('hot', performance.now() - startTime);
-                return hotResult.value;
-            }
-            const warmResult = this.getFromWarmCache(cacheKey);
-            if (warmResult !== null) {
-                if (warmResult.entry.accessCount >= 3) {
-                    this.promoteToHotCache(cacheKey, warmResult.value, warmResult.entry);
-                }
-                this.recordCacheHit('warm', performance.now() - startTime);
-                return warmResult.value;
-            }
-            if (this.distributedCache) {
-                const distributedResult = await this.distributedCache.get(cacheKey);
-                if (distributedResult !== null) {
-                    this.setInWarmCache(cacheKey, distributedResult, options);
-                    this.recordCacheHit('distributed', performance.now() - startTime);
-                    return distributedResult;
-                }
-            }
-            const persistentResult = await this.persistentCache.get(cacheKey, () => null, { forceRefresh: false });
-            if (persistentResult !== null) {
-                this.setInWarmCache(cacheKey, persistentResult, options);
-                this.recordCacheHit('persistent', performance.now() - startTime);
-                return persistentResult;
-            }
-            this.recordCacheMiss(performance.now() - startTime);
-            return this.computeAndDistribute(cacheKey, computeFn, options);
-        }
-        catch (error) {
-            console.error('Cache retrieval error:', error);
-            this.recordCacheMiss(performance.now() - startTime);
-            return computeFn();
-        }
+    if (metrics.avgResponseTime > 100) {
+      suggestions.push('Hot cache may need optimization - check for large objects');
     }
-    async warmCache(strategy) {
-        console.log('🔥 Starting intelligent cache warming...');
-        const startTime = performance.now();
-        let warmedEntries = 0;
-        const strategiesToRun = strategy
-            ? [this.warmingStrategies.get(strategy)].filter(Boolean)
-            : Array.from(this.warmingStrategies.values());
-        for (const warmingStrategy of strategiesToRun) {
-            if (!warmingStrategy)
-                continue;
-            try {
-                const strategyEntries = await this.executeWarmingStrategy(warmingStrategy);
-                warmedEntries += strategyEntries;
-            }
-            catch (error) {
-                console.error(`Cache warming strategy '${warmingStrategy.name}' failed:`, error);
-            }
-        }
-        const duration = performance.now() - startTime;
-        console.log(`✅ Cache warming completed: ${warmedEntries} entries in ${Math.round(duration)}ms`);
-        this.emit('cache-warmed', { entriesWarmed: warmedEntries, duration });
-        return warmedEntries;
+    const hotLayer = metrics.layers.find(l => l.level === 1);
+    if (hotLayer && hotLayer.hitRate < 0.6) {
+      suggestions.push('Hot cache hit rate is low - review access patterns');
     }
-    async predictiveCache(userContext) {
-        if (!this.config.enablePredictiveCaching)
-            return 0;
-        const predictions = await this.generateCachePredictions(userContext);
-        let cached = 0;
-        for (const prediction of predictions) {
-            try {
-                await this.get(prediction.key, prediction.computeFn, {
-                    priority: 'low',
-                    ttl: prediction.ttl,
-                    tags: prediction.tags,
-                    userContext
-                });
-                cached++;
-            }
-            catch (error) {
-                console.error('Predictive caching failed for:', prediction.key, error);
-            }
-        }
-        console.log(`🔮 Predictive caching: ${cached} entries pre-cached`);
-        return cached;
+    if (this.mvpLevel >= 5 && !this.distributedCache) {
+      suggestions.push('Consider enabling distributed cache for MVP5 performance');
     }
-    async invalidate(pattern, tags, cascade = true) {
-        let totalInvalidated = 0;
-        totalInvalidated += this.invalidateLayer(this.instantCache, pattern, tags);
-        totalInvalidated += this.invalidateLayer(this.hotCache, pattern, tags);
-        totalInvalidated += this.invalidateLayer(this.warmCache, pattern, tags);
-        if (this.distributedCache && cascade) {
-            totalInvalidated += await this.distributedCache.invalidate(pattern, tags);
-        }
-        if (cascade) {
-            totalInvalidated += await this.persistentCache.invalidate(pattern, tags);
-        }
-        console.log(`🗑️ Cache invalidation: ${totalInvalidated} entries invalidated`);
-        this.emit('cache-invalidated', { pattern, tags, count: totalInvalidated });
-        return totalInvalidated;
+    return suggestions;
+  }
+  getFromInstantCache(key) {
+    const entry = this.instantCache.get(key);
+    if (!entry || this.isExpired(entry)) {
+      if (entry) this.instantCache.delete(key);
+      return null;
     }
-    getMetrics() {
-        const layers = [
-            {
-                name: 'Instant Cache (L0)',
-                level: 0,
-                enabled: true,
-                hitRate: this.calculateLayerHitRate('instant'),
-                avgResponseTime: this.calculateLayerAvgTime('instant'),
-                memoryUsage: this.calculateMemoryUsage(this.instantCache),
-                size: this.instantCache.size
-            },
-            {
-                name: 'Hot Cache (L1)',
-                level: 1,
-                enabled: true,
-                hitRate: this.calculateLayerHitRate('hot'),
-                avgResponseTime: this.calculateLayerAvgTime('hot'),
-                memoryUsage: this.calculateMemoryUsage(this.hotCache),
-                size: this.hotCache.size
-            },
-            {
-                name: 'Warm Cache (L2)',
-                level: 2,
-                enabled: true,
-                hitRate: this.calculateLayerHitRate('warm'),
-                avgResponseTime: this.calculateLayerAvgTime('warm'),
-                memoryUsage: this.calculateMemoryUsage(this.warmCache),
-                size: this.warmCache.size
-            }
-        ];
-        if (this.distributedCache) {
-            layers.push({
-                name: 'Distributed Cache (L3)',
-                level: 3,
-                enabled: true,
-                hitRate: this.calculateLayerHitRate('distributed'),
-                avgResponseTime: this.calculateLayerAvgTime('distributed'),
-                memoryUsage: 0,
-                size: 0
-            });
-        }
-        layers.push({
-            name: 'Persistent Cache (L4)',
-            level: 4,
-            enabled: true,
-            hitRate: this.calculateLayerHitRate('persistent'),
-            avgResponseTime: this.calculateLayerAvgTime('persistent'),
-            memoryUsage: 0,
-            size: 0
-        });
-        return {
-            ...this.metrics,
-            layers,
-            overallHitRate: this.metrics.totalRequests > 0
-                ? this.metrics.totalHits / this.metrics.totalRequests
-                : 0
-        };
+    entry.accessCount++;
+    entry.lastAccessed = Date.now();
+    return entry.value;
+  }
+  setInInstantCache(key, value, entry) {
+    this.enforceInstantCacheLimit();
+    const cacheEntry = entry || {
+      key,
+      value,
+      timestamp: Date.now(),
+      ttl: this.config.instantCacheTTL,
+      accessCount: 1,
+      lastAccessed: Date.now(),
+      computationTime: 0,
+      size: this.estimateSize(value),
+      priority: 'critical',
+      tags: [],
+      mvpLevel: this.mvpLevel,
+    };
+    if (cacheEntry.size <= 10000) {
+      this.instantCache.set(key, cacheEntry);
     }
-    getOptimizationSuggestions() {
-        const suggestions = [];
-        const metrics = this.getMetrics();
-        if (metrics.overallHitRate < 0.8) {
-            suggestions.push('Consider increasing cache TTL or improving warming strategies');
-        }
-        if (metrics.avgResponseTime > 100) {
-            suggestions.push('Hot cache may need optimization - check for large objects');
-        }
-        const hotLayer = metrics.layers.find(l => l.level === 1);
-        if (hotLayer && hotLayer.hitRate < 0.6) {
-            suggestions.push('Hot cache hit rate is low - review access patterns');
-        }
-        if (this.mvpLevel >= 5 && !this.distributedCache) {
-            suggestions.push('Consider enabling distributed cache for MVP5 performance');
-        }
-        return suggestions;
+  }
+  promoteToInstantCache(key, value, sourceEntry) {
+    const promotedEntry = {
+      ...sourceEntry,
+      ttl: this.config.instantCacheTTL,
+      priority: 'critical',
+    };
+    this.setInInstantCache(key, value, promotedEntry);
+  }
+  enforceInstantCacheLimit() {
+    if (this.instantCache.size < this.config.instantCacheSize) return;
+    const entries = Array.from(this.instantCache.entries());
+    entries.sort((a, b) => {
+      const scoreA = this.calculateInstantCacheValue(a[1]);
+      const scoreB = this.calculateInstantCacheValue(b[1]);
+      return scoreA - scoreB;
+    });
+    const toEvict = Math.max(1, Math.ceil(this.config.instantCacheSize * 0.3));
+    for (let i = 0; i < toEvict && i < entries.length; i++) {
+      this.instantCache.delete(entries[i][0]);
     }
-    getFromInstantCache(key) {
-        const entry = this.instantCache.get(key);
-        if (!entry || this.isExpired(entry)) {
-            if (entry)
-                this.instantCache.delete(key);
-            return null;
-        }
-        entry.accessCount++;
-        entry.lastAccessed = Date.now();
-        return entry.value;
+  }
+  calculateInstantCacheValue(entry) {
+    const accessScore = Math.log(entry.accessCount + 1) * 5;
+    const recencyScore = Math.max(0, 1 - (Date.now() - entry.lastAccessed) / entry.ttl) * 10;
+    const sizeScore = Math.max(0, 1 - entry.size / 10000) * 2;
+    return accessScore + recencyScore + sizeScore;
+  }
+  getFromHotCache(key) {
+    const entry = this.hotCache.get(key);
+    if (!entry || this.isExpired(entry)) {
+      if (entry) this.hotCache.delete(key);
+      return null;
     }
-    setInInstantCache(key, value, entry) {
-        this.enforceInstantCacheLimit();
-        const cacheEntry = entry || {
-            key,
-            value,
-            timestamp: Date.now(),
-            ttl: this.config.instantCacheTTL,
-            accessCount: 1,
-            lastAccessed: Date.now(),
-            computationTime: 0,
-            size: this.estimateSize(value),
-            priority: 'critical',
-            tags: [],
-            mvpLevel: this.mvpLevel
-        };
-        if (cacheEntry.size <= 10000) {
-            this.instantCache.set(key, cacheEntry);
-        }
+    entry.accessCount++;
+    entry.lastAccessed = Date.now();
+    return { value: entry.value, entry };
+  }
+  getFromWarmCache(key) {
+    const entry = this.warmCache.get(key);
+    if (!entry || this.isExpired(entry)) {
+      if (entry) this.warmCache.delete(key);
+      return null;
     }
-    promoteToInstantCache(key, value, sourceEntry) {
-        const promotedEntry = {
-            ...sourceEntry,
-            ttl: this.config.instantCacheTTL,
-            priority: 'critical'
-        };
-        this.setInInstantCache(key, value, promotedEntry);
+    entry.accessCount++;
+    entry.lastAccessed = Date.now();
+    return { value: entry.value, entry };
+  }
+  async computeAndDistribute(key, computeFn, options) {
+    const computeStart = performance.now();
+    const value = await computeFn();
+    const computationTime = performance.now() - computeStart;
+    const entry = {
+      key,
+      value,
+      timestamp: Date.now(),
+      ttl: options?.ttl || this.config.warmCacheTTL,
+      accessCount: 1,
+      lastAccessed: Date.now(),
+      computationTime,
+      size: this.estimateSize(value),
+      priority: options?.priority || (computationTime > 100 ? 'high' : 'normal'),
+      tags: options?.tags || [],
+      mvpLevel: this.mvpLevel,
+      userContext: options?.userContext,
+    };
+    if (entry.priority === 'critical' && computationTime > 100) {
+      this.setInInstantCache(key, value, entry);
+    } else if (entry.priority === 'critical' || computationTime > 50) {
+      this.setInHotCache(key, value, entry);
     }
-    enforceInstantCacheLimit() {
-        if (this.instantCache.size < this.config.instantCacheSize)
-            return;
-        const entries = Array.from(this.instantCache.entries());
-        entries.sort((a, b) => {
-            const scoreA = this.calculateInstantCacheValue(a[1]);
-            const scoreB = this.calculateInstantCacheValue(b[1]);
-            return scoreA - scoreB;
-        });
-        const toEvict = Math.max(1, Math.ceil(this.config.instantCacheSize * 0.3));
-        for (let i = 0; i < toEvict && i < entries.length; i++) {
-            this.instantCache.delete(entries[i][0]);
-        }
+    this.setInWarmCache(key, value, options);
+    if (this.distributedCache && entry.size < 100000) {
+      await this.distributedCache.set(key, value, { ttl: entry.ttl });
     }
-    calculateInstantCacheValue(entry) {
-        const accessScore = Math.log(entry.accessCount + 1) * 5;
-        const recencyScore = Math.max(0, 1 - (Date.now() - entry.lastAccessed) / entry.ttl) * 10;
-        const sizeScore = Math.max(0, 1 - entry.size / 10000) * 2;
-        return accessScore + recencyScore + sizeScore;
+    await this.persistentCache.set(key, value, {
+      ttl: entry.ttl * 2,
+      tags: entry.tags,
+    });
+    return value;
+  }
+  setInHotCache(key, value, entry) {
+    this.enforceHotCacheLimit();
+    const cacheEntry = entry || {
+      key,
+      value,
+      timestamp: Date.now(),
+      ttl: this.config.hotCacheTTL,
+      accessCount: 1,
+      lastAccessed: Date.now(),
+      computationTime: 0,
+      size: this.estimateSize(value),
+      priority: 'normal',
+      tags: [],
+      mvpLevel: this.mvpLevel,
+    };
+    this.hotCache.set(key, cacheEntry);
+  }
+  setInWarmCache(key, value, options) {
+    this.enforceWarmCacheLimit();
+    const entry = {
+      key,
+      value,
+      timestamp: Date.now(),
+      ttl: options?.ttl || this.config.warmCacheTTL,
+      accessCount: 1,
+      lastAccessed: Date.now(),
+      computationTime: 0,
+      size: this.estimateSize(value),
+      priority: options?.priority || 'normal',
+      tags: options?.tags || [],
+      mvpLevel: this.mvpLevel,
+      userContext: options?.userContext,
+    };
+    this.warmCache.set(key, entry);
+  }
+  promoteToHotCache(key, value, sourceEntry) {
+    const promotedEntry = {
+      ...sourceEntry,
+      ttl: this.config.hotCacheTTL,
+      priority: sourceEntry.priority === 'low' ? 'normal' : 'high',
+    };
+    this.setInHotCache(key, value, promotedEntry);
+  }
+  enforceHotCacheLimit() {
+    if (this.hotCache.size < this.config.hotCacheSize) return;
+    const entries = Array.from(this.hotCache.entries());
+    entries.sort((a, b) => {
+      const scoreA = this.calculateEntryValue(a[1]);
+      const scoreB = this.calculateEntryValue(b[1]);
+      return scoreA - scoreB;
+    });
+    const toEvict = Math.ceil(this.config.hotCacheSize * 0.2);
+    for (let i = 0; i < toEvict && i < entries.length; i++) {
+      this.hotCache.delete(entries[i][0]);
     }
-    getFromHotCache(key) {
-        const entry = this.hotCache.get(key);
-        if (!entry || this.isExpired(entry)) {
-            if (entry)
-                this.hotCache.delete(key);
-            return null;
-        }
-        entry.accessCount++;
-        entry.lastAccessed = Date.now();
-        return { value: entry.value, entry };
+  }
+  enforceWarmCacheLimit() {
+    if (this.warmCache.size < this.config.warmCacheSize) return;
+    const entries = Array.from(this.warmCache.entries());
+    entries.sort((a, b) => {
+      const priorityScore = { low: 1, normal: 2, high: 3, critical: 4 };
+      const scoreA = priorityScore[a[1].priority] + a[1].accessCount * 0.1;
+      const scoreB = priorityScore[b[1].priority] + b[1].accessCount * 0.1;
+      if (scoreA !== scoreB) return scoreA - scoreB;
+      return a[1].lastAccessed - b[1].lastAccessed;
+    });
+    const toEvict = Math.ceil(this.config.warmCacheSize * 0.1);
+    for (let i = 0; i < toEvict && i < entries.length; i++) {
+      this.warmCache.delete(entries[i][0]);
     }
-    getFromWarmCache(key) {
-        const entry = this.warmCache.get(key);
-        if (!entry || this.isExpired(entry)) {
-            if (entry)
-                this.warmCache.delete(key);
-            return null;
-        }
-        entry.accessCount++;
-        entry.lastAccessed = Date.now();
-        return { value: entry.value, entry };
+  }
+  calculateEntryValue(entry) {
+    const priorityScore = { low: 1, normal: 2, high: 4, critical: 8 };
+    const computationBonus = Math.log(entry.computationTime + 1);
+    const accessBonus = Math.log(entry.accessCount + 1);
+    const recencyBonus = Math.max(0, 1 - (Date.now() - entry.lastAccessed) / entry.ttl);
+    return priorityScore[entry.priority] + computationBonus + accessBonus + recencyBonus;
+  }
+  invalidateLayer(cache, pattern, tags) {
+    let invalidated = 0;
+    for (const [key, entry] of cache) {
+      let shouldInvalidate = false;
+      if (pattern) {
+        const regex = new RegExp(pattern);
+        shouldInvalidate = regex.test(key);
+      }
+      if (tags && tags.length > 0) {
+        shouldInvalidate = shouldInvalidate || tags.some(tag => entry.tags.includes(tag));
+      }
+      if (shouldInvalidate) {
+        cache.delete(key);
+        invalidated++;
+      }
     }
-    async computeAndDistribute(key, computeFn, options) {
-        const computeStart = performance.now();
-        const value = await computeFn();
-        const computationTime = performance.now() - computeStart;
-        const entry = {
-            key,
-            value,
-            timestamp: Date.now(),
-            ttl: options?.ttl || this.config.warmCacheTTL,
-            accessCount: 1,
-            lastAccessed: Date.now(),
-            computationTime,
-            size: this.estimateSize(value),
-            priority: options?.priority || (computationTime > 100 ? 'high' : 'normal'),
-            tags: options?.tags || [],
-            mvpLevel: this.mvpLevel,
-            userContext: options?.userContext
-        };
-        if (entry.priority === 'critical' && computationTime > 100) {
-            this.setInInstantCache(key, value, entry);
-        }
-        else if (entry.priority === 'critical' || computationTime > 50) {
-            this.setInHotCache(key, value, entry);
-        }
-        this.setInWarmCache(key, value, options);
-        if (this.distributedCache && entry.size < 100000) {
-            await this.distributedCache.set(key, value, { ttl: entry.ttl });
-        }
-        await this.persistentCache.set(key, value, {
-            ttl: entry.ttl * 2,
-            tags: entry.tags
-        });
-        return value;
+    return invalidated;
+  }
+  generateCacheKey(key, tags, userContext) {
+    let cacheKey = `mlc:mvp${this.mvpLevel}:${key}`;
+    if (userContext) {
+      cacheKey += `:user:${userContext}`;
     }
-    setInHotCache(key, value, entry) {
-        this.enforceHotCacheLimit();
-        const cacheEntry = entry || {
-            key,
-            value,
-            timestamp: Date.now(),
-            ttl: this.config.hotCacheTTL,
-            accessCount: 1,
-            lastAccessed: Date.now(),
-            computationTime: 0,
-            size: this.estimateSize(value),
-            priority: 'normal',
-            tags: [],
-            mvpLevel: this.mvpLevel
-        };
-        this.hotCache.set(key, cacheEntry);
+    if (tags && tags.length > 0) {
+      cacheKey += `:tags:${tags.sort().join(',')}`;
     }
-    setInWarmCache(key, value, options) {
-        this.enforceWarmCacheLimit();
-        const entry = {
-            key,
-            value,
-            timestamp: Date.now(),
-            ttl: options?.ttl || this.config.warmCacheTTL,
-            accessCount: 1,
-            lastAccessed: Date.now(),
-            computationTime: 0,
-            size: this.estimateSize(value),
-            priority: options?.priority || 'normal',
-            tags: options?.tags || [],
-            mvpLevel: this.mvpLevel,
-            userContext: options?.userContext
-        };
-        this.warmCache.set(key, entry);
+    return cacheKey;
+  }
+  isExpired(entry) {
+    return Date.now() > entry.timestamp + entry.ttl;
+  }
+  estimateSize(obj) {
+    try {
+      return new Blob([JSON.stringify(obj)]).size;
+    } catch {
+      return 1000;
     }
-    promoteToHotCache(key, value, sourceEntry) {
-        const promotedEntry = {
-            ...sourceEntry,
-            ttl: this.config.hotCacheTTL,
-            priority: sourceEntry.priority === 'low' ? 'normal' : 'high'
-        };
-        this.setInHotCache(key, value, promotedEntry);
+  }
+  recordCacheHit(layer, responseTime) {
+    this.metrics.totalHits++;
+    this.metrics.totalRequests++;
+    this.updateResponseTime(responseTime);
+  }
+  recordCacheMiss(responseTime) {
+    this.metrics.totalMisses++;
+    this.metrics.totalRequests++;
+    this.updateResponseTime(responseTime);
+  }
+  updateResponseTime(responseTime) {
+    this.metrics.avgResponseTime =
+      (this.metrics.avgResponseTime * (this.metrics.totalRequests - 1) + responseTime) /
+      this.metrics.totalRequests;
+  }
+  calculateLayerHitRate(layer) {
+    return 0.85;
+  }
+  calculateLayerAvgTime(layer) {
+    return 10;
+  }
+  calculateMemoryUsage(cache) {
+    let totalSize = 0;
+    for (const entry of cache.values()) {
+      totalSize += entry.size;
     }
-    enforceHotCacheLimit() {
-        if (this.hotCache.size < this.config.hotCacheSize)
-            return;
-        const entries = Array.from(this.hotCache.entries());
-        entries.sort((a, b) => {
-            const scoreA = this.calculateEntryValue(a[1]);
-            const scoreB = this.calculateEntryValue(b[1]);
-            return scoreA - scoreB;
-        });
-        const toEvict = Math.ceil(this.config.hotCacheSize * 0.2);
-        for (let i = 0; i < toEvict && i < entries.length; i++) {
-            this.hotCache.delete(entries[i][0]);
-        }
+    return totalSize;
+  }
+  initializeMetrics() {
+    this.metrics = {
+      totalHits: 0,
+      totalMisses: 0,
+      totalRequests: 0,
+      overallHitRate: 0,
+      avgResponseTime: 0,
+      layers: [],
+      predictiveAccuracy: 0,
+      warmingEffectiveness: 0,
+    };
+  }
+  setupWarmingStrategies() {
+    const baseStrategies = [
+      {
+        name: 'popular-entries',
+        priority: 10,
+        frequency: 'hourly',
+        queries: ['popular:*', 'trending:*'],
+        estimatedBenefit: 0.4,
+      },
+      {
+        name: 'category-overview',
+        priority: 8,
+        frequency: 'daily',
+        queries: ['category:JCL', 'category:VSAM', 'category:DB2', 'category:Batch'],
+        estimatedBenefit: 0.3,
+      },
+      {
+        name: 'recent-activity',
+        priority: 6,
+        frequency: 'continuous',
+        queries: ['recent:*'],
+        estimatedBenefit: 0.2,
+      },
+    ];
+    if (this.mvpLevel >= 2) {
+      baseStrategies.push({
+        name: 'pattern-analysis',
+        priority: 9,
+        frequency: 'hourly',
+        queries: ['patterns:*', 'trends:*'],
+        estimatedBenefit: 0.35,
+      });
     }
-    enforceWarmCacheLimit() {
-        if (this.warmCache.size < this.config.warmCacheSize)
-            return;
-        const entries = Array.from(this.warmCache.entries());
-        entries.sort((a, b) => {
-            const priorityScore = { low: 1, normal: 2, high: 3, critical: 4 };
-            const scoreA = priorityScore[a[1].priority] + (a[1].accessCount * 0.1);
-            const scoreB = priorityScore[b[1].priority] + (b[1].accessCount * 0.1);
-            if (scoreA !== scoreB)
-                return scoreA - scoreB;
-            return a[1].lastAccessed - b[1].lastAccessed;
-        });
-        const toEvict = Math.ceil(this.config.warmCacheSize * 0.1);
-        for (let i = 0; i < toEvict && i < entries.length; i++) {
-            this.warmCache.delete(entries[i][0]);
-        }
+    if (this.mvpLevel >= 3) {
+      baseStrategies.push({
+        name: 'code-integration',
+        priority: 7,
+        frequency: 'daily',
+        queries: ['code:*', 'debug:*'],
+        estimatedBenefit: 0.25,
+      });
     }
-    calculateEntryValue(entry) {
-        const priorityScore = { low: 1, normal: 2, high: 4, critical: 8 };
-        const computationBonus = Math.log(entry.computationTime + 1);
-        const accessBonus = Math.log(entry.accessCount + 1);
-        const recencyBonus = Math.max(0, 1 - (Date.now() - entry.lastAccessed) / entry.ttl);
-        return priorityScore[entry.priority] + computationBonus + accessBonus + recencyBonus;
-    }
-    invalidateLayer(cache, pattern, tags) {
-        let invalidated = 0;
-        for (const [key, entry] of cache) {
-            let shouldInvalidate = false;
-            if (pattern) {
-                const regex = new RegExp(pattern);
-                shouldInvalidate = regex.test(key);
-            }
-            if (tags && tags.length > 0) {
-                shouldInvalidate = shouldInvalidate || tags.some(tag => entry.tags.includes(tag));
-            }
-            if (shouldInvalidate) {
-                cache.delete(key);
-                invalidated++;
-            }
-        }
-        return invalidated;
-    }
-    generateCacheKey(key, tags, userContext) {
-        let cacheKey = `mlc:mvp${this.mvpLevel}:${key}`;
-        if (userContext) {
-            cacheKey += `:user:${userContext}`;
-        }
-        if (tags && tags.length > 0) {
-            cacheKey += `:tags:${tags.sort().join(',')}`;
-        }
-        return cacheKey;
-    }
-    isExpired(entry) {
-        return Date.now() > entry.timestamp + entry.ttl;
-    }
-    estimateSize(obj) {
-        try {
-            return new Blob([JSON.stringify(obj)]).size;
-        }
-        catch {
-            return 1000;
-        }
-    }
-    recordCacheHit(layer, responseTime) {
-        this.metrics.totalHits++;
-        this.metrics.totalRequests++;
-        this.updateResponseTime(responseTime);
-    }
-    recordCacheMiss(responseTime) {
-        this.metrics.totalMisses++;
-        this.metrics.totalRequests++;
-        this.updateResponseTime(responseTime);
-    }
-    updateResponseTime(responseTime) {
-        this.metrics.avgResponseTime =
-            (this.metrics.avgResponseTime * (this.metrics.totalRequests - 1) + responseTime)
-                / this.metrics.totalRequests;
-    }
-    calculateLayerHitRate(layer) {
-        return 0.85;
-    }
-    calculateLayerAvgTime(layer) {
-        return 10;
-    }
-    calculateMemoryUsage(cache) {
-        let totalSize = 0;
-        for (const entry of cache.values()) {
-            totalSize += entry.size;
-        }
-        return totalSize;
-    }
-    initializeMetrics() {
-        this.metrics = {
-            totalHits: 0,
-            totalMisses: 0,
-            totalRequests: 0,
-            overallHitRate: 0,
-            avgResponseTime: 0,
-            layers: [],
-            predictiveAccuracy: 0,
-            warmingEffectiveness: 0
-        };
-    }
-    setupWarmingStrategies() {
-        const baseStrategies = [
-            {
-                name: 'popular-entries',
-                priority: 10,
-                frequency: 'hourly',
-                queries: ['popular:*', 'trending:*'],
-                estimatedBenefit: 0.4
-            },
-            {
-                name: 'category-overview',
-                priority: 8,
-                frequency: 'daily',
-                queries: ['category:JCL', 'category:VSAM', 'category:DB2', 'category:Batch'],
-                estimatedBenefit: 0.3
-            },
-            {
-                name: 'recent-activity',
-                priority: 6,
-                frequency: 'continuous',
-                queries: ['recent:*'],
-                estimatedBenefit: 0.2
-            }
-        ];
-        if (this.mvpLevel >= 2) {
-            baseStrategies.push({
-                name: 'pattern-analysis',
-                priority: 9,
-                frequency: 'hourly',
-                queries: ['patterns:*', 'trends:*'],
-                estimatedBenefit: 0.35
-            });
-        }
-        if (this.mvpLevel >= 3) {
-            baseStrategies.push({
-                name: 'code-integration',
-                priority: 7,
-                frequency: 'daily',
-                queries: ['code:*', 'debug:*'],
-                estimatedBenefit: 0.25
-            });
-        }
-        baseStrategies.forEach(strategy => {
-            this.warmingStrategies.set(strategy.name, strategy);
-        });
-    }
-    async executeWarmingStrategy(strategy) {
-        console.log(`Executing warming strategy: ${strategy.name}`);
-        return strategy.queries.length;
-    }
-    async generateCachePredictions(userContext) {
-        return [];
-    }
-    startMaintenanceProcesses() {
-        setInterval(() => {
-            this.cleanupExpiredEntries();
-        }, 5 * 60 * 1000);
-        setInterval(() => {
-            this.performMaintenance();
-        }, 60 * 60 * 1000);
-        if (this.mvpLevel >= 5) {
-            setInterval(() => {
-                this.monitorPerformance();
-            }, 30 * 1000);
-        }
-    }
-    cleanupExpiredEntries() {
-        const now = Date.now();
-        let cleaned = 0;
-        for (const [key, entry] of this.instantCache) {
-            if (now > entry.timestamp + entry.ttl) {
-                this.instantCache.delete(key);
-                cleaned++;
-            }
-        }
-        for (const [key, entry] of this.hotCache) {
-            if (now > entry.timestamp + entry.ttl) {
-                this.hotCache.delete(key);
-                cleaned++;
-            }
-        }
-        for (const [key, entry] of this.warmCache) {
-            if (now > entry.timestamp + entry.ttl) {
-                this.warmCache.delete(key);
-                cleaned++;
-            }
-        }
-        if (cleaned > 0) {
-            console.log(`🧹 Cleaned up ${cleaned} expired cache entries`);
-        }
-    }
-    performMaintenance() {
-        console.log('🔧 Performing cache maintenance...');
+    baseStrategies.forEach(strategy => {
+      this.warmingStrategies.set(strategy.name, strategy);
+    });
+  }
+  async executeWarmingStrategy(strategy) {
+    console.log(`Executing warming strategy: ${strategy.name}`);
+    return strategy.queries.length;
+  }
+  async generateCachePredictions(userContext) {
+    return [];
+  }
+  startMaintenanceProcesses() {
+    setInterval(
+      () => {
         this.cleanupExpiredEntries();
-        this.enforceInstantCacheLimit();
-        this.enforceHotCacheLimit();
-        this.enforceWarmCacheLimit();
-        this.warmCache('popular-entries');
-        console.log('✅ Cache maintenance completed');
+      },
+      5 * 60 * 1000
+    );
+    setInterval(
+      () => {
+        this.performMaintenance();
+      },
+      60 * 60 * 1000
+    );
+    if (this.mvpLevel >= 5) {
+      setInterval(() => {
+        this.monitorPerformance();
+      }, 30 * 1000);
     }
-    monitorPerformance() {
-        const metrics = this.getMetrics();
-        if (metrics.overallHitRate < 0.8) {
-            console.warn('⚠️ Cache hit rate below target (80%)');
-            this.emit('performance-warning', 'low-hit-rate');
-        }
-        if (metrics.avgResponseTime > 50) {
-            console.warn('⚠️ Average response time above target (50ms)');
-            this.emit('performance-warning', 'high-response-time');
-        }
-        const instantLayer = metrics.layers.find(l => l.level === 0);
-        if (instantLayer && instantLayer.avgResponseTime > 10) {
-            console.warn('⚠️ Instant cache (L0) response time above target (10ms)');
-            this.emit('performance-warning', 'instant-cache-slow');
-        }
+  }
+  cleanupExpiredEntries() {
+    const now = Date.now();
+    let cleaned = 0;
+    for (const [key, entry] of this.instantCache) {
+      if (now > entry.timestamp + entry.ttl) {
+        this.instantCache.delete(key);
+        cleaned++;
+      }
     }
+    for (const [key, entry] of this.hotCache) {
+      if (now > entry.timestamp + entry.ttl) {
+        this.hotCache.delete(key);
+        cleaned++;
+      }
+    }
+    for (const [key, entry] of this.warmCache) {
+      if (now > entry.timestamp + entry.ttl) {
+        this.warmCache.delete(key);
+        cleaned++;
+      }
+    }
+    if (cleaned > 0) {
+      console.log(`🧹 Cleaned up ${cleaned} expired cache entries`);
+    }
+  }
+  performMaintenance() {
+    console.log('🔧 Performing cache maintenance...');
+    this.cleanupExpiredEntries();
+    this.enforceInstantCacheLimit();
+    this.enforceHotCacheLimit();
+    this.enforceWarmCacheLimit();
+    this.warmCache('popular-entries');
+    console.log('✅ Cache maintenance completed');
+  }
+  monitorPerformance() {
+    const metrics = this.getMetrics();
+    if (metrics.overallHitRate < 0.8) {
+      console.warn('⚠️ Cache hit rate below target (80%)');
+      this.emit('performance-warning', 'low-hit-rate');
+    }
+    if (metrics.avgResponseTime > 50) {
+      console.warn('⚠️ Average response time above target (50ms)');
+      this.emit('performance-warning', 'high-response-time');
+    }
+    const instantLayer = metrics.layers.find(l => l.level === 0);
+    if (instantLayer && instantLayer.avgResponseTime > 10) {
+      console.warn('⚠️ Instant cache (L0) response time above target (10ms)');
+      this.emit('performance-warning', 'instant-cache-slow');
+    }
+  }
 }
 exports.MultiLayerCacheManager = MultiLayerCacheManager;
 class RedisCache {
-    async get(key) {
-        return null;
-    }
-    async set(key, value, options) {
-    }
-    async invalidate(pattern, tags) {
-        return 0;
-    }
+  async get(key) {
+    return null;
+  }
+  async set(key, value, options) {}
+  async invalidate(pattern, tags) {
+    return 0;
+  }
 }
 //# sourceMappingURL=MultiLayerCacheManager.js.map

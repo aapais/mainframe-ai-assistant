@@ -9,7 +9,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 const performanceAPI = {
   // Render performance tracking
   trackRenderStart: () => ipcRenderer.invoke('perf:track-render-start'),
-  trackRenderEnd: (renderStartId: string) => ipcRenderer.invoke('perf:track-render-end', renderStartId),
+  trackRenderEnd: (renderStartId: string) =>
+    ipcRenderer.invoke('perf:track-render-end', renderStartId),
 
   // Search performance tracking
   trackSearchStart: (query: string) => ipcRenderer.invoke('perf:track-search-start', query),
@@ -20,8 +21,10 @@ const performanceAPI = {
   trackIPCEnd: (ipcId: string) => ipcRenderer.invoke('perf:track-ipc-end', ipcId),
 
   // Window operation tracking
-  trackWindowOperationStart: (operation: string) => ipcRenderer.invoke('perf:track-window-start', operation),
-  trackWindowOperationEnd: (windowId: string) => ipcRenderer.invoke('perf:track-window-end', windowId),
+  trackWindowOperationStart: (operation: string) =>
+    ipcRenderer.invoke('perf:track-window-start', operation),
+  trackWindowOperationEnd: (windowId: string) =>
+    ipcRenderer.invoke('perf:track-window-end', windowId),
 
   // Get performance metrics
   getPerformanceMetrics: () => ipcRenderer.invoke('perf:get-metrics'),
@@ -41,8 +44,10 @@ const performanceAPI = {
 
   // Alert management
   getAlerts: (count?: number) => ipcRenderer.invoke('perf:get-alerts', count),
-  getAlertsBySeverity: (severity: string) => ipcRenderer.invoke('perf:get-alerts-severity', severity),
-  clearOldAlerts: (olderThanMs?: number) => ipcRenderer.invoke('perf:clear-old-alerts', olderThanMs),
+  getAlertsBySeverity: (severity: string) =>
+    ipcRenderer.invoke('perf:get-alerts-severity', severity),
+  clearOldAlerts: (olderThanMs?: number) =>
+    ipcRenderer.invoke('perf:clear-old-alerts', olderThanMs),
 
   // Performance control
   startMonitoring: () => ipcRenderer.invoke('perf:start-monitoring'),
@@ -83,12 +88,13 @@ const performanceAPI = {
   getTargets: () => ipcRenderer.invoke('perf:get-targets'),
 
   // Benchmarking
-  runBenchmark: (type: string, options?: any) => ipcRenderer.invoke('perf:run-benchmark', type, options),
+  runBenchmark: (type: string, options?: any) =>
+    ipcRenderer.invoke('perf:run-benchmark', type, options),
   getBenchmarkResults: () => ipcRenderer.invoke('perf:get-benchmark-results'),
 
   // Health check
   getSystemHealth: () => ipcRenderer.invoke('perf:get-system-health'),
-  getHealthTrend: (hours?: number) => ipcRenderer.invoke('perf:get-health-trend', hours)
+  getHealthTrend: (hours?: number) => ipcRenderer.invoke('perf:get-health-trend', hours),
 };
 
 // Expose the API to the renderer process
@@ -104,7 +110,7 @@ if (typeof window !== 'undefined') {
     trackRenderEnd: performanceAPI.trackRenderEnd,
     trackSearchStart: performanceAPI.trackSearchStart,
     trackSearchEnd: performanceAPI.trackSearchEnd,
-    getPerformanceMetrics: performanceAPI.getPerformanceMetrics
+    getPerformanceMetrics: performanceAPI.getPerformanceMetrics,
   });
 }
 
@@ -176,7 +182,7 @@ const performanceUtils = {
    */
   createPerformanceObserver: (callback: (entries: PerformanceEntry[]) => void) => {
     if (typeof PerformanceObserver !== 'undefined') {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         callback(list.getEntries());
       });
 
@@ -216,7 +222,7 @@ const performanceUtils = {
 
     return {
       getFPS: () => fps,
-      stop: () => frames = -1 // Signal to stop counting
+      stop: () => (frames = -1), // Signal to stop counting
     };
   },
 
@@ -228,7 +234,7 @@ const performanceUtils = {
       return {
         usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
         totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
-        jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit
+        jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
       };
     }
     return null;
@@ -244,11 +250,11 @@ const performanceUtils = {
         effectiveType: connection.effectiveType,
         downlink: connection.downlink,
         rtt: connection.rtt,
-        saveData: connection.saveData
+        saveData: connection.saveData,
       };
     }
     return null;
-  }
+  },
 };
 
 // Expose performance utilities

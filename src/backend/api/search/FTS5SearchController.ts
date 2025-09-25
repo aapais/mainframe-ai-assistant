@@ -75,7 +75,7 @@ export class FTS5SearchController {
     this.rateLimiter = new RateLimiter({
       windowMs: 60 * 1000, // 1 minute
       maxRequests: 100, // 100 requests per minute
-      skipSuccessfulRequests: false
+      skipSuccessfulRequests: false,
     });
     this.requestValidator = new RequestValidator();
 
@@ -125,21 +125,18 @@ export class FTS5SearchController {
         ...options,
         userId: user_id,
         sessionId: session_id,
-        userContext: req.headers['user-agent'] || 'unknown'
+        userContext: req.headers['user-agent'] || 'unknown',
       };
 
       // Execute search
       const results = await this.searchService.search(query, searchOptions);
 
       // Process results through integration adapter for UI compatibility
-      const processedResults = await this.integrationAdapter.adaptSearchResults(
-        results.results,
-        {
-          query,
-          pagination: results.pagination,
-          facets: results.facets
-        }
-      );
+      const processedResults = await this.integrationAdapter.adaptSearchResults(results.results, {
+        query,
+        pagination: results.pagination,
+        facets: results.facets,
+      });
 
       const responseTime = Date.now() - startTime;
 
@@ -149,25 +146,24 @@ export class FTS5SearchController {
         data: {
           ...results,
           results: processedResults.results,
-          ui_state: processedResults.uiState
+          ui_state: processedResults.uiState,
         },
         meta: {
           request_id: req.headers['x-request-id'] || 'unknown',
           response_time: responseTime,
           server_time: new Date().toISOString(),
-          api_version: '2.0'
-        }
+          api_version: '2.0',
+        },
       };
 
       // Set caching headers for search results
       res.set({
         'Cache-Control': 'private, max-age=300', // 5 minutes
         'X-Response-Time': `${responseTime}ms`,
-        'X-Search-Engine': 'FTS5-Advanced'
+        'X-Search-Engine': 'FTS5-Advanced',
       });
 
       res.status(200).json(response);
-
     } catch (error) {
       next(error);
     }
@@ -191,21 +187,18 @@ export class FTS5SearchController {
             suggestions: [],
             meta: {
               query: q || '',
-              count: 0
-            }
-          }
+              count: 0,
+            },
+          },
         });
         return;
       }
 
-      const suggestions = await this.searchService.getSuggestions(
-        q,
-        Math.min(parseInt(limit), 20)
-      );
+      const suggestions = await this.searchService.getSuggestions(q, Math.min(parseInt(limit), 20));
 
       res.set({
         'Cache-Control': 'private, max-age=120', // 2 minutes
-        'X-Search-Engine': 'FTS5-Suggestions'
+        'X-Search-Engine': 'FTS5-Suggestions',
       });
 
       res.status(200).json({
@@ -215,11 +208,10 @@ export class FTS5SearchController {
           meta: {
             query: q,
             count: suggestions.length,
-            category: category || null
-          }
-        }
+            category: category || null,
+          },
+        },
       });
-
     } catch (error) {
       next(error);
     }
@@ -241,17 +233,16 @@ export class FTS5SearchController {
         data: {
           stats,
           timestamp: new Date().toISOString(),
-          timeframe: req.query.timeframe || '24h'
-        }
+          timeframe: req.query.timeframe || '24h',
+        },
       };
 
       res.set({
         'Cache-Control': 'private, max-age=60', // 1 minute
-        'X-Data-Source': 'search-analytics'
+        'X-Data-Source': 'search-analytics',
       });
 
       res.status(200).json(response);
-
     } catch (error) {
       next(error);
     }
@@ -276,9 +267,8 @@ export class FTS5SearchController {
       res.status(200).json({
         success: true,
         message: 'Search index rebuild completed',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       next(error);
     }
@@ -300,10 +290,10 @@ export class FTS5SearchController {
           total_searches: stats.total_searches,
           cache_hit_rate: stats.cache_hit_rate,
           avg_response_time: stats.avg_response_time,
-          error_rate: stats.error_rate
+          error_rate: stats.error_rate,
         },
         uptime: process.uptime(),
-        memory: process.memoryUsage()
+        memory: process.memoryUsage(),
       };
 
       // Determine health status based on metrics
@@ -315,13 +305,12 @@ export class FTS5SearchController {
       }
 
       res.status(200).json(health);
-
     } catch (error) {
       res.status(503).json({
         status: 'unhealthy',
         service: 'FTS5SearchService',
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -354,7 +343,10 @@ export class FTS5SearchController {
         }
       }
 
-      if (options.query_type && !['simple', 'boolean', 'phrase', 'proximity'].includes(options.query_type)) {
+      if (
+        options.query_type &&
+        !['simple', 'boolean', 'phrase', 'proximity'].includes(options.query_type)
+      ) {
         errors.push('Invalid query_type. Must be one of: simple, boolean, phrase, proximity');
       }
 
@@ -367,7 +359,11 @@ export class FTS5SearchController {
       }
 
       if (options.min_score !== undefined) {
-        if (typeof options.min_score !== 'number' || options.min_score < 0 || options.min_score > 1) {
+        if (
+          typeof options.min_score !== 'number' ||
+          options.min_score < 0 ||
+          options.min_score > 1
+        ) {
           errors.push('min_score must be a number between 0 and 1');
         }
       }
@@ -381,7 +377,10 @@ export class FTS5SearchController {
         }
       }
 
-      if (options.fields && (!Array.isArray(options.fields) || !options.fields.every(f => typeof f === 'string'))) {
+      if (
+        options.fields &&
+        (!Array.isArray(options.fields) || !options.fields.every(f => typeof f === 'string'))
+      ) {
         errors.push('fields must be an array of strings');
       }
 
@@ -392,7 +391,7 @@ export class FTS5SearchController {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -426,8 +425,8 @@ export class FTS5SearchController {
           method: req.method,
           url: req.url,
           body: req.body,
-          query: req.query
-        }
+          query: req.query,
+        },
       });
 
       // Handle specific error types
@@ -437,12 +436,12 @@ export class FTS5SearchController {
           error: {
             code: error.code,
             message: error.message,
-            type: 'ApplicationError'
+            type: 'ApplicationError',
           },
           meta: {
             request_id: req.headers['x-request-id'] || 'unknown',
-            timestamp: new Date().toISOString()
-          }
+            timestamp: new Date().toISOString(),
+          },
         });
         return;
       }
@@ -454,8 +453,8 @@ export class FTS5SearchController {
           error: {
             code: 'RATE_LIMIT_EXCEEDED',
             message: 'Too many requests. Please try again later.',
-            retry_after: error.retry_after
-          }
+            retry_after: error.retry_after,
+          },
         });
         return;
       }
@@ -467,8 +466,8 @@ export class FTS5SearchController {
           error: {
             code: 'VALIDATION_ERROR',
             message: error.message,
-            details: error.details
-          }
+            details: error.details,
+          },
         });
         return;
       }
@@ -479,12 +478,12 @@ export class FTS5SearchController {
         error: {
           code: 'INTERNAL_SERVER_ERROR',
           message: 'An unexpected error occurred',
-          type: 'SystemError'
+          type: 'SystemError',
         },
         meta: {
           request_id: req.headers['x-request-id'] || 'unknown',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     };
   }

@@ -101,10 +101,7 @@ const DEFAULT_BREAKPOINTS: BreakpointConfig = {
 /**
  * Get current breakpoint based on width
  */
-const getCurrentBreakpoint = (
-  width: number,
-  breakpoints: BreakpointConfig
-): BreakpointKey => {
+const getCurrentBreakpoint = (width: number, breakpoints: BreakpointConfig): BreakpointKey => {
   const breakpointEntries = Object.entries(breakpoints) as [BreakpointKey, number][];
 
   // Sort by value descending to find the largest matching breakpoint
@@ -207,10 +204,13 @@ export const useResponsive = (options: ResponsiveHookOptions = {}): ResponsiveHo
   } = options;
 
   // Merge custom breakpoints with defaults
-  const mergedBreakpoints = useMemo(() => ({
-    ...DEFAULT_BREAKPOINTS,
-    ...breakpoints,
-  }), [breakpoints]);
+  const mergedBreakpoints = useMemo(
+    () => ({
+      ...DEFAULT_BREAKPOINTS,
+      ...breakpoints,
+    }),
+    [breakpoints]
+  );
 
   // Initialize state with SSR-safe defaults
   const [dimensions, setDimensions] = useState(() => {
@@ -227,16 +227,18 @@ export const useResponsive = (options: ResponsiveHookOptions = {}): ResponsiveHo
     };
   });
 
-  const [deviceInfo, setDeviceInfo] = useState<Omit<DeviceInfo, 'width' | 'height' | 'breakpoint'>>(() => ({
-    isTouchDevice: ssr ? false : checkTouchSupport(),
-    devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
-    isHighDPI: typeof window !== 'undefined' ? (window.devicePixelRatio || 1) > 1 : false,
-    prefersReducedMotion: ssr ? false : checkReducedMotion(),
-    prefersDark: ssr ? false : checkDarkMode(),
-    isMobile: false,
-    isTablet: false,
-    isDesktop: false,
-  }));
+  const [deviceInfo, setDeviceInfo] = useState<Omit<DeviceInfo, 'width' | 'height' | 'breakpoint'>>(
+    () => ({
+      isTouchDevice: ssr ? false : checkTouchSupport(),
+      devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+      isHighDPI: typeof window !== 'undefined' ? (window.devicePixelRatio || 1) > 1 : false,
+      prefersReducedMotion: ssr ? false : checkReducedMotion(),
+      prefersDark: ssr ? false : checkDarkMode(),
+      isMobile: false,
+      isTablet: false,
+      isDesktop: false,
+    })
+  );
 
   // Memoized device calculations
   const device = useMemo<DeviceInfo>(() => {
@@ -260,19 +262,20 @@ export const useResponsive = (options: ResponsiveHookOptions = {}): ResponsiveHo
 
   // Debounced resize handler
   const handleResize = useMemo(
-    () => debounce(() => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+    () =>
+      debounce(() => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
 
-      setDimensions({ width, height });
+        setDimensions({ width, height });
 
-      // Update device info that might change
-      setDeviceInfo(prev => ({
-        ...prev,
-        devicePixelRatio: window.devicePixelRatio || 1,
-        isHighDPI: (window.devicePixelRatio || 1) > 1,
-      }));
-    }, debounceMs),
+        // Update device info that might change
+        setDeviceInfo(prev => ({
+          ...prev,
+          devicePixelRatio: window.devicePixelRatio || 1,
+          isHighDPI: (window.devicePixelRatio || 1) > 1,
+        }));
+      }, debounceMs),
     [debounceMs]
   );
 

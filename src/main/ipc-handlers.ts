@@ -10,7 +10,11 @@ import { UnifiedHandler } from './ipc/handlers/UnifiedHandler';
 import { KnowledgeService } from '../services/KnowledgeService';
 import { SearchService } from '../services/SearchService';
 import { AIService } from './services/AIService';
-import { IncidentAIService, IncidentAnalysisResult, SemanticSearchOptions } from '../services/IncidentAIService';
+import {
+  IncidentAIService,
+  IncidentAnalysisResult,
+  SemanticSearchOptions,
+} from '../services/IncidentAIService';
 import { DatabaseManager } from '../database/DatabaseManager';
 import path from 'path';
 
@@ -60,11 +64,15 @@ export function setupIpcHandlers() {
 function checkUnifiedSchemaAvailable(db: any): boolean {
   try {
     // Check for unified_entries table
-    const unifiedTableExists = db.prepare(`
+    const unifiedTableExists = db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM sqlite_master
       WHERE type='table' AND name='unified_entries'
-    `).get();
+    `
+      )
+      .get();
 
     if (unifiedTableExists.count > 0) {
       console.log('🔍 Unified schema detected: unified_entries table found');
@@ -72,19 +80,27 @@ function checkUnifiedSchemaAvailable(db: any): boolean {
     }
 
     // Check for entries table (alternative naming in unified schema)
-    const entriesTableExists = db.prepare(`
+    const entriesTableExists = db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM sqlite_master
       WHERE type='table' AND name='entries'
-    `).get();
+    `
+      )
+      .get();
 
     if (entriesTableExists.count > 0) {
       // Verify it has the entry_type column
-      const hasEntryType = db.prepare(`
+      const hasEntryType = db
+        .prepare(
+          `
         SELECT COUNT(*) as count
         FROM pragma_table_info('entries')
         WHERE name='entry_type'
-      `).get();
+      `
+        )
+        .get();
 
       if (hasEntryType.count > 0) {
         console.log('🔍 Unified schema detected: entries table with entry_type column found');
@@ -114,9 +130,9 @@ function setupCompatibilityHandlers(): void {
         cross_type_relationships: unifiedHandler !== undefined,
         advanced_analytics: unifiedHandler !== undefined,
         legacy_incident_management: true, // Always supported
-        legacy_kb_management: true // Always supported
+        legacy_kb_management: true, // Always supported
       },
-      schema_version: unifiedHandler ? 'unified_v1' : 'legacy_v1'
+      schema_version: unifiedHandler ? 'unified_v1' : 'legacy_v1',
     };
   });
 
@@ -127,7 +143,7 @@ function setupCompatibilityHandlers(): void {
         status: 'not_started',
         can_migrate: true,
         current_schema: 'legacy',
-        target_schema: 'unified'
+        target_schema: 'unified',
       };
     }
 
@@ -135,7 +151,7 @@ function setupCompatibilityHandlers(): void {
       status: 'completed',
       can_migrate: false,
       current_schema: 'unified',
-      target_schema: 'unified'
+      target_schema: 'unified',
     };
   });
 
@@ -145,18 +161,24 @@ function setupCompatibilityHandlers(): void {
       const db = dbManager.db;
 
       // Get all tables
-      const tables = db.prepare(`
+      const tables = db
+        .prepare(
+          `
         SELECT name, sql FROM sqlite_master
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
         ORDER BY name
-      `).all();
+      `
+        )
+        .all();
 
       // Get some basic counts
       const counts: any = {};
 
       for (const table of tables) {
         try {
-          const countResult = db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as any;
+          const countResult = db
+            .prepare(`SELECT COUNT(*) as count FROM ${table.name}`)
+            .get() as any;
           counts[table.name] = countResult.count;
         } catch (error) {
           counts[table.name] = 'error';
@@ -167,13 +189,13 @@ function setupCompatibilityHandlers(): void {
         tables: tables.map(t => ({ name: t.name, sql: t.sql })),
         record_counts: counts,
         schema_type: unifiedHandler ? 'unified' : 'legacy',
-        database_path: dbPath
+        database_path: dbPath,
       };
     } catch (error) {
       console.error('Error getting schema info:', error);
       return {
         error: error.message,
-        schema_type: unifiedHandler ? 'unified' : 'legacy'
+        schema_type: unifiedHandler ? 'unified' : 'legacy',
       };
     }
   });
@@ -272,7 +294,10 @@ function setupLegacyHandlers(): void {
 
       const validStatuses = ['em_revisao', 'aberto', 'em_tratamento', 'resolvido', 'fechado'];
       if (!validStatuses.includes(status)) {
-        return { success: false, error: 'Status inválido. Use: em_revisao, aberto, em_tratamento, resolvido, fechado' };
+        return {
+          success: false,
+          error: 'Status inválido. Use: em_revisao, aberto, em_tratamento, resolvido, fechado',
+        };
       }
 
       const db = knowledgeService.getDatabase();
@@ -281,7 +306,9 @@ function setupLegacyHandlers(): void {
       }
 
       // Update status and log the action
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         UPDATE kb_entries
         SET incident_status = ?,
             updated_at = CURRENT_TIMESTAMP,
@@ -289,13 +316,25 @@ function setupLegacyHandlers(): void {
             resolved_by = CASE WHEN ? = 'resolvido' THEN ? ELSE resolved_by END,
             closed_at = CASE WHEN ? = 'fechado' THEN CURRENT_TIMESTAMP ELSE closed_at END
         WHERE id = ?
-      `).run(status, status, status, userId, status, id);
+      `
+        )
+        .run(status, status, status, userId, status, id);
 
       // Log audit action
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, previous_values, new_values, change_description)
         VALUES (?, 'status_alterado', ?, ?, ?, ?)
-      `).run(id, userId, JSON.stringify({status: 'previous'}), JSON.stringify({status}), `Status alterado para: ${status}`);
+      `
+        )
+        .run(
+          id,
+          userId,
+          JSON.stringify({ status: 'previous' }),
+          JSON.stringify({ status }),
+          `Status alterado para: ${status}`
+        );
 
       return { success: true, message: 'Status do incidente atualizado com sucesso' };
     } catch (error) {
@@ -305,76 +344,121 @@ function setupLegacyHandlers(): void {
   });
 
   // Assign incident to user
-  ipcMain.handle('incident:assign', async (_, id: string, assignedTo: string, assignedBy: string) => {
-    try {
-      if (!id || !assignedTo || !assignedBy) {
-        return { success: false, error: 'ID, usuário atribuído e usuário responsável pela atribuição são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:assign',
+    async (_, id: string, assignedTo: string, assignedBy: string) => {
+      try {
+        if (!id || !assignedTo || !assignedBy) {
+          return {
+            success: false,
+            error: 'ID, usuário atribuído e usuário responsável pela atribuição são obrigatórios',
+          };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
         UPDATE kb_entries
         SET assigned_to = ?,
             updated_at = CURRENT_TIMESTAMP,
             incident_status = CASE WHEN incident_status = 'em_revisao' THEN 'em_tratamento' ELSE incident_status END
         WHERE id = ?
-      `).run(assignedTo, id);
+      `
+          )
+          .run(assignedTo, id);
 
-      // Log audit action
-      await db.db.prepare(`
+        // Log audit action
+        await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, new_values, change_description)
         VALUES (?, 'atribuido', ?, ?, ?)
-      `).run(id, assignedBy, JSON.stringify({assigned_to: assignedTo}), `Incidente atribuído para: ${assignedTo}`);
+      `
+          )
+          .run(
+            id,
+            assignedBy,
+            JSON.stringify({ assigned_to: assignedTo }),
+            `Incidente atribuído para: ${assignedTo}`
+          );
 
-      return { success: true, message: 'Incidente atribuído com sucesso' };
-    } catch (error) {
-      console.error('Incident assignment error:', error);
-      return { success: false, error: 'Erro ao atribuir incidente: ' + error.message };
+        return { success: true, message: 'Incidente atribuído com sucesso' };
+      } catch (error) {
+        console.error('Incident assignment error:', error);
+        return { success: false, error: 'Erro ao atribuir incidente: ' + error.message };
+      }
     }
-  });
+  );
 
   // Add comment to incident
-  ipcMain.handle('incident:addComment', async (_, entryId: string, commentText: string, userId: string, commentType = 'user') => {
-    try {
-      if (!entryId || !commentText || !userId) {
-        return { success: false, error: 'ID do incidente, texto do comentário e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:addComment',
+    async (_, entryId: string, commentText: string, userId: string, commentType = 'user') => {
+      try {
+        if (!entryId || !commentText || !userId) {
+          return {
+            success: false,
+            error: 'ID do incidente, texto do comentário e usuário são obrigatórios',
+          };
+        }
 
-      if (commentText.length > 2000) {
-        return { success: false, error: 'Comentário muito longo. Máximo de 2000 caracteres' };
-      }
+        if (commentText.length > 2000) {
+          return { success: false, error: 'Comentário muito longo. Máximo de 2000 caracteres' };
+        }
 
-      const validTypes = ['user', 'system', 'ai'];
-      if (!validTypes.includes(commentType)) {
-        return { success: false, error: 'Tipo de comentário inválido' };
-      }
+        const validTypes = ['user', 'system', 'ai'];
+        if (!validTypes.includes(commentType)) {
+          return { success: false, error: 'Tipo de comentário inválido' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      const commentResult = await db.db.prepare(`
+        const commentResult = await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_comments (entry_id, comment_text, comment_type, created_by)
         VALUES (?, ?, ?, ?)
-      `).run(entryId, commentText, commentType, userId);
+      `
+          )
+          .run(entryId, commentText, commentType, userId);
 
-      // Log audit action
-      await db.db.prepare(`
+        // Log audit action
+        await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, new_values, change_description)
         VALUES (?, 'comentario_adicionado', ?, ?, ?)
-      `).run(entryId, userId, JSON.stringify({comment_id: commentResult.lastInsertRowid, comment_type: commentType}), 'Comentário adicionado');
+      `
+          )
+          .run(
+            entryId,
+            userId,
+            JSON.stringify({
+              comment_id: commentResult.lastInsertRowid,
+              comment_type: commentType,
+            }),
+            'Comentário adicionado'
+          );
 
-      return { success: true, data: { commentId: commentResult.lastInsertRowid }, message: 'Comentário adicionado com sucesso' };
-    } catch (error) {
-      console.error('Add comment error:', error);
-      return { success: false, error: 'Erro ao adicionar comentário: ' + error.message };
+        return {
+          success: true,
+          data: { commentId: commentResult.lastInsertRowid },
+          message: 'Comentário adicionado com sucesso',
+        };
+      } catch (error) {
+        console.error('Add comment error:', error);
+        return { success: false, error: 'Erro ao adicionar comentário: ' + error.message };
+      }
     }
-  });
+  );
 
   // Get comments for incident
   ipcMain.handle('incident:getComments', async (_, entryId: string) => {
@@ -388,12 +472,16 @@ function setupLegacyHandlers(): void {
         return { success: false, error: 'Serviço de banco de dados não disponível' };
       }
 
-      const comments = await db.db.prepare(`
+      const comments = await db.db
+        .prepare(
+          `
         SELECT id, comment_text, comment_type, created_by, created_at, updated_at
         FROM kb_entry_comments
         WHERE entry_id = ? AND is_active = TRUE
         ORDER BY created_at ASC
-      `).all(entryId);
+      `
+        )
+        .all(entryId);
 
       return { success: true, data: comments };
     } catch (error) {
@@ -414,7 +502,9 @@ function setupLegacyHandlers(): void {
         return { success: false, error: 'Serviço de banco de dados não disponível' };
       }
 
-      const related = await db.db.prepare(`
+      const related = await db.db
+        .prepare(
+          `
         SELECT
           r.related_id,
           r.similarity_score,
@@ -428,7 +518,9 @@ function setupLegacyHandlers(): void {
         JOIN kb_entries k ON r.related_id = k.id
         WHERE r.entry_id = ?
         ORDER BY r.similarity_score DESC
-      `).all(entryId);
+      `
+        )
+        .all(entryId);
 
       return { success: true, data: related };
     } catch (error) {
@@ -449,18 +541,26 @@ function setupLegacyHandlers(): void {
         return { success: false, error: 'Serviço de banco de dados não disponível' };
       }
 
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         UPDATE kb_entries
         SET ai_analysis_requested = TRUE,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(entryId);
+      `
+        )
+        .run(entryId);
 
       // Log audit action
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, change_description)
         VALUES (?, 'analise_ia_solicitada', ?, 'Análise de IA solicitada')
-      `).run(entryId, userId);
+      `
+        )
+        .run(entryId, userId);
 
       return { success: true, message: 'Análise de IA solicitada com sucesso' };
     } catch (error) {
@@ -470,22 +570,26 @@ function setupLegacyHandlers(): void {
   });
 
   // Accept AI solution
-  ipcMain.handle('incident:acceptSolution', async (_, entryId: string, userId: string, rating?: number) => {
-    try {
-      if (!entryId || !userId) {
-        return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:acceptSolution',
+    async (_, entryId: string, userId: string, rating?: number) => {
+      try {
+        if (!entryId || !userId) {
+          return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
+        }
 
-      if (rating && (rating < 1 || rating > 5)) {
-        return { success: false, error: 'Avaliação deve ser entre 1 e 5' };
-      }
+        if (rating && (rating < 1 || rating > 5)) {
+          return { success: false, error: 'Avaliação deve ser entre 1 e 5' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
         UPDATE kb_entries
         SET solution_accepted = TRUE,
             solution_rating = ?,
@@ -494,62 +598,93 @@ function setupLegacyHandlers(): void {
             resolved_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(rating || null, userId, entryId);
+      `
+          )
+          .run(rating || null, userId, entryId);
 
-      // Log audit action
-      await db.db.prepare(`
+        // Log audit action
+        await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, new_values, change_description)
         VALUES (?, 'solucao_aceita', ?, ?, 'Solução aceita e incidente resolvido')
-      `).run(entryId, userId, JSON.stringify({solution_accepted: true, rating: rating || null}));
+      `
+          )
+          .run(
+            entryId,
+            userId,
+            JSON.stringify({ solution_accepted: true, rating: rating || null })
+          );
 
-      return { success: true, message: 'Solução aceita e incidente resolvido com sucesso' };
-    } catch (error) {
-      console.error('Accept solution error:', error);
-      return { success: false, error: 'Erro ao aceitar solução: ' + error.message };
+        return { success: true, message: 'Solução aceita e incidente resolvido com sucesso' };
+      } catch (error) {
+        console.error('Accept solution error:', error);
+        return { success: false, error: 'Erro ao aceitar solução: ' + error.message };
+      }
     }
-  });
+  );
 
   // Reject AI solution
-  ipcMain.handle('incident:rejectSolution', async (_, entryId: string, userId: string, reason?: string) => {
-    try {
-      if (!entryId || !userId) {
-        return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:rejectSolution',
+    async (_, entryId: string, userId: string, reason?: string) => {
+      try {
+        if (!entryId || !userId) {
+          return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
         UPDATE kb_entries
         SET solution_accepted = FALSE,
             ai_analysis_requested = FALSE,
             ai_analysis_completed = FALSE,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(entryId);
+      `
+          )
+          .run(entryId);
 
-      // Add comment with rejection reason if provided
-      if (reason) {
-        await db.db.prepare(`
+        // Add comment with rejection reason if provided
+        if (reason) {
+          await db.db
+            .prepare(
+              `
           INSERT INTO kb_entry_comments (entry_id, comment_text, comment_type, created_by)
           VALUES (?, ?, 'system', ?)
-        `).run(entryId, `Solução rejeitada: ${reason}`, userId);
-      }
+        `
+            )
+            .run(entryId, `Solução rejeitada: ${reason}`, userId);
+        }
 
-      // Log audit action
-      await db.db.prepare(`
+        // Log audit action
+        await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, new_values, change_description)
         VALUES (?, 'solucao_rejeitada', ?, ?, ?)
-      `).run(entryId, userId, JSON.stringify({solution_accepted: false, reason: reason || null}), 'Solução rejeitada');
+      `
+          )
+          .run(
+            entryId,
+            userId,
+            JSON.stringify({ solution_accepted: false, reason: reason || null }),
+            'Solução rejeitada'
+          );
 
-      return { success: true, message: 'Solução rejeitada com sucesso' };
-    } catch (error) {
-      console.error('Reject solution error:', error);
-      return { success: false, error: 'Erro ao rejeitar solução: ' + error.message };
+        return { success: true, message: 'Solução rejeitada com sucesso' };
+      } catch (error) {
+        console.error('Reject solution error:', error);
+        return { success: false, error: 'Erro ao rejeitar solução: ' + error.message };
+      }
     }
-  });
+  );
 
   // Bulk import placeholder
   ipcMain.handle('incident:bulkImport', async (_, data: any[], userId: string) => {
@@ -566,8 +701,8 @@ function setupLegacyHandlers(): void {
         data: {
           imported: 0,
           failed: 0,
-          total: data.length
-        }
+          total: data.length,
+        },
       };
     } catch (error) {
       console.error('Bulk import error:', error);
@@ -576,47 +711,54 @@ function setupLegacyHandlers(): void {
   });
 
   // Get incident queue with filters
-  ipcMain.handle('incident:getQueue', async (_, filters: {
-    status?: string;
-    assignedTo?: string;
-    category?: string;
-    severity?: string;
-    limit?: number;
-    offset?: number;
-  } = {}) => {
-    try {
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+  ipcMain.handle(
+    'incident:getQueue',
+    async (
+      _,
+      filters: {
+        status?: string;
+        assignedTo?: string;
+        category?: string;
+        severity?: string;
+        limit?: number;
+        offset?: number;
+      } = {}
+    ) => {
+      try {
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      let whereClause = 'WHERE 1=1';
-      const params: any[] = [];
+        let whereClause = 'WHERE 1=1';
+        const params: any[] = [];
 
-      if (filters.status) {
-        whereClause += ' AND incident_status = ?';
-        params.push(filters.status);
-      }
+        if (filters.status) {
+          whereClause += ' AND incident_status = ?';
+          params.push(filters.status);
+        }
 
-      if (filters.assignedTo) {
-        whereClause += ' AND assigned_to = ?';
-        params.push(filters.assignedTo);
-      }
+        if (filters.assignedTo) {
+          whereClause += ' AND assigned_to = ?';
+          params.push(filters.assignedTo);
+        }
 
-      if (filters.category) {
-        whereClause += ' AND category = ?';
-        params.push(filters.category);
-      }
+        if (filters.category) {
+          whereClause += ' AND category = ?';
+          params.push(filters.category);
+        }
 
-      if (filters.severity) {
-        whereClause += ' AND severity = ?';
-        params.push(filters.severity);
-      }
+        if (filters.severity) {
+          whereClause += ' AND severity = ?';
+          params.push(filters.severity);
+        }
 
-      const limit = filters.limit || 50;
-      const offset = filters.offset || 0;
+        const limit = filters.limit || 50;
+        const offset = filters.offset || 0;
 
-      const incidents = await db.db.prepare(`
+        const incidents = await db.db
+          .prepare(
+            `
         SELECT
           id, title, problem, category, severity, incident_status,
           assigned_to, created_at, updated_at, created_by
@@ -638,24 +780,29 @@ function setupLegacyHandlers(): void {
           END,
           created_at DESC
         LIMIT ? OFFSET ?
-      `).all(...params, limit, offset);
+      `
+          )
+          .all(...params, limit, offset);
 
-      return { success: true, data: incidents };
-    } catch (error) {
-      console.error('Get incident queue error:', error);
-      return { success: false, error: 'Erro ao buscar fila de incidentes: ' + error.message };
+        return { success: true, data: incidents };
+      } catch (error) {
+        console.error('Get incident queue error:', error);
+        return { success: false, error: 'Erro ao buscar fila de incidentes: ' + error.message };
+      }
     }
-  });
+  );
 
   // Get incident statistics
-  ipcMain.handle('incident:getStats', async (_) => {
+  ipcMain.handle('incident:getStats', async _ => {
     try {
       const db = knowledgeService.getDatabase();
       if (!db) {
         return { success: false, error: 'Serviço de banco de dados não disponível' };
       }
 
-      const stats = await db.db.prepare(`
+      const stats = await db.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as total,
           SUM(CASE WHEN incident_status = 'aberto' THEN 1 ELSE 0 END) as aberto,
@@ -670,59 +817,90 @@ function setupLegacyHandlers(): void {
           SUM(CASE WHEN ai_analysis_requested = TRUE THEN 1 ELSE 0 END) as ai_analysis_requested,
           SUM(CASE WHEN solution_accepted = TRUE THEN 1 ELSE 0 END) as solution_accepted
         FROM kb_entries
-      `).get();
+      `
+        )
+        .get();
 
       return { success: true, data: stats };
     } catch (error) {
       console.error('Get incident stats error:', error);
-      return { success: false, error: 'Erro ao buscar estatísticas de incidentes: ' + error.message };
+      return {
+        success: false,
+        error: 'Erro ao buscar estatísticas de incidentes: ' + error.message,
+      };
     }
   });
 
   // Log action for audit trail
-  ipcMain.handle('incident:logAction', async (_, entryId: string, actionType: string, userId: string, description?: string, metadata?: any) => {
-    try {
-      if (!entryId || !actionType || !userId) {
-        return { success: false, error: 'ID do incidente, tipo de ação e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:logAction',
+    async (
+      _,
+      entryId: string,
+      actionType: string,
+      userId: string,
+      description?: string,
+      metadata?: any
+    ) => {
+      try {
+        if (!entryId || !actionType || !userId) {
+          return {
+            success: false,
+            error: 'ID do incidente, tipo de ação e usuário são obrigatórios',
+          };
+        }
 
-      const validActions = [
-        'criado', 'editado', 'status_alterado', 'atribuido',
-        'comentario_adicionado', 'comentario_removido',
-        'solucao_aceita', 'solucao_rejeitada', 'analise_ia_solicitada',
-        'fechado', 'reaberto', 'duplicado', 'relacionado_adicionado'
-      ];
+        const validActions = [
+          'criado',
+          'editado',
+          'status_alterado',
+          'atribuido',
+          'comentario_adicionado',
+          'comentario_removido',
+          'solucao_aceita',
+          'solucao_rejeitada',
+          'analise_ia_solicitada',
+          'fechado',
+          'reaberto',
+          'duplicado',
+          'relacionado_adicionado',
+        ];
 
-      if (!validActions.includes(actionType)) {
-        return { success: false, error: 'Tipo de ação inválido' };
-      }
+        if (!validActions.includes(actionType)) {
+          return { success: false, error: 'Tipo de ação inválido' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_audit (
           entry_id, action_type, performed_by, change_description,
           new_values, session_id, ip_address
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        entryId,
-        actionType,
-        userId,
-        description || '',
-        metadata ? JSON.stringify(metadata) : null,
-        'ipc-session', // Default session ID
-        '127.0.0.1' // Default local IP
-      );
+      `
+          )
+          .run(
+            entryId,
+            actionType,
+            userId,
+            description || '',
+            metadata ? JSON.stringify(metadata) : null,
+            'ipc-session', // Default session ID
+            '127.0.0.1' // Default local IP
+          );
 
-      return { success: true, message: 'Ação registrada no log de auditoria' };
-    } catch (error) {
-      console.error('Log action error:', error);
-      return { success: false, error: 'Erro ao registrar ação: ' + error.message };
+        return { success: true, message: 'Ação registrada no log de auditoria' };
+      } catch (error) {
+        console.error('Log action error:', error);
+        return { success: false, error: 'Erro ao registrar ação: ' + error.message };
+      }
     }
-  });
+  );
 
   // AI-powered incident operations
 
@@ -743,9 +921,13 @@ function setupLegacyHandlers(): void {
       }
 
       // Get the incident details
-      const incident = await db.db.prepare(`
+      const incident = await db.db
+        .prepare(
+          `
         SELECT * FROM kb_entries WHERE id = ?
-      `).get(entryId);
+      `
+        )
+        .get(entryId);
 
       if (!incident) {
         return { success: false, error: 'Incidente não encontrado' };
@@ -766,18 +948,33 @@ function setupLegacyHandlers(): void {
             inputTokens: { count: 1500, rate: 0.00001, costUSD: 0.015 },
             outputTokens: { count: 1000, rate: 0.00003, costUSD: 0.03 },
             apiOverhead: 0.001,
-            serviceFees: 0.001
-          }
+            serviceFees: 0.001,
+          },
         },
         dataContext: {
           dataFields: [
-            { name: 'título', type: 'string', sensitivity: 'internal', preview: incident.title?.substring(0, 50) },
-            { name: 'problema', type: 'text', sensitivity: 'internal', preview: incident.problem?.substring(0, 100) },
-            { name: 'categoria', type: 'string', sensitivity: 'public', preview: incident.category }
+            {
+              name: 'título',
+              type: 'string',
+              sensitivity: 'internal',
+              preview: incident.title?.substring(0, 50),
+            },
+            {
+              name: 'problema',
+              type: 'text',
+              sensitivity: 'internal',
+              preview: incident.problem?.substring(0, 100),
+            },
+            {
+              name: 'categoria',
+              type: 'string',
+              sensitivity: 'public',
+              preview: incident.category,
+            },
           ],
           dataSizeBytes: JSON.stringify(incident).length,
           containsPII: false,
-          isConfidential: false
+          isConfidential: false,
         },
         fallbackOptions: [
           {
@@ -786,32 +983,36 @@ function setupLegacyHandlers(): void {
             description: 'Usar análise baseada em regras locais sem IA',
             recommended: true,
             performance: { speed: 'high', accuracy: 'medium', coverage: 'medium' },
-            limitations: ['Análise limitada a padrões conhecidos', 'Sem aprendizado contextual']
-          }
-        ]
+            limitations: ['Análise limitada a padrões conhecidos', 'Sem aprendizado contextual'],
+          },
+        ],
       };
 
       // Store the request for authorization
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         INSERT INTO ai_operations (
           operation_id, operation_type, entry_id, user_id,
           estimated_cost, estimated_tokens, status, request_data
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        authRequest.id,
-        'analyze_incident',
-        entryId,
-        userId,
-        authRequest.estimates.estimatedCostUSD,
-        authRequest.estimates.estimatedTokens,
-        'pending_authorization',
-        JSON.stringify(authRequest)
-      );
+      `
+        )
+        .run(
+          authRequest.id,
+          'analyze_incident',
+          entryId,
+          userId,
+          authRequest.estimates.estimatedCostUSD,
+          authRequest.estimates.estimatedTokens,
+          'pending_authorization',
+          JSON.stringify(authRequest)
+        );
 
       return {
         success: true,
         data: { authRequest },
-        message: 'Autorização necessária para análise de IA'
+        message: 'Autorização necessária para análise de IA',
       };
     } catch (error) {
       console.error('Request AI analysis error:', error);
@@ -836,36 +1037,50 @@ function setupLegacyHandlers(): void {
       }
 
       // Get the operation details
-      const operation = await db.db.prepare(`
+      const operation = await db.db
+        .prepare(
+          `
         SELECT * FROM ai_operations WHERE operation_id = ? AND user_id = ?
-      `).get(operationId, userId);
+      `
+        )
+        .get(operationId, userId);
 
       if (!operation || operation.status !== 'authorized') {
         return { success: false, error: 'Operação não autorizada ou não encontrada' };
       }
 
       // Get the incident
-      const incident = await db.db.prepare(`
+      const incident = await db.db
+        .prepare(
+          `
         SELECT * FROM kb_entries WHERE id = ?
-      `).get(operation.entry_id);
+      `
+        )
+        .get(operation.entry_id);
 
       if (!incident) {
         return { success: false, error: 'Incidente não encontrado' };
       }
 
       // Update operation status
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         UPDATE ai_operations
         SET status = 'in_progress', started_at = CURRENT_TIMESTAMP
         WHERE operation_id = ?
-      `).run(operationId);
+      `
+        )
+        .run(operationId);
 
       try {
         // Perform AI analysis
         const analysis: IncidentAnalysisResult = await incidentAIService.analyzeIncident(incident);
 
         // Store the analysis result
-        await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
           UPDATE ai_operations
           SET status = 'completed',
               completed_at = CURRENT_TIMESTAMP,
@@ -873,37 +1088,51 @@ function setupLegacyHandlers(): void {
               actual_tokens = ?,
               actual_cost = ?
           WHERE operation_id = ?
-        `).run(
-          JSON.stringify(analysis),
-          operation.estimated_tokens, // Would be actual tokens from API
-          operation.estimated_cost,   // Would be actual cost from API
-          operationId
-        );
+        `
+          )
+          .run(
+            JSON.stringify(analysis),
+            operation.estimated_tokens, // Would be actual tokens from API
+            operation.estimated_cost, // Would be actual cost from API
+            operationId
+          );
 
         // Update incident with AI analysis flag
-        await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
           UPDATE kb_entries
           SET ai_analysis_completed = TRUE,
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).run(operation.entry_id);
+        `
+          )
+          .run(operation.entry_id);
 
         // Log audit action
-        await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
           INSERT INTO kb_entry_audit (entry_id, action_type, performed_by, change_description, new_values)
           VALUES (?, 'analise_ia_completada', ?, 'Análise de IA completada com sucesso', ?)
-        `).run(operation.entry_id, userId, JSON.stringify({ operation_id: operationId }));
+        `
+          )
+          .run(operation.entry_id, userId, JSON.stringify({ operation_id: operationId }));
 
         return { success: true, data: analysis, message: 'Análise de IA completada com sucesso' };
       } catch (analysisError) {
         // Update operation status on failure
-        await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
           UPDATE ai_operations
           SET status = 'failed',
               completed_at = CURRENT_TIMESTAMP,
               error_message = ?
           WHERE operation_id = ?
-        `).run(analysisError.message, operationId);
+        `
+          )
+          .run(analysisError.message, operationId);
 
         throw analysisError;
       }
@@ -914,155 +1143,190 @@ function setupLegacyHandlers(): void {
   });
 
   // Semantic search for related incidents
-  ipcMain.handle('incident:semanticSearch', async (_, query: string, options: SemanticSearchOptions, userId: string) => {
-    try {
-      if (!query || !userId) {
-        return { success: false, error: 'Consulta de busca e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:semanticSearch',
+    async (_, query: string, options: SemanticSearchOptions, userId: string) => {
+      try {
+        if (!query || !userId) {
+          return { success: false, error: 'Consulta de busca e usuário são obrigatórios' };
+        }
 
-      if (!incidentAIService) {
-        return { success: false, error: 'Serviço de IA não está disponível' };
-      }
+        if (!incidentAIService) {
+          return { success: false, error: 'Serviço de IA não está disponível' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      // Get all incidents for semantic analysis
-      let whereClause = 'WHERE archived = FALSE';
-      const params: any[] = [];
+        // Get all incidents for semantic analysis
+        let whereClause = 'WHERE archived = FALSE';
+        const params: any[] = [];
 
-      if (options.categoryFilter && options.categoryFilter.length > 0) {
-        whereClause += ` AND category IN (${options.categoryFilter.map(() => '?').join(',')})`;
-        params.push(...options.categoryFilter);
-      }
+        if (options.categoryFilter && options.categoryFilter.length > 0) {
+          whereClause += ` AND category IN (${options.categoryFilter.map(() => '?').join(',')})`;
+          params.push(...options.categoryFilter);
+        }
 
-      if (!options.includeResolved) {
-        whereClause += ' AND incident_status NOT IN (?, ?)';
-        params.push('resolvido', 'fechado');
-      }
+        if (!options.includeResolved) {
+          whereClause += ' AND incident_status NOT IN (?, ?)';
+          params.push('resolvido', 'fechado');
+        }
 
-      const incidents = await db.db.prepare(`
+        const incidents = await db.db
+          .prepare(
+            `
         SELECT * FROM kb_entries ${whereClause}
         ORDER BY created_at DESC
         LIMIT 100
-      `).all(...params);
+      `
+          )
+          .all(...params);
 
-      // Create a dummy incident for search
-      const searchIncident = {
-        id: 'search-query',
-        title: query,
-        problem: query,
-        category: '',
-        solution: ''
-      };
+        // Create a dummy incident for search
+        const searchIncident = {
+          id: 'search-query',
+          title: query,
+          problem: query,
+          category: '',
+          solution: '',
+        };
 
-      const relatedIncidents = await incidentAIService.findRelatedIncidents(searchIncident, options);
+        const relatedIncidents = await incidentAIService.findRelatedIncidents(
+          searchIncident,
+          options
+        );
 
-      // Log the search operation
-      await db.db.prepare(`
+        // Log the search operation
+        await db.db
+          .prepare(
+            `
         INSERT INTO search_history (
           query, normalized_query, results_count, user_id,
           search_time_ms, ai_used, timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `).run(
-        query,
-        query.toLowerCase(),
-        relatedIncidents.length,
-        userId,
-        0, // Would measure actual time
-        true
-      );
+      `
+          )
+          .run(
+            query,
+            query.toLowerCase(),
+            relatedIncidents.length,
+            userId,
+            0, // Would measure actual time
+            true
+          );
 
-      return { success: true, data: relatedIncidents };
-    } catch (error) {
-      console.error('Semantic search error:', error);
-      return { success: false, error: 'Erro na busca semântica: ' + error.message };
+        return { success: true, data: relatedIncidents };
+      } catch (error) {
+        console.error('Semantic search error:', error);
+        return { success: false, error: 'Erro na busca semântica: ' + error.message };
+      }
     }
-  });
+  );
 
   // Get AI solution suggestions
-  ipcMain.handle('incident:suggestSolution', async (_, entryId: string, context: any, userId: string) => {
-    try {
-      if (!entryId || !userId) {
-        return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:suggestSolution',
+    async (_, entryId: string, context: any, userId: string) => {
+      try {
+        if (!entryId || !userId) {
+          return { success: false, error: 'ID do incidente e usuário são obrigatórios' };
+        }
 
-      if (!incidentAIService) {
-        return { success: false, error: 'Serviço de IA não está disponível' };
-      }
+        if (!incidentAIService) {
+          return { success: false, error: 'Serviço de IA não está disponível' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      // Get the incident
-      const incident = await db.db.prepare(`
+        // Get the incident
+        const incident = await db.db
+          .prepare(
+            `
         SELECT * FROM kb_entries WHERE id = ?
-      `).get(entryId);
+      `
+          )
+          .get(entryId);
 
-      if (!incident) {
-        return { success: false, error: 'Incidente não encontrado' };
-      }
+        if (!incident) {
+          return { success: false, error: 'Incidente não encontrado' };
+        }
 
-      const suggestions = await incidentAIService.suggestSolution({
-        incident,
-        previousAttempts: context?.previousAttempts || [],
-        context: context?.additionalContext || '',
-        urgency: context?.urgency || 'media'
-      });
+        const suggestions = await incidentAIService.suggestSolution({
+          incident,
+          previousAttempts: context?.previousAttempts || [],
+          context: context?.additionalContext || '',
+          urgency: context?.urgency || 'media',
+        });
 
-      // Add comment with AI suggestions
-      await db.db.prepare(`
+        // Add comment with AI suggestions
+        await db.db
+          .prepare(
+            `
         INSERT INTO kb_entry_comments (entry_id, comment_text, comment_type, created_by)
         VALUES (?, ?, 'ai', ?)
-      `).run(
-        entryId,
-        `IA sugeriu ${suggestions.length} possíveis soluções`,
-        userId
-      );
+      `
+          )
+          .run(entryId, `IA sugeriu ${suggestions.length} possíveis soluções`, userId);
 
-      return { success: true, data: suggestions };
-    } catch (error) {
-      console.error('Suggest solution error:', error);
-      return { success: false, error: 'Erro ao sugerir soluções: ' + error.message };
+        return { success: true, data: suggestions };
+      } catch (error) {
+        console.error('Suggest solution error:', error);
+        return { success: false, error: 'Erro ao sugerir soluções: ' + error.message };
+      }
     }
-  });
+  );
 
   // Authorize AI operation
-  ipcMain.handle('incident:authorizeAI', async (_, operationId: string, decision: string, userId: string) => {
-    try {
-      if (!operationId || !decision || !userId) {
-        return { success: false, error: 'ID da operação, decisão e usuário são obrigatórios' };
-      }
+  ipcMain.handle(
+    'incident:authorizeAI',
+    async (_, operationId: string, decision: string, userId: string) => {
+      try {
+        if (!operationId || !decision || !userId) {
+          return { success: false, error: 'ID da operação, decisão e usuário são obrigatórios' };
+        }
 
-      const validDecisions = ['approved', 'denied', 'local_only'];
-      if (!validDecisions.includes(decision)) {
-        return { success: false, error: 'Decisão inválida' };
-      }
+        const validDecisions = ['approved', 'denied', 'local_only'];
+        if (!validDecisions.includes(decision)) {
+          return { success: false, error: 'Decisão inválida' };
+        }
 
-      const db = knowledgeService.getDatabase();
-      if (!db) {
-        return { success: false, error: 'Serviço de banco de dados não disponível' };
-      }
+        const db = knowledgeService.getDatabase();
+        if (!db) {
+          return { success: false, error: 'Serviço de banco de dados não disponível' };
+        }
 
-      const newStatus = decision === 'approved' ? 'authorized' :
-                       decision === 'denied' ? 'denied' : 'local_fallback';
+        const newStatus =
+          decision === 'approved'
+            ? 'authorized'
+            : decision === 'denied'
+              ? 'denied'
+              : 'local_fallback';
 
-      await db.db.prepare(`
+        await db.db
+          .prepare(
+            `
         UPDATE ai_operations
         SET status = ?, authorized_by = ?, authorized_at = CURRENT_TIMESTAMP
         WHERE operation_id = ?
-      `).run(newStatus, userId, operationId);
+      `
+          )
+          .run(newStatus, userId, operationId);
 
-      return { success: true, message: `Operação ${decision === 'approved' ? 'autorizada' : 'negada'} com sucesso` };
-    } catch (error) {
-      console.error('Authorize AI error:', error);
-      return { success: false, error: 'Erro ao autorizar operação de IA: ' + error.message };
+        return {
+          success: true,
+          message: `Operação ${decision === 'approved' ? 'autorizada' : 'negada'} com sucesso`,
+        };
+      } catch (error) {
+        console.error('Authorize AI error:', error);
+        return { success: false, error: 'Erro ao autorizar operação de IA: ' + error.message };
+      }
     }
-  });
+  );
 
   // AI Settings handlers
   ipcMain.handle('settings:get-ai', async () => {
@@ -1074,21 +1338,25 @@ function setupLegacyHandlers(): void {
           autoApproveLimit: '0.01',
           dailyBudget: '5.00',
           monthlyBudget: '100.00',
-          requireAuth: true
+          requireAuth: true,
         };
       }
 
       // Get AI preferences from database
-      const preferences = await db.db.prepare(`
+      const preferences = await db.db
+        .prepare(
+          `
         SELECT * FROM ai_preferences WHERE user_id = 'system'
-      `).get();
+      `
+        )
+        .get();
 
       return {
         apiKey: process.env.GEMINI_API_KEY || preferences?.api_key || '',
         autoApproveLimit: preferences?.auto_approve_limit || '0.01',
         dailyBudget: preferences?.daily_budget || '5.00',
         monthlyBudget: preferences?.monthly_budget || '100.00',
-        requireAuth: preferences?.require_auth !== false
+        requireAuth: preferences?.require_auth !== false,
       };
     } catch (error) {
       console.error('Error getting AI settings:', error);
@@ -1104,10 +1372,14 @@ function setupLegacyHandlers(): void {
       }
 
       // Guardar API key na base de dados
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO ai_preferences (user_id, api_key, updated_at)
         VALUES ('system', ?, CURRENT_TIMESTAMP)
-      `).run(apiKey);
+      `
+        )
+        .run(apiKey);
 
       // Também definir como variável de ambiente para o serviço
       process.env.GEMINI_API_KEY = apiKey;
@@ -1132,16 +1404,20 @@ function setupLegacyHandlers(): void {
         return { success: false, error: 'Database não disponível' };
       }
 
-      await db.db.prepare(`
+      await db.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO ai_preferences
         (user_id, auto_approve_limit, daily_budget, monthly_budget, require_auth, updated_at)
         VALUES ('system', ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `).run(
-        budgets.autoApproveLimit,
-        budgets.dailyBudget,
-        budgets.monthlyBudget,
-        budgets.requireAuth ? 1 : 0
-      );
+      `
+        )
+        .run(
+          budgets.autoApproveLimit,
+          budgets.dailyBudget,
+          budgets.monthlyBudget,
+          budgets.requireAuth ? 1 : 0
+        );
 
       return { success: true };
     } catch (error) {

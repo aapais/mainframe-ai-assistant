@@ -27,7 +27,7 @@ class MockKnowledgeBaseService {
       usage_count: 45,
       success_count: 40,
       failure_count: 5,
-      version: 1
+      version: 1,
     },
     {
       id: '2',
@@ -42,13 +42,13 @@ class MockKnowledgeBaseService {
       usage_count: 32,
       success_count: 28,
       failure_count: 4,
-      version: 1
-    }
+      version: 1,
+    },
   ];
 
   async list(options: any = {}) {
     return {
-      data: this.entries.slice(0, options.limit || 10)
+      data: this.entries.slice(0, options.limit || 10),
     };
   }
 
@@ -98,7 +98,7 @@ describe('Enhanced Export/Import Services', () => {
     test('should validate export options', () => {
       const validation = services.export.validateOptions('json', {
         includeMetrics: true,
-        format: 'full'
+        format: 'full',
       });
 
       expect(validation.valid).toBe(true);
@@ -107,7 +107,7 @@ describe('Enhanced Export/Import Services', () => {
 
     test('should handle Avro format requirement for schema', () => {
       const validation = services.export.validateOptions('avro', {});
-      
+
       // Should warn about missing schema
       expect(validation.warnings.length).toBeGreaterThan(0);
     });
@@ -134,7 +134,7 @@ describe('Enhanced Export/Import Services', () => {
     test('should convert data to JSON', async () => {
       const data = await kbService.list();
       const result = await services.converter.convert(data.data, 'json');
-      
+
       expect(typeof result).toBe('string');
       const parsed = JSON.parse(result as string);
       expect(parsed).toHaveProperty('metadata');
@@ -144,7 +144,7 @@ describe('Enhanced Export/Import Services', () => {
     test('should convert data to CSV', async () => {
       const data = await kbService.list();
       const result = await services.converter.convert(data.data, 'csv');
-      
+
       expect(typeof result).toBe('string');
       expect(result).toContain('id,title,problem');
     });
@@ -152,7 +152,7 @@ describe('Enhanced Export/Import Services', () => {
     test('should convert data to XML', async () => {
       const data = await kbService.list();
       const result = await services.converter.convert(data.data, 'xml');
-      
+
       expect(typeof result).toBe('string');
       expect(result).toContain('<?xml version="1.0"');
       expect(result).toContain('<knowledgebase');
@@ -160,7 +160,7 @@ describe('Enhanced Export/Import Services', () => {
 
     test('should validate format conversion compatibility', () => {
       const compatibility = services.converter.validateConversion('json', 'csv', 1000);
-      
+
       expect(compatibility.compatible).toBe(true);
       expect(Array.isArray(compatibility.warnings)).toBe(true);
       expect(Array.isArray(compatibility.limitations)).toBe(true);
@@ -186,12 +186,12 @@ describe('Enhanced Export/Import Services', () => {
       const data = await kbService.list();
       const transformed = await services.transformer.transform(data.data, {
         format: 'minimal',
-        includeMetrics: false
+        includeMetrics: false,
       });
 
       expect(Array.isArray(transformed)).toBe(true);
       expect(transformed.length).toBe(data.data.length);
-      
+
       // Should remove metrics in minimal format
       if (transformed.length > 0) {
         expect(transformed[0]).not.toHaveProperty('usage_count');
@@ -206,22 +206,22 @@ describe('Enhanced Export/Import Services', () => {
           summary: 'Test Problem',
           description: 'Test problem description',
           resolution: 'Test solution',
-          issuetype: 'Bug'
-        }
+          issuetype: 'Bug',
+        },
       ];
 
       const transformed = await services.transformer.transformForImport(importData, {
         fieldMappings: {
-          'summary': 'title',
-          'description': 'problem',
-          'resolution': 'solution',
-          'issuetype': 'category'
-        }
+          summary: 'title',
+          description: 'problem',
+          resolution: 'solution',
+          issuetype: 'category',
+        },
       });
 
       expect(Array.isArray(transformed)).toBe(true);
       expect(transformed.length).toBe(1);
-      
+
       const entry = transformed[0];
       expect(entry).toHaveProperty('title', 'Test Problem');
       expect(entry).toHaveProperty('problem', 'Test problem description');
@@ -234,14 +234,14 @@ describe('Enhanced Export/Import Services', () => {
           title: 'Sample Entry',
           problem: 'Sample problem',
           solution: 'Sample solution',
-          category: 'VSAM'
-        }
+          category: 'VSAM',
+        },
       ];
 
       const compatibility = services.transformer.validateTransformation(sampleData, {
         fieldMappings: {
-          'title': 'summary'
-        }
+          title: 'summary',
+        },
       });
 
       expect(compatibility.compatible).toBe(true);
@@ -251,10 +251,10 @@ describe('Enhanced Export/Import Services', () => {
 
     test('should get available pipelines', () => {
       const pipelines = services.transformer.getAvailablePipelines();
-      
+
       expect(Array.isArray(pipelines)).toBe(true);
       expect(pipelines.length).toBeGreaterThan(0);
-      
+
       pipelines.forEach(pipeline => {
         expect(pipeline).toHaveProperty('id');
         expect(pipeline).toHaveProperty('name');
@@ -274,11 +274,11 @@ describe('Enhanced Export/Import Services', () => {
         problem: 'This is a valid problem description with sufficient detail',
         solution: 'This is a valid solution with clear steps',
         category: 'VSAM',
-        tags: ['valid', 'test']
+        tags: ['valid', 'test'],
       };
 
       const validation = await services.validator.validateRecord(validRecord, 0);
-      
+
       expect(validation.valid).toBe(true);
       expect(validation.issues.filter(i => i.level === 'error')).toHaveLength(0);
     });
@@ -289,11 +289,11 @@ describe('Enhanced Export/Import Services', () => {
         problem: 'Short', // Too short
         solution: '', // Empty
         category: 'InvalidCategory', // Invalid
-        tags: 'not-an-array' // Wrong type
+        tags: 'not-an-array', // Wrong type
       };
 
       const validation = await services.validator.validateRecord(invalidRecord, 0);
-      
+
       expect(validation.valid).toBe(false);
       expect(validation.issues.filter(i => i.level === 'error').length).toBeGreaterThan(0);
     });
@@ -304,23 +304,23 @@ describe('Enhanced Export/Import Services', () => {
           title: 'Valid Entry',
           problem: 'Valid problem description',
           solution: 'Valid solution',
-          category: 'VSAM'
+          category: 'VSAM',
         },
         {
           title: 'Invalid', // Issues
           problem: 'Short',
           solution: '',
-          category: 'BadCategory'
-        }
+          category: 'BadCategory',
+        },
       ];
 
       const validation = await services.validator.validateImportData(testData);
-      
+
       expect(validation).toHaveProperty('valid');
       expect(validation).toHaveProperty('errors');
       expect(validation).toHaveProperty('warnings');
       expect(validation).toHaveProperty('stats');
-      
+
       expect(validation.stats?.totalRecords).toBe(2);
       expect(validation.stats?.validRecords).toBe(1);
       expect(validation.stats?.invalidRecords).toBe(1);
@@ -333,25 +333,25 @@ describe('Enhanced Export/Import Services', () => {
           problem: 'Complete problem',
           solution: 'Complete solution',
           category: 'VSAM',
-          created_at: new Date()
+          created_at: new Date(),
         },
         {
           title: 'Incomplete Entry',
           problem: '',
           solution: 'Solution only',
-          category: 'DB2'
-        }
+          category: 'DB2',
+        },
       ];
 
       const metrics = await services.validator.getDataQualityMetrics(testData);
-      
+
       expect(metrics).toHaveProperty('completeness');
       expect(metrics).toHaveProperty('accuracy');
       expect(metrics).toHaveProperty('consistency');
       expect(metrics).toHaveProperty('uniqueness');
       expect(metrics).toHaveProperty('timeliness');
       expect(metrics).toHaveProperty('validity');
-      
+
       expect(metrics.completeness).toBeGreaterThan(0);
       expect(metrics.completeness).toBeLessThanOrEqual(100);
     });
@@ -362,7 +362,7 @@ describe('Enhanced Export/Import Services', () => {
         'Bad',
         'Title too short'
       );
-      
+
       expect(Array.isArray(suggestions)).toBe(true);
       expect(suggestions.length).toBeGreaterThan(0);
       expect(suggestions[0]).toContain('5-200 characters');
@@ -377,16 +377,13 @@ describe('Enhanced Export/Import Services', () => {
     test('should process batch data', async () => {
       const testData = Array.from({ length: 10 }, (_, i) => ({
         id: i + 1,
-        data: `item-${i + 1}`
+        data: `item-${i + 1}`,
       }));
 
-      const result = await services.batchProcessor.processBatch(
-        testData,
-        async (batch) => {
-          // Simulate processing
-          return batch.map(item => ({ ...item, processed: true }));
-        }
-      );
+      const result = await services.batchProcessor.processBatch(testData, async batch => {
+        // Simulate processing
+        return batch.map(item => ({ ...item, processed: true }));
+      });
 
       expect(result.data).toHaveLength(10);
       expect(result.totalProcessed).toBe(10);
@@ -398,12 +395,12 @@ describe('Enhanced Export/Import Services', () => {
       const testData = [
         { id: 1, valid: true },
         { id: 2, valid: false }, // This will cause an error
-        { id: 3, valid: true }
+        { id: 3, valid: true },
       ];
 
       const result = await services.batchProcessor.processBatch(
         testData,
-        async (batch) => {
+        async batch => {
           return batch.map(item => {
             if (!item.valid) {
               throw new Error('Invalid item');
@@ -412,7 +409,7 @@ describe('Enhanced Export/Import Services', () => {
           });
         },
         undefined, // no progress callback
-        (error) => {
+        error => {
           expect(error.error).toContain('Invalid item');
           expect(error.recoverable).toBe(true);
         }
@@ -424,12 +421,12 @@ describe('Enhanced Export/Import Services', () => {
 
     test('should get processor statistics', () => {
       const stats = services.batchProcessor.getStatistics();
-      
+
       expect(stats).toHaveProperty('isProcessing');
       expect(stats).toHaveProperty('activeWorkers');
       expect(stats).toHaveProperty('checkpointCount');
       expect(stats).toHaveProperty('memoryUsage');
-      
+
       expect(typeof stats.isProcessing).toBe('boolean');
       expect(typeof stats.activeWorkers).toBe('number');
       expect(typeof stats.checkpointCount).toBe('number');
@@ -439,7 +436,7 @@ describe('Enhanced Export/Import Services', () => {
   describe('ServiceFactory', () => {
     test('should create complete service set', () => {
       const services = ExportImportServiceFactory.createCompleteService(kbService);
-      
+
       expect(services).toHaveProperty('export');
       expect(services).toHaveProperty('import');
       expect(services).toHaveProperty('converter');
@@ -455,7 +452,7 @@ describe('Enhanced Export/Import Services', () => {
       const transformer = ExportImportServiceFactory.createDataTransformer();
       const validator = ExportImportServiceFactory.createValidationService();
       const batchProcessor = ExportImportServiceFactory.createBatchProcessor();
-      
+
       expect(exportService).toBeInstanceOf(ExportService);
       expect(importService).toBeInstanceOf(ImportService);
       expect(converter).toBeInstanceOf(FormatConverter);
@@ -469,24 +466,24 @@ describe('Enhanced Export/Import Services', () => {
     test('should perform complete export-import cycle', async () => {
       // This would require actual file operations
       // For now, we'll test the data flow
-      
+
       const data = await kbService.list();
-      
+
       // Transform for export
       const exportData = await services.transformer.transform(data.data, {
         format: 'full',
-        includeMetrics: true
+        includeMetrics: true,
       });
-      
+
       // Convert to JSON
       const jsonData = await services.converter.convert(exportData, 'json');
-      
+
       // Parse back from JSON
       const parsedData = await services.converter.parse(jsonData, 'json');
-      
+
       // Transform for import
       const importData = await services.transformer.transformForImport(parsedData);
-      
+
       expect(importData).toHaveLength(data.data.length);
       expect(importData[0]).toHaveProperty('title');
       expect(importData[0]).toHaveProperty('problem');
@@ -495,19 +492,19 @@ describe('Enhanced Export/Import Services', () => {
 
     test('should handle format conversion pipeline', async () => {
       const data = await kbService.list();
-      
+
       // JSON -> CSV -> JSON conversion
       const jsonData = await services.converter.convert(data.data, 'json');
       const csvData = await services.converter.convert(data.data, 'csv');
-      
+
       expect(typeof jsonData).toBe('string');
       expect(typeof csvData).toBe('string');
       expect(csvData).toContain('id,title,problem');
-      
+
       // Parse back
       const parsedJson = await services.converter.parse(jsonData, 'json');
       const parsedCsv = await services.converter.parse(csvData, 'csv');
-      
+
       expect(Array.isArray(parsedJson)).toBe(true);
       expect(Array.isArray(parsedCsv)).toBe(true);
     });

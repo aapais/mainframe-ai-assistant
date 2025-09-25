@@ -1,6 +1,6 @@
 /**
  * Alerting Engine for Search Performance Monitoring
- * 
+ *
  * Comprehensive alerting system with configurable rules,
  * escalation policies, and multiple notification channels.
  */
@@ -15,22 +15,22 @@ export interface AlertRule {
   name: string;
   description: string;
   enabled: boolean;
-  
+
   // Condition
   metric: string;
   operator: '>' | '<' | '>=' | '<=' | '==' | '!=';
   threshold: number;
   duration: number; // milliseconds
-  
+
   // Severity and actions
   severity: 'info' | 'warning' | 'critical';
   channels: string[];
   escalation?: EscalationPolicy;
-  
+
   // Timing
   cooldown: number; // milliseconds between similar alerts
   schedule?: AlertSchedule;
-  
+
   // Metadata
   tags: string[];
   runbook?: string;
@@ -58,25 +58,25 @@ export interface AlertSchedule {
 export interface Alert {
   id: string;
   rule_id: string;
-  
+
   // Alert details
   message: string;
   severity: 'info' | 'warning' | 'critical';
   metric: string;
   current_value: number;
   threshold: number;
-  
+
   // Status
   status: 'active' | 'acknowledged' | 'resolved';
   acknowledged_by?: string;
   acknowledged_at?: Date;
   resolved_at?: Date;
-  
+
   // Timing
   triggered_at: Date;
   last_notification: Date;
   notification_count: number;
-  
+
   // Context
   query?: string;
   tags: string[];
@@ -99,31 +99,31 @@ export class AlertingEngine extends EventEmitter {
   private db: Database.Database;
   private searchMonitor: SearchPerformanceMonitor;
   private performanceMonitor: PerformanceMonitor;
-  
+
   private rules: Map<string, AlertRule> = new Map();
   private channels: Map<string, NotificationChannel> = new Map();
   private activeAlerts: Map<string, Alert> = new Map();
   private lastNotifications: Map<string, number> = new Map();
-  
+
   private evaluationInterval = 15000; // 15 seconds
   private evaluationTimer?: ReturnType<typeof setTimeout>;
-  
+
   constructor(
     database: Database.Database,
     searchMonitor: SearchPerformanceMonitor,
     performanceMonitor: PerformanceMonitor
   ) {
     super();
-    
+
     this.db = database;
     this.searchMonitor = searchMonitor;
     this.performanceMonitor = performanceMonitor;
-    
+
     this.initializeAlertingTables();
     this.loadDefaultRules();
     this.loadDefaultChannels();
     this.startEvaluation();
-    
+
     console.log('🚨 Alerting engine initialized');
   }
 
@@ -136,12 +136,12 @@ export class AlertingEngine extends EventEmitter {
       id,
       created_at: new Date(),
       updated_at: new Date(),
-      ...rule
+      ...rule,
     };
-    
+
     this.rules.set(id, fullRule);
     this.storeRule(fullRule);
-    
+
     console.log(`✅ Alert rule added: ${rule.name}`);
     return id;
   }
@@ -154,16 +154,16 @@ export class AlertingEngine extends EventEmitter {
     if (!rule) {
       throw new Error(`Alert rule ${id} not found`);
     }
-    
+
     const updatedRule = {
       ...rule,
       ...updates,
-      updated_at: new Date()
+      updated_at: new Date(),
     };
-    
+
     this.rules.set(id, updatedRule);
     this.storeRule(updatedRule);
-    
+
     console.log(`✅ Alert rule updated: ${rule.name}`);
   }
 
@@ -175,10 +175,10 @@ export class AlertingEngine extends EventEmitter {
     if (!rule) {
       throw new Error(`Alert rule ${id} not found`);
     }
-    
+
     this.rules.delete(id);
     this.db.prepare('DELETE FROM alert_rules WHERE id = ?').run(id);
-    
+
     console.log(`🗑️ Alert rule deleted: ${rule.name}`);
   }
 
@@ -189,12 +189,12 @@ export class AlertingEngine extends EventEmitter {
     const id = this.generateId();
     const fullChannel: NotificationChannel = {
       id,
-      ...channel
+      ...channel,
     };
-    
+
     this.channels.set(id, fullChannel);
     this.storeChannel(fullChannel);
-    
+
     console.log(`✅ Notification channel added: ${channel.name}`);
     return id;
   }
@@ -217,8 +217,7 @@ export class AlertingEngine extends EventEmitter {
    * Get active alerts
    */
   getActiveAlerts(): Alert[] {
-    return Array.from(this.activeAlerts.values())
-      .filter(alert => alert.status === 'active');
+    return Array.from(this.activeAlerts.values()).filter(alert => alert.status === 'active');
   }
 
   /**
@@ -229,14 +228,14 @@ export class AlertingEngine extends EventEmitter {
     if (!alert) {
       throw new Error(`Alert ${alertId} not found`);
     }
-    
+
     alert.status = 'acknowledged';
     alert.acknowledged_by = acknowledgedBy;
     alert.acknowledged_at = new Date();
-    
+
     this.updateAlert(alert);
     this.emit('alert-acknowledged', alert);
-    
+
     console.log(`✅ Alert acknowledged: ${alert.message}`);
   }
 
@@ -248,14 +247,14 @@ export class AlertingEngine extends EventEmitter {
     if (!alert) {
       throw new Error(`Alert ${alertId} not found`);
     }
-    
+
     alert.status = 'resolved';
     alert.resolved_at = new Date();
-    
+
     this.updateAlert(alert);
     this.activeAlerts.delete(alertId);
     this.emit('alert-resolved', alert);
-    
+
     console.log(`✅ Alert resolved: ${alert.message}`);
   }
 
@@ -267,7 +266,7 @@ export class AlertingEngine extends EventEmitter {
     if (!channel) {
       throw new Error(`Channel ${channelId} not found`);
     }
-    
+
     const testAlert: Alert = {
       id: 'test',
       rule_id: 'test',
@@ -281,9 +280,9 @@ export class AlertingEngine extends EventEmitter {
       last_notification: new Date(),
       notification_count: 1,
       tags: ['test'],
-      context: {}
+      context: {},
     };
-    
+
     await this.sendNotification(channel, testAlert);
     console.log(`📧 Test notification sent to ${channel.name}`);
   }
@@ -301,22 +300,30 @@ export class AlertingEngine extends EventEmitter {
   } {
     const activeAlerts = this.getActiveAlerts();
     const last24h = Date.now() - 24 * 60 * 60 * 1000;
-    
+
     // Get alerts from last 24h from database
-    const alertsLast24h = this.db.prepare(`
+    const alertsLast24h = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM alerts 
       WHERE triggered_at > datetime('now', '-24 hours')
-    `).get() as { count: number };
-    
+    `
+      )
+      .get() as { count: number };
+
     // Top alert metrics
-    const topMetrics = this.db.prepare(`
+    const topMetrics = this.db
+      .prepare(
+        `
       SELECT metric, COUNT(*) as count FROM alerts 
       WHERE triggered_at > datetime('now', '-7 days')
       GROUP BY metric 
       ORDER BY count DESC 
       LIMIT 5
-    `).all() as Array<{ metric: string; count: number }>;
-    
+    `
+      )
+      .all() as Array<{ metric: string; count: number }>;
+
     return {
       totalRules: this.rules.size,
       enabledRules: Array.from(this.rules.values()).filter(r => r.enabled).length,
@@ -326,8 +333,8 @@ export class AlertingEngine extends EventEmitter {
       channelHealth: Array.from(this.channels.values()).map(channel => ({
         name: channel.name,
         status: channel.enabled ? 'enabled' : 'disabled',
-        lastUsed: this.getChannelLastUsed(channel.id)
-      }))
+        lastUsed: this.getChannelLastUsed(channel.id),
+      })),
     };
   }
 
@@ -337,27 +344,26 @@ export class AlertingEngine extends EventEmitter {
     try {
       const currentMetrics = this.searchMonitor.getCurrentMetrics();
       const performanceStatus = this.performanceMonitor.getRealTimeStatus();
-      
+
       if (!currentMetrics) {
         return; // No metrics available
       }
-      
+
       // Combine metrics for evaluation
       const allMetrics = {
         ...currentMetrics,
         memoryUsage: performanceStatus.memoryUsage,
         currentLoad: performanceStatus.currentLoad,
-        isHealthy: performanceStatus.isHealthy
+        isHealthy: performanceStatus.isHealthy,
       };
-      
+
       for (const rule of this.rules.values()) {
         if (!rule.enabled || !this.isRuleScheduleActive(rule)) {
           continue;
         }
-        
+
         await this.evaluateRule(rule, allMetrics);
       }
-      
     } catch (error) {
       console.error('Error evaluating alert rules:', error);
     }
@@ -368,10 +374,10 @@ export class AlertingEngine extends EventEmitter {
     if (metricValue === undefined) {
       return; // Metric not available
     }
-    
+
     const conditionMet = this.evaluateCondition(metricValue, rule.operator, rule.threshold);
     const existingAlert = this.findActiveAlert(rule.id);
-    
+
     if (conditionMet && !existingAlert) {
       // New alert condition
       await this.triggerAlert(rule, metricValue, metrics);
@@ -383,7 +389,7 @@ export class AlertingEngine extends EventEmitter {
       existingAlert.current_value = metricValue;
       existingAlert.context = { ...metrics };
       this.updateAlert(existingAlert);
-      
+
       // Check for escalation
       await this.checkEscalation(existingAlert, rule);
     }
@@ -404,15 +410,15 @@ export class AlertingEngine extends EventEmitter {
       notification_count: 0,
       tags: rule.tags,
       context: { ...metrics },
-      query: metrics.query || undefined
+      query: metrics.query || undefined,
     };
-    
+
     this.activeAlerts.set(alert.id, alert);
     this.storeAlert(alert);
-    
+
     // Send notifications
     await this.notifyChannels(rule.channels, alert);
-    
+
     this.emit('alert-triggered', alert);
     console.log(`🚨 Alert triggered: ${alert.message}`);
   }
@@ -423,7 +429,7 @@ export class AlertingEngine extends EventEmitter {
       if (!channel || !channel.enabled) {
         continue;
       }
-      
+
       try {
         await this.sendNotification(channel, alert);
         alert.notification_count++;
@@ -432,7 +438,7 @@ export class AlertingEngine extends EventEmitter {
         console.error(`Failed to send notification to ${channel.name}:`, error);
       }
     }
-    
+
     this.updateAlert(alert);
   }
 
@@ -442,7 +448,7 @@ export class AlertingEngine extends EventEmitter {
       console.warn(`Rate limit exceeded for channel ${channel.name}`);
       return;
     }
-    
+
     switch (channel.type) {
       case 'console':
         this.sendConsoleNotification(alert);
@@ -459,16 +465,18 @@ export class AlertingEngine extends EventEmitter {
       default:
         console.warn(`Unsupported channel type: ${channel.type}`);
     }
-    
+
     this.recordNotification(channel.id);
   }
 
   private sendConsoleNotification(alert: Alert): void {
-    const prefix = alert.severity === 'critical' ? '🔴' : 
-                  alert.severity === 'warning' ? '🟡' : '🔵';
-    
+    const prefix =
+      alert.severity === 'critical' ? '🔴' : alert.severity === 'warning' ? '🟡' : '🔵';
+
     console.log(`${prefix} [${alert.severity.toUpperCase()}] ${alert.message}`);
-    console.log(`   Metric: ${alert.metric} = ${alert.current_value} (threshold: ${alert.threshold})`);
+    console.log(
+      `   Metric: ${alert.metric} = ${alert.current_value} (threshold: ${alert.threshold})`
+    );
     console.log(`   Time: ${alert.triggered_at.toISOString()}`);
   }
 
@@ -482,9 +490,9 @@ export class AlertingEngine extends EventEmitter {
       metric: alert.metric,
       current_value: alert.current_value,
       threshold: alert.threshold,
-      context: alert.context
+      context: alert.context,
     };
-    
+
     const logFile = channel.config.file_path || './alerts.log';
     await fs.appendFile(logFile, JSON.stringify(logEntry) + '\n');
   }
@@ -499,18 +507,18 @@ export class AlertingEngine extends EventEmitter {
       threshold: alert.threshold,
       triggered_at: alert.triggered_at.toISOString(),
       tags: alert.tags,
-      context: alert.context
+      context: alert.context,
     };
-    
+
     const response = await fetch(channel.config.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...channel.config.headers
+        ...channel.config.headers,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Webhook failed: ${response.status} ${response.statusText}`);
     }
@@ -523,16 +531,17 @@ export class AlertingEngine extends EventEmitter {
 
   private checkRateLimit(channel: NotificationChannel): boolean {
     if (!channel.rate_limit) return true;
-    
+
     const now = Date.now();
     const key = `${channel.id}_notifications`;
     const lastCheck = this.lastNotifications.get(key) || 0;
-    
+
     // Simple rate limiting - would need more sophisticated implementation for production
-    if (now - lastCheck < 60000) { // 1 minute
+    if (now - lastCheck < 60000) {
+      // 1 minute
       return false;
     }
-    
+
     return true;
   }
 
@@ -548,7 +557,7 @@ export class AlertingEngine extends EventEmitter {
   private getMetricValue(metrics: any, metricPath: string): number | undefined {
     const parts = metricPath.split('.');
     let value = metrics;
-    
+
     for (const part of parts) {
       if (value && typeof value === 'object' && part in value) {
         value = value[part];
@@ -556,34 +565,42 @@ export class AlertingEngine extends EventEmitter {
         return undefined;
       }
     }
-    
+
     return typeof value === 'number' ? value : undefined;
   }
 
   private evaluateCondition(value: number, operator: string, threshold: number): boolean {
     switch (operator) {
-      case '>': return value > threshold;
-      case '<': return value < threshold;
-      case '>=': return value >= threshold;
-      case '<=': return value <= threshold;
-      case '==': return value === threshold;
-      case '!=': return value !== threshold;
-      default: return false;
+      case '>':
+        return value > threshold;
+      case '<':
+        return value < threshold;
+      case '>=':
+        return value >= threshold;
+      case '<=':
+        return value <= threshold;
+      case '==':
+        return value === threshold;
+      case '!=':
+        return value !== threshold;
+      default:
+        return false;
     }
   }
 
   private findActiveAlert(ruleId: string): Alert | undefined {
-    return Array.from(this.activeAlerts.values())
-      .find(alert => alert.rule_id === ruleId && alert.status === 'active');
+    return Array.from(this.activeAlerts.values()).find(
+      alert => alert.rule_id === ruleId && alert.status === 'active'
+    );
   }
 
   private isRuleScheduleActive(rule: AlertRule): boolean {
     if (!rule.schedule) return true;
-    
+
     const now = new Date();
     const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     const currentTime = now.toTimeString().slice(0, 5);
-    
+
     return rule.schedule.active_periods.some(period => {
       const isDayActive = period.days.includes(currentDay);
       const isTimeActive = currentTime >= period.start_time && currentTime <= period.end_time;
@@ -593,14 +610,16 @@ export class AlertingEngine extends EventEmitter {
 
   private async checkEscalation(alert: Alert, rule: AlertRule): Promise<void> {
     if (!rule.escalation) return;
-    
+
     const timeSinceTriggered = Date.now() - alert.triggered_at.getTime();
-    
+
     for (const stage of rule.escalation.stages) {
       if (timeSinceTriggered >= stage.delay) {
         // Check if this stage was already notified
         // For simplicity, we'll just log escalation
-        console.log(`📈 Escalating alert ${alert.id} to stage with channels: ${stage.channels.join(', ')}`);
+        console.log(
+          `📈 Escalating alert ${alert.id} to stage with channels: ${stage.channels.join(', ')}`
+        );
         await this.notifyChannels(stage.channels, alert);
       }
     }
@@ -619,7 +638,7 @@ export class AlertingEngine extends EventEmitter {
         severity: 'critical' as const,
         channels: ['console', 'file'],
         cooldown: 300000, // 5 minutes
-        tags: ['sla', 'performance']
+        tags: ['sla', 'performance'],
       },
       {
         name: 'High Response Time',
@@ -632,7 +651,7 @@ export class AlertingEngine extends EventEmitter {
         severity: 'warning' as const,
         channels: ['console'],
         cooldown: 300000,
-        tags: ['performance', 'response-time']
+        tags: ['performance', 'response-time'],
       },
       {
         name: 'Low Cache Hit Rate',
@@ -645,10 +664,10 @@ export class AlertingEngine extends EventEmitter {
         severity: 'warning' as const,
         channels: ['console'],
         cooldown: 600000, // 10 minutes
-        tags: ['cache', 'performance']
-      }
+        tags: ['cache', 'performance'],
+      },
     ];
-    
+
     defaultRules.forEach(rule => this.addRule(rule));
     console.log(`✅ Loaded ${defaultRules.length} default alert rules`);
   }
@@ -659,18 +678,18 @@ export class AlertingEngine extends EventEmitter {
         name: 'Console',
         type: 'console' as const,
         config: {},
-        enabled: true
+        enabled: true,
       },
       {
         name: 'Log File',
         type: 'file' as const,
         config: {
-          file_path: './monitoring/alerts.log'
+          file_path: './monitoring/alerts.log',
         },
-        enabled: true
-      }
+        enabled: true,
+      },
     ];
-    
+
     defaultChannels.forEach(channel => this.addChannel(channel));
     console.log(`✅ Loaded ${defaultChannels.length} default notification channels`);
   }
@@ -686,21 +705,35 @@ export class AlertingEngine extends EventEmitter {
 
   private storeRule(rule: AlertRule): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO alert_rules (
           id, name, description, enabled, metric, operator, threshold,
           duration, severity, channels, escalation, cooldown, schedule,
           tags, runbook, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        rule.id, rule.name, rule.description, rule.enabled ? 1 : 0,
-        rule.metric, rule.operator, rule.threshold, rule.duration,
-        rule.severity, JSON.stringify(rule.channels),
-        rule.escalation ? JSON.stringify(rule.escalation) : null,
-        rule.cooldown, rule.schedule ? JSON.stringify(rule.schedule) : null,
-        JSON.stringify(rule.tags), rule.runbook,
-        rule.created_at.toISOString(), rule.updated_at.toISOString()
-      );
+      `
+        )
+        .run(
+          rule.id,
+          rule.name,
+          rule.description,
+          rule.enabled ? 1 : 0,
+          rule.metric,
+          rule.operator,
+          rule.threshold,
+          rule.duration,
+          rule.severity,
+          JSON.stringify(rule.channels),
+          rule.escalation ? JSON.stringify(rule.escalation) : null,
+          rule.cooldown,
+          rule.schedule ? JSON.stringify(rule.schedule) : null,
+          JSON.stringify(rule.tags),
+          rule.runbook,
+          rule.created_at.toISOString(),
+          rule.updated_at.toISOString()
+        );
     } catch (error) {
       console.error('Failed to store alert rule:', error);
     }
@@ -708,15 +741,22 @@ export class AlertingEngine extends EventEmitter {
 
   private storeChannel(channel: NotificationChannel): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO notification_channels (
           id, name, type, config, enabled, rate_limit
         ) VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        channel.id, channel.name, channel.type,
-        JSON.stringify(channel.config), channel.enabled ? 1 : 0,
-        channel.rate_limit ? JSON.stringify(channel.rate_limit) : null
-      );
+      `
+        )
+        .run(
+          channel.id,
+          channel.name,
+          channel.type,
+          JSON.stringify(channel.config),
+          channel.enabled ? 1 : 0,
+          channel.rate_limit ? JSON.stringify(channel.rate_limit) : null
+        );
     } catch (error) {
       console.error('Failed to store notification channel:', error);
     }
@@ -724,24 +764,36 @@ export class AlertingEngine extends EventEmitter {
 
   private storeAlert(alert: Alert): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO alerts (
           id, rule_id, message, severity, metric, current_value, threshold,
           status, acknowledged_by, acknowledged_at, resolved_at,
           triggered_at, last_notification, notification_count,
           query, tags, context
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        alert.id, alert.rule_id, alert.message, alert.severity,
-        alert.metric, alert.current_value, alert.threshold,
-        alert.status, alert.acknowledged_by,
-        alert.acknowledged_at?.toISOString() || null,
-        alert.resolved_at?.toISOString() || null,
-        alert.triggered_at.toISOString(),
-        alert.last_notification.toISOString(),
-        alert.notification_count, alert.query,
-        JSON.stringify(alert.tags), JSON.stringify(alert.context)
-      );
+      `
+        )
+        .run(
+          alert.id,
+          alert.rule_id,
+          alert.message,
+          alert.severity,
+          alert.metric,
+          alert.current_value,
+          alert.threshold,
+          alert.status,
+          alert.acknowledged_by,
+          alert.acknowledged_at?.toISOString() || null,
+          alert.resolved_at?.toISOString() || null,
+          alert.triggered_at.toISOString(),
+          alert.last_notification.toISOString(),
+          alert.notification_count,
+          alert.query,
+          JSON.stringify(alert.tags),
+          JSON.stringify(alert.context)
+        );
     } catch (error) {
       console.error('Failed to store alert:', error);
     }
@@ -808,7 +860,7 @@ export class AlertingEngine extends EventEmitter {
         CREATE INDEX IF NOT EXISTS idx_alerts_triggered ON alerts(triggered_at DESC);
         CREATE INDEX IF NOT EXISTS idx_alerts_rule ON alerts(rule_id);
       `);
-      
+
       console.log('✅ Alerting tables initialized');
     } catch (error) {
       console.error('❌ Failed to initialize alerting tables:', error);
@@ -821,7 +873,7 @@ export class AlertingEngine extends EventEmitter {
         console.error('Error in rule evaluation:', error);
       });
     }, this.evaluationInterval);
-    
+
     console.log('🔄 Alert rule evaluation started');
   }
 

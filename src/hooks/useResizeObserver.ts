@@ -240,74 +240,75 @@ export const useResizeObserver = (
   }, [isSupported, box, monitor]);
 
   // Ref callback to attach observer
-  const ref = useCallback((element: Element | null) => {
-    // Cleanup previous observer
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
+  const ref = useCallback(
+    (element: Element | null) => {
+      // Cleanup previous observer
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
 
-    elementRef.current = element;
+      elementRef.current = element;
 
-    if (!element || !enabled) {
-      setSize(null);
-      return;
-    }
+      if (!element || !enabled) {
+        setSize(null);
+        return;
+      }
 
-    if (isSupported) {
-      // Use ResizeObserver
-      try {
-        const observer = new ResizeObserver(handleResize);
-        observer.observe(element, { box });
-        observerRef.current = observer;
+      if (isSupported) {
+        // Use ResizeObserver
+        try {
+          const observer = new ResizeObserver(handleResize);
+          observer.observe(element, { box });
+          observerRef.current = observer;
+
+          if (monitor) {
+            console.log('ResizeObserver attached:', {
+              element,
+              box,
+              enabled,
+            });
+          }
+        } catch (error) {
+          console.warn('Failed to create ResizeObserver:', error);
+
+          // Fallback to initial size calculation
+          const initialSize = getElementSize(element);
+          setSize(initialSize);
+        }
+      } else {
+        // Fallback: use manual size calculation and window resize
+        const updateSize = () => {
+          const newSize = getElementSize(element);
+          setSize(newSize);
+        };
+
+        // Initial size
+        updateSize();
+
+        // Listen to window resize as fallback
+        const handleWindowResize = debounceMs > 0 ? debounce(updateSize, debounceMs) : updateSize;
+
+        window.addEventListener('resize', handleWindowResize, { passive: true });
+
+        // Store cleanup function
+        const cleanup = () => {
+          window.removeEventListener('resize', handleWindowResize);
+        };
+
+        // We can't return cleanup from useCallback, so store it
+        (elementRef as any).cleanup = cleanup;
 
         if (monitor) {
-          console.log('ResizeObserver attached:', {
+          console.log('Fallback resize listener attached:', {
             element,
-            box,
             enabled,
           });
         }
-      } catch (error) {
-        console.warn('Failed to create ResizeObserver:', error);
-
-        // Fallback to initial size calculation
-        const initialSize = getElementSize(element);
-        setSize(initialSize);
       }
-    } else {
-      // Fallback: use manual size calculation and window resize
-      const updateSize = () => {
-        const newSize = getElementSize(element);
-        setSize(newSize);
-      };
-
-      // Initial size
-      updateSize();
-
-      // Listen to window resize as fallback
-      const handleWindowResize = debounceMs > 0
-        ? debounce(updateSize, debounceMs)
-        : updateSize;
-
-      window.addEventListener('resize', handleWindowResize, { passive: true });
-
-      // Store cleanup function
-      const cleanup = () => {
-        window.removeEventListener('resize', handleWindowResize);
-      };
-
-      // We can't return cleanup from useCallback, so store it
-      (elementRef as any).cleanup = cleanup;
-
-      if (monitor) {
-        console.log('Fallback resize listener attached:', {
-          element,
-          enabled,
-        });
-      }
-    }
-  }, [enabled, isSupported, handleResize, box, debounceMs, monitor]);
+    },
+    [enabled, isSupported, handleResize, box, debounceMs, monitor]
+  );
 
   // Cleanup effect
   useEffect(() => {
@@ -360,22 +361,27 @@ export const useResizeObserver = (
 /**
  * Hook for observing only width changes
  */
-export const useWidthObserver = (options: Omit<UseResizeObserverOptions, 'onResize'> & {
-  onWidthChange?: (width: number) => void;
-} = {}) => {
+export const useWidthObserver = (
+  options: Omit<UseResizeObserverOptions, 'onResize'> & {
+    onWidthChange?: (width: number) => void;
+  } = {}
+) => {
   const { onWidthChange, ...restOptions } = options;
   const prevWidthRef = useRef<number>(0);
 
   const { size, ref, refresh, isSupported } = useResizeObserver({
     ...restOptions,
-    onResize: useCallback((entry) => {
-      const newWidth = entry.contentRect.width;
+    onResize: useCallback(
+      entry => {
+        const newWidth = entry.contentRect.width;
 
-      if (newWidth !== prevWidthRef.current) {
-        prevWidthRef.current = newWidth;
-        onWidthChange?.(newWidth);
-      }
-    }, [onWidthChange]),
+        if (newWidth !== prevWidthRef.current) {
+          prevWidthRef.current = newWidth;
+          onWidthChange?.(newWidth);
+        }
+      },
+      [onWidthChange]
+    ),
   });
 
   return {
@@ -389,22 +395,27 @@ export const useWidthObserver = (options: Omit<UseResizeObserverOptions, 'onResi
 /**
  * Hook for observing only height changes
  */
-export const useHeightObserver = (options: Omit<UseResizeObserverOptions, 'onResize'> & {
-  onHeightChange?: (height: number) => void;
-} = {}) => {
+export const useHeightObserver = (
+  options: Omit<UseResizeObserverOptions, 'onResize'> & {
+    onHeightChange?: (height: number) => void;
+  } = {}
+) => {
   const { onHeightChange, ...restOptions } = options;
   const prevHeightRef = useRef<number>(0);
 
   const { size, ref, refresh, isSupported } = useResizeObserver({
     ...restOptions,
-    onResize: useCallback((entry) => {
-      const newHeight = entry.contentRect.height;
+    onResize: useCallback(
+      entry => {
+        const newHeight = entry.contentRect.height;
 
-      if (newHeight !== prevHeightRef.current) {
-        prevHeightRef.current = newHeight;
-        onHeightChange?.(newHeight);
-      }
-    }, [onHeightChange]),
+        if (newHeight !== prevHeightRef.current) {
+          prevHeightRef.current = newHeight;
+          onHeightChange?.(newHeight);
+        }
+      },
+      [onHeightChange]
+    ),
   });
 
   return {
@@ -453,38 +464,43 @@ export const useBoundsObserver = (options: UseResizeObserverOptions = {}) => {
 /**
  * Hook for detecting significant size changes (useful for performance)
  */
-export const useSignificantResize = (options: UseResizeObserverOptions & {
-  /** Minimum change threshold in pixels */
-  threshold?: number;
-} = {}) => {
+export const useSignificantResize = (
+  options: UseResizeObserverOptions & {
+    /** Minimum change threshold in pixels */
+    threshold?: number;
+  } = {}
+) => {
   const { threshold = 10, onResize, ...restOptions } = options;
   const [significantSize, setSignificantSize] = useState<ElementSize | null>(null);
   const lastSignificantSizeRef = useRef<ElementSize | null>(null);
 
   const { size, ref, refresh, isSupported } = useResizeObserver({
     ...restOptions,
-    onResize: useCallback((entry) => {
-      const currentSize = extractSizeFromEntry(entry);
-      const lastSize = lastSignificantSizeRef.current;
+    onResize: useCallback(
+      entry => {
+        const currentSize = extractSizeFromEntry(entry);
+        const lastSize = lastSignificantSizeRef.current;
 
-      if (!lastSize) {
-        // First measurement
-        setSignificantSize(currentSize);
-        lastSignificantSizeRef.current = currentSize;
-        onResize?.(entry);
-        return;
-      }
+        if (!lastSize) {
+          // First measurement
+          setSignificantSize(currentSize);
+          lastSignificantSizeRef.current = currentSize;
+          onResize?.(entry);
+          return;
+        }
 
-      // Check if change is significant
-      const widthChange = Math.abs(currentSize.width - lastSize.width);
-      const heightChange = Math.abs(currentSize.height - lastSize.height);
+        // Check if change is significant
+        const widthChange = Math.abs(currentSize.width - lastSize.width);
+        const heightChange = Math.abs(currentSize.height - lastSize.height);
 
-      if (widthChange >= threshold || heightChange >= threshold) {
-        setSignificantSize(currentSize);
-        lastSignificantSizeRef.current = currentSize;
-        onResize?.(entry);
-      }
-    }, [threshold, onResize]),
+        if (widthChange >= threshold || heightChange >= threshold) {
+          setSignificantSize(currentSize);
+          lastSignificantSizeRef.current = currentSize;
+          onResize?.(entry);
+        }
+      },
+      [threshold, onResize]
+    ),
   });
 
   return {

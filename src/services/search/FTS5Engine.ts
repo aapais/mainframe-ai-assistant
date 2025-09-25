@@ -21,35 +21,35 @@ import { KBEntry, SearchResult, SearchOptions } from '../../types';
 export interface FTS5Config {
   /** BM25 ranking parameters */
   bm25: {
-    k1: number;      // Term frequency saturation parameter (default: 1.2)
-    b: number;       // Length normalization parameter (default: 0.75)
-    titleWeight: number;    // Weight for title field (default: 3.0)
-    problemWeight: number;  // Weight for problem field (default: 2.0)
+    k1: number; // Term frequency saturation parameter (default: 1.2)
+    b: number; // Length normalization parameter (default: 0.75)
+    titleWeight: number; // Weight for title field (default: 3.0)
+    problemWeight: number; // Weight for problem field (default: 2.0)
     solutionWeight: number; // Weight for solution field (default: 1.5)
-    tagsWeight: number;     // Weight for tags field (default: 1.0)
+    tagsWeight: number; // Weight for tags field (default: 1.0)
   };
 
   /** Snippet generation settings */
   snippet: {
-    maxLength: number;        // Maximum snippet length in characters (default: 200)
-    contextWindow: number;    // Context characters around each match (default: 30)
-    maxSnippets: number;      // Maximum number of snippets per result (default: 3)
-    ellipsis: string;         // Ellipsis string for truncated text (default: '...')
+    maxLength: number; // Maximum snippet length in characters (default: 200)
+    contextWindow: number; // Context characters around each match (default: 30)
+    maxSnippets: number; // Maximum number of snippets per result (default: 3)
+    ellipsis: string; // Ellipsis string for truncated text (default: '...')
   };
 
   /** Highlight settings */
   highlight: {
-    startTag: string;         // Opening highlight tag (default: '<mark>')
-    endTag: string;           // Closing highlight tag (default: '</mark>')
-    caseSensitive: boolean;   // Case-sensitive highlighting (default: false)
+    startTag: string; // Opening highlight tag (default: '<mark>')
+    endTag: string; // Closing highlight tag (default: '</mark>')
+    caseSensitive: boolean; // Case-sensitive highlighting (default: false)
   };
 
   /** Performance tuning */
   performance: {
-    mergeFrequency: number;   // FTS5 automerge frequency (default: 4)
-    crisisMerges: number;     // Crisis merge threshold (default: 16)
-    deleteSize: number;       // Delete size threshold (default: 1000)
-    optimizeOnInit: boolean;  // Optimize FTS index on initialization (default: true)
+    mergeFrequency: number; // FTS5 automerge frequency (default: 4)
+    crisisMerges: number; // Crisis merge threshold (default: 16)
+    deleteSize: number; // Delete size threshold (default: 1000)
+    optimizeOnInit: boolean; // Optimize FTS index on initialization (default: true)
   };
 }
 
@@ -68,11 +68,14 @@ export interface FTS5SearchResult extends SearchResult {
   }>;
 
   /** Matched terms and their frequencies */
-  termMatches: Record<string, {
-    frequency: number;
-    positions: number[];
-    field: string;
-  }>;
+  termMatches: Record<
+    string,
+    {
+      frequency: number;
+      positions: number[];
+      field: string;
+    }
+  >;
 }
 
 /**
@@ -118,30 +121,30 @@ export class FTS5Engine {
    */
   private static readonly DEFAULT_CONFIG: FTS5Config = {
     bm25: {
-      k1: 1.2,          // Standard BM25 k1 parameter
-      b: 0.75,          // Standard BM25 b parameter
-      titleWeight: 3.0,    // Title matches are most important
-      problemWeight: 2.0,  // Problem descriptions are important
+      k1: 1.2, // Standard BM25 k1 parameter
+      b: 0.75, // Standard BM25 b parameter
+      titleWeight: 3.0, // Title matches are most important
+      problemWeight: 2.0, // Problem descriptions are important
       solutionWeight: 1.5, // Solutions are relevant but less than problems
-      tagsWeight: 1.0      // Tags provide context
+      tagsWeight: 1.0, // Tags provide context
     },
     snippet: {
       maxLength: 200,
       contextWindow: 30,
       maxSnippets: 3,
-      ellipsis: '...'
+      ellipsis: '...',
     },
     highlight: {
       startTag: '<mark>',
       endTag: '</mark>',
-      caseSensitive: false
+      caseSensitive: false,
     },
     performance: {
       mergeFrequency: 4,
       crisisMerges: 16,
       deleteSize: 1000,
-      optimizeOnInit: true
-    }
+      optimizeOnInit: true,
+    },
   };
 
   /**
@@ -152,48 +155,155 @@ export class FTS5Engine {
    */
   private static readonly DEFAULT_TOKENIZER_CONFIG: MainframeTokenizerConfig = {
     jclTokens: [
-      'JOB', 'EXEC', 'DD', 'SYSIN', 'SYSOUT', 'DISP', 'DSN', 'DCB', 'SPACE',
-      'UNIT', 'VOL', 'LABEL', 'RECFM', 'LRECL', 'BLKSIZE', 'COND', 'PARM',
-      'PROC', 'SET', 'IF', 'THEN', 'ELSE', 'ENDIF', 'INCLUDE', 'JCLLIB',
-      'OUTPUT', 'JOBLIB', 'STEPLIB', 'SYSLIB', 'SYSTSIN', 'SYSPROC'
+      'JOB',
+      'EXEC',
+      'DD',
+      'SYSIN',
+      'SYSOUT',
+      'DISP',
+      'DSN',
+      'DCB',
+      'SPACE',
+      'UNIT',
+      'VOL',
+      'LABEL',
+      'RECFM',
+      'LRECL',
+      'BLKSIZE',
+      'COND',
+      'PARM',
+      'PROC',
+      'SET',
+      'IF',
+      'THEN',
+      'ELSE',
+      'ENDIF',
+      'INCLUDE',
+      'JCLLIB',
+      'OUTPUT',
+      'JOBLIB',
+      'STEPLIB',
+      'SYSLIB',
+      'SYSTSIN',
+      'SYSPROC',
     ],
     vsamTokens: [
-      'VSAM', 'KSDS', 'ESDS', 'RRDS', 'LDS', 'DEFINE', 'DELETE', 'LISTCAT',
-      'REPRO', 'PRINT', 'VERIFY', 'EXAMINE', 'ALTER', 'CLUSTER', 'DATA',
-      'INDEX', 'AIX', 'PATH', 'CATALOG', 'MASTERCATALOG', 'USERCATALOG',
-      'NONVSAM', 'RECATALOG', 'UNCATALOG', 'CNVTCAT'
+      'VSAM',
+      'KSDS',
+      'ESDS',
+      'RRDS',
+      'LDS',
+      'DEFINE',
+      'DELETE',
+      'LISTCAT',
+      'REPRO',
+      'PRINT',
+      'VERIFY',
+      'EXAMINE',
+      'ALTER',
+      'CLUSTER',
+      'DATA',
+      'INDEX',
+      'AIX',
+      'PATH',
+      'CATALOG',
+      'MASTERCATALOG',
+      'USERCATALOG',
+      'NONVSAM',
+      'RECATALOG',
+      'UNCATALOG',
+      'CNVTCAT',
     ],
     cobolTokens: [
-      'IDENTIFICATION', 'ENVIRONMENT', 'DATA', 'PROCEDURE', 'DIVISION',
-      'PROGRAM-ID', 'WORKING-STORAGE', 'FILE-SECTION', 'LINKAGE',
-      'PERFORM', 'CALL', 'MOVE', 'ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE',
-      'COMPUTE', 'IF', 'ELSE', 'EVALUATE', 'WHEN', 'GO TO', 'STOP RUN',
-      'PIC', 'PICTURE', 'COMP', 'COMP-3', 'DISPLAY', 'BINARY', 'PACKED-DECIMAL',
-      'OCCURS', 'REDEFINES', 'VALUE', 'FILLER', 'LEVEL', '01', '05', '10', '15'
+      'IDENTIFICATION',
+      'ENVIRONMENT',
+      'DATA',
+      'PROCEDURE',
+      'DIVISION',
+      'PROGRAM-ID',
+      'WORKING-STORAGE',
+      'FILE-SECTION',
+      'LINKAGE',
+      'PERFORM',
+      'CALL',
+      'MOVE',
+      'ADD',
+      'SUBTRACT',
+      'MULTIPLY',
+      'DIVIDE',
+      'COMPUTE',
+      'IF',
+      'ELSE',
+      'EVALUATE',
+      'WHEN',
+      'GO TO',
+      'STOP RUN',
+      'PIC',
+      'PICTURE',
+      'COMP',
+      'COMP-3',
+      'DISPLAY',
+      'BINARY',
+      'PACKED-DECIMAL',
+      'OCCURS',
+      'REDEFINES',
+      'VALUE',
+      'FILLER',
+      'LEVEL',
+      '01',
+      '05',
+      '10',
+      '15',
     ],
     db2Tokens: [
-      'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
-      'INDEX', 'TABLE', 'VIEW', 'SYNONYM', 'TABLESPACE', 'DATABASE',
-      'COMMIT', 'ROLLBACK', 'BIND', 'REBIND', 'RUNSTATS', 'REORG',
-      'EXPLAIN', 'PLAN_TABLE', 'SPUFI', 'QMF', 'DCLGEN', 'PRECOMPILE',
-      'SQLCODE', 'SQLSTATE', 'CURSOR', 'FETCH', 'OPEN', 'CLOSE'
+      'SELECT',
+      'INSERT',
+      'UPDATE',
+      'DELETE',
+      'CREATE',
+      'DROP',
+      'ALTER',
+      'INDEX',
+      'TABLE',
+      'VIEW',
+      'SYNONYM',
+      'TABLESPACE',
+      'DATABASE',
+      'COMMIT',
+      'ROLLBACK',
+      'BIND',
+      'REBIND',
+      'RUNSTATS',
+      'REORG',
+      'EXPLAIN',
+      'PLAN_TABLE',
+      'SPUFI',
+      'QMF',
+      'DCLGEN',
+      'PRECOMPILE',
+      'SQLCODE',
+      'SQLSTATE',
+      'CURSOR',
+      'FETCH',
+      'OPEN',
+      'CLOSE',
     ],
     errorCodePatterns: [
-      /^[A-Z]{2,4}\d{3,4}[A-Z]?$/,    // Standard mainframe error codes (e.g., IEF212I, IGZ0037S)
-      /^S\d{3}[A-Z]?$/,               // System completion codes (e.g., S0C7, S322)
-      /^U\d{4}$/,                     // User completion codes (e.g., U4038)
-      /^SQL[A-Z]?\d{3,5}[A-Z]?$/,     // DB2 SQL codes (e.g., SQL0803N, SQL0904C)
-      /^DFHAC\d{4}$/,                 // CICS error codes (e.g., DFHAC2001)
-      /^DFS\d{4}[A-Z]?$/              // IMS error codes (e.g., DFS0555I)
+      /^[A-Z]{2,4}\d{3,4}[A-Z]?$/, // Standard mainframe error codes (e.g., IEF212I, IGZ0037S)
+      /^S\d{3}[A-Z]?$/, // System completion codes (e.g., S0C7, S322)
+      /^U\d{4}$/, // User completion codes (e.g., U4038)
+      /^SQL[A-Z]?\d{3,5}[A-Z]?$/, // DB2 SQL codes (e.g., SQL0803N, SQL0904C)
+      /^DFHAC\d{4}$/, // CICS error codes (e.g., DFHAC2001)
+      /^DFS\d{4}[A-Z]?$/, // IMS error codes (e.g., DFS0555I)
     ],
     datasetPatterns: [
-      /^[A-Z][A-Z0-9]{0,7}(\.[A-Z][A-Z0-9]{0,7}){0,21}$/,  // Standard dataset names
-      /^[A-Z][A-Z0-9]{0,7}(\([A-Z][A-Z0-9]{0,7}\))?$/      // PDS member names
+      /^[A-Z][A-Z0-9]{0,7}(\.[A-Z][A-Z0-9]{0,7}){0,21}$/, // Standard dataset names
+      /^[A-Z][A-Z0-9]{0,7}(\([A-Z][A-Z0-9]{0,7}\))?$/, // PDS member names
     ],
     systemCommandPatterns: [
-      /^[A-Z]{1,8}$/,                 // Simple system commands
-      /^[A-Z]{1,8}\s+[A-Z0-9.()]+$/  // Commands with parameters
-    ]
+      /^[A-Z]{1,8}$/, // Simple system commands
+      /^[A-Z]{1,8}\s+[A-Z0-9.()]+$/, // Commands with parameters
+    ],
   };
 
   constructor(
@@ -238,7 +348,6 @@ export class FTS5Engine {
 
       // Log initialization stats
       await this.logInitializationStats();
-
     } catch (error) {
       console.error('❌ FTS5 Engine initialization failed:', error);
       throw new Error(`FTS5 initialization failed: ${error.message}`);
@@ -248,10 +357,7 @@ export class FTS5Engine {
   /**
    * Perform advanced FTS5 search with BM25 ranking
    */
-  async search(
-    query: string,
-    options: SearchOptions = {}
-  ): Promise<FTS5SearchResult[]> {
+  async search(query: string, options: SearchOptions = {}): Promise<FTS5SearchResult[]> {
     this.ensureInitialized();
 
     const startTime = Date.now();
@@ -270,7 +376,6 @@ export class FTS5Engine {
       console.log(`🔍 FTS5 search completed in ${executionTime}ms (${results.length} results)`);
 
       return enhancedResults;
-
     } catch (error) {
       console.error('❌ FTS5 search failed:', error);
       throw new Error(`FTS5 search failed: ${error.message}`);
@@ -301,7 +406,6 @@ export class FTS5Engine {
         entry.category,
         tagsString
       );
-
     } catch (error) {
       console.error('Failed to add document to FTS5:', error);
       throw error;
@@ -320,7 +424,6 @@ export class FTS5Engine {
 
       // Add updated entry
       await this.addDocument(entry);
-
     } catch (error) {
       console.error('Failed to update document in FTS5:', error);
       throw error;
@@ -336,7 +439,6 @@ export class FTS5Engine {
     try {
       const stmt = this.db.prepare('DELETE FROM kb_fts5 WHERE id = ?');
       stmt.run(id);
-
     } catch (error) {
       console.error('Failed to remove document from FTS5:', error);
       throw error;
@@ -359,7 +461,6 @@ export class FTS5Engine {
       this.db.exec('ANALYZE kb_fts5');
 
       console.log('✅ FTS5 index optimization completed');
-
     } catch (error) {
       console.error('❌ FTS5 optimization failed:', error);
       throw error;
@@ -380,28 +481,37 @@ export class FTS5Engine {
 
     try {
       // Get basic document count
-      const docCount = this.db.prepare('SELECT COUNT(*) as count FROM kb_fts5').get() as { count: number };
+      const docCount = this.db.prepare('SELECT COUNT(*) as count FROM kb_fts5').get() as {
+        count: number;
+      };
 
       // Get index size estimation
-      const indexSize = this.db.prepare(`
+      const indexSize = this.db
+        .prepare(
+          `
         SELECT SUM(LENGTH(title) + LENGTH(problem) + LENGTH(solution) + LENGTH(tags)) as size
         FROM kb_fts5
-      `).get() as { size: number };
+      `
+        )
+        .get() as { size: number };
 
       // Get average document length
-      const avgLength = this.db.prepare(`
+      const avgLength = this.db
+        .prepare(
+          `
         SELECT AVG(LENGTH(title) + LENGTH(problem) + LENGTH(solution) + LENGTH(tags)) as avg_length
         FROM kb_fts5
-      `).get() as { avg_length: number };
+      `
+        )
+        .get() as { avg_length: number };
 
       return {
         indexSize: indexSize.size || 0,
         documentCount: docCount.count,
         totalTokens: 0, // Would need custom calculation
         uniqueTokens: 0, // Would need custom calculation
-        averageDocumentLength: avgLength.avg_length || 0
+        averageDocumentLength: avgLength.avg_length || 0,
       };
-
     } catch (error) {
       console.error('Failed to get FTS5 stats:', error);
       return {
@@ -409,7 +519,7 @@ export class FTS5Engine {
         documentCount: 0,
         totalTokens: 0,
         uniqueTokens: 0,
-        averageDocumentLength: 0
+        averageDocumentLength: 0,
       };
     }
   }
@@ -459,36 +569,31 @@ export class FTS5Engine {
    */
   private async registerCustomFunctions(): Promise<void> {
     // Register BM25 scoring function
-    this.db.function('bm25_score', { deterministic: true }, (
-      tf: number,
-      docLen: number,
-      avgDocLen: number,
-      docCount: number,
-      termCount: number
-    ) => {
-      const k1 = this.config.bm25.k1;
-      const b = this.config.bm25.b;
+    this.db.function(
+      'bm25_score',
+      { deterministic: true },
+      (tf: number, docLen: number, avgDocLen: number, docCount: number, termCount: number) => {
+        const k1 = this.config.bm25.k1;
+        const b = this.config.bm25.b;
 
-      const idf = Math.log((docCount - termCount + 0.5) / (termCount + 0.5));
-      const score = idf * (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (docLen / avgDocLen)));
+        const idf = Math.log((docCount - termCount + 0.5) / (termCount + 0.5));
+        const score = (idf * (tf * (k1 + 1))) / (tf + k1 * (1 - b + b * (docLen / avgDocLen)));
 
-      return Math.max(0, score);
-    });
+        return Math.max(0, score);
+      }
+    );
 
     // Register snippet generation function
-    this.db.function('generate_snippet', { deterministic: true }, (
-      text: string,
-      query: string,
-      maxLength: number = this.config.snippet.maxLength
-    ) => {
-      return this.generateSnippet(text, query, maxLength);
-    });
+    this.db.function(
+      'generate_snippet',
+      { deterministic: true },
+      (text: string, query: string, maxLength: number = this.config.snippet.maxLength) => {
+        return this.generateSnippet(text, query, maxLength);
+      }
+    );
 
     // Register highlight function
-    this.db.function('highlight_text', { deterministic: true }, (
-      text: string,
-      query: string
-    ) => {
+    this.db.function('highlight_text', { deterministic: true }, (text: string, query: string) => {
       return this.highlightText(text, query);
     });
   }
@@ -515,7 +620,9 @@ export class FTS5Engine {
    * Populate FTS5 index from existing kb_entries
    */
   private async populateFTS5Index(): Promise<void> {
-    const entries = this.db.prepare(`
+    const entries = this.db
+      .prepare(
+        `
       SELECT
         e.id,
         e.title,
@@ -527,7 +634,9 @@ export class FTS5Engine {
       LEFT JOIN kb_tags t ON e.id = t.entry_id
       WHERE e.archived = FALSE
       GROUP BY e.id, e.title, e.problem, e.solution, e.category
-    `).all() as Array<{
+    `
+      )
+      .all() as Array<{
       id: string;
       title: string;
       problem: string;
@@ -622,7 +731,7 @@ export class FTS5Engine {
         ...this.tokenizerConfig.jclTokens,
         ...this.tokenizerConfig.vsamTokens,
         ...this.tokenizerConfig.cobolTokens,
-        ...this.tokenizerConfig.db2Tokens
+        ...this.tokenizerConfig.db2Tokens,
       ];
 
       if (allTokens.includes(upperTerm)) {
@@ -641,10 +750,7 @@ export class FTS5Engine {
   /**
    * Execute FTS5 search with BM25 ranking
    */
-  private async executeFTS5Search(
-    ftsQuery: string,
-    options: SearchOptions
-  ): Promise<any[]> {
+  private async executeFTS5Search(ftsQuery: string, options: SearchOptions): Promise<any[]> {
     const limit = Math.min(options.limit || 10, 100);
     const offset = options.offset || 0;
 
@@ -687,7 +793,7 @@ export class FTS5Engine {
       ...(options.category ? [options.category] : []),
       options.sortBy || 'relevance',
       limit,
-      offset
+      offset,
     ];
 
     return this.db.prepare(searchSQL).all(...params);
@@ -696,10 +802,7 @@ export class FTS5Engine {
   /**
    * Enhance search results with snippets and highlights
    */
-  private async enhanceResults(
-    results: any[],
-    originalQuery: string
-  ): Promise<FTS5SearchResult[]> {
+  private async enhanceResults(results: any[], originalQuery: string): Promise<FTS5SearchResult[]> {
     return results.map(row => {
       // Generate snippets for each field
       const snippets = this.generateSnippets(row, originalQuery);
@@ -719,7 +822,7 @@ export class FTS5Engine {
         usage_count: row.usage_count,
         success_count: row.success_count,
         failure_count: row.failure_count,
-        last_used: row.last_used ? new Date(row.last_used) : undefined
+        last_used: row.last_used ? new Date(row.last_used) : undefined,
       };
 
       return {
@@ -729,7 +832,7 @@ export class FTS5Engine {
         highlights: snippets.map(s => s.text),
         bm25Score: row.bm25_score,
         snippets,
-        termMatches
+        termMatches,
       };
     });
   }
@@ -744,11 +847,14 @@ export class FTS5Engine {
     const fields = [
       { name: 'title', content: row.title, weight: 3 },
       { name: 'problem', content: row.problem, weight: 2 },
-      { name: 'solution', content: row.solution, weight: 1 }
+      { name: 'solution', content: row.solution, weight: 1 },
     ];
 
     const snippets: Array<{ field: string; text: string; score: number }> = [];
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 2);
 
     fields.forEach(field => {
       const snippet = this.generateSnippet(field.content, query, this.config.snippet.maxLength);
@@ -761,15 +867,13 @@ export class FTS5Engine {
         snippets.push({
           field: field.name,
           text: snippet,
-          score: termScore * field.weight
+          score: termScore * field.weight,
         });
       }
     });
 
     // Sort by score and return top snippets
-    return snippets
-      .sort((a, b) => b.score - a.score)
-      .slice(0, this.config.snippet.maxSnippets);
+    return snippets.sort((a, b) => b.score - a.score).slice(0, this.config.snippet.maxSnippets);
   }
 
   /**
@@ -778,7 +882,10 @@ export class FTS5Engine {
   private generateSnippet(text: string, query: string, maxLength: number): string {
     if (!text || text.length <= maxLength) return text;
 
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 2);
     const lowerText = text.toLowerCase();
 
     // Find the best match position
@@ -835,12 +942,15 @@ export class FTS5Engine {
     query: string
   ): Record<string, { frequency: number; positions: number[]; field: string }> {
     const matches: Record<string, { frequency: number; positions: number[]; field: string }> = {};
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 2);
 
     const fields = [
       { name: 'title', content: row.title },
       { name: 'problem', content: row.problem },
-      { name: 'solution', content: row.solution }
+      { name: 'solution', content: row.solution },
     ];
 
     queryTerms.forEach(term => {
@@ -885,8 +995,8 @@ export class FTS5Engine {
     const stats = this.getStats();
     console.log(
       `📊 FTS5 Engine ready: ${stats.documentCount} indexed documents, ` +
-      `${Math.round(stats.indexSize / 1024)} KB index size, ` +
-      `${Math.round(stats.averageDocumentLength)} avg doc length`
+        `${Math.round(stats.indexSize / 1024)} KB index size, ` +
+        `${Math.round(stats.averageDocumentLength)} avg doc length`
     );
   }
 
@@ -898,7 +1008,7 @@ export class FTS5Engine {
       bm25: { ...defaults.bm25, ...config.bm25 },
       snippet: { ...defaults.snippet, ...config.snippet },
       highlight: { ...defaults.highlight, ...config.highlight },
-      performance: { ...defaults.performance, ...config.performance }
+      performance: { ...defaults.performance, ...config.performance },
     };
   }
 
@@ -916,7 +1026,10 @@ export class FTS5Engine {
       db2Tokens: [...defaults.db2Tokens, ...(config.db2Tokens || [])],
       errorCodePatterns: [...defaults.errorCodePatterns, ...(config.errorCodePatterns || [])],
       datasetPatterns: [...defaults.datasetPatterns, ...(config.datasetPatterns || [])],
-      systemCommandPatterns: [...defaults.systemCommandPatterns, ...(config.systemCommandPatterns || [])]
+      systemCommandPatterns: [
+        ...defaults.systemCommandPatterns,
+        ...(config.systemCommandPatterns || []),
+      ],
     };
   }
 

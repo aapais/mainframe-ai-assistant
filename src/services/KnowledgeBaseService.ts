@@ -35,7 +35,7 @@ import {
   DBKBEntry,
   DBKBTag,
   ServiceEvents,
-  DEFAULT_SERVICE_CONFIG
+  DEFAULT_SERVICE_CONFIG,
 } from '../types/services';
 
 /**
@@ -83,10 +83,10 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       await this.prepareStatements();
       await this.initializeDependentServices();
       await this.setupPeriodicTasks();
-      
+
       this.isInitialized = true;
       this.emit('service:initialized', { timestamp: new Date() });
-      
+
       console.info('KnowledgeBaseService initialized successfully');
     } catch (error) {
       const serviceError = new DatabaseError(
@@ -94,7 +94,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         'initialize',
         { originalError: error }
       );
-      
+
       this.emit('error:occurred', serviceError);
       throw serviceError;
     }
@@ -105,7 +105,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async create(entry: KBEntryInput): Promise<string> {
     this.ensureInitialized();
-    
+
     // Validate entry
     if (this.validationService) {
       const validation = this.validationService.validateEntry(entry);
@@ -119,7 +119,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
     const id = uuidv4();
     const now = new Date();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Insert main entry
@@ -135,7 +135,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           0, // usage_count
           0, // success_count
           0, // failure_count
-          1  // version
+          1 // version
         );
 
         // Insert tags
@@ -151,21 +151,20 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
         return id;
       } catch (error) {
-        throw new DatabaseError(
-          `Failed to create entry: ${error.message}`,
-          'create',
-          { entry, originalError: error }
-        );
+        throw new DatabaseError(`Failed to create entry: ${error.message}`, 'create', {
+          entry,
+          originalError: error,
+        });
       }
     });
 
     const result = transaction();
-    
+
     // Get the full created entry
     const createdEntry = await this.read(id);
     if (createdEntry) {
       this.emit('entry:created', createdEntry);
-      
+
       if (this.metricsService) {
         await this.metricsService.recordUsage(id, 'create');
       }
@@ -183,7 +182,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async createBatch(entries: KBEntryInput[]): Promise<string[]> {
     this.ensureInitialized();
-    
+
     if (entries.length === 0) {
       return [];
     }
@@ -192,7 +191,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     if (this.validationService) {
       const validations = this.validationService.validateBatch(entries);
       const invalidEntries = validations.filter(v => !v.valid);
-      
+
       if (invalidEntries.length > 0) {
         throw new ValidationError(
           `Batch validation failed for ${invalidEntries.length} entries`,
@@ -203,12 +202,12 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
     const ids: string[] = [];
     const now = new Date();
-    
+
     const transaction = this.db.transaction(() => {
       entries.forEach(entry => {
         const id = uuidv4();
         ids.push(id);
-        
+
         // Insert main entry
         this.statements.insertEntry.run(
           id,
@@ -219,7 +218,10 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           now.toISOString(),
           now.toISOString(),
           entry.created_by || 'system',
-          0, 0, 0, 1
+          0,
+          0,
+          0,
+          1
         );
 
         // Insert tags
@@ -235,15 +237,13 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     });
 
     transaction();
-    
+
     // Get all created entries
     const createdEntries = await this.readBatch(ids);
     this.emit('entries:batch-created', createdEntries);
 
     if (this.metricsService) {
-      await Promise.all(
-        ids.map(id => this.metricsService!.recordUsage(id, 'create'))
-      );
+      await Promise.all(ids.map(id => this.metricsService!.recordUsage(id, 'create')));
     }
 
     return ids;
@@ -254,7 +254,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async read(id: string): Promise<KBEntry | null> {
     this.ensureInitialized();
-    
+
     // Try cache first
     if (this.cacheService) {
       const cached = await this.cacheService.get<KBEntry>(`entry:${id}`);
@@ -267,7 +267,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
     try {
       const row = this.statements.selectEntry.get(id) as DBKBEntry | undefined;
-      
+
       if (!row) {
         return null;
       }
@@ -275,10 +275,14 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       const entry = this.mapDBEntryToKBEntry(row);
 
       // Get tags
-      const tags = this.db.prepare(`
+      const tags = this.db
+        .prepare(
+          `
         SELECT tag FROM kb_tags WHERE entry_id = ? ORDER BY weight DESC, tag ASC
-      `).all(id) as { tag: string }[];
-      
+      `
+        )
+        .all(id) as { tag: string }[];
+
       entry.tags = tags.map(t => t.tag);
 
       // Cache the result
@@ -288,11 +292,10 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
       return entry;
     } catch (error) {
-      throw new DatabaseError(
-        `Failed to read entry ${id}: ${error.message}`,
-        'read',
-        { id, originalError: error }
-      );
+      throw new DatabaseError(`Failed to read entry ${id}: ${error.message}`, 'read', {
+        id,
+        originalError: error,
+      });
     }
   }
 
@@ -301,7 +304,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async readBatch(ids: string[]): Promise<KBEntry[]> {
     this.ensureInitialized();
-    
+
     if (ids.length === 0) {
       return [];
     }
@@ -309,11 +312,11 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     // Try cache first for available entries
     const results: KBEntry[] = [];
     const missingIds: string[] = [];
-    
+
     if (this.cacheService) {
       const cacheKeys = ids.map(id => `entry:${id}`);
       const cachedEntries = await this.cacheService.mget<KBEntry>(cacheKeys);
-      
+
       for (let i = 0; i < ids.length; i++) {
         if (cachedEntries[i]) {
           results.push(cachedEntries[i]!);
@@ -335,7 +338,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         WHERE id IN (${placeholders})
         ORDER BY created_at DESC
       `;
-      
+
       const rows = this.db.prepare(query).all(...missingIds) as DBKBEntry[];
       const dbEntries = rows.map(row => this.mapDBEntryToKBEntry(row));
 
@@ -346,8 +349,11 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           WHERE entry_id IN (${placeholders})
           ORDER BY weight DESC, tag ASC
         `;
-        const tagRows = this.db.prepare(tagQuery).all(...missingIds) as { entry_id: string; tag: string }[];
-        
+        const tagRows = this.db.prepare(tagQuery).all(...missingIds) as {
+          entry_id: string;
+          tag: string;
+        }[];
+
         // Group tags by entry_id
         const tagsByEntry = new Map<string, string[]>();
         tagRows.forEach(row => {
@@ -367,7 +373,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           const cacheItems = dbEntries.map(entry => ({
             key: `entry:${entry.id}`,
             value: entry,
-            ttl: this.config.cache.ttl
+            ttl: this.config.cache.ttl,
           }));
           await this.cacheService.mset(cacheItems);
         }
@@ -377,7 +383,9 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     }
 
     // Sort results by the original ID order
-    const sortedResults = ids.map(id => results.find(entry => entry.id === id)).filter(Boolean) as KBEntry[];
+    const sortedResults = ids
+      .map(id => results.find(entry => entry.id === id))
+      .filter(Boolean) as KBEntry[];
     return sortedResults;
   }
 
@@ -386,7 +394,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async update(id: string, updates: KBEntryUpdate): Promise<boolean> {
     this.ensureInitialized();
-    
+
     // Validate updates
     if (this.validationService) {
       const validation = this.validationService.validateUpdate(updates);
@@ -406,13 +414,13 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
     const now = new Date();
     const newVersion = currentEntry.version + 1;
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Update main entry
         const updateFields = [];
         const updateValues = [];
-        
+
         if (updates.title !== undefined) {
           updateFields.push('title = ?');
           updateValues.push(updates.title);
@@ -429,10 +437,10 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           updateFields.push('category = ?');
           updateValues.push(updates.category);
         }
-        
+
         updateFields.push('updated_at = ?', 'version = ?');
         updateValues.push(now.toISOString(), newVersion);
-        
+
         if (updates.updated_by) {
           updateFields.push('updated_by = ?');
           updateValues.push(updates.updated_by);
@@ -446,7 +454,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         updateValues.push(id);
 
         const result = this.db.prepare(updateQuery).run(...updateValues);
-        
+
         if (result.changes === 0) {
           return false;
         }
@@ -467,16 +475,16 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
         return true;
       } catch (error) {
-        throw new DatabaseError(
-          `Failed to update entry ${id}: ${error.message}`,
-          'update',
-          { id, updates, originalError: error }
-        );
+        throw new DatabaseError(`Failed to update entry ${id}: ${error.message}`, 'update', {
+          id,
+          updates,
+          originalError: error,
+        });
       }
     });
 
     const success = transaction();
-    
+
     if (success) {
       // Clear cache
       if (this.cacheService) {
@@ -487,7 +495,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       const updatedEntry = await this.read(id);
       if (updatedEntry) {
         this.emit('entry:updated', updatedEntry, updates);
-        
+
         if (this.metricsService) {
           await this.metricsService.recordUsage(id, 'update');
         }
@@ -502,14 +510,14 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async updateBatch(updates: Array<{ id: string; updates: KBEntryUpdate }>): Promise<boolean[]> {
     this.ensureInitialized();
-    
+
     if (updates.length === 0) {
       return [];
     }
 
     const results: boolean[] = [];
     const now = new Date();
-    
+
     const transaction = this.db.transaction(() => {
       updates.forEach(({ id, updates: entryUpdates }) => {
         try {
@@ -523,19 +531,19 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           // Build update query dynamically
           const updateFields = [];
           const updateValues = [];
-          
+
           Object.entries(entryUpdates).forEach(([key, value]) => {
             if (value !== undefined && key !== 'tags' && key !== 'updated_by') {
               updateFields.push(`${key} = ?`);
               updateValues.push(value);
             }
           });
-          
+
           if (entryUpdates.updated_by) {
             updateFields.push('updated_by = ?');
             updateValues.push(entryUpdates.updated_by);
           }
-          
+
           updateFields.push('updated_at = ?', 'version = version + 1');
           updateValues.push(now.toISOString(), id);
 
@@ -546,7 +554,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           `;
 
           const result = this.db.prepare(updateQuery).run(...updateValues);
-          
+
           // Update tags if provided
           if (entryUpdates.tags !== undefined) {
             this.statements.deleteTagsForEntry.run(id);
@@ -577,11 +585,12 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     const successfulUpdates = updates.filter((_, index) => results[index]);
     if (successfulUpdates.length > 0) {
       const updatedEntries = await this.readBatch(successfulUpdates.map(u => u.id));
-      this.emit('entries:batch-updated', 
+      this.emit(
+        'entries:batch-updated',
         successfulUpdates.map((u, i) => ({
           id: u.id,
           entry: updatedEntries[i],
-          changes: u.updates
+          changes: u.updates,
         }))
       );
 
@@ -600,30 +609,31 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async delete(id: string): Promise<boolean> {
     this.ensureInitialized();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Delete from FTS index first
-        this.db.prepare('DELETE FROM kb_fts WHERE rowid = (SELECT rowid FROM kb_entries WHERE id = ?)').run(id);
-        
+        this.db
+          .prepare('DELETE FROM kb_fts WHERE rowid = (SELECT rowid FROM kb_entries WHERE id = ?)')
+          .run(id);
+
         // Delete tags (will cascade)
         this.statements.deleteTagsForEntry.run(id);
-        
+
         // Delete main entry
         const result = this.statements.deleteEntry.run(id);
-        
+
         return result.changes > 0;
       } catch (error) {
-        throw new DatabaseError(
-          `Failed to delete entry ${id}: ${error.message}`,
-          'delete',
-          { id, originalError: error }
-        );
+        throw new DatabaseError(`Failed to delete entry ${id}: ${error.message}`, 'delete', {
+          id,
+          originalError: error,
+        });
       }
     });
 
     const success = transaction();
-    
+
     if (success) {
       // Clear cache
       if (this.cacheService) {
@@ -631,7 +641,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       }
 
       this.emit('entry:deleted', id);
-      
+
       if (this.metricsService) {
         await this.metricsService.recordUsage(id, 'delete');
       }
@@ -645,25 +655,27 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async deleteBatch(ids: string[]): Promise<boolean[]> {
     this.ensureInitialized();
-    
+
     if (ids.length === 0) {
       return [];
     }
 
     const results: boolean[] = [];
-    
+
     const transaction = this.db.transaction(() => {
       ids.forEach(id => {
         try {
           // Delete from FTS index
-          this.db.prepare('DELETE FROM kb_fts WHERE rowid = (SELECT rowid FROM kb_entries WHERE id = ?)').run(id);
-          
+          this.db
+            .prepare('DELETE FROM kb_fts WHERE rowid = (SELECT rowid FROM kb_entries WHERE id = ?)')
+            .run(id);
+
           // Delete tags
           this.statements.deleteTagsForEntry.run(id);
-          
+
           // Delete main entry
           const result = this.statements.deleteEntry.run(id);
-          
+
           results.push(result.changes > 0);
         } catch (error) {
           console.error(`Failed to delete entry ${id}:`, error);
@@ -700,7 +712,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async list(options: ListOptions = {}): Promise<PaginatedResult<KBEntry>> {
     this.ensureInitialized();
-    
+
     const {
       limit = 50,
       offset = 0,
@@ -708,7 +720,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       sortBy = 'created_at',
       sortOrder = 'desc',
       includeMetrics = false,
-      filters = {}
+      filters = {},
     } = options;
 
     // Build WHERE clause
@@ -736,7 +748,9 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     }
 
     if (filters.minSuccessRate) {
-      conditions.push('CASE WHEN (success_count + failure_count) = 0 THEN 0 ELSE CAST(success_count AS REAL) / (success_count + failure_count) END >= ?');
+      conditions.push(
+        'CASE WHEN (success_count + failure_count) = 0 THEN 0 ELSE CAST(success_count AS REAL) / (success_count + failure_count) END >= ?'
+      );
       params.push(filters.minSuccessRate);
     }
 
@@ -747,7 +761,9 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
     if (filters.tags && filters.tags.length > 0) {
       const tagPlaceholders = filters.tags.map(() => '?').join(',');
-      conditions.push(`id IN (SELECT DISTINCT entry_id FROM kb_tags WHERE tag IN (${tagPlaceholders}))`);
+      conditions.push(
+        `id IN (SELECT DISTINCT entry_id FROM kb_tags WHERE tag IN (${tagPlaceholders}))`
+      );
       params.push(...filters.tags);
     }
 
@@ -757,7 +773,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     const validSortFields = ['created_at', 'updated_at', 'usage_count', 'title'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'created_at';
     const order = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-    
+
     // Special handling for success_rate
     let orderByClause = `ORDER BY ${sortField} ${order}`;
     if (sortBy === 'success_rate') {
@@ -794,8 +810,11 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           WHERE entry_id IN (${placeholders})
           ORDER BY weight DESC, tag ASC
         `;
-        const tagRows = this.db.prepare(tagQuery).all(...entryIds) as { entry_id: string; tag: string }[];
-        
+        const tagRows = this.db.prepare(tagQuery).all(...entryIds) as {
+          entry_id: string;
+          tag: string;
+        }[];
+
         // Group tags by entry_id
         const tagsByEntry = new Map<string, string[]>();
         tagRows.forEach(row => {
@@ -818,14 +837,13 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         offset,
         hasMore: offset + limit < total,
         nextOffset: offset + limit < total ? offset + limit : undefined,
-        previousOffset: offset > 0 ? Math.max(0, offset - limit) : undefined
+        previousOffset: offset > 0 ? Math.max(0, offset - limit) : undefined,
       };
     } catch (error) {
-      throw new DatabaseError(
-        `Failed to list entries: ${error.message}`,
-        'list',
-        { options, originalError: error }
-      );
+      throw new DatabaseError(`Failed to list entries: ${error.message}`, 'list', {
+        options,
+        originalError: error,
+      });
     }
   }
 
@@ -834,22 +852,22 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     if (!this.searchService) {
       throw new ServiceError('Search service not configured', 'SEARCH_SERVICE_MISSING');
     }
 
     const startTime = Date.now();
-    
+
     try {
       // Get all entries for search (consider implementing a more efficient approach for large datasets)
       const allEntries = await this.getAllEntriesForSearch(options);
-      
+
       // Perform search
       const results = await this.searchService.search(query, allEntries, options);
-      
+
       const searchTime = Date.now() - startTime;
-      
+
       // Record search metrics
       if (this.metricsService) {
         const searchQuery = {
@@ -857,11 +875,14 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           options,
           timestamp: new Date(),
           user_id: options.userId,
-          session_id: options.sessionId
+          session_id: options.sessionId,
         };
-        
+
         await this.metricsService.recordSearch(searchQuery, results);
-        await this.metricsService.recordPerformance('search', searchTime, { query, resultCount: results.length });
+        await this.metricsService.recordPerformance('search', searchTime, {
+          query,
+          resultCount: results.length,
+        });
       }
 
       this.emit('search:performed', { text: query, options, timestamp: new Date() }, results);
@@ -874,7 +895,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         500,
         { query, options, originalError: error }
       );
-      
+
       this.emit('error:occurred', searchError);
       throw searchError;
     }
@@ -885,13 +906,13 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async recordUsage(id: string, successful: boolean, userId?: string): Promise<void> {
     this.ensureInitialized();
-    
+
     try {
       const successIncrement = successful ? 1 : 0;
       const failureIncrement = successful ? 0 : 1;
-      
+
       this.statements.updateUsageStats.run(successIncrement, failureIncrement, id);
-      
+
       // Clear cache for this entry
       if (this.cacheService) {
         await this.cacheService.delete(`entry:${id}`);
@@ -918,22 +939,28 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async getMetrics(): Promise<KBMetrics> {
     this.ensureInitialized();
-    
+
     if (this.metricsService) {
       return await this.metricsService.getMetrics();
     }
 
     // Fallback to basic metrics
     try {
-      const overview = this.db.prepare(`
+      const overview = this.db
+        .prepare(
+          `
         SELECT 
           COUNT(*) as totalEntries,
           AVG(CASE WHEN (success_count + failure_count) = 0 THEN 0 ELSE CAST(success_count AS REAL) / (success_count + failure_count) END) as averageSuccessRate,
           SUM(usage_count) as totalUsage
         FROM kb_entries
-      `).get() as any;
+      `
+        )
+        .get() as any;
 
-      const categories = this.db.prepare(`
+      const categories = this.db
+        .prepare(
+          `
         SELECT 
           category,
           COUNT(*) as count,
@@ -942,7 +969,9 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         FROM kb_entries
         GROUP BY category
         ORDER BY count DESC
-      `).all() as any[];
+      `
+        )
+        .all() as any[];
 
       return {
         overview: {
@@ -951,7 +980,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           averageSuccessRate: overview.averageSuccessRate || 0,
           totalUsage: overview.totalUsage || 0,
           activeUsers: 0,
-          uptime: Date.now() - this.startTime
+          uptime: Date.now() - this.startTime,
         },
         categories: categories.map(cat => ({
           category: cat.category,
@@ -960,7 +989,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           successRate: cat.successRate || 0,
           averageScore: 0,
           trend: 0,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
         })),
         searches: {
           totalSearches: 0,
@@ -975,14 +1004,14 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
             semantic: 0,
             category: 0,
             tag: 0,
-            ai: 0
+            ai: 0,
           },
           aiUsage: {
             totalRequests: 0,
             successRate: 0,
             averageLatency: 0,
-            fallbackRate: 0
-          }
+            fallbackRate: 0,
+          },
         },
         usage: {
           totalViews: 0,
@@ -996,8 +1025,8 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
             dailyActive: 0,
             weeklyActive: 0,
             monthlyActive: 0,
-            retention: 0
-          }
+            retention: 0,
+          },
         },
         performance: {
           averageSearchTime: 0,
@@ -1011,8 +1040,8 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           throughput: {
             searches: 0,
             creates: 0,
-            updates: 0
-          }
+            updates: 0,
+          },
         },
         trends: {
           period: '24h',
@@ -1021,16 +1050,14 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           successRate: [],
           performance: [],
           users: [],
-          errors: []
+          errors: [],
         },
-        alerts: []
+        alerts: [],
       };
     } catch (error) {
-      throw new DatabaseError(
-        `Failed to get metrics: ${error.message}`,
-        'getMetrics',
-        { originalError: error }
-      );
+      throw new DatabaseError(`Failed to get metrics: ${error.message}`, 'getMetrics', {
+        originalError: error,
+      });
     }
   }
 
@@ -1039,19 +1066,23 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async export(options: ExportOptions = {}): Promise<string> {
     this.ensureInitialized();
-    
+
     if (this.importExportService) {
       return await this.importExportService.exportToJSON(options);
     }
 
     // Fallback export
     const entries = await this.list({ limit: 10000 });
-    return JSON.stringify({
-      version: '1.0',
-      exported_at: new Date().toISOString(),
-      total: entries.total,
-      entries: entries.data
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: '1.0',
+        exported_at: new Date().toISOString(),
+        total: entries.total,
+        entries: entries.data,
+      },
+      null,
+      2
+    );
   }
 
   /**
@@ -1059,7 +1090,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async import(data: string, options: ImportOptions = {}): Promise<ImportResult> {
     this.ensureInitialized();
-    
+
     if (this.importExportService) {
       return await this.importExportService.importFromJSON(data, options);
     }
@@ -1072,27 +1103,27 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async backup(): Promise<string> {
     this.ensureInitialized();
-    
+
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupPath = path.join(this.config.database.backup.path || './backups', `kb-backup-${timestamp}.db`);
-      
+      const backupPath = path.join(
+        this.config.database.backup.path || './backups',
+        `kb-backup-${timestamp}.db`
+      );
+
       // Ensure backup directory exists
       await fs.mkdir(path.dirname(backupPath), { recursive: true });
-      
+
       // Create backup
       await this.db.backup(backupPath);
-      
+
       this.emit('data:backup-created', backupPath, 0);
-      
+
       return backupPath;
     } catch (error) {
-      throw new ServiceError(
-        `Backup failed: ${error.message}`,
-        'BACKUP_FAILED',
-        500,
-        { originalError: error }
-      );
+      throw new ServiceError(`Backup failed: ${error.message}`, 'BACKUP_FAILED', 500, {
+        originalError: error,
+      });
     }
   }
 
@@ -1101,21 +1132,21 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
    */
   async restore(backupPath: string): Promise<RestoreResult> {
     this.ensureInitialized();
-    
+
     try {
       // Validate backup file exists
       await fs.access(backupPath);
-      
+
       // Close current database
       this.db.close();
-      
+
       // Replace current database with backup
       await fs.copyFile(backupPath, this.config.database.path);
-      
+
       // Reinitialize
       await this.initializeDatabase();
       await this.prepareStatements();
-      
+
       const result: RestoreResult = {
         success: true,
         restored: 0,
@@ -1123,20 +1154,18 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
         metadata: {
           backupVersion: '1.0',
           restoreTime: new Date(),
-          dataIntegrity: true
-        }
+          dataIntegrity: true,
+        },
       };
 
       this.emit('data:restored', result);
-      
+
       return result;
     } catch (error) {
-      throw new ServiceError(
-        `Restore failed: ${error.message}`,
-        'RESTORE_FAILED',
-        500,
-        { backupPath, originalError: error }
-      );
+      throw new ServiceError(`Restore failed: ${error.message}`, 'RESTORE_FAILED', 500, {
+        backupPath,
+        originalError: error,
+      });
     }
   }
 
@@ -1147,7 +1176,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     try {
       // Clear any periodic tasks
       this.removeAllListeners();
-      
+
       // Close database
       if (this.db && this.db.open) {
         this.db.close();
@@ -1181,9 +1210,9 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       // Ensure database directory exists
       const dbDir = path.dirname(this.config.database.path);
       await fs.mkdir(dbDir, { recursive: true });
-      
+
       this.db = new Database(this.config.database.path);
-      
+
       // Set pragmas
       Object.entries(this.config.database.pragmas).forEach(([key, value]) => {
         this.db.pragma(`${key} = ${value}`);
@@ -1191,14 +1220,13 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
 
       // Create schema
       await this.createSchema();
-      
+
       console.info(`Database initialized at ${this.config.database.path}`);
     } catch (error) {
-      throw new DatabaseError(
-        `Failed to initialize database: ${error.message}`,
-        'initialize',
-        { path: this.config.database.path, originalError: error }
-      );
+      throw new DatabaseError(`Failed to initialize database: ${error.message}`, 'initialize', {
+        path: this.config.database.path,
+        originalError: error,
+      });
     }
   }
 
@@ -1391,7 +1419,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
           AVG(CASE WHEN (success_count + failure_count) = 0 THEN 0 
                ELSE CAST(success_count AS REAL) / (success_count + failure_count) END) as avg_success_rate
         FROM kb_entries
-      `)
+      `),
     };
   }
 
@@ -1400,7 +1428,7 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
     if (this.metricsService) {
       // MetricsService might need database access
     }
-    
+
     if (this.cacheService) {
       // CacheService is standalone
     }
@@ -1447,24 +1475,28 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       usage_count: row.usage_count,
       success_count: row.success_count,
       failure_count: row.failure_count,
-      version: row.version
+      version: row.version,
     };
   }
 
   private updateFTSIndex(id: string, entry: Partial<KBEntryInput>): void {
     const tags = Array.isArray(entry.tags) ? entry.tags.join(' ') : '';
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(
+        `
       INSERT OR REPLACE INTO kb_fts (id, title, problem, solution, tags, category)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      entry.title || '',
-      entry.problem || '',
-      entry.solution || '',
-      tags,
-      entry.category || ''
-    );
+    `
+      )
+      .run(
+        id,
+        entry.title || '',
+        entry.problem || '',
+        entry.solution || '',
+        tags,
+        entry.category || ''
+      );
   }
 
   private async getAllEntriesForSearch(options: SearchOptions): Promise<KBEntry[]> {
@@ -1474,10 +1506,10 @@ export class KnowledgeBaseService extends EventEmitter implements IKnowledgeBase
       limit: 10000,
       category: options.category,
       filters: {
-        tags: options.tags
-      }
+        tags: options.tags,
+      },
     };
-    
+
     const result = await this.list(listOptions);
     return result.data;
   }

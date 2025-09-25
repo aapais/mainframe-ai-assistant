@@ -35,7 +35,7 @@ const mockKBEntries: KBEntry[] = [
     success_count: 8,
     failure_count: 2,
     difficulty_level: 'medium',
-    author: 'test-user'
+    author: 'test-user',
   },
   {
     id: '2',
@@ -50,8 +50,8 @@ const mockKBEntries: KBEntry[] = [
     success_count: 14,
     failure_count: 1,
     difficulty_level: 'easy',
-    author: 'test-user'
-  }
+    author: 'test-user',
+  },
 ];
 
 const mockAIOperation: AIOperation = {
@@ -63,7 +63,7 @@ const mockAIOperation: AIOperation = {
   purpose: 'Knowledge base search with AI enhancement',
   timestamp: new Date(),
   userId: 'test-user',
-  sessionId: 'test-session'
+  sessionId: 'test-session',
 };
 
 // Mock electron API
@@ -73,14 +73,14 @@ const mockElectronAPI = {
   searchLocal: jest.fn().mockResolvedValue([]),
   rateEntry: jest.fn().mockResolvedValue(true),
   getGeminiConfig: jest.fn().mockResolvedValue({}),
-  getBuildInfo: jest.fn().mockResolvedValue({ version: '1.0.0' })
+  getBuildInfo: jest.fn().mockResolvedValue({ version: '1.0.0' }),
 };
 
 // Setup mocks
 beforeAll(() => {
   (global as any).window.electronAPI = mockElectronAPI;
   (global as any).window.crypto = {
-    randomUUID: () => 'test-uuid-' + Math.random()
+    randomUUID: () => 'test-uuid-' + Math.random(),
   };
 
   // Mock localStorage
@@ -88,7 +88,7 @@ beforeAll(() => {
     getItem: jest.fn(),
     setItem: jest.fn(),
     removeItem: jest.fn(),
-    clear: jest.fn()
+    clear: jest.fn(),
   };
   Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 });
@@ -103,12 +103,7 @@ describe('AI Transparency Integration', () => {
     test('should show cost estimation before AI search', async () => {
       const user = userEvent.setup();
 
-      render(
-        <AISearchTab
-          entries={mockKBEntries}
-          userId="test-user"
-        />
-      );
+      render(<AISearchTab entries={mockKBEntries} userId='test-user' />);
 
       // Trigger AI search
       const searchInput = screen.getByPlaceholderText(/search/i);
@@ -191,16 +186,11 @@ describe('AI Transparency Integration', () => {
       const user = userEvent.setup();
 
       // Mock search with delay to simulate real operation
-      mockElectronAPI.searchWithAI.mockImplementation(() =>
-        new Promise(resolve => setTimeout(() => resolve([]), 1000))
+      mockElectronAPI.searchWithAI.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve([]), 1000))
       );
 
-      render(
-        <AISearchTab
-          entries={mockKBEntries}
-          userId="test-user"
-        />
-      );
+      render(<AISearchTab entries={mockKBEntries} userId='test-user' />);
 
       // Start AI search
       const searchInput = screen.getByPlaceholderText(/search/i);
@@ -216,7 +206,9 @@ describe('AI Transparency Integration', () => {
 
       // Should show progress indicators
       await waitFor(() => {
-        expect(screen.getByText(/Initializing AI search/i) || screen.getByText(/Processing query/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Initializing AI search/i) || screen.getByText(/Processing query/i)
+        ).toBeInTheDocument();
       });
 
       // Should show cost updates
@@ -245,8 +237,8 @@ describe('AI Transparency Integration', () => {
       // Set low budget limits for testing
       aiService.updateBudgetLimits({
         dailyLimit: 0.01,
-        monthlyLimit: 0.10,
-        warningThreshold: 50
+        monthlyLimit: 0.1,
+        warningThreshold: 50,
       });
 
       // Log operation that exceeds threshold
@@ -257,11 +249,7 @@ describe('AI Transparency Integration', () => {
         true
       );
 
-      const estimate = await aiService.getSearchEstimate(
-        'test query',
-        'openai',
-        'gpt-3.5-turbo'
-      );
+      const estimate = await aiService.getSearchEstimate('test query', 'openai', 'gpt-3.5-turbo');
 
       expect(estimate.budgetWarnings.length).toBeGreaterThan(0);
     });
@@ -270,7 +258,7 @@ describe('AI Transparency Integration', () => {
       // Set very low budget limits
       aiService.updateBudgetLimits({
         dailyLimit: 0.001,
-        perOperationLimit: 0.0005
+        perOperationLimit: 0.0005,
       });
 
       const estimate = await aiService.getSearchEstimate(
@@ -313,15 +301,14 @@ describe('AI Transparency Integration', () => {
 
     test('should display operation history in UI', async () => {
       // Log some test operations
-      await aiService.logOperation(mockAIOperation, 0.0025, { input: 100, output: 200, total: 300 }, true);
-
-      render(
-        <CostTracker
-          userId="test-user"
-          compact={false}
-          showBudgetAlerts={true}
-        />
+      await aiService.logOperation(
+        mockAIOperation,
+        0.0025,
+        { input: 100, output: 200, total: 300 },
+        true
       );
+
+      render(<CostTracker userId='test-user' compact={false} showBudgetAlerts={true} />);
 
       // Should show operation count
       await waitFor(() => {
@@ -365,7 +352,7 @@ describe('AI Transparency Integration', () => {
         type: 'daily',
         usage: 8.5,
         limit: 10.0,
-        percentage: 85.0
+        percentage: 85.0,
       });
 
       render(<TransparentAISearchPage />);
@@ -391,12 +378,7 @@ describe('AI Transparency Integration', () => {
       // Mock API failure
       mockElectronAPI.searchWithAI.mockRejectedValueOnce(new Error('API Error'));
 
-      render(
-        <AISearchTab
-          entries={mockKBEntries}
-          userId="test-user"
-        />
-      );
+      render(<AISearchTab entries={mockKBEntries} userId='test-user' />);
 
       const searchInput = screen.getByPlaceholderText(/search/i);
       await user.type(searchInput, 'test query');
@@ -416,11 +398,7 @@ describe('AI Transparency Integration', () => {
     });
 
     test('should validate cost calculations', async () => {
-      const estimate = await aiService.getSearchEstimate(
-        'test query',
-        'openai',
-        'gpt-3.5-turbo'
-      );
+      const estimate = await aiService.getSearchEstimate('test query', 'openai', 'gpt-3.5-turbo');
 
       expect(estimate.cost.totalCost).toBeGreaterThan(0);
       expect(estimate.cost.inputCost).toBeGreaterThanOrEqual(0);
@@ -432,17 +410,19 @@ describe('AI Transparency Integration', () => {
     test('should handle malformed operation data', async () => {
       const invalidOperation = {
         ...mockAIOperation,
-        queryText: undefined // Invalid data
+        queryText: undefined, // Invalid data
       };
 
       // Should not throw error
-      await expect(aiService.logOperation(
-        invalidOperation as AIOperation,
-        0.001,
-        { input: 10, output: 10, total: 20 },
-        false,
-        'Invalid query text'
-      )).resolves.not.toThrow();
+      await expect(
+        aiService.logOperation(
+          invalidOperation as AIOperation,
+          0.001,
+          { input: 10, output: 10, total: 20 },
+          false,
+          'Invalid query text'
+        )
+      ).resolves.not.toThrow();
     });
   });
 
@@ -450,12 +430,7 @@ describe('AI Transparency Integration', () => {
     test('should debounce cost estimation requests', async () => {
       const user = userEvent.setup();
 
-      render(
-        <AISearchTab
-          entries={mockKBEntries}
-          userId="test-user"
-        />
-      );
+      render(<AISearchTab entries={mockKBEntries} userId='test-user' />);
 
       const searchInput = screen.getByPlaceholderText(/search/i);
 
@@ -463,9 +438,12 @@ describe('AI Transparency Integration', () => {
       await user.type(searchInput, 'quick typing test');
 
       // Should only make one estimation request after debounce
-      await waitFor(() => {
-        expect(screen.getByDisplayValue('quick typing test')).toBeInTheDocument();
-      }, { timeout: 1000 });
+      await waitFor(
+        () => {
+          expect(screen.getByDisplayValue('quick typing test')).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
     });
 
     test('should limit operation history size', async () => {
@@ -492,7 +470,7 @@ describe('AI Service Unit Tests', () => {
       estimatedComplexity: 'medium' as const,
       expectedResultCount: 10,
       useSemanticSearch: true,
-      includeExplanations: true
+      includeExplanations: true,
     };
 
     const tokens = aiService.estimateSearchTokens(context);
@@ -513,7 +491,7 @@ describe('AI Service Unit Tests', () => {
   test('should update budget limits', () => {
     const newLimits = {
       dailyLimit: 25.0,
-      monthlyLimit: 200.0
+      monthlyLimit: 200.0,
     };
 
     aiService.updateBudgetLimits(newLimits);

@@ -90,8 +90,18 @@ class SimilarityAlgorithms {
    * Calculate Jaccard similarity between two text strings
    */
   static jaccard(text1: string, text2: string): number {
-    const words1 = new Set(text1.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-    const words2 = new Set(text2.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+    const words1 = new Set(
+      text1
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length > 2)
+    );
+    const words2 = new Set(
+      text2
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length > 2)
+    );
 
     const intersection = new Set([...words1].filter(x => words2.has(x)));
     const union = new Set([...words1, ...words2]);
@@ -103,8 +113,14 @@ class SimilarityAlgorithms {
    * Calculate Cosine similarity between two text strings
    */
   static cosine(text1: string, text2: string): number {
-    const words1 = text1.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-    const words2 = text2.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const words1 = text1
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(w => w.length > 2);
+    const words2 = text2
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(w => w.length > 2);
 
     // Create vocabulary
     const vocab = new Set([...words1, ...words2]);
@@ -139,7 +155,9 @@ class SimilarityAlgorithms {
     if (len1 === 0) return len2 === 0 ? 1 : 0;
     if (len2 === 0) return 0;
 
-    const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null));
+    const matrix = Array(len2 + 1)
+      .fill(null)
+      .map(() => Array(len1 + 1).fill(null));
 
     for (let i = 0; i <= len1; i++) matrix[0][i] = i;
     for (let j = 0; j <= len2; j++) matrix[j][0] = j;
@@ -177,7 +195,10 @@ class SimilarityAlgorithms {
 
   private static generateNgrams(text: string, n: number): Set<string> {
     const ngrams = new Set<string>();
-    const cleaned = text.replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+    const cleaned = text
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
     for (let i = 0; i <= cleaned.length - n; i++) {
       ngrams.add(cleaned.substring(i, i + n));
@@ -217,7 +238,7 @@ export class DuplicateDetectionService {
     executionTime: 0,
     cacheHits: 0,
     aiCalls: 0,
-    memoryUsed: 0
+    memoryUsed: 0,
   };
 
   private defaultWeights = {
@@ -226,7 +247,7 @@ export class DuplicateDetectionService {
     solution: 1.5,
     tags: 1.0,
     category: 0.5,
-    semantic: 4.0
+    semantic: 4.0,
   };
 
   /**
@@ -243,7 +264,7 @@ export class DuplicateDetectionService {
       useAI = false,
       maxComparisons = 1000,
       includeFields = ['title', 'problem', 'solution', 'tags', 'category'],
-      optimizationLevel = 'balanced'
+      optimizationLevel = 'balanced',
     } = options;
 
     // Check cache first
@@ -265,12 +286,7 @@ export class DuplicateDetectionService {
 
     // Perform similarity comparisons
     for (const entry of filteredEntries) {
-      const similarity = await this.calculateSimilarity(
-        targetEntry,
-        entry,
-        includeFields,
-        useAI
-      );
+      const similarity = await this.calculateSimilarity(targetEntry, entry, includeFields, useAI);
 
       if (similarity.similarity >= threshold) {
         results.push(similarity);
@@ -298,11 +314,7 @@ export class DuplicateDetectionService {
     entries: KBEntry[],
     options: DetectionOptions = {}
   ): Promise<DuplicateGroup[]> {
-    const {
-      threshold = 0.8,
-      groupSimilar = true,
-      optimizationLevel = 'balanced'
-    } = options;
+    const { threshold = 0.8, groupSimilar = true, optimizationLevel = 'balanced' } = options;
 
     const processedEntries = new Set<string>();
     const duplicateGroups: DuplicateGroup[] = [];
@@ -327,7 +339,7 @@ export class DuplicateDetectionService {
       const similarEntries = await this.findSimilar(entry, entries, {
         ...options,
         threshold,
-        groupSimilar: false
+        groupSimilar: false,
       });
 
       if (similarEntries.length > 0) {
@@ -339,9 +351,10 @@ export class DuplicateDetectionService {
           const group: DuplicateGroup = {
             primary: entry,
             duplicates,
-            averageSimilarity: similarEntries.reduce((sum, s) => sum + s.similarity, 0) / similarEntries.length,
+            averageSimilarity:
+              similarEntries.reduce((sum, s) => sum + s.similarity, 0) / similarEntries.length,
             mergeStrategy: this.suggestMergeStrategy(entry, duplicates),
-            conflicts: this.identifyConflicts(entry, duplicates)
+            conflicts: this.identifyConflicts(entry, duplicates),
           };
 
           duplicateGroups.push(group);
@@ -370,7 +383,7 @@ export class DuplicateDetectionService {
       problem: 0,
       solution: 0,
       tags: 0,
-      category: 0
+      category: 0,
     };
 
     const matchedFields: string[] = [];
@@ -450,7 +463,7 @@ export class DuplicateDetectionService {
       scores,
       matchType,
       matchedFields,
-      confidence
+      confidence,
     };
   }
 
@@ -474,7 +487,10 @@ export class DuplicateDetectionService {
   /**
    * Extract technical terms for semantic analysis
    */
-  private extractTechnicalTerms(text1: string, text2: string): {
+  private extractTechnicalTerms(
+    text1: string,
+    text2: string
+  ): {
     common: number;
     total: number;
   } {
@@ -505,7 +521,7 @@ export class DuplicateDetectionService {
 
     return {
       common: commonTerms.size,
-      total: totalTerms.size
+      total: totalTerms.size,
     };
   }
 
@@ -588,7 +604,9 @@ export class DuplicateDetectionService {
     duplicates: KBEntry[]
   ): DuplicateGroup['mergeStrategy'] {
     const primaryUsage = (primary.usage_count || 0) + (primary.success_count || 0);
-    const maxDuplicateUsage = Math.max(...duplicates.map(d => (d.usage_count || 0) + (d.success_count || 0)));
+    const maxDuplicateUsage = Math.max(
+      ...duplicates.map(d => (d.usage_count || 0) + (d.success_count || 0))
+    );
 
     // If primary has significantly more usage, keep it
     if (primaryUsage > maxDuplicateUsage * 2) {
@@ -597,11 +615,12 @@ export class DuplicateDetectionService {
 
     // If duplicates have much more recent activity, suggest manual review
     const primaryDate = new Date(primary.updated_at || primary.created_at || 0).getTime();
-    const maxDuplicateDate = Math.max(...duplicates.map(d =>
-      new Date(d.updated_at || d.created_at || 0).getTime()
-    ));
+    const maxDuplicateDate = Math.max(
+      ...duplicates.map(d => new Date(d.updated_at || d.created_at || 0).getTime())
+    );
 
-    if (maxDuplicateDate > primaryDate + (30 * 24 * 60 * 60 * 1000)) { // 30 days
+    if (maxDuplicateDate > primaryDate + 30 * 24 * 60 * 60 * 1000) {
+      // 30 days
       return 'manual_review';
     }
 
@@ -633,7 +652,8 @@ export class DuplicateDetectionService {
       const primaryUpdate = new Date(primary.updated_at || 0).getTime();
       const duplicateUpdate = new Date(duplicate.updated_at || 0).getTime();
 
-      if (duplicateUpdate > primaryUpdate + (7 * 24 * 60 * 60 * 1000)) { // 7 days
+      if (duplicateUpdate > primaryUpdate + 7 * 24 * 60 * 60 * 1000) {
+        // 7 days
         conflicts.push('Duplicate has more recent updates');
       }
     });
@@ -665,7 +685,7 @@ export class DuplicateDetectionService {
       executionTime: 0,
       cacheHits: 0,
       aiCalls: 0,
-      memoryUsed: 0
+      memoryUsed: 0,
     };
   }
 
@@ -673,12 +693,13 @@ export class DuplicateDetectionService {
    * Get cache statistics
    */
   getCacheStats(): { size: number; hitRate: number } {
-    const totalRequests = this.performanceMetrics.totalComparisons + this.performanceMetrics.cacheHits;
+    const totalRequests =
+      this.performanceMetrics.totalComparisons + this.performanceMetrics.cacheHits;
     const hitRate = totalRequests > 0 ? this.performanceMetrics.cacheHits / totalRequests : 0;
 
     return {
       size: this.cache.size,
-      hitRate
+      hitRate,
     };
   }
 }

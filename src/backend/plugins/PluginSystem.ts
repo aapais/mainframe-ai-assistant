@@ -125,7 +125,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       eventBus: this.eventBus,
       hookRegistry: this.hookRegistry,
       pluginConfig: {},
-      sharedStorage: this.pluginStorage
+      sharedStorage: this.pluginStorage,
     };
 
     // Load enabled plugins from configuration
@@ -133,10 +133,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       try {
         await this.loadPlugin(pluginConfig.name, pluginConfig.config);
       } catch (error) {
-        this.context.logger.error(
-          `Failed to load plugin: ${pluginConfig.name}`,
-          error as Error
-        );
+        this.context.logger.error(`Failed to load plugin: ${pluginConfig.name}`, error as Error);
       }
     }
 
@@ -154,10 +151,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       try {
         await this.unloadPlugin(pluginName);
       } catch (error) {
-        this.context.logger.error(
-          `Failed to shutdown plugin: ${pluginName}`,
-          error as Error
-        );
+        this.context.logger.error(`Failed to shutdown plugin: ${pluginName}`, error as Error);
       }
     }
 
@@ -181,7 +175,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
         pluginHealths[name] = {
           healthy: false,
           error: (error as Error).message,
-          lastCheck: new Date()
+          lastCheck: new Date(),
         };
       }
     }
@@ -192,9 +186,9 @@ export class PluginManager extends EventEmitter implements IPluginManager {
         totalPlugins: this.plugins.size,
         healthyPlugins: this.plugins.size - unhealthyPlugins.length,
         unhealthyPlugins,
-        pluginHealths
+        pluginHealths,
       },
-      lastCheck: new Date()
+      lastCheck: new Date(),
     };
   }
 
@@ -224,10 +218,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
           }
         }
       } catch (error) {
-        this.context.logger.warn(
-          `Failed to discover plugins in ${searchPath}`,
-          error as Error
-        );
+        this.context.logger.warn(`Failed to discover plugins in ${searchPath}`, error as Error);
       }
     }
 
@@ -249,9 +240,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       // Validate plugin
       const validationResult = await this.validatePlugin(manifest.path!);
       if (!validationResult.valid) {
-        throw new PluginError(
-          `Plugin validation failed: ${validationResult.errors.join(', ')}`
-        );
+        throw new PluginError(`Plugin validation failed: ${validationResult.errors.join(', ')}`);
       }
 
       // Load plugin module
@@ -274,7 +263,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       // Create plugin context
       const pluginContext: PluginContext = {
         ...this.context,
-        pluginConfig: config || {}
+        pluginConfig: config || {},
       };
 
       // Initialize plugin
@@ -296,14 +285,13 @@ export class PluginManager extends EventEmitter implements IPluginManager {
         hooks,
         sandbox: this.config.security.enableSandboxing
           ? await this.sandboxPlugin(pluginName)
-          : null
+          : null,
       };
 
       this.plugins.set(pluginName, loadedPlugin);
 
       this.emit('plugin:loaded', { name: pluginName, plugin: loadedPlugin });
       this.context.logger.info(`Plugin loaded successfully: ${pluginName}`);
-
     } catch (error) {
       this.emit('plugin:load-failed', { name: pluginName, error });
       throw error;
@@ -335,7 +323,6 @@ export class PluginManager extends EventEmitter implements IPluginManager {
 
       this.emit('plugin:unloaded', { name: pluginName });
       this.context.logger.info(`Plugin unloaded successfully: ${pluginName}`);
-
     } catch (error) {
       this.emit('plugin:unload-failed', { name: pluginName, error });
       throw error;
@@ -367,7 +354,6 @@ export class PluginManager extends EventEmitter implements IPluginManager {
         const duration = Date.now() - startTime;
 
         this.recordHookExecution(hookName, registration.plugin.name, duration, true);
-
       } catch (error) {
         this.recordHookExecution(hookName, registration.plugin.name, 0, false);
 
@@ -406,7 +392,6 @@ export class PluginManager extends EventEmitter implements IPluginManager {
 
         this.recordHookExecution(hookName, registration.plugin.name, duration, true);
         return result;
-
       } catch (error) {
         this.recordHookExecution(hookName, registration.plugin.name, 0, false);
 
@@ -470,10 +455,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
           const response = await (loadedPlugin.plugin as any).handleMessage(message);
           responses.push({ from: pluginName, ...response });
         } catch (error) {
-          this.context.logger.warn(
-            `Broadcast message failed for ${pluginName}`,
-            error as Error
-          );
+          this.context.logger.warn(`Broadcast message failed for ${pluginName}`, error as Error);
         }
       }
     }
@@ -489,14 +471,14 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       enabled: loaded.enabled,
       loadedAt: loaded.loadedAt,
       hooks: loaded.hooks,
-      version: loaded.plugin.version
+      version: loaded.plugin.version,
     }));
 
     return {
       totalPlugins: this.plugins.size,
       enabledPlugins: Array.from(this.plugins.values()).filter(p => p.enabled).length,
       plugins: pluginMetrics,
-      hookRegistrations: this.hookRegistry.getAllHooks().length
+      hookRegistrations: this.hookRegistry.getAllHooks().length,
     };
   }
 
@@ -552,7 +534,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       pluginName,
       duration,
       success,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -597,7 +579,7 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       version: loaded.plugin.version,
       description: loaded.manifest.description,
       enabled: loaded.enabled,
-      loadedAt: loaded.loadedAt
+      loadedAt: loaded.loadedAt,
     }));
   }
 
@@ -610,7 +592,10 @@ export class PluginManager extends EventEmitter implements IPluginManager {
     return plugin ? plugin.config : {};
   }
 
-  async updatePluginConfig(pluginName: string, config: Partial<PluginConfiguration>): Promise<void> {
+  async updatePluginConfig(
+    pluginName: string,
+    config: Partial<PluginConfiguration>
+  ): Promise<void> {
     const plugin = this.plugins.get(pluginName);
     if (plugin) {
       plugin.config = { ...plugin.config, ...config };
@@ -751,14 +736,13 @@ class PluginSecurityManager {
       if (!fs.existsSync(mainPath)) {
         errors.push(`Main file not found: ${manifest.main || 'index.js'}`);
       }
-
     } catch (error) {
       errors.push(`Validation error: ${(error as Error).message}`);
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

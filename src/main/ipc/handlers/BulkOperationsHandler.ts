@@ -9,12 +9,12 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import {
   BulkOperationResult,
   CategoryNode,
-  Tag
+  Tag,
 } from '../../../database/schemas/HierarchicalCategories.schema';
 import { CategoryService } from '../../../services/CategoryService';
 import { TagService } from '../../../services/TagService';
@@ -26,9 +26,19 @@ import { v4 as uuidv4 } from 'uuid';
 // Request/Response Types
 interface BulkOperation {
   id: string;
-  type: 'category_create' | 'category_update' | 'category_delete' | 'category_move' |
-        'tag_create' | 'tag_update' | 'tag_delete' | 'tag_associate' | 'tag_dissociate' |
-        'kb_entry_create' | 'kb_entry_update' | 'kb_entry_delete';
+  type:
+    | 'category_create'
+    | 'category_update'
+    | 'category_delete'
+    | 'category_move'
+    | 'tag_create'
+    | 'tag_update'
+    | 'tag_delete'
+    | 'tag_associate'
+    | 'tag_dissociate'
+    | 'kb_entry_create'
+    | 'kb_entry_update'
+    | 'kb_entry_delete';
   data: any;
   dependencies?: string[]; // IDs of operations this depends on
   metadata?: Record<string, any>;
@@ -200,7 +210,7 @@ export class BulkOperationsHandler {
         {
           ...result,
           dependency_graph: this.serializeDependencyGraph(dependencyGraph),
-          execution_plan: executionPlan
+          execution_plan: executionPlan,
         },
         {
           total_operations: operations.length,
@@ -208,10 +218,9 @@ export class BulkOperationsHandler {
           failed,
           execution_time: executionTime,
           rollback_performed: !result.success && options.transaction !== false,
-          parallel_batches: executionPlan?.length
+          parallel_batches: executionPlan?.length,
         }
       ) as BulkOperationResponse;
-
     } catch (error) {
       console.error('Bulk execution error:', error);
       return HandlerUtils.createErrorResponse(
@@ -226,7 +235,9 @@ export class BulkOperationsHandler {
   /**
    * Validate bulk operations without executing
    */
-  handleBulkValidate: IPCHandlerFunction<'bulk:validate'> = async (request: BulkValidationRequest) => {
+  handleBulkValidate: IPCHandlerFunction<'bulk:validate'> = async (
+    request: BulkValidationRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -255,16 +266,11 @@ export class BulkOperationsHandler {
         }
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        {
-          valid: validationResults.valid && dependencyIssues.length === 0,
-          validation_results: validationResults.results,
-          dependency_issues: dependencyIssues
-        }
-      ) as BulkValidationResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        valid: validationResults.valid && dependencyIssues.length === 0,
+        validation_results: validationResults.results,
+        dependency_issues: dependencyIssues,
+      }) as BulkValidationResponse;
     } catch (error) {
       console.error('Bulk validation error:', error);
       return HandlerUtils.createErrorResponse(
@@ -279,7 +285,9 @@ export class BulkOperationsHandler {
   /**
    * Generate bulk operation templates
    */
-  handleBulkTemplate: IPCHandlerFunction<'bulk:template'> = async (request: BulkTemplateRequest) => {
+  handleBulkTemplate: IPCHandlerFunction<'bulk:template'> = async (
+    request: BulkTemplateRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -316,17 +324,12 @@ export class BulkOperationsHandler {
           );
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        {
-          operations,
-          estimated_time: estimatedTime,
-          risk_assessment: riskAssessment,
-          recommendations
-        }
-      ) as BulkTemplateResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        operations,
+        estimated_time: estimatedTime,
+        risk_assessment: riskAssessment,
+        recommendations,
+      }) as BulkTemplateResponse;
     } catch (error) {
       console.error('Bulk template error:', error);
       return HandlerUtils.createErrorResponse(
@@ -340,7 +343,10 @@ export class BulkOperationsHandler {
 
   // Private helper methods
 
-  private validateBulkRequest(operations: BulkOperation[], options: any): { valid: boolean; error?: string } {
+  private validateBulkRequest(
+    operations: BulkOperation[],
+    options: any
+  ): { valid: boolean; error?: string } {
     if (!operations || operations.length === 0) {
       return { valid: false, error: 'No operations provided' };
     }
@@ -358,9 +364,18 @@ export class BulkOperationsHandler {
 
     // Validate operation types
     const validTypes = [
-      'category_create', 'category_update', 'category_delete', 'category_move',
-      'tag_create', 'tag_update', 'tag_delete', 'tag_associate', 'tag_dissociate',
-      'kb_entry_create', 'kb_entry_update', 'kb_entry_delete'
+      'category_create',
+      'category_update',
+      'category_delete',
+      'category_move',
+      'tag_create',
+      'tag_update',
+      'tag_delete',
+      'tag_associate',
+      'tag_dissociate',
+      'kb_entry_create',
+      'kb_entry_update',
+      'kb_entry_delete',
     ];
 
     for (const operation of operations) {
@@ -376,7 +391,10 @@ export class BulkOperationsHandler {
     return { valid: true };
   }
 
-  private async validateAllOperations(operations: BulkOperation[], options: any): Promise<{
+  private async validateAllOperations(
+    operations: BulkOperation[],
+    options: any
+  ): Promise<{
     valid: boolean;
     results: Array<{
       operation_id: string;
@@ -395,7 +413,7 @@ export class BulkOperationsHandler {
           operation_id: operation.id,
           valid: validation.valid,
           errors: validation.errors,
-          warnings: validation.warnings
+          warnings: validation.warnings,
         });
 
         if (!validation.valid) {
@@ -405,7 +423,7 @@ export class BulkOperationsHandler {
         results.push({
           operation_id: operation.id,
           valid: false,
-          errors: [`Validation error: ${error instanceof Error ? error.message : String(error)}`]
+          errors: [`Validation error: ${error instanceof Error ? error.message : String(error)}`],
         });
         allValid = false;
       }
@@ -414,7 +432,10 @@ export class BulkOperationsHandler {
     return { valid: allValid, results };
   }
 
-  private async validateSingleOperation(operation: BulkOperation, options: any): Promise<{
+  private async validateSingleOperation(
+    operation: BulkOperation,
+    options: any
+  ): Promise<{
     valid: boolean;
     errors?: string[];
     warnings?: string[];
@@ -467,7 +488,7 @@ export class BulkOperationsHandler {
     return {
       valid: errors.length === 0,
       errors: errors.length > 0 ? errors : undefined,
-      warnings: warnings.length > 0 ? warnings : undefined
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   }
 
@@ -495,7 +516,7 @@ export class BulkOperationsHandler {
         if (missingDeps.length > 0) {
           errors.push({
             operation_id: operation.id,
-            missing_dependencies: missingDeps
+            missing_dependencies: missingDeps,
           });
         }
       }
@@ -516,7 +537,7 @@ export class BulkOperationsHandler {
         } else if (recursionStack.has(depId)) {
           errors.push({
             operation_id: nodeId,
-            circular_dependencies: [depId]
+            circular_dependencies: [depId],
           });
           return true;
         }
@@ -545,7 +566,7 @@ export class BulkOperationsHandler {
     return {
       valid: true,
       graph,
-      executionPlan
+      executionPlan,
     };
   }
 
@@ -605,7 +626,7 @@ export class BulkOperationsHandler {
     let success = true;
 
     try {
-      await this.dbManager.transaction(async (db) => {
+      await this.dbManager.transaction(async db => {
         if (executionPlan) {
           // Execute in dependency order
           for (const batch of executionPlan) {
@@ -633,9 +654,8 @@ export class BulkOperationsHandler {
         results,
         total_operations: operations.length,
         executed_at: new Date(),
-        execution_time_ms: 0 // Will be calculated by caller
+        execution_time_ms: 0, // Will be calculated by caller
       };
-
     } catch (error) {
       console.error('Transaction execution failed:', error);
       return {
@@ -644,7 +664,7 @@ export class BulkOperationsHandler {
         total_operations: operations.length,
         executed_at: new Date(),
         execution_time_ms: 0,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -681,11 +701,14 @@ export class BulkOperationsHandler {
       results,
       total_operations: operations.length,
       executed_at: new Date(),
-      execution_time_ms: 0 // Will be calculated by caller
+      execution_time_ms: 0, // Will be calculated by caller
     };
   }
 
-  private async executeBatch(operations: BulkOperation[], options: any): Promise<BulkOperationResult> {
+  private async executeBatch(
+    operations: BulkOperation[],
+    options: any
+  ): Promise<BulkOperationResult> {
     const results = [];
     let batchSuccess = true;
 
@@ -701,7 +724,7 @@ export class BulkOperationsHandler {
           results.push({
             operation_id: operations[index].id,
             success: false,
-            error: result.reason instanceof Error ? result.reason.message : String(result.reason)
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
           });
           batchSuccess = false;
         }
@@ -721,7 +744,7 @@ export class BulkOperationsHandler {
           const errorResult = {
             operation_id: operation.id,
             success: false,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           };
           results.push(errorResult);
           batchSuccess = false;
@@ -738,7 +761,7 @@ export class BulkOperationsHandler {
       results,
       total_operations: operations.length,
       executed_at: new Date(),
-      execution_time_ms: 0
+      execution_time_ms: 0,
     };
   }
 
@@ -759,7 +782,11 @@ export class BulkOperationsHandler {
           result = await this.categoryService.delete(operation.data.id, operation.data.options);
           break;
         case 'category_move':
-          result = await this.categoryService.move(operation.data.id, operation.data.new_parent_id, operation.data.position);
+          result = await this.categoryService.move(
+            operation.data.id,
+            operation.data.new_parent_id,
+            operation.data.position
+          );
           break;
         case 'tag_create':
           result = await this.tagService.create(operation.data);
@@ -771,10 +798,17 @@ export class BulkOperationsHandler {
           result = await this.tagService.delete(operation.data.id, operation.data.options);
           break;
         case 'tag_associate':
-          result = await this.tagService.associateWithEntry(operation.data.tag_id, operation.data.entry_id, operation.data);
+          result = await this.tagService.associateWithEntry(
+            operation.data.tag_id,
+            operation.data.entry_id,
+            operation.data
+          );
           break;
         case 'tag_dissociate':
-          result = await this.tagService.dissociateFromEntry(operation.data.tag_id, operation.data.entry_id);
+          result = await this.tagService.dissociateFromEntry(
+            operation.data.tag_id,
+            operation.data.entry_id
+          );
           break;
         default:
           throw new Error(`Unknown operation type: ${operation.type}`);
@@ -784,15 +818,14 @@ export class BulkOperationsHandler {
         operation_id: operation.id,
         success: true,
         result,
-        execution_time: Date.now() - startTime
+        execution_time: Date.now() - startTime,
       };
-
     } catch (error) {
       return {
         operation_id: operation.id,
         success: false,
         error: error instanceof Error ? error.message : String(error),
-        execution_time: Date.now() - startTime
+        execution_time: Date.now() - startTime,
       };
     }
   }
@@ -832,7 +865,10 @@ export class BulkOperationsHandler {
 
   // Template generation methods (simplified implementations)
 
-  private async generateCategoryHierarchyTemplate(data: any, options: any): Promise<{
+  private async generateCategoryHierarchyTemplate(
+    data: any,
+    options: any
+  ): Promise<{
     operations: BulkOperation[];
     estimatedTime: number;
     riskAssessment: 'low' | 'medium' | 'high';
@@ -847,11 +883,17 @@ export class BulkOperationsHandler {
       operations,
       estimatedTime: operations.length * 100, // Rough estimate
       riskAssessment: 'low',
-      recommendations: ['Validate category names before execution', 'Consider backing up existing categories']
+      recommendations: [
+        'Validate category names before execution',
+        'Consider backing up existing categories',
+      ],
     };
   }
 
-  private async generateTagMigrationTemplate(data: any, options: any): Promise<{
+  private async generateTagMigrationTemplate(
+    data: any,
+    options: any
+  ): Promise<{
     operations: BulkOperation[];
     estimatedTime: number;
     riskAssessment: 'low' | 'medium' | 'high';
@@ -865,11 +907,14 @@ export class BulkOperationsHandler {
       operations,
       estimatedTime: operations.length * 50,
       riskAssessment: 'medium',
-      recommendations: ['Review tag associations before migration', 'Test with small batch first']
+      recommendations: ['Review tag associations before migration', 'Test with small batch first'],
     };
   }
 
-  private async generateKBImportTemplate(data: any, options: any): Promise<{
+  private async generateKBImportTemplate(
+    data: any,
+    options: any
+  ): Promise<{
     operations: BulkOperation[];
     estimatedTime: number;
     riskAssessment: 'low' | 'medium' | 'high';
@@ -883,11 +928,14 @@ export class BulkOperationsHandler {
       operations,
       estimatedTime: operations.length * 200,
       riskAssessment: 'high',
-      recommendations: ['Validate all KB entries', 'Check for duplicates', 'Use transaction mode']
+      recommendations: ['Validate all KB entries', 'Check for duplicates', 'Use transaction mode'],
     };
   }
 
-  private async generateDataCleanupTemplate(data: any, options: any): Promise<{
+  private async generateDataCleanupTemplate(
+    data: any,
+    options: any
+  ): Promise<{
     operations: BulkOperation[];
     estimatedTime: number;
     riskAssessment: 'low' | 'medium' | 'high';
@@ -901,7 +949,11 @@ export class BulkOperationsHandler {
       operations,
       estimatedTime: operations.length * 75,
       riskAssessment: 'high',
-      recommendations: ['Create backup before cleanup', 'Review cleanup criteria', 'Use dry run first']
+      recommendations: [
+        'Create backup before cleanup',
+        'Review cleanup criteria',
+        'Use dry run first',
+      ],
     };
   }
 }
@@ -911,8 +963,8 @@ export const bulkOperationsHandlerConfigs = {
   'bulk:execute': {
     ...HandlerConfigs.CRITICAL_OPERATIONS,
     rateLimitConfig: { requests: 2, windowMs: 60000 }, // Very restrictive
-    timeout: 300000 // 5 minutes
+    timeout: 300000, // 5 minutes
   },
   'bulk:validate': HandlerConfigs.WRITE_OPERATIONS,
-  'bulk:template': HandlerConfigs.SYSTEM_OPERATIONS
+  'bulk:template': HandlerConfigs.SYSTEM_OPERATIONS,
 } as const;

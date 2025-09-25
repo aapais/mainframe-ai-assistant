@@ -26,8 +26,8 @@
 .search-suggestions,
 .kb-search-suggestions,
 .enhanced-search-suggestions,
-[class*="suggestions"],
-[data-dropdown="suggestions"] {
+[class*='suggestions'],
+[data-dropdown='suggestions'] {
   z-index: var(--z-index-dropdown-suggestions) !important;
   position: absolute !important;
   isolation: isolate !important;
@@ -35,8 +35,8 @@
 
 .search-history,
 .kb-search-history,
-[class*="history"],
-[data-dropdown="history"] {
+[class*='history'],
+[data-dropdown='history'] {
   z-index: var(--z-index-dropdown-history) !important;
   position: absolute !important;
   isolation: isolate !important;
@@ -45,8 +45,8 @@
 .search-filters,
 .kb-search-filters,
 .search-filters-panel,
-[class*="filters"],
-[data-dropdown="filters"] {
+[class*='filters'],
+[data-dropdown='filters'] {
   z-index: var(--z-index-dropdown-filters) !important;
   position: relative !important;
   isolation: isolate !important;
@@ -55,8 +55,8 @@
 .quick-actions,
 .quick-actions-menu,
 .quick-actions-dropdown,
-[class*="quick-actions"],
-[data-dropdown="quick-actions"] {
+[class*='quick-actions'],
+[data-dropdown='quick-actions'] {
   z-index: var(--z-index-dropdown-quick-actions) !important;
   position: absolute !important;
   isolation: isolate !important;
@@ -64,8 +64,8 @@
 
 .popular-searches,
 .popular-searches-dropdown,
-[class*="popular"],
-[data-dropdown="popular"] {
+[class*='popular'],
+[data-dropdown='popular'] {
   z-index: var(--z-index-dropdown-suggestions) !important;
   position: absolute !important;
   isolation: isolate !important;
@@ -118,8 +118,9 @@
   background: white !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 8px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-              0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
   opacity: 0 !important;
   visibility: hidden !important;
   transform: translateY(-8px) scale(0.95) !important;
@@ -288,8 +289,9 @@
     background: #1f2937 !important;
     border-color: #374151 !important;
     color: #f3f4f6 !important;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3),
-                0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.3),
+      0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
   }
 
   .suggestion-item,
@@ -550,12 +552,12 @@
 
 /* Ensure this file loads last and overrides everything */
 .dropdown-system-loaded {
-  --dropdown-system-version: "2.0.0";
+  --dropdown-system-version: '2.0.0';
 }
 
 /* Mark the system as loaded for debugging */
 html::after {
-  content: "✅ Dropdown System v2.0.0 Loaded";
+  content: '✅ Dropdown System v2.0.0 Loaded';
   position: fixed;
   bottom: 10px;
   right: 10px;
@@ -571,8 +573,16 @@ html::after {
 }
 
 @keyframes system-loaded {
-  0% { opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }

@@ -95,7 +95,10 @@ export class RendererPerformanceTracker extends EventEmitter {
   /**
    * Track component render start
    */
-  public trackComponentRenderStart(componentName: string, renderPhase: 'mounting' | 'updating' | 'unmounting' = 'updating'): string {
+  public trackComponentRenderStart(
+    componentName: string,
+    renderPhase: 'mounting' | 'updating' | 'unmounting' = 'updating'
+  ): string {
     const renderId = `${componentName}-${Date.now()}-${Math.random()}`;
     const startTime = performance.now();
 
@@ -112,7 +115,11 @@ export class RendererPerformanceTracker extends EventEmitter {
   /**
    * Track component render end
    */
-  public trackComponentRenderEnd(renderId: string, componentName: string, renderPhase: 'mounting' | 'updating' | 'unmounting' = 'updating'): number {
+  public trackComponentRenderEnd(
+    renderId: string,
+    componentName: string,
+    renderPhase: 'mounting' | 'updating' | 'unmounting' = 'updating'
+  ): number {
     const endTime = performance.now();
     const startTime = this.renderStartTimes.get(renderId);
 
@@ -135,7 +142,7 @@ export class RendererPerformanceTracker extends EventEmitter {
       isTargetMet: renderTime <= this.frameTargetMs,
       timestamp: Date.now(),
       componentName,
-      renderPhase
+      renderPhase,
     };
 
     this.renderMetrics.push(metrics);
@@ -148,7 +155,7 @@ export class RendererPerformanceTracker extends EventEmitter {
         componentName,
         renderTime,
         target: this.frameTargetMs,
-        message: `Component ${componentName} render time ${renderTime.toFixed(2)}ms exceeds 16ms target`
+        message: `Component ${componentName} render time ${renderTime.toFixed(2)}ms exceeds 16ms target`,
       });
     }
 
@@ -176,7 +183,7 @@ export class RendererPerformanceTracker extends EventEmitter {
 
     // Frame timing observer
     try {
-      this.frameObserver = new PerformanceObserver((list) => {
+      this.frameObserver = new PerformanceObserver(list => {
         const entries = list.getEntries();
         for (const entry of entries) {
           if (entry.entryType === 'measure' || entry.entryType === 'navigation') {
@@ -190,7 +197,7 @@ export class RendererPerformanceTracker extends EventEmitter {
 
     // Render timing observer
     try {
-      this.renderObserver = new PerformanceObserver((list) => {
+      this.renderObserver = new PerformanceObserver(list => {
         const entries = list.getEntries();
         for (const entry of entries) {
           if (entry.name.includes('render') || entry.name.includes('component')) {
@@ -251,7 +258,7 @@ export class RendererPerformanceTracker extends EventEmitter {
           frameDuration,
           isTargetMet: frameDuration <= this.frameTargetMs,
           timestamp: Date.now(),
-          renderPhase: 'updating'
+          renderPhase: 'updating',
         };
 
         this.renderMetrics.push(metrics);
@@ -262,7 +269,7 @@ export class RendererPerformanceTracker extends EventEmitter {
             type: 'frame-duration',
             frameDuration,
             target: this.frameTargetMs,
-            message: `Frame duration ${frameDuration.toFixed(2)}ms exceeds 16ms target`
+            message: `Frame duration ${frameDuration.toFixed(2)}ms exceeds 16ms target`,
           });
         }
       }
@@ -286,7 +293,7 @@ export class RendererPerformanceTracker extends EventEmitter {
       frameDuration,
       isTargetMet: frameDuration <= this.frameTargetMs,
       timestamp: Date.now(),
-      renderPhase: 'updating'
+      renderPhase: 'updating',
     };
 
     this.renderMetrics.push(metrics);
@@ -307,7 +314,7 @@ export class RendererPerformanceTracker extends EventEmitter {
       isTargetMet: renderTime <= this.frameTargetMs,
       timestamp: Date.now(),
       componentName,
-      renderPhase: 'updating'
+      renderPhase: 'updating',
     };
 
     this.renderMetrics.push(metrics);
@@ -322,12 +329,7 @@ export class RendererPerformanceTracker extends EventEmitter {
    * Extract component name from performance entry name
    */
   private extractComponentName(entryName: string): string | undefined {
-    const patterns = [
-      /component-(.+)/,
-      /render-(.+)/,
-      /(.+)-render/,
-      /(.+)-component/
-    ];
+    const patterns = [/component-(.+)/, /render-(.+)/, /(.+)-render/, /(.+)-component/];
 
     for (const pattern of patterns) {
       const match = entryName.match(pattern);
@@ -354,7 +356,7 @@ export class RendererPerformanceTracker extends EventEmitter {
         maxRenderTime: 0,
         minRenderTime: Infinity,
         lastRenderTime: 0,
-        violationsCount: 0
+        violationsCount: 0,
       };
       this.componentMetrics.set(componentName, metrics);
     }
@@ -412,7 +414,7 @@ export class RendererPerformanceTracker extends EventEmitter {
         isTargetMet: commitTime <= this.frameTargetMs,
         timestamp: Date.now(),
         componentName: 'React-Commit',
-        renderPhase: 'updating'
+        renderPhase: 'updating',
       };
 
       this.renderMetrics.push(metrics);
@@ -451,15 +453,24 @@ export class RendererPerformanceTracker extends EventEmitter {
 
     return {
       totalRenders: this.renderMetrics.length,
-      averageRenderTime: this.renderMetrics.length > 0
-        ? this.renderMetrics.reduce((sum, m) => sum + m.componentRenderTime, 0) / this.renderMetrics.length
-        : 0,
+      averageRenderTime:
+        this.renderMetrics.length > 0
+          ? this.renderMetrics.reduce((sum, m) => sum + m.componentRenderTime, 0) /
+            this.renderMetrics.length
+          : 0,
       violationsCount: totalViolations,
-      violationRate: this.renderMetrics.length > 0 ? totalViolations / this.renderMetrics.length : 0,
-      slowestComponent: metrics.reduce((slowest, current) =>
-        !slowest || current.averageRenderTime > slowest.averageRenderTime ? current : slowest, null as ComponentPerformanceData | null),
-      fastestComponent: metrics.reduce((fastest, current) =>
-        !fastest || current.averageRenderTime < fastest.averageRenderTime ? current : fastest, null as ComponentPerformanceData | null)
+      violationRate:
+        this.renderMetrics.length > 0 ? totalViolations / this.renderMetrics.length : 0,
+      slowestComponent: metrics.reduce(
+        (slowest, current) =>
+          !slowest || current.averageRenderTime > slowest.averageRenderTime ? current : slowest,
+        null as ComponentPerformanceData | null
+      ),
+      fastestComponent: metrics.reduce(
+        (fastest, current) =>
+          !fastest || current.averageRenderTime < fastest.averageRenderTime ? current : fastest,
+        null as ComponentPerformanceData | null
+      ),
     };
   }
 
@@ -484,7 +495,7 @@ export class RendererPerformanceTracker extends EventEmitter {
     return {
       renderMetrics: this.getRenderMetrics(),
       componentMetrics: this.getComponentMetrics(),
-      summary: this.getPerformanceSummary()
+      summary: this.getPerformanceSummary(),
     };
   }
 }
@@ -501,18 +512,28 @@ export function useComponentPerformance(componentName: string) {
     }
   }, []);
 
-  const trackRenderStart = React.useCallback((phase: 'mounting' | 'updating' | 'unmounting' = 'updating') => {
-    if (trackerRef.current) {
-      renderIdRef.current = trackerRef.current.trackComponentRenderStart(componentName, phase);
-    }
-  }, [componentName]);
+  const trackRenderStart = React.useCallback(
+    (phase: 'mounting' | 'updating' | 'unmounting' = 'updating') => {
+      if (trackerRef.current) {
+        renderIdRef.current = trackerRef.current.trackComponentRenderStart(componentName, phase);
+      }
+    },
+    [componentName]
+  );
 
-  const trackRenderEnd = React.useCallback((phase: 'mounting' | 'updating' | 'unmounting' = 'updating') => {
-    if (trackerRef.current && renderIdRef.current) {
-      return trackerRef.current.trackComponentRenderEnd(renderIdRef.current, componentName, phase);
-    }
-    return 0;
-  }, [componentName]);
+  const trackRenderEnd = React.useCallback(
+    (phase: 'mounting' | 'updating' | 'unmounting' = 'updating') => {
+      if (trackerRef.current && renderIdRef.current) {
+        return trackerRef.current.trackComponentRenderEnd(
+          renderIdRef.current,
+          componentName,
+          phase
+        );
+      }
+      return 0;
+    },
+    [componentName]
+  );
 
   React.useEffect(() => {
     trackRenderStart('mounting');

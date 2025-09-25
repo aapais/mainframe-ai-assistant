@@ -91,7 +91,7 @@ export class PostgresMigrator extends EventEmitter {
     super();
     this.config = config;
     this.sourceDb = config.sourceDb;
-    
+
     this.targetPool = new Pool({
       host: config.targetConfig.host,
       port: config.targetConfig.port,
@@ -101,7 +101,7 @@ export class PostgresMigrator extends EventEmitter {
       ssl: config.targetConfig.ssl,
       max: config.targetConfig.maxConnections || 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000
+      connectionTimeoutMillis: 5000,
     });
   }
 
@@ -121,7 +121,7 @@ export class PostgresMigrator extends EventEmitter {
       triggerMapping,
       estimatedDuration: this.estimateMigrationDuration(dataMapping),
       estimatedSize: this.estimateDataSize(dataMapping),
-      compatibility: this.analyzeCompatibility(schemaMapping, triggerMapping)
+      compatibility: this.analyzeCompatibility(schemaMapping, triggerMapping),
     };
 
     return this.migrationPlan;
@@ -137,7 +137,6 @@ export class PostgresMigrator extends EventEmitter {
     warnings: string[];
     duration: number;
   }> {
-    
     if (this.isRunning) {
       throw new Error('Migration already in progress');
     }
@@ -154,7 +153,7 @@ export class PostgresMigrator extends EventEmitter {
       migratedTables: [] as string[],
       errors: [] as string[],
       warnings: [] as string[],
-      duration: 0
+      duration: 0,
     };
 
     try {
@@ -162,7 +161,7 @@ export class PostgresMigrator extends EventEmitter {
 
       // Step 1: Create target database schema
       await this.createPostgresSchema(migrationPlan.schemaMapping);
-      
+
       // Step 2: Migrate data
       const dataMigrationResult = await this.migrateData(migrationPlan.dataMapping);
       result.migratedTables = dataMigrationResult.migratedTables;
@@ -180,7 +179,7 @@ export class PostgresMigrator extends EventEmitter {
       if (this.config.options.validateData) {
         const validationResult = await this.validateMigratedData(migrationPlan.dataMapping);
         result.warnings.push(...validationResult.warnings);
-        
+
         if (!validationResult.isValid) {
           result.errors.push(...validationResult.errors);
           throw new Error('Data validation failed');
@@ -191,19 +190,18 @@ export class PostgresMigrator extends EventEmitter {
       result.duration = Date.now() - startTime;
 
       this.emit('migrationCompleted', result);
-
     } catch (error) {
       result.errors.push(error.message);
       result.success = false;
       result.duration = Date.now() - startTime;
-      
+
       this.emit('migrationFailed', { error: error.message, result });
-      
+
       // Attempt cleanup on failure
       if (!this.config.options.dryRun) {
         await this.cleanupFailedMigration(result.migratedTables);
       }
-      
+
       throw error;
     } finally {
       this.isRunning = false;
@@ -216,7 +214,7 @@ export class PostgresMigrator extends EventEmitter {
    * Generate PostgreSQL schema from SQLite schema
    */
   async generatePostgresSchema(): Promise<string> {
-    const migrationPlan = this.migrationPlan || await this.analyzeMigration();
+    const migrationPlan = this.migrationPlan || (await this.analyzeMigration());
     let schema = '';
 
     schema += '-- PostgreSQL Schema Generated from SQLite\n';
@@ -252,17 +250,17 @@ export class PostgresMigrator extends EventEmitter {
       const client = await this.targetPool.connect();
       const result = await client.query('SELECT version()');
       client.release();
-      
-      this.emit('connectionTest', { 
-        success: true, 
-        version: result.rows[0].version 
+
+      this.emit('connectionTest', {
+        success: true,
+        version: result.rows[0].version,
       });
-      
+
       return true;
     } catch (error) {
-      this.emit('connectionTest', { 
-        success: false, 
-        error: error.message 
+      this.emit('connectionTest', {
+        success: false,
+        error: error.message,
       });
       return false;
     }
@@ -272,13 +270,17 @@ export class PostgresMigrator extends EventEmitter {
 
   private async analyzeSchemaMigration(): Promise<SchemaMapping[]> {
     const mappings: SchemaMapping[] = [];
-    
+
     // Get all tables from SQLite
-    const tables = this.sourceDb.prepare(`
+    const tables = this.sourceDb
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'table' 
       AND name NOT LIKE 'sqlite_%'
-    `).all() as Array<{ name: string }>;
+    `
+      )
+      .all() as Array<{ name: string }>;
 
     for (const table of tables) {
       const columnMappings = await this.analyzeTableColumns(table.name);
@@ -288,7 +290,7 @@ export class PostgresMigrator extends EventEmitter {
         sqliteTable: table.name,
         postgresTable: this.convertTableName(table.name),
         columns: columnMappings,
-        constraints: constraintMappings
+        constraints: constraintMappings,
       });
     }
 
@@ -297,43 +299,45 @@ export class PostgresMigrator extends EventEmitter {
 
   private async analyzeTableColumns(tableName: string): Promise<ColumnMapping[]> {
     const columns = this.sourceDb.prepare(`PRAGMA table_info(${tableName})`).all() as any[];
-    
+
     return columns.map(col => ({
       sqliteName: col.name,
       postgresName: col.name,
       sqliteType: col.type,
       postgresType: this.mapSqliteTypeToPostgres(col.type),
       requiresTransformation: this.requiresTypeTransformation(col.type),
-      transformFunction: this.getTypeTransformFunction(col.type)
+      transformFunction: this.getTypeTransformFunction(col.type),
     }));
   }
 
   private async analyzeTableConstraints(tableName: string): Promise<ConstraintMapping[]> {
     const constraints: ConstraintMapping[] = [];
-    
+
     // Get foreign key constraints
-    const foreignKeys = this.sourceDb.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as any[];
-    
+    const foreignKeys = this.sourceDb
+      .prepare(`PRAGMA foreign_key_list(${tableName})`)
+      .all() as any[];
+
     for (const fk of foreignKeys) {
       constraints.push({
         type: 'foreign_key',
         sqliteDefinition: `FOREIGN KEY (${fk.from}) REFERENCES ${fk.table}(${fk.to})`,
-        postgresDefinition: `CONSTRAINT fk_${tableName}_${fk.from} FOREIGN KEY (${fk.from}) REFERENCES ${fk.table}(${fk.to})`
+        postgresDefinition: `CONSTRAINT fk_${tableName}_${fk.from} FOREIGN KEY (${fk.from}) REFERENCES ${fk.table}(${fk.to})`,
       });
     }
 
     // Get unique constraints from indexes
     const indexes = this.sourceDb.prepare(`PRAGMA index_list(${tableName})`).all() as any[];
-    
+
     for (const index of indexes) {
       if (index.unique) {
         const indexInfo = this.sourceDb.prepare(`PRAGMA index_info(${index.name})`).all() as any[];
         const columns = indexInfo.map((info: any) => info.name).join(', ');
-        
+
         constraints.push({
           type: 'unique',
           sqliteDefinition: `UNIQUE (${columns})`,
-          postgresDefinition: `CONSTRAINT uk_${tableName}_${index.name} UNIQUE (${columns})`
+          postgresDefinition: `CONSTRAINT uk_${tableName}_${index.name} UNIQUE (${columns})`,
         });
       }
     }
@@ -343,22 +347,28 @@ export class PostgresMigrator extends EventEmitter {
 
   private async analyzeDataMigration(): Promise<DataMapping[]> {
     const mappings: DataMapping[] = [];
-    
-    const tables = this.sourceDb.prepare(`
+
+    const tables = this.sourceDb
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'table' 
       AND name NOT LIKE 'sqlite_%'
-    `).all() as Array<{ name: string }>;
+    `
+      )
+      .all() as Array<{ name: string }>;
 
     for (const table of tables) {
-      const rowCount = this.sourceDb.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as { count: number };
-      
+      const rowCount = this.sourceDb
+        .prepare(`SELECT COUNT(*) as count FROM ${table.name}`)
+        .get() as { count: number };
+
       mappings.push({
         sourceTable: table.name,
         targetTable: this.convertTableName(table.name),
         rowCount: rowCount.count,
         transformationRequired: this.requiresDataTransformation(table.name),
-        dependencies: this.getTableDependencies(table.name)
+        dependencies: this.getTableDependencies(table.name),
       });
     }
 
@@ -368,13 +378,17 @@ export class PostgresMigrator extends EventEmitter {
 
   private async analyzeIndexMigration(): Promise<IndexMapping[]> {
     const mappings: IndexMapping[] = [];
-    
-    const indexes = this.sourceDb.prepare(`
+
+    const indexes = this.sourceDb
+      .prepare(
+        `
       SELECT name, tbl_name, sql 
       FROM sqlite_master 
       WHERE type = 'index' 
       AND name NOT LIKE 'sqlite_%'
-    `).all() as Array<{ name: string; tbl_name: string; sql: string }>;
+    `
+      )
+      .all() as Array<{ name: string; tbl_name: string; sql: string }>;
 
     for (const index of indexes) {
       const indexInfo = this.sourceDb.prepare(`PRAGMA index_info(${index.name})`).all() as any[];
@@ -386,7 +400,7 @@ export class PostgresMigrator extends EventEmitter {
         indexType: this.determineIndexType(index.sql),
         columns,
         isUnique: index.sql?.includes('UNIQUE') || false,
-        createAfterData: this.config.options.createIndexesLast || false
+        createAfterData: this.config.options.createIndexesLast || false,
       });
     }
 
@@ -395,12 +409,16 @@ export class PostgresMigrator extends EventEmitter {
 
   private async analyzeTriggerMigration(): Promise<TriggerMapping[]> {
     const mappings: TriggerMapping[] = [];
-    
-    const triggers = this.sourceDb.prepare(`
+
+    const triggers = this.sourceDb
+      .prepare(
+        `
       SELECT name, tbl_name, sql 
       FROM sqlite_master 
       WHERE type = 'trigger'
-    `).all() as Array<{ name: string; tbl_name: string; sql: string }>;
+    `
+      )
+      .all() as Array<{ name: string; tbl_name: string; sql: string }>;
 
     for (const trigger of triggers) {
       const postgresFunction = this.convertTriggerToFunction(trigger.sql);
@@ -410,7 +428,7 @@ export class PostgresMigrator extends EventEmitter {
         sqliteTrigger: trigger.name,
         postgresFunction: `${trigger.name}_func`,
         postgresTrigger: this.convertTriggerName(trigger.name),
-        requiresRewrite: this.requiresTriggerRewrite(trigger.sql)
+        requiresRewrite: this.requiresTriggerRewrite(trigger.sql),
       });
     }
 
@@ -421,14 +439,14 @@ export class PostgresMigrator extends EventEmitter {
 
   private mapSqliteTypeToPostgres(sqliteType: string): string {
     const typeMap: { [key: string]: string } = {
-      'INTEGER': 'INTEGER',
-      'TEXT': 'TEXT',
-      'REAL': 'REAL',
-      'BLOB': 'BYTEA',
-      'BOOLEAN': 'BOOLEAN',
-      'DATETIME': 'TIMESTAMP',
-      'DATE': 'DATE',
-      'TIME': 'TIME'
+      INTEGER: 'INTEGER',
+      TEXT: 'TEXT',
+      REAL: 'REAL',
+      BLOB: 'BYTEA',
+      BOOLEAN: 'BOOLEAN',
+      DATETIME: 'TIMESTAMP',
+      DATE: 'DATE',
+      TIME: 'TIME',
     };
 
     // Handle type with constraints (e.g., "TEXT NOT NULL")
@@ -443,14 +461,14 @@ export class PostgresMigrator extends EventEmitter {
 
   private getTypeTransformFunction(sqliteType: string): ((value: any) => any) | undefined {
     const baseType = sqliteType.split(' ')[0].toUpperCase();
-    
+
     switch (baseType) {
       case 'DATETIME':
-        return (value) => value ? new Date(value).toISOString() : null;
+        return value => (value ? new Date(value).toISOString() : null);
       case 'BOOLEAN':
-        return (value) => value === 1 || value === '1' || value === true;
+        return value => value === 1 || value === '1' || value === true;
       case 'BLOB':
-        return (value) => value ? Buffer.from(value, 'hex') : null;
+        return value => (value ? Buffer.from(value, 'hex') : null);
       default:
         return undefined;
     }
@@ -459,10 +477,10 @@ export class PostgresMigrator extends EventEmitter {
   private generateTableSchema(mapping: SchemaMapping): string {
     let schema = `-- Table: ${mapping.postgresTable}\n`;
     schema += `CREATE TABLE ${mapping.postgresTable} (\n`;
-    
+
     const columnDefs = mapping.columns.map(col => {
       let def = `  ${col.postgresName} ${col.postgresType}`;
-      
+
       // Add constraints based on original SQLite schema
       const originalColumn = this.getOriginalColumnInfo(mapping.sqliteTable, col.sqliteName);
       if (originalColumn?.notnull) {
@@ -474,12 +492,12 @@ export class PostgresMigrator extends EventEmitter {
       if (originalColumn?.dflt_value) {
         def += ` DEFAULT ${originalColumn.dflt_value}`;
       }
-      
+
       return def;
     });
 
     schema += columnDefs.join(',\n');
-    
+
     // Add table constraints
     for (const constraint of mapping.constraints) {
       schema += `,\n  ${constraint.postgresDefinition}`;
@@ -496,7 +514,7 @@ export class PostgresMigrator extends EventEmitter {
   private generateIndexSchema(mapping: IndexMapping): string {
     const unique = mapping.isUnique ? 'UNIQUE ' : '';
     const columns = mapping.columns.join(', ');
-    
+
     return `CREATE ${unique}INDEX ${mapping.postgresIndex} ON ${this.getTableForIndex(mapping.sqliteIndex)} (${columns});`;
   }
 
@@ -524,14 +542,13 @@ export class PostgresMigrator extends EventEmitter {
         } else {
           await this.migrateTableData(mapping);
         }
-        
+
         migratedTables.push(mapping.targetTable);
         this.emit('tableCompleted', { table: mapping.sourceTable });
-
       } catch (error) {
         warnings.push(`Failed to migrate table ${mapping.sourceTable}: ${error.message}`);
         this.emit('tableError', { table: mapping.sourceTable, error: error.message });
-        
+
         if (!this.config.options.continueOnError) {
           throw error;
         }
@@ -556,35 +573,38 @@ export class PostgresMigrator extends EventEmitter {
     }
 
     while (processedRows < totalRows) {
-      const rows = this.sourceDb.prepare(`
+      const rows = this.sourceDb
+        .prepare(
+          `
         SELECT * FROM ${mapping.sourceTable} 
         LIMIT ? OFFSET ?
-      `).all(batchSize, processedRows);
+      `
+        )
+        .all(batchSize, processedRows);
 
       if (rows.length === 0) break;
 
       await this.insertBatchToPostgres(mapping.targetTable, rows, schemaMapping.columns);
-      
+
       processedRows += rows.length;
       this.emit('batchCompleted', {
         table: mapping.sourceTable,
         processed: processedRows,
         total: totalRows,
-        percentage: Math.round((processedRows / totalRows) * 100)
+        percentage: Math.round((processedRows / totalRows) * 100),
       });
     }
   }
 
   private async insertBatchToPostgres(
-    tableName: string, 
-    rows: any[], 
+    tableName: string,
+    rows: any[],
     columnMappings: ColumnMapping[]
   ): Promise<void> {
-    
     if (rows.length === 0) return;
 
     const client = await this.targetPool.connect();
-    
+
     try {
       if (this.config.options.useTransactions) {
         await client.query('BEGIN');
@@ -593,7 +613,7 @@ export class PostgresMigrator extends EventEmitter {
       // Prepare column names and placeholders
       const columnNames = columnMappings.map(cm => cm.postgresName).join(', ');
       const placeholders = columnMappings.map((_, i) => `$${i + 1}`).join(', ');
-      
+
       const insertQuery = `
         INSERT INTO ${tableName} (${columnNames}) 
         VALUES (${placeholders})
@@ -603,12 +623,12 @@ export class PostgresMigrator extends EventEmitter {
       for (const row of rows) {
         const values = columnMappings.map(cm => {
           let value = row[cm.sqliteName];
-          
+
           // Apply transformation if needed
           if (cm.transformFunction && value !== null && value !== undefined) {
             value = cm.transformFunction(value);
           }
-          
+
           return value;
         });
 
@@ -618,7 +638,6 @@ export class PostgresMigrator extends EventEmitter {
       if (this.config.options.useTransactions) {
         await client.query('COMMIT');
       }
-
     } catch (error) {
       if (this.config.options.useTransactions) {
         await client.query('ROLLBACK');
@@ -657,14 +676,13 @@ export class PostgresMigrator extends EventEmitter {
   }
 
   private analyzeCompatibility(
-    schemaMappings: SchemaMapping[], 
+    schemaMappings: SchemaMapping[],
     triggerMappings: TriggerMapping[]
   ): {
     fullyCompatible: string[];
     requiresTransformation: string[];
     unsupported: string[];
   } {
-    
     const fullyCompatible: string[] = [];
     const requiresTransformation: string[] = [];
     const unsupported: string[] = [];
@@ -672,7 +690,7 @@ export class PostgresMigrator extends EventEmitter {
     // Analyze schema compatibility
     for (const mapping of schemaMappings) {
       const hasTransformations = mapping.columns.some(cm => cm.requiresTransformation);
-      
+
       if (hasTransformations) {
         requiresTransformation.push(mapping.sqliteTable);
       } else {
@@ -699,10 +717,14 @@ export class PostgresMigrator extends EventEmitter {
   }
 
   private getTableForIndex(indexName: string): string {
-    const indexInfo = this.sourceDb.prepare(`
+    const indexInfo = this.sourceDb
+      .prepare(
+        `
       SELECT tbl_name FROM sqlite_master WHERE name = ? AND type = 'index'
-    `).get(indexName) as any;
-    
+    `
+      )
+      .get(indexName) as any;
+
     return this.convertTableName(indexInfo?.tbl_name || 'unknown');
   }
 

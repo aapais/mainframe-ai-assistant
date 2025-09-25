@@ -1,9 +1,9 @@
 /**
  * Intelligent Cache Invalidation Manager
- * 
+ *
  * Implements sophisticated cache invalidation strategies to maintain
  * data consistency while maximizing cache effectiveness:
- * 
+ *
  * - Event-driven invalidation on data changes
  * - Tag-based selective invalidation
  * - Smart TTL management with adaptive expiry
@@ -62,18 +62,18 @@ export interface InvalidationStats {
 export class CacheInvalidationManager extends EventEmitter {
   private db: Database.Database;
   private cacheManager: MultiLayerCacheManager;
-  
+
   private rules: Map<string, InvalidationRule> = new Map();
   private dependencies: Map<string, Set<string>> = new Map();
   private events: InvalidationEvent[] = [];
-  
+
   private stats: InvalidationStats = {
     totalInvalidations: 0,
     successfulInvalidations: 0,
     cascadeInvalidations: 0,
     avgInvalidationTime: 0,
     topTriggers: [],
-    effectiveness: 0
+    effectiveness: 0,
   };
 
   private config = {
@@ -83,23 +83,20 @@ export class CacheInvalidationManager extends EventEmitter {
     maxCascadeDepth: 5,
     defaultTTL: 5 * 60 * 1000, // 5 minutes
     adaptiveTTLMultiplier: 1.5,
-    dependencyTrackingEnabled: true
+    dependencyTrackingEnabled: true,
   };
 
-  constructor(
-    database: Database.Database,
-    cacheManager: MultiLayerCacheManager
-  ) {
+  constructor(database: Database.Database, cacheManager: MultiLayerCacheManager) {
     super();
-    
+
     this.db = database;
     this.cacheManager = cacheManager;
-    
+
     this.initializeInvalidationTables();
     this.setupDefaultRules();
     this.setupDatabaseTriggers();
     this.startMaintenanceProcesses();
-    
+
     console.log('🗑️ Cache invalidation manager initialized');
   }
 
@@ -108,10 +105,10 @@ export class CacheInvalidationManager extends EventEmitter {
    */
   async registerRule(rule: InvalidationRule): Promise<void> {
     this.rules.set(rule.id, rule);
-    
+
     // Store rule in database for persistence
     await this.storeRule(rule);
-    
+
     // Setup dependencies if specified
     if (rule.dependencies && this.config.dependencyTrackingEnabled) {
       for (const dependency of rule.dependencies) {
@@ -121,7 +118,7 @@ export class CacheInvalidationManager extends EventEmitter {
         this.dependencies.get(dependency)!.add(rule.id);
       }
     }
-    
+
     console.log(`📋 Invalidation rule registered: ${rule.name}`);
     this.emit('rule-registered', rule);
   }
@@ -136,22 +133,27 @@ export class CacheInvalidationManager extends EventEmitter {
     changes?: Record<string, any>
   ): Promise<InvalidationEvent[]> {
     const events: InvalidationEvent[] = [];
-    const triggeredRules = this.findTriggeredRules('data_change', { table, operation, affectedIds, changes });
-    
+    const triggeredRules = this.findTriggeredRules('data_change', {
+      table,
+      operation,
+      affectedIds,
+      changes,
+    });
+
     for (const rule of triggeredRules) {
       const event = await this.executeRule(rule, {
         table,
         operation,
         affectedIds,
         changes,
-        trigger: 'data_change'
+        trigger: 'data_change',
       });
-      
+
       if (event) {
         events.push(event);
       }
     }
-    
+
     return events;
   }
 
@@ -166,22 +168,22 @@ export class CacheInvalidationManager extends EventEmitter {
   ): Promise<InvalidationEvent> {
     const eventId = this.generateEventId();
     const startTime = Date.now();
-    
+
     try {
       let affectedKeys: string[] = [];
       let cascadeLevel = 0;
-      
+
       // Primary invalidation
       const primaryCount = await this.cacheManager.invalidate(pattern, tags, cascade);
       affectedKeys.push(...this.generateAffectedKeysFromPattern(pattern, tags));
-      
+
       // Cascade invalidation if enabled
       if (cascade && this.config.enableCascadeInvalidation) {
         const cascadeResults = await this.executeCascadeInvalidation(pattern, tags, 1);
         cascadeLevel = cascadeResults.maxDepth;
         affectedKeys.push(...cascadeResults.keys);
       }
-      
+
       const event: InvalidationEvent = {
         id: eventId,
         timestamp: new Date(),
@@ -189,17 +191,18 @@ export class CacheInvalidationManager extends EventEmitter {
         affectedKeys,
         affectedTags: tags || [],
         cascadeLevel,
-        success: true
+        success: true,
       };
-      
+
       this.recordEvent(event);
       this.updateStats(event, Date.now() - startTime);
-      
-      console.log(`🗑️ Manual invalidation: ${affectedKeys.length} keys, cascade depth ${cascadeLevel}`);
+
+      console.log(
+        `🗑️ Manual invalidation: ${affectedKeys.length} keys, cascade depth ${cascadeLevel}`
+      );
       this.emit('invalidation-completed', event);
-      
+
       return event;
-      
     } catch (error) {
       const event: InvalidationEvent = {
         id: eventId,
@@ -209,12 +212,12 @@ export class CacheInvalidationManager extends EventEmitter {
         affectedTags: tags || [],
         cascadeLevel: 0,
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
-      
+
       this.recordEvent(event);
       console.error('❌ Invalidation failed:', error);
-      
+
       return event;
     }
   }
@@ -222,39 +225,42 @@ export class CacheInvalidationManager extends EventEmitter {
   /**
    * Smart TTL adjustment based on usage patterns
    */
-  async adjustTTL(cacheKey: string, accessPattern: {
-    accessCount: number;
-    lastAccessed: Date;
-    computationTime: number;
-    hitRate: number;
-  }): Promise<number> {
+  async adjustTTL(
+    cacheKey: string,
+    accessPattern: {
+      accessCount: number;
+      lastAccessed: Date;
+      computationTime: number;
+      hitRate: number;
+    }
+  ): Promise<number> {
     if (!this.config.enableSmartTTL) {
       return this.config.defaultTTL;
     }
-    
+
     let adjustedTTL = this.config.defaultTTL;
-    
+
     // Increase TTL for frequently accessed items
     if (accessPattern.accessCount > 10) {
       adjustedTTL *= this.config.adaptiveTTLMultiplier;
     }
-    
+
     // Increase TTL for expensive computations
     if (accessPattern.computationTime > 100) {
       adjustedTTL *= this.config.adaptiveTTLMultiplier;
     }
-    
+
     // Decrease TTL for items with low hit rates
     if (accessPattern.hitRate < 0.5) {
       adjustedTTL *= 0.5;
     }
-    
+
     // Consider recency
     const hoursSinceAccess = (Date.now() - accessPattern.lastAccessed.getTime()) / (60 * 60 * 1000);
     if (hoursSinceAccess > 24) {
       adjustedTTL *= 0.5; // Reduce TTL for stale items
     }
-    
+
     return Math.max(adjustedTTL, 60000); // Minimum 1 minute TTL
   }
 
@@ -269,9 +275,7 @@ export class CacheInvalidationManager extends EventEmitter {
    * Get recent invalidation events
    */
   getRecentEvents(limit: number = 50): InvalidationEvent[] {
-    return this.events
-      .slice(-limit)
-      .reverse(); // Most recent first
+    return this.events.slice(-limit).reverse(); // Most recent first
   }
 
   /**
@@ -279,39 +283,38 @@ export class CacheInvalidationManager extends EventEmitter {
    */
   getRecommendations(): string[] {
     const recommendations: string[] = [];
-    
+
     if (this.stats.effectiveness < 0.7) {
       recommendations.push('Invalidation effectiveness is low - review rule conditions');
     }
-    
+
     if (this.stats.cascadeInvalidations / Math.max(this.stats.totalInvalidations, 1) > 0.5) {
       recommendations.push('High cascade ratio - consider optimizing dependency chains');
     }
-    
+
     const topTrigger = this.stats.topTriggers[0];
     if (topTrigger && topTrigger.avgKeysAffected > 100) {
-      recommendations.push(`Trigger "${topTrigger.trigger}" invalidates too many keys - consider refinement`);
+      recommendations.push(
+        `Trigger "${topTrigger.trigger}" invalidates too many keys - consider refinement`
+      );
     }
-    
+
     return recommendations;
   }
 
   // Private implementation methods
 
-  private findTriggeredRules(
-    trigger: string,
-    context: Record<string, any>
-  ): InvalidationRule[] {
+  private findTriggeredRules(trigger: string, context: Record<string, any>): InvalidationRule[] {
     const triggeredRules: InvalidationRule[] = [];
-    
+
     for (const rule of this.rules.values()) {
       if (!rule.enabled || rule.trigger !== trigger) continue;
-      
+
       if (this.evaluateRuleConditions(rule, context)) {
         triggeredRules.push(rule);
       }
     }
-    
+
     // Sort by priority (higher priority first)
     return triggeredRules.sort((a, b) => b.priority - a.priority);
   }
@@ -320,19 +323,22 @@ export class CacheInvalidationManager extends EventEmitter {
     if (!rule.conditions || rule.conditions.length === 0) {
       return true; // No conditions means always trigger
     }
-    
+
     for (const condition of rule.conditions) {
       if (!this.evaluateCondition(condition, context)) {
         return false; // All conditions must be true
       }
     }
-    
+
     return true;
   }
 
-  private evaluateCondition(condition: InvalidationCondition, context: Record<string, any>): boolean {
+  private evaluateCondition(
+    condition: InvalidationCondition,
+    context: Record<string, any>
+  ): boolean {
     const targetValue = context[condition.target];
-    
+
     switch (condition.operator) {
       case 'eq':
         return targetValue === condition.value;
@@ -359,22 +365,22 @@ export class CacheInvalidationManager extends EventEmitter {
   ): Promise<InvalidationEvent | null> {
     const eventId = this.generateEventId();
     const startTime = Date.now();
-    
+
     try {
       let affectedKeys: string[] = [];
       let cascadeLevel = 0;
-      
+
       // Execute primary invalidation
       const primaryCount = await this.cacheManager.invalidate(rule.pattern, rule.tags, false);
       affectedKeys.push(...this.generateAffectedKeysFromPattern(rule.pattern, rule.tags));
-      
+
       // Execute cascade if enabled
       if (rule.cascade && this.config.enableCascadeInvalidation) {
         const cascadeResults = await this.executeCascadeInvalidation(rule.pattern, rule.tags, 1);
         cascadeLevel = cascadeResults.maxDepth;
         affectedKeys.push(...cascadeResults.keys);
       }
-      
+
       const event: InvalidationEvent = {
         id: eventId,
         timestamp: new Date(),
@@ -382,17 +388,16 @@ export class CacheInvalidationManager extends EventEmitter {
         affectedKeys,
         affectedTags: rule.tags || [],
         cascadeLevel,
-        success: true
+        success: true,
       };
-      
+
       this.recordEvent(event);
       this.updateStats(event, Date.now() - startTime);
-      
+
       console.log(`🗑️ Rule executed: ${rule.name} - ${affectedKeys.length} keys invalidated`);
       this.emit('rule-executed', { rule, event });
-      
+
       return event;
-      
     } catch (error) {
       const event: InvalidationEvent = {
         id: eventId,
@@ -402,12 +407,12 @@ export class CacheInvalidationManager extends EventEmitter {
         affectedTags: rule.tags || [],
         cascadeLevel: 0,
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
-      
+
       this.recordEvent(event);
       console.error(`❌ Rule execution failed: ${rule.name}`, error);
-      
+
       return event;
     }
   }
@@ -420,18 +425,18 @@ export class CacheInvalidationManager extends EventEmitter {
     if (depth > this.config.maxCascadeDepth) {
       return { keys: [], maxDepth: depth - 1 };
     }
-    
+
     const cascadeKeys: string[] = [];
     let maxDepth = depth;
-    
+
     // Find dependent rules
     const dependentRules = this.findDependentRules(pattern, tags);
-    
+
     for (const rule of dependentRules) {
       // Execute dependent rule
       const dependentCount = await this.cacheManager.invalidate(rule.pattern, rule.tags, false);
       cascadeKeys.push(...this.generateAffectedKeysFromPattern(rule.pattern, rule.tags));
-      
+
       // Recurse if the dependent rule also has cascade enabled
       if (rule.cascade) {
         const nestedResults = await this.executeCascadeInvalidation(
@@ -443,24 +448,24 @@ export class CacheInvalidationManager extends EventEmitter {
         maxDepth = Math.max(maxDepth, nestedResults.maxDepth);
       }
     }
-    
+
     return { keys: cascadeKeys, maxDepth };
   }
 
   private findDependentRules(pattern?: string, tags?: string[]): InvalidationRule[] {
     const dependentRules: InvalidationRule[] = [];
-    
+
     // Find rules that depend on the given pattern or tags
     for (const [ruleId, dependencies] of this.dependencies) {
       const rule = this.rules.get(ruleId);
       if (!rule || !rule.enabled) continue;
-      
+
       // Check if any dependencies match
       if (pattern && dependencies.has(pattern)) {
         dependentRules.push(rule);
         continue;
       }
-      
+
       if (tags) {
         for (const tag of tags) {
           if (dependencies.has(tag)) {
@@ -470,7 +475,7 @@ export class CacheInvalidationManager extends EventEmitter {
         }
       }
     }
-    
+
     return dependentRules;
   }
 
@@ -490,9 +495,9 @@ export class CacheInvalidationManager extends EventEmitter {
             type: 'table_change',
             target: 'table',
             operator: 'eq',
-            value: 'kb_entries'
-          }
-        ]
+            value: 'kb_entries',
+          },
+        ],
       },
       {
         id: 'user-pattern-changed',
@@ -508,9 +513,9 @@ export class CacheInvalidationManager extends EventEmitter {
             type: 'table_change',
             target: 'operation',
             operator: 'eq',
-            value: 'UPDATE'
-          }
-        ]
+            value: 'UPDATE',
+          },
+        ],
       },
       {
         id: 'category-stats-stale',
@@ -526,9 +531,9 @@ export class CacheInvalidationManager extends EventEmitter {
             type: 'time_elapsed',
             target: 'hours',
             operator: 'gte',
-            value: 24
-          }
-        ]
+            value: 24,
+          },
+        ],
       },
       {
         id: 'search-index-rebuilt',
@@ -538,10 +543,10 @@ export class CacheInvalidationManager extends EventEmitter {
         tags: ['search', 'index'],
         cascade: true,
         priority: 15,
-        enabled: true
-      }
+        enabled: true,
+      },
     ];
-    
+
     defaultRules.forEach(rule => {
       this.registerRule(rule).catch(error => {
         console.error(`Failed to register default rule ${rule.id}:`, error);
@@ -563,7 +568,7 @@ export class CacheInvalidationManager extends EventEmitter {
           );
         END;
       `);
-      
+
       this.db.exec(`
         CREATE TRIGGER IF NOT EXISTS kb_entries_insert_invalidate_cache
         AFTER INSERT ON kb_entries
@@ -575,7 +580,7 @@ export class CacheInvalidationManager extends EventEmitter {
           );
         END;
       `);
-      
+
       this.db.exec(`
         CREATE TRIGGER IF NOT EXISTS kb_entries_delete_invalidate_cache
         AFTER DELETE ON kb_entries
@@ -587,7 +592,7 @@ export class CacheInvalidationManager extends EventEmitter {
           );
         END;
       `);
-      
+
       console.log('✅ Database triggers for cache invalidation set up');
     } catch (error) {
       console.error('❌ Failed to set up database triggers:', error);
@@ -598,26 +603,26 @@ export class CacheInvalidationManager extends EventEmitter {
     // This is a simplified implementation
     // In practice, you'd need to track actual cache keys that match the pattern
     const keys: string[] = [];
-    
+
     if (pattern) {
       keys.push(`pattern:${pattern}`);
     }
-    
+
     if (tags) {
       keys.push(...tags.map(tag => `tag:${tag}`));
     }
-    
+
     return keys;
   }
 
   private recordEvent(event: InvalidationEvent): void {
     this.events.push(event);
-    
+
     // Keep only recent events in memory
     if (this.events.length > this.config.maxEventsHistory) {
       this.events.shift();
     }
-    
+
     // Store event in database
     this.storeEvent(event).catch(error => {
       console.error('Failed to store invalidation event:', error);
@@ -626,40 +631,40 @@ export class CacheInvalidationManager extends EventEmitter {
 
   private updateStats(event: InvalidationEvent, duration: number): void {
     this.stats.totalInvalidations++;
-    
+
     if (event.success) {
       this.stats.successfulInvalidations++;
     }
-    
+
     if (event.cascadeLevel > 0) {
       this.stats.cascadeInvalidations++;
     }
-    
+
     // Update average invalidation time
-    this.stats.avgInvalidationTime = 
-      (this.stats.avgInvalidationTime * (this.stats.totalInvalidations - 1) + duration) 
-      / this.stats.totalInvalidations;
-    
+    this.stats.avgInvalidationTime =
+      (this.stats.avgInvalidationTime * (this.stats.totalInvalidations - 1) + duration) /
+      this.stats.totalInvalidations;
+
     // Update top triggers
     this.updateTopTriggers(event);
   }
 
   private updateTopTriggers(event: InvalidationEvent): void {
     const triggerStats = this.stats.topTriggers.find(t => t.trigger === event.trigger);
-    
+
     if (triggerStats) {
       triggerStats.count++;
-      triggerStats.avgKeysAffected = 
-        (triggerStats.avgKeysAffected * (triggerStats.count - 1) + event.affectedKeys.length) 
-        / triggerStats.count;
+      triggerStats.avgKeysAffected =
+        (triggerStats.avgKeysAffected * (triggerStats.count - 1) + event.affectedKeys.length) /
+        triggerStats.count;
     } else {
       this.stats.topTriggers.push({
         trigger: event.trigger,
         count: 1,
-        avgKeysAffected: event.affectedKeys.length
+        avgKeysAffected: event.affectedKeys.length,
       });
     }
-    
+
     // Sort by count and keep only top 10
     this.stats.topTriggers.sort((a, b) => b.count - a.count);
     this.stats.topTriggers = this.stats.topTriggers.slice(0, 10);
@@ -671,23 +676,27 @@ export class CacheInvalidationManager extends EventEmitter {
 
   private async storeRule(rule: InvalidationRule): Promise<void> {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO invalidation_rules (
           id, name, trigger_type, pattern, tags, dependencies, cascade,
           priority, enabled, conditions
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        rule.id,
-        rule.name,
-        rule.trigger,
-        rule.pattern || null,
-        rule.tags ? JSON.stringify(rule.tags) : null,
-        rule.dependencies ? JSON.stringify(rule.dependencies) : null,
-        rule.cascade ? 1 : 0,
-        rule.priority,
-        rule.enabled ? 1 : 0,
-        rule.conditions ? JSON.stringify(rule.conditions) : null
-      );
+      `
+        )
+        .run(
+          rule.id,
+          rule.name,
+          rule.trigger,
+          rule.pattern || null,
+          rule.tags ? JSON.stringify(rule.tags) : null,
+          rule.dependencies ? JSON.stringify(rule.dependencies) : null,
+          rule.cascade ? 1 : 0,
+          rule.priority,
+          rule.enabled ? 1 : 0,
+          rule.conditions ? JSON.stringify(rule.conditions) : null
+        );
     } catch (error) {
       console.error('Failed to store invalidation rule:', error);
     }
@@ -695,21 +704,25 @@ export class CacheInvalidationManager extends EventEmitter {
 
   private async storeEvent(event: InvalidationEvent): Promise<void> {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO cache_invalidation_events (
           event_id, timestamp, trigger_type, affected_keys, affected_tags,
           cascade_level, success, error_message
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        event.id,
-        event.timestamp.toISOString(),
-        event.trigger,
-        JSON.stringify(event.affectedKeys),
-        JSON.stringify(event.affectedTags),
-        event.cascadeLevel,
-        event.success ? 1 : 0,
-        event.error || null
-      );
+      `
+        )
+        .run(
+          event.id,
+          event.timestamp.toISOString(),
+          event.trigger,
+          JSON.stringify(event.affectedKeys),
+          JSON.stringify(event.affectedTags),
+          event.cascadeLevel,
+          event.success ? 1 : 0,
+          event.error || null
+        );
     } catch (error) {
       console.error('Failed to store invalidation event:', error);
     }
@@ -774,24 +787,34 @@ export class CacheInvalidationManager extends EventEmitter {
     }, 30 * 1000);
 
     // Calculate effectiveness metrics every 5 minutes
-    setInterval(() => {
-      this.calculateEffectiveness();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this.calculateEffectiveness();
+      },
+      5 * 60 * 1000
+    );
 
     // Clean up old events every hour
-    setInterval(() => {
-      this.cleanupOldEvents();
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupOldEvents();
+      },
+      60 * 60 * 1000
+    );
   }
 
   private async processPendingEvents(): Promise<void> {
     try {
-      const pendingEvents = this.db.prepare(`
+      const pendingEvents = this.db
+        .prepare(
+          `
         SELECT * FROM cache_invalidation_events
         WHERE success IS NULL
         ORDER BY timestamp ASC
         LIMIT 50
-      `).all();
+      `
+        )
+        .all();
 
       for (const event of pendingEvents as any[]) {
         await this.onDataChange(
@@ -801,11 +824,15 @@ export class CacheInvalidationManager extends EventEmitter {
         );
 
         // Mark as processed
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           UPDATE cache_invalidation_events
           SET success = 1
           WHERE id = ?
-        `).run(event.id);
+        `
+          )
+          .run(event.id);
       }
     } catch (error) {
       console.error('Error processing pending invalidation events:', error);
@@ -814,26 +841,29 @@ export class CacheInvalidationManager extends EventEmitter {
 
   private calculateEffectiveness(): void {
     // Calculate effectiveness based on prevented stale reads vs useful cache invalidations
-    const recentEvents = this.events.filter(e => 
-      e.timestamp.getTime() > Date.now() - (24 * 60 * 60 * 1000)
+    const recentEvents = this.events.filter(
+      e => e.timestamp.getTime() > Date.now() - 24 * 60 * 60 * 1000
     );
 
     const totalInvalidations = recentEvents.length;
     const successfulInvalidations = recentEvents.filter(e => e.success).length;
 
-    this.stats.effectiveness = totalInvalidations > 0 
-      ? successfulInvalidations / totalInvalidations 
-      : 1;
+    this.stats.effectiveness =
+      totalInvalidations > 0 ? successfulInvalidations / totalInvalidations : 1;
   }
 
   private cleanupOldEvents(): void {
-    const cutoffTime = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)); // 7 days ago
+    const cutoffTime = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
 
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         DELETE FROM cache_invalidation_events
         WHERE timestamp < ?
-      `).run(cutoffTime.toISOString());
+      `
+        )
+        .run(cutoffTime.toISOString());
 
       if (result.changes && result.changes > 0) {
         console.log(`🧹 Cleaned up ${result.changes} old invalidation events`);

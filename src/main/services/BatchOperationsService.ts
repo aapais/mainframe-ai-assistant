@@ -160,7 +160,7 @@ export class BatchOperationsService extends EventEmitter {
       enableRollback = true,
       progressUpdates = true,
       validateFirst = true,
-      stopOnFirstError = false
+      stopOnFirstError = false,
     } = options;
 
     // Initialize progress tracking
@@ -204,7 +204,7 @@ export class BatchOperationsService extends EventEmitter {
             operationId: operation.id,
             success: true,
             entryId: result.entryId,
-            executionTime
+            executionTime,
           });
 
           successCount++;
@@ -213,7 +213,6 @@ export class BatchOperationsService extends EventEmitter {
           if (progressUpdates && i % this.PROGRESS_UPDATE_INTERVAL === 0) {
             this.updateProgress(batchId, i + 1, operation.type);
           }
-
         } catch (error) {
           const executionTime = Date.now() - opStartTime;
 
@@ -221,7 +220,7 @@ export class BatchOperationsService extends EventEmitter {
             operationId: operation.id,
             success: false,
             error: error.message,
-            executionTime
+            executionTime,
           });
 
           failureCount++;
@@ -241,7 +240,6 @@ export class BatchOperationsService extends EventEmitter {
       if (progressUpdates) {
         this.completeProgress(batchId);
       }
-
     } catch (error) {
       // Handle transaction failure
       if (enableRollback && rollbackId) {
@@ -259,7 +257,7 @@ export class BatchOperationsService extends EventEmitter {
       failedOperations: failureCount,
       executionTime: Date.now() - startTime,
       results,
-      rollbackId
+      rollbackId,
     };
 
     this.emit('complete', executionResult);
@@ -284,14 +282,14 @@ export class BatchOperationsService extends EventEmitter {
     const operations: BatchOperation[] = entries.map(entry => ({
       id: uuidv4(),
       type: 'create' as BatchOperationType,
-      entry: { ...entry, id: uuidv4() }
+      entry: { ...entry, id: uuidv4() },
     }));
 
     return this.executeBatch(operations, {
       enableRollback: true,
       progressUpdates: true,
       validateFirst: options.validateBeforeInsert,
-      stopOnFirstError: !options.skipDuplicates
+      stopOnFirstError: !options.skipDuplicates,
     });
   }
 
@@ -313,14 +311,14 @@ export class BatchOperationsService extends EventEmitter {
       id: uuidv4(),
       type: 'update' as BatchOperationType,
       entryId: update.id,
-      entry: update.updates
+      entry: update.updates,
     }));
 
     return this.executeBatch(operations, {
       enableRollback: true,
       progressUpdates: true,
       validateFirst: options.validateBeforeUpdate,
-      stopOnFirstError: !options.skipMissing
+      stopOnFirstError: !options.skipMissing,
     });
   }
 
@@ -343,13 +341,13 @@ export class BatchOperationsService extends EventEmitter {
     const operations: BatchOperation[] = entryIds.map(entryId => ({
       id: uuidv4(),
       type: operationType as BatchOperationType,
-      entryId
+      entryId,
     }));
 
     return this.executeBatch(operations, {
       enableRollback: true,
       progressUpdates: true,
-      stopOnFirstError: !options.skipMissing
+      stopOnFirstError: !options.skipMissing,
     });
   }
 
@@ -391,10 +389,7 @@ export class BatchOperationsService extends EventEmitter {
 
     if (filter?.dateRange) {
       whereConditions.push('created_at BETWEEN ? AND ?');
-      queryParams.push(
-        filter.dateRange.start.toISOString(),
-        filter.dateRange.end.toISOString()
-      );
+      queryParams.push(filter.dateRange.start.toISOString(), filter.dateRange.end.toISOString());
     }
 
     if (filter?.archived !== undefined) {
@@ -406,14 +401,18 @@ export class BatchOperationsService extends EventEmitter {
     const baseQuery = `
       SELECT
         e.*,
-        ${includeUsageStats ? `
+        ${
+          includeUsageStats
+            ? `
           e.usage_count,
           e.success_count,
           e.failure_count,
           CASE WHEN (e.success_count + e.failure_count) > 0
                THEN CAST(e.success_count AS REAL) / (e.success_count + e.failure_count)
                ELSE 0 END as success_rate,
-        ` : ''}
+        `
+            : ''
+        }
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags
       FROM kb_entries e
       LEFT JOIN kb_tags t ON e.id = t.entry_id
@@ -437,7 +436,7 @@ export class BatchOperationsService extends EventEmitter {
     return {
       ...exportResult,
       format,
-      executionTime: Date.now() - startTime
+      executionTime: Date.now() - startTime,
     };
   }
 
@@ -487,29 +486,31 @@ export class BatchOperationsService extends EventEmitter {
       const batch = entries.slice(i, i + batchSizeValue);
 
       try {
-        const operations = batch.map(entry => {
-          // Validate entry structure if requested
-          if (validateBeforeImport) {
-            const validationError = this.validateEntryStructure(entry);
-            if (validationError) {
-              errors.push(`Entry ${i + batch.indexOf(entry)}: ${validationError}`);
-              return null;
+        const operations = batch
+          .map(entry => {
+            // Validate entry structure if requested
+            if (validateBeforeImport) {
+              const validationError = this.validateEntryStructure(entry);
+              if (validationError) {
+                errors.push(`Entry ${i + batch.indexOf(entry)}: ${validationError}`);
+                return null;
+              }
             }
-          }
 
-          return {
-            id: uuidv4(),
-            type: 'create' as BatchOperationType,
-            entry: this.normalizeImportedEntry(entry)
-          };
-        }).filter(op => op !== null) as BatchOperation[];
+            return {
+              id: uuidv4(),
+              type: 'create' as BatchOperationType,
+              entry: this.normalizeImportedEntry(entry),
+            };
+          })
+          .filter(op => op !== null) as BatchOperation[];
 
         if (operations.length > 0) {
           const result = await this.executeBatch(operations, {
             enableRollback: false, // Handle errors gracefully during import
             progressUpdates: false, // Disable progress for internal batches
             validateFirst: false, // Already validated above
-            stopOnFirstError: false
+            stopOnFirstError: false,
           });
 
           importedCount += result.successfulOperations;
@@ -520,7 +521,6 @@ export class BatchOperationsService extends EventEmitter {
             .filter(r => !r.success)
             .forEach(r => errors.push(`Operation ${r.operationId}: ${r.error}`));
         }
-
       } catch (error) {
         errorCount += batch.length;
         errors.push(`Batch ${i}-${i + batchSizeValue}: ${error.message}`);
@@ -532,7 +532,7 @@ export class BatchOperationsService extends EventEmitter {
       skippedCount,
       errorCount,
       executionTime: Date.now() - startTime,
-      errors
+      errors,
     };
   }
 
@@ -586,13 +586,13 @@ export class BatchOperationsService extends EventEmitter {
       return {
         rolledBackOperations,
         success: errors.length === 0,
-        errors
+        errors,
       };
     } catch (error) {
       return {
         rolledBackOperations: 0,
         success: false,
-        errors: [`Transaction failed: ${error.message}`]
+        errors: [`Transaction failed: ${error.message}`],
       };
     }
   }
@@ -620,7 +620,7 @@ export class BatchOperationsService extends EventEmitter {
     return Array.from(this.rollbackData.entries()).map(([rollbackId, data]) => ({
       rollbackId,
       createdAt: new Date(data[0]?.timestamp || Date.now()),
-      operationCount: data.length
+      operationCount: data.length,
     }));
   }
 
@@ -638,7 +638,10 @@ export class BatchOperationsService extends EventEmitter {
         errors.push(`Operation ${index}: Invalid operation type: ${operation.type}`);
       }
 
-      if (['update', 'delete', 'archive', 'restore'].includes(operation.type) && !operation.entryId) {
+      if (
+        ['update', 'delete', 'archive', 'restore'].includes(operation.type) &&
+        !operation.entryId
+      ) {
         errors.push(`Operation ${index}: Missing entryId for ${operation.type} operation`);
       }
 
@@ -705,18 +708,22 @@ export class BatchOperationsService extends EventEmitter {
   private createEntry(entry: Partial<KBEntry>): string {
     const id = entry.id || uuidv4();
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO kb_entries (id, title, problem, solution, category, severity, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      entry.title,
-      entry.problem,
-      entry.solution,
-      entry.category,
-      entry.severity || 'medium',
-      entry.created_by || 'batch-service'
-    );
+    `
+      )
+      .run(
+        id,
+        entry.title,
+        entry.problem,
+        entry.solution,
+        entry.category,
+        entry.severity || 'medium',
+        entry.created_by || 'batch-service'
+      );
 
     // Insert tags if provided
     if (entry.tags && entry.tags.length > 0) {
@@ -744,11 +751,15 @@ export class BatchOperationsService extends EventEmitter {
       setClause.push('updated_at = CURRENT_TIMESTAMP');
       values.push(entryId);
 
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         UPDATE kb_entries
         SET ${setClause.join(', ')}
         WHERE id = ?
-      `).run(...values);
+      `
+        )
+        .run(...values);
     }
 
     // Update tags if provided
@@ -791,11 +802,15 @@ export class BatchOperationsService extends EventEmitter {
 
     values.push(data.id);
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE kb_entries
       SET ${setClause}
       WHERE id = ?
-    `).run(...values);
+    `
+      )
+      .run(...values);
   }
 
   private createRollbackPoint(operations: BatchOperation[]): string {
@@ -808,33 +823,39 @@ export class BatchOperationsService extends EventEmitter {
         rollbackData.push({
           action: 'delete_entry',
           entryId: operation.entry?.id,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } else if (operation.type === 'update' && operation.entryId) {
         // For update operations, store original data
-        const original = this.db.prepare('SELECT * FROM kb_entries WHERE id = ?').get(operation.entryId);
+        const original = this.db
+          .prepare('SELECT * FROM kb_entries WHERE id = ?')
+          .get(operation.entryId);
         if (original) {
           rollbackData.push({
             action: 'restore_original',
             data: original,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         }
       } else if (['delete', 'archive'].includes(operation.type) && operation.entryId) {
         // For delete/archive operations, store full entry data
-        const entryData = this.db.prepare(`
+        const entryData = this.db
+          .prepare(
+            `
           SELECT e.*, GROUP_CONCAT(t.tag) as tags
           FROM kb_entries e
           LEFT JOIN kb_tags t ON e.id = t.entry_id
           WHERE e.id = ?
           GROUP BY e.id
-        `).get(operation.entryId);
+        `
+          )
+          .get(operation.entryId);
 
         if (entryData) {
           rollbackData.push({
             action: 'restore_entry',
             data: entryData,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         }
       }
@@ -851,11 +872,15 @@ export class BatchOperationsService extends EventEmitter {
       completedOperations: 0,
       currentOperation: 'Initializing...',
       estimatedTimeRemaining: 0,
-      percentage: 0
+      percentage: 0,
     });
   }
 
-  private updateProgress(batchId: string, completedOperations: number, currentOperation: string): void {
+  private updateProgress(
+    batchId: string,
+    completedOperations: number,
+    currentOperation: string
+  ): void {
     const progress = this.activeBatches.get(batchId);
     if (!progress) return;
 
@@ -869,7 +894,7 @@ export class BatchOperationsService extends EventEmitter {
       completedOperations,
       currentOperation,
       percentage,
-      estimatedTimeRemaining
+      estimatedTimeRemaining,
     };
 
     this.activeBatches.set(batchId, updatedProgress);
@@ -884,23 +909,29 @@ export class BatchOperationsService extends EventEmitter {
         completedOperations: progress.totalOperations,
         currentOperation: 'Completed',
         percentage: 100,
-        estimatedTimeRemaining: 0
+        estimatedTimeRemaining: 0,
       });
     }
 
     this.activeBatches.delete(batchId);
   }
 
-  private async exportToJSON(entries: any[], outputPath: string, includeMetadata?: boolean): Promise<{ exportedCount: number; fileSize: number }> {
+  private async exportToJSON(
+    entries: any[],
+    outputPath: string,
+    includeMetadata?: boolean
+  ): Promise<{ exportedCount: number; fileSize: number }> {
     const fs = await import('fs/promises');
 
     const exportData = {
-      metadata: includeMetadata ? {
-        exportedAt: new Date().toISOString(),
-        version: '1.0',
-        source: 'BatchOperationsService'
-      } : undefined,
-      entries
+      metadata: includeMetadata
+        ? {
+            exportedAt: new Date().toISOString(),
+            version: '1.0',
+            source: 'BatchOperationsService',
+          }
+        : undefined,
+      entries,
     };
 
     const jsonData = JSON.stringify(exportData, null, 2);
@@ -908,11 +939,14 @@ export class BatchOperationsService extends EventEmitter {
 
     return {
       exportedCount: entries.length,
-      fileSize: Buffer.byteLength(jsonData, 'utf8')
+      fileSize: Buffer.byteLength(jsonData, 'utf8'),
     };
   }
 
-  private async exportToCSV(entries: any[], outputPath: string): Promise<{ exportedCount: number; fileSize: number }> {
+  private async exportToCSV(
+    entries: any[],
+    outputPath: string
+  ): Promise<{ exportedCount: number; fileSize: number }> {
     const fs = await import('fs/promises');
 
     if (entries.length === 0) {
@@ -941,7 +975,7 @@ export class BatchOperationsService extends EventEmitter {
 
     return {
       exportedCount: entries.length,
-      fileSize: Buffer.byteLength(csvData, 'utf8')
+      fileSize: Buffer.byteLength(csvData, 'utf8'),
     };
   }
 
@@ -1009,22 +1043,29 @@ export class BatchOperationsService extends EventEmitter {
       solution: entry.solution,
       category: entry.category,
       severity: entry.severity || 'medium',
-      tags: Array.isArray(entry.tags) ? entry.tags : (entry.tags ? entry.tags.split(',').map((t: string) => t.trim()) : []),
-      created_by: entry.created_by || 'import'
+      tags: Array.isArray(entry.tags)
+        ? entry.tags
+        : entry.tags
+          ? entry.tags.split(',').map((t: string) => t.trim())
+          : [],
+      created_by: entry.created_by || 'import',
     };
   }
 
   private setupCleanupInterval(): void {
     // Clean up old rollback data every hour
-    setInterval(() => {
-      const cutoffTime = Date.now() - this.MAX_ROLLBACK_RETENTION;
+    setInterval(
+      () => {
+        const cutoffTime = Date.now() - this.MAX_ROLLBACK_RETENTION;
 
-      this.rollbackData.forEach((data, rollbackId) => {
-        const oldestTimestamp = Math.min(...data.map(item => item.timestamp || Date.now()));
-        if (oldestTimestamp < cutoffTime) {
-          this.rollbackData.delete(rollbackId);
-        }
-      });
-    }, 60 * 60 * 1000); // Run every hour
+        this.rollbackData.forEach((data, rollbackId) => {
+          const oldestTimestamp = Math.min(...data.map(item => item.timestamp || Date.now()));
+          if (oldestTimestamp < cutoffTime) {
+            this.rollbackData.delete(rollbackId);
+          }
+        });
+      },
+      60 * 60 * 1000
+    ); // Run every hour
   }
 }

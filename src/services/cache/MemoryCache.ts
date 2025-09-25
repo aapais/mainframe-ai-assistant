@@ -26,7 +26,7 @@ export class MemoryCache<T = any> {
     hits: 0,
     misses: 0,
     evictions: 0,
-    memoryUsage: 0
+    memoryUsage: 0,
   };
 
   constructor(config: MemoryCacheConfig) {
@@ -36,7 +36,7 @@ export class MemoryCache<T = any> {
 
   get(key: string): T | null {
     const item = this.cache.get(key);
-    
+
     if (!item) {
       this.metrics.misses++;
       return null;
@@ -53,14 +53,14 @@ export class MemoryCache<T = any> {
     item.lastAccessed = Date.now();
     item.accessCount++;
     this.updateAccessOrder(key);
-    
+
     this.metrics.hits++;
     return item.value;
   }
 
   set(key: string, value: T, ttl?: number, tags?: string[]): boolean {
     const size = this.estimateSize(value);
-    
+
     // Check memory limits
     if (this.currentMemoryUsage + size > this.config.maxMemoryUsage) {
       this.evictLRU(size);
@@ -78,7 +78,7 @@ export class MemoryCache<T = any> {
       accessCount: 1,
       lastAccessed: Date.now(),
       size,
-      tags
+      tags,
     };
 
     // Remove old item if exists
@@ -90,7 +90,7 @@ export class MemoryCache<T = any> {
     this.cache.set(key, item);
     this.currentMemoryUsage += size;
     this.updateAccessOrder(key);
-    
+
     return true;
   }
 
@@ -137,7 +137,7 @@ export class MemoryCache<T = any> {
       memoryUsage: this.currentMemoryUsage,
       maxMemoryUsage: this.config.maxMemoryUsage,
       memoryUtilization: (this.currentMemoryUsage / this.config.maxMemoryUsage) * 100,
-      ...this.metrics
+      ...this.metrics,
     };
   }
 
@@ -145,7 +145,7 @@ export class MemoryCache<T = any> {
   keys(pattern?: string): string[] {
     const keys = Array.from(this.cache.keys());
     if (!pattern) return keys;
-    
+
     const regex = new RegExp(pattern.replace(/\*/g, '.*'));
     return keys.filter(key => regex.test(key));
   }
@@ -169,18 +169,18 @@ export class MemoryCache<T = any> {
   }
 
   private isExpired(item: CacheItem<T>): boolean {
-    return Date.now() > item.timestamp + (item.ttl * 1000);
+    return Date.now() > item.timestamp + item.ttl * 1000;
   }
 
   private evictLRU(requiredSize?: number): void {
     const targetSize = requiredSize || 0;
-    
+
     while (
-      (this.cache.size >= this.config.maxSize) ||
-      (this.currentMemoryUsage + targetSize > this.config.maxMemoryUsage)
+      this.cache.size >= this.config.maxSize ||
+      this.currentMemoryUsage + targetSize > this.config.maxMemoryUsage
     ) {
       if (this.accessOrder.length === 0) break;
-      
+
       const lruKey = this.accessOrder[0];
       this.delete(lruKey);
       this.metrics.evictions++;
@@ -189,7 +189,7 @@ export class MemoryCache<T = any> {
 
   private updateAccessOrder(key: string): void {
     if (!this.config.enableLRU) return;
-    
+
     // Remove from current position
     this.removeFromAccessOrder(key);
     // Add to end (most recent)
@@ -220,14 +220,14 @@ export class MemoryCache<T = any> {
   private cleanup(): void {
     const now = Date.now();
     let cleaned = 0;
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (this.isExpired(item)) {
         this.delete(key);
         cleaned++;
       }
     }
-    
+
     if (cleaned > 0) {
       console.log(`Memory cache cleanup: removed ${cleaned} expired items`);
     }

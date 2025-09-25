@@ -1,6 +1,6 @@
 /**
  * Window Factory - Progressive Window Creation System
- * 
+ *
  * Creates and configures windows based on type and MVP level
  * with proper security, theming, and progressive enhancement
  */
@@ -8,13 +8,13 @@
 import { BrowserWindow, nativeTheme } from 'electron';
 import { join } from 'path';
 import { ServiceContext } from '../services/ServiceManager';
-import { 
-  WindowType, 
-  WindowConfig, 
-  WindowInstance, 
+import {
+  WindowType,
+  WindowConfig,
+  WindowInstance,
   WindowFactoryConfig,
   DEFAULT_WINDOW_CONFIGS,
-  MVP_WINDOW_CAPABILITIES
+  MVP_WINDOW_CAPABILITIES,
 } from './types/WindowTypes';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -29,15 +29,18 @@ import { v4 as uuidv4 } from 'uuid';
 export class WindowFactory {
   private factoryConfig: WindowFactoryConfig;
   private mvpLevel: number;
-  
+
   constructor(private context: ServiceContext) {
     this.mvpLevel = this.detectMVPLevel();
     this.factoryConfig = this.createFactoryConfig();
   }
 
   // Window Creation
-  
-  async createWindow(type: WindowType, userConfig?: Partial<WindowConfig>): Promise<WindowInstance> {
+
+  async createWindow(
+    type: WindowType,
+    userConfig?: Partial<WindowConfig>
+  ): Promise<WindowInstance> {
     // Validate window type is available for current MVP level
     if (!this.isWindowTypeAvailable(type)) {
       throw new Error(`Window type '${type}' not available in MVP ${this.mvpLevel}`);
@@ -63,7 +66,7 @@ export class WindowFactory {
       config: finalConfig,
       created: new Date(),
       focused: false,
-      metadata: {}
+      metadata: {},
     };
 
     // Load content
@@ -76,7 +79,7 @@ export class WindowFactory {
     await this.setupTypeSpecificFeatures(windowInstance);
 
     this.context.logger.info(`Created ${type} window: ${windowInstance.id}`);
-    
+
     return windowInstance;
   }
 
@@ -89,7 +92,7 @@ export class WindowFactory {
       webSecurity: true,
       allowRunningInsecureContent: false,
       experimentalFeatures: false,
-      ...config.webPreferences
+      ...config.webPreferences,
     };
 
     // Add preload script if available
@@ -121,16 +124,16 @@ export class WindowFactory {
       icon: this.getWindowIcon(),
       titleBarStyle: this.getTitleBarStyle(),
       webPreferences: secureWebPreferences,
-      
+
       // Additional security
       frame: true, // Always use frame for security
       transparent: false, // Avoid transparency for security
-      
+
       // macOS specific
       vibrancy: process.platform === 'darwin' ? 'under-window' : undefined,
-      
+
       // Windows specific
-      thickFrame: process.platform === 'win32'
+      thickFrame: process.platform === 'win32',
     });
 
     // Security event handlers
@@ -140,7 +143,7 @@ export class WindowFactory {
   }
 
   // Content Loading
-  
+
   private async loadWindowContent(windowInstance: WindowInstance): Promise<void> {
     const { window, type } = windowInstance;
 
@@ -148,10 +151,10 @@ export class WindowFactory {
       // Development mode - use dev server
       const port = this.getDevServerPort(type);
       const url = `http://localhost:${port}`;
-      
+
       try {
         await window.loadURL(url);
-        
+
         // Open DevTools for specific window types in development
         if (this.shouldOpenDevTools(type)) {
           window.webContents.openDevTools();
@@ -163,7 +166,7 @@ export class WindowFactory {
     } else {
       // Production mode - use bundled files
       const rendererPath = this.getRendererPath(type);
-      
+
       try {
         await window.loadFile(rendererPath);
       } catch (error) {
@@ -174,7 +177,7 @@ export class WindowFactory {
   }
 
   // Configuration Management
-  
+
   private mergeConfigurations(base: WindowConfig, user?: Partial<WindowConfig>): WindowConfig {
     const merged = { ...base };
 
@@ -184,7 +187,7 @@ export class WindowFactory {
         if (key === 'webPreferences' && user.webPreferences) {
           merged.webPreferences = {
             ...merged.webPreferences,
-            ...user.webPreferences
+            ...user.webPreferences,
           };
         } else {
           (merged as any)[key] = (user as any)[key];
@@ -200,7 +203,7 @@ export class WindowFactory {
 
   private applyMVPRestrictions(config: WindowConfig): void {
     const capabilities = MVP_WINDOW_CAPABILITIES[this.mvpLevel];
-    
+
     if (!capabilities) {
       return;
     }
@@ -212,12 +215,14 @@ export class WindowFactory {
 
     if (this.mvpLevel < 2 && config.type !== 'main') {
       // Force single window mode in MVP1
-      this.context.logger.warn(`Multi-window not available in MVP${this.mvpLevel}, creating main window instead`);
+      this.context.logger.warn(
+        `Multi-window not available in MVP${this.mvpLevel}, creating main window instead`
+      );
     }
   }
 
   // Type-Specific Features
-  
+
   private async setupTypeSpecificFeatures(windowInstance: WindowInstance): Promise<void> {
     const { type, window } = windowInstance;
 
@@ -225,23 +230,23 @@ export class WindowFactory {
       case 'main':
         await this.setupMainWindowFeatures(windowInstance);
         break;
-        
+
       case 'pattern-dashboard':
         await this.setupPatternDashboardFeatures(windowInstance);
         break;
-        
+
       case 'code-viewer':
         await this.setupCodeViewerFeatures(windowInstance);
         break;
-        
+
       case 'alert':
         await this.setupAlertWindowFeatures(windowInstance);
         break;
-        
+
       case 'ai-assistant':
         await this.setupAIAssistantFeatures(windowInstance);
         break;
-        
+
       default:
         // Apply default features
         await this.setupDefaultFeatures(windowInstance);
@@ -252,7 +257,7 @@ export class WindowFactory {
     const { window } = windowInstance;
 
     // Main window specific setup
-    window.on('close', (event) => {
+    window.on('close', event => {
       if (this.shouldMinimizeToTray()) {
         event.preventDefault();
         window.hide();
@@ -279,7 +284,7 @@ export class WindowFactory {
 
     // Pattern dashboard specific features
     window.setMenu(null); // Remove menu for dashboard windows
-    
+
     // Auto-refresh capability
     window.webContents.on('did-finish-load', () => {
       // Setup auto-refresh for pattern data
@@ -292,7 +297,7 @@ export class WindowFactory {
 
     // Code viewer specific features
     window.setMenu(null);
-    
+
     // Setup zoom controls for code readability
     window.webContents.on('did-finish-load', () => {
       window.webContents.send('setup-zoom-controls');
@@ -310,7 +315,7 @@ export class WindowFactory {
     // Alert window specific features
     window.setAlwaysOnTop(true);
     window.setSkipTaskbar(true);
-    
+
     // Auto-close after timeout if configured
     if (windowInstance.metadata?.autoCloseTimeout) {
       setTimeout(() => {
@@ -331,10 +336,10 @@ export class WindowFactory {
 
     // AI Assistant specific features
     window.setMenu(null);
-    
+
     // Always on top but not modal
     window.setAlwaysOnTop(false);
-    
+
     // Setup AI communication channels
     window.webContents.on('did-finish-load', () => {
       window.webContents.send('setup-ai-communication');
@@ -346,18 +351,18 @@ export class WindowFactory {
 
     // Default features for all windows
     window.setMenu(null); // Most windows don't need menus
-    
+
     // Standard security handlers
     this.setupSecurityHandlers(window);
   }
 
   // Security and Theming
-  
+
   private setupSecurityHandlers(window: BrowserWindow): void {
     // Prevent navigation to external URLs
     window.webContents.on('will-navigate', (event, navigationUrl) => {
       const url = new URL(navigationUrl);
-      
+
       if (this.context.isDevelopment) {
         // In development, allow localhost
         if (!url.hostname.includes('localhost') && !url.protocol.includes('file:')) {
@@ -389,9 +394,9 @@ export class WindowFactory {
 
   private applyTheme(windowInstance: WindowInstance): void {
     const { window, config } = windowInstance;
-    
+
     const theme = config.theme || 'auto';
-    
+
     // Apply theme based on configuration
     switch (theme) {
       case 'dark':
@@ -408,19 +413,21 @@ export class WindowFactory {
     window.webContents.on('did-finish-load', () => {
       window.webContents.send('theme-changed', {
         theme: nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
-        systemTheme: nativeTheme.themeSource
+        systemTheme: nativeTheme.themeSource,
       });
     });
   }
 
   // Helper Methods
-  
+
   getPreloadPath(type: WindowType): string {
     return this.factoryConfig.preloadPaths[type] || join(__dirname, `../preload-${type}.js`);
   }
 
   getRendererPath(type: WindowType): string {
-    return this.factoryConfig.rendererPaths[type] || join(__dirname, `../../renderer/${type}/index.html`);
+    return (
+      this.factoryConfig.rendererPaths[type] || join(__dirname, `../../renderer/${type}/index.html`)
+    );
   }
 
   private createFactoryConfig(): WindowFactoryConfig {
@@ -428,10 +435,10 @@ export class WindowFactory {
       mvpLevel: this.mvpLevel,
       defaultTheme: 'auto',
       preloadPaths: {
-        'main': join(__dirname, '../preload.js'),
+        main: join(__dirname, '../preload.js'),
         'pattern-dashboard': join(__dirname, '../preload-pattern.js'),
         'code-viewer': join(__dirname, '../preload-code.js'),
-        'alert': join(__dirname, '../preload-alert.js'),
+        alert: join(__dirname, '../preload-alert.js'),
         'ai-assistant': join(__dirname, '../preload-ai.js'),
         'analytics-dashboard': join(__dirname, '../preload-analytics.js'),
         'debug-context': join(__dirname, '../preload-debug.js'),
@@ -442,13 +449,13 @@ export class WindowFactory {
         'export-manager': join(__dirname, '../preload-export.js'),
         'import-wizard': join(__dirname, '../preload-import.js'),
         'auto-resolution-monitor': join(__dirname, '../preload-monitor.js'),
-        'predictive-dashboard': join(__dirname, '../preload-predictive.js')
+        'predictive-dashboard': join(__dirname, '../preload-predictive.js'),
       },
       rendererPaths: {
-        'main': join(__dirname, '../../renderer/main/index.html'),
+        main: join(__dirname, '../../renderer/main/index.html'),
         'pattern-dashboard': join(__dirname, '../../renderer/pattern-dashboard/index.html'),
         'code-viewer': join(__dirname, '../../renderer/code-viewer/index.html'),
-        'alert': join(__dirname, '../../renderer/alert/index.html'),
+        alert: join(__dirname, '../../renderer/alert/index.html'),
         'ai-assistant': join(__dirname, '../../renderer/ai-assistant/index.html'),
         'analytics-dashboard': join(__dirname, '../../renderer/analytics/index.html'),
         'debug-context': join(__dirname, '../../renderer/debug/index.html'),
@@ -459,14 +466,14 @@ export class WindowFactory {
         'export-manager': join(__dirname, '../../renderer/export/index.html'),
         'import-wizard': join(__dirname, '../../renderer/import/index.html'),
         'auto-resolution-monitor': join(__dirname, '../../renderer/monitor/index.html'),
-        'predictive-dashboard': join(__dirname, '../../renderer/predictive/index.html')
+        'predictive-dashboard': join(__dirname, '../../renderer/predictive/index.html'),
       },
       iconPaths: {
-        'win32': join(__dirname, '../../assets/icons/icon.ico'),
-        'darwin': join(__dirname, '../../assets/icons/icon.icns'),
-        'linux': join(__dirname, '../../assets/icons/icon.png')
+        win32: join(__dirname, '../../assets/icons/icon.ico'),
+        darwin: join(__dirname, '../../assets/icons/icon.icns'),
+        linux: join(__dirname, '../../assets/icons/icon.png'),
       },
-      defaultConfigs: DEFAULT_WINDOW_CONFIGS
+      defaultConfigs: DEFAULT_WINDOW_CONFIGS,
     };
   }
 
@@ -488,11 +495,11 @@ export class WindowFactory {
 
   private getDevServerPort(type: WindowType): number {
     const ports: Record<string, number> = {
-      'main': 3000,
+      main: 3000,
       'pattern-dashboard': 3001,
       'code-viewer': 3002,
-      'alert': 3003,
-      'ai-assistant': 3004
+      alert: 3003,
+      'ai-assistant': 3004,
     };
 
     return ports[type] || 3000;

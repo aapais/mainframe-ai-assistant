@@ -186,7 +186,7 @@ function setupIPCHandlers(): void {
       searchResponse: performanceIntegration?.getMonitors().search.getTargetResponseTime() || 1000,
       ipcLatency: performanceIntegration?.getMonitors().ipc.getTargetLatency() || 5,
       windowOperation: performanceIntegration?.getMonitors().window.getTargetDuration() || 100,
-      memoryGrowthRate: 10 // MB/hour
+      memoryGrowthRate: 10, // MB/hour
     };
   });
 
@@ -206,7 +206,7 @@ function setupIPCHandlers(): void {
     return {
       overallHealth: currentData?.overallHealth || 'unknown',
       timestamp: Date.now(),
-      metrics: currentData
+      metrics: currentData,
     };
   });
 
@@ -214,7 +214,7 @@ function setupIPCHandlers(): void {
     const history = performanceIntegration?.getPerformanceHistory();
     if (!history) return [];
 
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
     return history.filter(data => data.timestamp >= cutoff);
   });
 }
@@ -226,7 +226,7 @@ function setupEventForwarding(): void {
   if (!performanceIntegration) return;
 
   // Forward performance events to all renderer processes
-  performanceIntegration.on('data-collected', (data) => {
+  performanceIntegration.on('data-collected', data => {
     // Send to all renderer processes
     const windows = require('electron').BrowserWindow.getAllWindows();
     windows.forEach(window => {
@@ -236,7 +236,7 @@ function setupEventForwarding(): void {
     });
   });
 
-  performanceIntegration.on('alert-added', (alert) => {
+  performanceIntegration.on('alert-added', alert => {
     const windows = require('electron').BrowserWindow.getAllWindows();
     windows.forEach(window => {
       if (!window.isDestroyed()) {
@@ -245,7 +245,7 @@ function setupEventForwarding(): void {
     });
   });
 
-  performanceIntegration.on('critical-alert', (alert) => {
+  performanceIntegration.on('critical-alert', alert => {
     const windows = require('electron').BrowserWindow.getAllWindows();
     windows.forEach(window => {
       if (!window.isDestroyed()) {
@@ -255,7 +255,7 @@ function setupEventForwarding(): void {
   });
 
   // Forward threshold violations
-  performanceIntegration.getMonitors().electron.on('threshold-violation', (violation) => {
+  performanceIntegration.getMonitors().electron.on('threshold-violation', violation => {
     const windows = require('electron').BrowserWindow.getAllWindows();
     windows.forEach(window => {
       if (!window.isDestroyed()) {
@@ -314,7 +314,7 @@ async function runMemoryBenchmark(options: any): Promise<any> {
     objects.push({
       id: i,
       data: new Array(1000).fill(Math.random()),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -418,7 +418,7 @@ function generateTestSearchData(size: number): any[] {
       id: i,
       title: `Test Item ${i}`,
       content: `This is test content for item ${i} with some keywords`,
-      tags: [`tag-${i % 10}`, `category-${i % 5}`]
+      tags: [`tag-${i % 10}`, `category-${i % 5}`],
     });
   }
   return data;
@@ -429,10 +429,11 @@ function generateTestSearchData(size: number): any[] {
  */
 async function simulateSearch(data: any[], query: string): Promise<any[]> {
   // Simple filtering simulation
-  return data.filter(item =>
-    item.title.includes(query) ||
-    item.content.includes(query) ||
-    item.tags.some((tag: string) => tag.includes(query))
+  return data.filter(
+    item =>
+      item.title.includes(query) ||
+      item.content.includes(query) ||
+      item.tags.some((tag: string) => tag.includes(query))
   );
 }
 
@@ -495,23 +496,40 @@ export function cleanupMainPerformanceMonitoring(): void {
 
   // Remove IPC handlers
   const channels = [
-    'perf:track-render-start', 'perf:track-render-end',
-    'perf:track-search-start', 'perf:track-search-end',
-    'perf:track-ipc-start', 'perf:track-ipc-end',
-    'perf:track-window-start', 'perf:track-window-end',
-    'perf:get-metrics', 'perf:get-history', 'perf:get-summary',
-    'perf:get-integrated-data', 'perf:get-report',
-    'perf:get-component-metrics', 'perf:get-search-metrics',
-    'perf:get-ipc-metrics', 'perf:get-memory-metrics',
-    'perf:get-window-metrics', 'perf:get-alerts',
-    'perf:get-alerts-severity', 'perf:clear-old-alerts',
-    'perf:start-monitoring', 'perf:stop-monitoring',
-    'perf:reset-metrics', 'perf:export-metrics',
-    'perf:export-all-data', 'perf:force-gc',
-    'perf:get-memory-snapshot', 'perf:update-targets',
-    'perf:get-targets', 'perf:run-benchmark',
-    'perf:get-benchmark-results', 'perf:get-system-health',
-    'perf:get-health-trend'
+    'perf:track-render-start',
+    'perf:track-render-end',
+    'perf:track-search-start',
+    'perf:track-search-end',
+    'perf:track-ipc-start',
+    'perf:track-ipc-end',
+    'perf:track-window-start',
+    'perf:track-window-end',
+    'perf:get-metrics',
+    'perf:get-history',
+    'perf:get-summary',
+    'perf:get-integrated-data',
+    'perf:get-report',
+    'perf:get-component-metrics',
+    'perf:get-search-metrics',
+    'perf:get-ipc-metrics',
+    'perf:get-memory-metrics',
+    'perf:get-window-metrics',
+    'perf:get-alerts',
+    'perf:get-alerts-severity',
+    'perf:clear-old-alerts',
+    'perf:start-monitoring',
+    'perf:stop-monitoring',
+    'perf:reset-metrics',
+    'perf:export-metrics',
+    'perf:export-all-data',
+    'perf:force-gc',
+    'perf:get-memory-snapshot',
+    'perf:update-targets',
+    'perf:get-targets',
+    'perf:run-benchmark',
+    'perf:get-benchmark-results',
+    'perf:get-system-health',
+    'perf:get-health-trend',
   ];
 
   channels.forEach(channel => {
@@ -524,5 +542,5 @@ export function cleanupMainPerformanceMonitoring(): void {
 export default {
   initializeMainPerformanceMonitoring,
   getPerformanceIntegration,
-  cleanupMainPerformanceMonitoring
+  cleanupMainPerformanceMonitoring,
 };

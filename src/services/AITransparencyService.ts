@@ -21,7 +21,7 @@ import {
   AIProvider,
   AIOperationType,
   UserDecision,
-  BudgetType
+  BudgetType,
 } from '../renderer/types/ai';
 
 class AITransparencyService implements IAITransparencyService {
@@ -76,7 +76,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return newOperation;
     } catch (error) {
-      throw new Error(`Failed to create AI operation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create AI operation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -98,9 +100,11 @@ class AITransparencyService implements IAITransparencyService {
       // await this.database.prepare(query).run(...values);
 
       // Return updated operation
-      return await this.getOperation(id) as AIOperation;
+      return (await this.getOperation(id)) as AIOperation;
     } catch (error) {
-      throw new Error(`Failed to update AI operation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to update AI operation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -135,7 +139,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockOperation;
     } catch (error) {
-      throw new Error(`Failed to get AI operation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get AI operation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -230,7 +236,9 @@ class AITransparencyService implements IAITransparencyService {
         },
       };
     } catch (error) {
-      throw new Error(`Failed to get AI operations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get AI operations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -262,7 +270,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return newBudget;
     } catch (error) {
-      throw new Error(`Failed to create budget: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create budget: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -279,14 +289,19 @@ class AITransparencyService implements IAITransparencyService {
         WHERE id = ?
       `;
 
-      const values = [...Object.values(updates).filter((_, i) => Object.keys(updates)[i] !== 'id'), id];
+      const values = [
+        ...Object.values(updates).filter((_, i) => Object.keys(updates)[i] !== 'id'),
+        id,
+      ];
 
       // Execute update
       // await this.database.prepare(query).run(...values);
 
-      return await this.getBudget(id) as AIBudget;
+      return (await this.getBudget(id)) as AIBudget;
     } catch (error) {
-      throw new Error(`Failed to update budget: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to update budget: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -312,7 +327,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockBudget;
     } catch (error) {
-      throw new Error(`Failed to get budget: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get budget: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -354,7 +371,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockBudgets;
     } catch (error) {
-      throw new Error(`Failed to get user budgets: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get user budgets: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -392,7 +411,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockStatus;
     } catch (error) {
-      throw new Error(`Failed to get budget status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get budget status: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -425,7 +446,9 @@ class AITransparencyService implements IAITransparencyService {
         },
       };
     } catch (error) {
-      throw new Error(`Failed to calculate cost: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to calculate cost: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -472,7 +495,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return provider ? mockRates.filter(rate => rate.provider === provider) : mockRates;
     } catch (error) {
-      throw new Error(`Failed to get cost rates: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get cost rates: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -527,11 +552,16 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockPreferences;
     } catch (error) {
-      throw new Error(`Failed to get user preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get user preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
-  async updateUserPreferences(userId: string, preferences: Partial<AIPreferences>): Promise<AIPreferences> {
+  async updateUserPreferences(
+    userId: string,
+    preferences: Partial<AIPreferences>
+  ): Promise<AIPreferences> {
     try {
       const setClause = Object.keys(preferences)
         .filter(key => key !== 'userId')
@@ -540,18 +570,29 @@ class AITransparencyService implements IAITransparencyService {
 
       const query = `
         INSERT OR REPLACE INTO ai_preferences (
-          user_id, ${Object.keys(preferences).filter(k => k !== 'userId').map(this.camelToSnake).join(', ')}, updated_at
-        ) VALUES (?, ${Object.keys(preferences).filter(k => k !== 'userId').map(() => '?').join(', ')}, CURRENT_TIMESTAMP)
+          user_id, ${Object.keys(preferences)
+            .filter(k => k !== 'userId')
+            .map(this.camelToSnake)
+            .join(', ')}, updated_at
+        ) VALUES (?, ${Object.keys(preferences)
+          .filter(k => k !== 'userId')
+          .map(() => '?')
+          .join(', ')}, CURRENT_TIMESTAMP)
       `;
 
-      const values = [userId, ...Object.values(preferences).filter((_, i) => Object.keys(preferences)[i] !== 'userId')];
+      const values = [
+        userId,
+        ...Object.values(preferences).filter((_, i) => Object.keys(preferences)[i] !== 'userId'),
+      ];
 
       // Execute query
       // await this.database.prepare(query).run(...values);
 
-      return await this.getUserPreferences(userId) as AIPreferences;
+      return (await this.getUserPreferences(userId)) as AIPreferences;
     } catch (error) {
-      throw new Error(`Failed to update user preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to update user preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -577,7 +618,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockSummary;
     } catch (error) {
-      throw new Error(`Failed to get usage summary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get usage summary: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -608,7 +651,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockDailyCosts;
     } catch (error) {
-      throw new Error(`Failed to get daily costs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get daily costs: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -639,7 +684,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return mockAlerts;
     } catch (error) {
-      throw new Error(`Failed to get unacknowledged alerts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get unacknowledged alerts: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -654,7 +701,9 @@ class AITransparencyService implements IAITransparencyService {
       // Execute query
       // await this.database.prepare(query).run(alertId);
     } catch (error) {
-      throw new Error(`Failed to acknowledge alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to acknowledge alert: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -677,13 +726,18 @@ class AITransparencyService implements IAITransparencyService {
 
       return exportData;
     } catch (error) {
-      throw new Error(`Failed to export data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to export data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   // ===== BUDGET ENFORCEMENT =====
 
-  async checkBudgetLimits(userId: string, estimatedCost: number): Promise<{
+  async checkBudgetLimits(
+    userId: string,
+    estimatedCost: number
+  ): Promise<{
     allowed: boolean;
     reason?: string;
     budgetStatus: BudgetStatus[];
@@ -708,7 +762,9 @@ class AITransparencyService implements IAITransparencyService {
         budgetStatus,
       };
     } catch (error) {
-      throw new Error(`Failed to check budget limits: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to check budget limits: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -735,7 +791,10 @@ class AITransparencyService implements IAITransparencyService {
       }
 
       // Check operation type allowlist
-      if (operation.operationType && !preferences.alwaysAllowOperations.includes(operation.operationType)) {
+      if (
+        operation.operationType &&
+        !preferences.alwaysAllowOperations.includes(operation.operationType)
+      ) {
         return false;
       }
 
@@ -780,7 +839,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return 0; // Mock return
     } catch (error) {
-      throw new Error(`Failed to cleanup old operations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to cleanup old operations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -798,7 +859,9 @@ class AITransparencyService implements IAITransparencyService {
 
       return 0; // Mock return
     } catch (error) {
-      throw new Error(`Failed to reset budgets: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to reset budgets: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

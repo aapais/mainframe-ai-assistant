@@ -16,5 +16,5 @@ export type {
   ChartConfig,
   PerformanceValidationResult,
   WindowPerformanceSummary,
-  PerformanceReport
+  PerformanceReport,
 } from './shared/performance';

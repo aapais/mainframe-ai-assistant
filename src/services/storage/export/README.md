@@ -1,10 +1,12 @@
 # Enhanced Export/Import Services
 
-Comprehensive export/import functionality with multi-format support, cross-system compatibility, and enterprise features.
+Comprehensive export/import functionality with multi-format support,
+cross-system compatibility, and enterprise features.
 
 ## Features
 
 ### 🎯 **Multi-Format Support**
+
 - **JSON**: Standard format with full metadata
 - **CSV**: Tabular format for spreadsheet compatibility
 - **XML**: Structured format with schema support
@@ -13,6 +15,7 @@ Comprehensive export/import functionality with multi-format support, cross-syste
 - **ORC**: Optimized row columnar format for analytics
 
 ### 🔄 **Cross-System Compatibility**
+
 - ServiceNow integration with field mapping
 - Jira issue format compatibility
 - Confluence documentation format
@@ -20,6 +23,7 @@ Comprehensive export/import functionality with multi-format support, cross-syste
 - Generic format with custom mappings
 
 ### 📊 **Enterprise Features**
+
 - Version-aware export/import
 - Data transformation pipelines
 - Comprehensive validation with business rules
@@ -82,17 +86,20 @@ const services = ExportImportServiceFactory.createCompleteService(kbService);
 const result = await services.export.export(
   'json',
   './exports/knowledge-base.json',
-  { includeMetrics: true, format: 'full' }
+  {
+    includeMetrics: true,
+    format: 'full',
+  }
 );
 
 // Import with validation
 const importResult = await services.import.import(
   './data/import-file.csv',
   'csv',
-  { 
+  {
     validateOnly: false,
     skipDuplicates: true,
-    batchSize: 100
+    batchSize: 100,
   }
 );
 ```
@@ -106,7 +113,7 @@ const importResult = await services.import.import(
 const exportJobs = [
   { format: 'json', outputPath: './exports/kb.json' },
   { format: 'csv', outputPath: './exports/kb.csv' },
-  { format: 'parquet', outputPath: './exports/kb.parquet' }
+  { format: 'parquet', outputPath: './exports/kb.parquet' },
 ];
 
 const results = await services.export.exportBatch(
@@ -125,8 +132,8 @@ const serviceNowResult = await services.export.exportForSystem(
   {
     transform: {
       customMapping: true,
-      includeSystemFields: true
-    }
+      includeSystemFields: true,
+    },
   }
 );
 
@@ -144,14 +151,14 @@ const jiraResult = await services.export.exportForSystem(
 const exportStream = await services.export.exportStream('json', {
   batchSize: 1000,
   compression: 'gzip',
-  transform: (entry) => ({
+  transform: entry => ({
     ...entry,
-    exported_at: new Date().toISOString()
-  })
+    exported_at: new Date().toISOString(),
+  }),
 });
 
 // Process stream
-exportStream.on('data', (chunk) => {
+exportStream.on('data', chunk => {
   console.log('Received chunk:', chunk.length);
 });
 ```
@@ -168,25 +175,25 @@ const importResult = await services.import.import(
       strictMode: true,
       validateSchema: true,
       customValidators: [
-        (entry) => ({
+        entry => ({
           valid: entry.title.length > 5,
           errors: entry.title.length <= 5 ? ['Title too short'] : [],
-          warnings: []
-        })
-      ]
+          warnings: [],
+        }),
+      ],
     },
     transform: {
       fieldMappings: {
-        'description': 'problem',
-        'resolution': 'solution'
+        description: 'problem',
+        resolution: 'solution',
       },
-      legacyCompatibility: true
+      legacyCompatibility: true,
     },
     recovery: {
       enableAutoRecovery: true,
       rollbackOnFailure: true,
-      retryAttempts: 3
-    }
+      retryAttempts: 3,
+    },
   }
 );
 ```
@@ -197,11 +204,15 @@ const importResult = await services.import.import(
 
 #### Methods
 
-- **`export(format, outputPath, options?, progressCallback?)`** - Export data to specified format
+- **`export(format, outputPath, options?, progressCallback?)`** - Export data to
+  specified format
 - **`exportStream(format, options?)`** - Create export stream for large datasets
-- **`exportBatch(jobs, progressCallback?)`** - Export to multiple formats in parallel
-- **`exportForSystem(targetSystem, outputPath, options?)`** - Export with system-specific formatting
-- **`exportCompatible(targetVersion, outputPath, options?)`** - Export with version compatibility
+- **`exportBatch(jobs, progressCallback?)`** - Export to multiple formats in
+  parallel
+- **`exportForSystem(targetSystem, outputPath, options?)`** - Export with
+  system-specific formatting
+- **`exportCompatible(targetVersion, outputPath, options?)`** - Export with
+  version compatibility
 - **`getJobStatus(jobId)`** - Get export job status
 - **`cancelJob(jobId)`** - Cancel running export job
 - **`getSupportedFormats()`** - Get list of supported formats
@@ -231,11 +242,16 @@ interface ExportOptions {
 
 #### Methods
 
-- **`import(filePath, format, options?, progressCallback?)`** - Import data from file
-- **`importStream(stream, format, options?, progressCallback?)`** - Import from stream
-- **`validateImport(filePath, format, options?)`** - Validate import file without importing
-- **`importFromSystem(filePath, sourceSystem, options?)`** - Import with system-specific parsing
-- **`importCompatible(filePath, sourceVersion, options?)`** - Import with version compatibility
+- **`import(filePath, format, options?, progressCallback?)`** - Import data from
+  file
+- **`importStream(stream, format, options?, progressCallback?)`** - Import from
+  stream
+- **`validateImport(filePath, format, options?)`** - Validate import file
+  without importing
+- **`importFromSystem(filePath, sourceSystem, options?)`** - Import with
+  system-specific parsing
+- **`importCompatible(filePath, sourceVersion, options?)`** - Import with
+  version compatibility
 - **`resumeImport(jobId)`** - Resume import from checkpoint
 - **`getJobStatus(jobId)`** - Get import job status
 - **`cancelJob(jobId)`** - Cancel running import job
@@ -280,7 +296,8 @@ interface ImportOptions {
 - **`parseChunk(chunk, format)`** - Parse chunk for streaming operations
 - **`getSupportedFormats()`** - Get supported formats
 - **`supportsCompression(format)`** - Check if format supports compression
-- **`validateConversion(sourceFormat, targetFormat, dataSize)`** - Validate conversion compatibility
+- **`validateConversion(sourceFormat, targetFormat, dataSize)`** - Validate
+  conversion compatibility
 
 ### DataTransformer
 
@@ -288,10 +305,13 @@ interface ImportOptions {
 
 - **`transform(entries, options?)`** - Transform data for export
 - **`transformForImport(data, options?)`** - Transform data for import
-- **`transformWithPipeline(data, pipelineId, context?)`** - Transform using custom pipeline
-- **`transformBatch(batch, options?, batchIndex?)`** - Transform batch for streaming
+- **`transformWithPipeline(data, pipelineId, context?)`** - Transform using
+  custom pipeline
+- **`transformBatch(batch, options?, batchIndex?)`** - Transform batch for
+  streaming
 - **`createPipeline(pipeline)`** - Create custom transformation pipeline
-- **`validateTransformation(sampleData, options)`** - Validate transformation compatibility
+- **`validateTransformation(sampleData, options)`** - Validate transformation
+  compatibility
 
 ### ValidationService
 
@@ -301,15 +321,19 @@ interface ImportOptions {
 - **`validateRecord(record, index, options?)`** - Validate single record
 - **`validateBatch(batch, batchIndex?, options?)`** - Validate batch of records
 - **`getDataQualityMetrics(data)`** - Calculate data quality metrics
-- **`getValidationSuggestions(field, value, error)`** - Get validation suggestions
+- **`getValidationSuggestions(field, value, error)`** - Get validation
+  suggestions
 
 ### BatchProcessor
 
 #### Methods
 
-- **`processBatch(data, processor, progressCallback?, errorCallback?)`** - Process data in batches
-- **`processStream(dataGenerator, processor, progressCallback?, errorCallback?)`** - Process stream with batches
-- **`resumeFromCheckpoint(checkpointId, data, processor, ...)`** - Resume from checkpoint
+- **`processBatch(data, processor, progressCallback?, errorCallback?)`** -
+  Process data in batches
+- **`processStream(dataGenerator, processor, progressCallback?, errorCallback?)`** -
+  Process stream with batches
+- **`resumeFromCheckpoint(checkpointId, data, processor, ...)`** - Resume from
+  checkpoint
 - **`cancel()`** - Cancel current processing
 - **`getStatistics()`** - Get processing statistics
 
@@ -375,23 +399,23 @@ id,title,problem,solution,category,tags,created_at,usage_count
 
 ### ServiceNow
 
-| KB Field | ServiceNow Field |
-|----------|------------------|
-| title | short_description |
-| problem | description |
-| solution | resolution_notes |
-| category | category |
-| created_at | sys_created_on |
+| KB Field   | ServiceNow Field  |
+| ---------- | ----------------- |
+| title      | short_description |
+| problem    | description       |
+| solution   | resolution_notes  |
+| category   | category          |
+| created_at | sys_created_on    |
 
 ### Jira
 
-| KB Field | Jira Field |
-|----------|------------|
-| title | summary |
-| problem | description |
-| solution | resolution |
-| category | issuetype |
-| created_at | created |
+| KB Field   | Jira Field  |
+| ---------- | ----------- |
+| title      | summary     |
+| problem    | description |
+| solution   | resolution  |
+| category   | issuetype   |
+| created_at | created     |
 
 ## Error Handling
 
@@ -422,11 +446,13 @@ id,title,problem,solution,category,tags,created_at,usage_count
 
 ### Optimization Tips
 
-1. **Use appropriate batch sizes** (100 for fast processing, 1000 for throughput)
+1. **Use appropriate batch sizes** (100 for fast processing, 1000 for
+   throughput)
 2. **Enable compression** for large exports
 3. **Use streaming** for files > 100MB
 4. **Choose optimal formats** (Parquet for analytics, JSON for interchange)
-5. **Configure validation levels** (strict for critical data, relaxed for bulk import)
+5. **Configure validation levels** (strict for critical data, relaxed for bulk
+   import)
 
 ## Monitoring and Metrics
 
@@ -494,10 +520,11 @@ if (job.status === 'running') {
 const services = ExportImportServiceFactory.createCompleteService(kbService, {
   export: { debug: true },
   import: { debug: true, enableRecovery: true },
-  batch: { enableProgress: true, memoryLimit: 256 }
+  batch: { enableProgress: true, memoryLimit: 256 },
 });
 ```
 
 ## License
 
-This enhanced export/import system is part of the Mainframe Knowledge Base Assistant project.
+This enhanced export/import system is part of the Mainframe Knowledge Base
+Assistant project.

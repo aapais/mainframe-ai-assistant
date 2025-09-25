@@ -10,7 +10,7 @@ export class SemanticSearchEnhancer {
     return {
       original: query,
       enhanced: query,
-      confidence: 1.0
+      confidence: 1.0,
     };
   }
 }

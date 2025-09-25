@@ -47,8 +47,9 @@
 
 .search-input-container:focus-within {
   border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1),
-              0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 0 3px rgba(124, 58, 237, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .search-input-container.has-focus {
@@ -214,8 +215,13 @@
 }
 
 @keyframes search-loading-fade {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* ===============================================
@@ -336,8 +342,9 @@
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   z-index: var(--z-dropdown-suggestions);
   max-height: 350px;
   overflow-y: auto;
@@ -507,8 +514,9 @@
 
   .popular-searches-dropdown {
     border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15),
-                0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.15),
+      0 20px 25px -5px rgba(0, 0, 0, 0.1);
   }
 
   .search-action-button:hover {

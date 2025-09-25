@@ -18,9 +18,9 @@ export interface MemoryMetrics {
 }
 
 export interface MemoryThresholds {
-  warning: number;  // Warning level (MB)
+  warning: number; // Warning level (MB)
   critical: number; // Critical level (MB)
-  cleanup: number;  // Cleanup trigger level (MB)
+  cleanup: number; // Cleanup trigger level (MB)
 }
 
 export interface MemoryConfig {
@@ -51,15 +51,15 @@ export interface MemoryLeak {
 const DEFAULT_MEMORY_CONFIG: MemoryConfig = {
   checkInterval: 30000, // 30 seconds
   thresholds: {
-    warning: 500,  // 500MB
+    warning: 500, // 500MB
     critical: 800, // 800MB
-    cleanup: 1000  // 1GB
+    cleanup: 1000, // 1GB
   },
   enableAutoCleanup: true,
   maxCacheSize: 200,
   enableLeakDetection: true,
   leakCheckInterval: 300000, // 5 minutes
-  reportToRenderer: true
+  reportToRenderer: true,
 };
 
 export class MemoryManager extends EventEmitter implements Service {
@@ -73,7 +73,7 @@ export class MemoryManager extends EventEmitter implements Service {
   private context!: ServiceContext;
   private connectionPool!: ConnectionPool;
   private cacheManager!: CacheManager;
-  
+
   private monitoringInterval?: ReturnType<typeof setTimeout>;
   private leakDetectionInterval?: ReturnType<typeof setTimeout>;
   private memoryHistory: MemoryMetrics[] = [];
@@ -88,43 +88,43 @@ export class MemoryManager extends EventEmitter implements Service {
 
   async initialize(context: ServiceContext): Promise<void> {
     this.context = context;
-    
+
     // Initialize sub-components
     await this.initializeConnectionPool();
     await this.initializeCacheManager();
-    
+
     // Setup IPC handlers
     this.setupIPCHandlers();
-    
+
     // Start memory monitoring
     await this.startMonitoring();
-    
+
     this.context.logger.info('MemoryManager initialized successfully');
   }
 
   async shutdown(): Promise<void> {
     this.isShuttingDown = true;
-    
+
     // Stop monitoring
     await this.stopMonitoring();
-    
+
     // Cleanup resources
     await this.performCleanup();
-    
+
     // Shutdown sub-components
     await this.shutdownSubComponents();
-    
+
     this.context.logger.info('MemoryManager shutdown completed');
   }
 
   async healthCheck() {
     const metrics = process.memoryUsage();
     const heapMB = metrics.heapUsed / 1024 / 1024;
-    
+
     let healthy = true;
     let status = 'healthy';
     const issues: string[] = [];
-    
+
     if (heapMB > this.config.thresholds.critical) {
       healthy = false;
       status = 'critical';
@@ -133,21 +133,21 @@ export class MemoryManager extends EventEmitter implements Service {
       status = 'warning';
       issues.push(`High memory usage: ${heapMB.toFixed(0)}MB`);
     }
-    
+
     // Check connection pool health
     const poolHealth = this.connectionPool?.getHealth();
     if (poolHealth && !poolHealth.healthy) {
       healthy = false;
       issues.push('Connection pool unhealthy');
     }
-    
+
     // Check cache health
     const cacheHealth = await this.cacheManager?.getHealth();
     if (cacheHealth && !cacheHealth.healthy) {
       healthy = false;
       issues.push('Cache manager unhealthy');
     }
-    
+
     return {
       healthy,
       status,
@@ -156,8 +156,8 @@ export class MemoryManager extends EventEmitter implements Service {
         memoryUsage: `${heapMB.toFixed(0)}MB`,
         connectionPool: poolHealth,
         cache: cacheHealth,
-        issues: issues.length > 0 ? issues : undefined
-      }
+        issues: issues.length > 0 ? issues : undefined,
+      },
     };
   }
 
@@ -169,38 +169,40 @@ export class MemoryManager extends EventEmitter implements Service {
     if (this.isMonitoring) return;
 
     this.isMonitoring = true;
-    
+
     // Start memory monitoring
     this.monitoringInterval = setInterval(() => {
       this.checkMemoryUsage();
     }, this.config.checkInterval);
-    
+
     // Start leak detection
     if (this.config.enableLeakDetection) {
       this.leakDetectionInterval = setInterval(() => {
         this.detectMemoryLeaks();
       }, this.config.leakCheckInterval);
     }
-    
+
     // Initial memory check
     await this.checkMemoryUsage();
-    
-    this.context.logger.info(`Memory monitoring started with interval: ${this.config.checkInterval}ms`);
+
+    this.context.logger.info(
+      `Memory monitoring started with interval: ${this.config.checkInterval}ms`
+    );
   }
 
   private async stopMonitoring(): Promise<void> {
     this.isMonitoring = false;
-    
+
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = undefined;
     }
-    
+
     if (this.leakDetectionInterval) {
       clearInterval(this.leakDetectionInterval);
       this.leakDetectionInterval = undefined;
     }
-    
+
     this.context.logger.info('Memory monitoring stopped');
   }
 
@@ -211,48 +213,48 @@ export class MemoryManager extends EventEmitter implements Service {
 
     const metrics = this.getMemoryMetrics();
     const report = this.generateMemoryReport(metrics);
-    
+
     // Store in history
     this.memoryHistory.push(metrics);
-    
+
     // Keep only last 100 measurements
     if (this.memoryHistory.length > 100) {
       this.memoryHistory = this.memoryHistory.slice(-100);
     }
-    
+
     // Handle memory status
     await this.handleMemoryStatus(report);
-    
+
     // Report to renderer if enabled
     if (this.config.reportToRenderer) {
       this.reportToRenderer(report);
     }
-    
+
     // Emit events
     this.emit('memory:check', report);
-    
+
     return report;
   }
 
   private getMemoryMetrics(): MemoryMetrics {
     const usage = process.memoryUsage();
-    
+
     return {
       rss: usage.rss,
       heapUsed: usage.heapUsed,
       heapTotal: usage.heapTotal,
       external: usage.external,
-      arrayBuffers: usage.arrayBuffers
+      arrayBuffers: usage.arrayBuffers,
     };
   }
 
   private generateMemoryReport(metrics: MemoryMetrics): MemoryReport {
     const heapMB = metrics.heapUsed / 1024 / 1024;
     const rssMB = metrics.rss / 1024 / 1024;
-    
+
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
     const recommendations: string[] = [];
-    
+
     // Determine status
     if (heapMB > this.config.thresholds.critical) {
       status = 'critical';
@@ -263,60 +265,65 @@ export class MemoryManager extends EventEmitter implements Service {
       recommendations.push('Monitor memory usage closely');
       recommendations.push('Consider clearing caches');
     }
-    
+
     // Heap utilization check
     const heapUtilization = metrics.heapUsed / metrics.heapTotal;
     if (heapUtilization > 0.9) {
       recommendations.push('High heap utilization - consider increasing heap size');
     }
-    
+
     // Memory growth trend
     if (this.memoryHistory.length >= 10) {
       const recent = this.memoryHistory.slice(-10);
       const trend = this.calculateMemoryTrend(recent);
-      
-      if (trend > 5) { // Growing > 5MB per check
+
+      if (trend > 5) {
+        // Growing > 5MB per check
         recommendations.push(`Memory usage trending upward (+${trend.toFixed(1)}MB/check)`);
       }
     }
-    
+
     return {
       timestamp: new Date(),
       metrics,
       status,
-      recommendations
+      recommendations,
     };
   }
 
   private calculateMemoryTrend(history: MemoryMetrics[]): number {
     if (history.length < 2) return 0;
-    
+
     const first = history[0].heapUsed / 1024 / 1024;
     const last = history[history.length - 1].heapUsed / 1024 / 1024;
-    
+
     return (last - first) / (history.length - 1);
   }
 
   private async handleMemoryStatus(report: MemoryReport): Promise<void> {
     switch (report.status) {
       case 'critical':
-        this.context.logger.error(`Critical memory usage detected: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB`);
+        this.context.logger.error(
+          `Critical memory usage detected: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB`
+        );
         this.emit('memory:critical', report);
-        
+
         if (this.config.enableAutoCleanup) {
           await this.performEmergencyCleanup();
         }
         break;
-        
+
       case 'warning':
-        this.context.logger.warn(`High memory usage detected: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB`);
+        this.context.logger.warn(
+          `High memory usage detected: ${(report.metrics.heapUsed / 1024 / 1024).toFixed(0)}MB`
+        );
         this.emit('memory:warning', report);
-        
+
         if (this.config.enableAutoCleanup && this.shouldPerformCleanup()) {
           await this.performCleanup();
         }
         break;
-        
+
       case 'healthy':
         this.emit('memory:healthy', report);
         break;
@@ -337,35 +344,36 @@ export class MemoryManager extends EventEmitter implements Service {
 
     const startTime = Date.now();
     const beforeMetrics = this.getMemoryMetrics();
-    
+
     this.context.logger.info('Starting memory cleanup...');
-    
+
     try {
       // Clear caches
       await this.cacheManager.cleanup();
-      
+
       // Close idle database connections
       this.connectionPool.closeIdleConnections();
-      
+
       // Force garbage collection if available
       if (global.gc) {
         global.gc();
       }
-      
+
       // Clear memory history if it's getting too large
       if (this.memoryHistory.length > 50) {
         this.memoryHistory = this.memoryHistory.slice(-25);
       }
-      
+
       this.lastCleanup = Date.now();
-      
+
       const afterMetrics = this.getMemoryMetrics();
       const freed = (beforeMetrics.heapUsed - afterMetrics.heapUsed) / 1024 / 1024;
       const duration = Date.now() - startTime;
-      
-      this.context.logger.info(`Memory cleanup completed in ${duration}ms, freed ${freed.toFixed(1)}MB`);
+
+      this.context.logger.info(
+        `Memory cleanup completed in ${duration}ms, freed ${freed.toFixed(1)}MB`
+      );
       this.emit('memory:cleanup', { freed, duration });
-      
     } catch (error) {
       this.context.logger.error('Memory cleanup failed', error);
       this.emit('memory:cleanup-error', error);
@@ -374,17 +382,17 @@ export class MemoryManager extends EventEmitter implements Service {
 
   async performEmergencyCleanup(): Promise<void> {
     this.context.logger.warn('Performing emergency memory cleanup...');
-    
+
     try {
       // Aggressive cache clearing
       await this.cacheManager.clear();
-      
+
       // Close all idle connections immediately
       this.connectionPool.closeAllIdleConnections();
-      
+
       // Clear all non-essential data
       this.memoryHistory = this.memoryHistory.slice(-10);
-      
+
       // Force multiple GC cycles
       if (global.gc) {
         for (let i = 0; i < 3; i++) {
@@ -392,11 +400,10 @@ export class MemoryManager extends EventEmitter implements Service {
           await this.sleep(100);
         }
       }
-      
+
       this.lastCleanup = Date.now();
-      
+
       this.context.logger.warn('Emergency memory cleanup completed');
-      
     } catch (error) {
       this.context.logger.error('Emergency memory cleanup failed', error);
     }
@@ -411,17 +418,16 @@ export class MemoryManager extends EventEmitter implements Service {
 
     try {
       const leaks = this.analyzeMemoryLeaks();
-      
+
       if (leaks.length > 0) {
         this.context.logger.warn(`Detected ${leaks.length} potential memory leaks`);
         this.emit('memory:leaks-detected', leaks);
-        
+
         // Report to renderer
         if (this.config.reportToRenderer) {
           this.reportLeaksToRenderer(leaks);
         }
       }
-      
     } catch (error) {
       this.context.logger.error('Memory leak detection failed', error);
     }
@@ -430,34 +436,36 @@ export class MemoryManager extends EventEmitter implements Service {
   private analyzeMemoryLeaks(): MemoryLeak[] {
     const leaks: MemoryLeak[] = [];
     const recentHistory = this.memoryHistory.slice(-20);
-    
+
     if (recentHistory.length < 20) return leaks;
-    
+
     // Check for consistent memory growth
     const growthRate = this.calculateMemoryTrend(recentHistory);
-    
-    if (growthRate > 2) { // Growing > 2MB per check consistently
+
+    if (growthRate > 2) {
+      // Growing > 2MB per check consistently
       leaks.push({
         type: 'heap_growth',
         location: 'general',
         size: growthRate * recentHistory.length,
-        detected: new Date()
+        detected: new Date(),
       });
     }
-    
+
     // Check for heap fragmentation
     const latest = recentHistory[recentHistory.length - 1];
     const heapUtilization = latest.heapUsed / latest.heapTotal;
-    
-    if (heapUtilization < 0.5 && latest.heapTotal > 200 * 1024 * 1024) { // > 200MB total but < 50% used
+
+    if (heapUtilization < 0.5 && latest.heapTotal > 200 * 1024 * 1024) {
+      // > 200MB total but < 50% used
       leaks.push({
         type: 'heap_fragmentation',
         location: 'heap',
         size: latest.heapTotal - latest.heapUsed,
-        detected: new Date()
+        detected: new Date(),
       });
     }
-    
+
     return leaks;
   }
 
@@ -470,9 +478,9 @@ export class MemoryManager extends EventEmitter implements Service {
       maxConnections: 10,
       idleTimeout: 300000, // 5 minutes
       checkInterval: 60000, // 1 minute
-      enableMetrics: true
+      enableMetrics: true,
     });
-    
+
     await this.connectionPool.initialize();
     this.context.logger.info('Connection pool initialized');
   }
@@ -483,9 +491,9 @@ export class MemoryManager extends EventEmitter implements Service {
       defaultTTL: 300000, // 5 minutes
       enableDiskCache: true,
       diskCachePath: `${this.context.dataPath}/cache`,
-      enableMetrics: true
+      enableMetrics: true,
     });
-    
+
     await this.cacheManager.initialize();
     this.context.logger.info('Cache manager initialized');
   }
@@ -495,7 +503,7 @@ export class MemoryManager extends EventEmitter implements Service {
     if (this.connectionPool) {
       await this.connectionPool.shutdown();
     }
-    
+
     // Shutdown cache manager
     if (this.cacheManager) {
       await this.cacheManager.shutdown();
@@ -538,16 +546,16 @@ export class MemoryManager extends EventEmitter implements Service {
     ipcMain.handle('memory:get-report', async () => {
       return this.getMemoryReport();
     });
-    
+
     ipcMain.handle('memory:get-history', async () => {
       return this.getMemoryHistory();
     });
-    
+
     ipcMain.handle('memory:force-cleanup', async () => {
       await this.performCleanup();
       return this.getMemoryReport();
     });
-    
+
     ipcMain.handle('memory:force-gc', async () => {
       return this.forceGarbageCollection();
     });
@@ -584,10 +592,10 @@ export class MemoryManager extends EventEmitter implements Service {
         heapUsed: 0,
         heapTotal: 0,
         external: 0,
-        arrayBuffers: 0
+        arrayBuffers: 0,
       },
       status: 'healthy',
-      recommendations: []
+      recommendations: [],
     };
   }
 

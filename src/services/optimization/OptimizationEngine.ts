@@ -87,12 +87,12 @@ export class OptimizationEngine extends EventEmitter {
         performanceCritical: 3000, // ms
         cacheHitRatio: 0.8, // 80%
         queryResponseTime: 500, // ms
-        memoryUsage: 0.8 // 80%
+        memoryUsage: 0.8, // 80%
       },
       categories: ['performance', 'search', 'cache', 'database', 'memory'],
       minROI: 20, // Minimum 20% ROI
       maxRecommendations: 10,
-      ...config
+      ...config,
     };
 
     this.algorithmTuner = new AlgorithmTuner();
@@ -113,7 +113,7 @@ export class OptimizationEngine extends EventEmitter {
       this.algorithmTuner.initialize(),
       this.indexAdvisor.initialize(),
       this.cacheOptimizer.initialize(),
-      this.bottleneckDetector.initialize()
+      this.bottleneckDetector.initialize(),
     ]);
 
     if (this.config.enableAutoRecommendations) {
@@ -132,9 +132,12 @@ export class OptimizationEngine extends EventEmitter {
       return; // Already monitoring
     }
 
-    this.monitoringInterval = setInterval(async () => {
-      await this.performAnalysis();
-    }, this.config.monitoringInterval * 60 * 1000);
+    this.monitoringInterval = setInterval(
+      async () => {
+        await this.performAnalysis();
+      },
+      this.config.monitoringInterval * 60 * 1000
+    );
 
     console.log(`Started optimization monitoring (interval: ${this.config.monitoringInterval}min)`);
   }
@@ -159,27 +162,27 @@ export class OptimizationEngine extends EventEmitter {
 
     try {
       // Collect metrics from all analyzers
-      const [
-        algorithmMetrics,
-        indexMetrics,
-        cacheMetrics,
-        bottleneckMetrics
-      ] = await Promise.all([
+      const [algorithmMetrics, indexMetrics, cacheMetrics, bottleneckMetrics] = await Promise.all([
         this.algorithmTuner.analyzePerformance(),
         this.indexAdvisor.analyzeIndexes(),
         this.cacheOptimizer.analyzeCacheStrategy(),
-        this.bottleneckDetector.detectBottlenecks()
+        this.bottleneckDetector.detectBottlenecks(),
       ]);
 
       // Store metrics
-      this.metrics.push(...algorithmMetrics, ...indexMetrics, ...cacheMetrics, ...bottleneckMetrics);
+      this.metrics.push(
+        ...algorithmMetrics,
+        ...indexMetrics,
+        ...cacheMetrics,
+        ...bottleneckMetrics
+      );
 
       // Generate recommendations
       const recommendations = await this.generateRecommendations({
         algorithmMetrics,
         indexMetrics,
         cacheMetrics,
-        bottleneckMetrics
+        bottleneckMetrics,
       });
 
       // Filter and prioritize
@@ -194,15 +197,17 @@ export class OptimizationEngine extends EventEmitter {
       this.emit('analysis-completed', {
         timestamp,
         recommendations: filteredRecommendations,
-        metrics: { algorithmMetrics, indexMetrics, cacheMetrics, bottleneckMetrics }
+        metrics: { algorithmMetrics, indexMetrics, cacheMetrics, bottleneckMetrics },
       });
 
       if (filteredRecommendations.some(r => r.impact === 'critical')) {
-        this.emit('critical-issues-detected', filteredRecommendations.filter(r => r.impact === 'critical'));
+        this.emit(
+          'critical-issues-detected',
+          filteredRecommendations.filter(r => r.impact === 'critical')
+        );
       }
 
       return filteredRecommendations;
-
     } catch (error) {
       console.error('Error performing optimization analysis:', error);
       this.emit('analysis-error', error);
@@ -218,20 +223,34 @@ export class OptimizationEngine extends EventEmitter {
     const timestamp = Date.now();
 
     // Algorithm optimization recommendations
-    const algorithmRecs = await this.algorithmTuner.getOptimizationRecommendations(metrics.algorithmMetrics);
-    recommendations.push(...algorithmRecs.map(rec => this.formatRecommendation(rec, 'algorithm', timestamp)));
+    const algorithmRecs = await this.algorithmTuner.getOptimizationRecommendations(
+      metrics.algorithmMetrics
+    );
+    recommendations.push(
+      ...algorithmRecs.map(rec => this.formatRecommendation(rec, 'algorithm', timestamp))
+    );
 
     // Index optimization recommendations
     const indexRecs = await this.indexAdvisor.getOptimizationRecommendations(metrics.indexMetrics);
-    recommendations.push(...indexRecs.map(rec => this.formatRecommendation(rec, 'database', timestamp)));
+    recommendations.push(
+      ...indexRecs.map(rec => this.formatRecommendation(rec, 'database', timestamp))
+    );
 
     // Cache optimization recommendations
-    const cacheRecs = await this.cacheOptimizer.getOptimizationRecommendations(metrics.cacheMetrics);
-    recommendations.push(...cacheRecs.map(rec => this.formatRecommendation(rec, 'cache', timestamp)));
+    const cacheRecs = await this.cacheOptimizer.getOptimizationRecommendations(
+      metrics.cacheMetrics
+    );
+    recommendations.push(
+      ...cacheRecs.map(rec => this.formatRecommendation(rec, 'cache', timestamp))
+    );
 
     // Bottleneck recommendations
-    const bottleneckRecs = await this.bottleneckDetector.getOptimizationRecommendations(metrics.bottleneckMetrics);
-    recommendations.push(...bottleneckRecs.map(rec => this.formatRecommendation(rec, 'performance', timestamp)));
+    const bottleneckRecs = await this.bottleneckDetector.getOptimizationRecommendations(
+      metrics.bottleneckMetrics
+    );
+    recommendations.push(
+      ...bottleneckRecs.map(rec => this.formatRecommendation(rec, 'performance', timestamp))
+    );
 
     return recommendations;
   }
@@ -239,7 +258,11 @@ export class OptimizationEngine extends EventEmitter {
   /**
    * Format a recommendation from analyzer into standard format
    */
-  private formatRecommendation(rec: any, category: string, timestamp: number): OptimizationRecommendation {
+  private formatRecommendation(
+    rec: any,
+    category: string,
+    timestamp: number
+  ): OptimizationRecommendation {
     return {
       id: `${category}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp,
@@ -254,14 +277,14 @@ export class OptimizationEngine extends EventEmitter {
         steps: rec.steps || rec.implementation || [],
         estimatedTime: rec.estimatedTime || 'Unknown',
         prerequisites: rec.prerequisites || [],
-        risks: rec.risks || []
+        risks: rec.risks || [],
       },
       metrics: {
         before: rec.beforeMetrics || [],
         expectedAfter: rec.expectedMetrics || [],
-        measurableGoals: rec.goals || []
+        measurableGoals: rec.goals || [],
       },
-      status: 'pending'
+      status: 'pending',
     };
   }
 
@@ -291,7 +314,9 @@ export class OptimizationEngine extends EventEmitter {
     const roiBonus = Math.floor((recommendation.roi || 0) / 20);
 
     return Math.min(
-      (impactScore[recommendation.impact as keyof typeof impactScore] || 4) + urgencyScore + roiBonus,
+      (impactScore[recommendation.impact as keyof typeof impactScore] || 4) +
+        urgencyScore +
+        roiBonus,
       10
     );
   }
@@ -299,7 +324,9 @@ export class OptimizationEngine extends EventEmitter {
   /**
    * Filter and prioritize recommendations
    */
-  private filterAndPrioritizeRecommendations(recommendations: OptimizationRecommendation[]): OptimizationRecommendation[] {
+  private filterAndPrioritizeRecommendations(
+    recommendations: OptimizationRecommendation[]
+  ): OptimizationRecommendation[] {
     return recommendations
       .filter(rec => rec.roi >= this.config.minROI)
       .sort((a, b) => {
@@ -375,7 +402,6 @@ export class OptimizationEngine extends EventEmitter {
 
       this.emit('recommendation-applied', { recommendation, success });
       return success;
-
     } catch (error) {
       recommendation.status = 'pending';
       this.emit('recommendation-error', { recommendation, error });
@@ -386,7 +412,9 @@ export class OptimizationEngine extends EventEmitter {
   /**
    * Measure the results of an applied optimization
    */
-  private async measureOptimizationResults(recommendation: OptimizationRecommendation): Promise<void> {
+  private async measureOptimizationResults(
+    recommendation: OptimizationRecommendation
+  ): Promise<void> {
     try {
       // Re-run analysis to get updated metrics
       const updatedMetrics = await this.performAnalysis();
@@ -398,11 +426,10 @@ export class OptimizationEngine extends EventEmitter {
         actualImprovement: improvement,
         metricsAfter: this.getRecentMetrics(recommendation.category),
         success: improvement > 0,
-        notes: `Measured ${improvement.toFixed(1)}% improvement after optimization`
+        notes: `Measured ${improvement.toFixed(1)}% improvement after optimization`,
       };
 
       this.emit('optimization-results-measured', recommendation);
-
     } catch (error) {
       console.error('Error measuring optimization results:', error);
     }
@@ -411,7 +438,10 @@ export class OptimizationEngine extends EventEmitter {
   /**
    * Calculate improvement percentage
    */
-  private calculateImprovement(recommendation: OptimizationRecommendation, currentMetrics: any[]): number {
+  private calculateImprovement(
+    recommendation: OptimizationRecommendation,
+    currentMetrics: any[]
+  ): number {
     // Simplified improvement calculation
     // In a real implementation, this would compare specific metrics before and after
     return Math.random() * 30 + 5; // Simulate 5-35% improvement
@@ -421,7 +451,7 @@ export class OptimizationEngine extends EventEmitter {
    * Get recent metrics for a category
    */
   private getRecentMetrics(category: string): OptimizationMetrics[] {
-    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
     return this.metrics
       .filter(metric => metric.category === category && metric.timestamp >= fiveMinutesAgo)
       .slice(-10); // Last 10 metrics
@@ -440,17 +470,18 @@ export class OptimizationEngine extends EventEmitter {
         criticalIssues: recommendations.filter(r => r.impact === 'critical').length,
         pendingRecommendations: recommendations.filter(r => r.status === 'pending').length,
         completedOptimizations: recommendations.filter(r => r.status === 'completed').length,
-        averageROI: recommendations.reduce((sum, r) => sum + r.roi, 0) / recommendations.length || 0
+        averageROI:
+          recommendations.reduce((sum, r) => sum + r.roi, 0) / recommendations.length || 0,
       },
       recommendations: recommendations.slice(0, 5), // Top 5 recommendations
       metrics: {
         recent: recentMetrics,
-        trends: this.calculateTrends(recentMetrics)
+        trends: this.calculateTrends(recentMetrics),
       },
       performance: {
         improvementHistory: this.getImprovementHistory(),
-        categories: this.getCategoryBreakdown(recommendations)
-      }
+        categories: this.getCategoryBreakdown(recommendations),
+      },
     };
   }
 
@@ -470,8 +501,9 @@ export class OptimizationEngine extends EventEmitter {
         const olderAvg = older.reduce((sum, m) => sum + m.value, 0) / older.length;
 
         trends[category] = {
-          direction: recentAvg > olderAvg ? 'improving' : recentAvg < olderAvg ? 'degrading' : 'stable',
-          change: Math.abs(((recentAvg - olderAvg) / olderAvg) * 100)
+          direction:
+            recentAvg > olderAvg ? 'improving' : recentAvg < olderAvg ? 'degrading' : 'stable',
+          change: Math.abs(((recentAvg - olderAvg) / olderAvg) * 100),
         };
       }
     });
@@ -489,7 +521,7 @@ export class OptimizationEngine extends EventEmitter {
         timestamp: r.appliedAt,
         category: r.category,
         improvement: r.results!.actualImprovement,
-        title: r.title
+        title: r.title,
       }))
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }
@@ -505,7 +537,7 @@ export class OptimizationEngine extends EventEmitter {
       breakdown[category] = {
         total: categoryRecs.length,
         critical: categoryRecs.filter(r => r.impact === 'critical').length,
-        avgROI: categoryRecs.reduce((sum, r) => sum + r.roi, 0) / categoryRecs.length || 0
+        avgROI: categoryRecs.reduce((sum, r) => sum + r.roi, 0) / categoryRecs.length || 0,
       };
     });
 
@@ -517,22 +549,22 @@ export class OptimizationEngine extends EventEmitter {
    */
   private setupEventHandlers(): void {
     // Handle bottleneck detection
-    this.bottleneckDetector.on('bottleneck-detected', (bottleneck) => {
+    this.bottleneckDetector.on('bottleneck-detected', bottleneck => {
       this.emit('bottleneck-detected', bottleneck);
     });
 
     // Handle cache optimization opportunities
-    this.cacheOptimizer.on('optimization-opportunity', (opportunity) => {
+    this.cacheOptimizer.on('optimization-opportunity', opportunity => {
       this.emit('cache-optimization-opportunity', opportunity);
     });
 
     // Handle index optimization suggestions
-    this.indexAdvisor.on('index-suggestion', (suggestion) => {
+    this.indexAdvisor.on('index-suggestion', suggestion => {
       this.emit('index-optimization-suggestion', suggestion);
     });
 
     // Handle algorithm tuning recommendations
-    this.algorithmTuner.on('tuning-recommendation', (recommendation) => {
+    this.algorithmTuner.on('tuning-recommendation', recommendation => {
       this.emit('algorithm-tuning-recommendation', recommendation);
     });
   }
@@ -547,7 +579,7 @@ export class OptimizationEngine extends EventEmitter {
       this.algorithmTuner.destroy(),
       this.indexAdvisor.destroy(),
       this.cacheOptimizer.destroy(),
-      this.bottleneckDetector.destroy()
+      this.bottleneckDetector.destroy(),
     ]);
 
     this.recommendations.clear();

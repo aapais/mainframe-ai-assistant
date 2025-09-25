@@ -82,7 +82,7 @@ export class SearchApiController {
     this.rateLimiter = new RateLimiter({
       windowMs: 60 * 1000, // 1 minute
       max: 100, // 100 requests per minute
-      skipSuccessfulRequests: false
+      skipSuccessfulRequests: false,
     });
     this.validator = new RequestValidator();
 
@@ -121,7 +121,7 @@ export class SearchApiController {
         suggestions = await this.searchService.getAutocompleteSuggestions(query, maxResults, {
           userId: req.headers['x-user-id'] as string,
           currentQuery: query,
-          preferredCategories: category ? [category] : undefined
+          preferredCategories: category ? [category] : undefined,
         });
 
         // Cache for 5 minutes with L0 priority (memory cache)
@@ -137,7 +137,7 @@ export class SearchApiController {
         responseTime,
         resultCount: suggestions.length,
         cacheHit: !!suggestions,
-        userId: req.headers['x-user-id'] as string
+        userId: req.headers['x-user-id'] as string,
       });
 
       res.json({
@@ -148,12 +148,11 @@ export class SearchApiController {
           metadata: {
             count: suggestions.length,
             responseTime,
-            cacheHit: !!suggestions
-          }
+            cacheHit: !!suggestions,
+          },
         },
-        requestId
+        requestId,
       });
-
     } catch (error) {
       this.handleError(error, req, res, requestId, 'autocomplete', Date.now() - startTime);
     }
@@ -183,7 +182,7 @@ export class SearchApiController {
         includeArchived: options.includeArchived || false,
         fuzzyThreshold: Math.min(Math.max(options.fuzzyThreshold || 0.7, 0.1), 1.0),
         useAI: options.useAI !== false, // default true
-        ...context
+        ...context,
       };
 
       // Multi-layer cache strategy
@@ -218,7 +217,7 @@ export class SearchApiController {
         useAI: searchParams.useAI,
         category: searchParams.category,
         userId: searchParams.userId,
-        sessionId: searchParams.sessionId
+        sessionId: searchParams.sessionId,
       });
 
       res.json({
@@ -229,12 +228,11 @@ export class SearchApiController {
             ...searchResult.metadata,
             responseTime,
             cacheHit: fromCache,
-            requestId
-          }
+            requestId,
+          },
         },
-        requestId
+        requestId,
       });
-
     } catch (error) {
       this.handleError(error, req, res, requestId, 'search', Date.now() - startTime);
     }
@@ -260,7 +258,7 @@ export class SearchApiController {
         userId,
         limit: Math.min(parseInt(limit || '50'), 200),
         offset: Math.max(parseInt(offset || '0'), 0),
-        timeframe: timeframe || '7d' // default 7 days
+        timeframe: timeframe || '7d', // default 7 days
       };
 
       // Check L1 cache (Redis) for history
@@ -283,12 +281,11 @@ export class SearchApiController {
           metadata: {
             responseTime,
             cacheHit: !!history,
-            requestId
-          }
+            requestId,
+          },
         },
-        requestId
+        requestId,
       });
-
     } catch (error) {
       this.handleError(error, req, res, requestId, 'history', Date.now() - startTime);
     }
@@ -313,7 +310,7 @@ export class SearchApiController {
       const metricsParams = {
         timeframe: timeframe || '1h',
         granularity: granularity || '5m',
-        userId
+        userId,
       };
 
       // Metrics are cached less aggressively (L2 - database cache)
@@ -336,12 +333,11 @@ export class SearchApiController {
           metadata: {
             responseTime,
             cacheHit: !!metrics,
-            requestId
-          }
+            requestId,
+          },
         },
-        requestId
+        requestId,
       });
-
     } catch (error) {
       this.handleError(error, req, res, requestId, 'metrics', Date.now() - startTime);
     }
@@ -358,7 +354,7 @@ export class SearchApiController {
       params.offset,
       params.includeArchived,
       params.fuzzyThreshold,
-      params.useAI
+      params.useAI,
     ];
     return `search:${keyParts.join(':')}`;
   }
@@ -429,7 +425,7 @@ export class SearchApiController {
       url: req.url,
       method: req.method,
       userAgent: req.headers['user-agent'],
-      userId: req.headers['x-user-id']
+      userId: req.headers['x-user-id'],
     });
 
     // Record error metrics
@@ -438,7 +434,7 @@ export class SearchApiController {
       operation,
       error: error.message,
       responseTime,
-      userId: req.headers['x-user-id'] as string
+      userId: req.headers['x-user-id'] as string,
     });
 
     // Return appropriate error response
@@ -448,9 +444,9 @@ export class SearchApiController {
         error: {
           message: error.message,
           code: error.code,
-          details: error.details
+          details: error.details,
         },
-        requestId
+        requestId,
       });
     } else if (error.name === 'ValidationError') {
       res.status(400).json({
@@ -458,9 +454,9 @@ export class SearchApiController {
         error: {
           message: 'Invalid request parameters',
           code: 'VALIDATION_ERROR',
-          details: error.message
+          details: error.message,
         },
-        requestId
+        requestId,
       });
     } else if (error.name === 'RateLimitError') {
       res.status(429).json({
@@ -468,9 +464,9 @@ export class SearchApiController {
         error: {
           message: 'Too many requests',
           code: 'RATE_LIMIT_EXCEEDED',
-          retryAfter: error.retryAfter
+          retryAfter: error.retryAfter,
         },
-        requestId
+        requestId,
       });
     } else {
       // Generic server error
@@ -478,9 +474,9 @@ export class SearchApiController {
         success: false,
         error: {
           message: 'Internal server error',
-          code: 'INTERNAL_ERROR'
+          code: 'INTERNAL_ERROR',
         },
-        requestId
+        requestId,
       });
     }
   }

@@ -148,7 +148,7 @@ export class IntegrationMemoryStore extends EventEmitter {
       persistenceEnabled: true,
       encryptionEnabled: false,
       compressionEnabled: true,
-      ...config
+      ...config,
     };
 
     this.startCleanupTimer();
@@ -172,8 +172,8 @@ export class IntegrationMemoryStore extends EventEmitter {
       metadata: {
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        version: '1.0.0'
-      }
+        version: '1.0.0',
+      },
     };
 
     this.integrationMappings.set(id, fullMapping);
@@ -204,8 +204,8 @@ export class IntegrationMemoryStore extends EventEmitter {
       ...updates,
       metadata: {
         ...existing.metadata,
-        updatedAt: Date.now()
-      }
+        updatedAt: Date.now(),
+      },
     };
 
     this.integrationMappings.set(id, updated);
@@ -219,8 +219,7 @@ export class IntegrationMemoryStore extends EventEmitter {
    * Get mappings by type
    */
   getMappingsByType(type: IntegrationType): IntegrationMapping[] {
-    return Array.from(this.integrationMappings.values())
-      .filter(mapping => mapping.type === type);
+    return Array.from(this.integrationMappings.values()).filter(mapping => mapping.type === type);
   }
 
   /**
@@ -282,12 +281,16 @@ export class IntegrationMemoryStore extends EventEmitter {
   /**
    * Set configuration value
    */
-  setConfig(key: string, value: any, options: {
-    type?: ConfigurationEntry['type'];
-    source?: ConfigurationEntry['source'];
-    encrypted?: boolean;
-    validators?: ConfigurationEntry['validators'];
-  } = {}): void {
+  setConfig(
+    key: string,
+    value: any,
+    options: {
+      type?: ConfigurationEntry['type'];
+      source?: ConfigurationEntry['source'];
+      encrypted?: boolean;
+      validators?: ConfigurationEntry['validators'];
+    } = {}
+  ): void {
     const config: ConfigurationEntry = {
       key,
       value: options.encrypted ? this.encrypt(value) : value,
@@ -295,7 +298,7 @@ export class IntegrationMemoryStore extends EventEmitter {
       source: options.source || 'runtime',
       encrypted: options.encrypted || false,
       lastModified: Date.now(),
-      validators: options.validators
+      validators: options.validators,
     };
 
     // Validate configuration
@@ -359,7 +362,7 @@ export class IntegrationMemoryStore extends EventEmitter {
       timestamp: Date.now(),
       version: existing ? existing.version + 1 : 1,
       subscribers: existing?.subscribers || [],
-      dirty: true
+      dirty: true,
     };
 
     this.runtimeStates.set(componentId, runtimeState);
@@ -437,15 +440,16 @@ export class IntegrationMemoryStore extends EventEmitter {
 
     if (!timeRange) return metrics;
 
-    return metrics.filter(m =>
-      m.timestamp >= timeRange.from && m.timestamp <= timeRange.to
-    );
+    return metrics.filter(m => m.timestamp >= timeRange.from && m.timestamp <= timeRange.to);
   }
 
   /**
    * Get aggregated metrics
    */
-  getAggregatedMetrics(name: string, aggregation: 'sum' | 'average' | 'min' | 'max' | 'count'): number {
+  getAggregatedMetrics(
+    name: string,
+    aggregation: 'sum' | 'average' | 'min' | 'max' | 'count'
+  ): number {
     const metrics = this.performanceMetrics.get(name) || [];
     if (metrics.length === 0) return 0;
 
@@ -478,7 +482,7 @@ export class IntegrationMemoryStore extends EventEmitter {
     const fullMessage: CrossComponentMessage = {
       ...message,
       id: this.generateId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     const messages = this.messageQueue.get(message.to) || [];
@@ -545,7 +549,9 @@ export class IntegrationMemoryStore extends EventEmitter {
   /**
    * Get integration health status
    */
-  getIntegrationHealth(integrationId: string): IntegrationMapping['metadata']['healthCheck'] | null {
+  getIntegrationHealth(
+    integrationId: string
+  ): IntegrationMapping['metadata']['healthCheck'] | null {
     const mapping = this.integrationMappings.get(integrationId);
     return mapping?.metadata.healthCheck || null;
   }
@@ -570,9 +576,10 @@ export class IntegrationMemoryStore extends EventEmitter {
     const degraded = healthChecks.filter(h => h.status === 'degraded').length;
     const unhealthy = healthChecks.filter(h => h.status === 'unhealthy').length;
 
-    const averageLatency = healthChecks.length > 0
-      ? healthChecks.reduce((sum, h) => sum + h.latency, 0) / healthChecks.length
-      : 0;
+    const averageLatency =
+      healthChecks.length > 0
+        ? healthChecks.reduce((sum, h) => sum + h.latency, 0) / healthChecks.length
+        : 0;
 
     const totalErrors = healthChecks.reduce((sum, h) => sum + h.errorRate, 0);
 
@@ -582,7 +589,7 @@ export class IntegrationMemoryStore extends EventEmitter {
       degradedIntegrations: degraded,
       unhealthyIntegrations: unhealthy,
       averageLatency,
-      totalErrors
+      totalErrors,
     };
   }
 
@@ -607,9 +614,15 @@ export class IntegrationMemoryStore extends EventEmitter {
       serviceConnections: this.serviceConnections.size,
       configurations: this.configurations.size,
       runtimeStates: this.runtimeStates.size,
-      performanceMetrics: Array.from(this.performanceMetrics.values()).reduce((sum, arr) => sum + arr.length, 0),
-      messageQueue: Array.from(this.messageQueue.values()).reduce((sum, arr) => sum + arr.length, 0),
-      totalSize: 0
+      performanceMetrics: Array.from(this.performanceMetrics.values()).reduce(
+        (sum, arr) => sum + arr.length,
+        0
+      ),
+      messageQueue: Array.from(this.messageQueue.values()).reduce(
+        (sum, arr) => sum + arr.length,
+        0
+      ),
+      totalSize: 0,
     };
 
     // Estimate total memory usage
@@ -619,7 +632,7 @@ export class IntegrationMemoryStore extends EventEmitter {
       configurations: Array.from(this.configurations.entries()),
       runtimeStates: Array.from(this.runtimeStates.entries()),
       performanceMetrics: Array.from(this.performanceMetrics.entries()),
-      messageQueue: Array.from(this.messageQueue.entries())
+      messageQueue: Array.from(this.messageQueue.entries()),
     }).length;
 
     return stats;
@@ -666,7 +679,7 @@ export class IntegrationMemoryStore extends EventEmitter {
       runtimeStates: Array.from(this.runtimeStates.entries()),
       performanceMetrics: Array.from(this.performanceMetrics.entries()),
       messageQueue: Array.from(this.messageQueue.entries()),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -714,7 +727,7 @@ export class IntegrationMemoryStore extends EventEmitter {
         to: subscriberId,
         type: 'stateUpdate',
         payload: { componentId, state },
-        priority: 'medium'
+        priority: 'medium',
       });
     });
   }
@@ -822,7 +835,6 @@ export class IntegrationMemoryStore extends EventEmitter {
       }
 
       console.log('Persisted data loaded successfully');
-
     } catch (error) {
       console.warn('Failed to load persisted data:', error);
     }

@@ -1,10 +1,15 @@
 # Migration Framework
 
-A comprehensive database migration framework supporting schema evolution across MVPs with rollback capabilities, data transformations, and extensive validation.
+A comprehensive database migration framework supporting schema evolution across
+MVPs with rollback capabilities, data transformations, and extensive validation.
 
 ## Overview
 
-This migration framework provides enterprise-grade database migration capabilities specifically designed for the Mainframe AI Assistant project's progressive MVP evolution. It supports safe schema migrations, data transformations, rollback procedures, and comprehensive validation at every step.
+This migration framework provides enterprise-grade database migration
+capabilities specifically designed for the Mainframe AI Assistant project's
+progressive MVP evolution. It supports safe schema migrations, data
+transformations, rollback procedures, and comprehensive validation at every
+step.
 
 ## Key Features
 
@@ -54,7 +59,7 @@ const framework = createMigrationFramework({
   database: db,
   migrationsPath: './src/database/migrations/mvp-upgrades',
   enableLogging: true,
-  enableMetrics: true
+  enableMetrics: true,
 });
 
 // Health check
@@ -74,7 +79,7 @@ const results = await framework.migrationService.executeMVPMigration(3, {
   dryRun: false,
   validateIntegrity: true,
   createCheckpoints: true,
-  enableRollback: true
+  enableRollback: true,
 });
 
 console.log('Migration Results:', results);
@@ -87,10 +92,13 @@ console.log('Migration Results:', results);
 const rollbackPlan = await framework.rollbackManager.createRollbackPlan(20);
 
 // Execute rollback
-const rollbackResults = await framework.rollbackManager.executeRollbackPlan(rollbackPlan, {
-  preserveUserData: true,
-  validateRollback: true
-});
+const rollbackResults = await framework.rollbackManager.executeRollbackPlan(
+  rollbackPlan,
+  {
+    preserveUserData: true,
+    validateRollback: true,
+  }
+);
 
 console.log('Rollback Results:', rollbackResults);
 ```
@@ -98,6 +106,7 @@ console.log('Rollback Results:', rollbackResults);
 ## MVP Migration Paths
 
 ### MVP1 → MVP2: Pattern Detection
+
 - Add incident tracking tables
 - Create pattern detection indexes
 - Migrate existing KB entries to incident format
@@ -106,6 +115,7 @@ console.log('Rollback Results:', rollbackResults);
 - **Downtime Required**: No
 
 ### MVP2 → MVP3: Code Analysis
+
 - Add code analysis tables
 - Create KB-code linking system
 - Initialize code references
@@ -114,6 +124,7 @@ console.log('Rollback Results:', rollbackResults);
 - **Downtime Required**: No
 
 ### MVP3 → MVP4: IDZ Integration
+
 - Add project management tables
 - Create template system
 - Initialize workspace management
@@ -122,6 +133,7 @@ console.log('Rollback Results:', rollbackResults);
 - **Downtime Required**: Yes
 
 ### MVP4 → MVP5: Enterprise Features
+
 - Add ML model storage
 - Create auto-resolution system
 - Initialize enterprise security
@@ -167,8 +179,8 @@ const transformation: DataTransformation = {
   estimatedDuration: 30,
   dependencies: [],
   validationQueries: [
-    'SELECT COUNT(*) FROM incidents WHERE ticket_id LIKE "KB-%"'
-  ]
+    'SELECT COUNT(*) FROM incidents WHERE ticket_id LIKE "KB-%"',
+  ],
 };
 ```
 
@@ -186,7 +198,8 @@ const transformation: DataTransformation = {
 ### Comprehensive Validation
 
 ```typescript
-const validationReport = await framework.validation.performComprehensiveValidation();
+const validationReport =
+  await framework.validation.performComprehensiveValidation();
 
 console.log('Overall Health:', validationReport.summary.overallHealth);
 console.log('Critical Issues:', validationReport.summary.criticalIssues);
@@ -206,7 +219,8 @@ console.log('Migration Safety:', validationReport.summary.migrationSafety);
 
 ```typescript
 // Emergency rollback for data corruption
-const emergencyResult = await framework.rollbackManager.executeEmergencyRollback('corruption');
+const emergencyResult =
+  await framework.rollbackManager.executeEmergencyRollback('corruption');
 
 console.log('Emergency Actions:', emergencyResult.actionsPerformed);
 console.log('Restored to Version:', emergencyResult.restoredToVersion);
@@ -234,7 +248,11 @@ console.log('- Downtime Required:', plan.requiresDowntime);
 const resources = await framework.planner.estimateResourceRequirements(plan);
 
 console.log('Resource Requirements:');
-console.log('- Additional Storage:', resources.storage.additionalSpaceRequired, 'bytes');
+console.log(
+  '- Additional Storage:',
+  resources.storage.additionalSpaceRequired,
+  'bytes'
+);
 console.log('- Backup Space:', resources.storage.backupSpaceRequired, 'bytes');
 console.log('- Peak Memory:', resources.memory.peakMemoryUsage, 'bytes');
 console.log('- Recommended Cores:', resources.cpu.recommendedCores);
@@ -249,7 +267,7 @@ try {
   const results = await framework.migrationService.executeMVPMigration(3);
 } catch (error) {
   console.error('Migration failed:', error.message);
-  
+
   // Check if rollback was performed
   const progress = framework.migrationService.getCurrentProgress();
   if (progress?.status === 'rolled_back') {
@@ -307,11 +325,11 @@ if (!validation.isValid) {
 
 ```typescript
 // Listen for migration events
-framework.migrationService.on('migrationStepCompleted', (data) => {
+framework.migrationService.on('migrationStepCompleted', data => {
   console.log(`Step ${data.step} completed in ${data.duration}ms`);
 });
 
-framework.migrationService.on('progressUpdated', (progress) => {
+framework.migrationService.on('progressUpdated', progress => {
   const percent = (progress.currentStep / progress.totalSteps) * 100;
   console.log(`Migration ${percent.toFixed(1)}% complete`);
 });
@@ -360,7 +378,7 @@ const config: MigrationFrameworkConfig = {
   migrationsPath: process.env.MIGRATION_PATH || './migrations',
   enableLogging: process.env.ENABLE_LOGGING === 'true',
   enableMetrics: process.env.ENABLE_METRICS === 'true',
-  backupPath: process.env.BACKUP_PATH || './backups'
+  backupPath: process.env.BACKUP_PATH || './backups',
 };
 ```
 
@@ -380,7 +398,7 @@ const config: MigrationFrameworkConfig = {
 // Enable detailed logging
 const framework = createMigrationFramework({
   database: db,
-  enableLogging: true
+  enableLogging: true,
 });
 
 // Add debug listeners
@@ -426,7 +444,8 @@ framework.migrationService.on('*', (event, data) => {
 
 ## License
 
-This migration framework is part of the Mainframe AI Assistant project and follows the same license terms.
+This migration framework is part of the Mainframe AI Assistant project and
+follows the same license terms.
 
 ## Support
 

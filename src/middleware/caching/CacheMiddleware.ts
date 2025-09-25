@@ -19,10 +19,7 @@ export class CacheMiddleware {
   private cacheOrchestrator: CacheOrchestrator;
   private defaultOptions: CacheMiddlewareOptions;
 
-  constructor(
-    cacheOrchestrator: CacheOrchestrator,
-    defaultOptions: CacheMiddlewareOptions = {}
-  ) {
+  constructor(cacheOrchestrator: CacheOrchestrator, defaultOptions: CacheMiddlewareOptions = {}) {
     this.cacheOrchestrator = cacheOrchestrator;
     this.defaultOptions = {
       ttl: 300, // 5 minutes
@@ -30,14 +27,14 @@ export class CacheMiddleware {
       etag: true,
       maxAge: 300,
       public: true,
-      ...defaultOptions
+      ...defaultOptions,
     };
   }
 
   // Main caching middleware
   cache(options: CacheMiddlewareOptions = {}) {
     const opts = { ...this.defaultOptions, ...options };
-    
+
     return async (req: Request, res: Response, next: NextFunction) => {
       // Skip caching for certain methods
       if (opts.skipMethods?.includes(req.method)) {
@@ -50,11 +47,11 @@ export class CacheMiddleware {
       }
 
       const cacheKey = this.generateCacheKey(req, opts.keyGenerator);
-      
+
       try {
         // Try to get from cache
         const cached = await this.cacheOrchestrator.get(cacheKey);
-        
+
         if (cached) {
           this.setCacheHeaders(res, opts);
           return this.sendCachedResponse(res, cached);
@@ -75,7 +72,7 @@ export class CacheMiddleware {
       ttl: 600, // 10 minutes for API responses
       public: false,
       ...this.defaultOptions,
-      ...options
+      ...options,
     };
 
     return this.cache(opts);
@@ -88,7 +85,7 @@ export class CacheMiddleware {
       varyBy: ['query', 'filters', 'sort'],
       tags: ['search'],
       ...this.defaultOptions,
-      ...options
+      ...options,
     };
 
     return this.cache(opts);
@@ -101,7 +98,7 @@ export class CacheMiddleware {
       tags: ['database'],
       staleWhileRevalidate: 300,
       ...this.defaultOptions,
-      ...options
+      ...options,
     };
 
     return this.cache(opts);
@@ -115,7 +112,7 @@ export class CacheMiddleware {
       public: true,
       etag: true,
       ...this.defaultOptions,
-      ...options
+      ...options,
     };
 
     return this.cache(opts);
@@ -147,34 +144,36 @@ export class CacheMiddleware {
   compress(threshold: number = 1024) {
     return (req: Request, res: Response, next: NextFunction) => {
       const originalSend = res.send;
-      
-      res.send = function(body: any) {
+
+      res.send = function (body: any) {
         if (typeof body === 'string' && body.length > threshold) {
           res.set('Content-Encoding', 'gzip');
           // In production, use actual compression
         }
         return originalSend.call(this, body);
       };
-      
+
       next();
     };
   }
 
   // Browser cache headers
-  browserCache(options: {
-    maxAge?: number;
-    public?: boolean;
-    mustRevalidate?: boolean;
-    noCache?: boolean;
-    noStore?: boolean;
-  } = {}) {
+  browserCache(
+    options: {
+      maxAge?: number;
+      public?: boolean;
+      mustRevalidate?: boolean;
+      noCache?: boolean;
+      noStore?: boolean;
+    } = {}
+  ) {
     return (req: Request, res: Response, next: NextFunction) => {
       const {
         maxAge = 3600,
         public: isPublic = true,
         mustRevalidate = false,
         noCache = false,
-        noStore = false
+        noStore = false,
       } = options;
 
       if (noStore) {
@@ -183,22 +182,22 @@ export class CacheMiddleware {
         res.set('Cache-Control', 'no-cache');
       } else {
         const directives = [];
-        
+
         if (isPublic) {
           directives.push('public');
         } else {
           directives.push('private');
         }
-        
+
         directives.push(`max-age=${maxAge}`);
-        
+
         if (mustRevalidate) {
           directives.push('must-revalidate');
         }
-        
+
         res.set('Cache-Control', directives.join(', '));
       }
-      
+
       next();
     };
   }
@@ -207,10 +206,13 @@ export class CacheMiddleware {
     if (keyGenerator) {
       return keyGenerator(req);
     }
-    
+
     const baseKey = `${req.method}:${req.path}`;
-    const queryParams = Object.keys(req.query).sort().map(key => `${key}=${req.query[key]}`).join('&');
-    
+    const queryParams = Object.keys(req.query)
+      .sort()
+      .map(key => `${key}=${req.query[key]}`)
+      .join('&');
+
     return queryParams ? `${baseKey}?${queryParams}` : baseKey;
   }
 
@@ -223,17 +225,17 @@ export class CacheMiddleware {
   ): void {
     const originalSend = res.send;
     const originalJson = res.json;
-    
+
     res.send = (body: any) => {
       this.cacheResponse(cacheKey, { body, statusCode: res.statusCode }, options);
       return originalSend.call(res, body);
     };
-    
+
     res.json = (body: any) => {
       this.cacheResponse(cacheKey, { body, statusCode: res.statusCode }, options);
       return originalJson.call(res, body);
     };
-    
+
     next();
   }
 
@@ -245,12 +247,7 @@ export class CacheMiddleware {
     try {
       // Only cache successful responses
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        await this.cacheOrchestrator.set(
-          cacheKey,
-          response,
-          options.ttl,
-          options.tags
-        );
+        await this.cacheOrchestrator.set(cacheKey, response, options.ttl, options.tags);
       }
     } catch (error) {
       console.error('Response caching error:', error);
@@ -261,61 +258,61 @@ export class CacheMiddleware {
     if (cached.statusCode) {
       res.status(cached.statusCode);
     }
-    
+
     if (cached.body) {
       return res.send(cached.body);
     }
-    
+
     return res.send(cached);
   }
 
   private setCacheHeaders(res: Response, options: CacheMiddlewareOptions): void {
     if (options.etag) {
       // Generate ETag based on response (simplified)
-      const etag = `"${Date.now()}"`;  // In production, use proper ETag generation
+      const etag = `"${Date.now()}"`; // In production, use proper ETag generation
       res.set('ETag', etag);
     }
-    
+
     if (options.lastModified) {
       res.set('Last-Modified', new Date().toUTCString());
     }
-    
+
     if (options.maxAge) {
       const cacheControl = [];
-      
+
       if (options.public) {
         cacheControl.push('public');
       } else {
         cacheControl.push('private');
       }
-      
+
       cacheControl.push(`max-age=${options.maxAge}`);
-      
+
       if (options.staleWhileRevalidate) {
         cacheControl.push(`stale-while-revalidate=${options.staleWhileRevalidate}`);
       }
-      
+
       res.set('Cache-Control', cacheControl.join(', '));
     }
-    
+
     // Set cache hit header
     res.set('X-Cache', 'HIT');
   }
 
   private extractTagsFromRequest(req: Request): string[] {
     const tags: string[] = [];
-    
+
     // Extract tags from path
     const pathSegments = req.path.split('/').filter(Boolean);
     if (pathSegments.length > 0) {
       tags.push(pathSegments[0]); // First path segment as tag
     }
-    
+
     // Add method-based tags
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       tags.push('write-operation');
     }
-    
+
     return tags;
   }
 }

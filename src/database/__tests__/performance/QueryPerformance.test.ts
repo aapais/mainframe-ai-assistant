@@ -30,8 +30,8 @@ describe('Query Performance Tests', () => {
       queryCache: {
         enabled: true,
         maxSize: 1000,
-        ttlMs: 300000 // 5 minutes
-      }
+        ttlMs: 300000, // 5 minutes
+      },
     });
 
     kb = new KnowledgeDB(testDbPath);
@@ -76,17 +76,19 @@ describe('Query Performance Tests', () => {
       `);
 
       // Insert test data
-      const insertData = Array(1000).fill(0).map((_, i) => [`value_${i}`, i]);
-      
+      const insertData = Array(1000)
+        .fill(0)
+        .map((_, i) => [`value_${i}`, i]);
+
       const insertResult = await performanceHelper.measureOperation(
         'parameterized-inserts',
         async () => {
           await dbManager.transaction(async () => {
             for (const [value, number] of insertData) {
-              await dbManager.execute(
-                'INSERT INTO perf_test (value, number) VALUES (?, ?)',
-                [value, number]
-              );
+              await dbManager.execute('INSERT INTO perf_test (value, number) VALUES (?, ?)', [
+                value,
+                number,
+              ]);
             }
           });
         }
@@ -98,10 +100,8 @@ describe('Query Performance Tests', () => {
       // Test parameterized selects
       const selectResult = await performanceHelper.measureOperation(
         'parameterized-selects',
-        () => dbManager.execute(
-          'SELECT * FROM perf_test WHERE number > ? AND number < ?',
-          [250, 750]
-        ),
+        () =>
+          dbManager.execute('SELECT * FROM perf_test WHERE number > ? AND number < ?', [250, 750]),
         100
       );
 
@@ -132,23 +132,27 @@ describe('Query Performance Tests', () => {
       await dbManager.execute('CREATE INDEX idx_posts_user_id ON posts(user_id)');
 
       // Insert test data
-      const userInserts = Array(100).fill(0).map((_, i) => 
-        dbManager.execute('INSERT INTO users (name) VALUES (?)', [`user_${i}`])
-      );
+      const userInserts = Array(100)
+        .fill(0)
+        .map((_, i) => dbManager.execute('INSERT INTO users (name) VALUES (?)', [`user_${i}`]));
       await Promise.all(userInserts);
 
-      const postInserts = Array(1000).fill(0).map((_, i) =>
-        dbManager.execute(
-          'INSERT INTO posts (user_id, title, content) VALUES (?, ?, ?)',
-          [Math.floor(Math.random() * 100) + 1, `Post ${i}`, `Content for post ${i}`]
-        )
-      );
+      const postInserts = Array(1000)
+        .fill(0)
+        .map((_, i) =>
+          dbManager.execute('INSERT INTO posts (user_id, title, content) VALUES (?, ?, ?)', [
+            Math.floor(Math.random() * 100) + 1,
+            `Post ${i}`,
+            `Content for post ${i}`,
+          ])
+        );
       await Promise.all(postInserts);
 
       // Test JOIN performance
       const joinResult = await performanceHelper.measureOperation(
         'join-query-performance',
-        () => dbManager.execute(`
+        () =>
+          dbManager.execute(`
           SELECT u.name, COUNT(p.id) as post_count
           FROM users u
           LEFT JOIN posts p ON u.id = p.user_id
@@ -180,12 +184,16 @@ describe('Query Performance Tests', () => {
 
       // Insert test data
       const categories = ['Electronics', 'Books', 'Clothing', 'Food', 'Sports'];
-      const salesData = Array(5000).fill(0).map((_, i) => [
-        Math.floor(Math.random() * 1000) + 1, // product_id
-        categories[Math.floor(Math.random() * categories.length)],
-        Math.random() * 1000, // amount
-        new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0]
-      ]);
+      const salesData = Array(5000)
+        .fill(0)
+        .map((_, i) => [
+          Math.floor(Math.random() * 1000) + 1, // product_id
+          categories[Math.floor(Math.random() * categories.length)],
+          Math.random() * 1000, // amount
+          new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1)
+            .toISOString()
+            .split('T')[0],
+        ]);
 
       await dbManager.transaction(async () => {
         for (const [product_id, category, amount, sale_date] of salesData) {
@@ -200,13 +208,13 @@ describe('Query Performance Tests', () => {
       const aggregationQueries = [
         'SELECT category, COUNT(*), SUM(amount), AVG(amount) FROM sales GROUP BY category',
         'SELECT strftime("%Y-%m", sale_date) as month, SUM(amount) FROM sales GROUP BY month ORDER BY month',
-        'SELECT category, MAX(amount), MIN(amount) FROM sales WHERE amount > 500 GROUP BY category'
+        'SELECT category, MAX(amount), MIN(amount) FROM sales WHERE amount > 500 GROUP BY category',
       ];
 
       const aggregationResults = await performanceHelper.compareImplementations(
         aggregationQueries.map((query, i) => ({
           name: `aggregation-query-${i + 1}`,
-          fn: () => dbManager.execute(query)
+          fn: () => dbManager.execute(query),
         })),
         20
       );
@@ -233,13 +241,13 @@ describe('Query Performance Tests', () => {
         'VSAM status',
         'data exception',
         'JCL dataset not found',
-        'DB2 resource unavailable'
+        'DB2 resource unavailable',
       ];
 
       const searchResults = await performanceHelper.compareImplementations(
         searchQueries.map(query => ({
           name: `search-${query.replace(/\s+/g, '-')}`,
-          fn: () => kb.search(query)
+          fn: () => kb.search(query),
         })),
         50
       );
@@ -256,9 +264,11 @@ describe('Query Performance Tests', () => {
 
       for (const targetSize of sizes) {
         const currentSize = await kb.getEntryCount();
-        
+
         if (currentSize < targetSize) {
-          const additionalEntries = TestDatabaseFactory.createLargeTestDataset(targetSize - currentSize);
+          const additionalEntries = TestDatabaseFactory.createLargeTestDataset(
+            targetSize - currentSize
+          );
           for (const entry of additionalEntries) {
             await kb.addEntry(entry, 'test-user');
           }
@@ -273,17 +283,17 @@ describe('Query Performance Tests', () => {
         scalingResults.push({
           size: targetSize,
           avgTime: searchResult.metrics.executionTime,
-          opsPerSec: searchResult.metrics.operationsPerSecond
+          opsPerSec: searchResult.metrics.operationsPerSecond,
         });
       }
 
       // Performance degradation should be sub-linear with dataset growth
       const firstResult = scalingResults[0];
       const lastResult = scalingResults[scalingResults.length - 1];
-      
+
       // Allow up to 4x time increase for 20x data increase
       expect(lastResult.avgTime).toBeLessThan(firstResult.avgTime * 4);
-      
+
       // Operations per second should remain reasonably high
       expect(lastResult.opsPerSec).toBeGreaterThan(20);
     });
@@ -293,13 +303,13 @@ describe('Query Performance Tests', () => {
         () => kb.searchByCategory('VSAM'),
         () => kb.searchByCategory('JCL'),
         () => kb.searchByTag('error'),
-        () => kb.searchByTag('abend')
+        () => kb.searchByTag('abend'),
       ];
 
       const filterResults = await performanceHelper.compareImplementations(
         filterQueries.map((query, i) => ({
           name: `filter-query-${i + 1}`,
-          fn: query
+          fn: query,
         })),
         100
       );
@@ -312,26 +322,29 @@ describe('Query Performance Tests', () => {
 
     it('should handle complex search queries efficiently', async () => {
       const complexQueries = [
-        () => kb.search('VSAM error status', {
-          limit: 10,
-          includeUsageStats: true,
-          sortBy: 'usage_count'
-        }),
-        () => kb.search('data exception COBOL', {
-          limit: 5,
-          sortBy: 'success_rate',
-          sortOrder: 'DESC'
-        }),
-        () => kb.search('JCL dataset', {
-          limit: 20,
-          includeUsageStats: true
-        })
+        () =>
+          kb.search('VSAM error status', {
+            limit: 10,
+            includeUsageStats: true,
+            sortBy: 'usage_count',
+          }),
+        () =>
+          kb.search('data exception COBOL', {
+            limit: 5,
+            sortBy: 'success_rate',
+            sortOrder: 'DESC',
+          }),
+        () =>
+          kb.search('JCL dataset', {
+            limit: 20,
+            includeUsageStats: true,
+          }),
       ];
 
       const complexResults = await performanceHelper.compareImplementations(
         complexQueries.map((query, i) => ({
           name: `complex-search-${i + 1}`,
-          fn: query
+          fn: query,
         })),
         30
       );
@@ -350,7 +363,7 @@ describe('Query Performance Tests', () => {
 
       for (const batchSize of batchSizes) {
         const entries = TestDatabaseFactory.createLargeTestDataset(batchSize);
-        
+
         const batchResult = await performanceHelper.measureOperation(
           `batch-insert-${batchSize}`,
           async () => {
@@ -365,14 +378,14 @@ describe('Query Performance Tests', () => {
         batchResults.push({
           batchSize,
           totalTime: batchResult.metrics.executionTime,
-          avgTimePerRecord: batchResult.metrics.executionTime / batchSize
+          avgTimePerRecord: batchResult.metrics.executionTime / batchSize,
         });
       }
 
       // Average time per record should not increase dramatically with batch size
       const firstAvg = batchResults[0].avgTimePerRecord;
       const lastAvg = batchResults[batchResults.length - 1].avgTimePerRecord;
-      
+
       expect(lastAvg).toBeLessThan(firstAvg * 2); // Allow up to 2x increase
     });
 
@@ -380,27 +393,28 @@ describe('Query Performance Tests', () => {
       // Create test data
       const entries = TestDatabaseFactory.createLargeTestDataset(1000);
       const entryIds: string[] = [];
-      
+
       for (const entry of entries) {
         const id = await kb.addEntry(entry, 'test-user');
         entryIds.push(id);
       }
 
       // Test bulk updates
-      const updateResult = await performanceHelper.measureOperation(
-        'bulk-updates',
-        async () => {
-          await dbManager.transaction(async () => {
-            for (let i = 0; i < entryIds.length; i += 10) {
-              const id = entryIds[i];
-              await kb.updateEntry(id, {
+      const updateResult = await performanceHelper.measureOperation('bulk-updates', async () => {
+        await dbManager.transaction(async () => {
+          for (let i = 0; i < entryIds.length; i += 10) {
+            const id = entryIds[i];
+            await kb.updateEntry(
+              id,
+              {
                 ...entries[i],
-                solution: `Updated solution ${i}`
-              }, 'test-user');
-            }
-          });
-        }
-      );
+                solution: `Updated solution ${i}`,
+              },
+              'test-user'
+            );
+          }
+        });
+      });
 
       expect(updateResult.success).toBe(true);
       expect(updateResult.metrics.executionTime).toHaveExecutedWithin(5000);
@@ -410,23 +424,20 @@ describe('Query Performance Tests', () => {
       // Create test data
       const entries = TestDatabaseFactory.createLargeTestDataset(500);
       const entryIds: string[] = [];
-      
+
       for (const entry of entries) {
         const id = await kb.addEntry(entry, 'test-user');
         entryIds.push(id);
       }
 
       // Test bulk deletes
-      const deleteResult = await performanceHelper.measureOperation(
-        'bulk-deletes',
-        async () => {
-          await dbManager.transaction(async () => {
-            for (let i = 0; i < entryIds.length; i += 2) {
-              await kb.deleteEntry(entryIds[i]);
-            }
-          });
-        }
-      );
+      const deleteResult = await performanceHelper.measureOperation('bulk-deletes', async () => {
+        await dbManager.transaction(async () => {
+          for (let i = 0; i < entryIds.length; i += 2) {
+            await kb.deleteEntry(entryIds[i]);
+          }
+        });
+      });
 
       expect(deleteResult.success).toBe(true);
       expect(deleteResult.metrics.executionTime).toHaveExecutedWithin(3000);
@@ -466,11 +477,13 @@ describe('Query Performance Tests', () => {
       await dbManager.execute('CREATE INDEX idx_created_at ON perf_with_index(created_at)');
 
       // Insert identical data into both tables
-      const testData = Array(5000).fill(0).map((_, i) => [
-        `category_${i % 10}`,
-        `search text ${i}`,
-        Math.floor(Math.random() * 1000)
-      ]);
+      const testData = Array(5000)
+        .fill(0)
+        .map((_, i) => [
+          `category_${i % 10}`,
+          `search text ${i}`,
+          Math.floor(Math.random() * 1000),
+        ]);
 
       // Insert data without transaction for realistic scenario
       for (const [category, search_text, number_value] of testData) {
@@ -509,9 +522,11 @@ describe('Query Performance Tests', () => {
 
         expect(noIndexResult.success).toBe(true);
         expect(withIndexResult.success).toBe(true);
-        
+
         // Indexed queries should be faster
-        expect(withIndexResult.metrics.executionTime).toBeLessThan(noIndexResult.metrics.executionTime);
+        expect(withIndexResult.metrics.executionTime).toBeLessThan(
+          noIndexResult.metrics.executionTime
+        );
       }
     });
 
@@ -527,19 +542,23 @@ describe('Query Performance Tests', () => {
       `);
 
       // Create composite index
-      await dbManager.execute('CREATE INDEX idx_status_category_priority ON composite_test(status, category, priority)');
+      await dbManager.execute(
+        'CREATE INDEX idx_status_category_priority ON composite_test(status, category, priority)'
+      );
 
       // Insert test data
       const statuses = ['active', 'inactive', 'pending'];
       const categories = ['A', 'B', 'C', 'D', 'E'];
       const priorities = [1, 2, 3, 4, 5];
 
-      const compositeData = Array(2000).fill(0).map(() => [
-        statuses[Math.floor(Math.random() * statuses.length)],
-        categories[Math.floor(Math.random() * categories.length)],
-        priorities[Math.floor(Math.random() * priorities.length)],
-        new Date().toISOString()
-      ]);
+      const compositeData = Array(2000)
+        .fill(0)
+        .map(() => [
+          statuses[Math.floor(Math.random() * statuses.length)],
+          categories[Math.floor(Math.random() * categories.length)],
+          priorities[Math.floor(Math.random() * priorities.length)],
+          new Date().toISOString(),
+        ]);
 
       await dbManager.transaction(async () => {
         for (const [status, category, priority, created_at] of compositeData) {
@@ -555,13 +574,13 @@ describe('Query Performance Tests', () => {
         'SELECT * FROM composite_test WHERE status = "active"',
         'SELECT * FROM composite_test WHERE status = "active" AND category = "A"',
         'SELECT * FROM composite_test WHERE status = "active" AND category = "A" AND priority = 1',
-        'SELECT COUNT(*) FROM composite_test WHERE status = "active" GROUP BY category'
+        'SELECT COUNT(*) FROM composite_test WHERE status = "active" GROUP BY category',
       ];
 
       const compositeResults = await performanceHelper.compareImplementations(
         compositeQueries.map((query, i) => ({
           name: `composite-index-query-${i + 1}`,
-          fn: () => dbManager.execute(query)
+          fn: () => dbManager.execute(query),
         })),
         50
       );
@@ -599,14 +618,18 @@ describe('Query Performance Tests', () => {
 
       expect(missResult.success).toBe(true);
       expect(hitResult.success).toBe(true);
-      
+
       // Cache hits should be significantly faster
-      expect(hitResult.metrics.operationsPerSecond).toBeGreaterThan(missResult.metrics.operationsPerSecond! * 2);
+      expect(hitResult.metrics.operationsPerSecond).toBeGreaterThan(
+        missResult.metrics.operationsPerSecond! * 2
+      );
     });
 
     it('should handle cache eviction gracefully', async () => {
       // Fill cache beyond capacity
-      const manyQueries = Array(1500).fill(0).map((_, i) => `query ${i} unique search`);
+      const manyQueries = Array(1500)
+        .fill(0)
+        .map((_, i) => `query ${i} unique search`);
 
       // Execute queries to fill cache
       for (let i = 0; i < manyQueries.length; i += 100) {
@@ -629,13 +652,17 @@ describe('Query Performance Tests', () => {
     it('should maintain performance under cache pressure', async () => {
       // Create mixed workload with repeated and unique queries
       const repeatedQueries = ['error', 'VSAM', 'JCL', 'DB2', 'abend'];
-      const uniqueQueries = Array(500).fill(0).map((_, i) => `unique query ${i}`);
+      const uniqueQueries = Array(500)
+        .fill(0)
+        .map((_, i) => `unique query ${i}`);
 
-      const mixedWorkload = Array(1000).fill(0).map(() => {
-        return Math.random() < 0.3 
-          ? repeatedQueries[Math.floor(Math.random() * repeatedQueries.length)]
-          : uniqueQueries[Math.floor(Math.random() * uniqueQueries.length)];
-      });
+      const mixedWorkload = Array(1000)
+        .fill(0)
+        .map(() => {
+          return Math.random() < 0.3
+            ? repeatedQueries[Math.floor(Math.random() * repeatedQueries.length)]
+            : uniqueQueries[Math.floor(Math.random() * uniqueQueries.length)];
+        });
 
       const workloadResult = await performanceHelper.measureOperation(
         'mixed-cache-workload',
@@ -661,7 +688,9 @@ describe('Query Performance Tests', () => {
         )
       `);
 
-      const testData = Array(1000).fill(0).map((_, i) => `data_${i}`);
+      const testData = Array(1000)
+        .fill(0)
+        .map((_, i) => `data_${i}`);
       await dbManager.transaction(async () => {
         for (const data of testData) {
           await dbManager.execute('INSERT INTO concurrent_test (data) VALUES (?)', [data]);
@@ -669,44 +698,48 @@ describe('Query Performance Tests', () => {
       });
 
       // Test concurrent read operations
-      const concurrentReads = Array(50).fill(0).map(() => 
-        () => dbManager.execute('SELECT * FROM concurrent_test ORDER BY RANDOM() LIMIT 10')
-      );
+      const concurrentReads = Array(50)
+        .fill(0)
+        .map(
+          () => () => dbManager.execute('SELECT * FROM concurrent_test ORDER BY RANDOM() LIMIT 10')
+        );
 
       const concurrentResult = await performanceHelper.runLoadTest({
         concurrentUsers: 10,
         duration: 5,
         rampUpTime: 1,
-        operations: concurrentReads
+        operations: concurrentReads,
       });
 
       const successRate = concurrentResult.filter(r => r.success).length / concurrentResult.length;
       expect(successRate).toBeGreaterThan(0.95);
 
       // Average response time should be reasonable
-      const avgTime = concurrentResult
-        .filter(r => r.success)
-        .reduce((sum, r) => sum + r.metrics.executionTime, 0) / concurrentResult.filter(r => r.success).length;
-      
+      const avgTime =
+        concurrentResult
+          .filter(r => r.success)
+          .reduce((sum, r) => sum + r.metrics.executionTime, 0) /
+        concurrentResult.filter(r => r.success).length;
+
       expect(avgTime).toHaveExecutedWithin(100);
     });
 
     it('should scale with connection pool size', async () => {
       // This test would compare different pool sizes
       // For now, verify that current pool configuration handles load
-      const poolStressTest = Array(20).fill(0).map(() => 
-        () => dbManager.execute('SELECT COUNT(*) FROM sqlite_master')
-      );
+      const poolStressTest = Array(20)
+        .fill(0)
+        .map(() => () => dbManager.execute('SELECT COUNT(*) FROM sqlite_master'));
 
       const poolResult = await performanceHelper.runLoadTest({
         concurrentUsers: 15,
         duration: 3,
         rampUpTime: 1,
-        operations: poolStressTest
+        operations: poolStressTest,
       });
 
       const successRate = poolResult.filter(r => r.success).length / poolResult.length;
-      expect(successRate).toBeGreaterThan(0.90);
+      expect(successRate).toBeGreaterThan(0.9);
 
       // Verify pool health after stress test
       const health = await dbManager.getHealth();

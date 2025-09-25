@@ -1,6 +1,6 @@
 /**
  * Hybrid Search Service - UC001 Implementation
- * 
+ *
  * Combines local and AI search capabilities with progressive enhancement:
  * 1. Local search responds in <500ms
  * 2. AI enhancement requires authorization dialog before ANY API call
@@ -10,7 +10,11 @@
  */
 
 import { SearchService, SearchQuery, SearchResponse } from './api/SearchService';
-import { AIAuthorizationService, AIOperation, AuthorizationResult } from '../../main/services/AIAuthorizationService';
+import {
+  AIAuthorizationService,
+  AIOperation,
+  AuthorizationResult,
+} from '../../main/services/AIAuthorizationService';
 import { SearchResult, KBCategory } from '../../types/services';
 import { AIOperationType } from '../../types/authorization.types';
 
@@ -68,7 +72,7 @@ export class HybridSearchService {
   private performanceThresholds = {
     localSearchMaxTime: 500, // UC001 requirement: <500ms
     aiSearchMaxTime: 10000,
-    totalMaxTime: 15000
+    totalMaxTime: 15000,
   };
 
   constructor() {
@@ -106,7 +110,7 @@ export class HybridSearchService {
       enableMerging: true,
       prioritizeLocal: true,
       timeoutMs: this.performanceThresholds.totalMaxTime,
-      ...options
+      ...options,
     };
 
     const result: HybridSearchResult = {
@@ -118,33 +122,36 @@ export class HybridSearchService {
         totalTime: 0,
         localCompleted: false,
         aiCompleted: false,
-        authorizationRequired: false
+        authorizationRequired: false,
       },
       metadata: {
         localResultCount: 0,
         aiResultCount: 0,
         mergedResultCount: 0,
         duplicatesRemoved: 0,
-        errorMessages: []
-      }
+        errorMessages: [],
+      },
     };
 
     try {
       // Step 1: Always start with local search (UC001 requirement)
       const localSearchPromise = this.performLocalSearch(query, category, searchOptions);
-      
+
       // Step 2: Run local search first and ensure it completes within 500ms
       const localStartTime = Date.now();
       const localSearchResult = await Promise.race([
         localSearchPromise,
-        new Promise<SearchResponse>((_, reject) => 
-          setTimeout(() => reject(new Error('Local search timeout')), this.performanceThresholds.localSearchMaxTime)
-        )
+        new Promise<SearchResponse>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Local search timeout')),
+            this.performanceThresholds.localSearchMaxTime
+          )
+        ),
       ]);
 
       result.performance.localSearchTime = Date.now() - localStartTime;
       result.performance.localCompleted = true;
-      
+
       if (localSearchResult.success && localSearchResult.data) {
         result.localResults = localSearchResult.data.results;
         result.metadata.localResultCount = result.localResults.length;
@@ -153,19 +160,19 @@ export class HybridSearchService {
       // Step 3: Progressive enhancement - add AI search if enabled and authorized
       if (searchOptions.enableAI && this.shouldEnhanceWithAI(result.localResults, query)) {
         const aiEnhancementResult = await this.performAIEnhancement(
-          query, 
-          category, 
+          query,
+          category,
           result.localResults,
           searchOptions
         );
-        
+
         result.aiResults = aiEnhancementResult.results;
         result.performance.aiSearchTime = aiEnhancementResult.searchTime;
         result.performance.aiCompleted = aiEnhancementResult.completed;
         result.performance.authorizationRequired = aiEnhancementResult.authorizationRequired;
         result.metadata.aiResultCount = result.aiResults.length;
         result.metadata.authorizationStatus = aiEnhancementResult.authorizationStatus;
-        
+
         if (aiEnhancementResult.errorMessage) {
           result.metadata.errorMessages?.push(aiEnhancementResult.errorMessage);
         }
@@ -178,23 +185,22 @@ export class HybridSearchService {
           result.aiResults,
           searchOptions.prioritizeLocal
         );
-        
+
         result.mergedResults = mergeResult.results;
         result.metadata.duplicatesRemoved = mergeResult.duplicatesRemoved;
         result.metadata.mergedResultCount = result.mergedResults.length;
       } else {
         // If merging disabled, prioritize local results
-        result.mergedResults = searchOptions.prioritizeLocal ? 
-          [...result.localResults, ...result.aiResults] :
-          [...result.aiResults, ...result.localResults];
+        result.mergedResults = searchOptions.prioritizeLocal
+          ? [...result.localResults, ...result.aiResults]
+          : [...result.aiResults, ...result.localResults];
         result.metadata.mergedResultCount = result.mergedResults.length;
       }
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       result.metadata.errorMessages?.push(errorMessage);
       console.error('Hybrid search error:', error);
-      
+
       // Fallback to local results only
       result.mergedResults = result.localResults;
       result.metadata.mergedResultCount = result.localResults.length;
@@ -215,12 +221,12 @@ export class HybridSearchService {
     const searchQuery: SearchQuery = {
       query,
       category,
-      useAI: false // Force local-only search
+      useAI: false, // Force local-only search
     };
 
     return await this.searchService.search(searchQuery, {
       pageSize: options.maxLocalResults || 50,
-      timeout: this.performanceThresholds.localSearchMaxTime
+      timeout: this.performanceThresholds.localSearchMaxTime,
     });
   }
 
@@ -232,7 +238,7 @@ export class HybridSearchService {
     // 1. Local results are insufficient (< 5 results)
     // 2. Query indicates complex search intent
     // 3. Query contains error codes or technical terms
-    
+
     if (localResults.length < 5) {
       return true;
     }
@@ -242,7 +248,7 @@ export class HybridSearchService {
       /how\s+to|why\s+does|what\s+causes/i,
       /s0c[0-9]|u[0-9]{4}|ief[0-9]{3}/i, // Error codes
       /explain|analyze|troubleshoot|debug/i,
-      /best\s+practice|recommend|suggest/i
+      /best\s+practice|recommend|suggest/i,
     ];
 
     return complexIndicators.some(pattern => pattern.test(query));
@@ -265,12 +271,12 @@ export class HybridSearchService {
     errorMessage?: string;
   }> {
     const startTime = Date.now();
-    
+
     try {
       // Step 1: Check if authorization is required (UC001 requirement)
       const authContext = this.createAuthorizationContext(query, category);
       const authResult = await this.requestAIAuthorization(authContext);
-      
+
       if (!authResult.authorized) {
         return {
           results: [],
@@ -278,7 +284,7 @@ export class HybridSearchService {
           completed: false,
           authorizationRequired: true,
           authorizationStatus: 'denied',
-          errorMessage: 'AI search not authorized'
+          errorMessage: 'AI search not authorized',
         };
       }
 
@@ -286,12 +292,12 @@ export class HybridSearchService {
       const searchQuery: SearchQuery = {
         query,
         category,
-        useAI: true
+        useAI: true,
       };
 
       const aiSearchResult = await this.searchService.search(searchQuery, {
         pageSize: options.maxAIResults || 20,
-        timeout: this.performanceThresholds.aiSearchMaxTime
+        timeout: this.performanceThresholds.aiSearchMaxTime,
       });
 
       if (aiSearchResult.success && aiSearchResult.data) {
@@ -300,7 +306,7 @@ export class HybridSearchService {
           searchTime: Date.now() - startTime,
           completed: true,
           authorizationRequired: true,
-          authorizationStatus: 'approved'
+          authorizationStatus: 'approved',
         };
       } else {
         return {
@@ -309,10 +315,9 @@ export class HybridSearchService {
           completed: false,
           authorizationRequired: true,
           authorizationStatus: 'approved',
-          errorMessage: 'AI search failed: ' + (aiSearchResult.error || 'Unknown error')
+          errorMessage: 'AI search failed: ' + (aiSearchResult.error || 'Unknown error'),
         };
       }
-
     } catch (error) {
       return {
         results: [],
@@ -320,7 +325,7 @@ export class HybridSearchService {
         completed: false,
         authorizationRequired: true,
         authorizationStatus: 'denied',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -328,11 +333,14 @@ export class HybridSearchService {
   /**
    * Create authorization context for AI operations
    */
-  private createAuthorizationContext(query: string, category?: KBCategory): SearchAuthorizationContext {
+  private createAuthorizationContext(
+    query: string,
+    category?: KBCategory
+  ): SearchAuthorizationContext {
     // Analyze query for PII and sensitivity
     const containsPII = this.detectPII(query);
     const isConfidential = this.detectConfidentialData(query);
-    
+
     return {
       query,
       operationType: 'semantic_search',
@@ -344,19 +352,21 @@ export class HybridSearchService {
           {
             name: 'search_query',
             type: 'string',
-            sensitivity: isConfidential ? 'confidential' : containsPII ? 'internal' : 'public'
-          }
-        ]
+            sensitivity: isConfidential ? 'confidential' : containsPII ? 'internal' : 'public',
+          },
+        ],
       },
       sessionId: this.generateSessionId(),
-      userId: 'current_user' // Should be replaced with actual user ID
+      userId: 'current_user', // Should be replaced with actual user ID
     };
   }
 
   /**
    * Request AI authorization through the authorization service
    */
-  private async requestAIAuthorization(context: SearchAuthorizationContext): Promise<AuthorizationResult> {
+  private async requestAIAuthorization(
+    context: SearchAuthorizationContext
+  ): Promise<AuthorizationResult> {
     if (!this.authService) {
       // Fallback: require explicit user approval for any AI operation
       return {
@@ -364,7 +374,7 @@ export class HybridSearchService {
         action: 'ask_always',
         requestId: this.generateRequestId(),
         autoApproved: false,
-        reason: 'Authorization service not available'
+        reason: 'Authorization service not available',
       };
     }
 
@@ -374,7 +384,7 @@ export class HybridSearchService {
       dataContext: context.dataContext!,
       priority: 'medium',
       sessionId: context.sessionId,
-      userId: context.userId
+      userId: context.userId,
     };
 
     try {
@@ -386,7 +396,7 @@ export class HybridSearchService {
         action: 'deny',
         requestId: this.generateRequestId(),
         autoApproved: false,
-        reason: 'Authorization request failed'
+        reason: 'Authorization request failed',
       };
     }
   }
@@ -405,21 +415,27 @@ export class HybridSearchService {
     let duplicatesRemoved = 0;
 
     // Define result sources in priority order
-    const sources = prioritizeLocal ? 
-      [{ results: localResults, source: 'local' }, { results: aiResults, source: 'ai' }] :
-      [{ results: aiResults, source: 'ai' }, { results: localResults, source: 'local' }];
+    const sources = prioritizeLocal
+      ? [
+          { results: localResults, source: 'local' },
+          { results: aiResults, source: 'ai' },
+        ]
+      : [
+          { results: aiResults, source: 'ai' },
+          { results: localResults, source: 'local' },
+        ];
 
     for (const { results, source } of sources) {
       for (const result of results) {
         const id = result.entry.id;
         const title = result.entry.title.trim().toLowerCase();
-        
+
         // Check for exact ID match
         if (seenIds.has(id)) {
           duplicatesRemoved++;
           continue;
         }
-        
+
         // Check for similar titles (fuzzy deduplication)
         if (seenTitles.has(title)) {
           duplicatesRemoved++;
@@ -429,17 +445,17 @@ export class HybridSearchService {
         // Add to results
         seenIds.add(id);
         seenTitles.add(title);
-        
+
         // Add source metadata
         const enhancedResult = {
           ...result,
           metadata: {
             ...result.metadata,
             source,
-            hybridRank: mergedResults.length + 1
-          }
+            hybridRank: mergedResults.length + 1,
+          },
         };
-        
+
         mergedResults.push(enhancedResult);
       }
     }
@@ -455,9 +471,9 @@ export class HybridSearchService {
       /\b\d{3}-\d{2}-\d{4}\b/, // SSN
       /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/, // Email
       /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/, // Credit card
-      /\b\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/ // Phone number
+      /\b\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/, // Phone number
     ];
-    
+
     return piiPatterns.some(pattern => pattern.test(query));
   }
 
@@ -466,10 +482,17 @@ export class HybridSearchService {
    */
   private detectConfidentialData(query: string): boolean {
     const confidentialKeywords = [
-      'password', 'credential', 'secret', 'token', 'key',
-      'confidential', 'internal', 'private', 'restricted'
+      'password',
+      'credential',
+      'secret',
+      'token',
+      'key',
+      'confidential',
+      'internal',
+      'private',
+      'restricted',
     ];
-    
+
     const lowerQuery = query.toLowerCase();
     return confidentialKeywords.some(keyword => lowerQuery.includes(keyword));
   }
@@ -503,17 +526,17 @@ export class HybridSearchService {
     };
   }> {
     const localHealth = await this.searchService.healthCheck();
-    
+
     return {
-      healthy: localHealth.success && localHealth.data?.healthy || false,
+      healthy: (localHealth.success && localHealth.data?.healthy) || false,
       localSearchAvailable: localHealth.data?.localSearchAvailable || false,
       aiSearchAvailable: localHealth.data?.aiSearchAvailable || false,
       authorizationAvailable: this.authService !== null,
       performanceMetrics: {
         averageLocalSearchTime: localHealth.data?.averageQueryTime || 0,
         averageAISearchTime: 0, // TODO: Implement AI search time tracking
-        averageAuthorizationTime: 0 // TODO: Implement authorization time tracking
-      }
+        averageAuthorizationTime: 0, // TODO: Implement authorization time tracking
+      },
     };
   }
 

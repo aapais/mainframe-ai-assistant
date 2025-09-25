@@ -4,7 +4,12 @@
  */
 
 import { EventEmitter } from 'events';
-import { ICacheService, IBaseService, ServiceContext, ServiceHealth } from '../core/interfaces/ServiceInterfaces';
+import {
+  ICacheService,
+  IBaseService,
+  ServiceContext,
+  ServiceHealth,
+} from '../core/interfaces/ServiceInterfaces';
 
 // ==============================
 // Core Cache Interfaces
@@ -125,13 +130,13 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
           healthy: true,
           size: stats.size,
           hitRate: stats.hitRate,
-          capacity: stats.capacity
+          capacity: stats.capacity,
         };
         healthyLayers++;
       } catch (error) {
         layerHealths[layer.name] = {
           healthy: false,
-          error: (error as Error).message
+          error: (error as Error).message,
         };
       }
     }
@@ -144,9 +149,9 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
         totalLayers: this.layers.length,
         healthyLayers,
         layers: layerHealths,
-        overallStats: this.getStats()
+        overallStats: this.getStats(),
       },
-      lastCheck: new Date()
+      lastCheck: new Date(),
     };
   }
 
@@ -198,15 +203,12 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
         : value;
 
       // Set in all layers
-      const setPromises = this.layers.map(layer =>
-        layer.set(normalizedKey, processedValue, ttl)
-      );
+      const setPromises = this.layers.map(layer => layer.set(normalizedKey, processedValue, ttl));
 
       await Promise.all(setPromises);
 
       this.metrics.recordLatency('set', Date.now() - startTime);
       this.emit('cache:set', { key: normalizedKey, ttl });
-
     } catch (error) {
       this.metrics.recordError('set', error as Error);
       this.context?.logger?.error('Cache set error', error as Error, { key: normalizedKey });
@@ -231,7 +233,6 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
 
       this.emit('cache:delete', { key: normalizedKey });
       return deleted;
-
     } catch (error) {
       this.metrics.recordError('delete', error as Error);
       throw error;
@@ -256,7 +257,6 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
 
       this.metrics.reset();
       this.emit('cache:cleared');
-
     } catch (error) {
       this.context?.logger?.error('Cache clear error', error as Error);
       throw error;
@@ -290,24 +290,20 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
     return results;
   }
 
-  async mset(items: Array<{key: string, value: any, ttl?: number}>): Promise<void> {
+  async mset(items: Array<{ key: string; value: any; ttl?: number }>): Promise<void> {
     const processedItems = await Promise.all(
       items.map(async item => ({
         ...item,
         key: this.normalizeKey(item.key),
         value: this.config.compression.enabled
           ? await this.compressionManager.compress(item.value)
-          : item.value
+          : item.value,
       }))
     );
 
     // Set in all layers
     const setPromises = this.layers.map(layer =>
-      Promise.all(
-        processedItems.map(item =>
-          layer.set(item.key, item.value, item.ttl)
-        )
-      )
+      Promise.all(processedItems.map(item => layer.set(item.key, item.value, item.ttl)))
     );
 
     await Promise.all(setPromises);
@@ -392,7 +388,7 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
     const layerStats = this.layers.map(layer => ({
       name: layer.name,
       level: layer.level,
-      ...layer.getStats()
+      ...layer.getStats(),
     }));
 
     const overall = this.metrics.getOverallStats();
@@ -403,8 +399,8 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
       performance: {
         averageGetTime: overall.averageGetTime,
         averageSetTime: overall.averageSetTime,
-        hitRate: overall.hitRate
-      }
+        hitRate: overall.hitRate,
+      },
     };
   }
 
@@ -416,7 +412,7 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
     return {
       cache: this.getStats(),
       invalidation: this.invalidationManager.getStats(),
-      warming: this.warmingManager.getStats()
+      warming: this.warmingManager.getStats(),
     };
   }
 
@@ -434,7 +430,7 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
         level: 1,
         maxSize: this.config.layers.memory.maxSize,
         ttl: this.config.layers.memory.ttl,
-        algorithm: this.config.layers.memory.algorithm
+        algorithm: this.config.layers.memory.algorithm,
       });
       this.layers.push(memoryLayer);
     }
@@ -447,7 +443,7 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
         dbPath: this.config.layers.sqlite.dbPath,
         maxSize: this.config.layers.sqlite.maxSize,
         ttl: this.config.layers.sqlite.ttl,
-        compressionLevel: this.config.layers.sqlite.compressionLevel
+        compressionLevel: this.config.layers.sqlite.compressionLevel,
       });
       await sqliteLayer.initialize();
       this.layers.push(sqliteLayer);
@@ -461,7 +457,7 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
         basePath: this.config.layers.filesystem.basePath,
         maxSize: this.config.layers.filesystem.maxSize,
         ttl: this.config.layers.filesystem.ttl,
-        compression: this.config.layers.filesystem.compression
+        compression: this.config.layers.filesystem.compression,
       });
       await fsLayer.initialize();
       this.layers.push(fsLayer);
@@ -470,9 +466,7 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
 
   private async promoteToHigherLayers(key: string, value: any, fromLevel: number): Promise<void> {
     // Promote to all layers above the one where we found the value
-    const promotionPromises = this.layers
-      .slice(0, fromLevel)
-      .map(layer => layer.set(key, value));
+    const promotionPromises = this.layers.slice(0, fromLevel).map(layer => layer.set(key, value));
 
     await Promise.all(promotionPromises);
   }
@@ -486,18 +480,18 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
       {
         name: 'kb-entry-updated',
         pattern: 'kb:entry:*',
-        triggers: ['kb.entry.updated', 'kb.entry.deleted']
+        triggers: ['kb.entry.updated', 'kb.entry.deleted'],
       },
       {
         name: 'search-cache-invalidation',
         pattern: 'search:*',
-        triggers: ['kb.entry.created', 'kb.entry.updated', 'kb.entry.deleted']
+        triggers: ['kb.entry.created', 'kb.entry.updated', 'kb.entry.deleted'],
       },
       {
         name: 'category-cache-invalidation',
         pattern: 'categories:*',
-        triggers: ['kb.entry.created', 'kb.entry.updated', 'kb.entry.deleted']
-      }
+        triggers: ['kb.entry.created', 'kb.entry.updated', 'kb.entry.deleted'],
+      },
     ];
 
     for (const rule of defaultRules) {
@@ -521,14 +515,20 @@ export class MultiLayerCache extends EventEmitter implements ICacheService {
       this.emit('cache:alert', {
         type: 'low-hit-rate',
         hitRate: stats.overall.hitRate,
-        threshold: this.config.alerts.lowHitRateThreshold
+        threshold: this.config.alerts.lowHitRateThreshold,
       });
     }
 
-    if (stats.layers.some((layer: any) => layer.size / layer.capacity > this.config.alerts.highMemoryThreshold)) {
+    if (
+      stats.layers.some(
+        (layer: any) => layer.size / layer.capacity > this.config.alerts.highMemoryThreshold
+      )
+    ) {
       this.emit('cache:alert', {
         type: 'high-memory-usage',
-        layers: stats.layers.filter((layer: any) => layer.size / layer.capacity > this.config.alerts.highMemoryThreshold)
+        layers: stats.layers.filter(
+          (layer: any) => layer.size / layer.capacity > this.config.alerts.highMemoryThreshold
+        ),
       });
     }
   }
@@ -560,7 +560,7 @@ class MemoryCacheLayer implements CacheLayer {
       capacity: config.maxSize,
       evictions: 0,
       averageGetTime: 0,
-      averageSetTime: 0
+      averageSetTime: 0,
     };
   }
 
@@ -610,7 +610,7 @@ class MemoryCacheLayer implements CacheLayer {
       value,
       createdAt: Date.now(),
       accessedAt: Date.now(),
-      expiresAt
+      expiresAt,
     };
 
     this.cache.set(key, entry);
@@ -769,9 +769,8 @@ class SQLiteCacheLayer implements CacheLayer {
 
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     const serialized = JSON.stringify(value);
-    const compressed = this.config.compressionLevel > 0
-      ? await this.compress(serialized)
-      : serialized;
+    const compressed =
+      this.config.compressionLevel > 0 ? await this.compress(serialized) : serialized;
 
     const expiresAt = ttl ? Date.now() + ttl : null;
     const size = Buffer.byteLength(compressed);
@@ -845,7 +844,7 @@ class SQLiteCacheLayer implements CacheLayer {
       capacity: this.capacity,
       evictions: 0,
       averageGetTime: 0,
-      averageSetTime: 0
+      averageSetTime: 0,
     };
   }
 
@@ -912,9 +911,7 @@ class FileSystemCacheLayer implements CacheLayer {
         return null;
       }
 
-      return this.config.compression
-        ? await this.decompress(entry.value)
-        : entry.value;
+      return this.config.compression ? await this.decompress(entry.value) : entry.value;
     } catch (error) {
       return null;
     }
@@ -927,7 +924,7 @@ class FileSystemCacheLayer implements CacheLayer {
     const entry = {
       value: this.config.compression ? await this.compress(value) : value,
       createdAt: Date.now(),
-      expiresAt: ttl ? Date.now() + ttl : null
+      expiresAt: ttl ? Date.now() + ttl : null,
     };
 
     fs.writeFileSync(filePath, JSON.stringify(entry));
@@ -1035,7 +1032,7 @@ class FileSystemCacheLayer implements CacheLayer {
       capacity: this.capacity,
       evictions: 0,
       averageGetTime: 0,
-      averageSetTime: 0
+      averageSetTime: 0,
     };
   }
 
@@ -1114,7 +1111,7 @@ class CacheInvalidationManager {
   getStats(): any {
     return {
       totalRules: this.rules.size,
-      rules: Array.from(this.rules.values())
+      rules: Array.from(this.rules.values()),
     };
   }
 }
@@ -1173,7 +1170,7 @@ class CacheWarmingManager {
     return {
       totalStrategies: this.strategies.size,
       activeStrategies: this.intervals.size,
-      strategies: Array.from(this.strategies.values())
+      strategies: Array.from(this.strategies.values()),
     };
   }
 }
@@ -1194,10 +1191,11 @@ class CompressionManager {
     return new Promise((resolve, reject) => {
       zlib.gzip(data, { level: this.config.level }, (err, result) => {
         if (err) reject(err);
-        else resolve({
-          __compressed: true,
-          data: result.toString('base64')
-        });
+        else
+          resolve({
+            __compressed: true,
+            data: result.toString('base64'),
+          });
       });
     });
   }
@@ -1255,7 +1253,7 @@ class CacheMetrics {
       totalMisses: this.misses,
       totalRequests,
       averageGetTime: this.getAverageLatency('get'),
-      averageSetTime: this.getAverageLatency('set')
+      averageSetTime: this.getAverageLatency('set'),
     };
   }
 

@@ -1,10 +1,12 @@
 # Incident AI Server
 
-Express.js server that provides AI-powered incident management with LLM integration, vector search, and LGPD compliance.
+Express.js server that provides AI-powered incident management with LLM
+integration, vector search, and LGPD compliance.
 
 ## Features
 
 ### Core Functionality
+
 - **Incident Creation** with AI-powered categorization
 - **Semantic Search** with RAG (Retrieval Augmented Generation)
 - **Similar Incident Detection** using advanced algorithms
@@ -12,12 +14,14 @@ Express.js server that provides AI-powered incident management with LLM integrat
 - **LGPD Compliance** with automatic data masking
 
 ### LLM Integration
+
 - **Google Gemini** - Primary AI service
 - **OpenAI GPT** - Alternative AI service
 - **Anthropic Claude** - Advanced reasoning
 - **Azure OpenAI** - Enterprise AI service
 
 ### Advanced Features
+
 - Rate limiting and security headers
 - Comprehensive validation
 - Bulk operations support
@@ -28,18 +32,21 @@ Express.js server that provides AI-powered incident management with LLM integrat
 ## Quick Start
 
 ### 1. Install Dependencies
+
 ```bash
 cd src/api
 npm install
 ```
 
 ### 2. Environment Setup
+
 ```bash
 cp .env.example .env
 # Edit .env with your API keys and configuration
 ```
 
 ### 3. Start ChromaDB (Optional)
+
 ```bash
 # Using Docker
 docker run -p 8000:8000 chromadb/chroma
@@ -50,6 +57,7 @@ chroma run --host localhost --port 8000
 ```
 
 ### 4. Start Server
+
 ```bash
 # Development mode
 npm run dev
@@ -61,6 +69,7 @@ npm start
 ## API Endpoints
 
 ### Health Check
+
 ```
 GET /health
 ```
@@ -68,6 +77,7 @@ GET /health
 ### Incident Management
 
 #### Create Incident with AI Categorization
+
 ```
 POST /api/incidents/create
 Content-Type: application/json
@@ -82,6 +92,7 @@ Content-Type: application/json
 ```
 
 #### Find Similar Incidents
+
 ```
 POST /api/incidents/similar
 Content-Type: application/json
@@ -97,11 +108,13 @@ Content-Type: application/json
 ### Search Operations
 
 #### Semantic Search with RAG
+
 ```
 GET /api/search/semantic?q=S0C7%20data%20exception&limit=20&use_vector=true&use_llm=true
 ```
 
 #### Vector Search
+
 ```
 POST /api/search/vector
 Content-Type: application/json
@@ -116,6 +129,7 @@ Content-Type: application/json
 ### AI Services
 
 #### Categorize Incident
+
 ```
 POST /api/incidents/categorize
 Content-Type: application/json
@@ -129,6 +143,7 @@ Content-Type: application/json
 ### Data Compliance
 
 #### Mask Sensitive Data (LGPD)
+
 ```
 POST /api/incidents/mask
 Content-Type: application/json
@@ -143,6 +158,7 @@ Content-Type: application/json
 ```
 
 ### Bulk Operations
+
 ```
 POST /api/incidents/bulk
 Content-Type: application/json
@@ -162,11 +178,13 @@ Content-Type: application/json
 ### Analytics
 
 #### Summary Analytics
+
 ```
 GET /api/analytics/summary
 ```
 
 #### Trends Analysis
+
 ```
 GET /api/analytics/trends?period=30d&category=JCL
 ```
@@ -175,20 +193,21 @@ GET /api/analytics/trends?period=30d&category=JCL
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | 3001 |
-| `NODE_ENV` | Environment | development |
-| `GEMINI_API_KEY` | Google Gemini API key | - |
-| `OPENAI_API_KEY` | OpenAI API key | - |
-| `CLAUDE_API_KEY` | Anthropic Claude API key | - |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | - |
-| `CHROMA_URL` | ChromaDB URL | http://localhost:8000 |
-| `LGPD_ENABLED` | Enable LGPD compliance | true |
+| Variable               | Description              | Default               |
+| ---------------------- | ------------------------ | --------------------- |
+| `PORT`                 | Server port              | 3001                  |
+| `NODE_ENV`             | Environment              | development           |
+| `GEMINI_API_KEY`       | Google Gemini API key    | -                     |
+| `OPENAI_API_KEY`       | OpenAI API key           | -                     |
+| `CLAUDE_API_KEY`       | Anthropic Claude API key | -                     |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key     | -                     |
+| `CHROMA_URL`           | ChromaDB URL             | http://localhost:8000 |
+| `LGPD_ENABLED`         | Enable LGPD compliance   | true                  |
 
 ### LLM Provider Configuration
 
 #### Gemini (Google AI)
+
 ```javascript
 {
   llm: {
@@ -202,6 +221,7 @@ GET /api/analytics/trends?period=30d&category=JCL
 ```
 
 #### OpenAI
+
 ```javascript
 {
   llm: {
@@ -214,17 +234,19 @@ GET /api/analytics/trends?period=30d&category=JCL
 ```
 
 #### Anthropic Claude
+
 ```javascript
 {
   llm: {
     claude: {
-      apiKey: process.env.CLAUDE_API_KEY
+      apiKey: process.env.CLAUDE_API_KEY;
     }
   }
 }
 ```
 
 #### Azure OpenAI
+
 ```javascript
 {
   llm: {
@@ -249,7 +271,7 @@ const {
   ValidationService,
   EnhancedSearchService,
   CategoryService,
-  DuplicateDetectionService
+  DuplicateDetectionService,
 } = require('../services');
 ```
 
@@ -285,27 +307,31 @@ The server automatically masks sensitive data when `LGPD_ENABLED=true`:
 const masked = server.applySensitiveDataMasking(data, ['email', 'phone']);
 
 // Configure in environment
-LGPD_MASK_FIELDS=email,cpf,phone,address
+((LGPD_MASK_FIELDS = email), cpf, phone, address);
 ```
 
 ## Performance Features
 
 ### Rate Limiting
+
 - 100 requests per 15 minutes by default
 - Configurable per endpoint
 - IP-based tracking
 
 ### Caching
+
 - Built-in memory caching
 - Redis support (optional)
 - TTL-based expiration
 
 ### Vector Search
+
 - ChromaDB integration
 - Embeddings-based similarity
 - Fallback to text search
 
 ### Response Compression
+
 - Gzip compression enabled
 - Automatic content-type detection
 - Bandwidth optimization
@@ -313,6 +339,7 @@ LGPD_MASK_FIELDS=email,cpf,phone,address
 ## Monitoring
 
 ### Health Endpoint
+
 ```json
 {
   "status": "healthy",
@@ -326,6 +353,7 @@ LGPD_MASK_FIELDS=email,cpf,phone,address
 ```
 
 ### Error Handling
+
 - Structured error responses
 - Request correlation IDs
 - Comprehensive logging
@@ -334,6 +362,7 @@ LGPD_MASK_FIELDS=email,cpf,phone,address
 ## Security
 
 ### Built-in Security
+
 - Helmet.js security headers
 - CORS configuration
 - Input validation
@@ -341,6 +370,7 @@ LGPD_MASK_FIELDS=email,cpf,phone,address
 - XSS protection
 
 ### Authentication (Optional)
+
 The server is designed to work with external authentication:
 
 ```javascript
@@ -355,21 +385,25 @@ function authenticateToken(req, res, next) {
 ## Development
 
 ### Running Tests
+
 ```bash
 npm test
 ```
 
 ### Linting
+
 ```bash
 npm run lint
 ```
 
 ### API Documentation
+
 ```bash
 npm run docs
 ```
 
 ### Hot Reload Development
+
 ```bash
 npm run dev
 ```
@@ -377,6 +411,7 @@ npm run dev
 ## Deployment
 
 ### Docker Deployment
+
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
@@ -388,6 +423,7 @@ CMD ["npm", "start"]
 ```
 
 ### Environment-specific Configs
+
 - Development: Auto-reload, verbose logging
 - Production: Optimized, security headers
 - Testing: Mock services, in-memory database
@@ -412,11 +448,13 @@ CMD ["npm", "start"]
    - Verify SQLite installation
 
 ### Debug Mode
+
 ```bash
 DEBUG=incident-ai:* npm run dev
 ```
 
 ### Logs Location
+
 - Development: Console output
 - Production: `./logs/incident-ai-server.log`
 - Error logs: `./logs/error.log`

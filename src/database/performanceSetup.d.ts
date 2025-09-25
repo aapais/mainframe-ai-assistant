@@ -3,38 +3,41 @@ import { ConnectionPool } from './ConnectionPool';
 import { QueryCache } from './QueryCache';
 import { PerformanceManager } from './PerformanceManager';
 export interface PerformanceSetupOptions {
-    dbPath?: string;
-    maxConnections?: number;
-    cacheSize?: number;
-    enableBenchmarking?: boolean;
-    customThresholds?: {
-        maxQueryTime?: number;
-        minCacheHitRate?: number;
-        maxSlowQueryPercent?: number;
-    };
+  dbPath?: string;
+  maxConnections?: number;
+  cacheSize?: number;
+  enableBenchmarking?: boolean;
+  customThresholds?: {
+    maxQueryTime?: number;
+    minCacheHitRate?: number;
+    maxSlowQueryPercent?: number;
+  };
 }
 export declare function setupPerformanceOptimizedDB(options?: PerformanceSetupOptions): Promise<{
-    db: KnowledgeDB;
-    connectionPool: ConnectionPool;
-    cache: QueryCache;
-    manager: PerformanceManager;
+  db: KnowledgeDB;
+  connectionPool: ConnectionPool;
+  cache: QueryCache;
+  manager: PerformanceManager;
 }>;
 export declare function setupDevelopmentDB(): Promise<{
-    db: KnowledgeDB;
-    connectionPool: ConnectionPool;
-    cache: QueryCache;
-    manager: PerformanceManager;
+  db: KnowledgeDB;
+  connectionPool: ConnectionPool;
+  cache: QueryCache;
+  manager: PerformanceManager;
 }>;
 export declare function setupProductionDB(dbPath: string): Promise<{
-    db: KnowledgeDB;
-    connectionPool: ConnectionPool;
-    cache: QueryCache;
-    manager: PerformanceManager;
+  db: KnowledgeDB;
+  connectionPool: ConnectionPool;
+  cache: QueryCache;
+  manager: PerformanceManager;
 }>;
-export declare function validatePerformanceOptimizations(db: KnowledgeDB, manager: PerformanceManager): Promise<{
-    passed: boolean;
-    results: any[];
-    recommendations: string[];
+export declare function validatePerformanceOptimizations(
+  db: KnowledgeDB,
+  manager: PerformanceManager
+): Promise<{
+  passed: boolean;
+  results: any[];
+  recommendations: string[];
 }>;
 export * from './PerformanceManager';
 export { KnowledgeDB } from './KnowledgeDB';

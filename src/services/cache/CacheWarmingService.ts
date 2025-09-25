@@ -43,10 +43,7 @@ export class CacheWarmingService {
   private metrics: WarmingMetrics;
   private isWarming = false;
 
-  constructor(
-    cacheOrchestrator: CacheOrchestrator,
-    queryCache: QueryCache
-  ) {
+  constructor(cacheOrchestrator: CacheOrchestrator, queryCache: QueryCache) {
     this.cacheOrchestrator = cacheOrchestrator;
     this.queryCache = queryCache;
     this.metrics = {
@@ -56,14 +53,14 @@ export class CacheWarmingService {
       avgWarmingTime: 0,
       lastWarmingTime: 0,
       nextScheduledWarming: 0,
-      strategiesExecuted: []
+      strategiesExecuted: [],
     };
   }
 
   // Register a warming strategy
   registerStrategy(strategy: WarmingStrategy): void {
     this.strategies.set(strategy.name, strategy);
-    
+
     if (strategy.enabled) {
       this.scheduleStrategy(strategy);
     }
@@ -85,39 +82,39 @@ export class CacheWarmingService {
           priority: 10,
           ttl: 3600,
           tags: ['search', 'popular'],
-          schedule: { onStartup: true, interval: 3600000 } // 1 hour
+          schedule: { onStartup: true, interval: 3600000 }, // 1 hour
         },
         {
           key: 'search:popular:cobol',
           fetcher: () => this.fetchPopularSearch('cobol'),
           priority: 9,
           ttl: 3600,
-          tags: ['search', 'popular']
+          tags: ['search', 'popular'],
         },
         {
           key: 'search:popular:jcl',
           fetcher: () => this.fetchPopularSearch('jcl'),
           priority: 8,
           ttl: 3600,
-          tags: ['search', 'popular']
+          tags: ['search', 'popular'],
         },
         {
           key: 'search:popular:db2',
           fetcher: () => this.fetchPopularSearch('db2'),
           priority: 7,
           ttl: 3600,
-          tags: ['search', 'popular']
+          tags: ['search', 'popular'],
         },
         {
           key: 'search:popular:vsam',
           fetcher: () => this.fetchPopularSearch('vsam'),
           priority: 6,
           ttl: 3600,
-          tags: ['search', 'popular']
-        }
-      ]
+          tags: ['search', 'popular'],
+        },
+      ],
     };
-    
+
     this.registerStrategy(strategy);
   }
 
@@ -137,25 +134,25 @@ export class CacheWarmingService {
           priority: 10,
           ttl: 7200, // 2 hours
           tags: ['kb', 'categories'],
-          schedule: { onStartup: true, interval: 7200000 }
+          schedule: { onStartup: true, interval: 7200000 },
         },
         {
           key: 'kb:entries:recent',
           fetcher: () => this.fetchRecentEntries(),
           priority: 8,
           ttl: 1800, // 30 minutes
-          tags: ['kb', 'entries']
+          tags: ['kb', 'entries'],
         },
         {
           key: 'kb:tags:popular',
           fetcher: () => this.fetchPopularTags(),
           priority: 6,
           ttl: 3600,
-          tags: ['kb', 'tags']
-        }
-      ]
+          tags: ['kb', 'tags'],
+        },
+      ],
     };
-    
+
     this.registerStrategy(strategy);
   }
 
@@ -174,18 +171,18 @@ export class CacheWarmingService {
           fetcher: () => this.fetchDefaultSettings(),
           priority: 5,
           ttl: 1800,
-          tags: ['user', 'settings']
+          tags: ['user', 'settings'],
         },
         {
           key: 'user:themes:available',
           fetcher: () => this.fetchAvailableThemes(),
           priority: 3,
           ttl: 86400, // 24 hours
-          tags: ['user', 'themes']
-        }
-      ]
+          tags: ['user', 'themes'],
+        },
+      ],
     };
-    
+
     this.registerStrategy(strategy);
   }
 
@@ -198,10 +195,10 @@ export class CacheWarmingService {
 
     this.isWarming = true;
     const startTime = Date.now();
-    
+
     try {
       console.log('Starting comprehensive cache warming...');
-      
+
       const enabledStrategies = Array.from(this.strategies.values())
         .filter(strategy => strategy.enabled)
         .sort((a, b) => this.getMaxPriority(b) - this.getMaxPriority(a));
@@ -210,13 +207,14 @@ export class CacheWarmingService {
         await this.executeStrategy(strategy);
         this.metrics.strategiesExecuted.push(strategy.name);
       }
-      
+
       const duration = Date.now() - startTime;
       this.metrics.lastWarmingTime = duration;
-      
+
       console.log(`Cache warming completed in ${duration}ms`);
-      console.log(`Warmed ${this.metrics.successfulWarms} entries, ${this.metrics.failedWarms} failures`);
-      
+      console.log(
+        `Warmed ${this.metrics.successfulWarms} entries, ${this.metrics.failedWarms} failures`
+      );
     } catch (error) {
       console.error('Cache warming error:', error);
     } finally {
@@ -227,16 +225,14 @@ export class CacheWarmingService {
   // Execute startup warming
   async warmOnStartup(): Promise<void> {
     const startupEntries: WarmingEntry[] = [];
-    
+
     for (const strategy of this.strategies.values()) {
       if (strategy.enabled) {
-        const entries = strategy.entries.filter(entry => 
-          entry.schedule?.onStartup
-        );
+        const entries = strategy.entries.filter(entry => entry.schedule?.onStartup);
         startupEntries.push(...entries);
       }
     }
-    
+
     if (startupEntries.length > 0) {
       console.log(`Warming ${startupEntries.length} startup cache entries`);
       await this.warmEntries(startupEntries, { batchSize: 5, concurrency: 3 });
@@ -249,20 +245,18 @@ export class CacheWarmingService {
     options: { batchSize?: number; concurrency?: number } = {}
   ): Promise<void> {
     const { batchSize = 10, concurrency = 3 } = options;
-    
+
     // Sort by priority
     const sortedEntries = entries.sort((a, b) => b.priority - a.priority);
-    
+
     for (let i = 0; i < sortedEntries.length; i += batchSize) {
       const batch = sortedEntries.slice(i, i + batchSize);
-      
+
       // Process batch with limited concurrency
       const chunks = this.chunkArray(batch, concurrency);
-      
+
       for (const chunk of chunks) {
-        await Promise.allSettled(
-          chunk.map(entry => this.warmEntry(entry))
-        );
+        await Promise.allSettled(chunk.map(entry => this.warmEntry(entry)));
       }
     }
   }
@@ -283,42 +277,36 @@ export class CacheWarmingService {
 
   private async executeStrategy(strategy: WarmingStrategy): Promise<void> {
     console.log(`Executing warming strategy: ${strategy.name}`);
-    
+
     await this.warmEntries(strategy.entries, {
       batchSize: strategy.batchSize,
-      concurrency: strategy.concurrency
+      concurrency: strategy.concurrency,
     });
   }
 
   private async warmEntry(entry: WarmingEntry): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`Warming cache entry: ${entry.key}`);
-      
+
       const data = await this.executeWithRetry(
         entry.fetcher,
         3, // retry attempts
         1000 // retry delay
       );
-      
-      await this.cacheOrchestrator.set(
-        entry.key,
-        data,
-        entry.ttl,
-        entry.tags
-      );
-      
+
+      await this.cacheOrchestrator.set(entry.key, data, entry.ttl, entry.tags);
+
       this.metrics.successfulWarms++;
-      
+
       const duration = Date.now() - startTime;
       this.updateAverageWarmingTime(duration);
-      
     } catch (error) {
       console.error(`Failed to warm cache entry ${entry.key}:`, error);
       this.metrics.failedWarms++;
     }
-    
+
     this.metrics.totalWarmed++;
   }
 
@@ -346,7 +334,7 @@ export class CacheWarmingService {
             console.error(`Scheduled warming failed for ${entry.key}:`, error);
           });
         }, entry.schedule.interval);
-        
+
         this.scheduledTasks.set(`${strategy.name}:${entry.key}`, task);
       }
     }
@@ -381,10 +369,10 @@ export class CacheWarmingService {
       results: [
         { id: 1, title: `${term} Overview`, type: 'documentation' },
         { id: 2, title: `${term} Best Practices`, type: 'guide' },
-        { id: 3, title: `${term} Examples`, type: 'example' }
+        { id: 3, title: `${term} Examples`, type: 'example' },
       ],
       count: 3,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -395,9 +383,9 @@ export class CacheWarmingService {
         { id: 2, name: 'COBOL Programming', count: 78 },
         { id: 3, name: 'JCL Scripts', count: 34 },
         { id: 4, name: 'DB2 Database', count: 56 },
-        { id: 5, name: 'VSAM Files', count: 23 }
+        { id: 5, name: 'VSAM Files', count: 23 },
       ],
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -406,9 +394,9 @@ export class CacheWarmingService {
       entries: [
         { id: 101, title: 'New COBOL Features', updated: Date.now() - 86400000 },
         { id: 102, title: 'JCL Optimization Tips', updated: Date.now() - 172800000 },
-        { id: 103, title: 'DB2 Performance Tuning', updated: Date.now() - 259200000 }
+        { id: 103, title: 'DB2 Performance Tuning', updated: Date.now() - 259200000 },
       ],
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -419,9 +407,9 @@ export class CacheWarmingService {
         { name: 'jcl', count: 89 },
         { name: 'db2', count: 67 },
         { name: 'vsam', count: 45 },
-        { name: 'cics', count: 34 }
+        { name: 'cics', count: 34 },
       ],
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -431,7 +419,7 @@ export class CacheWarmingService {
       language: 'en',
       notifications: true,
       autoSave: true,
-      pageSize: 25
+      pageSize: 25,
     };
   }
 
@@ -440,8 +428,8 @@ export class CacheWarmingService {
       themes: [
         { id: 'light', name: 'Light Theme', default: true },
         { id: 'dark', name: 'Dark Theme', default: false },
-        { id: 'high-contrast', name: 'High Contrast', default: false }
-      ]
+        { id: 'high-contrast', name: 'High Contrast', default: false },
+      ],
     };
   }
 }

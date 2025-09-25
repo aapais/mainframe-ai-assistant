@@ -121,7 +121,7 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
   // Don't exit in production, just log
   if (process.env.NODE_ENV === 'development') {

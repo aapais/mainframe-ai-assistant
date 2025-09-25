@@ -249,7 +249,10 @@ export interface AITransparencyService {
 
   // Preferences
   getUserPreferences(userId: string): Promise<AIPreferences | null>;
-  updateUserPreferences(userId: string, preferences: Partial<AIPreferences>): Promise<AIPreferences>;
+  updateUserPreferences(
+    userId: string,
+    preferences: Partial<AIPreferences>
+  ): Promise<AIPreferences>;
 
   // Analytics
   getUsageSummary(userId: string): Promise<AIUsageSummary>;

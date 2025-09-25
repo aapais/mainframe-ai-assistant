@@ -17,12 +17,12 @@ import {
   DatabaseStats,
   SchemaValidator,
   KBCategory,
-  SearchMatchType
+  SearchMatchType,
 } from '../schemas/KnowledgeBase.schema';
 import {
   SearchOptions,
   QueryPerformanceMetrics,
-  PerformanceSchemaValidator
+  PerformanceSchemaValidator,
 } from '../schemas/PerformanceOptimization.schema';
 import { AppError, ErrorCode, ErrorUtils } from '../../core/errors/AppError';
 import { v4 as uuidv4 } from 'uuid';
@@ -57,18 +57,29 @@ export interface IRepository<T, CreateT = Omit<T, 'id'>, UpdateT = Partial<T>> {
 /**
  * Knowledge Base specific repository interface
  */
-export interface IKnowledgeBaseRepository extends IRepository<KBEntry, CreateKBEntry, UpdateKBEntry> {
+export interface IKnowledgeBaseRepository
+  extends IRepository<KBEntry, CreateKBEntry, UpdateKBEntry> {
   // Search operations
   search(query: SearchQuery): Promise<RepositoryResult<SearchResult[]>>;
   searchWithFacets(query: SearchQuery): Promise<RepositoryResult<SearchWithFacets>>;
-  autoComplete(query: string, limit?: number): Promise<RepositoryResult<Array<{
-    suggestion: string;
-    category: string;
-    score: number;
-  }>>>;
+  autoComplete(
+    query: string,
+    limit?: number
+  ): Promise<
+    RepositoryResult<
+      Array<{
+        suggestion: string;
+        category: string;
+        score: number;
+      }>
+    >
+  >;
 
   // Category and tag operations
-  findByCategory(category: KBCategory, options?: SearchOptions): Promise<RepositoryResult<SearchResult[]>>;
+  findByCategory(
+    category: KBCategory,
+    options?: SearchOptions
+  ): Promise<RepositoryResult<SearchResult[]>>;
   findByTags(tags: string[], options?: SearchOptions): Promise<RepositoryResult<SearchResult[]>>;
   getAllCategories(): Promise<RepositoryResult<Array<{ name: string; count: number }>>>;
   getAllTags(): Promise<RepositoryResult<Array<{ name: string; count: number }>>>;
@@ -323,7 +334,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         WHERE suggestion IS NOT NULL
         ORDER BY score DESC, length(suggestion) ASC
         LIMIT ?
-      `
+      `,
     };
 
     // Prepare all statements
@@ -351,28 +362,30 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       }
 
       const row = this.statements.get('findById')!.get(id) as any;
-      
+
       if (!row) {
         throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'KB entry not found', { entryId: id });
       }
 
       const entry = this.transformRowToKBEntry(row);
-      
+
       // Record view
       await this.recordUsage({
         entry_id: id,
         action: 'view',
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       return entry;
     });
   }
 
-  async findAll(options: { limit?: number; offset?: number } = {}): Promise<RepositoryResult<KBEntry[]>> {
+  async findAll(
+    options: { limit?: number; offset?: number } = {}
+  ): Promise<RepositoryResult<KBEntry[]>> {
     return this.executeWithMetrics('findAll', async () => {
       const { limit = 50, offset = 0 } = options;
-      
+
       if (limit > 1000) {
         throw new AppError(ErrorCode.VALIDATION_ERROR, 'Limit cannot exceed 1000');
       }
@@ -390,15 +403,17 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
 
       const transaction = this.db.transaction(() => {
         // Insert main entry
-        this.statements.get('create')!.run(
-          id,
-          validatedData.title,
-          validatedData.problem,
-          validatedData.solution,
-          validatedData.category,
-          validatedData.severity || 'medium',
-          'system'
-        );
+        this.statements
+          .get('create')!
+          .run(
+            id,
+            validatedData.title,
+            validatedData.problem,
+            validatedData.solution,
+            validatedData.category,
+            validatedData.severity || 'medium',
+            'system'
+          );
 
         // Insert tags
         if (validatedData.tags && validatedData.tags.length > 0) {
@@ -415,12 +430,12 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       });
 
       const createdId = transaction();
-      
+
       // Record creation
       await this.recordUsage({
         entry_id: createdId,
         action: 'create',
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       // Return created entry
@@ -433,7 +448,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
     return this.executeWithMetrics('update', async () => {
       // Validate input
       const validatedData = SchemaValidator.validateKBEntryUpdate(data);
-      
+
       // Check if entry exists
       const existing = await this.findById(id);
       if (!existing.success) {
@@ -442,22 +457,25 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
 
       const transaction = this.db.transaction(() => {
         // Update main entry if any fields changed
-        if (validatedData.title !== undefined ||
-            validatedData.problem !== undefined ||
-            validatedData.solution !== undefined ||
-            validatedData.category !== undefined ||
-            validatedData.severity !== undefined ||
-            validatedData.archived !== undefined) {
-          
-          const result = this.statements.get('update')!.run(
-            validatedData.title ?? existing.data!.title,
-            validatedData.problem ?? existing.data!.problem,
-            validatedData.solution ?? existing.data!.solution,
-            validatedData.category ?? existing.data!.category,
-            validatedData.severity ?? existing.data!.severity,
-            validatedData.archived ?? existing.data!.archived,
-            id
-          );
+        if (
+          validatedData.title !== undefined ||
+          validatedData.problem !== undefined ||
+          validatedData.solution !== undefined ||
+          validatedData.category !== undefined ||
+          validatedData.severity !== undefined ||
+          validatedData.archived !== undefined
+        ) {
+          const result = this.statements
+            .get('update')!
+            .run(
+              validatedData.title ?? existing.data!.title,
+              validatedData.problem ?? existing.data!.problem,
+              validatedData.solution ?? existing.data!.solution,
+              validatedData.category ?? existing.data!.category,
+              validatedData.severity ?? existing.data!.severity,
+              validatedData.archived ?? existing.data!.archived,
+              id
+            );
 
           if (result.changes === 0) {
             throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'Entry not found or archived');
@@ -467,7 +485,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         // Update tags if provided
         if (validatedData.tags !== undefined) {
           this.statements.get('deleteEntryTags')!.run(id);
-          
+
           if (validatedData.tags.length > 0) {
             const insertTag = this.statements.get('insertTag')!;
             validatedData.tags.forEach(tag => {
@@ -477,26 +495,28 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         }
 
         // Update FTS if content changed
-        if (validatedData.title !== undefined ||
-            validatedData.problem !== undefined ||
-            validatedData.solution !== undefined ||
-            validatedData.tags !== undefined) {
+        if (
+          validatedData.title !== undefined ||
+          validatedData.problem !== undefined ||
+          validatedData.solution !== undefined ||
+          validatedData.tags !== undefined
+        ) {
           this.updateFTSIndex(id, {
             title: validatedData.title ?? existing.data!.title,
             problem: validatedData.problem ?? existing.data!.problem,
             solution: validatedData.solution ?? existing.data!.solution,
-            tags: validatedData.tags ?? existing.data!.tags
+            tags: validatedData.tags ?? existing.data!.tags,
           });
         }
       });
 
       transaction();
-      
+
       // Record update
       await this.recordUsage({
         entry_id: id,
         action: 'update',
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       // Return updated entry
@@ -508,7 +528,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async delete(id: string): Promise<RepositoryResult<void>> {
     return this.executeWithMetrics('delete', async () => {
       const result = this.statements.get('delete')!.run(id);
-      
+
       if (result.changes === 0) {
         throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, 'Entry not found', { entryId: id });
       }
@@ -517,7 +537,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       await this.recordUsage({
         entry_id: id,
         action: 'delete',
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     });
   }
@@ -536,7 +556,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async search(query: SearchQuery): Promise<RepositoryResult<SearchResult[]>> {
     return this.executeWithMetrics('search', async () => {
       const validatedQuery = SchemaValidator.validateSearchQuery(query);
-      
+
       // Use existing search logic with optimizations
       const searchStart = Date.now();
       let results: SearchResult[] = [];
@@ -544,7 +564,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       try {
         // Determine search strategy
         const strategy = this.determineSearchStrategy(validatedQuery);
-        
+
         // Execute search based on strategy
         switch (strategy) {
           case 'category':
@@ -554,15 +574,15 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
             );
             results = categoryResults.data || [];
             break;
-            
+
           case 'tag':
-            const tagResults = await this.findByTags(
-              validatedQuery.tags || [],
-              { limit: validatedQuery.limit, offset: validatedQuery.offset }
-            );
+            const tagResults = await this.findByTags(validatedQuery.tags || [], {
+              limit: validatedQuery.limit,
+              offset: validatedQuery.offset,
+            });
             results = tagResults.data || [];
             break;
-            
+
           case 'fts':
           default:
             results = await this.executeFTSSearch(validatedQuery);
@@ -576,7 +596,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
           results_count: results.length,
           search_time_ms: Date.now() - searchStart,
           filters_used: this.extractFilters(validatedQuery),
-          ai_used: validatedQuery.useAI
+          ai_used: validatedQuery.useAI,
         });
 
         return results;
@@ -590,7 +610,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
     return this.executeWithMetrics('searchWithFacets', async () => {
       const [searchResults, facets] = await Promise.all([
         this.search(query),
-        this.calculateFacets(query.query)
+        this.calculateFacets(query.query),
       ]);
 
       if (!searchResults.success) {
@@ -601,24 +621,35 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         results: searchResults.data!,
         facets: facets.data!,
         totalCount: searchResults.data!.length,
-        executionTime: searchResults.metadata?.executionTime
+        executionTime: searchResults.metadata?.executionTime,
       } as SearchWithFacets;
     });
   }
 
-  async autoComplete(query: string, limit: number = 5): Promise<RepositoryResult<Array<{
-    suggestion: string;
-    category: string;
-    score: number;
-  }>>> {
+  async autoComplete(
+    query: string,
+    limit: number = 5
+  ): Promise<
+    RepositoryResult<
+      Array<{
+        suggestion: string;
+        category: string;
+        score: number;
+      }>
+    >
+  > {
     return this.executeWithMetrics('autoComplete', async () => {
       if (!query || query.length < 2) {
         return [];
       }
 
-      const results = this.statements.get('autoComplete')!.all(
-        query, query, query, limit
-      ) as Array<{ suggestion: string; category: string; score: number }>;
+      const results = this.statements
+        .get('autoComplete')!
+        .all(query, query, query, limit) as Array<{
+        suggestion: string;
+        category: string;
+        score: number;
+      }>;
 
       return results;
     });
@@ -628,52 +659,59 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   // CATEGORY AND TAG OPERATIONS
   // ===========================
 
-  async findByCategory(category: KBCategory, options: SearchOptions = {}): Promise<RepositoryResult<SearchResult[]>> {
+  async findByCategory(
+    category: KBCategory,
+    options: SearchOptions = {}
+  ): Promise<RepositoryResult<SearchResult[]>> {
     return this.executeWithMetrics('findByCategory', async () => {
       const { limit = 10, offset = 0 } = options;
-      
-      const rows = this.statements.get('findByCategory')!.all(
-        category, limit, offset
-      ) as any[];
+
+      const rows = this.statements.get('findByCategory')!.all(category, limit, offset) as any[];
 
       return rows.map(row => ({
         entry: this.transformRowToKBEntry(row),
         score: row.relevance_score || 90,
         matchType: 'category' as SearchMatchType,
         highlights: [],
-        executionTime: 0
+        executionTime: 0,
       }));
     });
   }
 
-  async findByTags(tags: string[], options: SearchOptions = {}): Promise<RepositoryResult<SearchResult[]>> {
+  async findByTags(
+    tags: string[],
+    options: SearchOptions = {}
+  ): Promise<RepositoryResult<SearchResult[]>> {
     return this.executeWithMetrics('findByTags', async () => {
       if (!tags || tags.length === 0) {
         return [];
       }
 
       const { limit = 10, offset = 0 } = options;
-      
+
       // Pad tags array to match prepared statement
       const paddedTags = [...tags.slice(0, 10), ...Array(10 - Math.min(tags.length, 10)).fill('')];
-      
-      const rows = this.statements.get('findByTags')!.all(
-        ...paddedTags, ...paddedTags, limit, offset
-      ) as any[];
+
+      const rows = this.statements
+        .get('findByTags')!
+        .all(...paddedTags, ...paddedTags, limit, offset) as any[];
 
       return rows.map(row => ({
         entry: this.transformRowToKBEntry(row),
         score: (row.tag_matches || 0) * 20 + 60,
         matchType: 'tag' as SearchMatchType,
         highlights: [],
-        executionTime: 0
+        executionTime: 0,
       }));
     });
   }
 
   async getAllCategories(): Promise<RepositoryResult<Array<{ name: string; count: number }>>> {
     return this.executeWithMetrics('getAllCategories', async () => {
-      return this.statements.get('getAllCategories')!.all() as Array<{ name: string; count: number }>;
+      return this.statements.get('getAllCategories')!.all() as Array<{
+        name: string;
+        count: number;
+      }>;
     });
   }
 
@@ -693,7 +731,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         this.getBasicStats(),
         this.getAllCategories(),
         this.getAllTags(),
-        this.getSeverityStats()
+        this.getSeverityStats(),
       ]);
 
       const stats: DatabaseStats = {
@@ -706,9 +744,9 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         diskUsage: this.getDiskUsage(),
         performance: {
           avgSearchTime: 150, // Placeholder
-          cacheHitRate: 75,   // Placeholder
+          cacheHitRate: 75, // Placeholder
           slowQueries: 0,
-          errorRate: 0.1
+          errorRate: 0.1,
         },
         healthStatus: {
           overall: 'healthy',
@@ -716,9 +754,9 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
           cache: true,
           indexes: true,
           backup: true,
-          issues: []
+          issues: [],
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       return stats;
@@ -728,13 +766,13 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async getPopularEntries(limit: number = 10): Promise<RepositoryResult<SearchResult[]>> {
     return this.executeWithMetrics('getPopular', async () => {
       const rows = this.statements.get('getPopular')!.all(limit) as any[];
-      
+
       return rows.map(row => ({
         entry: this.transformRowToKBEntry(row),
         score: row.relevance_score || 0,
         matchType: 'popular' as SearchMatchType,
         highlights: [],
-        executionTime: 0
+        executionTime: 0,
       }));
     });
   }
@@ -742,13 +780,13 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async getRecentEntries(limit: number = 10): Promise<RepositoryResult<SearchResult[]>> {
     return this.executeWithMetrics('getRecent', async () => {
       const rows = this.statements.get('getRecent')!.all(limit) as any[];
-      
+
       return rows.map(row => ({
         entry: this.transformRowToKBEntry(row),
         score: 100,
         matchType: 'recent' as SearchMatchType,
         highlights: [],
-        executionTime: 0
+        executionTime: 0,
       }));
     });
   }
@@ -762,23 +800,27 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       const validatedFeedback = SchemaValidator.validateFeedback(feedback);
       const id = uuidv4();
 
-      this.statements.get('recordFeedback')!.run(
-        id,
-        validatedFeedback.entry_id,
-        validatedFeedback.user_id,
-        validatedFeedback.rating,
-        validatedFeedback.successful,
-        validatedFeedback.comment,
-        validatedFeedback.session_id,
-        validatedFeedback.resolution_time
-      );
+      this.statements
+        .get('recordFeedback')!
+        .run(
+          id,
+          validatedFeedback.entry_id,
+          validatedFeedback.user_id,
+          validatedFeedback.rating,
+          validatedFeedback.successful,
+          validatedFeedback.comment,
+          validatedFeedback.session_id,
+          validatedFeedback.resolution_time
+        );
 
       // Update entry metrics
-      this.statements.get('updateEntryMetrics')!.run(
-        validatedFeedback.successful ? 1 : 0,
-        validatedFeedback.successful ? 0 : 1,
-        validatedFeedback.entry_id
-      );
+      this.statements
+        .get('updateEntryMetrics')!
+        .run(
+          validatedFeedback.successful ? 1 : 0,
+          validatedFeedback.successful ? 0 : 1,
+          validatedFeedback.entry_id
+        );
 
       return id;
     });
@@ -787,13 +829,15 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async recordUsage(metric: UsageMetric): Promise<RepositoryResult<void>> {
     return this.executeWithMetrics('recordUsage', async () => {
       try {
-        this.statements.get('recordUsage')!.run(
-          metric.entry_id,
-          metric.action,
-          metric.user_id || 'anonymous',
-          metric.session_id,
-          metric.metadata ? JSON.stringify(metric.metadata) : null
-        );
+        this.statements
+          .get('recordUsage')!
+          .run(
+            metric.entry_id,
+            metric.action,
+            metric.user_id || 'anonymous',
+            metric.session_id,
+            metric.metadata ? JSON.stringify(metric.metadata) : null
+          );
       } catch (error) {
         // Non-critical error, log but don't throw
         console.warn('Failed to record usage metric:', error);
@@ -804,17 +848,19 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async recordSearch(history: SearchHistory): Promise<RepositoryResult<void>> {
     return this.executeWithMetrics('recordSearch', async () => {
       try {
-        this.statements.get('recordSearch')!.run(
-          history.query,
-          history.normalized_query,
-          history.results_count,
-          history.selected_entry_id,
-          history.user_id || 'anonymous',
-          history.session_id,
-          history.search_time_ms,
-          history.filters_used ? JSON.stringify(history.filters_used) : null,
-          history.ai_used
-        );
+        this.statements
+          .get('recordSearch')!
+          .run(
+            history.query,
+            history.normalized_query,
+            history.results_count,
+            history.selected_entry_id,
+            history.user_id || 'anonymous',
+            history.session_id,
+            history.search_time_ms,
+            history.filters_used ? JSON.stringify(history.filters_used) : null,
+            history.ai_used
+          );
       } catch (error) {
         // Non-critical error, log but don't throw
         console.warn('Failed to record search history:', error);
@@ -829,15 +875,15 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   async bulkCreate(entries: CreateKBEntry[]): Promise<RepositoryResult<string[]>> {
     return this.executeWithMetrics('bulkCreate', async () => {
       const ids: string[] = [];
-      
+
       const transaction = this.db.transaction(() => {
         const createStmt = this.statements.get('create')!;
         const tagStmt = this.statements.get('insertTag')!;
-        
+
         for (const entry of entries) {
           const validatedEntry = SchemaValidator.validateKBEntry(entry);
           const id = uuidv4();
-          
+
           createStmt.run(
             id,
             validatedEntry.title,
@@ -847,24 +893,26 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
             validatedEntry.severity || 'medium',
             'system'
           );
-          
+
           if (validatedEntry.tags) {
             validatedEntry.tags.forEach(tag => {
               tagStmt.run(id, tag.toLowerCase().trim());
             });
           }
-          
+
           this.updateFTSIndex(id, validatedEntry);
           ids.push(id);
         }
       });
-      
+
       transaction();
       return ids;
     });
   }
 
-  async bulkUpdate(updates: Array<{ id: string; data: UpdateKBEntry }>): Promise<RepositoryResult<void>> {
+  async bulkUpdate(
+    updates: Array<{ id: string; data: UpdateKBEntry }>
+  ): Promise<RepositoryResult<void>> {
     return this.executeWithMetrics('bulkUpdate', async () => {
       const transaction = this.db.transaction(() => {
         for (const update of updates) {
@@ -872,7 +920,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
           this.update(update.id, update.data);
         }
       });
-      
+
       transaction();
     });
   }
@@ -885,7 +933,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
           deleteStmt.run(id);
         }
       });
-      
+
       transaction();
     });
   }
@@ -899,30 +947,30 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
     callback: () => Promise<T> | T
   ): Promise<RepositoryResult<T>> {
     const startTime = Date.now();
-    
+
     try {
       const result = await callback();
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: true,
         data: result,
         metadata: {
           executionTime,
           cacheHit: false,
-          queryHash: this.generateQueryHash(operation)
-        }
+          queryHash: this.generateQueryHash(operation),
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       return {
         success: false,
         error: error instanceof AppError ? error : AppError.fromUnknown(error, { operation }),
         metadata: {
           executionTime,
-          cacheHit: false
-        }
+          cacheHit: false,
+        },
       };
     }
   }
@@ -944,29 +992,35 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       failure_count: row.failure_count || 0,
       last_used: row.last_used ? new Date(row.last_used) : undefined,
       archived: Boolean(row.archived),
-      confidence_score: row.confidence_score
+      confidence_score: row.confidence_score,
     };
   }
 
   private updateFTSIndex(id: string, data: any): void {
     try {
       this.db.prepare('DELETE FROM kb_fts WHERE id = ?').run(id);
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO kb_fts (id, title, problem, solution, tags)
         VALUES (?, ?, ?, ?, ?)
-      `).run(
-        id,
-        data.title || '',
-        data.problem || '',
-        data.solution || '',
-        Array.isArray(data.tags) ? data.tags.join(' ') : (data.tags || '')
-      );
+      `
+        )
+        .run(
+          id,
+          data.title || '',
+          data.problem || '',
+          data.solution || '',
+          Array.isArray(data.tags) ? data.tags.join(' ') : data.tags || ''
+        );
     } catch (error) {
       console.warn('Failed to update FTS index:', error);
     }
   }
 
-  private determineSearchStrategy(query: SearchQuery): 'exact' | 'fts' | 'fuzzy' | 'category' | 'tag' | 'hybrid' {
+  private determineSearchStrategy(
+    query: SearchQuery
+  ): 'exact' | 'fts' | 'fuzzy' | 'category' | 'tag' | 'hybrid' {
     if (query.category) return 'category';
     if (query.tags && query.tags.length > 0) return 'tag';
     return 'fts';
@@ -974,7 +1028,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
 
   private async executeFTSSearch(query: SearchQuery): Promise<SearchResult[]> {
     const ftsQuery = this.prepareFTSQuery(query.query);
-    
+
     const sql = `
       SELECT 
         e.*,
@@ -991,15 +1045,15 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       ORDER BY relevance_score DESC
       LIMIT ?
     `;
-    
+
     const rows = this.db.prepare(sql).all(ftsQuery, query.limit || 10) as any[];
-    
+
     return rows.map(row => ({
       entry: this.transformRowToKBEntry(row),
       score: Math.abs(row.relevance_score || 0) * 10,
       matchType: 'fts' as SearchMatchType,
       highlights: this.generateHighlights(query.query, row),
-      executionTime: 0
+      executionTime: 0,
     }));
   }
 
@@ -1011,7 +1065,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   private generateHighlights(query: string, row: any): string[] {
     const highlights: string[] = [];
     const queryLower = query.toLowerCase();
-    
+
     [row.title, row.problem, row.solution].forEach(field => {
       if (field && field.toLowerCase().includes(queryLower)) {
         const index = field.toLowerCase().indexOf(queryLower);
@@ -1020,7 +1074,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
         highlights.push(field.substring(start, end));
       }
     });
-    
+
     return highlights.slice(0, 3);
   }
 
@@ -1033,25 +1087,27 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       category: query.category,
       severity: query.severity,
       tags: query.tags,
-      sortBy: query.sortBy
+      sortBy: query.sortBy,
     };
   }
 
-  private async calculateFacets(query: string): Promise<RepositoryResult<{
-    categories: Array<{ name: string; count: number }>;
-    tags: Array<{ name: string; count: number }>;
-    severities: Array<{ name: string; count: number }>;
-  }>> {
+  private async calculateFacets(query: string): Promise<
+    RepositoryResult<{
+      categories: Array<{ name: string; count: number }>;
+      tags: Array<{ name: string; count: number }>;
+      severities: Array<{ name: string; count: number }>;
+    }>
+  > {
     const [categories, tags, severities] = await Promise.all([
       this.getAllCategories(),
       this.getAllTags(),
-      this.getSeverityStats()
+      this.getSeverityStats(),
     ]);
 
     return {
       categories: categories.data || [],
       tags: (tags.data || []).slice(0, 15),
-      severities: severities.data || []
+      severities: severities.data || [],
     };
   }
 
@@ -1067,7 +1123,7 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       FROM kb_entries
       WHERE archived = FALSE
     `;
-    
+
     const topEntriesSql = `
       SELECT id, title, usage_count, 
              CASE WHEN (success_count + failure_count) > 0 
@@ -1078,19 +1134,21 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       ORDER BY usage_count DESC, success_rate DESC
       LIMIT 10
     `;
-    
+
     const [basic, topEntries] = await Promise.all([
       this.db.prepare(sql).get(),
-      this.db.prepare(topEntriesSql).all()
+      this.db.prepare(topEntriesSql).all(),
     ]);
 
     return {
       ...basic,
-      topEntries
+      topEntries,
     };
   }
 
-  private async getSeverityStats(): Promise<RepositoryResult<Array<{ name: string; count: number }>>> {
+  private async getSeverityStats(): Promise<
+    RepositoryResult<Array<{ name: string; count: number }>>
+  > {
     const sql = `
       SELECT severity as name, COUNT(*) as count
       FROM kb_entries 
@@ -1098,8 +1156,11 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       GROUP BY severity
       ORDER BY count DESC
     `;
-    
-    return { success: true, data: this.db.prepare(sql).all() as Array<{ name: string; count: number }> };
+
+    return {
+      success: true,
+      data: this.db.prepare(sql).all() as Array<{ name: string; count: number }>,
+    };
   }
 
   private arrayToRecord(arr: Array<{ name: string; count: number }>): Record<string, number> {
@@ -1120,7 +1181,10 @@ export class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
   }
 
   private generateQueryHash(operation: string): string {
-    return require('crypto').createHash('md5').update(operation + Date.now()).digest('hex');
+    return require('crypto')
+      .createHash('md5')
+      .update(operation + Date.now())
+      .digest('hex');
   }
 
   /**

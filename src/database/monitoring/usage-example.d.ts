@@ -6,5 +6,13 @@ declare function dashboardExample(): Promise<void>;
 declare function queryOptimizationExample(): Promise<void>;
 declare function advancedConfigurationExample(): Promise<void>;
 declare function runExamples(): Promise<void>;
-export { basicUsageExample, queryMonitoringExample, healthMonitoringExample, dashboardExample, queryOptimizationExample, advancedConfigurationExample, runExamples };
+export {
+  basicUsageExample,
+  queryMonitoringExample,
+  healthMonitoringExample,
+  dashboardExample,
+  queryOptimizationExample,
+  advancedConfigurationExample,
+  runExamples,
+};
 //# sourceMappingURL=usage-example.d.ts.map

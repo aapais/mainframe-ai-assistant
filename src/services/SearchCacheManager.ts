@@ -70,7 +70,7 @@ export class SearchCacheManager {
     evictionCount: 0,
     l1Hits: 0,
     l2Hits: 0,
-    l3Hits: 0
+    l3Hits: 0,
   };
 
   private config: CacheConfig;
@@ -85,7 +85,7 @@ export class SearchCacheManager {
       compressionEnabled: true,
       persistentCacheEnabled: true,
       serviceWorkerCacheEnabled: false,
-      ...config
+      ...config,
     };
 
     this.initialize();
@@ -110,7 +110,6 @@ export class SearchCacheManager {
       this.startCleanup();
 
       console.log('SearchCacheManager initialized successfully');
-
     } catch (error) {
       console.error('Failed to initialize cache manager:', error);
     }
@@ -130,7 +129,7 @@ export class SearchCacheManager {
         resolve();
       };
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
 
         if (!db.objectStoreNames.contains('searchCache')) {
@@ -165,7 +164,7 @@ export class SearchCacheManager {
       tags: options.tags?.sort(),
       sortBy: options.sortBy,
       sortOrder: options.sortOrder,
-      filters: options.filters
+      filters: options.filters,
     };
 
     return btoa(JSON.stringify(keyObject)).replace(/[+/=]/g, '');
@@ -213,7 +212,6 @@ export class SearchCacheManager {
 
       this.updateMetrics('cache_miss', performance.now() - startTime);
       return null;
-
     } catch (error) {
       console.error('Cache get operation failed:', error);
       this.updateMetrics('cache_miss', performance.now() - startTime);
@@ -244,8 +242,8 @@ export class SearchCacheManager {
           query,
           options,
           resultCount: results.length,
-          searchDuration
-        }
+          searchDuration,
+        },
       };
 
       // Set in all cache layers
@@ -260,7 +258,6 @@ export class SearchCacheManager {
       }
 
       this.updateCacheMetrics();
-
     } catch (error) {
       console.error('Cache set operation failed:', error);
     }
@@ -319,7 +316,7 @@ export class SearchCacheManager {
   private async getFromL2(key: string): Promise<CacheEntry | null> {
     if (!this.l2Cache) return null;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const transaction = this.l2Cache!.transaction(['searchCache'], 'readonly');
       const store = transaction.objectStore('searchCache');
       const request = store.get(key);
@@ -356,7 +353,7 @@ export class SearchCacheManager {
   private async setInL2(key: string, entry: CacheEntry): Promise<void> {
     if (!this.l2Cache) return;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const transaction = this.l2Cache!.transaction(['searchCache'], 'readwrite');
       const store = transaction.objectStore('searchCache');
 
@@ -375,7 +372,7 @@ export class SearchCacheManager {
   private async deleteFromL2(key: string): Promise<void> {
     if (!this.l2Cache) return;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const transaction = this.l2Cache!.transaction(['searchCache'], 'readwrite');
       const store = transaction.objectStore('searchCache');
       const request = store.delete(key);
@@ -406,7 +403,6 @@ export class SearchCacheManager {
       }
 
       return entry;
-
     } catch (error) {
       console.warn('L3 cache get failed:', error);
       return null;
@@ -419,11 +415,10 @@ export class SearchCacheManager {
 
       const cache = await caches.open(this.l3CacheName);
       const response = new Response(JSON.stringify(entry), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
 
       await cache.put(key, response);
-
     } catch (error) {
       console.warn('L3 cache set failed:', error);
     }
@@ -457,7 +452,7 @@ export class SearchCacheManager {
    * Prefetch likely next queries
    */
   async prefetchQueries(baseQuery: string, variations: string[]): Promise<void> {
-    const prefetchPromises = variations.map(async (variation) => {
+    const prefetchPromises = variations.map(async variation => {
       try {
         const query = baseQuery + ' ' + variation;
         const cached = await this.get(query);
@@ -497,7 +492,6 @@ export class SearchCacheManager {
       this.updateCacheMetrics();
 
       console.log('Cache cleanup completed');
-
     } catch (error) {
       console.error('Cache cleanup failed:', error);
     }
@@ -519,7 +513,7 @@ export class SearchCacheManager {
   private async cleanupL2(): Promise<void> {
     if (!this.l2Cache) return;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const transaction = this.l2Cache!.transaction(['searchCache'], 'readwrite');
       const store = transaction.objectStore('searchCache');
       const index = store.index('timestamp');
@@ -530,7 +524,7 @@ export class SearchCacheManager {
       const range = IDBKeyRange.upperBound(cutoff);
       const request = index.openCursor(range);
 
-      request.onsuccess = (event) => {
+      request.onsuccess = event => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
           cursor.delete();
@@ -557,14 +551,16 @@ export class SearchCacheManager {
         // Remove redundant fields or compress content
         entry: {
           ...result.entry,
-          problem: result.entry.problem.length > 500
-            ? result.entry.problem.substring(0, 500) + '...'
-            : result.entry.problem,
-          solution: result.entry.solution.length > 500
-            ? result.entry.solution.substring(0, 500) + '...'
-            : result.entry.solution
-        }
-      }))
+          problem:
+            result.entry.problem.length > 500
+              ? result.entry.problem.substring(0, 500) + '...'
+              : result.entry.problem,
+          solution:
+            result.entry.solution.length > 500
+              ? result.entry.solution.substring(0, 500) + '...'
+              : result.entry.solution,
+        },
+      })),
     };
 
     return compressed;
@@ -634,7 +630,7 @@ export class SearchCacheManager {
       if (this.l2Cache) {
         const transaction = this.l2Cache.transaction(['searchCache'], 'readwrite');
         const store = transaction.objectStore('searchCache');
-        await new Promise<void>((resolve) => {
+        await new Promise<void>(resolve => {
           const request = store.clear();
           request.onsuccess = () => resolve();
           request.onerror = () => resolve();
@@ -658,11 +654,10 @@ export class SearchCacheManager {
         evictionCount: 0,
         l1Hits: 0,
         l2Hits: 0,
-        l3Hits: 0
+        l3Hits: 0,
       };
 
       console.log('All caches cleared');
-
     } catch (error) {
       console.error('Failed to clear caches:', error);
     }

@@ -14,22 +14,24 @@ import { z } from 'zod';
  */
 export const CategoryNodeSchema = z.object({
   id: z.string().uuid(),
-  name: z.string()
-    .min(1, 'Category name is required')
-    .max(100, 'Category name too long')
-    .trim(),
-  slug: z.string()
+  name: z.string().min(1, 'Category name is required').max(100, 'Category name too long').trim(),
+  slug: z
+    .string()
     .min(1, 'Category slug is required')
     .max(100, 'Category slug too long')
-    .regex(/^[a-z0-9-]+$/, 'Category slug must contain only lowercase letters, numbers, and hyphens'),
-  description: z.string()
-    .max(500, 'Description too long')
-    .optional(),
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Category slug must contain only lowercase letters, numbers, and hyphens'
+    ),
+  description: z.string().max(500, 'Description too long').optional(),
   parent_id: z.string().uuid().nullable(),
   level: z.number().int().min(0).max(5), // Max 5 levels deep
   sort_order: z.number().int().min(0).default(0),
   icon: z.string().max(50).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   is_active: z.boolean().default(true),
   is_system: z.boolean().default(false), // System categories can't be deleted
   entry_count: z.number().int().min(0).default(0),
@@ -47,11 +49,15 @@ export const CategoryTreeSchema = z.object({
   ...CategoryNodeSchema.shape,
   children: z.array(z.lazy(() => CategoryTreeSchema)).default([]),
   path: z.array(z.string()).default([]), // Full path from root to this category
-  breadcrumbs: z.array(z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    slug: z.string(),
-  })).default([]),
+  breadcrumbs: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string(),
+        slug: z.string(),
+      })
+    )
+    .default([]),
 });
 
 export type CategoryTree = z.infer<typeof CategoryTreeSchema>;
@@ -91,18 +97,23 @@ export type UpdateCategory = z.infer<typeof UpdateCategorySchema>;
  */
 export const TagSchema = z.object({
   id: z.string().uuid(),
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Tag name is required')
     .max(50, 'Tag name too long')
     .trim()
     .transform(val => val.toLowerCase()),
-  display_name: z.string()
+  display_name: z
+    .string()
     .min(1, 'Display name is required')
     .max(50, 'Display name too long')
     .trim(),
   description: z.string().max(200).optional(),
   category_id: z.string().uuid().nullable(), // Optional category association
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   usage_count: z.number().int().min(0).default(0),
   is_system: z.boolean().default(false),
   is_suggested: z.boolean().default(false), // Auto-suggested by AI
@@ -162,17 +173,21 @@ export type TagAssociation = z.infer<typeof TagAssociationSchema>;
  */
 export const BulkCategoryOperationSchema = z.object({
   operation: z.enum(['create', 'update', 'delete', 'move', 'reorder']),
-  categories: z.array(z.object({
-    id: z.string().uuid().optional(),
-    data: z.record(z.any()),
-    target_parent_id: z.string().uuid().nullable().optional(), // For move operations
-    new_sort_order: z.number().int().min(0).optional(), // For reorder operations
-  })),
-  options: z.object({
-    cascade_delete: z.boolean().default(false),
-    preserve_entries: z.boolean().default(true),
-    validate_hierarchy: z.boolean().default(true),
-  }).optional(),
+  categories: z.array(
+    z.object({
+      id: z.string().uuid().optional(),
+      data: z.record(z.any()),
+      target_parent_id: z.string().uuid().nullable().optional(), // For move operations
+      new_sort_order: z.number().int().min(0).optional(), // For reorder operations
+    })
+  ),
+  options: z
+    .object({
+      cascade_delete: z.boolean().default(false),
+      preserve_entries: z.boolean().default(true),
+      validate_hierarchy: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 export type BulkCategoryOperation = z.infer<typeof BulkCategoryOperationSchema>;
@@ -182,17 +197,21 @@ export type BulkCategoryOperation = z.infer<typeof BulkCategoryOperationSchema>;
  */
 export const BulkTagOperationSchema = z.object({
   operation: z.enum(['create', 'update', 'delete', 'assign', 'unassign', 'merge']),
-  tags: z.array(z.object({
-    id: z.string().uuid().optional(),
-    data: z.record(z.any()),
-    entry_ids: z.array(z.string().uuid()).optional(), // For assign/unassign operations
-    merge_into_id: z.string().uuid().optional(), // For merge operations
-  })),
-  options: z.object({
-    force_delete: z.boolean().default(false),
-    update_usage_count: z.boolean().default(true),
-    validate_associations: z.boolean().default(true),
-  }).optional(),
+  tags: z.array(
+    z.object({
+      id: z.string().uuid().optional(),
+      data: z.record(z.any()),
+      entry_ids: z.array(z.string().uuid()).optional(), // For assign/unassign operations
+      merge_into_id: z.string().uuid().optional(), // For merge operations
+    })
+  ),
+  options: z
+    .object({
+      force_delete: z.boolean().default(false),
+      update_usage_count: z.boolean().default(true),
+      validate_associations: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 export type BulkTagOperation = z.infer<typeof BulkTagOperationSchema>;
@@ -205,11 +224,13 @@ export const BulkOperationResultSchema = z.object({
   total_items: z.number().int().min(0),
   successful: z.number().int().min(0),
   failed: z.number().int().min(0),
-  errors: z.array(z.object({
-    item_id: z.string().optional(),
-    error: z.string(),
-    details: z.record(z.any()).optional(),
-  })),
+  errors: z.array(
+    z.object({
+      item_id: z.string().optional(),
+      error: z.string(),
+      details: z.record(z.any()).optional(),
+    })
+  ),
   execution_time: z.number().min(0),
   transaction_id: z.string().uuid().optional(),
 });
@@ -244,11 +265,13 @@ export const AutocompleteQuerySchema = z.object({
   query: z.string().min(1).max(100).trim(),
   types: z.array(z.enum(['category', 'tag', 'entry', 'search_term'])).default(['category', 'tag']),
   limit: z.number().int().min(1).max(50).default(10),
-  context: z.object({
-    current_category_id: z.string().uuid().optional(),
-    exclude_ids: z.array(z.string().uuid()).optional(),
-    entry_id: z.string().uuid().optional(), // For context-aware suggestions
-  }).optional(),
+  context: z
+    .object({
+      current_category_id: z.string().uuid().optional(),
+      exclude_ids: z.array(z.string().uuid()).optional(),
+      entry_id: z.string().uuid().optional(), // For context-aware suggestions
+    })
+    .optional(),
 });
 
 export type AutocompleteQuery = z.infer<typeof AutocompleteQuerySchema>;
@@ -264,12 +287,14 @@ export const SearchFacetSchema = z.object({
   key: z.string(),
   name: z.string(),
   type: z.enum(['category', 'tag', 'range', 'boolean', 'date']),
-  values: z.array(z.object({
-    value: z.string(),
-    display_value: z.string(),
-    count: z.number().int().min(0),
-    selected: z.boolean().default(false),
-  })),
+  values: z.array(
+    z.object({
+      value: z.string(),
+      display_value: z.string(),
+      count: z.number().int().min(0),
+      selected: z.boolean().default(false),
+    })
+  ),
   min_value: z.number().optional(), // For range facets
   max_value: z.number().optional(), // For range facets
   is_hierarchical: z.boolean().default(false),
@@ -283,14 +308,18 @@ export type SearchFacet = z.infer<typeof SearchFacetSchema>;
 export const FacetedSearchQuerySchema = z.object({
   query: z.string().default(''),
   facets: z.record(z.array(z.string())), // facet_key -> selected_values
-  sort: z.object({
-    field: z.string(),
-    direction: z.enum(['asc', 'desc']).default('desc'),
-  }).optional(),
-  pagination: z.object({
-    page: z.number().int().min(1).default(1),
-    page_size: z.number().int().min(1).max(100).default(20),
-  }).optional(),
+  sort: z
+    .object({
+      field: z.string(),
+      direction: z.enum(['asc', 'desc']).default('desc'),
+    })
+    .optional(),
+  pagination: z
+    .object({
+      page: z.number().int().min(1).default(1),
+      page_size: z.number().int().min(1).max(100).default(20),
+    })
+    .optional(),
   filters: z.record(z.any()).optional(),
 });
 
@@ -310,16 +339,20 @@ export const CategoryAnalyticsSchema = z.object({
   search_count: z.number().int().min(0),
   success_rate: z.number().min(0).max(1),
   avg_resolution_time: z.number().min(0).optional(), // in milliseconds
-  top_tags: z.array(z.object({
-    tag_id: z.string().uuid(),
-    tag_name: z.string(),
-    count: z.number().int().min(0),
-  })),
-  trend: z.object({
-    direction: z.enum(['up', 'down', 'stable']),
-    percentage: z.number(),
-    period: z.string(), // e.g., "7days", "30days"
-  }).optional(),
+  top_tags: z.array(
+    z.object({
+      tag_id: z.string().uuid(),
+      tag_name: z.string(),
+      count: z.number().int().min(0),
+    })
+  ),
+  trend: z
+    .object({
+      direction: z.enum(['up', 'down', 'stable']),
+      percentage: z.number(),
+      period: z.string(), // e.g., "7days", "30days"
+    })
+    .optional(),
   last_updated: z.date(),
 });
 
@@ -332,22 +365,28 @@ export const TagAnalyticsSchema = z.object({
   tag_id: z.string().uuid(),
   usage_count: z.number().int().min(0),
   entry_count: z.number().int().min(0),
-  categories: z.array(z.object({
-    category_id: z.string().uuid(),
-    category_name: z.string(),
-    count: z.number().int().min(0),
-  })),
-  co_occurrence: z.array(z.object({
-    tag_id: z.string().uuid(),
-    tag_name: z.string(),
-    count: z.number().int().min(0),
-    correlation: z.number().min(-1).max(1),
-  })),
-  trend: z.object({
-    direction: z.enum(['up', 'down', 'stable']),
-    percentage: z.number(),
-    period: z.string(),
-  }).optional(),
+  categories: z.array(
+    z.object({
+      category_id: z.string().uuid(),
+      category_name: z.string(),
+      count: z.number().int().min(0),
+    })
+  ),
+  co_occurrence: z.array(
+    z.object({
+      tag_id: z.string().uuid(),
+      tag_name: z.string(),
+      count: z.number().int().min(0),
+      correlation: z.number().min(-1).max(1),
+    })
+  ),
+  trend: z
+    .object({
+      direction: z.enum(['up', 'down', 'stable']),
+      percentage: z.number(),
+      period: z.string(),
+    })
+    .optional(),
   last_updated: z.date(),
 });
 
@@ -458,7 +497,7 @@ export class HierarchicalSchemaValidator {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

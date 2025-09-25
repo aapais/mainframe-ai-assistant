@@ -109,10 +109,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
   private optimalChunkSizes = new Map<string, number>();
   private throughputHistory: number[] = [];
 
-  constructor(
-    chunkCache: ChunkCache<T>,
-    config: Partial<IncrementalLoaderConfig> = {}
-  ) {
+  constructor(chunkCache: ChunkCache<T>, config: Partial<IncrementalLoaderConfig> = {}) {
     super();
 
     this.config = {
@@ -127,7 +124,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       retryDelay: 1000,
       throughputThreshold: 0.8,
       adaptiveThreshold: 0.1,
-      ...config
+      ...config,
     };
 
     this.chunkCache = chunkCache;
@@ -164,7 +161,11 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       const loadPlan = this.createLoadPlan(request, chunkingStrategy);
 
       // Execute load plan
-      const result = await this.executeLoadPlan(request as LoadRequest<T>, loadPlan, dataSource as any);
+      const result = await this.executeLoadPlan(
+        request as LoadRequest<T>,
+        loadPlan,
+        dataSource as any
+      );
 
       // Calculate final stats
       const totalTime = performance.now() - startTime;
@@ -175,7 +176,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
         cacheHitRate: this.calculateCacheHitRate(request.id),
         chunksFromCache: this.getChunksFromCache(request.id),
         chunksFromSource: this.getChunksFromSource(request.id),
-        errorCount: 0
+        errorCount: 0,
       };
 
       console.log(`Incremental load completed: ${request.id} in ${Math.round(totalTime)}ms`);
@@ -188,7 +189,6 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       this.emit('load-complete', { requestId: request.id, stats });
 
       return result;
-
     } catch (error) {
       console.error(`Incremental load failed: ${request.id}`, error);
 
@@ -198,7 +198,6 @@ export class IncrementalLoader<T = any> extends EventEmitter {
 
       this.emit('load-error', { requestId: request.id, error });
       throw error;
-
     } finally {
       this.activeLoads.delete(request.id);
     }
@@ -217,7 +216,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
 
     console.log(`Preloading ${chunkIds.length} chunks for ${requestId}`);
 
-    const preloadPromises = chunkIds.map(async (chunkId) => {
+    const preloadPromises = chunkIds.map(async chunkId => {
       try {
         // Check if already cached
         const cacheKey = this.generateCacheKey(requestId, chunkId);
@@ -236,7 +235,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
           size: data.length,
           priority: 1,
           timestamp: Date.now(),
-          estimatedLoadTime: 100
+          estimatedLoadTime: 100,
         };
 
         // Cache the chunk
@@ -246,7 +245,6 @@ export class IncrementalLoader<T = any> extends EventEmitter {
 
         preloadedCount++;
         this.emit('chunk-preloaded', { requestId, chunkId, size: data.length });
-
       } catch (error) {
         console.error(`Preload failed for chunk ${chunkId}:`, error);
       }
@@ -288,7 +286,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       totalSize: request.totalSize,
       percentage: Math.min(100, (loadedSize / request.totalSize) * 100),
       estimatedTimeRemaining: this.estimateTimeRemaining(request, loadedChunks),
-      currentThroughput: this.getCurrentThroughput()
+      currentThroughput: this.getCurrentThroughput(),
     };
 
     return progress;
@@ -334,19 +332,22 @@ export class IncrementalLoader<T = any> extends EventEmitter {
     averageThroughput: number;
     cacheHitRate: number;
   } {
-    const recentLoads = this.loadHistory
-      .filter(load => Date.now() - load.timestamp < 60 * 60 * 1000);
+    const recentLoads = this.loadHistory.filter(
+      load => Date.now() - load.timestamp < 60 * 60 * 1000
+    );
 
-    const averageLoadTime = recentLoads.length > 0
-      ? recentLoads.reduce((sum, load) => sum + load.loadTime, 0) / recentLoads.length
-      : 0;
+    const averageLoadTime =
+      recentLoads.length > 0
+        ? recentLoads.reduce((sum, load) => sum + load.loadTime, 0) / recentLoads.length
+        : 0;
 
     const cacheHits = recentLoads.filter(load => load.fromCache).length;
     const cacheHitRate = recentLoads.length > 0 ? cacheHits / recentLoads.length : 0;
 
-    const averageThroughput = this.throughputHistory.length > 0
-      ? this.throughputHistory.reduce((sum, t) => sum + t, 0) / this.throughputHistory.length
-      : 0;
+    const averageThroughput =
+      this.throughputHistory.length > 0
+        ? this.throughputHistory.reduce((sum, t) => sum + t, 0) / this.throughputHistory.length
+        : 0;
 
     return {
       activeLoads: this.activeLoads.size,
@@ -354,7 +355,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       cacheSize: this.chunkCache.size,
       averageLoadTime,
       averageThroughput,
-      cacheHitRate
+      cacheHitRate,
     };
   }
 
@@ -449,14 +450,17 @@ export class IncrementalLoader<T = any> extends EventEmitter {
         // Update progress
         const progress = this.calculateProgress(request, results.length);
         if (request.onChunkLoaded) {
-          request.onChunkLoaded({
-            id: `${chunk.offset}-${chunk.limit}`,
-            data: chunkData,
-            size: chunkData.length,
-            priority: chunk.priority,
-            timestamp: Date.now(),
-            estimatedLoadTime: 0
-          }, progress);
+          request.onChunkLoaded(
+            {
+              id: `${chunk.offset}-${chunk.limit}`,
+              data: chunkData,
+              size: chunkData.length,
+              priority: chunk.priority,
+              timestamp: Date.now(),
+              estimatedLoadTime: 0,
+            },
+            progress
+          );
         }
       }
     } else {
@@ -467,7 +471,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       for (let i = 0; i < plan.length; i += parallelChunks) {
         const batch = plan.slice(i, i + parallelChunks);
 
-        const batchPromises = batch.map(async (chunk) => {
+        const batchPromises = batch.map(async chunk => {
           const data = await this.loadChunk(request, chunk.offset, chunk.limit, dataSource);
           return { data, offset: chunk.offset, limit: chunk.limit };
         });
@@ -480,14 +484,17 @@ export class IncrementalLoader<T = any> extends EventEmitter {
           // Update progress
           const progress = this.calculateProgress(request, results.length);
           if (request.onChunkLoaded) {
-            request.onChunkLoaded({
-              id: `${result.offset}-${result.limit}`,
-              data: result.data,
-              size: result.data.length,
-              priority: 1,
-              timestamp: Date.now(),
-              estimatedLoadTime: 0
-            }, progress);
+            request.onChunkLoaded(
+              {
+                id: `${result.offset}-${result.limit}`,
+                data: result.data,
+                size: result.data.length,
+                priority: 1,
+                timestamp: Date.now(),
+                estimatedLoadTime: 0,
+              },
+              progress
+            );
           }
         });
       }
@@ -512,7 +519,13 @@ export class IncrementalLoader<T = any> extends EventEmitter {
         const cached = this.chunkCache.get(cacheKey);
 
         if (cached && !this.isChunkExpired(cached)) {
-          this.recordLoadHistory(request.id, chunkId, performance.now() - startTime, cached.size, true);
+          this.recordLoadHistory(
+            request.id,
+            chunkId,
+            performance.now() - startTime,
+            cached.size,
+            true
+          );
           return cached.data;
         }
       }
@@ -533,7 +546,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
           size: data.length,
           priority: 1,
           timestamp: Date.now(),
-          estimatedLoadTime: loadTime
+          estimatedLoadTime: loadTime,
         };
 
         this.chunkCache.set(cacheKey, chunk, this.config.chunkCacheTTL);
@@ -543,7 +556,6 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       this.updateThroughput(data.length, loadTime);
 
       return data;
-
     } catch (error) {
       console.error(`Chunk load failed: ${chunkId}`, error);
 
@@ -589,7 +601,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       totalSize: request.totalSize,
       percentage: (loadedSize / request.totalSize) * 100,
       estimatedTimeRemaining: this.estimateTimeRemaining(request, loadedChunks),
-      currentThroughput: this.getCurrentThroughput()
+      currentThroughput: this.getCurrentThroughput(),
     };
   }
 
@@ -614,11 +626,11 @@ export class IncrementalLoader<T = any> extends EventEmitter {
       loadTime,
       chunkSize,
       timestamp: Date.now(),
-      fromCache
+      fromCache,
     });
 
     // Keep only recent history
-    const cutoff = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours
     this.loadHistory = this.loadHistory.filter(h => h.timestamp > cutoff);
   }
 
@@ -649,8 +661,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
   }
 
   private getAverageChunkTime(requestId: string): number {
-    const requestLoads = this.loadHistory
-      .filter(h => h.requestId === requestId && !h.fromCache);
+    const requestLoads = this.loadHistory.filter(h => h.requestId === requestId && !h.fromCache);
 
     if (requestLoads.length === 0) return 1000; // Default 1 second
 
@@ -680,7 +691,8 @@ export class IncrementalLoader<T = any> extends EventEmitter {
   private getLoadPattern(request: LoadRequest<T>): string {
     // Create a pattern key based on query characteristics
     const queryTerms = request.query.split(' ').length;
-    const sizeCategory = request.totalSize < 100 ? 'small' : request.totalSize < 1000 ? 'medium' : 'large';
+    const sizeCategory =
+      request.totalSize < 100 ? 'small' : request.totalSize < 1000 ? 'medium' : 'large';
     const priorityLevel = request.priority;
 
     return `${sizeCategory}-${priorityLevel}-${queryTerms}terms`;
@@ -733,10 +745,7 @@ export class IncrementalLoader<T = any> extends EventEmitter {
     return bestSize;
   }
 
-  private async executeWithTimeout<U>(
-    operation: () => Promise<U>,
-    timeout: number
-  ): Promise<U> {
+  private async executeWithTimeout<U>(operation: () => Promise<U>, timeout: number): Promise<U> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`Operation timed out after ${timeout}ms`));
@@ -765,9 +774,12 @@ export class IncrementalLoader<T = any> extends EventEmitter {
     }, 100);
 
     // Optimize chunk sizes periodically
-    setInterval(() => {
-      this.optimizeChunkSizes();
-    }, 5 * 60 * 1000); // Every 5 minutes
+    setInterval(
+      () => {
+        this.optimizeChunkSizes();
+      },
+      5 * 60 * 1000
+    ); // Every 5 minutes
   }
 
   private processLoadQueue(): void {

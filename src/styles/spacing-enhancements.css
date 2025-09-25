@@ -342,38 +342,38 @@
    ========================================== */
 
 /* Compact density for information-dense interfaces */
-[data-density="compact"] {
+[data-density='compact'] {
   --local-spacing-scale: 0.75;
 }
 
-[data-density="compact"] .card-spacing {
+[data-density='compact'] .card-spacing {
   padding: calc(var(--card-padding) * var(--local-spacing-scale));
 }
 
-[data-density="compact"] .form-group,
-[data-density="compact"] .form-field {
+[data-density='compact'] .form-group,
+[data-density='compact'] .form-field {
   margin-bottom: calc(var(--space-component-md) * var(--local-spacing-scale));
 }
 
-[data-density="compact"] .content-section {
+[data-density='compact'] .content-section {
   margin-bottom: calc(var(--space-layout-sm) * var(--local-spacing-scale));
 }
 
 /* Spacious density for better accessibility */
-[data-density="spacious"] {
+[data-density='spacious'] {
   --local-spacing-scale: 1.25;
 }
 
-[data-density="spacious"] .card-spacing {
+[data-density='spacious'] .card-spacing {
   padding: calc(var(--card-padding) * var(--local-spacing-scale));
 }
 
-[data-density="spacious"] .form-group,
-[data-density="spacious"] .form-field {
+[data-density='spacious'] .form-group,
+[data-density='spacious'] .form-field {
   margin-bottom: calc(var(--space-component-lg) * var(--local-spacing-scale));
 }
 
-[data-density="spacious"] .content-section {
+[data-density='spacious'] .content-section {
   margin-bottom: calc(var(--space-layout-lg) * var(--local-spacing-scale));
 }
 
@@ -420,9 +420,15 @@
    ========================================== */
 
 /* Negative margins for layout adjustments */
-.-m-component-xs { margin: calc(-1 * var(--space-component-xs)); }
-.-m-component-sm { margin: calc(-1 * var(--space-component-sm)); }
-.-m-component-md { margin: calc(-1 * var(--space-component-md)); }
+.-m-component-xs {
+  margin: calc(-1 * var(--space-component-xs));
+}
+.-m-component-sm {
+  margin: calc(-1 * var(--space-component-sm));
+}
+.-m-component-md {
+  margin: calc(-1 * var(--space-component-md));
+}
 
 .-mx-component-xs {
   margin-left: calc(-1 * var(--space-component-xs));
@@ -435,9 +441,16 @@
 }
 
 /* Zero spacing overrides */
-.no-spacing { margin: 0 !important; padding: 0 !important; }
-.no-margin { margin: 0 !important; }
-.no-padding { padding: 0 !important; }
+.no-spacing {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.no-margin {
+  margin: 0 !important;
+}
+.no-padding {
+  padding: 0 !important;
+}
 
 /* Preserve spacing in specific contexts */
 .preserve-spacing * {

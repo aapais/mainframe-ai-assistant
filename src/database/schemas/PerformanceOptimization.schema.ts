@@ -13,14 +13,14 @@ import { z } from 'zod';
  * Search strategy enumeration for optimal query routing
  */
 export const SearchStrategySchema = z.enum([
-  'exact',      // Exact text matching
-  'fts',        // Full-text search with BM25
-  'fuzzy',      // Fuzzy/approximate matching
-  'semantic',   // AI semantic search
-  'category',   // Category-based filtering
-  'tag',        // Tag-based filtering
-  'hybrid',     // Multi-strategy combination
-  'cached'      // Cached result retrieval
+  'exact', // Exact text matching
+  'fts', // Full-text search with BM25
+  'fuzzy', // Fuzzy/approximate matching
+  'semantic', // AI semantic search
+  'category', // Category-based filtering
+  'tag', // Tag-based filtering
+  'hybrid', // Multi-strategy combination
+  'cached', // Cached result retrieval
 ]);
 
 export type SearchStrategy = z.infer<typeof SearchStrategySchema>;
@@ -33,7 +33,9 @@ export const SearchOptionsSchema = z.object({
   strategy: SearchStrategySchema.optional(),
   limit: z.number().int().min(1).max(1000).default(10),
   offset: z.number().int().min(0).default(0),
-  sortBy: z.enum(['relevance', 'usage', 'success_rate', 'created_at', 'updated_at']).default('relevance'),
+  sortBy: z
+    .enum(['relevance', 'usage', 'success_rate', 'created_at', 'updated_at'])
+    .default('relevance'),
   sortDirection: z.enum(['asc', 'desc']).default('desc'),
   category: z.string().optional(),
   tags: z.array(z.string()).max(10).optional(),
@@ -45,12 +47,14 @@ export const SearchOptionsSchema = z.object({
   maxExecutionTime: z.number().int().min(100).max(30000).default(5000), // 5 seconds
   enableHighlighting: z.boolean().default(true),
   enableFacets: z.boolean().default(false),
-  weightings: z.object({
-    title: z.number().min(0).max(10).default(3),
-    problem: z.number().min(0).max(10).default(2),
-    solution: z.number().min(0).max(10).default(1.5),
-    tags: z.number().min(0).max(10).default(1),
-  }).optional(),
+  weightings: z
+    .object({
+      title: z.number().min(0).max(10).default(3),
+      problem: z.number().min(0).max(10).default(2),
+      solution: z.number().min(0).max(10).default(1.5),
+      tags: z.number().min(0).max(10).default(1),
+    })
+    .optional(),
 });
 
 export type SearchOptions = z.infer<typeof SearchOptionsSchema>;
@@ -116,11 +120,15 @@ export const CacheStatsSchema = z.object({
     percentage: z.number().min(0).max(100),
   }),
   timeWindow: z.enum(['1h', '24h', '7d', '30d']).default('24h'),
-  topKeys: z.array(z.object({
-    key: z.string(),
-    hits: z.number().int().min(0),
-    lastHit: z.date(),
-  })).max(10),
+  topKeys: z
+    .array(
+      z.object({
+        key: z.string(),
+        hits: z.number().int().min(0),
+        lastHit: z.date(),
+      })
+    )
+    .max(10),
   timestamp: z.date(),
 });
 
@@ -155,18 +163,24 @@ export const IndexAnalysisSchema = z.object({
     needsRebuild: z.boolean(),
     vacuumRequired: z.boolean(),
   }),
-  recommendations: z.array(z.object({
-    type: z.enum(['create', 'drop', 'rebuild', 'partial', 'composite']),
-    priority: z.enum(['low', 'medium', 'high', 'critical']),
-    description: z.string().max(500),
-    estimatedImprovement: z.number().min(0).max(100),
-    cost: z.enum(['low', 'medium', 'high']),
-  })),
-  queryPatterns: z.array(z.object({
-    pattern: z.string().max(200),
-    frequency: z.number().int().min(0),
-    avgExecutionTime: z.number().min(0),
-  })).max(20),
+  recommendations: z.array(
+    z.object({
+      type: z.enum(['create', 'drop', 'rebuild', 'partial', 'composite']),
+      priority: z.enum(['low', 'medium', 'high', 'critical']),
+      description: z.string().max(500),
+      estimatedImprovement: z.number().min(0).max(100),
+      cost: z.enum(['low', 'medium', 'high']),
+    })
+  ),
+  queryPatterns: z
+    .array(
+      z.object({
+        pattern: z.string().max(200),
+        frequency: z.number().int().min(0),
+        avgExecutionTime: z.number().min(0),
+      })
+    )
+    .max(20),
   timestamp: z.date(),
 });
 
@@ -178,16 +192,18 @@ export type IndexAnalysis = z.infer<typeof IndexAnalysisSchema>;
 export const QueryExecutionPlanSchema = z.object({
   queryHash: z.string().max(64),
   query: z.string().max(2000),
-  plan: z.array(z.object({
-    step: z.number().int().min(0),
-    operation: z.string().max(100),
-    table: z.string().max(100).optional(),
-    index: z.string().max(100).optional(),
-    rows: z.number().int().min(0),
-    cost: z.number().min(0),
-    time: z.number().min(0),
-    details: z.string().max(500).optional(),
-  })),
+  plan: z.array(
+    z.object({
+      step: z.number().int().min(0),
+      operation: z.string().max(100),
+      table: z.string().max(100).optional(),
+      index: z.string().max(100).optional(),
+      rows: z.number().int().min(0),
+      cost: z.number().min(0),
+      time: z.number().min(0),
+      details: z.string().max(500).optional(),
+    })
+  ),
   totalCost: z.number().min(0),
   totalTime: z.number().min(0),
   optimization: z.object({
@@ -244,12 +260,14 @@ export const DatabasePerformanceSchema = z.object({
   health: z.object({
     status: z.enum(['healthy', 'warning', 'critical', 'degraded']),
     uptime: z.number().int().min(0), // seconds
-    issues: z.array(z.object({
-      category: z.string().max(50),
-      severity: z.enum(['low', 'medium', 'high', 'critical']),
-      message: z.string().max(200),
-      timestamp: z.date(),
-    })),
+    issues: z.array(
+      z.object({
+        category: z.string().max(50),
+        severity: z.enum(['low', 'medium', 'high', 'critical']),
+        message: z.string().max(200),
+        timestamp: z.date(),
+      })
+    ),
     recommendations: z.array(z.string().max(200)),
   }),
   timestamp: z.date(),
@@ -271,7 +289,7 @@ export const PerformanceAlertSchema = z.object({
     'cache_miss_rate',
     'index_scan',
     'lock_contention',
-    'error_rate'
+    'error_rate',
   ]),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
   message: z.string().max(500),
@@ -303,7 +321,7 @@ export const OptimizationRecommendationSchema = z.object({
     'schema_design',
     'cache_strategy',
     'configuration',
-    'hardware'
+    'hardware',
   ]),
   priority: z.enum(['low', 'medium', 'high', 'critical']),
   title: z.string().max(100),
@@ -324,21 +342,27 @@ export const OptimizationRecommendationSchema = z.object({
   evidence: z.object({
     queries: z.array(z.string()).optional(),
     metrics: z.record(z.number()).optional(),
-    benchmarks: z.array(z.object({
-      metric: z.string(),
-      before: z.number(),
-      after: z.number(),
-      improvement: z.number(),
-    })).optional(),
+    benchmarks: z
+      .array(
+        z.object({
+          metric: z.string(),
+          before: z.number(),
+          after: z.number(),
+          improvement: z.number(),
+        })
+      )
+      .optional(),
   }),
   status: z.enum(['pending', 'in_progress', 'completed', 'rejected']).default('pending'),
   implementedAt: z.date().optional(),
   implementedBy: z.string().max(100).optional(),
-  results: z.object({
-    actualImprovement: z.number().min(0).max(100).optional(),
-    issues: z.array(z.string()).optional(),
-    rollbackRequired: z.boolean().default(false),
-  }).optional(),
+  results: z
+    .object({
+      actualImprovement: z.number().min(0).max(100).optional(),
+      issues: z.array(z.string()).optional(),
+      rollbackRequired: z.boolean().default(false),
+    })
+    .optional(),
   created: z.date(),
   updated: z.date().optional(),
 });
@@ -437,7 +461,10 @@ export class PerformanceSchemaValidator {
   /**
    * Safe parse with error handling
    */
-  static safeParse<T>(schema: z.ZodType<T>, data: unknown): {
+  static safeParse<T>(
+    schema: z.ZodType<T>,
+    data: unknown
+  ): {
     success: boolean;
     data?: T;
     error?: string;
@@ -449,12 +476,12 @@ export class PerformanceSchemaValidator {
       if (error instanceof z.ZodError) {
         return {
           success: false,
-          error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+          error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '),
         };
       }
       return {
         success: false,
-        error: 'Unknown validation error'
+        error: 'Unknown validation error',
       };
     }
   }

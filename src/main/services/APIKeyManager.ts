@@ -74,7 +74,7 @@ export class APIKeyManager {
       pricingInfo: {
         inputCostPer1K: 0.0015,
         outputCostPer1K: 0.002,
-        currency: 'USD'
+        currency: 'USD',
       },
       documentationUrl: 'https://platform.openai.com/docs',
       setupInstructions: [
@@ -82,12 +82,12 @@ export class APIKeyManager {
         'Sign in to your account',
         'Navigate to API Keys section',
         'Click "Create new secret key"',
-        'Copy the key (it starts with sk-)'
+        'Copy the key (it starts with sk-)',
       ],
       requiredHeaders: {
-        'Authorization': 'Bearer {key}',
-        'Content-Type': 'application/json'
-      }
+        Authorization: 'Bearer {key}',
+        'Content-Type': 'application/json',
+      },
     },
     {
       id: 'anthropic',
@@ -99,7 +99,7 @@ export class APIKeyManager {
       pricingInfo: {
         inputCostPer1K: 0.008,
         outputCostPer1K: 0.024,
-        currency: 'USD'
+        currency: 'USD',
       },
       documentationUrl: 'https://docs.anthropic.com',
       setupInstructions: [
@@ -107,25 +107,25 @@ export class APIKeyManager {
         'Create an account or sign in',
         'Go to Settings > API Keys',
         'Generate a new API key',
-        'Copy the key (starts with sk-ant-)'
+        'Copy the key (starts with sk-ant-)',
       ],
       requiredHeaders: {
         'x-api-key': '{key}',
         'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01'
-      }
+        'anthropic-version': '2023-06-01',
+      },
     },
     {
       id: 'gemini',
       name: 'Google Gemini',
-      description: 'Google\'s multimodal AI models',
+      description: "Google's multimodal AI models",
       baseUrl: 'https://generativelanguage.googleapis.com/v1',
       apiKeyFormat: 'AIza.*',
       testEndpoint: '/models',
       pricingInfo: {
         inputCostPer1K: 0.00035,
         outputCostPer1K: 0.00105,
-        currency: 'USD'
+        currency: 'USD',
       },
       documentationUrl: 'https://ai.google.dev/docs',
       setupInstructions: [
@@ -133,11 +133,11 @@ export class APIKeyManager {
         'Sign in with your Google account',
         'Click "Get API key"',
         'Create a new API key',
-        'Copy the key (starts with AIza)'
+        'Copy the key (starts with AIza)',
       ],
       requiredHeaders: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     },
     {
       id: 'github-copilot',
@@ -149,7 +149,7 @@ export class APIKeyManager {
       pricingInfo: {
         inputCostPer1K: 0.0,
         outputCostPer1K: 0.0,
-        currency: 'USD'
+        currency: 'USD',
       },
       documentationUrl: 'https://docs.github.com/en/copilot',
       setupInstructions: [
@@ -157,13 +157,13 @@ export class APIKeyManager {
         'Navigate to Settings > Developer settings',
         'Click on Personal access tokens',
         'Generate new token with copilot scope',
-        'Copy the token (starts with ghu_)'
+        'Copy the token (starts with ghu_)',
       ],
       requiredHeaders: {
-        'Authorization': 'Bearer {key}',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    }
+        Authorization: 'Bearer {key}',
+        Accept: 'application/vnd.github.v3+json',
+      },
+    },
   ];
 
   private constructor() {
@@ -292,7 +292,7 @@ export class APIKeyManager {
     const keys = await this.loadStoredKeys();
     return keys.map(key => ({
       ...key,
-      maskedKey: this.maskApiKey(key.maskedKey) // Re-mask for safety
+      maskedKey: this.maskApiKey(key.maskedKey), // Re-mask for safety
     }));
   }
 
@@ -325,7 +325,7 @@ export class APIKeyManager {
       usageCount: 0,
       costThisMonth: 0,
       monthlyLimit,
-      isSessionOnly
+      isSessionOnly,
     };
 
     if (isSessionOnly) {
@@ -370,16 +370,13 @@ export class APIKeyManager {
     return false;
   }
 
-  public async testConnection(
-    providerId: string,
-    apiKey: string
-  ): Promise<ConnectionTestResult> {
+  public async testConnection(providerId: string, apiKey: string): Promise<ConnectionTestResult> {
     const provider = this.getProvider(providerId);
     if (!provider) {
       return {
         success: false,
         responseTime: 0,
-        error: `Unknown provider: ${providerId}`
+        error: `Unknown provider: ${providerId}`,
       };
     }
 
@@ -399,7 +396,7 @@ export class APIKeyManager {
       const response = await fetch(url, {
         method: 'GET',
         headers,
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       });
 
       const responseTime = Date.now() - startTime;
@@ -409,14 +406,14 @@ export class APIKeyManager {
           success: true,
           responseTime,
           statusCode: response.status,
-          rateLimitInfo: this.extractRateLimitInfo(response)
+          rateLimitInfo: this.extractRateLimitInfo(response),
         };
       } else {
         return {
           success: false,
           responseTime,
           statusCode: response.status,
-          error: `HTTP ${response.status}: ${response.statusText}`
+          error: `HTTP ${response.status}: ${response.statusText}`,
         };
       }
     } catch (error) {
@@ -424,12 +421,14 @@ export class APIKeyManager {
       return {
         success: false,
         responseTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
-  private extractRateLimitInfo(response: Response): { limit: number; remaining: number; resetTime: Date } | undefined {
+  private extractRateLimitInfo(
+    response: Response
+  ): { limit: number; remaining: number; resetTime: Date } | undefined {
     const limit = response.headers.get('x-ratelimit-limit');
     const remaining = response.headers.get('x-ratelimit-remaining');
     const reset = response.headers.get('x-ratelimit-reset');
@@ -438,7 +437,7 @@ export class APIKeyManager {
       return {
         limit: parseInt(limit),
         remaining: parseInt(remaining),
-        resetTime: new Date(parseInt(reset) * 1000)
+        resetTime: new Date(parseInt(reset) * 1000),
       };
     }
 
@@ -458,7 +457,7 @@ export class APIKeyManager {
       totalCost: 0,
       lastRequest: new Date(),
       errorCount: 0,
-      averageResponseTime: 0
+      averageResponseTime: 0,
     };
 
     current.requestCount += requestCount;
@@ -516,12 +515,16 @@ export class APIKeyManager {
             await this.storeApiKey(providerId, keyName, cleanValue, false);
             imported++;
           } catch (error) {
-            errors.push(`Failed to import ${cleanKey}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            errors.push(
+              `Failed to import ${cleanKey}: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
           }
         }
       }
     } catch (error) {
-      errors.push(`Failed to read env file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Failed to read env file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return { imported, errors };
@@ -544,7 +547,7 @@ export class APIKeyManager {
         // Note: Actual keys are not exported for security
       })),
       stats: stats,
-      providers: this.providers.map(p => ({ id: p.id, name: p.name }))
+      providers: this.providers.map(p => ({ id: p.id, name: p.name })),
     };
 
     return JSON.stringify(config, null, 2);

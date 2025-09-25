@@ -9,12 +9,12 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import {
   CategoryNode,
   CategoryTree,
-  BulkOperationResult
+  BulkOperationResult,
 } from '../../../database/schemas/HierarchicalCategories.schema';
 import { CategoryService } from '../../../services/CategoryService';
 import { CategoryRepository } from '../../../database/repositories/CategoryRepository';
@@ -127,7 +127,9 @@ export class CategoryHandler {
   /**
    * Create new category
    */
-  handleCategoryCreate: IPCHandlerFunction<'category:create'> = async (request: CategoryCreateRequest) => {
+  handleCategoryCreate: IPCHandlerFunction<'category:create'> = async (
+    request: CategoryCreateRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -174,7 +176,9 @@ export class CategoryHandler {
       const categoryData: CategoryNode = {
         id: uuidv4(),
         name: HandlerUtils.sanitizeString(category.name, 100),
-        description: category.description ? HandlerUtils.sanitizeString(category.description, 500) : undefined,
+        description: category.description
+          ? HandlerUtils.sanitizeString(category.description, 500)
+          : undefined,
         parent_id: category.parent_id,
         color: category.color,
         icon: category.icon,
@@ -184,7 +188,7 @@ export class CategoryHandler {
         entry_count: 0,
         created_at: new Date(),
         updated_at: new Date(),
-        is_active: true
+        is_active: true,
       };
 
       const createdId = await this.categoryService.create(categoryData);
@@ -194,17 +198,11 @@ export class CategoryHandler {
       const siblings = await this.categoryService.getSiblings(createdId);
       const path = await this.categoryService.getPath(createdId);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        createdId,
-        {
-          depth: created?.depth || 0,
-          siblings: siblings.length,
-          path: path.map(c => c.name)
-        }
-      ) as CategoryCreateResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, createdId, {
+        depth: created?.depth || 0,
+        siblings: siblings.length,
+        path: path.map(c => c.name),
+      }) as CategoryCreateResponse;
     } catch (error) {
       console.error('Category creation error:', error);
       return HandlerUtils.createErrorResponse(
@@ -219,7 +217,9 @@ export class CategoryHandler {
   /**
    * Update existing category
    */
-  handleCategoryUpdate: IPCHandlerFunction<'category:update'> = async (request: CategoryUpdateRequest) => {
+  handleCategoryUpdate: IPCHandlerFunction<'category:update'> = async (
+    request: CategoryUpdateRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -278,22 +278,19 @@ export class CategoryHandler {
         sanitizedUpdates.name = HandlerUtils.sanitizeString(sanitizedUpdates.name, 100);
       }
       if (sanitizedUpdates.description) {
-        sanitizedUpdates.description = HandlerUtils.sanitizeString(sanitizedUpdates.description, 500);
+        sanitizedUpdates.description = HandlerUtils.sanitizeString(
+          sanitizedUpdates.description,
+          500
+        );
       }
 
       // Perform update
       await this.categoryService.update(id, sanitizedUpdates);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          cascadeChanges: options.cascadeChanges || false,
-          affectedCategories: options.cascadeChanges ? await this.getCascadeCount(id) : 0
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        cascadeChanges: options.cascadeChanges || false,
+        affectedCategories: options.cascadeChanges ? await this.getCascadeCount(id) : 0,
+      });
     } catch (error) {
       console.error('Category update error:', error);
       return HandlerUtils.createErrorResponse(
@@ -308,7 +305,9 @@ export class CategoryHandler {
   /**
    * Get category hierarchy
    */
-  handleGetHierarchy: IPCHandlerFunction<'category:hierarchy'> = async (request: CategoryGetHierarchyRequest) => {
+  handleGetHierarchy: IPCHandlerFunction<'category:hierarchy'> = async (
+    request: CategoryGetHierarchyRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -319,17 +318,12 @@ export class CategoryHandler {
       const cached = await this.cacheManager.get<CategoryTree>(cacheKey);
 
       if (cached) {
-        return HandlerUtils.createSuccessResponse(
-          request.requestId,
-          startTime,
-          cached,
-          {
-            totalCategories: this.countTreeNodes(cached),
-            maxDepth: this.getTreeDepth(cached),
-            lastModified: 'cached',
-            cached: true
-          }
-        ) as CategoryGetHierarchyResponse;
+        return HandlerUtils.createSuccessResponse(request.requestId, startTime, cached, {
+          totalCategories: this.countTreeNodes(cached),
+          maxDepth: this.getTreeDepth(cached),
+          lastModified: 'cached',
+          cached: true,
+        }) as CategoryGetHierarchyResponse;
       }
 
       // Get hierarchy from service
@@ -344,7 +338,7 @@ export class CategoryHandler {
       await this.cacheManager.set(cacheKey, hierarchy, {
         ttl: 300000, // 5 minutes
         layer: 'memory',
-        tags: ['category-hierarchy', parent_id ? `parent:${parent_id}` : 'root']
+        tags: ['category-hierarchy', parent_id ? `parent:${parent_id}` : 'root'],
       });
 
       // Calculate metadata
@@ -352,17 +346,11 @@ export class CategoryHandler {
       const maxDepth = this.getTreeDepth(hierarchy);
       const lastModified = new Date().toISOString();
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        hierarchy,
-        {
-          totalCategories,
-          maxDepth,
-          lastModified
-        }
-      ) as CategoryGetHierarchyResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, hierarchy, {
+        totalCategories,
+        maxDepth,
+        lastModified,
+      }) as CategoryGetHierarchyResponse;
     } catch (error) {
       console.error('Get hierarchy error:', error);
       return HandlerUtils.createErrorResponse(
@@ -377,7 +365,9 @@ export class CategoryHandler {
   /**
    * Move category to new parent
    */
-  handleCategoryMove: IPCHandlerFunction<'category:move'> = async (request: CategoryMoveRequest) => {
+  handleCategoryMove: IPCHandlerFunction<'category:move'> = async (
+    request: CategoryMoveRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -409,16 +399,10 @@ export class CategoryHandler {
       // Perform move
       await this.categoryService.move(id, new_parent_id, position);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          preserveOrder: options.preserveOrder || false,
-          affectedCategories: await this.getCascadeCount(id)
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        preserveOrder: options.preserveOrder || false,
+        affectedCategories: await this.getCascadeCount(id),
+      });
     } catch (error) {
       console.error('Category move error:', error);
       return HandlerUtils.createErrorResponse(
@@ -433,7 +417,9 @@ export class CategoryHandler {
   /**
    * Bulk category operations
    */
-  handleCategoryBulk: IPCHandlerFunction<'category:bulk'> = async (request: CategoryBulkRequest) => {
+  handleCategoryBulk: IPCHandlerFunction<'category:bulk'> = async (
+    request: CategoryBulkRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -476,21 +462,15 @@ export class CategoryHandler {
       // Execute bulk operations
       const result = await this.categoryService.bulkOperation(operations, {
         transaction: options.transaction !== false,
-        stopOnError: options.stopOnError || false
+        stopOnError: options.stopOnError || false,
       });
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        result,
-        {
-          totalOperations: operations.length,
-          successful: result.results.filter(r => r.success).length,
-          failed: result.results.filter(r => !r.success).length,
-          rollbackPerformed: !result.success && options.transaction !== false
-        }
-      ) as CategoryBulkResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, result, {
+        totalOperations: operations.length,
+        successful: result.results.filter(r => r.success).length,
+        failed: result.results.filter(r => !r.success).length,
+        rollbackPerformed: !result.success && options.transaction !== false,
+      }) as CategoryBulkResponse;
     } catch (error) {
       console.error('Category bulk operation error:', error);
       return HandlerUtils.createErrorResponse(
@@ -505,7 +485,9 @@ export class CategoryHandler {
   /**
    * Delete category
    */
-  handleCategoryDelete: IPCHandlerFunction<'category:delete'> = async (request: BaseIPCRequest & { id: string; options?: { cascade?: boolean; moveChildren?: string } }) => {
+  handleCategoryDelete: IPCHandlerFunction<'category:delete'> = async (
+    request: BaseIPCRequest & { id: string; options?: { cascade?: boolean; moveChildren?: string } }
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -546,19 +528,13 @@ export class CategoryHandler {
       // Delete with options
       await this.categoryService.delete(id, {
         cascade: options.cascade,
-        moveChildrenTo: options.moveChildren
+        moveChildrenTo: options.moveChildren,
       });
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          childrenAffected: children.length,
-          cascadeDelete: options.cascade || false
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        childrenAffected: children.length,
+        cascadeDelete: options.cascade || false,
+      });
     } catch (error) {
       console.error('Category delete error:', error);
       return HandlerUtils.createErrorResponse(
@@ -573,7 +549,9 @@ export class CategoryHandler {
   /**
    * Get category analytics
    */
-  handleCategoryAnalytics: IPCHandlerFunction<'category:analytics'> = async (request: BaseIPCRequest & { id?: string; timeframe?: string }) => {
+  handleCategoryAnalytics: IPCHandlerFunction<'category:analytics'> = async (
+    request: BaseIPCRequest & { id?: string; timeframe?: string }
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -581,16 +559,10 @@ export class CategoryHandler {
 
       const analytics = await this.categoryService.getAnalytics(id, timeframe);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        analytics,
-        {
-          timeframe,
-          generatedAt: new Date().toISOString()
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, analytics, {
+        timeframe,
+        generatedAt: new Date().toISOString(),
+      });
     } catch (error) {
       console.error('Category analytics error:', error);
       return HandlerUtils.createErrorResponse(
@@ -604,7 +576,10 @@ export class CategoryHandler {
 
   // Private helper methods
 
-  private validateCategoryInput(category: { name: string; description?: string }): { valid: boolean; error?: string } {
+  private validateCategoryInput(category: { name: string; description?: string }): {
+    valid: boolean;
+    error?: string;
+  } {
     if (!category.name || category.name.trim().length === 0) {
       return { valid: false, error: 'Category name is required' };
     }
@@ -703,5 +678,5 @@ export const categoryHandlerConfigs = {
   'category:move': HandlerConfigs.WRITE_OPERATIONS,
   'category:bulk': HandlerConfigs.CRITICAL_OPERATIONS,
   'category:delete': HandlerConfigs.CRITICAL_OPERATIONS,
-  'category:analytics': HandlerConfigs.SYSTEM_OPERATIONS
+  'category:analytics': HandlerConfigs.SYSTEM_OPERATIONS,
 } as const;

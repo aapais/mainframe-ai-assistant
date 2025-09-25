@@ -123,12 +123,14 @@ export class MemoryAnalyzer extends EventEmitter {
   private gcObserver?: PerformanceObserver;
   private monitoringInterval?: ReturnType<typeof setTimeout>;
 
-  constructor(private config = {
-    snapshotInterval: 30000, // 30 seconds
-    maxSnapshots: 1000,
-    leakThreshold: 10 * 1024 * 1024, // 10MB
-    gcPressureThreshold: 100, // ms
-  }) {
+  constructor(
+    private config = {
+      snapshotInterval: 30000, // 30 seconds
+      maxSnapshots: 1000,
+      leakThreshold: 10 * 1024 * 1024, // 10MB
+      gcPressureThreshold: 100, // ms
+    }
+  ) {
     super();
   }
 
@@ -270,7 +272,7 @@ export class MemoryAnalyzer extends EventEmitter {
         memoryDelta: memoryGrowth,
         detectedAt: current.timestamp,
         description: `Excessive memory growth detected: ${this.formatBytes(memoryGrowth)}`,
-        suggestedFix: 'Review recent component changes and check for retained references'
+        suggestedFix: 'Review recent component changes and check for retained references',
       });
     }
 
@@ -284,7 +286,7 @@ export class MemoryAnalyzer extends EventEmitter {
           memoryDelta: component.memoryUsage,
           detectedAt: current.timestamp,
           description: `Component ${component.component} may be leaking memory`,
-          suggestedFix: 'Check cleanup in useEffect hooks and component unmounting'
+          suggestedFix: 'Check cleanup in useEffect hooks and component unmounting',
         });
       }
     });
@@ -298,7 +300,7 @@ export class MemoryAnalyzer extends EventEmitter {
         memoryDelta: current.eventListenerMetrics.orphaned * 1024, // Estimated
         detectedAt: current.timestamp,
         description: `${current.eventListenerMetrics.orphaned} orphaned event listeners detected`,
-        suggestedFix: 'Ensure event listeners are removed in cleanup functions'
+        suggestedFix: 'Ensure event listeners are removed in cleanup functions',
       });
     }
 
@@ -311,7 +313,7 @@ export class MemoryAnalyzer extends EventEmitter {
         memoryDelta: current.domMetrics.detachedNodes * 512, // Estimated
         detectedAt: current.timestamp,
         description: `${current.domMetrics.detachedNodes} detached DOM nodes found`,
-        suggestedFix: 'Review component cleanup and DOM manipulation code'
+        suggestedFix: 'Review component cleanup and DOM manipulation code',
       });
     }
 
@@ -331,7 +333,7 @@ export class MemoryAnalyzer extends EventEmitter {
       frequency: 0,
       lastCollection: new Date(),
       pressure: 'low',
-      efficiency: 0.95
+      efficiency: 0.95,
     };
   }
 
@@ -345,7 +347,7 @@ export class MemoryAnalyzer extends EventEmitter {
         detachedNodes: 0,
         eventListeners: 0,
         observedElements: 0,
-        largestComponent: { name: 'N/A', nodeCount: 0, memoryImpact: 0 }
+        largestComponent: { name: 'N/A', nodeCount: 0, memoryImpact: 0 },
       };
     }
 
@@ -361,8 +363,9 @@ export class MemoryAnalyzer extends EventEmitter {
       }
     });
 
-    const largestComponent = Array.from(componentNodes.entries())
-      .sort((a, b) => b[1] - a[1])[0] || ['N/A', 0];
+    const largestComponent = Array.from(componentNodes.entries()).sort(
+      (a, b) => b[1] - a[1]
+    )[0] || ['N/A', 0];
 
     return {
       totalNodes: allNodes.length,
@@ -372,8 +375,8 @@ export class MemoryAnalyzer extends EventEmitter {
       largestComponent: {
         name: largestComponent[0],
         nodeCount: largestComponent[1],
-        memoryImpact: largestComponent[1] * 512 // Estimated bytes per node
-      }
+        memoryImpact: largestComponent[1] * 512, // Estimated bytes per node
+      },
     };
   }
 
@@ -386,7 +389,7 @@ export class MemoryAnalyzer extends EventEmitter {
       orphaned: 0,
       duplicates: 0,
       byType: {},
-      leakyListeners: []
+      leakyListeners: [],
     };
 
     // This would require custom tracking in a real implementation
@@ -418,8 +421,7 @@ export class MemoryAnalyzer extends EventEmitter {
     const baseline = this.baselineSnapshot || this.snapshots[0];
 
     const memoryGrowth = current.heapUsed - baseline.heapUsed;
-    const growthRate = this.snapshots.length > 1 ?
-      this.calculateGrowthRate() : 0;
+    const growthRate = this.snapshots.length > 1 ? this.calculateGrowthRate() : 0;
 
     const issues = current.leakSuspects;
     const overallHealth = this.assessOverallHealth(current, baseline, issues);
@@ -429,21 +431,21 @@ export class MemoryAnalyzer extends EventEmitter {
         overallHealth,
         memoryGrowthRate: growthRate,
         leakCount: issues.length,
-        recommendations: this.generateRecommendations(current, issues)
+        recommendations: this.generateRecommendations(current, issues),
       },
       baseline: {
         initialHeapSize: baseline.heapUsed,
         targetHeapSize: 50 * 1024 * 1024, // 50MB target
-        maxAllowedGrowth: 10 * 1024 * 1024 // 10MB per hour
+        maxAllowedGrowth: 10 * 1024 * 1024, // 10MB per hour
       },
       current,
       trends: {
         heapGrowth: this.snapshots.map(s => s.heapUsed),
         gcFrequency: this.snapshots.map(s => s.gcMetrics.frequency),
-        componentCounts: this.extractComponentTrends()
+        componentCounts: this.extractComponentTrends(),
       },
       issues,
-      optimizations: this.generateOptimizations(current, issues)
+      optimizations: this.generateOptimizations(current, issues),
     };
 
     return report;
@@ -459,7 +461,7 @@ export class MemoryAnalyzer extends EventEmitter {
       sessionDuration: this.getSessionDuration(),
       configuration: this.config,
       report,
-      rawSnapshots: this.snapshots.slice(-10) // Last 10 snapshots
+      rawSnapshots: this.snapshots.slice(-10), // Last 10 snapshots
     };
 
     await fs.writeFile(filePath, JSON.stringify(detailedReport, null, 2));
@@ -472,7 +474,7 @@ export class MemoryAnalyzer extends EventEmitter {
   startLongSessionMonitoring(durationHours: number = 8): void {
     console.log(`🕐 Starting ${durationHours}h long-session memory monitoring...`);
 
-    const endTime = Date.now() + (durationHours * 60 * 60 * 1000);
+    const endTime = Date.now() + durationHours * 60 * 60 * 1000;
 
     const checkMemory = async () => {
       if (Date.now() >= endTime) {
@@ -483,8 +485,8 @@ export class MemoryAnalyzer extends EventEmitter {
       }
 
       const snapshot = await this.takeSnapshot();
-      const issues = snapshot.leakSuspects.filter(leak =>
-        leak.severity === 'high' || leak.severity === 'critical'
+      const issues = snapshot.leakSuspects.filter(
+        leak => leak.severity === 'high' || leak.severity === 'critical'
       );
 
       if (issues.length > 0) {
@@ -503,13 +505,13 @@ export class MemoryAnalyzer extends EventEmitter {
   private setupGCObserver(): void {
     if (typeof PerformanceObserver === 'undefined') return;
 
-    this.gcObserver = new PerformanceObserver((list) => {
+    this.gcObserver = new PerformanceObserver(list => {
       const entries = list.getEntries();
       entries.forEach(entry => {
         if (entry.entryType === 'measure' && entry.name.includes('gc')) {
           this.emit('gc:occurred', {
             duration: entry.duration,
-            timestamp: new Date(entry.startTime + performance.timeOrigin)
+            timestamp: new Date(entry.startTime + performance.timeOrigin),
           });
         }
       });
@@ -535,7 +537,7 @@ export class MemoryAnalyzer extends EventEmitter {
   private setupDOMObserver(): void {
     if (typeof MutationObserver === 'undefined') return;
 
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(mutations => {
       let addedNodes = 0;
       let removedNodes = 0;
 
@@ -552,7 +554,7 @@ export class MemoryAnalyzer extends EventEmitter {
     if (typeof document !== 'undefined') {
       observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
       });
     }
   }
@@ -563,7 +565,11 @@ export class MemoryAnalyzer extends EventEmitter {
     const originalAddEventListener = EventTarget.prototype.addEventListener;
     const originalRemoveEventListener = EventTarget.prototype.removeEventListener;
 
-    EventTarget.prototype.addEventListener = function(type: string, listener: EventListener, options?: any) {
+    EventTarget.prototype.addEventListener = function (
+      type: string,
+      listener: EventListener,
+      options?: any
+    ) {
       const elementId = this.id || this.tagName || 'unknown';
       const key = `${elementId}:${type}`;
 
@@ -575,7 +581,11 @@ export class MemoryAnalyzer extends EventEmitter {
       return originalAddEventListener.call(this, type, listener, options);
     };
 
-    EventTarget.prototype.removeEventListener = function(type: string, listener: EventListener, options?: any) {
+    EventTarget.prototype.removeEventListener = function (
+      type: string,
+      listener: EventListener,
+      options?: any
+    ) {
       if (this.eventListenerRegistry) {
         this.eventListenerRegistry.delete(listener);
       }
@@ -600,7 +610,7 @@ export class MemoryAnalyzer extends EventEmitter {
           leakSuspected: false,
           mountTime: new Date(),
           lastUpdate: new Date(),
-          retainedSize: 0
+          retainedSize: 0,
         });
       }
     }
@@ -628,9 +638,11 @@ export class MemoryAnalyzer extends EventEmitter {
   private getComponentName(node: Node): string | null {
     const element = node as Element;
     if (element.getAttribute) {
-      return element.getAttribute('data-component') ||
-             element.className.split(' ').find(c => c.includes('Component')) ||
-             null;
+      return (
+        element.getAttribute('data-component') ||
+        element.className.split(' ').find(c => c.includes('Component')) ||
+        null
+      );
     }
     return null;
   }
@@ -645,7 +657,7 @@ export class MemoryAnalyzer extends EventEmitter {
     return 0;
   }
 
-  private getElementEventListeners(element: Element): Array<{type: string, listener: Function}> {
+  private getElementEventListeners(element: Element): Array<{ type: string; listener: Function }> {
     // In a real implementation, this would access the element's event listeners
     return [];
   }
@@ -680,7 +692,9 @@ export class MemoryAnalyzer extends EventEmitter {
     const recommendations: string[] = [];
 
     if (current.heapUsed > 50 * 1024 * 1024) {
-      recommendations.push('Consider implementing component lazy loading to reduce initial memory footprint');
+      recommendations.push(
+        'Consider implementing component lazy loading to reduce initial memory footprint'
+      );
     }
 
     if (current.domMetrics.detachedNodes > 0) {
@@ -713,7 +727,10 @@ export class MemoryAnalyzer extends EventEmitter {
     return trends;
   }
 
-  private generateOptimizations(current: MemorySnapshot, issues: MemoryLeak[]): MemoryOptimization[] {
+  private generateOptimizations(
+    current: MemorySnapshot,
+    issues: MemoryLeak[]
+  ): MemoryOptimization[] {
     const optimizations: MemoryOptimization[] = [];
 
     // Component optimizations
@@ -728,7 +745,7 @@ export class MemoryAnalyzer extends EventEmitter {
         description: `Optimize ${component.component} memory usage`,
         implementation: 'Implement React.memo, useMemo, or component splitting',
         expectedSavings: component.memoryUsage * 0.3,
-        effort: 'moderate'
+        effort: 'moderate',
       });
     });
 
@@ -740,7 +757,7 @@ export class MemoryAnalyzer extends EventEmitter {
         description: 'Clean up orphaned event listeners',
         implementation: 'Add cleanup functions to useEffect hooks',
         expectedSavings: current.eventListenerMetrics.orphaned * 1024,
-        effort: 'minimal'
+        effort: 'minimal',
       });
     }
 

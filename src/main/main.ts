@@ -28,11 +28,11 @@ function createMainWindow(): void {
       preload: path.join(__dirname, '../preload/preload.js'),
       webSecurity: true,
       allowRunningInsecureContent: false,
-      experimentalFeatures: false
+      experimentalFeatures: false,
     },
     icon: path.join(__dirname, '../../assets/icon.png'),
     show: false, // Don't show until ready
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
   });
 
   // Load the appropriate content based on environment
@@ -123,7 +123,9 @@ function loadFallbackContent(): void {
   mainWindow.loadFile(fallbackPath).catch(err => {
     console.error('Failed to load fallback content:', err);
     // Last resort: create a basic HTML page
-    mainWindow?.loadURL('data:text/html,<h1>Accenture Mainframe AI Assistant</h1><p>Loading...</p>');
+    mainWindow?.loadURL(
+      'data:text/html,<h1>Accenture Mainframe AI Assistant</h1><p>Loading...</p>'
+    );
   });
 }
 
@@ -145,8 +147,8 @@ function setupApplicationMenu(): void {
           { role: 'hideothers' },
           { role: 'unhide' },
           { type: 'separator' },
-          { role: 'quit' }
-        ]
+          { role: 'quit' },
+        ],
       },
       {
         label: 'Edit',
@@ -157,8 +159,8 @@ function setupApplicationMenu(): void {
           { role: 'cut' },
           { role: 'copy' },
           { role: 'paste' },
-          { role: 'selectall' }
-        ]
+          { role: 'selectall' },
+        ],
       },
       {
         label: 'View',
@@ -171,16 +173,13 @@ function setupApplicationMenu(): void {
           { role: 'zoomIn' },
           { role: 'zoomOut' },
           { type: 'separator' },
-          { role: 'togglefullscreen' }
-        ]
+          { role: 'togglefullscreen' },
+        ],
       },
       {
         label: 'Window',
-        submenu: [
-          { role: 'minimize' },
-          { role: 'close' }
-        ]
-      }
+        submenu: [{ role: 'minimize' }, { role: 'close' }],
+      },
     ];
 
     Menu.setApplicationMenu(Menu.buildFromTemplate(template as any));
@@ -298,7 +297,7 @@ if (isDev) {
 }
 
 // Error handling
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error);
 });
 

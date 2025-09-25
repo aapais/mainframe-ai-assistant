@@ -61,7 +61,7 @@ const DEFAULT_POOL_CONFIG: PoolConfig = {
   checkInterval: 60000, // 1 minute
   connectionTimeout: 30000, // 30 seconds
   enableMetrics: true,
-  defaultDatabase: ':memory:'
+  defaultDatabase: ':memory:',
 };
 
 export class ConnectionPool extends EventEmitter {
@@ -72,7 +72,7 @@ export class ConnectionPool extends EventEmitter {
     reject: (error: Error) => void;
     timeout: ReturnType<typeof setTimeout>;
   }> = [];
-  
+
   private cleanupInterval?: ReturnType<typeof setTimeout>;
   private metrics: PoolMetrics = {
     totalConnections: 0,
@@ -81,9 +81,9 @@ export class ConnectionPool extends EventEmitter {
     totalQueries: 0,
     avgQueryTime: 0,
     connectionErrors: 0,
-    lastCleanup: new Date()
+    lastCleanup: new Date(),
   };
-  
+
   private queryTimes: number[] = [];
   private isInitialized = false;
   private isShuttingDown = false;
@@ -108,36 +108,36 @@ export class ConnectionPool extends EventEmitter {
 
     // Start cleanup interval
     this.startCleanup();
-    
+
     this.isInitialized = true;
     this.emit('pool:initialized', {
       connections: this.connections.size,
-      config: this.config
+      config: this.config,
     });
   }
 
   async shutdown(): Promise<void> {
     if (this.isShuttingDown) return;
-    
+
     this.isShuttingDown = true;
-    
+
     // Stop cleanup
     this.stopCleanup();
-    
+
     // Reject all waiting requests
     this.waitingQueue.forEach(({ reject, timeout }) => {
       clearTimeout(timeout);
       reject(new Error('Connection pool is shutting down'));
     });
     this.waitingQueue.length = 0;
-    
+
     // Close all connections
-    const closePromises = Array.from(this.connections.values()).map(conn => 
+    const closePromises = Array.from(this.connections.values()).map(conn =>
       this.closeConnection(conn.id)
     );
-    
+
     await Promise.allSettled(closePromises);
-    
+
     this.connections.clear();
     this.emit('pool:shutdown');
   }
@@ -184,13 +184,13 @@ export class ConnectionPool extends EventEmitter {
 
     // Process waiting queue
     this.processWaitingQueue();
-    
+
     this.emit('connection:released', { connectionId, queryCount: connection.queryCount });
   }
 
   async executeQuery<T = any>(
-    query: string, 
-    params: any[] = [], 
+    query: string,
+    params: any[] = [],
     config: ConnectionConfig = {}
   ): Promise<T> {
     const startTime = Date.now();
@@ -198,7 +198,7 @@ export class ConnectionPool extends EventEmitter {
 
     try {
       connection = await this.getConnection(config);
-      
+
       // Execute query
       let result;
       if (query.trim().toUpperCase().startsWith('SELECT')) {
@@ -206,16 +206,15 @@ export class ConnectionPool extends EventEmitter {
       } else {
         result = connection.db.prepare(query).run(...params);
       }
-      
+
       // Update metrics
       connection.queryCount++;
       this.metrics.totalQueries++;
-      
+
       const queryTime = Date.now() - startTime;
       this.recordQueryTime(queryTime);
-      
+
       return result as T;
-      
     } catch (error) {
       this.metrics.connectionErrors++;
       throw error;
@@ -228,23 +227,23 @@ export class ConnectionPool extends EventEmitter {
 
   private async createConnection(config: ConnectionConfig = {}): Promise<Connection> {
     const connectionId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
       const dbPath = config.database || this.config.defaultDatabase || ':memory:';
       const options = {
         readonly: config.readonly || false,
         timeout: config.timeout || this.config.connectionTimeout || 30000,
-        verbose: config.verbose
+        verbose: config.verbose,
       };
-      
+
       const db = new Database(dbPath, options);
-      
+
       // Configure database
       db.pragma('journal_mode = WAL');
       db.pragma('synchronous = NORMAL');
       db.pragma('cache_size = 1000');
       db.pragma('temp_store = MEMORY');
-      
+
       const connection: Connection = {
         id: connectionId,
         db,
@@ -252,16 +251,15 @@ export class ConnectionPool extends EventEmitter {
         lastUsed: new Date(),
         inUse: false,
         queryCount: 0,
-        config: { ...config }
+        config: { ...config },
       };
-      
+
       this.connections.set(connectionId, connection);
       this.updateMetrics();
-      
+
       this.emit('connection:created', { connectionId, database: dbPath });
-      
+
       return connection;
-      
     } catch (error) {
       this.emit('connection:error', { connectionId, error });
       throw new Error(`Failed to create database connection: ${error.message}`);
@@ -282,11 +280,11 @@ export class ConnectionPool extends EventEmitter {
     if (config.database && connection.config.database !== config.database) {
       return false;
     }
-    
+
     if (config.readonly !== undefined && connection.config.readonly !== config.readonly) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -305,7 +303,7 @@ export class ConnectionPool extends EventEmitter {
         }
         reject(new Error('Connection timeout'));
       }, this.config.connectionTimeout || 30000);
-      
+
       this.waitingQueue.push({ resolve, reject, timeout });
     });
   }
@@ -314,10 +312,10 @@ export class ConnectionPool extends EventEmitter {
     while (this.waitingQueue.length > 0) {
       const availableConnection = this.findAvailableConnection({});
       if (!availableConnection) break;
-      
+
       const waiting = this.waitingQueue.shift()!;
       clearTimeout(waiting.timeout);
-      
+
       this.markConnectionInUse(availableConnection);
       waiting.resolve(availableConnection);
     }
@@ -331,7 +329,7 @@ export class ConnectionPool extends EventEmitter {
       connection.db.close();
       this.connections.delete(connectionId);
       this.updateMetrics();
-      
+
       this.emit('connection:closed', { connectionId, queryCount: connection.queryCount });
     } catch (error) {
       this.emit('connection:error', { connectionId, error });
@@ -362,12 +360,12 @@ export class ConnectionPool extends EventEmitter {
 
     const now = Date.now();
     const connectionsToClose: string[] = [];
-    
+
     // Find idle connections to close
     for (const [id, connection] of this.connections.entries()) {
       if (!connection.inUse) {
         const idleTime = now - connection.lastUsed.getTime();
-        
+
         if (idleTime > this.config.idleTimeout) {
           // Keep minimum connections
           const minConnections = this.config.minConnections || 0;
@@ -377,19 +375,19 @@ export class ConnectionPool extends EventEmitter {
         }
       }
     }
-    
+
     // Close idle connections
     connectionsToClose.forEach(id => {
       this.closeConnection(id);
     });
-    
+
     // Update cleanup metrics
     this.metrics.lastCleanup = new Date();
-    
+
     if (connectionsToClose.length > 0) {
-      this.emit('pool:cleanup', { 
-        closed: connectionsToClose.length, 
-        remaining: this.connections.size 
+      this.emit('pool:cleanup', {
+        closed: connectionsToClose.length,
+        remaining: this.connections.size,
       });
     }
   }
@@ -402,7 +400,7 @@ export class ConnectionPool extends EventEmitter {
     const idleConnections = Array.from(this.connections.entries())
       .filter(([_, conn]) => !conn.inUse)
       .map(([id]) => id);
-    
+
     idleConnections.forEach(id => {
       this.closeConnection(id);
     });
@@ -425,28 +423,28 @@ export class ConnectionPool extends EventEmitter {
     const connections = Array.from(this.connections.values());
     const healthyConnections = connections.filter(conn => !conn.inUse);
     const errors: string[] = [];
-    
+
     // Check for issues
     if (connections.length === 0) {
       errors.push('No connections available');
     }
-    
+
     if (this.waitingQueue.length > 0) {
       errors.push(`${this.waitingQueue.length} requests waiting for connections`);
     }
-    
+
     if (this.metrics.connectionErrors > 0) {
       errors.push(`${this.metrics.connectionErrors} connection errors recorded`);
     }
-    
+
     return {
       healthy: errors.length === 0,
       connections: {
         total: connections.length,
         healthy: healthyConnections.length,
-        unhealthy: connections.length - healthyConnections.length
+        unhealthy: connections.length - healthyConnections.length,
       },
-      errors
+      errors,
     };
   }
 
@@ -456,7 +454,7 @@ export class ConnectionPool extends EventEmitter {
 
   private updateMetrics(): void {
     const connections = Array.from(this.connections.values());
-    
+
     this.metrics.totalConnections = connections.length;
     this.metrics.activeConnections = connections.filter(c => c.inUse).length;
     this.metrics.idleConnections = connections.filter(c => !c.inUse).length;
@@ -464,14 +462,14 @@ export class ConnectionPool extends EventEmitter {
 
   private recordQueryTime(duration: number): void {
     if (!this.config.enableMetrics) return;
-    
+
     this.queryTimes.push(duration);
-    
+
     // Keep only last 1000 query times
     if (this.queryTimes.length > 1000) {
       this.queryTimes = this.queryTimes.slice(-1000);
     }
-    
+
     // Calculate average
     this.metrics.avgQueryTime = this.queryTimes.reduce((a, b) => a + b, 0) / this.queryTimes.length;
   }
@@ -483,7 +481,7 @@ export class ConnectionPool extends EventEmitter {
 
   getDetailedMetrics() {
     const connections = Array.from(this.connections.values());
-    
+
     return {
       pool: this.getMetrics(),
       connections: connections.map(conn => ({
@@ -494,18 +492,18 @@ export class ConnectionPool extends EventEmitter {
         inUse: conn.inUse,
         queryCount: conn.queryCount,
         ageMinutes: (Date.now() - conn.created.getTime()) / 60000,
-        idleMinutes: conn.inUse ? 0 : (Date.now() - conn.lastUsed.getTime()) / 60000
+        idleMinutes: conn.inUse ? 0 : (Date.now() - conn.lastUsed.getTime()) / 60000,
       })),
       waitingQueue: {
         length: this.waitingQueue.length,
-        requests: this.waitingQueue.map((_, index) => ({ index, waiting: true }))
+        requests: this.waitingQueue.map((_, index) => ({ index, waiting: true })),
       },
       queryTimes: {
         recent: this.queryTimes.slice(-10),
         avg: this.metrics.avgQueryTime,
         min: this.queryTimes.length > 0 ? Math.min(...this.queryTimes) : 0,
-        max: this.queryTimes.length > 0 ? Math.max(...this.queryTimes) : 0
-      }
+        max: this.queryTimes.length > 0 ? Math.max(...this.queryTimes) : 0,
+      },
     };
   }
 
@@ -518,30 +516,29 @@ export class ConnectionPool extends EventEmitter {
     config: ConnectionConfig = {}
   ): Promise<T[]> {
     let connection: Connection | null = null;
-    
+
     try {
       connection = await this.getConnection(config);
-      
+
       const transaction = connection.db.transaction(() => {
         const results: T[] = [];
-        
+
         for (const { sql, params = [] } of queries) {
           const result = sql.trim().toUpperCase().startsWith('SELECT')
             ? connection!.db.prepare(sql).all(...params)
             : connection!.db.prepare(sql).run(...params);
-          
+
           results.push(result as T);
           connection!.queryCount++;
         }
-        
+
         return results;
       });
-      
+
       const results = transaction();
       this.metrics.totalQueries += queries.length;
-      
+
       return results;
-      
     } catch (error) {
       this.metrics.connectionErrors++;
       throw error;

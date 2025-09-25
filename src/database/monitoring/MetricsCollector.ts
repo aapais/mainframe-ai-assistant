@@ -1,6 +1,6 @@
 /**
  * Metrics Collector for SQLite Performance Monitoring
- * 
+ *
  * Handles time-series data collection, aggregation, and export
  * for comprehensive database performance analysis.
  */
@@ -74,7 +74,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'histogram',
       labels: ['operation', 'table', 'index_used'],
       retention: 7,
-      aggregationInterval: 60
+      aggregationInterval: 60,
     },
     {
       name: 'sqlite_memory_usage_bytes',
@@ -83,7 +83,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'gauge',
       labels: ['process', 'connection'],
       retention: 7,
-      aggregationInterval: 60
+      aggregationInterval: 60,
     },
     {
       name: 'sqlite_cache_hit_ratio',
@@ -92,7 +92,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'gauge',
       labels: ['cache_type'],
       retention: 7,
-      aggregationInterval: 60
+      aggregationInterval: 60,
     },
     {
       name: 'sqlite_queries_total',
@@ -101,7 +101,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'counter',
       labels: ['operation', 'status'],
       retention: 30,
-      aggregationInterval: 60
+      aggregationInterval: 60,
     },
     {
       name: 'sqlite_connections_active',
@@ -110,7 +110,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'gauge',
       labels: ['pool'],
       retention: 7,
-      aggregationInterval: 30
+      aggregationInterval: 30,
     },
     {
       name: 'sqlite_io_operations_total',
@@ -119,7 +119,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'counter',
       labels: ['operation_type'],
       retention: 7,
-      aggregationInterval: 60
+      aggregationInterval: 60,
     },
     {
       name: 'sqlite_lock_wait_time_ms',
@@ -128,7 +128,7 @@ export class MetricsCollector extends EventEmitter {
       type: 'histogram',
       labels: ['lock_type'],
       retention: 7,
-      aggregationInterval: 60
+      aggregationInterval: 60,
     },
     {
       name: 'sqlite_error_count',
@@ -137,8 +137,8 @@ export class MetricsCollector extends EventEmitter {
       type: 'counter',
       labels: ['error_type', 'operation'],
       retention: 30,
-      aggregationInterval: 60
-    }
+      aggregationInterval: 60,
+    },
   ];
 
   constructor(db: Database.Database, config?: Partial<CollectorConfig>) {
@@ -156,7 +156,7 @@ export class MetricsCollector extends EventEmitter {
         value: 1000,
         duration: 60,
         severity: 'warning',
-        description: 'Slow query detected'
+        description: 'Slow query detected',
       },
       {
         metricName: 'sqlite_query_duration_ms',
@@ -164,7 +164,7 @@ export class MetricsCollector extends EventEmitter {
         value: 5000,
         duration: 0,
         severity: 'critical',
-        description: 'Critical query performance'
+        description: 'Critical query performance',
       },
       {
         metricName: 'sqlite_cache_hit_ratio',
@@ -172,7 +172,7 @@ export class MetricsCollector extends EventEmitter {
         value: 80,
         duration: 300,
         severity: 'warning',
-        description: 'Low cache hit ratio'
+        description: 'Low cache hit ratio',
       },
       {
         metricName: 'sqlite_error_count',
@@ -180,7 +180,7 @@ export class MetricsCollector extends EventEmitter {
         value: 10,
         duration: 60,
         severity: 'critical',
-        description: 'High error rate detected'
+        description: 'High error rate detected',
       },
       {
         metricName: 'sqlite_memory_usage_bytes',
@@ -188,8 +188,8 @@ export class MetricsCollector extends EventEmitter {
         value: 512 * 1024 * 1024, // 512MB
         duration: 300,
         severity: 'warning',
-        description: 'High memory usage'
-      }
+        description: 'High memory usage',
+      },
     ];
 
     return {
@@ -201,7 +201,7 @@ export class MetricsCollector extends EventEmitter {
       enableCompression: true,
       exportFormats: ['prometheus', 'json'],
       alertThresholds: defaultThresholds,
-      ...config
+      ...config,
     };
   }
 
@@ -356,7 +356,7 @@ export class MetricsCollector extends EventEmitter {
     const dataPoint: TimeSeriesDataPoint = {
       timestamp: timestamp || Date.now(),
       value,
-      labels
+      labels,
     };
 
     if (!this.dataBuffer.has(metricName)) {
@@ -378,19 +378,23 @@ export class MetricsCollector extends EventEmitter {
     this.metrics.set(metric.name, metric);
 
     // Persist to database
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT OR REPLACE INTO metric_definitions 
       (name, description, unit, type, labels, retention_days, aggregation_interval)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      metric.name,
-      metric.description,
-      metric.unit,
-      metric.type,
-      JSON.stringify(metric.labels),
-      metric.retention,
-      metric.aggregationInterval
-    );
+    `
+      )
+      .run(
+        metric.name,
+        metric.description,
+        metric.unit,
+        metric.type,
+        JSON.stringify(metric.labels),
+        metric.retention,
+        metric.aggregationInterval
+      );
   }
 
   public getMetricData(
@@ -418,7 +422,7 @@ export class MetricsCollector extends EventEmitter {
       return results.map((row: any) => ({
         timestamp: row.timestamp,
         value: row.value,
-        labels: row.labels ? JSON.parse(row.labels) : undefined
+        labels: row.labels ? JSON.parse(row.labels) : undefined,
       }));
     } catch (error) {
       console.error(`Failed to get metric data for ${metricName}:`, error);
@@ -460,7 +464,7 @@ export class MetricsCollector extends EventEmitter {
         p50: row.p50,
         p95: row.p95,
         p99: row.p99,
-        stddev: row.stddev
+        stddev: row.stddev,
       }));
     } catch (error) {
       console.error(`Failed to get aggregated data for ${metricName}:`, error);
@@ -479,19 +483,19 @@ export class MetricsCollector extends EventEmitter {
     return {
       p50: sorted[Math.floor(n * 0.5)],
       p95: sorted[Math.floor(n * 0.95)],
-      p99: sorted[Math.floor(n * 0.99)]
+      p99: sorted[Math.floor(n * 0.99)],
     };
   }
 
   public exportPrometheusFormat(): string {
     const output: string[] = [];
     const now = Date.now();
-    const recentTime = now - (5 * 60 * 1000); // Last 5 minutes
+    const recentTime = now - 5 * 60 * 1000; // Last 5 minutes
 
     this.metrics.forEach((metric, name) => {
       // Get recent data points
       const dataPoints = this.getMetricData(name, recentTime, now);
-      
+
       if (dataPoints.length === 0) return;
 
       // Add metric help and type
@@ -500,7 +504,7 @@ export class MetricsCollector extends EventEmitter {
 
       // Group by labels
       const labelGroups = new Map<string, TimeSeriesDataPoint[]>();
-      
+
       dataPoints.forEach(point => {
         const labelsKey = JSON.stringify(point.labels || {});
         if (!labelGroups.has(labelsKey)) {
@@ -514,15 +518,15 @@ export class MetricsCollector extends EventEmitter {
         const labelStr = Object.entries(labels)
           .map(([key, value]) => `${key}="${value}"`)
           .join(',');
-        
+
         const latestPoint = points[points.length - 1];
         const metricName = labelStr ? `${name}{${labelStr}}` : name;
-        
+
         if (metric.type === 'histogram') {
           // For histograms, calculate and export percentiles
           const values = points.map(p => p.value);
           const percentiles = this.calculatePercentiles(values);
-          
+
           output.push(`${metricName}_p50 ${percentiles.p50}`);
           output.push(`${metricName}_p95 ${percentiles.p95}`);
           output.push(`${metricName}_p99 ${percentiles.p99}`);
@@ -541,11 +545,11 @@ export class MetricsCollector extends EventEmitter {
   public exportJSONFormat(): any {
     const result: any = {
       timestamp: Date.now(),
-      metrics: {}
+      metrics: {},
     };
 
     const now = Date.now();
-    const recentTime = now - (5 * 60 * 1000); // Last 5 minutes
+    const recentTime = now - 5 * 60 * 1000; // Last 5 minutes
 
     this.metrics.forEach((metric, name) => {
       const dataPoints = this.getMetricData(name, recentTime, now);
@@ -555,7 +559,7 @@ export class MetricsCollector extends EventEmitter {
         definition: metric,
         current_value: dataPoints.length > 0 ? dataPoints[dataPoints.length - 1].value : null,
         data_points: dataPoints.length,
-        aggregated: aggregated.length > 0 ? aggregated[aggregated.length - 1] : null
+        aggregated: aggregated.length > 0 ? aggregated[aggregated.length - 1] : null,
       };
     });
 
@@ -564,7 +568,7 @@ export class MetricsCollector extends EventEmitter {
 
   public exportCSVFormat(metricName: string, startTime: number, endTime: number): string {
     const dataPoints = this.getMetricData(metricName, startTime, endTime);
-    
+
     if (dataPoints.length === 0) {
       return 'timestamp,value,labels\n';
     }
@@ -573,18 +577,15 @@ export class MetricsCollector extends EventEmitter {
     const rows = dataPoints.map(point => [
       point.timestamp,
       point.value,
-      JSON.stringify(point.labels || {})
+      JSON.stringify(point.labels || {}),
     ]);
 
-    return [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
 
   private collectSystemMetrics(): void {
     const now = Date.now();
-    
+
     // Memory usage
     const memUsage = process.memoryUsage();
     this.recordMetric('sqlite_memory_usage_bytes', memUsage.heapUsed, { type: 'heap' }, now);
@@ -601,7 +602,6 @@ export class MetricsCollector extends EventEmitter {
       // Cache hit ratio (example using SQLite pragma)
       const cacheInfo = this.db.pragma('cache_size');
       this.recordMetric('sqlite_cache_size', cacheInfo, { type: 'page_cache' }, now);
-      
     } catch (error) {
       console.error('Failed to collect database metrics:', error);
     }
@@ -654,18 +654,22 @@ export class MetricsCollector extends EventEmitter {
   private aggregateMetricForPeriod(metricName: string, startTime: number, endTime: number): void {
     try {
       // Get raw data for the period
-      const rawData = this.db.prepare(`
+      const rawData = this.db
+        .prepare(
+          `
         SELECT value, labels
         FROM time_series_data
         WHERE metric_name = ? AND timestamp >= ? AND timestamp < ?
         ORDER BY timestamp
-      `).all(metricName, startTime, endTime);
+      `
+        )
+        .all(metricName, startTime, endTime);
 
       if (rawData.length === 0) return;
 
       // Group by labels
       const labelGroups = new Map<string, number[]>();
-      
+
       rawData.forEach((row: any) => {
         const labelsKey = row.labels || '{}';
         if (!labelGroups.has(labelsKey)) {
@@ -694,7 +698,7 @@ export class MetricsCollector extends EventEmitter {
       labelGroups.forEach((values, labelsKey) => {
         const aggregation = this.calculateAggregation(values);
         const percentiles = this.calculatePercentiles(values);
-        
+
         upsertStmt.run(
           metricName,
           startTime,
@@ -710,7 +714,6 @@ export class MetricsCollector extends EventEmitter {
           labelsKey === '{}' ? null : labelsKey
         );
       });
-
     } catch (error) {
       console.error(`Failed to aggregate metric ${metricName}:`, error);
     }
@@ -727,7 +730,7 @@ export class MetricsCollector extends EventEmitter {
         p50: 0,
         p95: 0,
         p99: 0,
-        stddev: 0
+        stddev: 0,
       };
     }
 
@@ -752,7 +755,7 @@ export class MetricsCollector extends EventEmitter {
       p50: percentiles.p50,
       p95: percentiles.p95,
       p99: percentiles.p99,
-      stddev
+      stddev,
     };
   }
 
@@ -769,13 +772,13 @@ export class MetricsCollector extends EventEmitter {
 
     // Get recent values for the metric
     const recentData = this.getMetricData(threshold.metricName, startTime, now);
-    
+
     if (recentData.length === 0) return;
 
     // Calculate the value to check against threshold
     let checkValue: number;
     const values = recentData.map(d => d.value);
-    
+
     switch (threshold.operator) {
       case 'gt':
       case 'gte':
@@ -790,7 +793,7 @@ export class MetricsCollector extends EventEmitter {
     }
 
     const isTriggered = this.evaluateCondition(checkValue, threshold.operator, threshold.value);
-    
+
     if (isTriggered) {
       this.recordAlert(threshold, checkValue, now);
     }
@@ -798,35 +801,45 @@ export class MetricsCollector extends EventEmitter {
 
   private evaluateCondition(value: number, operator: string, threshold: number): boolean {
     switch (operator) {
-      case 'gt': return value > threshold;
-      case 'gte': return value >= threshold;
-      case 'lt': return value < threshold;
-      case 'lte': return value <= threshold;
-      case 'eq': return value === threshold;
-      default: return false;
+      case 'gt':
+        return value > threshold;
+      case 'gte':
+        return value >= threshold;
+      case 'lt':
+        return value < threshold;
+      case 'lte':
+        return value <= threshold;
+      case 'eq':
+        return value === threshold;
+      default:
+        return false;
     }
   }
 
   private recordAlert(threshold: AlertThreshold, actualValue: number, timestamp: number): void {
     const alertId = `${timestamp}_${threshold.metricName}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO alert_history (
           id, metric_name, threshold_value, actual_value, operator,
           severity, description, triggered_at, duration
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        alertId,
-        threshold.metricName,
-        threshold.value,
-        actualValue,
-        threshold.operator,
-        threshold.severity,
-        threshold.description,
-        timestamp,
-        threshold.duration
-      );
+      `
+        )
+        .run(
+          alertId,
+          threshold.metricName,
+          threshold.value,
+          actualValue,
+          threshold.operator,
+          threshold.severity,
+          threshold.description,
+          timestamp,
+          threshold.duration
+        );
 
       this.emit('alert-triggered', {
         id: alertId,
@@ -835,9 +848,8 @@ export class MetricsCollector extends EventEmitter {
         description: threshold.description,
         actualValue,
         thresholdValue: threshold.value,
-        timestamp
+        timestamp,
       });
-
     } catch (error) {
       console.error('Failed to record alert:', error);
     }
@@ -849,24 +861,24 @@ export class MetricsCollector extends EventEmitter {
     try {
       // Clean up time series data based on metric retention
       this.metrics.forEach((metric, name) => {
-        const cutoff = now - (metric.retention * 24 * 60 * 60 * 1000);
-        this.db.prepare('DELETE FROM time_series_data WHERE metric_name = ? AND timestamp < ?')
+        const cutoff = now - metric.retention * 24 * 60 * 60 * 1000;
+        this.db
+          .prepare('DELETE FROM time_series_data WHERE metric_name = ? AND timestamp < ?')
           .run(name, cutoff);
       });
 
       // Clean up old aggregated data
-      const aggregatedCutoff = now - (this.config.retentionDays * 24 * 60 * 60 * 1000);
+      const aggregatedCutoff = now - this.config.retentionDays * 24 * 60 * 60 * 1000;
       this.db.prepare('DELETE FROM aggregated_metrics WHERE time_bucket < ?').run(aggregatedCutoff);
 
       // Clean up old alerts (keep for 30 days)
-      const alertCutoff = now - (30 * 24 * 60 * 60 * 1000);
+      const alertCutoff = now - 30 * 24 * 60 * 60 * 1000;
       this.db.prepare('DELETE FROM alert_history WHERE triggered_at < ?').run(alertCutoff);
 
       // Compress data if enabled
       if (this.config.enableCompression) {
         this.db.exec('VACUUM');
       }
-
     } catch (error) {
       console.error('Failed to cleanup old data:', error);
     }
@@ -885,13 +897,15 @@ export class MetricsCollector extends EventEmitter {
     const todayStart = today.getTime();
 
     try {
-      const dataPointsToday = this.db.prepare(
-        'SELECT COUNT(*) as count FROM time_series_data WHERE timestamp >= ?'
-      ).get(todayStart)?.count || 0;
+      const dataPointsToday =
+        this.db
+          .prepare('SELECT COUNT(*) as count FROM time_series_data WHERE timestamp >= ?')
+          .get(todayStart)?.count || 0;
 
-      const alertsToday = this.db.prepare(
-        'SELECT COUNT(*) as count FROM alert_history WHERE triggered_at >= ?'
-      ).get(todayStart)?.count || 0;
+      const alertsToday =
+        this.db
+          .prepare('SELECT COUNT(*) as count FROM alert_history WHERE triggered_at >= ?')
+          .get(todayStart)?.count || 0;
 
       let bufferSize = 0;
       this.dataBuffer.forEach(buffer => {
@@ -904,7 +918,7 @@ export class MetricsCollector extends EventEmitter {
         dataPointsToday,
         lastCollection: Date.now(),
         bufferSize,
-        alertsToday
+        alertsToday,
       };
     } catch (error) {
       console.error('Failed to get collection stats:', error);
@@ -914,7 +928,7 @@ export class MetricsCollector extends EventEmitter {
         dataPointsToday: 0,
         lastCollection: 0,
         bufferSize: 0,
-        alertsToday: 0
+        alertsToday: 0,
       };
     }
   }

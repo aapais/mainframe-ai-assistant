@@ -489,26 +489,40 @@ export class SearchSchema {
    * Clean up old data (call periodically)
    */
   cleanup(retentionDays: number = 90): void {
-    const cutoffTime = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
 
     const transaction = this.db.transaction(() => {
       // Clean old search history
-      const historyResult = this.db.prepare(`
+      const historyResult = this.db
+        .prepare(
+          `
         DELETE FROM search_history WHERE timestamp < ?
-      `).run(cutoffTime);
+      `
+        )
+        .run(cutoffTime);
 
       // Clean old performance logs
-      const perfResult = this.db.prepare(`
+      const perfResult = this.db
+        .prepare(
+          `
         DELETE FROM search_performance_log WHERE timestamp < ?
-      `).run(cutoffTime);
+      `
+        )
+        .run(cutoffTime);
 
       // Clean old metrics (keep daily aggregates longer)
-      const metricsResult = this.db.prepare(`
+      const metricsResult = this.db
+        .prepare(
+          `
         DELETE FROM search_metrics
         WHERE window_start < ? AND timeframe IN ('5m', '15m')
-      `).run(Date.now() - (7 * 24 * 60 * 60 * 1000)); // 7 days for fine-grained metrics
+      `
+        )
+        .run(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days for fine-grained metrics
 
-      console.log(`Cleanup completed: ${historyResult.changes} history entries, ${perfResult.changes} performance logs, ${metricsResult.changes} metrics removed`);
+      console.log(
+        `Cleanup completed: ${historyResult.changes} history entries, ${perfResult.changes} performance logs, ${metricsResult.changes} metrics removed`
+      );
     });
 
     transaction();

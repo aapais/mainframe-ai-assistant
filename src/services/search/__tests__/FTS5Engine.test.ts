@@ -52,48 +52,57 @@ describe('FTS5Engine', () => {
       {
         id: 'test-1',
         title: 'S0C7 Data Exception in COBOL Program',
-        problem: 'Program abends with S0C7 completion code when processing arithmetic operations on COMP-3 fields',
-        solution: '1. Check for uninitialized COMP-3 fields\n2. Validate input data format\n3. Add defensive programming checks',
+        problem:
+          'Program abends with S0C7 completion code when processing arithmetic operations on COMP-3 fields',
+        solution:
+          '1. Check for uninitialized COMP-3 fields\n2. Validate input data format\n3. Add defensive programming checks',
         category: 'Batch',
         severity: 'high',
-        tags: ['s0c7', 'abend', 'cobol', 'comp-3', 'arithmetic']
+        tags: ['s0c7', 'abend', 'cobol', 'comp-3', 'arithmetic'],
       },
       {
         id: 'test-2',
         title: 'VSAM Status 35 File Not Found Error',
-        problem: 'Job fails with VSAM return code 35 indicating file not found during KSDS processing',
-        solution: '1. Verify dataset exists in catalog\n2. Check JCL DD statement DSN parameter\n3. Ensure proper allocation',
+        problem:
+          'Job fails with VSAM return code 35 indicating file not found during KSDS processing',
+        solution:
+          '1. Verify dataset exists in catalog\n2. Check JCL DD statement DSN parameter\n3. Ensure proper allocation',
         category: 'VSAM',
         severity: 'medium',
-        tags: ['vsam', 'status-35', 'file-not-found', 'ksds', 'catalog']
+        tags: ['vsam', 'status-35', 'file-not-found', 'ksds', 'catalog'],
       },
       {
         id: 'test-3',
         title: 'DB2 SQL0803N Duplicate Key Error',
         problem: 'INSERT statement fails with SQLCODE -803 due to duplicate primary key value',
-        solution: '1. Check for existing records\n2. Use MERGE statement instead\n3. Implement proper key generation strategy',
+        solution:
+          '1. Check for existing records\n2. Use MERGE statement instead\n3. Implement proper key generation strategy',
         category: 'DB2',
         severity: 'medium',
-        tags: ['db2', 'sql0803n', 'duplicate-key', 'primary-key', 'insert']
+        tags: ['db2', 'sql0803n', 'duplicate-key', 'primary-key', 'insert'],
       },
       {
         id: 'test-4',
         title: 'JCL IEF212I Job Step Execution Error',
-        problem: 'Job step fails with IEF212I message indicating abnormal termination with condition code',
-        solution: '1. Review job step return codes\n2. Check COND parameters\n3. Verify program logic and data integrity',
+        problem:
+          'Job step fails with IEF212I message indicating abnormal termination with condition code',
+        solution:
+          '1. Review job step return codes\n2. Check COND parameters\n3. Verify program logic and data integrity',
         category: 'JCL',
         severity: 'high',
-        tags: ['jcl', 'ief212i', 'job-step', 'condition-code', 'abnormal-termination']
+        tags: ['jcl', 'ief212i', 'job-step', 'condition-code', 'abnormal-termination'],
       },
       {
         id: 'test-5',
         title: 'CICS DFHAC2001 Transaction Abend',
-        problem: 'CICS transaction terminates with DFHAC2001 abend code during file access operations',
-        solution: '1. Check file status in FCTTABLE\n2. Verify VSAM file integrity\n3. Review transaction logic',
+        problem:
+          'CICS transaction terminates with DFHAC2001 abend code during file access operations',
+        solution:
+          '1. Check file status in FCTTABLE\n2. Verify VSAM file integrity\n3. Review transaction logic',
         category: 'CICS',
         severity: 'critical',
-        tags: ['cics', 'dfhac2001', 'transaction', 'abend', 'file-access']
-      }
+        tags: ['cics', 'dfhac2001', 'transaction', 'abend', 'file-access'],
+      },
     ];
 
     // Insert test data into database
@@ -143,10 +152,14 @@ describe('FTS5Engine', () => {
     });
 
     test('should create FTS5 virtual table with correct schema', async () => {
-      const tableInfo = db.prepare(`
+      const tableInfo = db
+        .prepare(
+          `
         SELECT sql FROM sqlite_master
         WHERE type = 'table' AND name = 'kb_fts5'
-      `).get() as { sql: string } | undefined;
+      `
+        )
+        .get() as { sql: string } | undefined;
 
       expect(tableInfo).toBeDefined();
       expect(tableInfo!.sql).toContain('fts5');
@@ -359,7 +372,7 @@ describe('FTS5Engine', () => {
         problem: 'Test problem description',
         solution: 'Test solution steps',
         category: 'Other',
-        tags: ['test', 'new']
+        tags: ['test', 'new'],
       };
 
       await fts5Engine.addDocument(newEntry);
@@ -376,7 +389,7 @@ describe('FTS5Engine', () => {
         problem: 'Updated problem description',
         solution: 'Updated solution steps',
         category: 'Batch',
-        tags: ['s0c7', 'updated']
+        tags: ['s0c7', 'updated'],
       };
 
       await fts5Engine.updateDocument(updatedEntry);
@@ -429,7 +442,7 @@ describe('FTS5Engine', () => {
         problem: 'Cannot access USER.TEST.DATA dataset',
         solution: 'Check dataset allocation and catalog',
         category: 'Other',
-        tags: ['dataset', 'access']
+        tags: ['dataset', 'access'],
       };
 
       await fts5Engine.addDocument(dsEntry);
@@ -512,7 +525,7 @@ describe('FTS5Engine', () => {
         'AND OR NOT',
         '(((',
         null as any,
-        undefined as any
+        undefined as any,
       ];
 
       for (const query of malformedQueries) {
@@ -548,8 +561,8 @@ describe('FTS5Engine', () => {
           titleWeight: 4.0,
           problemWeight: 3.0,
           solutionWeight: 2.0,
-          tagsWeight: 1.5
-        }
+          tagsWeight: 1.5,
+        },
       };
 
       const customEngine = new FTS5Engine(db, customConfig);
@@ -566,8 +579,8 @@ describe('FTS5Engine', () => {
           maxLength: 100,
           contextWindow: 20,
           maxSnippets: 2,
-          ellipsis: '...'
-        }
+          ellipsis: '...',
+        },
       };
 
       const customEngine = new FTS5Engine(db, customConfig);
@@ -587,8 +600,8 @@ describe('FTS5Engine', () => {
         highlight: {
           startTag: '<em>',
           endTag: '</em>',
-          caseSensitive: false
-        }
+          caseSensitive: false,
+        },
       };
 
       const customEngine = new FTS5Engine(db, customConfig);
@@ -602,7 +615,7 @@ describe('FTS5Engine', () => {
     test('should accept custom tokenizer configuration', async () => {
       const customTokenizerConfig: Partial<MainframeTokenizerConfig> = {
         jclTokens: ['CUSTOM', 'TOKEN'],
-        errorCodePatterns: [/^CUSTOM\d{4}$/]
+        errorCodePatterns: [/^CUSTOM\d{4}$/],
       };
 
       const customEngine = new FTS5Engine(db, {}, customTokenizerConfig);

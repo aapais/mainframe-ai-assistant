@@ -32,7 +32,7 @@ export const transitions = {
   collapse: 'transition-[max-height,opacity] duration-300 ease-in',
 
   // Loading skeleton animation
-  skeleton: 'animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200'
+  skeleton: 'animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200',
 };
 
 // Ripple effect for button clicks
@@ -63,7 +63,7 @@ export const smoothScrollTo = (elementId: string, offset = 100) => {
     const top = element.offsetTop - offset;
     window.scrollTo({
       top,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 };
@@ -75,10 +75,10 @@ export const staggerChildren = (delay = 50) => {
     visible: (i: number) => ({
       opacity: 1,
       transition: {
-        delay: i * delay / 1000,
-        duration: 0.3
-      }
-    })
+        delay: (i * delay) / 1000,
+        duration: 0.3,
+      },
+    }),
   };
 };
 
@@ -86,12 +86,12 @@ export const staggerChildren = (delay = 50) => {
 export const hoverEffect = {
   rest: {
     scale: 1,
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)'
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
   },
   hover: {
     scale: 1.02,
-    boxShadow: '0 4px 6px rgba(161, 0, 255, 0.1)'
-  }
+    boxShadow: '0 4px 6px rgba(161, 0, 255, 0.1)',
+  },
 };
 
 // Accessibility: Respect prefers-reduced-motion
@@ -108,7 +108,7 @@ export const getAnimationClass = (animationClass: string) => {
 export const springConfig = {
   type: 'spring',
   stiffness: 300,
-  damping: 30
+  damping: 30,
 };
 
 // Category expand/collapse animation
@@ -119,8 +119,8 @@ export const categoryAnimation = {
     overflow: 'hidden',
     transition: {
       duration: 0.3,
-      ease: 'easeInOut'
-    }
+      ease: 'easeInOut',
+    },
   },
   expanded: {
     height: 'auto',
@@ -129,9 +129,9 @@ export const categoryAnimation = {
     transition: {
       duration: 0.3,
       ease: 'easeInOut',
-      staggerChildren: 0.05
-    }
-  }
+      staggerChildren: 0.05,
+    },
+  },
 };
 
 // Search modal animation
@@ -140,33 +140,33 @@ export const modalAnimation = {
     opacity: 0,
     scale: 0.95,
     transition: {
-      duration: 0.2
-    }
+      duration: 0.2,
+    },
   },
   visible: {
     opacity: 1,
     scale: 1,
     transition: {
       duration: 0.2,
-      ease: 'easeOut'
-    }
-  }
+      ease: 'easeOut',
+    },
+  },
 };
 
 // Quick Access widget animations
 export const widgetAnimation = {
   initial: {
     opacity: 0,
-    y: -20
+    y: -20,
   },
   animate: {
     opacity: 1,
     y: 0,
     transition: {
       duration: 0.5,
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 // Success/Error state animations
@@ -175,21 +175,21 @@ export const statusAnimation = {
     backgroundColor: '#10b981',
     scale: [1, 1.05, 1],
     transition: {
-      duration: 0.3
-    }
+      duration: 0.3,
+    },
   },
   error: {
     backgroundColor: '#ef4444',
     x: [0, -10, 10, -10, 10, 0],
     transition: {
-      duration: 0.5
-    }
+      duration: 0.5,
+    },
   },
   warning: {
     backgroundColor: '#f59e0b',
     scale: [1, 1.02, 1],
     transition: {
-      duration: 0.4
-    }
-  }
+      duration: 0.4,
+    },
+  },
 };

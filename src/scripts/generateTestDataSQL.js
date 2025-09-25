@@ -20,8 +20,8 @@ const config = {
     ai_cost_tracking: 80,
     operation_logs: 150,
     kb_relations: 30,
-    tags_per_entry: 3
-  }
+    tags_per_entry: 3,
+  },
 };
 
 // Utilities
@@ -31,10 +31,21 @@ const randomDate = (daysAgo = 90) => {
   date.setDate(date.getDate() - Math.floor(Math.random() * daysAgo));
   return date.toISOString().replace('T', ' ').replace('Z', '');
 };
-const randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const randomElement = arr => arr[Math.floor(Math.random() * arr.length)];
 
 // Data templates
-const categories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'Security', 'Network', 'Other'];
+const categories = [
+  'JCL',
+  'VSAM',
+  'DB2',
+  'Batch',
+  'Functional',
+  'CICS',
+  'IMS',
+  'Security',
+  'Network',
+  'Other',
+];
 const severities = ['critical', 'high', 'medium', 'low'];
 const errorCodes = ['S0C4', 'S0C7', 'S806', 'S822', 'S013', 'S217', 'S37', 'SB37', 'SD37'];
 
@@ -48,7 +59,7 @@ const kbTitles = [
   'Dataset Not Found IGD17101I',
   'Authorization Failure ICH408I',
   'Batch Job Loop Detected',
-  'REXX Exec Memory Error'
+  'REXX Exec Memory Error',
 ];
 
 const problems = [
@@ -61,7 +72,7 @@ const problems = [
   'Security violation when accessing system resources',
   'Network connection dropping during file transfer',
   'Memory allocation failure in COBOL program',
-  'Dataset contention issues in production'
+  'Dataset contention issues in production',
 ];
 
 const solutions = [
@@ -69,7 +80,7 @@ const solutions = [
   '1. Verify dataset exists using ISPF 3.4\n2. Check DISP parameter in JCL\n3. Ensure proper catalog entry\n4. Review job log for details',
   '1. Check bind timestamp mismatch\n2. Rebind the package\n3. Verify DBRM consistency\n4. Review DB2 authorization',
   '1. Verify file is not already open\n2. Check exclusive control\n3. Review SHAREOPTIONS\n4. Ensure proper CLOSE',
-  '1. Increase transaction timeout value\n2. Optimize database queries\n3. Check for resource contention\n4. Review CICS statistics'
+  '1. Increase transaction timeout value\n2. Optimize database queries\n3. Check for resource contention\n4. Review CICS statistics',
 ];
 
 // Generate SQL statements
@@ -109,7 +120,20 @@ BEGIN TRANSACTION;
 
   // 2. Generate Tags
   sql += '\n-- Tags\n';
-  const tags = ['mainframe', 'cobol', 'jcl', 'batch', 'db2', 'vsam', 'cics', 'ims', 'abend', 'error', 'production', 'critical'];
+  const tags = [
+    'mainframe',
+    'cobol',
+    'jcl',
+    'batch',
+    'db2',
+    'vsam',
+    'cics',
+    'ims',
+    'abend',
+    'error',
+    'production',
+    'critical',
+  ];
   kbEntries.forEach(entryId => {
     for (let j = 0; j < config.volumes.tags_per_entry; j++) {
       const tag = randomElement(tags);
@@ -120,9 +144,19 @@ BEGIN TRANSACTION;
   // 3. Generate Search History
   sql += '\n-- Search History\n';
   const searchQueries = [
-    'ABEND S0C4', 'JCL error', 'DB2 SQLCODE', 'VSAM status', 'CICS timeout',
-    'IMS deadlock', 'batch job failed', 'dataset not found', 'authorization error',
-    'COBOL compilation', 'file status 93', 'return code 12', 'system completion code'
+    'ABEND S0C4',
+    'JCL error',
+    'DB2 SQLCODE',
+    'VSAM status',
+    'CICS timeout',
+    'IMS deadlock',
+    'batch job failed',
+    'dataset not found',
+    'authorization error',
+    'COBOL compilation',
+    'file status 93',
+    'return code 12',
+    'system completion code',
   ];
 
   for (let i = 0; i < config.volumes.search_history; i++) {

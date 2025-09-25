@@ -72,53 +72,71 @@ console.log('📚 Sample KB Entry Structure:');
 console.log('This is what a typical KB entry would look like:');
 console.log('');
 console.log('```json');
-console.log(JSON.stringify({
-  id: 'kb-entry-uuid-12345',
-  title: 'S0C4 ABEND in COBOL Program During Array Processing',
-  problem: 'Program terminates with S0C4 protection exception when processing large arrays...',
-  solution: '1. Check OCCURS clause in data division...\n2. Verify subscript values...',
-  category: 'Functional',
-  subcategory: 'ABEND',
-  severity: 'high',
-  jcl_type: null,
-  cobol_version: 'Enterprise COBOL 6.3',
-  system_component: 'MVS',
-  error_codes: ['S0C4'],
-  usage_count: 45,
-  success_count: 38,
-  failure_count: 7,
-  relevance_score: 0.85,
-  tags: ['cobol', 'array', 'abend', 'runtime-error']
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      id: 'kb-entry-uuid-12345',
+      title: 'S0C4 ABEND in COBOL Program During Array Processing',
+      problem: 'Program terminates with S0C4 protection exception when processing large arrays...',
+      solution: '1. Check OCCURS clause in data division...\n2. Verify subscript values...',
+      category: 'Functional',
+      subcategory: 'ABEND',
+      severity: 'high',
+      jcl_type: null,
+      cobol_version: 'Enterprise COBOL 6.3',
+      system_component: 'MVS',
+      error_codes: ['S0C4'],
+      usage_count: 45,
+      success_count: 38,
+      failure_count: 7,
+      relevance_score: 0.85,
+      tags: ['cobol', 'array', 'abend', 'runtime-error'],
+    },
+    null,
+    2
+  )
+);
 console.log('```');
 console.log('');
 
 console.log('💰 Sample Cost Tracking Entry:');
 console.log('```json');
-console.log(JSON.stringify({
-  operation_id: 'ai-op-uuid-67890',
-  operation_type: 'semantic_search',
-  model: 'gemini-pro',
-  input_tokens: 250,
-  output_tokens: 150,
-  total_cost: 0.0025,
-  user_id: 'default',
-  success: true,
-  timestamp: new Date().toISOString()
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      operation_id: 'ai-op-uuid-67890',
+      operation_type: 'semantic_search',
+      model: 'gemini-pro',
+      input_tokens: 250,
+      output_tokens: 150,
+      total_cost: 0.0025,
+      user_id: 'default',
+      success: true,
+      timestamp: new Date().toISOString(),
+    },
+    null,
+    2
+  )
+);
 console.log('```');
 console.log('');
 
 console.log('🔐 Sample Authorization Decision:');
 console.log('```json');
-console.log(JSON.stringify({
-  operation_type: 'explain_error',
-  query: 'ABEND S0C4 in COBOL program',
-  estimated_cost: 0.0045,
-  user_decision: 'approved',
-  decision_time_ms: 1250,
-  timestamp: new Date().toISOString()
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      operation_type: 'explain_error',
+      query: 'ABEND S0C4 in COBOL program',
+      estimated_cost: 0.0045,
+      user_decision: 'approved',
+      decision_time_ms: 1250,
+      timestamp: new Date().toISOString(),
+    },
+    null,
+    2
+  )
+);
 console.log('```');
 console.log('');
 
@@ -151,7 +169,7 @@ const tables = [
   'user_preferences',
   'ai_cost_budgets',
   'ai_authorization_preferences',
-  'dashboard_metrics'
+  'dashboard_metrics',
 ];
 
 tables.forEach(table => {

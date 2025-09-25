@@ -24,11 +24,11 @@ export async function setupMemoryMonitoring() {
   await analyzer.startMonitoring();
 
   // Set up event listeners for real-time alerts
-  analyzer.on('monitoring:started', (baseline) => {
+  analyzer.on('monitoring:started', baseline => {
     console.log(`📊 Memory monitoring started. Baseline: ${formatBytes(baseline.heapUsed)}`);
   });
 
-  analyzer.on('snapshot:taken', (snapshot) => {
+  analyzer.on('snapshot:taken', snapshot => {
     console.log(`📸 Memory snapshot: ${formatBytes(snapshot.heapUsed)} heap`);
 
     // Check for immediate concerns
@@ -37,17 +37,17 @@ export async function setupMemoryMonitoring() {
     }
   });
 
-  analyzer.on('gc:occurred', (gcEvent) => {
+  analyzer.on('gc:occurred', gcEvent => {
     if (gcEvent.duration > 50) {
       console.warn(`🗑️ Long GC pause: ${gcEvent.duration.toFixed(2)}ms`);
     }
   });
 
-  analyzer.on('dom:large-mutation', (mutation) => {
+  analyzer.on('dom:large-mutation', mutation => {
     console.warn(`🌳 Large DOM mutation: +${mutation.addedNodes} -${mutation.removedNodes} nodes`);
   });
 
-  analyzer.on('long-session:alert', (issues) => {
+  analyzer.on('long-session:alert', issues => {
     console.error(`🚨 Long session memory alert: ${issues.length} critical issues`);
     issues.forEach(issue => {
       console.error(`  - ${issue.type}: ${issue.description}`);
@@ -78,8 +78,11 @@ export function trackComponentMemory(analyzer: MemoryAnalyzer, componentName: st
       console.log(`🔄 ${componentName} unmounted after ${duration}ms`);
       console.log(`   Memory delta: ${formatBytes(memoryDelta)}`);
 
-      if (memoryDelta > 1024 * 1024) { // 1MB threshold
-        console.warn(`⚠️ ${componentName} may have memory leak: ${formatBytes(memoryDelta)} not freed`);
+      if (memoryDelta > 1024 * 1024) {
+        // 1MB threshold
+        console.warn(
+          `⚠️ ${componentName} may have memory leak: ${formatBytes(memoryDelta)} not freed`
+        );
       }
     },
 
@@ -87,12 +90,13 @@ export function trackComponentMemory(analyzer: MemoryAnalyzer, componentName: st
       const updateSnapshot = await analyzer.takeSnapshot();
       const memoryDelta = updateSnapshot.heapUsed - mountSnapshot.heapUsed;
 
-      if (memoryDelta > 5 * 1024 * 1024) { // 5MB threshold
+      if (memoryDelta > 5 * 1024 * 1024) {
+        // 5MB threshold
         console.warn(`⚠️ ${componentName} memory growth: ${formatBytes(memoryDelta)}`);
         console.log(`   Props size: ${getObjectSize(props)}`);
         console.log(`   State size: ${getObjectSize(state)}`);
       }
-    }
+    },
   };
 }
 
@@ -115,17 +119,24 @@ export function trackServiceMemory(serviceName: string) {
         const memoryDelta = endMemory - startMemory;
         const duration = Date.now() - startTime;
 
-        console.log(`📊 ${serviceName}.${operationName}: ${duration}ms, ${formatBytes(memoryDelta)} memory`);
+        console.log(
+          `📊 ${serviceName}.${operationName}: ${duration}ms, ${formatBytes(memoryDelta)} memory`
+        );
 
-        if (memoryDelta > 10 * 1024 * 1024) { // 10MB threshold
-          console.warn(`⚠️ ${serviceName}.${operationName} used excessive memory: ${formatBytes(memoryDelta)}`);
+        if (memoryDelta > 10 * 1024 * 1024) {
+          // 10MB threshold
+          console.warn(
+            `⚠️ ${serviceName}.${operationName} used excessive memory: ${formatBytes(memoryDelta)}`
+          );
         }
 
         return result;
       } catch (error) {
         const endMemory = process.memoryUsage().heapUsed;
         const memoryDelta = endMemory - startMemory;
-        console.error(`❌ ${serviceName}.${operationName} failed with ${formatBytes(memoryDelta)} memory delta`);
+        console.error(
+          `❌ ${serviceName}.${operationName} failed with ${formatBytes(memoryDelta)} memory delta`
+        );
         throw error;
       }
     },
@@ -141,7 +152,7 @@ export function trackServiceMemory(serviceName: string) {
         totalMemoryDelta: totalDelta,
         averageMemoryGrowthRate: totalDelta / (uptime / 1000), // bytes per second
       };
-    }
+    },
   };
 }
 
@@ -153,31 +164,31 @@ export function analyzeCacheMemory(cache: any, cacheName: string) {
     cacheSize: 0,
     itemCount: 0,
     averageItemSize: 0,
-    largestItems: [] as Array<{key: string, size: number}>,
-    recommendations: [] as string[]
+    largestItems: [] as Array<{ key: string; size: number }>,
+    recommendations: [] as string[],
   };
 
   if (cache instanceof Map) {
     analysis.itemCount = cache.size;
-    const itemSizes: Array<{key: string, size: number}> = [];
+    const itemSizes: Array<{ key: string; size: number }> = [];
 
     cache.forEach((value, key) => {
       const size = getObjectSize(value);
       analysis.cacheSize += size;
-      itemSizes.push({key: String(key), size});
+      itemSizes.push({ key: String(key), size });
     });
 
     analysis.averageItemSize = analysis.cacheSize / analysis.itemCount;
-    analysis.largestItems = itemSizes
-      .sort((a, b) => b.size - a.size)
-      .slice(0, 5);
+    analysis.largestItems = itemSizes.sort((a, b) => b.size - a.size).slice(0, 5);
 
     // Generate recommendations
-    if (analysis.cacheSize > 50 * 1024 * 1024) { // 50MB
+    if (analysis.cacheSize > 50 * 1024 * 1024) {
+      // 50MB
       analysis.recommendations.push('Cache size exceeds 50MB - consider implementing LRU eviction');
     }
 
-    if (analysis.averageItemSize > 1024 * 1024) { // 1MB
+    if (analysis.averageItemSize > 1024 * 1024) {
+      // 1MB
       analysis.recommendations.push('Large average item size - consider compression or chunking');
     }
 
@@ -272,7 +283,7 @@ export async function runLongSessionTest(analyzer: MemoryAnalyzer, durationHours
       () => simulateKBEntry(),
       () => simulateDataImport(),
       () => simulateCacheUsage(),
-      () => simulateUIInteraction()
+      () => simulateUIInteraction(),
     ];
 
     while (Date.now() - testStartTime < testDuration) {
@@ -307,12 +318,14 @@ export async function runLongSessionTest(analyzer: MemoryAnalyzer, durationHours
 // Helper functions for simulation
 async function simulateSearch() {
   // Simulate search operation with memory allocation
-  const fakeResults = Array(100).fill(0).map(() => ({
-    id: Math.random().toString(36),
-    title: 'Sample KB Entry ' + Math.random(),
-    content: 'Lorem ipsum '.repeat(100),
-    metadata: { score: Math.random(), timestamp: new Date() }
-  }));
+  const fakeResults = Array(100)
+    .fill(0)
+    .map(() => ({
+      id: Math.random().toString(36),
+      title: 'Sample KB Entry ' + Math.random(),
+      content: 'Lorem ipsum '.repeat(100),
+      metadata: { score: Math.random(), timestamp: new Date() },
+    }));
 
   // Simulate processing delay
   await new Promise(resolve => setTimeout(resolve, 100));
@@ -327,10 +340,14 @@ async function simulateKBEntry() {
     title: 'Test Entry',
     content: 'Large content '.repeat(1000),
     metadata: {
-      tags: Array(20).fill(0).map(() => 'tag-' + Math.random()),
+      tags: Array(20)
+        .fill(0)
+        .map(() => 'tag-' + Math.random()),
       category: 'Test',
-      attachments: Array(5).fill(0).map(() => ({ data: 'binary data '.repeat(100) }))
-    }
+      attachments: Array(5)
+        .fill(0)
+        .map(() => ({ data: 'binary data '.repeat(100) })),
+    },
   };
 
   await new Promise(resolve => setTimeout(resolve, 200));
@@ -338,11 +355,15 @@ async function simulateKBEntry() {
 
 async function simulateDataImport() {
   // Simulate large data import
-  const importData = Array(1000).fill(0).map(() => ({
-    id: Math.random().toString(36),
-    data: 'Large import data '.repeat(50),
-    relationships: Array(10).fill(0).map(() => Math.random())
-  }));
+  const importData = Array(1000)
+    .fill(0)
+    .map(() => ({
+      id: Math.random().toString(36),
+      data: 'Large import data '.repeat(50),
+      relationships: Array(10)
+        .fill(0)
+        .map(() => Math.random()),
+    }));
 
   await new Promise(resolve => setTimeout(resolve, 500));
 }
@@ -354,7 +375,7 @@ async function simulateCacheUsage() {
   for (let i = 0; i < 100; i++) {
     cache.set(`key-${i}`, {
       data: 'Cached data '.repeat(50),
-      metadata: { created: new Date(), accessed: 0 }
+      metadata: { created: new Date(), accessed: 0 },
     });
   }
 
@@ -365,12 +386,14 @@ async function simulateCacheUsage() {
 async function simulateUIInteraction() {
   // Simulate DOM manipulation
   if (typeof document !== 'undefined') {
-    const elements = Array(50).fill(0).map(() => {
-      const div = document.createElement('div');
-      div.innerHTML = 'Test content '.repeat(20);
-      div.className = 'test-element';
-      return div;
-    });
+    const elements = Array(50)
+      .fill(0)
+      .map(() => {
+        const div = document.createElement('div');
+        div.innerHTML = 'Test content '.repeat(20);
+        div.className = 'test-element';
+        return div;
+      });
 
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -396,7 +419,4 @@ function getObjectSize(obj: any): number {
   }
 }
 
-export {
-  formatBytes,
-  getObjectSize
-};
+export { formatBytes, getObjectSize };

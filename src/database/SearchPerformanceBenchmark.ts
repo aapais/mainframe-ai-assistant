@@ -1,6 +1,6 @@
 /**
  * Comprehensive Search Performance Benchmark
- * 
+ *
  * Tests search operations specifically for 1000+ KB entries to ensure
  * sub-1s performance across various query types and conditions.
  */
@@ -53,17 +53,19 @@ export class SearchPerformanceBenchmark {
   /**
    * Run comprehensive benchmark suite for search operations
    */
-  async runSearchBenchmark(options: {
-    datasetSize?: number;
-    iterations?: number;
-    includeStressTest?: boolean;
-    enableOptimizations?: boolean;
-  } = {}): Promise<BenchmarkSuite> {
+  async runSearchBenchmark(
+    options: {
+      datasetSize?: number;
+      iterations?: number;
+      includeStressTest?: boolean;
+      enableOptimizations?: boolean;
+    } = {}
+  ): Promise<BenchmarkSuite> {
     const {
       datasetSize = 1000,
       iterations = 100,
       includeStressTest = true,
-      enableOptimizations = true
+      enableOptimizations = true,
     } = options;
 
     console.log(`🏁 Starting search performance benchmark with ${datasetSize} entries...`);
@@ -123,7 +125,7 @@ export class SearchPerformanceBenchmark {
       suiteName: 'Search Performance Benchmark',
       description: `Performance testing for ${datasetSize} KB entries`,
       results,
-      summary
+      summary,
     };
   }
 
@@ -141,7 +143,7 @@ export class SearchPerformanceBenchmark {
       'access denied',
       'invalid',
       'corrupt',
-      'deadlock'
+      'deadlock',
     ];
 
     const latencies: number[] = [];
@@ -153,24 +155,23 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const query = testQueries[i % testQueries.length];
-      
+
       try {
         const operationStart = Date.now();
-        
+
         // Execute search
         const results = await this.db.search(query, { limit: 10 });
-        
+
         const latency = Date.now() - operationStart;
         latencies.push(latency);
 
         // Track index usage (simplified)
         indexesUsed.add('kb_fts_index');
-        
+
         // Validate results
         if (results.length === 0 && i < 50) {
           console.warn(`No results for query: ${query}`);
         }
-        
       } catch (error) {
         errors++;
         console.error(`Error in basic text search: ${error.message}`);
@@ -188,7 +189,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: endMemory - startMemory,
       indexesUsed: Array.from(indexesUsed),
-      recommendations: this.getBasicSearchRecommendations(latencies)
+      recommendations: this.getBasicSearchRecommendations(latencies),
     });
   }
 
@@ -204,7 +205,7 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const category = categories[i % categories.length];
-      
+
       try {
         const operationStart = Date.now();
         const results = await this.db.search(`category:${category}`, { limit: 20 });
@@ -222,7 +223,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_category_search'],
-      recommendations: this.getCategorySearchRecommendations(latencies)
+      recommendations: this.getCategorySearchRecommendations(latencies),
     });
   }
 
@@ -238,7 +239,7 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const tag = tags[i % tags.length];
-      
+
       try {
         const operationStart = Date.now();
         const results = await this.db.search(`tag:${tag}`, { limit: 15 });
@@ -256,7 +257,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_tag_search'],
-      recommendations: this.getTagSearchRecommendations(latencies)
+      recommendations: this.getTagSearchRecommendations(latencies),
     });
   }
 
@@ -269,7 +270,7 @@ export class SearchPerformanceBenchmark {
       'file system access permission denied',
       'network connectivity issues troubleshooting',
       'memory allocation failure recovery',
-      'application performance degradation analysis'
+      'application performance degradation analysis',
     ];
 
     const latencies: number[] = [];
@@ -279,13 +280,13 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const query = complexQueries[i % complexQueries.length];
-      
+
       try {
         const operationStart = Date.now();
-        const results = await this.db.search(query, { 
+        const results = await this.db.search(query, {
           limit: 10,
           sortBy: 'relevance',
-          enableHighlighting: true 
+          enableHighlighting: true,
         });
         latencies.push(Date.now() - operationStart);
       } catch (error) {
@@ -301,7 +302,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['kb_fts', 'idx_bm25_ranking'],
-      recommendations: this.getFullTextSearchRecommendations(latencies)
+      recommendations: this.getFullTextSearchRecommendations(latencies),
     });
   }
 
@@ -332,7 +333,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_usage_count', 'idx_success_rate'],
-      recommendations: this.getPopularEntriesRecommendations(latencies)
+      recommendations: this.getPopularEntriesRecommendations(latencies),
     });
   }
 
@@ -363,7 +364,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_created_at', 'idx_updated_at'],
-      recommendations: this.getRecentEntriesRecommendations(latencies)
+      recommendations: this.getRecentEntriesRecommendations(latencies),
     });
   }
 
@@ -374,7 +375,7 @@ export class SearchPerformanceBenchmark {
     const complexScenarios = [
       { category: 'DB2', severity: 'high', sortBy: 'usage' },
       { category: 'JCL', severity: 'critical', sortBy: 'success_rate' },
-      { category: 'VSAM', severity: 'medium', sortBy: 'relevance' }
+      { category: 'VSAM', severity: 'medium', sortBy: 'relevance' },
     ];
 
     const latencies: number[] = [];
@@ -384,14 +385,14 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const scenario = complexScenarios[i % complexScenarios.length];
-      
+
       try {
         const operationStart = Date.now();
         const results = await this.db.searchWithFacets('error', {
           category: scenario.category,
           severity: scenario.severity,
           sortBy: scenario.sortBy as any,
-          limit: 15
+          limit: 15,
         });
         latencies.push(Date.now() - operationStart);
       } catch (error) {
@@ -407,7 +408,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_multi_criteria', 'idx_faceted_search'],
-      recommendations: this.getComplexSearchRecommendations(latencies)
+      recommendations: this.getComplexSearchRecommendations(latencies),
     });
   }
 
@@ -422,12 +423,12 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const offset = (i % 10) * 10; // Test different pages
-      
+
       try {
         const operationStart = Date.now();
-        const results = await this.db.search('system', { 
-          limit: 10, 
-          offset 
+        const results = await this.db.search('system', {
+          limit: 10,
+          offset,
         });
         latencies.push(Date.now() - operationStart);
       } catch (error) {
@@ -443,7 +444,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_pagination_optimized'],
-      recommendations: this.getPaginationRecommendations(latencies)
+      recommendations: this.getPaginationRecommendations(latencies),
     });
   }
 
@@ -459,7 +460,7 @@ export class SearchPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const prefix = prefixes[i % prefixes.length];
-      
+
       try {
         const operationStart = Date.now();
         const results = await this.db.autoComplete(prefix, 10);
@@ -477,7 +478,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_autocomplete'],
-      recommendations: this.getAutoCompleteRecommendations(latencies)
+      recommendations: this.getAutoCompleteRecommendations(latencies),
     });
   }
 
@@ -500,13 +501,13 @@ export class SearchPerformanceBenchmark {
     // Second pass - test cache hits
     for (let i = 0; i < iterations; i++) {
       const query = cachedQueries[i % cachedQueries.length];
-      
+
       try {
         const operationStart = Date.now();
         const results = await this.db.search(query);
         const latency = Date.now() - operationStart;
         latencies.push(latency);
-        
+
         // Assume cache hit if latency is very low
         if (latency < 50) cacheHits++;
       } catch (error) {
@@ -525,7 +526,7 @@ export class SearchPerformanceBenchmark {
       memoryDelta: 0,
       indexesUsed: ['cache_system'],
       recommendations: this.getCacheRecommendations(latencies, cacheHitRate),
-      cacheHitRate
+      cacheHitRate,
     });
   }
 
@@ -536,7 +537,7 @@ export class SearchPerformanceBenchmark {
     const concurrency = 10;
     const queriesPerThread = Math.floor(iterations / concurrency);
     const queries = ['error', 'system', 'database', 'network', 'file'];
-    
+
     const latencies: number[] = [];
     let errors = 0;
 
@@ -545,10 +546,10 @@ export class SearchPerformanceBenchmark {
     // Create concurrent search operations
     const searchPromises = Array.from({ length: concurrency }, async (_, threadIndex) => {
       const threadLatencies: number[] = [];
-      
+
       for (let i = 0; i < queriesPerThread; i++) {
         const query = queries[(threadIndex + i) % queries.length];
-        
+
         try {
           const operationStart = Date.now();
           const results = await this.db.search(query);
@@ -557,13 +558,13 @@ export class SearchPerformanceBenchmark {
           errors++;
         }
       }
-      
+
       return threadLatencies;
     });
 
     // Wait for all concurrent operations to complete
     const threadResults = await Promise.all(searchPromises);
-    
+
     // Combine all latencies
     threadResults.forEach(threadLatencies => {
       latencies.push(...threadLatencies);
@@ -577,7 +578,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['connection_pool', 'concurrent_indexes'],
-      recommendations: this.getConcurrencyRecommendations(latencies)
+      recommendations: this.getConcurrencyRecommendations(latencies),
     });
   }
 
@@ -609,7 +610,7 @@ export class SearchPerformanceBenchmark {
       errors,
       memoryDelta: 0,
       indexesUsed: ['idx_large_results'],
-      recommendations: this.getLargeResultsRecommendations(latencies)
+      recommendations: this.getLargeResultsRecommendations(latencies),
     });
   }
 
@@ -628,7 +629,7 @@ export class SearchPerformanceBenchmark {
     cacheHitRate?: number;
   }): BenchmarkResult {
     const { latencies, totalDuration, totalOperations, errors } = data;
-    
+
     if (latencies.length === 0) {
       return {
         testName: data.testName,
@@ -645,7 +646,10 @@ export class SearchPerformanceBenchmark {
         memoryUsed: data.memoryDelta,
         cacheHitRate: data.cacheHitRate,
         indexesUsed: data.indexesUsed,
-        recommendations: [...data.recommendations, 'All operations failed - investigate immediately']
+        recommendations: [
+          ...data.recommendations,
+          'All operations failed - investigate immediately',
+        ],
       };
     }
 
@@ -668,7 +672,7 @@ export class SearchPerformanceBenchmark {
       memoryUsed: data.memoryDelta,
       cacheHitRate: data.cacheHitRate,
       indexesUsed: data.indexesUsed,
-      recommendations: data.recommendations
+      recommendations: data.recommendations,
     };
   }
 
@@ -678,19 +682,24 @@ export class SearchPerformanceBenchmark {
   private analyzeBenchmarkResults(results: BenchmarkResult[]): BenchmarkSuite['summary'] {
     const passedTests = results.filter(r => r.averageLatency < 1000 && r.errorRate < 5).length;
     const failedTests = results.length - passedTests;
-    const averagePerformance = results.reduce((sum, r) => sum + r.operationsPerSecond, 0) / results.length;
+    const averagePerformance =
+      results.reduce((sum, r) => sum + r.operationsPerSecond, 0) / results.length;
 
     const overallRecommendations: string[] = [];
 
     // Global performance analysis
     const slowTests = results.filter(r => r.p95Latency > 1000);
     if (slowTests.length > 0) {
-      overallRecommendations.push(`${slowTests.length} tests have P95 latency > 1s - requires optimization`);
+      overallRecommendations.push(
+        `${slowTests.length} tests have P95 latency > 1s - requires optimization`
+      );
     }
 
     const highErrorRateTests = results.filter(r => r.errorRate > 1);
     if (highErrorRateTests.length > 0) {
-      overallRecommendations.push(`${highErrorRateTests.length} tests have error rates > 1% - investigate failures`);
+      overallRecommendations.push(
+        `${highErrorRateTests.length} tests have error rates > 1% - investigate failures`
+      );
     }
 
     if (averagePerformance < 100) {
@@ -702,7 +711,7 @@ export class SearchPerformanceBenchmark {
       passedTests,
       failedTests,
       averagePerformance: Math.round(averagePerformance),
-      overallRecommendations
+      overallRecommendations,
     };
   }
 
@@ -711,9 +720,11 @@ export class SearchPerformanceBenchmark {
    */
   private async ensureDatasetSize(targetSize: number): Promise<void> {
     const currentSize = this.db.getEntryCount();
-    
+
     if (currentSize < targetSize) {
-      console.log(`📊 Current dataset: ${currentSize} entries. Target: ${targetSize}. Generating additional entries...`);
+      console.log(
+        `📊 Current dataset: ${currentSize} entries. Target: ${targetSize}. Generating additional entries...`
+      );
       await this.generateTestData(targetSize - currentSize);
     } else {
       console.log(`✅ Dataset ready: ${currentSize} entries`);
@@ -736,7 +747,7 @@ export class SearchPerformanceBenchmark {
       'Invalid parameter specified',
       'Resource temporarily unavailable',
       'Operation timed out',
-      'Configuration error detected'
+      'Configuration error detected',
     ];
 
     const baseSolutions = [
@@ -749,7 +760,7 @@ export class SearchPerformanceBenchmark {
       'Clear cache and retry',
       'Update system resources',
       'Check system status',
-      'Review error logs'
+      'Review error logs',
     ];
 
     for (let i = 0; i < count; i++) {
@@ -759,7 +770,7 @@ export class SearchPerformanceBenchmark {
         solution: `${baseSolutions[i % baseSolutions.length]} - Specific steps for issue ${i + 1000}`,
         category: categories[i % categories.length],
         severity: severities[i % severities.length],
-        tags: [`test-${i}`, `benchmark`, `performance`]
+        tags: [`test-${i}`, `benchmark`, `performance`],
       };
 
       await this.db.addEntry(entry, 'benchmark-system');
@@ -776,109 +787,109 @@ export class SearchPerformanceBenchmark {
   private getBasicSearchRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 500) recommendations.push('Consider FTS index optimization');
     if (Math.max(...latencies) > 2000) recommendations.push('Investigate slow query outliers');
-    
+
     return recommendations;
   }
 
   private getCategorySearchRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 200) recommendations.push('Add category covering index');
-    
+
     return recommendations;
   }
 
   private getTagSearchRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 300) recommendations.push('Optimize tag junction table');
-    
+
     return recommendations;
   }
 
   private getFullTextSearchRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 800) recommendations.push('Rebuild FTS index');
-    
+
     return recommendations;
   }
 
   private getPopularEntriesRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 100) recommendations.push('Cache popular entries');
-    
+
     return recommendations;
   }
 
   private getRecentEntriesRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 150) recommendations.push('Optimize timestamp indexes');
-    
+
     return recommendations;
   }
 
   private getComplexSearchRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 1000) recommendations.push('Add composite indexes for multi-criteria queries');
-    
+
     return recommendations;
   }
 
   private getPaginationRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 400) recommendations.push('Implement cursor-based pagination');
-    
+
     return recommendations;
   }
 
   private getAutoCompleteRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 50) recommendations.push('Implement prefix tree for autocomplete');
-    
+
     return recommendations;
   }
 
   private getCacheRecommendations(latencies: number[], cacheHitRate: number): string[] {
     const recommendations = [];
-    
+
     if (cacheHitRate < 70) recommendations.push('Increase cache TTL for frequent queries');
     if (cacheHitRate < 50) recommendations.push('Review cache eviction strategy');
-    
+
     return recommendations;
   }
 
   private getConcurrencyRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 600) recommendations.push('Increase connection pool size');
-    
+
     return recommendations;
   }
 
   private getLargeResultsRecommendations(latencies: number[]): string[] {
     const recommendations = [];
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    
+
     if (avgLatency > 1500) recommendations.push('Implement streaming for large result sets');
-    
+
     return recommendations;
   }
 }

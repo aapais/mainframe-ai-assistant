@@ -119,7 +119,6 @@ export class ReportGenerator extends EventEmitter {
       this.emit('reportCompleted', result);
 
       return result;
-
     } catch (error) {
       this.activeReports.delete(config.id);
       const errorResult: ReportResult = {
@@ -132,9 +131,9 @@ export class ReportGenerator extends EventEmitter {
           rowCount: 0,
           executionTime: 0,
           dataSourceVersion: 'unknown',
-          parameters: config.parameters
+          parameters: config.parameters,
         },
-        errors: [error instanceof Error ? error.message : String(error)]
+        errors: [error instanceof Error ? error.message : String(error)],
       };
 
       this.emit('reportError', errorResult);
@@ -143,7 +142,10 @@ export class ReportGenerator extends EventEmitter {
     }
   }
 
-  private async executeReportGeneration(reportId: string, config: ReportConfig): Promise<ReportResult> {
+  private async executeReportGeneration(
+    reportId: string,
+    config: ReportConfig
+  ): Promise<ReportResult> {
     const startTime = Date.now();
     const connector = this.dataConnectors.get(config.dataSource);
 
@@ -178,11 +180,10 @@ export class ReportGenerator extends EventEmitter {
           rowCount: Array.isArray(processedData) ? processedData.length : 1,
           executionTime,
           dataSourceVersion: await this.getDataSourceVersion(connector),
-          parameters: config.parameters
+          parameters: config.parameters,
         },
-        warnings: this.validateReportData(processedData, config)
+        warnings: this.validateReportData(processedData, config),
       };
-
     } finally {
       await connector.disconnect();
     }
@@ -217,40 +218,54 @@ export class ReportGenerator extends EventEmitter {
   }
 
   private buildWhereClause(filters: FilterConfig[]): string {
-    return filters.map((filter, index) => {
-      let clause = '';
+    return filters
+      .map((filter, index) => {
+        let clause = '';
 
-      if (index > 0 && filter.logicalOperator) {
-        clause += ` ${filter.logicalOperator} `;
-      }
+        if (index > 0 && filter.logicalOperator) {
+          clause += ` ${filter.logicalOperator} `;
+        }
 
-      clause += this.buildFilterClause(filter);
-      return clause;
-    }).join('');
+        clause += this.buildFilterClause(filter);
+        return clause;
+      })
+      .join('');
   }
 
   private buildFilterClause(filter: FilterConfig): string {
     const { field, operator, value } = filter;
 
     switch (operator) {
-      case 'eq': return `${field} = '${value}'`;
-      case 'ne': return `${field} != '${value}'`;
-      case 'gt': return `${field} > ${value}`;
-      case 'gte': return `${field} >= ${value}`;
-      case 'lt': return `${field} < ${value}`;
-      case 'lte': return `${field} <= ${value}`;
-      case 'in': return `${field} IN (${Array.isArray(value) ? value.map(v => `'${v}'`).join(',') : value})`;
-      case 'like': return `${field} LIKE '%${value}%'`;
-      case 'between': return `${field} BETWEEN '${value.start}' AND '${value.end}'`;
-      default: throw new Error(`Unsupported filter operator: ${operator}`);
+      case 'eq':
+        return `${field} = '${value}'`;
+      case 'ne':
+        return `${field} != '${value}'`;
+      case 'gt':
+        return `${field} > ${value}`;
+      case 'gte':
+        return `${field} >= ${value}`;
+      case 'lt':
+        return `${field} < ${value}`;
+      case 'lte':
+        return `${field} <= ${value}`;
+      case 'in':
+        return `${field} IN (${Array.isArray(value) ? value.map(v => `'${v}'`).join(',') : value})`;
+      case 'like':
+        return `${field} LIKE '%${value}%'`;
+      case 'between':
+        return `${field} BETWEEN '${value.start}' AND '${value.end}'`;
+      default:
+        throw new Error(`Unsupported filter operator: ${operator}`);
     }
   }
 
   private buildSelectClause(aggregations: AggregationConfig[]): string {
-    return aggregations.map(agg => {
-      const func = agg.function.toUpperCase();
-      return `${func}(${agg.field}) as ${agg.field}_${agg.function}`;
-    }).join(', ');
+    return aggregations
+      .map(agg => {
+        const func = agg.function.toUpperCase();
+        return `${func}(${agg.field}) as ${agg.field}_${agg.function}`;
+      })
+      .join(', ');
   }
 
   private buildGroupByClause(aggregations: AggregationConfig[]): string | null {
@@ -286,7 +301,7 @@ export class ReportGenerator extends EventEmitter {
     return data.map(row => ({
       ...row,
       calculated_metrics: this.calculateMetrics(row, config.parameters),
-      trend_indicators: this.calculateTrends(row, data)
+      trend_indicators: this.calculateTrends(row, data),
     }));
   }
 
@@ -295,7 +310,7 @@ export class ReportGenerator extends EventEmitter {
     return data.map(row => ({
       ...row,
       performance_score: this.calculatePerformanceScore(row),
-      benchmark_comparison: this.compareToBenchmark(row, config.parameters)
+      benchmark_comparison: this.compareToBenchmark(row, config.parameters),
     }));
   }
 
@@ -304,7 +319,7 @@ export class ReportGenerator extends EventEmitter {
     return data.map(row => ({
       ...row,
       usage_patterns: this.identifyUsagePatterns(row),
-      activity_classification: this.classifyActivity(row)
+      activity_classification: this.classifyActivity(row),
     }));
   }
 
@@ -313,7 +328,7 @@ export class ReportGenerator extends EventEmitter {
     return {
       growth_rate: 0,
       conversion_rate: 0,
-      efficiency_score: 0
+      efficiency_score: 0,
     };
   }
 
@@ -322,7 +337,7 @@ export class ReportGenerator extends EventEmitter {
     return {
       direction: 'stable',
       magnitude: 0,
-      confidence: 0.5
+      confidence: 0.5,
     };
   }
 
@@ -336,7 +351,7 @@ export class ReportGenerator extends EventEmitter {
     return {
       vs_benchmark: 0,
       percentile: 50,
-      category: 'average'
+      category: 'average',
     };
   }
 
@@ -350,7 +365,10 @@ export class ReportGenerator extends EventEmitter {
     return 'normal';
   }
 
-  private async generateVisualizations(data: any[], configs: VisualizationConfig[]): Promise<any[]> {
+  private async generateVisualizations(
+    data: any[],
+    configs: VisualizationConfig[]
+  ): Promise<any[]> {
     const visualizations = [];
 
     for (const config of configs) {
@@ -371,7 +389,7 @@ export class ReportGenerator extends EventEmitter {
       type: config.type,
       title: config.title,
       data: this.mapDataForVisualization(data, config.dataMapping),
-      config: config.styling || {}
+      config: config.styling || {},
     };
   }
 

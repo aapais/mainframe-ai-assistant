@@ -246,7 +246,7 @@
   cursor: pointer;
 }
 
-.form-check-custom .form-check-input[type="radio"] {
+.form-check-custom .form-check-input[type='radio'] {
   border-radius: 50%;
 }
 
@@ -269,7 +269,7 @@
   transform: translate(-50%, -60%) rotate(45deg);
 }
 
-.form-check-custom .form-check-input[type="radio"]:checked::after {
+.form-check-custom .form-check-input[type='radio']:checked::after {
   width: 0.5rem;
   height: 0.5rem;
   border: none;
@@ -413,7 +413,9 @@
   pointer-events: none;
   border: 1px solid transparent;
   transform-origin: 0 0;
-  transition: opacity 0.1s ease-in-out, transform 0.1s ease-in-out;
+  transition:
+    opacity 0.1s ease-in-out,
+    transform 0.1s ease-in-out;
   margin: 0;
 }
 
@@ -640,7 +642,7 @@ html body .form-textarea:focus {
 }
 
 /* Ensure our styles take precedence */
-div[data-component="form"] .form-input {
+div[data-component='form'] .form-input {
   all: unset;
   width: 100%;
   padding: 0.75rem;

@@ -1,5 +1,10 @@
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
-import APIKeyManager, { APIProvider, APIKey, APIUsageStats, ConnectionTestResult } from '../../services/APIKeyManager';
+import APIKeyManager, {
+  APIProvider,
+  APIKey,
+  APIUsageStats,
+  ConnectionTestResult,
+} from '../../services/APIKeyManager';
 
 export interface APISettingsIPC {
   // Provider management
@@ -16,10 +21,16 @@ export interface APISettingsIPC {
     monthlyLimit?: number
   ) => Promise<{ success: boolean; keyId?: string; error?: string }>;
   'api-settings:delete-key': (keyId: string) => Promise<{ success: boolean; error?: string }>;
-  'api-settings:update-key-status': (keyId: string, isActive: boolean) => Promise<{ success: boolean; error?: string }>;
+  'api-settings:update-key-status': (
+    keyId: string,
+    isActive: boolean
+  ) => Promise<{ success: boolean; error?: string }>;
 
   // Connection testing
-  'api-settings:test-connection': (providerId: string, apiKey: string) => Promise<ConnectionTestResult>;
+  'api-settings:test-connection': (
+    providerId: string,
+    apiKey: string
+  ) => Promise<ConnectionTestResult>;
   'api-settings:test-stored-key': (keyId: string) => Promise<ConnectionTestResult>;
 
   // Usage statistics
@@ -33,12 +44,21 @@ export interface APISettingsIPC {
   ) => Promise<{ success: boolean; error?: string }>;
 
   // Import/Export
-  'api-settings:import-from-env': (envFilePath: string) => Promise<{ imported: number; errors: string[] }>;
-  'api-settings:export-configuration': () => Promise<{ success: boolean; data?: string; error?: string }>;
+  'api-settings:import-from-env': (
+    envFilePath: string
+  ) => Promise<{ imported: number; errors: string[] }>;
+  'api-settings:export-configuration': () => Promise<{
+    success: boolean;
+    data?: string;
+    error?: string;
+  }>;
 
   // Security operations
   'api-settings:clear-all-keys': () => Promise<{ success: boolean; error?: string }>;
-  'api-settings:validate-key-format': (providerId: string, apiKey: string) => Promise<{ valid: boolean; error?: string }>;
+  'api-settings:validate-key-format': (
+    providerId: string,
+    apiKey: string
+  ) => Promise<{ valid: boolean; error?: string }>;
 
   // Session management
   'api-settings:get-session-keys': () => Promise<string[]>;
@@ -95,7 +115,10 @@ export class APISettingsHandler {
     }
   }
 
-  private async handleGetProvider(event: IpcMainInvokeEvent, providerId: string): Promise<APIProvider | null> {
+  private async handleGetProvider(
+    event: IpcMainInvokeEvent,
+    providerId: string
+  ): Promise<APIProvider | null> {
     try {
       return this.keyManager.getProvider(providerId) || null;
     } catch (error) {
@@ -127,7 +150,7 @@ export class APISettingsHandler {
       if (!providerId || !keyName || !apiKey) {
         return {
           success: false,
-          error: 'Provider ID, key name, and API key are required'
+          error: 'Provider ID, key name, and API key are required',
         };
       }
 
@@ -135,7 +158,7 @@ export class APISettingsHandler {
       if (apiKey.length < 10) {
         return {
           success: false,
-          error: 'API key appears to be too short'
+          error: 'API key appears to be too short',
         };
       }
 
@@ -149,13 +172,13 @@ export class APISettingsHandler {
 
       return {
         success: true,
-        keyId
+        keyId,
       };
     } catch (error) {
       console.error('Error storing API key:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -168,20 +191,20 @@ export class APISettingsHandler {
       if (!keyId) {
         return {
           success: false,
-          error: 'Key ID is required'
+          error: 'Key ID is required',
         };
       }
 
       const success = await this.keyManager.deleteApiKey(keyId);
       return {
         success,
-        error: success ? undefined : 'Key not found'
+        error: success ? undefined : 'Key not found',
       };
     } catch (error) {
       console.error('Error deleting API key:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -195,20 +218,20 @@ export class APISettingsHandler {
       if (!keyId) {
         return {
           success: false,
-          error: 'Key ID is required'
+          error: 'Key ID is required',
         };
       }
 
       const success = await this.keyManager.updateKeyStatus(keyId, isActive);
       return {
         success,
-        error: success ? undefined : 'Key not found'
+        error: success ? undefined : 'Key not found',
       };
     } catch (error) {
       console.error('Error updating key status:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -224,7 +247,7 @@ export class APISettingsHandler {
         return {
           success: false,
           responseTime: 0,
-          error: 'Provider ID and API key are required'
+          error: 'Provider ID and API key are required',
         };
       }
 
@@ -234,7 +257,7 @@ export class APISettingsHandler {
       return {
         success: false,
         responseTime: 0,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -248,7 +271,7 @@ export class APISettingsHandler {
         return {
           success: false,
           responseTime: 0,
-          error: 'Key ID is required'
+          error: 'Key ID is required',
         };
       }
 
@@ -257,7 +280,7 @@ export class APISettingsHandler {
         return {
           success: false,
           responseTime: 0,
-          error: 'API key not found'
+          error: 'API key not found',
         };
       }
 
@@ -267,7 +290,7 @@ export class APISettingsHandler {
         return {
           success: false,
           responseTime: 0,
-          error: 'Key information not found'
+          error: 'Key information not found',
         };
       }
 
@@ -277,7 +300,7 @@ export class APISettingsHandler {
       return {
         success: false,
         responseTime: 0,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -307,7 +330,7 @@ export class APISettingsHandler {
       if (!providerId) {
         return {
           success: false,
-          error: 'Provider ID is required'
+          error: 'Provider ID is required',
         };
       }
 
@@ -317,7 +340,7 @@ export class APISettingsHandler {
       console.error('Error recording usage:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -331,7 +354,7 @@ export class APISettingsHandler {
       if (!envFilePath) {
         return {
           imported: 0,
-          errors: ['Environment file path is required']
+          errors: ['Environment file path is required'],
         };
       }
 
@@ -340,7 +363,7 @@ export class APISettingsHandler {
       console.error('Error importing from env:', error);
       return {
         imported: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error occurred']
+        errors: [error instanceof Error ? error.message : 'Unknown error occurred'],
       };
     }
   }
@@ -352,13 +375,13 @@ export class APISettingsHandler {
       const data = await this.keyManager.exportConfiguration();
       return {
         success: true,
-        data
+        data,
       };
     } catch (error) {
       console.error('Error exporting configuration:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -374,7 +397,7 @@ export class APISettingsHandler {
       console.error('Error clearing all keys:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -388,7 +411,7 @@ export class APISettingsHandler {
       if (!providerId || !apiKey) {
         return {
           valid: false,
-          error: 'Provider ID and API key are required'
+          error: 'Provider ID and API key are required',
         };
       }
 
@@ -396,7 +419,7 @@ export class APISettingsHandler {
       if (!provider) {
         return {
           valid: false,
-          error: 'Unknown provider'
+          error: 'Unknown provider',
         };
       }
 
@@ -405,13 +428,13 @@ export class APISettingsHandler {
 
       return {
         valid,
-        error: valid ? undefined : `API key format should match: ${provider.apiKeyFormat}`
+        error: valid ? undefined : `API key format should match: ${provider.apiKeyFormat}`,
       };
     } catch (error) {
       console.error('Error validating key format:', error);
       return {
         valid: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -428,9 +451,7 @@ export class APISettingsHandler {
     }
   }
 
-  private async handleClearSessionKeys(
-    event: IpcMainInvokeEvent
-  ): Promise<{ success: boolean }> {
+  private async handleClearSessionKeys(event: IpcMainInvokeEvent): Promise<{ success: boolean }> {
     try {
       // Clear only session keys - this would need to be implemented in APIKeyManager
       // For now, just return success
@@ -459,7 +480,7 @@ export class APISettingsHandler {
       'api-settings:clear-all-keys',
       'api-settings:validate-key-format',
       'api-settings:get-session-keys',
-      'api-settings:clear-session-keys'
+      'api-settings:clear-session-keys',
     ];
 
     channels.forEach(channel => {

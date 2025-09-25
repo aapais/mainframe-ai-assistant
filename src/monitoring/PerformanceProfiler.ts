@@ -1,6 +1,6 @@
 /**
  * Performance Profiler for Search Operations
- * 
+ *
  * Deep performance analysis including query profiling,
  * memory usage analysis, CPU profiling, and database
  * query optimization insights.
@@ -16,12 +16,12 @@ export interface ProfileSession {
   startTime: number;
   endTime?: number;
   duration?: number;
-  
+
   // Profiling data
   queries: QueryProfile[];
   memorySnapshots: MemorySnapshot[];
   cpuProfile: CPUProfile;
-  
+
   // Analysis results
   bottlenecks: Bottleneck[];
   recommendations: string[];
@@ -33,23 +33,23 @@ export interface QueryProfile {
   query: string;
   normalizedQuery: string;
   strategy: string;
-  
+
   // Timing breakdown
   totalTime: number;
   parseTime: number;
   executionTime: number;
   resultProcessingTime: number;
-  
+
   // Database analysis
   explainPlan?: string;
   indexesUsed: string[];
   rowsExamined: number;
   rowsReturned: number;
-  
+
   // Memory and CPU
   memoryUsed: number;
   cpuTime: number;
-  
+
   // Optimization insights
   optimizationLevel: 'optimal' | 'good' | 'poor' | 'critical';
   suggestions: string[];
@@ -61,7 +61,7 @@ export interface MemorySnapshot {
   heapTotal: number;
   external: number;
   rss: number;
-  
+
   // Cache memory breakdown
   cacheMemory: {
     hot: number;
@@ -69,7 +69,7 @@ export interface MemorySnapshot {
     cold: number;
     total: number;
   };
-  
+
   // Memory pressure indicators
   gcEvents: number;
   memoryPressure: 'low' | 'medium' | 'high';
@@ -79,7 +79,7 @@ export interface CPUProfile {
   totalTime: number;
   userTime: number;
   systemTime: number;
-  
+
   // Function-level profiling
   hotFunctions: Array<{
     name: string;
@@ -88,7 +88,7 @@ export interface CPUProfile {
     callCount: number;
     averageTime: number;
   }>;
-  
+
   // CPU usage patterns
   utilizationPattern: Array<{
     timestamp: number;
@@ -102,7 +102,7 @@ export interface Bottleneck {
   description: string;
   impact: string;
   recommendations: string[];
-  
+
   // Supporting data
   evidence: {
     metric: string;
@@ -116,11 +116,11 @@ export interface SessionMetrics {
   averageQueryTime: number;
   slowestQuery: number;
   fastestQuery: number;
-  
+
   memoryEfficiency: number;
   cpuEfficiency: number;
   cacheEfficiency: number;
-  
+
   performanceScore: number; // 0-100
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
 }
@@ -138,12 +138,12 @@ export class PerformanceProfiler {
   private db: Database.Database;
   private logger: SearchLogger;
   private config: ProfilingConfig;
-  
+
   private activeSessions: Map<string, ProfileSession> = new Map();
   private performanceObserver?: PerformanceObserver;
   private memoryMonitor?: ReturnType<typeof setTimeout>;
   private cpuBaseline: { user: number; system: number } = { user: 0, system: 0 };
-  
+
   constructor(
     database: Database.Database,
     logger: SearchLogger,
@@ -158,14 +158,14 @@ export class PerformanceProfiler {
       sampleInterval: 1000, // 1 second
       maxSessions: 10,
       autoAnalysis: true,
-      ...config
+      ...config,
     };
-    
+
     this.initializeProfilingTables();
     this.setupPerformanceObserver();
     this.startMemoryMonitoring();
     this.initializeCPUBaseline();
-    
+
     console.log('📊 Performance profiler initialized');
   }
 
@@ -174,7 +174,7 @@ export class PerformanceProfiler {
    */
   startSession(name: string): string {
     const sessionId = this.generateSessionId();
-    
+
     const session: ProfileSession = {
       id: sessionId,
       name,
@@ -186,7 +186,7 @@ export class PerformanceProfiler {
         userTime: 0,
         systemTime: 0,
         hotFunctions: [],
-        utilizationPattern: []
+        utilizationPattern: [],
       },
       bottlenecks: [],
       recommendations: [],
@@ -199,17 +199,17 @@ export class PerformanceProfiler {
         cpuEfficiency: 0,
         cacheEfficiency: 0,
         performanceScore: 0,
-        grade: 'F'
-      }
+        grade: 'F',
+      },
     };
-    
+
     this.activeSessions.set(sessionId, session);
-    
+
     // Cleanup old sessions
     if (this.activeSessions.size > this.config.maxSessions) {
       this.cleanupOldSessions();
     }
-    
+
     console.log(`🚀 Started profiling session: ${name} (${sessionId})`);
     return sessionId;
   }
@@ -223,19 +223,19 @@ export class PerformanceProfiler {
       console.warn(`Profiling session ${sessionId} not found`);
       return null;
     }
-    
+
     session.endTime = performance.now();
     session.duration = session.endTime - session.startTime;
-    
+
     // Perform analysis
     if (this.config.autoAnalysis) {
       this.analyzeSession(session);
     }
-    
+
     // Store session
     this.storeSession(session);
     this.activeSessions.delete(sessionId);
-    
+
     console.log(`✅ Ended profiling session: ${session.name} (${session.duration.toFixed(2)}ms)`);
     return session;
   }
@@ -255,12 +255,12 @@ export class PerformanceProfiler {
         reject(new Error(`Session ${sessionId} not found`));
         return;
       }
-      
+
       const queryId = this.generateQueryId();
       const startTime = performance.now();
       const startMemory = process.memoryUsage();
       const startCPU = process.cpuUsage();
-      
+
       // Create query profile
       const profile: QueryProfile = {
         id: queryId,
@@ -277,43 +277,46 @@ export class PerformanceProfiler {
         memoryUsed: 0,
         cpuTime: 0,
         optimizationLevel: 'optimal',
-        suggestions: []
+        suggestions: [],
       };
-      
+
       try {
         // Mark query start
         performance.mark(`query-start-${queryId}`);
-        
+
         // Execute query
         const result = await executionFn();
-        
+
         // Mark query end
         performance.mark(`query-end-${queryId}`);
-        performance.measure(`query-duration-${queryId}`, `query-start-${queryId}`, `query-end-${queryId}`);
-        
+        performance.measure(
+          `query-duration-${queryId}`,
+          `query-start-${queryId}`,
+          `query-end-${queryId}`
+        );
+
         // Calculate timing
         const endTime = performance.now();
         const endMemory = process.memoryUsage();
         const endCPU = process.cpuUsage(startCPU);
-        
+
         profile.totalTime = endTime - startTime;
         profile.executionTime = profile.totalTime; // Simplified for now
         profile.memoryUsed = endMemory.heapUsed - startMemory.heapUsed;
         profile.cpuTime = (endCPU.user + endCPU.system) / 1000; // Convert to ms
-        
+
         // Get database query plan if available
         if (this.config.enableQueryProfiling) {
           this.analyzeQueryPlan(profile);
         }
-        
+
         // Analyze performance
         this.analyzeQueryPerformance(profile);
-        
+
         // Add to session
         session.queries.push(profile);
-        
+
         resolve({ result, profile });
-        
       } catch (error) {
         reject(error);
       }
@@ -328,9 +331,9 @@ export class PerformanceProfiler {
     if (!session || !this.config.enableMemoryProfiling) {
       return null;
     }
-    
+
     const memUsage = process.memoryUsage();
-    
+
     const snapshot: MemorySnapshot = {
       timestamp: performance.now(),
       heapUsed: memUsage.heapUsed,
@@ -339,9 +342,9 @@ export class PerformanceProfiler {
       rss: memUsage.rss,
       cacheMemory: this.getCacheMemoryUsage(),
       gcEvents: this.getGCEventCount(),
-      memoryPressure: this.calculateMemoryPressure(memUsage)
+      memoryPressure: this.calculateMemoryPressure(memUsage),
     };
-    
+
     session.memorySnapshots.push(snapshot);
     return snapshot;
   }
@@ -355,7 +358,7 @@ export class PerformanceProfiler {
     if (activeSession) {
       return activeSession;
     }
-    
+
     // Load from database
     return this.loadSession(sessionId);
   }
@@ -366,40 +369,48 @@ export class PerformanceProfiler {
   getRecommendations(sessionId: string): string[] {
     const session = this.getSessionAnalysis(sessionId);
     if (!session) return [];
-    
+
     const recommendations: string[] = [];
-    
+
     // Query-based recommendations
     const slowQueries = session.queries.filter(q => q.totalTime > 1000);
     if (slowQueries.length > 0) {
-      recommendations.push(`${slowQueries.length} queries exceed 1s response time - optimize these queries`);
+      recommendations.push(
+        `${slowQueries.length} queries exceed 1s response time - optimize these queries`
+      );
     }
-    
-    const unoptimizedQueries = session.queries.filter(q => q.optimizationLevel === 'poor' || q.optimizationLevel === 'critical');
+
+    const unoptimizedQueries = session.queries.filter(
+      q => q.optimizationLevel === 'poor' || q.optimizationLevel === 'critical'
+    );
     if (unoptimizedQueries.length > 0) {
-      recommendations.push(`${unoptimizedQueries.length} queries need optimization - review indexes and query structure`);
+      recommendations.push(
+        `${unoptimizedQueries.length} queries need optimization - review indexes and query structure`
+      );
     }
-    
+
     // Memory-based recommendations
     const memorySnapshots = session.memorySnapshots;
     if (memorySnapshots.length > 0) {
       const maxMemory = Math.max(...memorySnapshots.map(s => s.heapUsed));
-      const avgMemory = memorySnapshots.reduce((sum, s) => sum + s.heapUsed, 0) / memorySnapshots.length;
-      
-      if (maxMemory > 512 * 1024 * 1024) { // 512MB
+      const avgMemory =
+        memorySnapshots.reduce((sum, s) => sum + s.heapUsed, 0) / memorySnapshots.length;
+
+      if (maxMemory > 512 * 1024 * 1024) {
+        // 512MB
         recommendations.push('High memory usage detected - consider optimizing cache sizes');
       }
-      
+
       if (avgMemory / maxMemory < 0.6) {
         recommendations.push('Memory usage is inconsistent - review allocation patterns');
       }
     }
-    
+
     // CPU-based recommendations
     if (session.cpuProfile.totalTime > session.duration! * 0.8) {
       recommendations.push('High CPU utilization - profile hot functions for optimization');
     }
-    
+
     return recommendations;
   }
 
@@ -411,46 +422,58 @@ export class PerformanceProfiler {
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
     }
-    
+
     return {
       session: {
         id: session.id,
         name: session.name,
         duration: session.duration,
         startTime: new Date(session.startTime),
-        endTime: session.endTime ? new Date(session.endTime) : null
+        endTime: session.endTime ? new Date(session.endTime) : null,
       },
-      
+
       summary: session.metrics,
-      
+
       queries: {
         total: session.queries.length,
-        slowest: session.queries.reduce((max, q) => q.totalTime > max.totalTime ? q : max, session.queries[0]),
-        fastest: session.queries.reduce((min, q) => q.totalTime < min.totalTime ? q : min, session.queries[0]),
+        slowest: session.queries.reduce(
+          (max, q) => (q.totalTime > max.totalTime ? q : max),
+          session.queries[0]
+        ),
+        fastest: session.queries.reduce(
+          (min, q) => (q.totalTime < min.totalTime ? q : min),
+          session.queries[0]
+        ),
         byStrategy: this.groupQueriesByStrategy(session.queries),
-        optimization: this.analyzeQueryOptimization(session.queries)
+        optimization: this.analyzeQueryOptimization(session.queries),
       },
-      
+
       memory: {
-        peak: session.memorySnapshots.length > 0 ? Math.max(...session.memorySnapshots.map(s => s.heapUsed)) : 0,
-        average: session.memorySnapshots.length > 0 ? 
-          session.memorySnapshots.reduce((sum, s) => sum + s.heapUsed, 0) / session.memorySnapshots.length : 0,
+        peak:
+          session.memorySnapshots.length > 0
+            ? Math.max(...session.memorySnapshots.map(s => s.heapUsed))
+            : 0,
+        average:
+          session.memorySnapshots.length > 0
+            ? session.memorySnapshots.reduce((sum, s) => sum + s.heapUsed, 0) /
+              session.memorySnapshots.length
+            : 0,
         pressure: this.analyzeMemoryPressure(session.memorySnapshots),
-        efficiency: session.metrics.memoryEfficiency
+        efficiency: session.metrics.memoryEfficiency,
       },
-      
+
       cpu: {
         totalTime: session.cpuProfile.totalTime,
         utilization: session.cpuProfile.totalTime / (session.duration || 1),
         hotFunctions: session.cpuProfile.hotFunctions.slice(0, 10),
-        efficiency: session.metrics.cpuEfficiency
+        efficiency: session.metrics.cpuEfficiency,
       },
-      
+
       bottlenecks: session.bottlenecks,
       recommendations: session.recommendations,
-      
+
       grade: session.metrics.grade,
-      score: session.metrics.performanceScore
+      score: session.metrics.performanceScore,
     };
   }
 
@@ -459,26 +482,26 @@ export class PerformanceProfiler {
   private analyzeSession(session: ProfileSession): void {
     // Calculate metrics
     session.metrics.totalQueries = session.queries.length;
-    
+
     if (session.queries.length > 0) {
       const totalTime = session.queries.reduce((sum, q) => sum + q.totalTime, 0);
       session.metrics.averageQueryTime = totalTime / session.queries.length;
       session.metrics.slowestQuery = Math.max(...session.queries.map(q => q.totalTime));
       session.metrics.fastestQuery = Math.min(...session.queries.map(q => q.totalTime));
     }
-    
+
     // Calculate efficiency scores
     session.metrics.memoryEfficiency = this.calculateMemoryEfficiency(session);
     session.metrics.cpuEfficiency = this.calculateCPUEfficiency(session);
     session.metrics.cacheEfficiency = this.calculateCacheEfficiency(session);
-    
+
     // Calculate overall performance score
     session.metrics.performanceScore = this.calculatePerformanceScore(session);
     session.metrics.grade = this.calculateGrade(session.metrics.performanceScore);
-    
+
     // Identify bottlenecks
     session.bottlenecks = this.identifyBottlenecks(session);
-    
+
     // Generate recommendations
     session.recommendations = this.generateSessionRecommendations(session);
   }
@@ -486,17 +509,17 @@ export class PerformanceProfiler {
   private analyzeQueryPlan(profile: QueryProfile): void {
     // In a real implementation, this would analyze SQLite query plans
     // For now, we'll provide basic heuristics
-    
+
     if (profile.query.toLowerCase().includes('select * from')) {
       profile.suggestions.push('Avoid SELECT * - specify only needed columns');
       profile.optimizationLevel = 'poor';
     }
-    
+
     if (profile.query.toLowerCase().includes('like %')) {
       profile.suggestions.push('Leading wildcard LIKE operations cannot use indexes efficiently');
       profile.optimizationLevel = 'poor';
     }
-    
+
     if (profile.totalTime > 1000) {
       profile.suggestions.push('Query execution time exceeds 1s - consider adding indexes');
       profile.optimizationLevel = 'critical';
@@ -514,12 +537,13 @@ export class PerformanceProfiler {
     } else {
       profile.optimizationLevel = 'critical';
     }
-    
+
     // Memory analysis
-    if (profile.memoryUsed > 10 * 1024 * 1024) { // 10MB
+    if (profile.memoryUsed > 10 * 1024 * 1024) {
+      // 10MB
       profile.suggestions.push('High memory usage - consider result set optimization');
     }
-    
+
     // CPU analysis
     if (profile.cpuTime > profile.totalTime * 0.8) {
       profile.suggestions.push('CPU-intensive query - review algorithmic complexity');
@@ -528,7 +552,7 @@ export class PerformanceProfiler {
 
   private identifyBottlenecks(session: ProfileSession): Bottleneck[] {
     const bottlenecks: Bottleneck[] = [];
-    
+
     // Query bottlenecks
     const slowQueries = session.queries.filter(q => q.totalTime > 1000);
     if (slowQueries.length > 0) {
@@ -540,21 +564,21 @@ export class PerformanceProfiler {
         recommendations: [
           'Optimize slow queries',
           'Add appropriate indexes',
-          'Consider query restructuring'
+          'Consider query restructuring',
         ],
         evidence: {
           metric: 'slow_query_count',
           value: slowQueries.length,
-          threshold: 0
-        }
+          threshold: 0,
+        },
       });
     }
-    
+
     // Memory bottlenecks
     if (session.memorySnapshots.length > 0) {
       const maxMemory = Math.max(...session.memorySnapshots.map(s => s.heapUsed));
       const threshold = 256 * 1024 * 1024; // 256MB
-      
+
       if (maxMemory > threshold) {
         bottlenecks.push({
           type: 'memory',
@@ -564,36 +588,36 @@ export class PerformanceProfiler {
           recommendations: [
             'Optimize cache sizes',
             'Review memory allocation patterns',
-            'Implement memory pooling'
+            'Implement memory pooling',
           ],
           evidence: {
             metric: 'max_memory_usage',
             value: maxMemory,
-            threshold
-          }
+            threshold,
+          },
         });
       }
     }
-    
+
     return bottlenecks;
   }
 
   private calculateMemoryEfficiency(session: ProfileSession): number {
     if (session.memorySnapshots.length === 0) return 1;
-    
+
     const snapshots = session.memorySnapshots;
     const maxMemory = Math.max(...snapshots.map(s => s.heapUsed));
     const avgMemory = snapshots.reduce((sum, s) => sum + s.heapUsed, 0) / snapshots.length;
-    
+
     // Efficiency based on memory utilization consistency
     return Math.max(0, 1 - (maxMemory - avgMemory) / maxMemory);
   }
 
   private calculateCPUEfficiency(session: ProfileSession): number {
     if (!session.duration) return 1;
-    
+
     const cpuUtilization = session.cpuProfile.totalTime / session.duration;
-    
+
     // Optimal CPU utilization is around 60-80%
     if (cpuUtilization <= 0.8) {
       return cpuUtilization / 0.8;
@@ -610,21 +634,21 @@ export class PerformanceProfiler {
 
   private calculatePerformanceScore(session: ProfileSession): number {
     const metrics = session.metrics;
-    
+
     // Weighted score calculation
-    const responseTimeScore = Math.max(0, 100 - (metrics.averageQueryTime / 10)); // Penalty for slow queries
+    const responseTimeScore = Math.max(0, 100 - metrics.averageQueryTime / 10); // Penalty for slow queries
     const memoryScore = metrics.memoryEfficiency * 100;
     const cpuScore = metrics.cpuEfficiency * 100;
     const cacheScore = metrics.cacheEfficiency * 100;
-    
+
     // Weighted average
     const weights = { response: 0.4, memory: 0.2, cpu: 0.2, cache: 0.2 };
-    
+
     return Math.round(
       responseTimeScore * weights.response +
-      memoryScore * weights.memory +
-      cpuScore * weights.cpu +
-      cacheScore * weights.cache
+        memoryScore * weights.memory +
+        cpuScore * weights.cpu +
+        cacheScore * weights.cache
     );
   }
 
@@ -638,40 +662,43 @@ export class PerformanceProfiler {
 
   private generateSessionRecommendations(session: ProfileSession): string[] {
     const recommendations: string[] = [];
-    
+
     // Add bottleneck recommendations
     session.bottlenecks.forEach(bottleneck => {
       recommendations.push(...bottleneck.recommendations);
     });
-    
+
     // Add query-specific recommendations
     session.queries.forEach(query => {
       recommendations.push(...query.suggestions);
     });
-    
+
     // Remove duplicates and return
     return [...new Set(recommendations)];
   }
 
   private groupQueriesByStrategy(queries: QueryProfile[]): Record<string, any> {
-    const groups = queries.reduce((acc, query) => {
-      if (!acc[query.strategy]) {
-        acc[query.strategy] = [];
-      }
-      acc[query.strategy].push(query);
-      return acc;
-    }, {} as Record<string, QueryProfile[]>);
-    
+    const groups = queries.reduce(
+      (acc, query) => {
+        if (!acc[query.strategy]) {
+          acc[query.strategy] = [];
+        }
+        acc[query.strategy].push(query);
+        return acc;
+      },
+      {} as Record<string, QueryProfile[]>
+    );
+
     const result: Record<string, any> = {};
     Object.entries(groups).forEach(([strategy, strategyQueries]) => {
       result[strategy] = {
         count: strategyQueries.length,
         avgTime: strategyQueries.reduce((sum, q) => sum + q.totalTime, 0) / strategyQueries.length,
         slowest: Math.max(...strategyQueries.map(q => q.totalTime)),
-        fastest: Math.min(...strategyQueries.map(q => q.totalTime))
+        fastest: Math.min(...strategyQueries.map(q => q.totalTime)),
       };
     });
-    
+
     return result;
   }
 
@@ -680,26 +707,30 @@ export class PerformanceProfiler {
       optimal: queries.filter(q => q.optimizationLevel === 'optimal').length,
       good: queries.filter(q => q.optimizationLevel === 'good').length,
       poor: queries.filter(q => q.optimizationLevel === 'poor').length,
-      critical: queries.filter(q => q.optimizationLevel === 'critical').length
+      critical: queries.filter(q => q.optimizationLevel === 'critical').length,
     };
-    
+
     return {
       ...optimization,
       total: queries.length,
-      needsAttention: optimization.poor + optimization.critical
+      needsAttention: optimization.poor + optimization.critical,
     };
   }
 
   private analyzeMemoryPressure(snapshots: MemorySnapshot[]): any {
     if (snapshots.length === 0) return { level: 'unknown', events: 0 };
-    
-    const maxPressure = Math.max(...snapshots.map(s => s.memoryPressure === 'high' ? 2 : s.memoryPressure === 'medium' ? 1 : 0));
+
+    const maxPressure = Math.max(
+      ...snapshots.map(s =>
+        s.memoryPressure === 'high' ? 2 : s.memoryPressure === 'medium' ? 1 : 0
+      )
+    );
     const gcEvents = snapshots.reduce((sum, s) => sum + s.gcEvents, 0);
-    
+
     return {
       level: maxPressure === 2 ? 'high' : maxPressure === 1 ? 'medium' : 'low',
       events: gcEvents,
-      peak: Math.max(...snapshots.map(s => s.heapUsed))
+      peak: Math.max(...snapshots.map(s => s.heapUsed)),
     };
   }
 
@@ -713,7 +744,7 @@ export class PerformanceProfiler {
       hot: 10 * 1024 * 1024,
       warm: 20 * 1024 * 1024,
       cold: 5 * 1024 * 1024,
-      total: 35 * 1024 * 1024
+      total: 35 * 1024 * 1024,
     };
   }
 
@@ -724,7 +755,7 @@ export class PerformanceProfiler {
 
   private calculateMemoryPressure(memUsage: NodeJS.MemoryUsage): 'low' | 'medium' | 'high' {
     const utilization = memUsage.heapUsed / memUsage.heapTotal;
-    
+
     if (utilization > 0.9) return 'high';
     if (utilization > 0.7) return 'medium';
     return 'low';
@@ -740,8 +771,8 @@ export class PerformanceProfiler {
 
   private cleanupOldSessions(): void {
     const sessions = Array.from(this.activeSessions.entries());
-    sessions.sort(([,a], [,b]) => a.startTime - b.startTime);
-    
+    sessions.sort(([, a], [, b]) => a.startTime - b.startTime);
+
     // Remove oldest sessions
     const toRemove = sessions.slice(0, sessions.length - this.config.maxSessions + 1);
     toRemove.forEach(([id]) => {
@@ -750,7 +781,7 @@ export class PerformanceProfiler {
   }
 
   private setupPerformanceObserver(): void {
-    this.performanceObserver = new PerformanceObserver((list) => {
+    this.performanceObserver = new PerformanceObserver(list => {
       // Process performance entries
       const entries = list.getEntries();
       entries.forEach(entry => {
@@ -759,13 +790,13 @@ export class PerformanceProfiler {
         }
       });
     });
-    
+
     this.performanceObserver.observe({ entryTypes: ['measure', 'mark'] });
   }
 
   private startMemoryMonitoring(): void {
     if (!this.config.enableMemoryProfiling) return;
-    
+
     this.memoryMonitor = setInterval(() => {
       // Take memory snapshots for all active sessions
       for (const sessionId of this.activeSessions.keys()) {
@@ -780,25 +811,29 @@ export class PerformanceProfiler {
 
   private storeSession(session: ProfileSession): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO profiling_sessions (
           id, name, start_time, end_time, duration, queries,
           memory_snapshots, cpu_profile, bottlenecks, recommendations,
           metrics
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        session.id,
-        session.name,
-        session.startTime,
-        session.endTime || null,
-        session.duration || null,
-        JSON.stringify(session.queries),
-        JSON.stringify(session.memorySnapshots),
-        JSON.stringify(session.cpuProfile),
-        JSON.stringify(session.bottlenecks),
-        JSON.stringify(session.recommendations),
-        JSON.stringify(session.metrics)
-      );
+      `
+        )
+        .run(
+          session.id,
+          session.name,
+          session.startTime,
+          session.endTime || null,
+          session.duration || null,
+          JSON.stringify(session.queries),
+          JSON.stringify(session.memorySnapshots),
+          JSON.stringify(session.cpuProfile),
+          JSON.stringify(session.bottlenecks),
+          JSON.stringify(session.recommendations),
+          JSON.stringify(session.metrics)
+        );
     } catch (error) {
       console.error('Failed to store profiling session:', error);
     }
@@ -806,12 +841,16 @@ export class PerformanceProfiler {
 
   private loadSession(sessionId: string): ProfileSession | null {
     try {
-      const row = this.db.prepare(`
+      const row = this.db
+        .prepare(
+          `
         SELECT * FROM profiling_sessions WHERE id = ?
-      `).get(sessionId) as any;
-      
+      `
+        )
+        .get(sessionId) as any;
+
       if (!row) return null;
-      
+
       return {
         id: row.id,
         name: row.name,
@@ -823,7 +862,7 @@ export class PerformanceProfiler {
         cpuProfile: JSON.parse(row.cpu_profile),
         bottlenecks: JSON.parse(row.bottlenecks),
         recommendations: JSON.parse(row.recommendations),
-        metrics: JSON.parse(row.metrics)
+        metrics: JSON.parse(row.metrics),
       };
     } catch (error) {
       console.error('Failed to load profiling session:', error);
@@ -852,7 +891,7 @@ export class PerformanceProfiler {
         CREATE INDEX IF NOT EXISTS idx_profiling_start_time ON profiling_sessions(start_time DESC);
         CREATE INDEX IF NOT EXISTS idx_profiling_name ON profiling_sessions(name);
       `);
-      
+
       console.log('✅ Profiling tables initialized');
     } catch (error) {
       console.error('❌ Failed to initialize profiling tables:', error);

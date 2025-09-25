@@ -86,14 +86,14 @@ export class SearchCacheSystem extends EventEmitter {
       this.metrics = new CacheMetrics({
         enabled: this.options.metrics?.enabled ?? true,
         flushInterval: this.options.metrics?.flushInterval ?? 60000,
-        retentionDays: this.options.metrics?.retentionDays ?? 30
+        retentionDays: this.options.metrics?.retentionDays ?? 30,
       });
 
       // Initialize memory cache
       this.memoryCache = new InMemoryCache({
         maxSize: this.options.memory?.maxSize ?? 100,
         ttl: this.options.memory?.ttl ?? 300000, // 5 minutes
-        checkPeriod: this.options.memory?.checkPeriod ?? 60000
+        checkPeriod: this.options.memory?.checkPeriod ?? 60000,
       });
 
       // Initialize Redis service if configured
@@ -105,7 +105,7 @@ export class SearchCacheSystem extends EventEmitter {
           db: this.options.redis.db ?? 0,
           keyPrefix: this.options.redis.keyPrefix ?? 'search:cache:',
           maxRetries: this.options.redis.maxRetries ?? 3,
-          retryDelayOnFailover: this.options.redis.retryDelayOnFailover ?? 100
+          retryDelayOnFailover: this.options.redis.retryDelayOnFailover ?? 100,
         });
 
         await this.redisService.connect();
@@ -119,8 +119,8 @@ export class SearchCacheSystem extends EventEmitter {
         metrics: this.metrics,
         fallbackConfig: {
           enableMemoryFallback: this.options.fallback?.enableMemoryFallback ?? true,
-          memoryFallbackSize: this.options.fallback?.memoryFallbackSize ?? 50
-        }
+          memoryFallbackSize: this.options.fallback?.memoryFallbackSize ?? 50,
+        },
       });
 
       // Set up event handlers
@@ -137,7 +137,6 @@ export class SearchCacheSystem extends EventEmitter {
       this.isInitialized = true;
       this.emit('initialized');
       this.logger.info('Search cache system initialized successfully');
-
     } catch (error) {
       this.logger.error('Failed to initialize cache system:', error);
       throw new Error(`Cache system initialization failed: ${error.message}`);
@@ -247,8 +246,8 @@ export class SearchCacheSystem extends EventEmitter {
 
     this.logger.info(`Starting cache warmup with ${searches.length} searches`);
 
-    const cachedSearch = this.createCachedSearch(
-      (query: string, options?: any) => this.searchService.search(query, options)
+    const cachedSearch = this.createCachedSearch((query: string, options?: any) =>
+      this.searchService.search(query, options)
     );
 
     const warmupPromises = searches.map(async ({ query, options }) => {
@@ -296,7 +295,7 @@ export class SearchCacheSystem extends EventEmitter {
 
     try {
       // Check memory cache
-      components.memoryCache = this.memoryCache && await this.memoryCache.healthCheck();
+      components.memoryCache = this.memoryCache && (await this.memoryCache.healthCheck());
 
       // Check Redis if available
       if (this.redisService) {
@@ -307,7 +306,7 @@ export class SearchCacheSystem extends EventEmitter {
       components.metrics = this.metrics && this.metrics.isHealthy();
 
       // Check cache manager
-      components.cacheManager = this.cacheManager && await this.cacheManager.healthCheck();
+      components.cacheManager = this.cacheManager && (await this.cacheManager.healthCheck());
 
       const allHealthy = Object.values(components).every(Boolean);
       const someHealthy = Object.values(components).some(Boolean);
@@ -315,14 +314,14 @@ export class SearchCacheSystem extends EventEmitter {
       return {
         status: allHealthy ? 'healthy' : someHealthy ? 'degraded' : 'unhealthy',
         components,
-        metrics: await this.getStats()
+        metrics: await this.getStats(),
       };
     } catch (error) {
       this.logger.error('Health check failed:', error);
       return {
         status: 'unhealthy',
         components,
-        metrics: null
+        metrics: null,
       };
     }
   }
@@ -357,15 +356,15 @@ export class SearchCacheSystem extends EventEmitter {
   }
 
   private setupEventHandlers(): void {
-    this.cacheManager.on('hit', (data) => this.emit('hit', data));
-    this.cacheManager.on('miss', (data) => this.emit('miss', data));
-    this.cacheManager.on('error', (error) => this.emit('error', error));
-    this.cacheManager.on('eviction', (data) => this.emit('eviction', data));
+    this.cacheManager.on('hit', data => this.emit('hit', data));
+    this.cacheManager.on('miss', data => this.emit('miss', data));
+    this.cacheManager.on('error', error => this.emit('error', error));
+    this.cacheManager.on('eviction', data => this.emit('eviction', data));
 
     if (this.redisService) {
       this.redisService.on('connect', () => this.emit('redisConnected'));
       this.redisService.on('disconnect', () => this.emit('redisDisconnected'));
-      this.redisService.on('error', (error) => this.emit('redisError', error));
+      this.redisService.on('error', error => this.emit('redisError', error));
     }
   }
 
@@ -414,22 +413,22 @@ export function createDefaultCacheConfig(): CacheSystemOptions {
       db: parseInt(process.env.REDIS_DB || '0'),
       keyPrefix: process.env.REDIS_KEY_PREFIX || 'search:cache:',
       maxRetries: parseInt(process.env.REDIS_MAX_RETRIES || '3'),
-      retryDelayOnFailover: parseInt(process.env.REDIS_RETRY_DELAY || '100')
+      retryDelayOnFailover: parseInt(process.env.REDIS_RETRY_DELAY || '100'),
     },
     memory: {
       maxSize: parseInt(process.env.MEMORY_CACHE_SIZE || '100'),
       ttl: parseInt(process.env.MEMORY_CACHE_TTL || '300000'), // 5 minutes
-      checkPeriod: parseInt(process.env.MEMORY_CACHE_CHECK_PERIOD || '60000')
+      checkPeriod: parseInt(process.env.MEMORY_CACHE_CHECK_PERIOD || '60000'),
     },
     metrics: {
       enabled: process.env.CACHE_METRICS_ENABLED !== 'false',
       flushInterval: parseInt(process.env.CACHE_METRICS_FLUSH_INTERVAL || '60000'),
-      retentionDays: parseInt(process.env.CACHE_METRICS_RETENTION_DAYS || '30')
+      retentionDays: parseInt(process.env.CACHE_METRICS_RETENTION_DAYS || '30'),
     },
     fallback: {
       enableMemoryFallback: process.env.ENABLE_MEMORY_FALLBACK !== 'false',
-      memoryFallbackSize: parseInt(process.env.MEMORY_FALLBACK_SIZE || '50')
-    }
+      memoryFallbackSize: parseInt(process.env.MEMORY_FALLBACK_SIZE || '50'),
+    },
   };
 }
 

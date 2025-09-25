@@ -21,7 +21,11 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import Database from 'better-sqlite3';
 import { Service, ServiceContext, ServiceHealth, ServiceStatus } from './ServiceManager';
-import { IBaseService, OperationResult, ServiceMetrics } from '../../backend/core/interfaces/ServiceInterfaces';
+import {
+  IBaseService,
+  OperationResult,
+  ServiceMetrics,
+} from '../../backend/core/interfaces/ServiceInterfaces';
 
 // =============================================================================
 // TYPES AND INTERFACES
@@ -114,9 +118,9 @@ export interface OperationMetrics {
   decisionsCount: number;
   autoApprovedCount: number;
   userDecisionsCount: number;
-  topUsers: Array<{userId: string; operationCount: number}>;
-  peakUsageHours: Array<{hour: number; count: number}>;
-  costByDay: Array<{date: string; cost: number}>;
+  topUsers: Array<{ userId: string; operationCount: number }>;
+  peakUsageHours: Array<{ hour: number; count: number }>;
+  costByDay: Array<{ date: string; cost: number }>;
   responseTimePercentiles: {
     p50: number;
     p90: number;
@@ -191,11 +195,7 @@ export type DecisionAction =
   | 'use_local_only'
   | 'modify_query';
 
-export type DecisionScope =
-  | 'operation'
-  | 'session'
-  | 'user'
-  | 'global';
+export type DecisionScope = 'operation' | 'session' | 'user' | 'global';
 
 export type ErrorType =
   | 'authorization_error'
@@ -208,20 +208,9 @@ export type ErrorType =
   | 'system_error'
   | 'user_error';
 
-export type ErrorSeverity =
-  | 'critical'
-  | 'high'
-  | 'medium'
-  | 'low'
-  | 'info';
+export type ErrorSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
-export type SortField =
-  | 'createdAt'
-  | 'startTime'
-  | 'duration'
-  | 'cost'
-  | 'type'
-  | 'status';
+export type SortField = 'createdAt' | 'startTime' | 'duration' | 'cost' | 'type' | 'status';
 
 // =============================================================================
 // DATABASE SCHEMA INTERFACES
@@ -308,7 +297,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
   private startTime?: Date;
   private metricsCache: Map<string, any> = new Map();
@@ -326,7 +315,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       operations: 90, // days
       decisions: 180, // days
       errors: 365, // days
-    }
+    },
   };
 
   constructor() {
@@ -361,7 +350,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
         status: 'running',
         startTime: this.startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('Operation Logger Service initialized successfully');
@@ -409,7 +398,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
         healthy: false,
         error: 'Database connection not available',
         lastCheck,
-        details: { status: this.status.status }
+        details: { status: this.status.status },
       };
     }
 
@@ -426,15 +415,15 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
           status: this.status.status,
           uptime: this.getUptime(),
           cacheSize: this.metricsCache.size,
-          operationsToday: await this.getTodayOperationsCount()
-        }
+          operationsToday: await this.getTodayOperationsCount(),
+        },
       };
     } catch (error) {
       return {
         healthy: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         lastCheck,
-        details: { status: this.status.status }
+        details: { status: this.status.status },
       };
     }
   }
@@ -447,7 +436,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       errorRate: this.metricsCache.get('errorRate') || 0,
       uptime,
       memoryUsage: process.memoryUsage().heapUsed,
-      cacheHitRate: this.calculateCacheHitRate()
+      cacheHitRate: this.calculateCacheHitRate(),
     };
   }
 
@@ -470,7 +459,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
         ...operation,
         id: this.generateOperationId(),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       };
 
       const stmt = this.db.prepare(`
@@ -514,7 +503,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       } else if (fullOperation.status === 'failed' && fullOperation.error) {
         this.emit('operation:failed', fullOperation, fullOperation.error);
       }
-
     } catch (error) {
       this.context?.logger.error('Failed to log operation', error);
       throw error;
@@ -529,7 +517,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       const fullDecision: AuthorizationDecision = {
         ...decision,
-        id: this.generateDecisionId()
+        id: this.generateDecisionId(),
       };
 
       const stmt = this.db.prepare(`
@@ -557,7 +545,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       // Emit event
       this.emit('decision:logged', fullDecision);
-
     } catch (error) {
       this.context?.logger.error('Failed to log decision', error);
       throw error;
@@ -572,7 +559,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       const fullError: OperationError = {
         ...error,
-        id: this.generateErrorId()
+        id: this.generateErrorId(),
       };
 
       const stmt = this.db.prepare(`
@@ -599,7 +586,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       // Emit event
       this.emit('error:logged', fullError);
-
     } catch (error) {
       this.context?.logger.error('Failed to log error', error);
       throw error;
@@ -685,7 +671,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       const rows = stmt.all(...params) as OperationRow[];
 
       return rows.map(row => this.mapRowToOperation(row));
-
     } catch (error) {
       this.context?.logger.error('Failed to get operation history', error);
       throw error;
@@ -705,7 +690,9 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       }
 
       // Get basic operation counts
-      const operationStats = this.db.prepare(`
+      const operationStats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as total_operations,
           COUNT(CASE WHEN status = 'completed' THEN 1 END) as successful_operations,
@@ -715,63 +702,91 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
           AVG(CASE WHEN cost_data IS NOT NULL THEN json_extract(cost_data, '$.estimatedCost') ELSE 0 END) as avg_cost
         FROM operation_logs
         WHERE start_time >= ? AND start_time <= ?
-      `).get(period.start.toISOString(), period.end.toISOString()) as any;
+      `
+        )
+        .get(period.start.toISOString(), period.end.toISOString()) as any;
 
       // Get operations by type
-      const operationsByType = this.db.prepare(`
+      const operationsByType = this.db
+        .prepare(
+          `
         SELECT type, COUNT(*) as count
         FROM operation_logs
         WHERE start_time >= ? AND start_time <= ?
         GROUP BY type
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       // Get operations by status
-      const operationsByStatus = this.db.prepare(`
+      const operationsByStatus = this.db
+        .prepare(
+          `
         SELECT status, COUNT(*) as count
         FROM operation_logs
         WHERE start_time >= ? AND start_time <= ?
         GROUP BY status
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       // Get errors by type
-      const errorsByType = this.db.prepare(`
+      const errorsByType = this.db
+        .prepare(
+          `
         SELECT error_type, COUNT(*) as count
         FROM operation_errors
         WHERE timestamp >= ? AND timestamp <= ?
         GROUP BY error_type
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       // Get decision stats
-      const decisionStats = this.db.prepare(`
+      const decisionStats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as decisions_count,
           COUNT(CASE WHEN auto_approved = 1 THEN 1 END) as auto_approved_count
         FROM operation_decisions
         WHERE timestamp >= ? AND timestamp <= ?
-      `).get(period.start.toISOString(), period.end.toISOString()) as any;
+      `
+        )
+        .get(period.start.toISOString(), period.end.toISOString()) as any;
 
       // Get top users
-      const topUsers = this.db.prepare(`
+      const topUsers = this.db
+        .prepare(
+          `
         SELECT user_id, COUNT(*) as operation_count
         FROM operation_logs
         WHERE start_time >= ? AND start_time <= ? AND user_id IS NOT NULL
         GROUP BY user_id
         ORDER BY operation_count DESC
         LIMIT 10
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       // Get response time percentiles
-      const responseTimes = this.db.prepare(`
+      const responseTimes = this.db
+        .prepare(
+          `
         SELECT duration
         FROM operation_logs
         WHERE start_time >= ? AND start_time <= ? AND duration IS NOT NULL
         ORDER BY duration
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       const percentiles = this.calculatePercentiles(responseTimes.map(r => r.duration));
 
       // Get peak usage hours
-      const peakUsage = this.db.prepare(`
+      const peakUsage = this.db
+        .prepare(
+          `
         SELECT
           CAST(strftime('%H', start_time) AS INTEGER) as hour,
           COUNT(*) as count
@@ -780,10 +795,14 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
         GROUP BY hour
         ORDER BY count DESC
         LIMIT 5
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       // Get cost by day
-      const costByDay = this.db.prepare(`
+      const costByDay = this.db
+        .prepare(
+          `
         SELECT
           DATE(start_time) as date,
           SUM(CASE WHEN cost_data IS NOT NULL THEN json_extract(cost_data, '$.estimatedCost') ELSE 0 END) as cost
@@ -791,7 +810,9 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
         WHERE start_time >= ? AND start_time <= ?
         GROUP BY DATE(start_time)
         ORDER BY date
-      `).all(period.start.toISOString(), period.end.toISOString()) as any[];
+      `
+        )
+        .all(period.start.toISOString(), period.end.toISOString()) as any[];
 
       const metrics: OperationMetrics = {
         totalOperations: operationStats.total_operations || 0,
@@ -811,32 +832,32 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
         ) as Record<ErrorType, number>,
         decisionsCount: decisionStats.decisions_count || 0,
         autoApprovedCount: decisionStats.auto_approved_count || 0,
-        userDecisionsCount: (decisionStats.decisions_count || 0) - (decisionStats.auto_approved_count || 0),
+        userDecisionsCount:
+          (decisionStats.decisions_count || 0) - (decisionStats.auto_approved_count || 0),
         topUsers: topUsers.map(user => ({
           userId: user.user_id,
-          operationCount: user.operation_count
+          operationCount: user.operation_count,
         })),
         peakUsageHours: peakUsage.map(peak => ({
           hour: peak.hour,
-          count: peak.count
+          count: peak.count,
         })),
         costByDay: costByDay.map(cost => ({
           date: cost.date,
-          cost: cost.cost || 0
+          cost: cost.cost || 0,
         })),
         responseTimePercentiles: percentiles,
         period,
-        generatedAt: new Date()
+        generatedAt: new Date(),
       };
 
       // Cache the result
       this.metricsCache.set(cacheKey, {
         data: metrics,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return metrics;
-
     } catch (error) {
       this.context?.logger.error('Failed to get operation metrics', error);
       throw error;
@@ -859,7 +880,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       const row = stmt.get(id) as OperationRow | undefined;
       return row ? this.mapRowToOperation(row) : null;
-
     } catch (error) {
       this.context?.logger.error('Failed to get operation by ID', error);
       throw error;
@@ -886,10 +906,14 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       `);
 
       const searchPattern = `%${query}%`;
-      const rows = stmt.all(searchPattern, searchPattern, searchPattern, searchPattern) as OperationRow[];
+      const rows = stmt.all(
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern
+      ) as OperationRow[];
 
       return rows.map(row => this.mapRowToOperation(row));
-
     } catch (error) {
       this.context?.logger.error('Failed to search logs', error);
       throw error;
@@ -908,15 +932,17 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       const operations = await this.getOperationHistory({
         dateRange: period,
-        limit: 10000 // Reasonable limit for exports
+        limit: 10000, // Reasonable limit for exports
       });
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = filePath || path.join(
-        this.context?.dataPath || '.',
-        'exports',
-        `operations_export_${timestamp}.${format}`
-      );
+      const filename =
+        filePath ||
+        path.join(
+          this.context?.dataPath || '.',
+          'exports',
+          `operations_export_${timestamp}.${format}`
+        );
 
       // Ensure export directory exists
       await fs.mkdir(path.dirname(filename), { recursive: true });
@@ -929,7 +955,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
 
       this.emit('export:completed', filename, format);
       return filename;
-
     } catch (error) {
       this.context?.logger.error('Failed to export logs', error);
       throw error;
@@ -971,7 +996,8 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       `);
       const errorsResult = errorsStmt.run();
 
-      const totalDeleted = operationsResult.changes + decisionsResult.changes + errorsResult.changes;
+      const totalDeleted =
+        operationsResult.changes + decisionsResult.changes + errorsResult.changes;
 
       // Clear metrics cache
       this.invalidateMetricsCache();
@@ -980,7 +1006,6 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       this.context?.logger.info(`Cleaned up ${totalDeleted} old log entries`);
 
       return totalDeleted;
-
     } catch (error) {
       this.context?.logger.error('Failed to cleanup old logs', error);
       throw error;
@@ -998,7 +1023,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
     await fs.mkdir(path.dirname(dbPath), { recursive: true });
 
     this.db = new Database(dbPath, {
-      verbose: this.context?.isDevelopment ? console.log : undefined
+      verbose: this.context?.isDevelopment ? console.log : undefined,
     });
 
     // Enable WAL mode for better concurrent access
@@ -1105,7 +1130,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       // Composite indexes for common queries
       'CREATE INDEX IF NOT EXISTS idx_operation_logs_type_status ON operation_logs(type, status)',
       'CREATE INDEX IF NOT EXISTS idx_operation_logs_user_time ON operation_logs(user_id, start_time)',
-      'CREATE INDEX IF NOT EXISTS idx_operation_logs_session_time ON operation_logs(session_id, start_time)'
+      'CREATE INDEX IF NOT EXISTS idx_operation_logs_session_time ON operation_logs(session_id, start_time)',
     ];
 
     for (const indexSql of indexes) {
@@ -1124,7 +1149,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
   }
 
   private setupErrorHandling(): void {
-    this.on('error', (error) => {
+    this.on('error', error => {
       this.context?.logger.error('OperationLoggerService error', error);
     });
 
@@ -1162,18 +1187,20 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
       kbEntryId: row.kb_entry_id || undefined,
       cost: row.cost_data ? JSON.parse(row.cost_data) : undefined,
-      error: row.error_id ? {
-        id: row.error_id,
-        operationId: row.id,
-        errorCode: (row as any).error_code || 'UNKNOWN',
-        errorType: (row as any).error_type as ErrorType || 'system_error',
-        message: (row as any).error_message || 'Unknown error',
-        severity: (row as any).error_severity as ErrorSeverity || 'medium',
-        timestamp: new Date(row.start_time),
-        resolved: false
-      } : undefined,
+      error: row.error_id
+        ? {
+            id: row.error_id,
+            operationId: row.id,
+            errorCode: (row as any).error_code || 'UNKNOWN',
+            errorType: ((row as any).error_type as ErrorType) || 'system_error',
+            message: (row as any).error_message || 'Unknown error',
+            severity: ((row as any).error_severity as ErrorSeverity) || 'medium',
+            timestamp: new Date(row.start_time),
+            resolved: false,
+          }
+        : undefined,
       createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
+      updatedAt: new Date(row.updated_at),
     };
   }
 
@@ -1184,48 +1211,66 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       duration: 'duration',
       cost: 'cost_data',
       type: 'type',
-      status: 'status'
+      status: 'status',
     };
     return mapping[field] || 'created_at';
   }
 
   private async exportToCSV(operations: Operation[], filename: string): Promise<void> {
     const headers = [
-      'ID', 'Type', 'Subtype', 'User ID', 'Session ID', 'Query', 'Status',
-      'Start Time', 'End Time', 'Duration (ms)', 'Cost', 'KB Entry ID',
-      'Error Type', 'Error Message', 'Created At'
+      'ID',
+      'Type',
+      'Subtype',
+      'User ID',
+      'Session ID',
+      'Query',
+      'Status',
+      'Start Time',
+      'End Time',
+      'Duration (ms)',
+      'Cost',
+      'KB Entry ID',
+      'Error Type',
+      'Error Message',
+      'Created At',
     ];
 
     const csvContent = [
       headers.join(','),
-      ...operations.map(op => [
-        op.id,
-        op.type,
-        op.subtype || '',
-        op.userId || '',
-        op.sessionId || '',
-        `"${op.query.replace(/"/g, '""')}"`,
-        op.status,
-        op.startTime.toISOString(),
-        op.endTime?.toISOString() || '',
-        op.duration || '',
-        op.cost?.estimatedCost || '',
-        op.kbEntryId || '',
-        op.error?.errorType || '',
-        op.error?.message ? `"${op.error.message.replace(/"/g, '""')}"` : '',
-        op.createdAt.toISOString()
-      ].join(','))
+      ...operations.map(op =>
+        [
+          op.id,
+          op.type,
+          op.subtype || '',
+          op.userId || '',
+          op.sessionId || '',
+          `"${op.query.replace(/"/g, '""')}"`,
+          op.status,
+          op.startTime.toISOString(),
+          op.endTime?.toISOString() || '',
+          op.duration || '',
+          op.cost?.estimatedCost || '',
+          op.kbEntryId || '',
+          op.error?.errorType || '',
+          op.error?.message ? `"${op.error.message.replace(/"/g, '""')}"` : '',
+          op.createdAt.toISOString(),
+        ].join(',')
+      ),
     ].join('\n');
 
     await fs.writeFile(filename, csvContent, 'utf8');
   }
 
   private async exportToJSON(operations: Operation[], filename: string): Promise<void> {
-    const jsonContent = JSON.stringify({
-      exportDate: new Date().toISOString(),
-      totalOperations: operations.length,
-      operations
-    }, null, 2);
+    const jsonContent = JSON.stringify(
+      {
+        exportDate: new Date().toISOString(),
+        totalOperations: operations.length,
+        operations,
+      },
+      null,
+      2
+    );
 
     await fs.writeFile(filename, jsonContent, 'utf8');
   }
@@ -1245,7 +1290,7 @@ export class OperationLoggerService extends EventEmitter implements IBaseService
       p50: getPercentile(50),
       p90: getPercentile(90),
       p95: getPercentile(95),
-      p99: getPercentile(99)
+      p99: getPercentile(99),
     };
   }
 

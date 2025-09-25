@@ -10,26 +10,11 @@ import { DatabaseManager } from '../../database/DatabaseManager';
 import { MultiLayerCacheManager } from '../../caching/MultiLayerCacheManager';
 
 // Import all handlers
-import {
-  CategoryHandler,
-  categoryHandlerConfigs
-} from './CategoryHandler';
-import {
-  TagHandler,
-  tagHandlerConfigs
-} from './TagHandler';
-import {
-  AutocompleteHandler,
-  autocompleteHandlerConfigs
-} from './AutocompleteHandler';
-import {
-  BulkOperationsHandler,
-  bulkOperationsHandlerConfigs
-} from './BulkOperationsHandler';
-import {
-  RealtimeHandler,
-  realtimeHandlerConfigs
-} from './RealtimeHandler';
+import { CategoryHandler, categoryHandlerConfigs } from './CategoryHandler';
+import { TagHandler, tagHandlerConfigs } from './TagHandler';
+import { AutocompleteHandler, autocompleteHandlerConfigs } from './AutocompleteHandler';
+import { BulkOperationsHandler, bulkOperationsHandlerConfigs } from './BulkOperationsHandler';
+import { RealtimeHandler, realtimeHandlerConfigs } from './RealtimeHandler';
 
 // Import services
 import { CategoryService } from '../../services/CategoryService';
@@ -344,7 +329,7 @@ export class CategorizationHandlerIntegration {
     const eventType = `category_${type}` as any;
     this.realtimeHandler.emitRealtimeEvent(eventType, categoryData, {
       affected_entities: [`category_${categoryData.id}`],
-      change_summary: `Category ${type}: ${categoryData.name}`
+      change_summary: `Category ${type}: ${categoryData.name}`,
     });
   }
 
@@ -352,14 +337,14 @@ export class CategorizationHandlerIntegration {
     const eventType = `tag_${type}` as any;
     this.realtimeHandler.emitRealtimeEvent(eventType, tagData, {
       affected_entities: [`tag_${tagData.id}`],
-      change_summary: `Tag ${type}: ${tagData.name}`
+      change_summary: `Tag ${type}: ${tagData.name}`,
     });
   }
 
   emitBulkOperationEvent(operationResult: any): void {
     this.realtimeHandler.emitRealtimeEvent('bulk_operation_completed', operationResult, {
       affected_entities: operationResult.affected_entities || [],
-      change_summary: `Bulk operation completed: ${operationResult.successful}/${operationResult.total_operations} successful`
+      change_summary: `Bulk operation completed: ${operationResult.successful}/${operationResult.total_operations} successful`,
     });
   }
 }
@@ -392,7 +377,9 @@ export function setupCategorizationHandlers(
   );
 
   console.log('✅ Categorization and tagging system ready');
-  console.log(`📊 Real-time subscriptions: ${integration.getRealtimeHandler().getSubscriptionCount()}`);
+  console.log(
+    `📊 Real-time subscriptions: ${integration.getRealtimeHandler().getSubscriptionCount()}`
+  );
 
   return integration;
 }

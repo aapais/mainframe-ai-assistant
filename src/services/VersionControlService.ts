@@ -108,7 +108,7 @@ export class VersionControlService extends EventEmitter {
     auto_cleanup_days: 90,
     enable_branching: true,
     require_change_summary: true,
-    significant_change_threshold: 0.3
+    significant_change_threshold: 0.3,
   };
 
   constructor(database: any, options: Partial<typeof VersionControlService.prototype.config> = {}) {
@@ -219,44 +219,52 @@ export class VersionControlService extends EventEmitter {
         change_summary: changeSummary,
         changed_fields: changedFields || [],
         editor_id: editorId,
-        editor_name: editorName
+        editor_name: editorName,
       };
 
       // Begin transaction
       const transaction = this.db.transaction(() => {
         // Mark previous version as not current
         if (currentVersion > 0) {
-          this.db.prepare(`
+          this.db
+            .prepare(
+              `
             UPDATE entry_versions
             SET is_current = 0
             WHERE entry_id = ? AND version = ?
-          `).run(entryId, currentVersion);
+          `
+            )
+            .run(entryId, currentVersion);
         }
 
         // Insert new version
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO entry_versions (
             id, entry_id, version, title, problem, solution, category, tags,
             editor_id, editor_name, change_summary, changed_fields, parent_version,
             is_current, data_hash
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          `${entryId}-v${newVersion}`,
-          entryId,
-          newVersion,
-          entry.title,
-          entry.problem,
-          entry.solution,
-          entry.category,
-          JSON.stringify(entry.tags || []),
-          editorId,
-          editorName,
-          changeSummary || 'No summary provided',
-          JSON.stringify(changedFields || []),
-          currentVersion || null,
-          1, // is_current
-          dataHash
-        );
+        `
+          )
+          .run(
+            `${entryId}-v${newVersion}`,
+            entryId,
+            newVersion,
+            entry.title,
+            entry.problem,
+            entry.solution,
+            entry.category,
+            JSON.stringify(entry.tags || []),
+            editorId,
+            editorName,
+            changeSummary || 'No summary provided',
+            JSON.stringify(changedFields || []),
+            currentVersion || null,
+            1, // is_current
+            dataHash
+          );
 
         // Create change record
         const changeRecord: ChangeRecord = {
@@ -269,7 +277,7 @@ export class VersionControlService extends EventEmitter {
           change_type: currentVersion === 0 ? 'create' : 'update',
           change_summary: changeSummary || 'No summary provided',
           changed_fields: changedFields || [],
-          new_data: entry
+          new_data: entry,
         };
 
         // Add previous data if updating
@@ -281,24 +289,28 @@ export class VersionControlService extends EventEmitter {
           }
         }
 
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO change_records (
             id, entry_id, version, editor_id, editor_name, change_type,
             change_summary, changed_fields, previous_data, new_data, diff_data
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          changeRecord.id,
-          changeRecord.entry_id,
-          changeRecord.version,
-          changeRecord.editor_id,
-          changeRecord.editor_name,
-          changeRecord.change_type,
-          changeRecord.change_summary,
-          JSON.stringify(changeRecord.changed_fields),
-          changeRecord.previous_data ? JSON.stringify(changeRecord.previous_data) : null,
-          JSON.stringify(changeRecord.new_data),
-          changeRecord.diff ? JSON.stringify(changeRecord.diff) : null
-        );
+        `
+          )
+          .run(
+            changeRecord.id,
+            changeRecord.entry_id,
+            changeRecord.version,
+            changeRecord.editor_id,
+            changeRecord.editor_name,
+            changeRecord.change_type,
+            changeRecord.change_summary,
+            JSON.stringify(changeRecord.changed_fields),
+            changeRecord.previous_data ? JSON.stringify(changeRecord.previous_data) : null,
+            JSON.stringify(changeRecord.new_data),
+            changeRecord.diff ? JSON.stringify(changeRecord.diff) : null
+          );
       });
 
       transaction();
@@ -311,7 +323,7 @@ export class VersionControlService extends EventEmitter {
         entry_id: entryId,
         version: newVersion,
         change_type: currentVersion === 0 ? 'create' : 'update',
-        editor: editorName
+        editor: editorName,
       });
 
       // Cleanup old versions if needed
@@ -327,10 +339,14 @@ export class VersionControlService extends EventEmitter {
 
   async getVersion(entryId: string, version: number): Promise<VersionedEntry | null> {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT * FROM entry_versions
         WHERE entry_id = ? AND version = ?
-      `).get(entryId, version);
+      `
+        )
+        .get(entryId, version);
 
       if (!result) return null;
 
@@ -343,10 +359,14 @@ export class VersionControlService extends EventEmitter {
 
   private getVersionSync(entryId: string, version: number): VersionedEntry | null {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT * FROM entry_versions
         WHERE entry_id = ? AND version = ?
-      `).get(entryId, version);
+      `
+        )
+        .get(entryId, version);
 
       if (!result) return null;
 
@@ -359,11 +379,15 @@ export class VersionControlService extends EventEmitter {
 
   async getCurrentVersion(entryId: string): Promise<number> {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT MAX(version) as max_version
         FROM entry_versions
         WHERE entry_id = ?
-      `).get(entryId);
+      `
+        )
+        .get(entryId);
 
       return result?.max_version || 0;
     } catch (error) {
@@ -380,27 +404,42 @@ export class VersionControlService extends EventEmitter {
       }
 
       // Get all versions
-      const versions = this.db.prepare(`
+      const versions = this.db
+        .prepare(
+          `
         SELECT * FROM entry_versions
         WHERE entry_id = ?
         ORDER BY version DESC
-      `).all(entryId).map((row: any) => this.parseVersionedEntry(row));
+      `
+        )
+        .all(entryId)
+        .map((row: any) => this.parseVersionedEntry(row));
 
       // Get all change records
-      const changes = this.db.prepare(`
+      const changes = this.db
+        .prepare(
+          `
         SELECT * FROM change_records
         WHERE entry_id = ?
         ORDER BY timestamp DESC
-      `).all(entryId).map((row: any) => this.parseChangeRecord(row));
+      `
+        )
+        .all(entryId)
+        .map((row: any) => this.parseChangeRecord(row));
 
       // Get branches if enabled
       let branches: VersionBranch[] = [];
       if (this.config.enable_branching) {
-        branches = this.db.prepare(`
+        branches = this.db
+          .prepare(
+            `
           SELECT * FROM version_branches
           WHERE entry_id = ? AND is_active = 1
           ORDER BY created_at DESC
-        `).all(entryId).map((row: any) => this.parseVersionBranch(row));
+        `
+          )
+          .all(entryId)
+          .map((row: any) => this.parseVersionBranch(row));
       }
 
       const history: VersionHistory = {
@@ -408,7 +447,7 @@ export class VersionControlService extends EventEmitter {
         current_version: versions.length > 0 ? versions[0].version : 0,
         versions,
         changes,
-        branches: branches.length > 0 ? branches : undefined
+        branches: branches.length > 0 ? branches : undefined,
       };
 
       // Cache the result
@@ -463,7 +502,10 @@ export class VersionControlService extends EventEmitter {
           break;
 
         case 'selective':
-          const currentEntry = await this.getVersion(entryId, await this.getCurrentVersion(entryId));
+          const currentEntry = await this.getVersion(
+            entryId,
+            await this.getCurrentVersion(entryId)
+          );
           rolledBackEntry = { ...currentEntry! };
 
           // Only rollback non-preserved fields
@@ -481,7 +523,10 @@ export class VersionControlService extends EventEmitter {
         case 'merge':
           // Implement three-way merge logic
           const baseEntry = await this.getVersion(entryId, targetVersion);
-          const currentEntryForMerge = await this.getVersion(entryId, await this.getCurrentVersion(entryId));
+          const currentEntryForMerge = await this.getVersion(
+            entryId,
+            await this.getCurrentVersion(entryId)
+          );
 
           const mergeResult = await this.mergeVersions(
             baseEntry!,
@@ -502,7 +547,8 @@ export class VersionControlService extends EventEmitter {
 
       // Create new version with rollback
       const changeFields = this.detectChangedFields(targetEntry, rolledBackEntry);
-      const changeSummary = options.change_summary ||
+      const changeSummary =
+        options.change_summary ||
         `Rolled back to version ${targetVersion} using ${options.merge_strategy} strategy`;
 
       const newVersion = await this.createVersion(
@@ -514,16 +560,23 @@ export class VersionControlService extends EventEmitter {
       );
 
       // Record rollback in change history
-      await this.recordRollback(entryId, targetVersion, newVersion.version!, editorId, editorName, options);
+      await this.recordRollback(
+        entryId,
+        targetVersion,
+        newVersion.version!,
+        editorId,
+        editorName,
+        options
+      );
 
       console.log(`✅ Successfully rolled back to version ${targetVersion}`);
 
       this.emit('rollback-completed', {
         entry_id: entryId,
-        from_version: await this.getCurrentVersion(entryId) - 1,
+        from_version: (await this.getCurrentVersion(entryId)) - 1,
         to_version: targetVersion,
         new_version: newVersion.version,
-        strategy: options.merge_strategy
+        strategy: options.merge_strategy,
       });
 
       return newVersion;
@@ -550,25 +603,29 @@ export class VersionControlService extends EventEmitter {
       editor_name: editorName,
       change_type: 'restore',
       change_summary: `Rolled back to version ${targetVersion}`,
-      changed_fields: ['rollback_operation']
+      changed_fields: ['rollback_operation'],
     };
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO change_records (
         id, entry_id, version, editor_id, editor_name, change_type,
         change_summary, changed_fields, new_data
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      changeRecord.id,
-      changeRecord.entry_id,
-      changeRecord.version,
-      changeRecord.editor_id,
-      changeRecord.editor_name,
-      changeRecord.change_type,
-      changeRecord.change_summary,
-      JSON.stringify(changeRecord.changed_fields),
-      JSON.stringify(options)
-    );
+    `
+      )
+      .run(
+        changeRecord.id,
+        changeRecord.entry_id,
+        changeRecord.version,
+        changeRecord.editor_id,
+        changeRecord.editor_name,
+        changeRecord.change_type,
+        changeRecord.change_summary,
+        JSON.stringify(changeRecord.changed_fields),
+        JSON.stringify(options)
+      );
   }
 
   // ========================
@@ -597,7 +654,7 @@ export class VersionControlService extends EventEmitter {
         differences,
         similarity_score: similarityScore,
         change_summary: changeSummary,
-        impact_assessment: impactAssessment
+        impact_assessment: impactAssessment,
       };
     } catch (error) {
       console.error('❌ Failed to compare versions:', error);
@@ -622,7 +679,7 @@ export class VersionControlService extends EventEmitter {
           diffs.push({
             field: `${field}[]`,
             operation: 'added',
-            new_value: tag
+            new_value: tag,
           });
         });
 
@@ -630,7 +687,7 @@ export class VersionControlService extends EventEmitter {
           diffs.push({
             field: `${field}[]`,
             operation: 'removed',
-            old_value: tag
+            old_value: tag,
           });
         });
       }
@@ -640,20 +697,20 @@ export class VersionControlService extends EventEmitter {
           diffs.push({
             field,
             operation: 'added',
-            new_value: valueB
+            new_value: valueB,
           });
         } else if (valueA && !valueB) {
           diffs.push({
             field,
             operation: 'removed',
-            old_value: valueA
+            old_value: valueA,
           });
         } else {
           diffs.push({
             field,
             operation: 'changed',
             old_value: valueA,
-            new_value: valueB
+            new_value: valueB,
           });
         }
       }
@@ -690,11 +747,14 @@ export class VersionControlService extends EventEmitter {
     }
 
     const changes: string[] = [];
-    const changesByField = differences.reduce((acc, diff) => {
-      if (!acc[diff.field]) acc[diff.field] = [];
-      acc[diff.field].push(diff);
-      return acc;
-    }, {} as Record<string, FieldDiff[]>);
+    const changesByField = differences.reduce(
+      (acc, diff) => {
+        if (!acc[diff.field]) acc[diff.field] = [];
+        acc[diff.field].push(diff);
+        return acc;
+      },
+      {} as Record<string, FieldDiff[]>
+    );
 
     Object.entries(changesByField).forEach(([field, fieldDiffs]) => {
       const operations = fieldDiffs.map(d => d.operation);
@@ -716,7 +776,10 @@ export class VersionControlService extends EventEmitter {
     return changes.join(', ');
   }
 
-  private assessChangeImpact(differences: FieldDiff[], similarityScore: number): 'low' | 'medium' | 'high' {
+  private assessChangeImpact(
+    differences: FieldDiff[],
+    similarityScore: number
+  ): 'low' | 'medium' | 'high' {
     // Critical fields have higher impact
     const criticalFields = ['title', 'problem', 'solution'];
     const criticalChanges = differences.filter(diff =>
@@ -773,7 +836,7 @@ export class VersionControlService extends EventEmitter {
               version_a: valueA,
               version_b: valueB,
               resolution_required: false,
-              suggested_resolution: mergedTags.tags
+              suggested_resolution: mergedTags.tags,
             });
           }
           return;
@@ -799,7 +862,7 @@ export class VersionControlService extends EventEmitter {
           version_a: valueA,
           version_b: valueB,
           resolution_required: true,
-          suggested_resolution: this.suggestResolution(field, valueA, valueB)
+          suggested_resolution: this.suggestResolution(field, valueA, valueB),
         });
 
         // Use suggested resolution for now
@@ -812,7 +875,7 @@ export class VersionControlService extends EventEmitter {
         success,
         merged_entry: success ? mergedEntry : undefined,
         conflicts: conflicts.length > 0 ? conflicts : undefined,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (error) {
       console.error('❌ Failed to merge versions:', error);
@@ -820,7 +883,11 @@ export class VersionControlService extends EventEmitter {
     }
   }
 
-  private mergeTags(baseTags: string[], tagsA: string[], tagsB: string[]): { tags: string[], conflicts: string[] } {
+  private mergeTags(
+    baseTags: string[],
+    tagsA: string[],
+    tagsB: string[]
+  ): { tags: string[]; conflicts: string[] } {
     const addedA = tagsA.filter(tag => !baseTags.includes(tag));
     const addedB = tagsB.filter(tag => !baseTags.includes(tag));
     const removedA = baseTags.filter(tag => !tagsA.includes(tag));
@@ -915,7 +982,7 @@ export class VersionControlService extends EventEmitter {
       problem: entry.problem,
       solution: entry.solution,
       category: entry.category,
-      tags: (entry.tags || []).sort()
+      tags: (entry.tags || []).sort(),
     };
 
     // Simple hash based on content
@@ -923,7 +990,7 @@ export class VersionControlService extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString(16);
@@ -942,7 +1009,7 @@ export class VersionControlService extends EventEmitter {
       change_summary: row.change_summary,
       changed_fields: row.changed_fields ? JSON.parse(row.changed_fields) : [],
       editor_id: row.editor_id,
-      editor_name: row.editor_name
+      editor_name: row.editor_name,
     };
   }
 
@@ -959,7 +1026,7 @@ export class VersionControlService extends EventEmitter {
       changed_fields: row.changed_fields ? JSON.parse(row.changed_fields) : [],
       previous_data: row.previous_data ? JSON.parse(row.previous_data) : undefined,
       new_data: row.new_data ? JSON.parse(row.new_data) : undefined,
-      diff: row.diff_data ? JSON.parse(row.diff_data) : undefined
+      diff: row.diff_data ? JSON.parse(row.diff_data) : undefined,
     };
   }
 
@@ -971,20 +1038,26 @@ export class VersionControlService extends EventEmitter {
       tip_version: row.tip_version,
       created_by: row.created_by,
       created_at: new Date(row.created_at),
-      description: row.description
+      description: row.description,
     };
   }
 
   private async cleanupOldVersions(entryId: string): Promise<void> {
     try {
-      const versionCount = this.db.prepare(`
+      const versionCount = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM entry_versions WHERE entry_id = ?
-      `).get(entryId).count;
+      `
+        )
+        .get(entryId).count;
 
       if (versionCount > this.config.max_versions_per_entry) {
         const versionsToDelete = versionCount - this.config.max_versions_per_entry;
 
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           DELETE FROM entry_versions
           WHERE entry_id = ? AND version IN (
             SELECT version FROM entry_versions
@@ -992,7 +1065,9 @@ export class VersionControlService extends EventEmitter {
             ORDER BY version ASC
             LIMIT ?
           )
-        `).run(entryId, entryId, versionsToDelete);
+        `
+          )
+          .run(entryId, entryId, versionsToDelete);
 
         console.log(`🧹 Cleaned up ${versionsToDelete} old versions for entry ${entryId}`);
       }
@@ -1046,11 +1121,15 @@ export class VersionControlService extends EventEmitter {
 
   async getRecentChanges(limit: number = 20): Promise<ChangeRecord[]> {
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT * FROM change_records
         ORDER BY timestamp DESC
         LIMIT ?
-      `).all(limit);
+      `
+        )
+        .all(limit);
 
       return results.map((row: any) => this.parseChangeRecord(row));
     } catch (error) {
@@ -1072,10 +1151,14 @@ export class VersionControlService extends EventEmitter {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - this.config.auto_cleanup_days);
 
-      const deletedCount = this.db.prepare(`
+      const deletedCount = this.db
+        .prepare(
+          `
         DELETE FROM change_records
         WHERE timestamp < ? AND change_type != 'create'
-      `).run(cutoffDate.toISOString()).changes;
+      `
+        )
+        .run(cutoffDate.toISOString()).changes;
 
       console.log(`🧹 Cleaned up ${deletedCount} old change records`);
 

@@ -1,11 +1,11 @@
 /**
  * Complete Cache System Integration
- * 
+ *
  * Demonstrates how to integrate all caching components for optimal
  * sub-1s performance across all MVPs of the mainframe KB assistant:
- * 
+ *
  * - Multi-layer cache manager with intelligent distribution
- * - Cache warming engine with predictive capabilities  
+ * - Cache warming engine with predictive capabilities
  * - Smart invalidation with event-driven updates
  * - Comprehensive performance monitoring and optimization
  */
@@ -63,7 +63,7 @@ export class CacheSystemIntegration {
   private warmingEngine: CacheWarmingEngine;
   private invalidationManager: CacheInvalidationManager;
   private performanceMonitor: CachePerformanceMonitor;
-  
+
   private config: CacheSystemConfig;
   private initialized: boolean = false;
 
@@ -74,9 +74,9 @@ export class CacheSystemIntegration {
       enablePredictiveWarming: true,
       enableSmartInvalidation: true,
       enablePerformanceMonitoring: true,
-      ...config
+      ...config,
     };
-    
+
     console.log(`🚀 Initializing integrated cache system for MVP${config.mvpLevel}...`);
   }
 
@@ -86,17 +86,13 @@ export class CacheSystemIntegration {
   async initialize(): Promise<void> {
     try {
       // 1. Initialize multi-layer cache manager
-      this.cacheManager = new MultiLayerCacheManager(
-        this.database,
-        this.config.mvpLevel,
-        {
-          enableDistributedCache: this.config.enableDistributedCache && this.config.mvpLevel >= 5,
-          enablePredictiveCaching: this.config.enablePredictiveWarming,
-          hotCacheSize: this.getOptimalHotCacheSize(),
-          warmCacheSize: this.getOptimalWarmCacheSize(),
-          maxMemoryMB: this.getOptimalMemoryLimit()
-        }
-      );
+      this.cacheManager = new MultiLayerCacheManager(this.database, this.config.mvpLevel, {
+        enableDistributedCache: this.config.enableDistributedCache && this.config.mvpLevel >= 5,
+        enablePredictiveCaching: this.config.enablePredictiveWarming,
+        hotCacheSize: this.getOptimalHotCacheSize(),
+        warmCacheSize: this.getOptimalWarmCacheSize(),
+        maxMemoryMB: this.getOptimalMemoryLimit(),
+      });
 
       // 2. Initialize cache warming engine
       this.warmingEngine = new CacheWarmingEngine(
@@ -106,10 +102,7 @@ export class CacheSystemIntegration {
       );
 
       // 3. Initialize invalidation manager
-      this.invalidationManager = new CacheInvalidationManager(
-        this.database,
-        this.cacheManager
-      );
+      this.invalidationManager = new CacheInvalidationManager(this.database, this.cacheManager);
 
       // 4. Initialize performance monitor
       this.performanceMonitor = new CachePerformanceMonitor(
@@ -128,7 +121,6 @@ export class CacheSystemIntegration {
 
       this.initialized = true;
       console.log(`✅ Cache system initialized successfully for MVP${this.config.mvpLevel}`);
-
     } catch (error) {
       console.error('❌ Failed to initialize cache system:', error);
       throw error;
@@ -150,10 +142,10 @@ export class CacheSystemIntegration {
     }
   ): Promise<T> {
     this.ensureInitialized();
-    
+
     const startTime = performance.now();
     const operationId = this.generateOperationId();
-    
+
     try {
       // Record user interaction for learning
       if (options?.userContext) {
@@ -171,7 +163,7 @@ export class CacheSystemIntegration {
         ttl: options?.ttl,
         priority: options?.priority,
         tags: options?.tags,
-        userContext: options?.userContext
+        userContext: options?.userContext,
       });
 
       // Record operation metrics
@@ -194,7 +186,6 @@ export class CacheSystemIntegration {
       }
 
       return result;
-
     } catch (error) {
       const duration = performance.now() - startTime;
       this.performanceMonitor.recordOperation('cache-get-error', duration, false);
@@ -215,18 +206,14 @@ export class CacheSystemIntegration {
     }
   ): Promise<any[]> {
     const cacheKey = this.generateSearchCacheKey(query, options);
-    
-    return this.get(
-      cacheKey,
-      () => this.executeKBSearch(query, options),
-      {
-        ttl: this.getSearchTTL(query),
-        priority: 'high', // Search results are high priority
-        tags: ['search', 'kb-entries', options?.category || 'all'].filter(Boolean),
-        userContext: options?.userContext,
-        category: 'search'
-      }
-    );
+
+    return this.get(cacheKey, () => this.executeKBSearch(query, options), {
+      ttl: this.getSearchTTL(query),
+      priority: 'high', // Search results are high priority
+      tags: ['search', 'kb-entries', options?.category || 'all'].filter(Boolean),
+      userContext: options?.userContext,
+      category: 'search',
+    });
   }
 
   /**
@@ -244,18 +231,14 @@ export class CacheSystemIntegration {
     }
 
     const cacheKey = `patterns:${timeWindow}:${(options?.components || []).join(',')}`;
-    
-    return this.get(
-      cacheKey,
-      () => this.executePatternAnalysis(timeWindow, options),
-      {
-        ttl: 15 * 60 * 1000, // 15 minutes - patterns change frequently
-        priority: 'normal',
-        tags: ['patterns', 'analysis', timeWindow],
-        userContext: options?.userContext,
-        category: 'patterns'
-      }
-    );
+
+    return this.get(cacheKey, () => this.executePatternAnalysis(timeWindow, options), {
+      ttl: 15 * 60 * 1000, // 15 minutes - patterns change frequently
+      priority: 'normal',
+      tags: ['patterns', 'analysis', timeWindow],
+      userContext: options?.userContext,
+      category: 'patterns',
+    });
   }
 
   /**
@@ -273,18 +256,14 @@ export class CacheSystemIntegration {
     }
 
     const cacheKey = `code:${filePath}:${options?.analysisType || 'full'}`;
-    
-    return this.get(
-      cacheKey,
-      () => this.executeCodeAnalysis(filePath, options),
-      {
-        ttl: 60 * 60 * 1000, // 1 hour - code changes less frequently
-        priority: 'normal',
-        tags: ['code', 'analysis', options?.analysisType || 'full'],
-        userContext: options?.userContext,
-        category: 'code'
-      }
-    );
+
+    return this.get(cacheKey, () => this.executeCodeAnalysis(filePath, options), {
+      ttl: 60 * 60 * 1000, // 1 hour - code changes less frequently
+      priority: 'normal',
+      tags: ['code', 'analysis', options?.analysisType || 'full'],
+      userContext: options?.userContext,
+      category: 'code',
+    });
   }
 
   /**
@@ -295,23 +274,23 @@ export class CacheSystemIntegration {
     userContext?: string
   ): Promise<number> {
     this.ensureInitialized();
-    
+
     console.log(`🔥 Warming cache with strategy: ${strategy || 'all'}`);
-    
+
     let totalWarmed = 0;
-    
+
     if (!strategy || strategy === 'popular') {
       totalWarmed += await this.warmingEngine.warmCache('popular-entries');
     }
-    
+
     if (!strategy || strategy === 'time-based') {
       totalWarmed += await this.warmingEngine.warmCache('recent-activity');
     }
-    
+
     if (!strategy || strategy === 'predictive') {
       totalWarmed += await this.warmingEngine.predictiveCache(userContext);
     }
-    
+
     console.log(`✅ Cache warming completed: ${totalWarmed} entries warmed`);
     return totalWarmed;
   }
@@ -319,15 +298,11 @@ export class CacheSystemIntegration {
   /**
    * Invalidate cache entries with smart cascade
    */
-  async invalidateCache(
-    pattern?: string,
-    tags?: string[],
-    reason?: string
-  ): Promise<number> {
+  async invalidateCache(pattern?: string, tags?: string[], reason?: string): Promise<number> {
     this.ensureInitialized();
-    
+
     const event = await this.invalidationManager.invalidate(pattern, tags, true, reason);
-    
+
     // Trigger predictive warming to refill invalidated entries
     if (event.success && event.affectedKeys.length > 10) {
       setTimeout(() => {
@@ -336,7 +311,7 @@ export class CacheSystemIntegration {
         });
       }, 1000); // Small delay to avoid immediate cache thrashing
     }
-    
+
     return event.affectedKeys.length;
   }
 
@@ -345,35 +320,37 @@ export class CacheSystemIntegration {
    */
   getSystemStats(): CacheSystemStats {
     this.ensureInitialized();
-    
+
     const cacheMetrics = this.cacheManager.getMetrics();
     const warmingStats = this.warmingEngine.getStats();
     const invalidationStats = this.invalidationManager.getStats();
     const performanceMetrics = this.performanceMonitor.getCurrentMetrics();
-    
+
     return {
       layers: {
         hot: this.extractLayerStats(cacheMetrics, 'Hot Cache (L1)'),
         warm: this.extractLayerStats(cacheMetrics, 'Warm Cache (L2)'),
         distributed: this.extractLayerStats(cacheMetrics, 'Distributed Cache (L3)'),
-        persistent: this.extractLayerStats(cacheMetrics, 'Persistent Cache (L4)')
+        persistent: this.extractLayerStats(cacheMetrics, 'Persistent Cache (L4)'),
       },
       warming: {
         totalWarmed: warmingStats.totalWarmed,
         accuracy: warmingStats.accuracy,
-        effectiveness: warmingStats.avgTimeSaved > 0 ? 1 : 0
+        effectiveness: warmingStats.avgTimeSaved > 0 ? 1 : 0,
       },
       invalidation: {
         totalInvalidated: invalidationStats.totalInvalidations,
-        cascadeRate: invalidationStats.cascadeInvalidations / Math.max(invalidationStats.totalInvalidations, 1),
-        accuracy: invalidationStats.effectiveness
+        cascadeRate:
+          invalidationStats.cascadeInvalidations /
+          Math.max(invalidationStats.totalInvalidations, 1),
+        accuracy: invalidationStats.effectiveness,
       },
       performance: {
         overallHitRate: performanceMetrics.overallHitRate,
         avgResponseTime: performanceMetrics.avgResponseTime,
         slaCompliance: performanceMetrics.slaCompliance,
-        grade: performanceMetrics.performanceGrade
-      }
+        grade: performanceMetrics.performanceGrade,
+      },
     };
   }
 
@@ -387,12 +364,12 @@ export class CacheSystemIntegration {
     performance: string[];
   } {
     this.ensureInitialized();
-    
+
     return {
       cache: this.cacheManager.getOptimizationSuggestions(),
       warming: this.warmingEngine.getRecommendations(),
       invalidation: this.invalidationManager.getRecommendations(),
-      performance: this.performanceMonitor.getOptimizationSuggestions()
+      performance: this.performanceMonitor.getOptimizationSuggestions(),
     };
   }
 
@@ -401,17 +378,17 @@ export class CacheSystemIntegration {
    */
   generatePerformanceReport(timeframe: 'hourly' | 'daily' | 'weekly' = 'hourly'): any {
     this.ensureInitialized();
-    
+
     const report = this.performanceMonitor.generateReport(timeframe);
     const systemStats = this.getSystemStats();
     const recommendations = this.getOptimizationRecommendations();
-    
+
     return {
       ...report,
       systemStats,
       recommendations,
       mvpLevel: this.config.mvpLevel,
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
     };
   }
 
@@ -420,19 +397,18 @@ export class CacheSystemIntegration {
    */
   async shutdown(): Promise<void> {
     if (!this.initialized) return;
-    
+
     console.log('🔄 Shutting down cache system...');
-    
+
     try {
       // Final cache warming for critical data
       await this.warmCache('popular');
-      
+
       // Flush any pending operations
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       this.initialized = false;
       console.log('✅ Cache system shutdown completed');
-      
     } catch (error) {
       console.error('❌ Error during cache system shutdown:', error);
     }
@@ -448,19 +424,23 @@ export class CacheSystemIntegration {
 
   private setupEventListeners(): void {
     // Cache warming events
-    this.warmingEngine.on('warming-completed', (event) => {
-      console.log(`🔥 Cache warming: ${event.warmed}/${event.total} entries, ${event.timeSaved}ms saved`);
+    this.warmingEngine.on('warming-completed', event => {
+      console.log(
+        `🔥 Cache warming: ${event.warmed}/${event.total} entries, ${event.timeSaved}ms saved`
+      );
     });
 
     // Invalidation events
-    this.invalidationManager.on('invalidation-completed', (event) => {
-      console.log(`🗑️ Cache invalidated: ${event.affectedKeys.length} keys, cascade level ${event.cascadeLevel}`);
+    this.invalidationManager.on('invalidation-completed', event => {
+      console.log(
+        `🗑️ Cache invalidated: ${event.affectedKeys.length} keys, cascade level ${event.cascadeLevel}`
+      );
     });
 
     // Performance alerts
-    this.performanceMonitor.on('performance-alert', (alert) => {
+    this.performanceMonitor.on('performance-alert', alert => {
       console.log(`🚨 Performance alert: ${alert.level} - ${alert.message}`);
-      
+
       // Auto-respond to critical alerts
       if (alert.level === 'critical') {
         this.handleCriticalAlert(alert).catch(error => {
@@ -470,7 +450,7 @@ export class CacheSystemIntegration {
     });
 
     // Metrics updates
-    this.performanceMonitor.on('metrics-updated', (metrics) => {
+    this.performanceMonitor.on('metrics-updated', metrics => {
       // Trigger warming if hit rate is low
       if (metrics.overallHitRate < 0.7) {
         this.warmCache('predictive').catch(error => {
@@ -482,18 +462,18 @@ export class CacheSystemIntegration {
 
   private async initialCacheWarming(): Promise<void> {
     console.log('🔥 Performing initial cache warming...');
-    
+
     // Warm essential data based on MVP level
     const strategies = ['popular-entries'];
-    
+
     if (this.config.mvpLevel >= 2) {
       strategies.push('category-overview');
     }
-    
+
     if (this.config.mvpLevel >= 3) {
       strategies.push('recent-activity');
     }
-    
+
     let totalWarmed = 0;
     for (const strategy of strategies) {
       try {
@@ -503,24 +483,24 @@ export class CacheSystemIntegration {
         console.warn(`Warning: Initial warming strategy '${strategy}' failed:`, error);
       }
     }
-    
+
     console.log(`✅ Initial warming completed: ${totalWarmed} entries`);
   }
 
   private async handleCriticalAlert(alert: any): Promise<void> {
     console.log('🚨 Handling critical performance alert:', alert.metric);
-    
+
     switch (alert.metric) {
       case 'avgResponseTime':
         // Aggressive cache warming
         await this.warmCache('popular');
         break;
-        
+
       case 'overallHitRate':
         // Increase TTLs and warm more aggressively
         await this.warmCache('predictive');
         break;
-        
+
       case 'memoryUsage':
         // Trigger cache cleanup
         await this.invalidateCache('*:old*', ['stale']);
@@ -545,11 +525,11 @@ export class CacheSystemIntegration {
 
   private generateSearchCacheKey(query: string, options?: any): string {
     const parts = ['search', query];
-    
+
     if (options?.category) parts.push(`cat:${options.category}`);
     if (options?.limit) parts.push(`limit:${options.limit}`);
     if (options?.useAI) parts.push('ai');
-    
+
     return parts.join(':');
   }
 
@@ -557,7 +537,7 @@ export class CacheSystemIntegration {
     // Popular searches get longer TTL
     const baseWords = query.toLowerCase().split(/\s+/);
     const popularWords = ['error', 'vsam', 'jcl', 'batch', 'status'];
-    
+
     const isPopular = popularWords.some(word => baseWords.includes(word));
     return isPopular ? 30 * 60 * 1000 : 10 * 60 * 1000; // 30min vs 10min
   }
@@ -581,13 +561,18 @@ export class CacheSystemIntegration {
     return {};
   }
 
-  private extractLayerStats(metrics: any, layerName: string): { size: number; hitRate: number; avgTime: number } {
+  private extractLayerStats(
+    metrics: any,
+    layerName: string
+  ): { size: number; hitRate: number; avgTime: number } {
     const layer = metrics.layers.find((l: any) => l.name === layerName);
-    return layer ? {
-      size: layer.size,
-      hitRate: layer.hitRate,
-      avgTime: layer.avgResponseTime
-    } : { size: 0, hitRate: 0, avgTime: 0 };
+    return layer
+      ? {
+          size: layer.size,
+          hitRate: layer.hitRate,
+          avgTime: layer.avgResponseTime,
+        }
+      : { size: 0, hitRate: 0, avgTime: 0 };
   }
 
   private generateOperationId(): string {
@@ -614,10 +599,10 @@ export const MVPConfigurations = {
     performanceTargets: {
       maxResponseTime: 1000,
       minHitRate: 0.8,
-      maxMemoryUsage: 100 * 1024 * 1024
-    }
+      maxMemoryUsage: 100 * 1024 * 1024,
+    },
   },
-  
+
   MVP2: {
     mvpLevel: 2 as const,
     enableDistributedCache: false,
@@ -625,10 +610,10 @@ export const MVPConfigurations = {
     performanceTargets: {
       maxResponseTime: 800,
       minHitRate: 0.82,
-      maxMemoryUsage: 150 * 1024 * 1024
-    }
+      maxMemoryUsage: 150 * 1024 * 1024,
+    },
   },
-  
+
   MVP3: {
     mvpLevel: 3 as const,
     enableDistributedCache: false,
@@ -636,10 +621,10 @@ export const MVPConfigurations = {
     performanceTargets: {
       maxResponseTime: 500,
       minHitRate: 0.85,
-      maxMemoryUsage: 200 * 1024 * 1024
-    }
+      maxMemoryUsage: 200 * 1024 * 1024,
+    },
   },
-  
+
   MVP4: {
     mvpLevel: 4 as const,
     enableDistributedCache: false,
@@ -647,10 +632,10 @@ export const MVPConfigurations = {
     performanceTargets: {
       maxResponseTime: 300,
       minHitRate: 0.88,
-      maxMemoryUsage: 250 * 1024 * 1024
-    }
+      maxMemoryUsage: 250 * 1024 * 1024,
+    },
   },
-  
+
   MVP5: {
     mvpLevel: 5 as const,
     enableDistributedCache: true,
@@ -658,7 +643,7 @@ export const MVPConfigurations = {
     performanceTargets: {
       maxResponseTime: 200,
       minHitRate: 0.9,
-      maxMemoryUsage: 512 * 1024 * 1024
-    }
-  }
+      maxMemoryUsage: 512 * 1024 * 1024,
+    },
+  },
 };

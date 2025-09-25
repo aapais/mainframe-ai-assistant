@@ -10,15 +10,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quit: () => ipcRenderer.invoke('app-quit'),
 
   // Dialog methods
-  showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
-  showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
-  showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
+  showMessageBox: options => ipcRenderer.invoke('show-message-box', options),
+  showSaveDialog: options => ipcRenderer.invoke('show-save-dialog', options),
+  showOpenDialog: options => ipcRenderer.invoke('show-open-dialog', options),
 
   // Update checking
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
 
   // Menu event listeners
-  onMenuAction: (callback) => {
+  onMenuAction: callback => {
     ipcRenderer.on('menu-new-entry', callback);
     ipcRenderer.on('menu-import-file', callback);
     ipcRenderer.on('menu-search', callback);
@@ -60,7 +60,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'api-settings:clear-all-keys',
       'api-settings:validate-key-format',
       'api-settings:get-session-keys',
-      'api-settings:clear-session-keys'
+      'api-settings:clear-session-keys',
     ];
 
     if (allowedChannels.includes(channel)) {
@@ -68,7 +68,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     } else {
       throw new Error(`Channel ${channel} is not allowed`);
     }
-  }
+  },
 });
 
 // Security: Remove any node.js APIs that shouldn't be accessible

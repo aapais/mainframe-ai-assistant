@@ -7,15 +7,15 @@
  */
 export const formatDate = (date: Date | string): string => {
   const d = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (isNaN(d.getTime())) {
     return 'Invalid date';
   }
-  
+
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
 };
 
@@ -24,17 +24,17 @@ export const formatDate = (date: Date | string): string => {
  */
 export const formatDateTime = (date: Date | string): string => {
   const d = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (isNaN(d.getTime())) {
     return 'Invalid date';
   }
-  
+
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 
@@ -43,11 +43,11 @@ export const formatDateTime = (date: Date | string): string => {
  */
 export const formatRelativeTime = (date: Date | string): string => {
   const d = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (isNaN(d.getTime())) {
     return 'Invalid date';
   }
-  
+
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
@@ -55,7 +55,7 @@ export const formatRelativeTime = (date: Date | string): string => {
   const diffDays = Math.floor(diffHours / 24);
   const diffWeeks = Math.floor(diffDays / 7);
   const diffMonths = Math.floor(diffDays / 30);
-  
+
   if (diffMinutes < 1) {
     return 'Just now';
   } else if (diffMinutes < 60) {
@@ -79,17 +79,17 @@ export const formatRelativeTime = (date: Date | string): string => {
  */
 export const highlightText = (text: string, searchTerms: string | string[]): string => {
   if (!text || !searchTerms) return text;
-  
+
   const terms = Array.isArray(searchTerms) ? searchTerms : [searchTerms];
   let highlightedText = text;
-  
+
   terms.forEach(term => {
     if (term.trim()) {
       const regex = new RegExp(`(${escapeRegExp(term)})`, 'gi');
       highlightedText = highlightedText.replace(regex, '<mark class="search-highlight">$1</mark>');
     }
   });
-  
+
   return highlightedText;
 };
 
@@ -113,11 +113,11 @@ export const truncateText = (text: string, maxLength: number): string => {
  */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
@@ -158,9 +158,7 @@ export const pluralize = (word: string, count: number, suffix: string = 's'): st
  * Capitalize first letter of each word
  */
 export const toTitleCase = (str: string): string => {
-  return str.replace(/\w\S*/g, (txt) => 
-    txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-  );
+  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
 
 /**
@@ -169,7 +167,7 @@ export const toTitleCase = (str: string): string => {
 export const camelToHuman = (str: string): string => {
   return str
     .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (str) => str.toUpperCase())
+    .replace(/^./, str => str.toUpperCase())
     .trim();
 };
 
@@ -181,7 +179,7 @@ export const stringToColor = (str: string): string => {
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const hue = hash % 360;
   return `hsl(${hue}, 70%, 50%)`;
 };
@@ -189,43 +187,47 @@ export const stringToColor = (str: string): string => {
 /**
  * Format search match type for display
  */
-export const formatMatchType = (matchType: string): { label: string; icon: string; description: string } => {
+export const formatMatchType = (
+  matchType: string
+): { label: string; icon: string; description: string } => {
   const types = {
-    exact: { 
-      label: 'Exact Match', 
-      icon: '🎯', 
-      description: 'Exact phrase found in content' 
+    exact: {
+      label: 'Exact Match',
+      icon: '🎯',
+      description: 'Exact phrase found in content',
     },
-    fuzzy: { 
-      label: 'Fuzzy Match', 
-      icon: '🔍', 
-      description: 'Similar terms found using fuzzy matching' 
+    fuzzy: {
+      label: 'Fuzzy Match',
+      icon: '🔍',
+      description: 'Similar terms found using fuzzy matching',
     },
-    semantic: { 
-      label: 'AI Semantic', 
-      icon: '🧠', 
-      description: 'Semantically similar content found by AI' 
+    semantic: {
+      label: 'AI Semantic',
+      icon: '🧠',
+      description: 'Semantically similar content found by AI',
     },
-    ai: { 
-      label: 'AI Enhanced', 
-      icon: '🤖', 
-      description: 'Enhanced by AI analysis' 
+    ai: {
+      label: 'AI Enhanced',
+      icon: '🤖',
+      description: 'Enhanced by AI analysis',
     },
-    category: { 
-      label: 'Category', 
-      icon: '📁', 
-      description: 'Matched based on category' 
+    category: {
+      label: 'Category',
+      icon: '📁',
+      description: 'Matched based on category',
     },
-    tag: { 
-      label: 'Tag Match', 
-      icon: '🏷️', 
-      description: 'Matched based on tags' 
+    tag: {
+      label: 'Tag Match',
+      icon: '🏷️',
+      description: 'Matched based on tags',
+    },
+  };
+
+  return (
+    types[matchType] || {
+      label: 'Unknown',
+      icon: '❓',
+      description: 'Unknown match type',
     }
-  };
-  
-  return types[matchType] || { 
-    label: 'Unknown', 
-    icon: '❓', 
-    description: 'Unknown match type' 
-  };
+  );
 };

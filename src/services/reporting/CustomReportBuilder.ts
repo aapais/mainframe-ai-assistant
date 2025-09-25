@@ -5,7 +5,7 @@ import {
   FilterConfig,
   AggregationConfig,
   VisualizationConfig,
-  ScheduleConfig
+  ScheduleConfig,
 } from './ReportGenerator';
 
 export interface ReportTemplate {
@@ -122,12 +122,14 @@ export class CustomReportBuilder extends EventEmitter {
   }
 
   // Template Management
-  public createTemplate(template: Omit<ReportTemplate, 'id' | 'createdAt' | 'usageCount'>): ReportTemplate {
+  public createTemplate(
+    template: Omit<ReportTemplate, 'id' | 'createdAt' | 'usageCount'>
+  ): ReportTemplate {
     const newTemplate: ReportTemplate = {
       ...template,
       id: `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date(),
-      usageCount: 0
+      usageCount: 0,
     };
 
     this.templates.set(newTemplate.id, newTemplate);
@@ -208,7 +210,7 @@ export class CustomReportBuilder extends EventEmitter {
       visualizations: [],
       format: 'json',
       parameters: {},
-      ...baseBuilder
+      ...baseBuilder,
     };
 
     this.builders.set(builderId, builder);
@@ -228,7 +230,7 @@ export class CustomReportBuilder extends EventEmitter {
       visualizations: baseConfig.visualizations || [],
       schedule: baseConfig.schedule,
       format: baseConfig.format || 'json',
-      parameters: baseConfig.parameters || {}
+      parameters: baseConfig.parameters || {},
     };
   }
 
@@ -295,7 +297,11 @@ export class CustomReportBuilder extends EventEmitter {
     return removed;
   }
 
-  public updateField(builderId: string, fieldName: string, updates: Partial<SelectedField>): boolean {
+  public updateField(
+    builderId: string,
+    fieldName: string,
+    updates: Partial<SelectedField>
+  ): boolean {
     const builder = this.builders.get(builderId);
     if (!builder) {
       return false;
@@ -415,7 +421,7 @@ export class CustomReportBuilder extends EventEmitter {
         isValid: false,
         errors: ['Builder not found'],
         warnings: [],
-        suggestions: []
+        suggestions: [],
       };
     }
 
@@ -486,7 +492,7 @@ export class CustomReportBuilder extends EventEmitter {
       isValid: errors.length === 0,
       errors,
       warnings,
-      suggestions
+      suggestions,
     };
   }
 
@@ -513,7 +519,7 @@ export class CustomReportBuilder extends EventEmitter {
       filters: builder.filters,
       aggregations: builder.aggregations,
       visualizations: builder.visualizations,
-      schedule: builder.schedule
+      schedule: builder.schedule,
     };
 
     this.logger.info(`Report configuration built: ${builder.name}`);
@@ -532,7 +538,7 @@ export class CustomReportBuilder extends EventEmitter {
     return {
       version: '1.0',
       exportedAt: new Date().toISOString(),
-      builder: builder
+      builder: builder,
     };
   }
 

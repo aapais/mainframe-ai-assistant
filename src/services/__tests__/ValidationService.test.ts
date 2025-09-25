@@ -8,7 +8,7 @@ import {
   ValidationError,
   ValidationWarning,
   CustomValidator,
-  ServiceError
+  ServiceError,
 } from '../../types/services';
 
 describe('ValidationService', () => {
@@ -97,13 +97,15 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'title' && e.code === 'MAX_LENGTH')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'title' && e.code === 'MAX_LENGTH')
+        ).toBeDefined();
       });
 
       it('validates title minimum length in strict mode', () => {
         const strictConfig = { ...config, strict: true };
         const strictService = new ValidationService(strictConfig);
-        
+
         const entry: KBEntryInput = {
           title: 'a',
           problem: 'Valid problem description with enough content',
@@ -114,7 +116,9 @@ describe('ValidationService', () => {
         const result = strictService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'title' && e.code === 'MIN_LENGTH')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'title' && e.code === 'MIN_LENGTH')
+        ).toBeDefined();
       });
 
       it('creates warnings for minimum length in non-strict mode', () => {
@@ -129,7 +133,9 @@ describe('ValidationService', () => {
 
         expect(result.valid).toBe(true); // Still valid in non-strict mode
         expect(result.warnings.length).toBeGreaterThan(0);
-        expect(result.warnings.find(w => w.field === 'title' && w.code === 'MIN_LENGTH')).toBeDefined();
+        expect(
+          result.warnings.find(w => w.field === 'title' && w.code === 'MIN_LENGTH')
+        ).toBeDefined();
       });
 
       it('validates problem maximum length', () => {
@@ -143,7 +149,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'problem' && e.code === 'MAX_LENGTH')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'problem' && e.code === 'MAX_LENGTH')
+        ).toBeDefined();
       });
 
       it('validates solution maximum length', () => {
@@ -157,14 +165,16 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'solution' && e.code === 'MAX_LENGTH')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'solution' && e.code === 'MAX_LENGTH')
+        ).toBeDefined();
       });
     });
 
     describe('Category Validation', () => {
       it('validates valid categories', () => {
         const validCategories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'];
-        
+
         validCategories.forEach(category => {
           const entry: KBEntryInput = {
             title: 'Valid Title',
@@ -189,7 +199,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'category' && e.code === 'INVALID_CATEGORY')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'category' && e.code === 'INVALID_CATEGORY')
+        ).toBeDefined();
       });
     });
 
@@ -220,7 +232,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'tags' && e.code === 'INVALID_TYPE')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'tags' && e.code === 'INVALID_TYPE')
+        ).toBeDefined();
       });
 
       it('rejects non-string tag elements', () => {
@@ -235,7 +249,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'tags[1]' && e.code === 'INVALID_TYPE')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'tags[1]' && e.code === 'INVALID_TYPE')
+        ).toBeDefined();
       });
 
       it('validates tag length', () => {
@@ -250,7 +266,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'tags[0]' && e.code === 'MAX_LENGTH')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'tags[0]' && e.code === 'MAX_LENGTH')
+        ).toBeDefined();
       });
 
       it('validates tag format', () => {
@@ -265,7 +283,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'tags[0]' && e.code === 'INVALID_FORMAT')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'tags[0]' && e.code === 'INVALID_FORMAT')
+        ).toBeDefined();
       });
 
       it('warns about duplicate tags', () => {
@@ -280,7 +300,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(true);
-        expect(result.warnings.find(w => w.field === 'tags' && w.code === 'DUPLICATE_TAGS')).toBeDefined();
+        expect(
+          result.warnings.find(w => w.field === 'tags' && w.code === 'DUPLICATE_TAGS')
+        ).toBeDefined();
       });
 
       it('warns about too many tags', () => {
@@ -295,7 +317,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(true);
-        expect(result.warnings.find(w => w.field === 'tags' && w.code === 'TOO_MANY_TAGS')).toBeDefined();
+        expect(
+          result.warnings.find(w => w.field === 'tags' && w.code === 'TOO_MANY_TAGS')
+        ).toBeDefined();
       });
     });
 
@@ -326,7 +350,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'created_by' && e.code === 'INVALID_FORMAT')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'created_by' && e.code === 'INVALID_FORMAT')
+        ).toBeDefined();
       });
 
       it('validates created_by length', () => {
@@ -341,7 +367,9 @@ describe('ValidationService', () => {
         const result = validationService.validateEntry(entry);
 
         expect(result.valid).toBe(false);
-        expect(result.errors.find(e => e.field === 'created_by' && e.code === 'MAX_LENGTH')).toBeDefined();
+        expect(
+          result.errors.find(e => e.field === 'created_by' && e.code === 'MAX_LENGTH')
+        ).toBeDefined();
       });
     });
   });
@@ -363,7 +391,9 @@ describe('ValidationService', () => {
       const result = validationService.validateUpdate(updates);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.find(e => e.field === 'title' && e.code === 'INVALID_VALUE')).toBeDefined();
+      expect(
+        result.errors.find(e => e.field === 'title' && e.code === 'INVALID_VALUE')
+      ).toBeDefined();
     });
 
     it('validates problem updates', () => {
@@ -374,7 +404,9 @@ describe('ValidationService', () => {
       const result = validationService.validateUpdate(updates);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.find(e => e.field === 'problem' && e.code === 'MAX_LENGTH')).toBeDefined();
+      expect(
+        result.errors.find(e => e.field === 'problem' && e.code === 'MAX_LENGTH')
+      ).toBeDefined();
     });
 
     it('validates category updates', () => {
@@ -385,7 +417,9 @@ describe('ValidationService', () => {
       const result = validationService.validateUpdate(updates);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.find(e => e.field === 'category' && e.code === 'INVALID_CATEGORY')).toBeDefined();
+      expect(
+        result.errors.find(e => e.field === 'category' && e.code === 'INVALID_CATEGORY')
+      ).toBeDefined();
     });
 
     it('validates tags updates', () => {
@@ -396,7 +430,9 @@ describe('ValidationService', () => {
       const result = validationService.validateUpdate(updates);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.find(e => e.field === 'tags' && e.code === 'INVALID_TYPE')).toBeDefined();
+      expect(
+        result.errors.find(e => e.field === 'tags' && e.code === 'INVALID_TYPE')
+      ).toBeDefined();
     });
 
     it('passes validation with valid updates', () => {
@@ -443,7 +479,9 @@ describe('ValidationService', () => {
       const result = validationService.validateSearch('a');
 
       expect(result.valid).toBe(true);
-      expect(result.warnings.find(w => w.field === 'query' && w.code === 'MIN_LENGTH')).toBeDefined();
+      expect(
+        result.warnings.find(w => w.field === 'query' && w.code === 'MIN_LENGTH')
+      ).toBeDefined();
     });
 
     it('detects SQL injection patterns', () => {
@@ -489,7 +527,9 @@ describe('ValidationService', () => {
       const result = validationService.validateSearch('query', options);
 
       expect(result.valid).toBe(true);
-      expect(result.warnings.find(w => w.field === 'limit' && w.code === 'HIGH_VALUE')).toBeDefined();
+      expect(
+        result.warnings.find(w => w.field === 'limit' && w.code === 'HIGH_VALUE')
+      ).toBeDefined();
     });
   });
 
@@ -611,7 +651,9 @@ describe('ValidationService', () => {
 
       const result = validationService.validateEntry(entry);
 
-      expect(result.warnings.find(w => w.field === 'problem' && w.code === 'CONTENT_QUALITY')).toBeDefined();
+      expect(
+        result.warnings.find(w => w.field === 'problem' && w.code === 'CONTENT_QUALITY')
+      ).toBeDefined();
     });
 
     it('warns about brief solution descriptions', () => {
@@ -624,7 +666,9 @@ describe('ValidationService', () => {
 
       const result = validationService.validateEntry(entry);
 
-      expect(result.warnings.find(w => w.field === 'solution' && w.code === 'CONTENT_QUALITY')).toBeDefined();
+      expect(
+        result.warnings.find(w => w.field === 'solution' && w.code === 'CONTENT_QUALITY')
+      ).toBeDefined();
     });
 
     it('warns about potentially non-mainframe content', () => {
@@ -650,7 +694,9 @@ describe('ValidationService', () => {
 
       const result = validationService.validateEntry(entry);
 
-      expect(result.warnings.find(w => w.field === 'solution' && w.code === 'CONTENT_QUALITY')).toBeDefined();
+      expect(
+        result.warnings.find(w => w.field === 'solution' && w.code === 'CONTENT_QUALITY')
+      ).toBeDefined();
     });
   });
 
@@ -769,8 +815,10 @@ describe('ValidationService', () => {
     it('calculates quality scores based on content', () => {
       const goodEntry: KBEntryInput = {
         title: 'Comprehensive VSAM Status 35 Resolution',
-        problem: 'When a COBOL program tries to open a VSAM file and receives status code 35, it indicates that the file was not found. This typically happens during file processing operations and can be caused by several factors including incorrect dataset names, catalog issues, or file deletion.',
-        solution: '1. Verify the dataset exists using LISTCAT command\n2. Check the DD statement in JCL for correct DSN\n3. Ensure file is properly cataloged\n4. Verify RACF permissions using LISTDSD command\n5. Check if file was deleted or renamed\n6. Verify the correct catalog is being used',
+        problem:
+          'When a COBOL program tries to open a VSAM file and receives status code 35, it indicates that the file was not found. This typically happens during file processing operations and can be caused by several factors including incorrect dataset names, catalog issues, or file deletion.',
+        solution:
+          '1. Verify the dataset exists using LISTCAT command\n2. Check the DD statement in JCL for correct DSN\n3. Ensure file is properly cataloged\n4. Verify RACF permissions using LISTDSD command\n5. Check if file was deleted or renamed\n6. Verify the correct catalog is being used',
         category: 'VSAM',
         tags: ['vsam', 'status-35', 'file-not-found'],
       };
@@ -797,8 +845,10 @@ describe('ValidationService', () => {
     it('gives bonus points for good practices', () => {
       const wellStructuredEntry: KBEntryInput = {
         title: 'Well Structured COBOL Debugging Guide',
-        problem: 'When debugging COBOL programs with complex data structures and multiple file operations, developers often struggle to identify the exact location and cause of runtime errors, leading to extended troubleshooting time.',
-        solution: '1. Enable compile-time debugging options\n2. Use DISPLAY statements strategically\n3. Check working storage initialization\n4. Validate input data formats\n5. Use CEDF for interactive debugging\n6. Review compile listings for warnings',
+        problem:
+          'When debugging COBOL programs with complex data structures and multiple file operations, developers often struggle to identify the exact location and cause of runtime errors, leading to extended troubleshooting time.',
+        solution:
+          '1. Enable compile-time debugging options\n2. Use DISPLAY statements strategically\n3. Check working storage initialization\n4. Validate input data formats\n5. Use CEDF for interactive debugging\n6. Review compile listings for warnings',
         category: 'Batch',
         tags: ['cobol', 'debugging', 'mainframe', 'troubleshooting'],
       };

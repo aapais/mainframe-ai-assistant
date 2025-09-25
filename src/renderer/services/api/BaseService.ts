@@ -51,7 +51,7 @@ export abstract class BaseService extends EventEmitter {
   ): Promise<ServiceResponse<T>> {
     const startTime = Date.now();
     const { timeout = this.defaultTimeout, retries = this.defaultRetries } = options;
-    
+
     let lastError: Error | undefined;
     let attempts = 0;
 
@@ -76,7 +76,7 @@ export abstract class BaseService extends EventEmitter {
 
         // Execute operation with timeout
         const data = await this.withTimeout(operation(), timeout);
-        
+
         // Cache successful results
         if (options.cacheOptions && data) {
           this.setCachedData(
@@ -86,8 +86,8 @@ export abstract class BaseService extends EventEmitter {
           );
         }
 
-        this.emit('operation-success', { 
-          service: this.serviceName, 
+        this.emit('operation-success', {
+          service: this.serviceName,
           attempts: attempts + 1,
           processingTime: Date.now() - startTime,
         });
@@ -101,11 +101,10 @@ export abstract class BaseService extends EventEmitter {
             processingTime: Date.now() - startTime,
           },
         };
-
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         attempts++;
-        
+
         this.emit('operation-error', {
           service: this.serviceName,
           attempt: attempts,
@@ -157,10 +156,8 @@ export abstract class BaseService extends EventEmitter {
       'not found',
       'bad request',
     ];
-    
-    return nonRetryableMessages.some(msg => 
-      error.message.toLowerCase().includes(msg)
-    );
+
+    return nonRetryableMessages.some(msg => error.message.toLowerCase().includes(msg));
   }
 
   /**
@@ -168,16 +165,16 @@ export abstract class BaseService extends EventEmitter {
    */
   protected getCachedData<T>(key: string): T | null {
     const cached = this.cache.get(`${this.serviceName}:${key}`);
-    
+
     if (!cached) {
       return null;
     }
-    
+
     if (Date.now() > cached.timestamp + cached.ttl) {
       this.cache.delete(`${this.serviceName}:${key}`);
       return null;
     }
-    
+
     return cached.data as T;
   }
 
@@ -205,9 +202,10 @@ export abstract class BaseService extends EventEmitter {
    * Get cache statistics
    */
   public getCacheStats(): { size: number; keys: string[] } {
-    const keys = Array.from(this.cache.keys())
-      .filter(key => key.startsWith(`${this.serviceName}:`));
-    
+    const keys = Array.from(this.cache.keys()).filter(key =>
+      key.startsWith(`${this.serviceName}:`)
+    );
+
     return {
       size: keys.length,
       keys: keys.map(key => key.substring(this.serviceName.length + 1)),
@@ -239,8 +237,7 @@ export abstract class BaseService extends EventEmitter {
    * Check if Electron API is available
    */
   protected isElectronAPIAvailable(): boolean {
-    return typeof window !== 'undefined' && 
-           window.electronAPI !== undefined;
+    return typeof window !== 'undefined' && window.electronAPI !== undefined;
   }
 
   /**

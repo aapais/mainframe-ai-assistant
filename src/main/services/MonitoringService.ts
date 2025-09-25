@@ -57,7 +57,7 @@ export class MonitoringService implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
   private startTime?: Date;
   private monitoringInterval?: ReturnType<typeof setTimeout>;
@@ -67,9 +67,9 @@ export class MonitoringService implements Service {
 
   // Configurable thresholds
   private readonly thresholds = {
-    cpuUsage: 80,           // CPU usage percentage
-    memoryUsage: 85,        // Memory usage percentage
-    diskUsage: 90,          // Disk usage percentage
+    cpuUsage: 80, // CPU usage percentage
+    memoryUsage: 85, // Memory usage percentage
+    diskUsage: 90, // Disk usage percentage
     serviceHealthCheck: 5000, // Service health check timeout (ms)
   };
 
@@ -77,7 +77,7 @@ export class MonitoringService implements Service {
     context.logger.info('Initializing Monitoring Service...');
     this.startTime = new Date();
     this.context = context;
-    
+
     try {
       // Start monitoring loop
       this.startMonitoring();
@@ -86,7 +86,7 @@ export class MonitoringService implements Service {
         status: 'running',
         startTime: this.startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('Monitoring Service initialized successfully');
@@ -96,9 +96,9 @@ export class MonitoringService implements Service {
         status: 'error',
         lastError: error,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
-      
+
       context.logger.error('Monitoring Service initialization failed', error);
       context.metrics.increment('service.monitoring.initialization_failed');
       throw error;
@@ -113,7 +113,7 @@ export class MonitoringService implements Service {
 
     this.status = {
       ...this.status,
-      status: 'stopped'
+      status: 'stopped',
     };
   }
 
@@ -126,30 +126,30 @@ export class MonitoringService implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       // Check if monitoring is active
       const isMonitoring = this.monitoringInterval !== undefined;
       const metricsCount = this.metricsHistory.length;
       const activeAlerts = this.alerts.filter(a => !a.resolved).length;
-      
+
       return {
         healthy: isMonitoring,
         details: {
           monitoring: isMonitoring,
           metricsHistory: metricsCount,
           activeAlerts,
-          lastCollection: this.metricsHistory[this.metricsHistory.length - 1]?.timestamp
+          lastCollection: this.metricsHistory[this.metricsHistory.length - 1]?.timestamp,
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
@@ -160,7 +160,7 @@ export class MonitoringService implements Service {
   }
 
   getMetricsHistory(minutes: number = 60): SystemMetrics[] {
-    const cutoffTime = Date.now() - (minutes * 60 * 1000);
+    const cutoffTime = Date.now() - minutes * 60 * 1000;
     return this.metricsHistory.filter(m => m.timestamp.getTime() > cutoffTime);
   }
 
@@ -169,7 +169,7 @@ export class MonitoringService implements Service {
   }
 
   getAllAlerts(hours: number = 24): Alert[] {
-    const cutoffTime = Date.now() - (hours * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - hours * 60 * 60 * 1000;
     return this.alerts.filter(a => a.timestamp.getTime() > cutoffTime);
   }
 
@@ -208,16 +208,16 @@ export class MonitoringService implements Service {
   private collectSystemMetrics(): SystemMetrics {
     const memInfo = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
-    
+
     // System memory info
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const usedMem = totalMem - freeMem;
-    
+
     // Service health status from service manager
     let healthyServices: string[] = [];
     let unhealthyServices: string[] = [];
-    
+
     if (this.context) {
       try {
         // Try to get service manager instance through context
@@ -236,32 +236,32 @@ export class MonitoringService implements Service {
     return {
       cpu: {
         usage: this.calculateCPUUsage(cpuUsage),
-        loadAverage: os.loadavg()
+        loadAverage: os.loadavg(),
       },
       memory: {
         total: totalMem,
         free: freeMem,
         used: usedMem,
-        usagePercent: (usedMem / totalMem) * 100
+        usagePercent: (usedMem / totalMem) * 100,
       },
       disk: {
         total: 0, // Would need platform-specific implementation
         free: 0,
         used: 0,
-        usagePercent: 0
+        usagePercent: 0,
       },
       process: {
         pid: process.pid,
         uptime: process.uptime(),
         memoryUsage: memInfo,
-        cpuUsage: cpuUsage
+        cpuUsage: cpuUsage,
       },
       services: {
         healthy: healthyServices,
         unhealthy: unhealthyServices,
-        total: healthyServices.length + unhealthyServices.length
+        total: healthyServices.length + unhealthyServices.length,
       },
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
@@ -273,7 +273,7 @@ export class MonitoringService implements Service {
 
   private storeMetrics(metrics: SystemMetrics): void {
     this.metricsHistory.push(metrics);
-    
+
     // Keep only last 24 hours of metrics (assuming 30s intervals = 2880 entries per day)
     if (this.metricsHistory.length > 2880) {
       this.metricsHistory.shift();
@@ -287,7 +287,7 @@ export class MonitoringService implements Service {
         type: 'system',
         level: 'warning',
         message: `High CPU usage detected: ${metrics.cpu.usage.toFixed(1)}%`,
-        metadata: { cpuUsage: metrics.cpu.usage, threshold: this.thresholds.cpuUsage }
+        metadata: { cpuUsage: metrics.cpu.usage, threshold: this.thresholds.cpuUsage },
       });
     }
 
@@ -297,7 +297,10 @@ export class MonitoringService implements Service {
         type: 'system',
         level: 'warning',
         message: `High memory usage detected: ${metrics.memory.usagePercent.toFixed(1)}%`,
-        metadata: { memoryUsage: metrics.memory.usagePercent, threshold: this.thresholds.memoryUsage }
+        metadata: {
+          memoryUsage: metrics.memory.usagePercent,
+          threshold: this.thresholds.memoryUsage,
+        },
       });
     }
 
@@ -307,22 +310,24 @@ export class MonitoringService implements Service {
         type: 'service',
         level: 'error',
         message: `Unhealthy services detected: ${metrics.services.unhealthy.join(', ')}`,
-        metadata: { unhealthyServices: metrics.services.unhealthy }
+        metadata: { unhealthyServices: metrics.services.unhealthy },
       });
     }
 
     // Process memory growth alert (basic implementation)
     if (this.metricsHistory.length > 10) {
       const oldMetrics = this.metricsHistory[this.metricsHistory.length - 10];
-      const memoryGrowth = metrics.process.memoryUsage.heapUsed - oldMetrics.process.memoryUsage.heapUsed;
+      const memoryGrowth =
+        metrics.process.memoryUsage.heapUsed - oldMetrics.process.memoryUsage.heapUsed;
       const growthMB = memoryGrowth / 1024 / 1024;
-      
-      if (growthMB > 50) { // More than 50MB growth in last 5 minutes
+
+      if (growthMB > 50) {
+        // More than 50MB growth in last 5 minutes
         this.createAlert({
           type: 'performance',
           level: 'warning',
           message: `Potential memory leak detected: ${growthMB.toFixed(1)}MB growth`,
-          metadata: { memoryGrowth: growthMB, timeSpan: '5 minutes' }
+          metadata: { memoryGrowth: growthMB, timeSpan: '5 minutes' },
         });
       }
     }
@@ -333,19 +338,20 @@ export class MonitoringService implements Service {
       id: this.generateAlertId(),
       ...alertData,
       timestamp: new Date(),
-      resolved: false
+      resolved: false,
     };
 
     // Avoid duplicate alerts within the last 5 minutes
-    const recentAlerts = this.alerts.filter(a => 
-      Date.now() - a.timestamp.getTime() < 300000 && // 5 minutes
-      a.message === alert.message &&
-      !a.resolved
+    const recentAlerts = this.alerts.filter(
+      a =>
+        Date.now() - a.timestamp.getTime() < 300000 && // 5 minutes
+        a.message === alert.message &&
+        !a.resolved
     );
 
     if (recentAlerts.length === 0) {
       this.alerts.push(alert);
-      
+
       // Log the alert
       if (this.context) {
         const logLevel = alert.level === 'critical' || alert.level === 'error' ? 'error' : 'warn';

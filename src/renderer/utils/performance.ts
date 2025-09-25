@@ -9,25 +9,24 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
   fallback?: React.ComponentType
 ): React.LazyExoticComponent<T> {
   const LazyComponent = React.lazy(importFn);
-  
+
   if (fallback) {
-    return memo((props) => (
-      React.createElement(React.Suspense, { fallback: React.createElement(fallback) },
+    return memo(props =>
+      React.createElement(
+        React.Suspense,
+        { fallback: React.createElement(fallback) },
         React.createElement(LazyComponent, props)
       )
-    )) as React.LazyExoticComponent<T>;
+    ) as React.LazyExoticComponent<T>;
   }
-  
+
   return LazyComponent;
 }
 
 /**
  * Memoization hook for expensive calculations
  */
-export function useExpensiveComputation<T>(
-  computeFn: () => T,
-  deps: React.DependencyList
-): T {
+export function useExpensiveComputation<T>(computeFn: () => T, deps: React.DependencyList): T {
   return useMemo(computeFn, deps);
 }
 
@@ -63,31 +62,31 @@ export function useDebounce<T>(value: T, delay: number): T {
 /**
  * Throttled callback hook
  */
-export function useThrottle<T extends (...args: any[]) => any>(
-  callback: T,
-  delay: number
-): T {
+export function useThrottle<T extends (...args: any[]) => any>(callback: T, delay: number): T {
   const lastCallTime = useRef<number>(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  return useCallback((...args: Parameters<T>) => {
-    const now = Date.now();
-    const timeSinceLastCall = now - lastCallTime.current;
+  return useCallback(
+    (...args: Parameters<T>) => {
+      const now = Date.now();
+      const timeSinceLastCall = now - lastCallTime.current;
 
-    if (timeSinceLastCall >= delay) {
-      lastCallTime.current = now;
-      return callback(...args);
-    } else {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (timeSinceLastCall >= delay) {
+        lastCallTime.current = now;
+        return callback(...args);
+      } else {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          lastCallTime.current = Date.now();
+          callback(...args);
+        }, delay - timeSinceLastCall);
       }
-      
-      timeoutRef.current = setTimeout(() => {
-        lastCallTime.current = Date.now();
-        callback(...args);
-      }, delay - timeSinceLastCall);
-    }
-  }, [callback, delay]) as T;
+    },
+    [callback, delay]
+  ) as T;
 }
 
 /**
@@ -97,7 +96,7 @@ export function useVirtualScrolling({
   itemCount,
   itemHeight,
   containerHeight,
-  buffer = 5
+  buffer = 5,
 }: {
   itemCount: number;
   itemHeight: number;
@@ -127,7 +126,7 @@ export function useVirtualScrolling({
     endIndex,
     offsetY,
     totalHeight,
-    handleScroll
+    handleScroll,
   };
 }
 
@@ -150,7 +149,7 @@ export function useIntersectionObserver(
       },
       {
         threshold: 0.1,
-        ...options
+        ...options,
       }
     );
 
@@ -175,11 +174,11 @@ export function usePerformanceMonitor(componentName: string) {
     renderCountRef.current += 1;
     const currentTime = performance.now();
     const renderTime = currentTime - lastRenderTime.current;
-    
+
     if (renderCountRef.current > 1) {
       console.log(`${componentName} render #${renderCountRef.current}: ${renderTime.toFixed(2)}ms`);
     }
-    
+
     lastRenderTime.current = currentTime;
   });
 
@@ -206,7 +205,7 @@ export function useMemoryMonitor() {
         setMemoryInfo({
           usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
           totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
-          jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit
+          jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
         });
       }
     };
@@ -231,10 +230,12 @@ export class BundleAnalyzer {
   }
 
   static getReport(): { name: string; size: number }[] {
-    return Array.from(this.componentSizes.entries()).map(([name, size]) => ({
-      name,
-      size
-    })).sort((a, b) => b.size - a.size);
+    return Array.from(this.componentSizes.entries())
+      .map(([name, size]) => ({
+        name,
+        size,
+      }))
+      .sort((a, b) => b.size - a.size);
   }
 
   static getTotalSize(): number {
@@ -261,9 +262,10 @@ export function useImageOptimization() {
 
     const checkAVIF = async () => {
       try {
-        const avifData = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
+        const avifData =
+          'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEAwgMg8f8D///8WfhwB8+ErK42A=';
         const img = new Image();
-        return new Promise<boolean>((resolve) => {
+        return new Promise<boolean>(resolve => {
           img.onload = () => resolve(true);
           img.onerror = () => resolve(false);
           img.src = avifData;
@@ -275,7 +277,7 @@ export function useImageOptimization() {
 
     setSupportedFormats({
       webp: checkWebP(),
-      avif: false // Will be set asynchronously
+      avif: false, // Will be set asynchronously
     });
 
     checkAVIF().then(avif => {
@@ -283,18 +285,18 @@ export function useImageOptimization() {
     });
   }, []);
 
-  const getOptimalImageSrc = useCallback((
-    baseSrc: string,
-    sizes?: { webp?: string; avif?: string }
-  ) => {
-    if (sizes?.avif && supportedFormats.avif) {
-      return sizes.avif;
-    }
-    if (sizes?.webp && supportedFormats.webp) {
-      return sizes.webp;
-    }
-    return baseSrc;
-  }, [supportedFormats]);
+  const getOptimalImageSrc = useCallback(
+    (baseSrc: string, sizes?: { webp?: string; avif?: string }) => {
+      if (sizes?.avif && supportedFormats.avif) {
+        return sizes.avif;
+      }
+      if (sizes?.webp && supportedFormats.webp) {
+        return sizes.webp;
+      }
+      return baseSrc;
+    },
+    [supportedFormats]
+  );
 
   return { supportedFormats, getOptimalImageSrc };
 }
@@ -303,13 +305,13 @@ export function useImageOptimization() {
  * Preload resources utility
  */
 export function preloadResource(
-  href: string, 
+  href: string,
   type: 'script' | 'style' | 'font' | 'image' = 'script'
 ): void {
   const link = document.createElement('link');
   link.rel = 'preload';
   link.href = href;
-  
+
   switch (type) {
     case 'script':
       link.as = 'script';
@@ -325,7 +327,7 @@ export function preloadResource(
       link.as = 'image';
       break;
   }
-  
+
   document.head.appendChild(link);
 }
 
@@ -337,10 +339,10 @@ export function withPerformanceMonitoring<P extends object>(
   componentName: string
 ) {
   const MemoizedComponent = memo(Component);
-  
+
   return memo((props: P) => {
     const renderStartTime = useRef<number>(0);
-    
+
     useEffect(() => {
       renderStartTime.current = performance.now();
     });
@@ -357,11 +359,8 @@ export function withPerformanceMonitoring<P extends object>(
 /**
  * Code splitting utilities
  */
-export const loadComponent = (
-  componentPath: string
-): Promise<React.ComponentType<any>> => {
-  return import(/* webpackChunkName: "[request]" */ componentPath)
-    .then(module => module.default);
+export const loadComponent = (componentPath: string): Promise<React.ComponentType<any>> => {
+  return import(/* webpackChunkName: "[request]" */ componentPath).then(module => module.default);
 };
 
 /**
@@ -400,5 +399,5 @@ export default {
   preloadResource,
   withPerformanceMonitoring,
   loadComponent,
-  BundleAnalyzer
+  BundleAnalyzer,
 };

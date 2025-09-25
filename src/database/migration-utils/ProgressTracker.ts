@@ -40,7 +40,7 @@ export class ProgressTracker extends EventEmitter {
       currentStep: 0,
       status: 'idle',
       progressPercentage: 0,
-      lastUpdateTime: new Date()
+      lastUpdateTime: new Date(),
     };
   }
 
@@ -56,7 +56,7 @@ export class ProgressTracker extends EventEmitter {
       progressPercentage: 0,
       processedRecords: 0,
       totalRecords,
-      lastUpdateTime: new Date()
+      lastUpdateTime: new Date(),
     };
 
     this.steps.clear();
@@ -74,12 +74,7 @@ export class ProgressTracker extends EventEmitter {
   /**
    * Update progress for current step
    */
-  updateProgress(
-    currentStep: number, 
-    operation?: string, 
-    recordsProcessed?: number
-  ): void {
-    
+  updateProgress(currentStep: number, operation?: string, recordsProcessed?: number): void {
     this.state.currentStep = currentStep;
     this.state.currentOperation = operation;
     this.state.progressPercentage = (currentStep / this.state.totalSteps) * 100;
@@ -87,11 +82,11 @@ export class ProgressTracker extends EventEmitter {
 
     if (recordsProcessed !== undefined) {
       this.state.processedRecords = recordsProcessed;
-      
+
       // Update throughput calculation
       this.throughputSamples.push({
         timestamp: Date.now(),
-        records: recordsProcessed
+        records: recordsProcessed,
       });
 
       // Keep only last 30 samples for throughput calculation
@@ -107,7 +102,7 @@ export class ProgressTracker extends EventEmitter {
       currentStep,
       operation,
       progressPercentage: this.state.progressPercentage,
-      recordsProcessed
+      recordsProcessed,
     });
   }
 
@@ -120,7 +115,7 @@ export class ProgressTracker extends EventEmitter {
       stepName,
       status: 'running',
       startTime: new Date(),
-      recordsProcessed: 0
+      recordsProcessed: 0,
     };
 
     this.steps.set(stepNumber, step);
@@ -133,12 +128,11 @@ export class ProgressTracker extends EventEmitter {
    * Complete a step
    */
   completeStep(
-    stepNumber: number, 
+    stepNumber: number,
     recordsProcessed?: number,
     errors?: string[],
     warnings?: string[]
   ): void {
-    
     const step = this.steps.get(stepNumber);
     if (step) {
       step.status = 'completed';
@@ -207,7 +201,7 @@ export class ProgressTracker extends EventEmitter {
   resume(): void {
     if (this.state.status === 'paused') {
       this.state.status = 'running';
-      
+
       // Restart periodic updates
       this.updateInterval = setInterval(() => {
         this.updateEstimates();
@@ -235,7 +229,7 @@ export class ProgressTracker extends EventEmitter {
     this.emit('finished', {
       success,
       totalDuration: this.getTotalDuration(),
-      finalState: this.state
+      finalState: this.state,
     });
   }
 
@@ -250,8 +244,7 @@ export class ProgressTracker extends EventEmitter {
    * Get detailed step information
    */
   getStepDetails(): StepProgress[] {
-    return Array.from(this.steps.values())
-      .sort((a, b) => a.stepNumber - b.stepNumber);
+    return Array.from(this.steps.values()).sort((a, b) => a.stepNumber - b.stepNumber);
   }
 
   /**
@@ -268,7 +261,6 @@ export class ProgressTracker extends EventEmitter {
     averageStepDuration?: number;
     throughputRps?: number;
   } {
-    
     const steps = Array.from(this.steps.values());
     const completedSteps = steps.filter(s => s.status === 'completed').length;
     const failedSteps = steps.filter(s => s.status === 'failed').length;
@@ -276,9 +268,11 @@ export class ProgressTracker extends EventEmitter {
 
     // Calculate average step duration
     const completedStepsWithDuration = steps.filter(s => s.status === 'completed' && s.duration);
-    const averageStepDuration = completedStepsWithDuration.length > 0
-      ? completedStepsWithDuration.reduce((sum, s) => sum + (s.duration || 0), 0) / completedStepsWithDuration.length
-      : undefined;
+    const averageStepDuration =
+      completedStepsWithDuration.length > 0
+        ? completedStepsWithDuration.reduce((sum, s) => sum + (s.duration || 0), 0) /
+          completedStepsWithDuration.length
+        : undefined;
 
     return {
       totalSteps: this.state.totalSteps,
@@ -289,7 +283,7 @@ export class ProgressTracker extends EventEmitter {
       totalDuration: this.getTotalDuration(),
       estimatedTimeRemaining: this.state.estimatedTimeRemaining,
       averageStepDuration,
-      throughputRps: this.state.throughputRps
+      throughputRps: this.state.throughputRps,
     };
   }
 
@@ -306,14 +300,13 @@ export class ProgressTracker extends EventEmitter {
       details: any;
     }>;
   } {
-    
     const throughputHistory = this.calculateThroughputHistory();
-    
+
     return {
       state: this.getState(),
       steps: this.getStepDetails(),
       throughputHistory,
-      timeline: [] // Could be populated with event history if needed
+      timeline: [], // Could be populated with event history if needed
     };
   }
 
@@ -331,7 +324,7 @@ export class ProgressTracker extends EventEmitter {
       currentStep: 0,
       status: 'idle',
       progressPercentage: 0,
-      lastUpdateTime: new Date()
+      lastUpdateTime: new Date(),
     };
 
     this.steps.clear();
@@ -359,13 +352,17 @@ export class ProgressTracker extends EventEmitter {
     // Update based on step completion if available
     const completedSteps = Array.from(this.steps.values()).filter(s => s.status === 'completed');
     if (completedSteps.length > 0 && this.state.currentStep > 0) {
-      const avgStepTime = completedSteps.reduce((sum, step) => sum + (step.duration || 0), 0) / completedSteps.length;
+      const avgStepTime =
+        completedSteps.reduce((sum, step) => sum + (step.duration || 0), 0) / completedSteps.length;
       const remainingSteps = this.state.totalSteps - this.state.currentStep;
       const stepBasedEstimate = remainingSteps * avgStepTime;
-      
+
       // Use the more conservative estimate
       if (this.state.estimatedTimeRemaining) {
-        this.state.estimatedTimeRemaining = Math.max(this.state.estimatedTimeRemaining, stepBasedEstimate);
+        this.state.estimatedTimeRemaining = Math.max(
+          this.state.estimatedTimeRemaining,
+          stepBasedEstimate
+        );
       } else {
         this.state.estimatedTimeRemaining = stepBasedEstimate;
       }
@@ -401,7 +398,7 @@ export class ProgressTracker extends EventEmitter {
     for (let i = 1; i < this.throughputSamples.length; i++) {
       const current = this.throughputSamples[i];
       const previous = this.throughputSamples[i - 1];
-      
+
       const timeSpan = current.timestamp - previous.timestamp;
       const recordsSpan = current.records - previous.records;
       const rps = timeSpan > 0 ? (recordsSpan / timeSpan) * 1000 : 0;
@@ -409,7 +406,7 @@ export class ProgressTracker extends EventEmitter {
       history.push({
         timestamp: current.timestamp,
         records: current.records,
-        rps
+        rps,
       });
     }
 
@@ -422,11 +419,11 @@ export class ProgressTracker extends EventEmitter {
   getProgressBar(width: number = 50): string {
     const filled = Math.round((this.state.progressPercentage / 100) * width);
     const empty = width - filled;
-    
+
     const filledChar = '█';
     const emptyChar = '░';
     const bar = filledChar.repeat(filled) + emptyChar.repeat(empty);
-    
+
     return `[${bar}] ${this.state.progressPercentage.toFixed(1)}%`;
   }
 
@@ -439,7 +436,7 @@ export class ProgressTracker extends EventEmitter {
     }
 
     const seconds = Math.round(this.state.estimatedTimeRemaining / 1000);
-    
+
     if (seconds < 60) {
       return `${seconds}s`;
     } else if (seconds < 3600) {
@@ -461,7 +458,7 @@ export class ProgressTracker extends EventEmitter {
     }
 
     const rps = this.state.throughputRps;
-    
+
     if (rps < 1) {
       return `${(rps * 60).toFixed(1)}/min`;
     } else if (rps < 1000) {
@@ -477,53 +474,53 @@ export class ProgressTracker extends EventEmitter {
   createProgressReport(): string {
     const summary = this.getSummary();
     const state = this.getState();
-    
+
     let report = '\n=== Migration Progress Report ===\n\n';
     report += `Status: ${state.status.toUpperCase()}\n`;
     report += `Progress: ${this.getProgressBar()} (${state.currentStep}/${state.totalSteps} steps)\n`;
-    
+
     if (state.currentOperation) {
       report += `Current Operation: ${state.currentOperation}\n`;
     }
-    
+
     if (state.estimatedTimeRemaining && state.status === 'running') {
       report += `Estimated Time Remaining: ${this.getTimeEstimate()}\n`;
     }
-    
+
     if (state.throughputRps) {
       report += `Throughput: ${this.getThroughputString()}\n`;
     }
-    
+
     if (state.processedRecords && state.totalRecords) {
       report += `Records: ${state.processedRecords.toLocaleString()} / ${state.totalRecords.toLocaleString()}\n`;
     }
-    
+
     const duration = this.getTotalDuration();
     if (duration) {
       report += `Duration: ${Math.round(duration / 1000)}s\n`;
     }
-    
+
     report += '\n=== Step Details ===\n';
     const steps = this.getStepDetails();
-    
+
     for (const step of steps) {
       const status = step.status.padEnd(10);
       const name = step.stepName.padEnd(30);
       const duration = step.duration ? `${Math.round(step.duration / 1000)}s` : '-';
-      
+
       report += `${step.stepNumber}. [${status}] ${name} ${duration}\n`;
-      
+
       if (step.errors && step.errors.length > 0) {
         report += `    Errors: ${step.errors.join(', ')}\n`;
       }
-      
+
       if (step.warnings && step.warnings.length > 0) {
         report += `    Warnings: ${step.warnings.join(', ')}\n`;
       }
     }
-    
+
     report += '\n' + '='.repeat(50) + '\n';
-    
+
     return report;
   }
 }

@@ -82,15 +82,15 @@ async function updateGlobalReferences(): Promise<void> {
     const dbService = serviceManager.getService('DatabaseService') as any;
     const aiService = serviceManager.getService('AIService') as any;
     const windowService = serviceManager.getService('WindowService') as any;
-    
+
     if (dbService) {
       knowledgeDB = dbService.getDatabase();
     }
-    
+
     if (aiService) {
       geminiService = aiService.getGeminiService();
     }
-    
+
     if (windowService) {
       mainWindow = windowService.getMainWindow();
     }
@@ -111,7 +111,7 @@ function setupStartupEventHandlers(): void {
     console.log('🚀 Startup process initiated');
   });
 
-  startupManager.on('progress', (progressData) => {
+  startupManager.on('progress', progressData => {
     console.log(`📋 ${progressData.description} (${progressData.progress}%)`);
   });
 
@@ -123,16 +123,18 @@ function setupStartupEventHandlers(): void {
     console.error(`❌ Phase '${phaseName}' failed in ${duration}ms:`, error);
   });
 
-  startupManager.on('startup:completed', (result) => {
+  startupManager.on('startup:completed', result => {
     console.log(`🎉 Startup completed successfully!`);
-    console.log(`📊 Performance: ${result.duration}ms total, ${result.completedPhases.length} phases completed`);
-    
+    console.log(
+      `📊 Performance: ${result.duration}ms total, ${result.completedPhases.length} phases completed`
+    );
+
     if (result.performanceMetrics) {
       console.log('📈 Startup metrics:', result.performanceMetrics);
     }
   });
 
-  startupManager.on('startup:degraded', (result) => {
+  startupManager.on('startup:degraded', result => {
     console.warn('⚠️ Application started in degraded mode');
     console.warn(`🔄 Degraded services: ${result.degradedServices.join(', ')}`);
   });
@@ -142,7 +144,7 @@ function setupStartupEventHandlers(): void {
     console.error('💥 Failed phases:', result.failedPhases);
   });
 
-  startupManager.on('startup:timeout', (error) => {
+  startupManager.on('startup:timeout', error => {
     console.error('⏰ Startup timeout:', error);
   });
 }
@@ -159,11 +161,11 @@ function setupServiceManagerEvents(): void {
     console.log(`🔄 Service restarted: ${serviceName} (attempt ${attempt})`);
   });
 
-  serviceManager.on('health:degraded', (unhealthyServices) => {
+  serviceManager.on('health:degraded', unhealthyServices => {
     console.warn(`⚠️ Services unhealthy: ${unhealthyServices.join(', ')}`);
   });
 
-  serviceManager.on('health:recovered', (recoveredServices) => {
+  serviceManager.on('health:recovered', recoveredServices => {
     console.log(`✅ Services recovered: ${recoveredServices.join(', ')}`);
   });
 
@@ -191,56 +193,52 @@ function createMenu(): void {
           accelerator: 'CmdOrCtrl+N',
           click: () => {
             mainWindow?.webContents.send('menu-new-entry');
-          }
+          },
         },
         {
           label: 'Import Knowledge Base',
           click: async () => {
             if (!mainWindow) return;
-            
+
             const result = await dialog.showOpenDialog(mainWindow, {
               title: 'Import Knowledge Base',
-              filters: [
-                { name: 'JSON Files', extensions: ['json'] }
-              ],
-              properties: ['openFile']
+              filters: [{ name: 'JSON Files', extensions: ['json'] }],
+              properties: ['openFile'],
             });
 
             if (!result.canceled && result.filePaths.length > 0) {
               mainWindow.webContents.send('menu-import-kb', result.filePaths[0]);
             }
-          }
+          },
         },
         {
           label: 'Export Knowledge Base',
           click: async () => {
             if (!mainWindow) return;
-            
+
             const result = await dialog.showSaveDialog(mainWindow, {
               title: 'Export Knowledge Base',
               defaultPath: `knowledge-base-${new Date().toISOString().split('T')[0]}.json`,
-              filters: [
-                { name: 'JSON Files', extensions: ['json'] }
-              ]
+              filters: [{ name: 'JSON Files', extensions: ['json'] }],
             });
 
             if (!result.canceled && result.filePath) {
               mainWindow.webContents.send('menu-export-kb', result.filePath);
             }
-          }
+          },
         },
         { type: 'separator' },
         {
           label: 'Create Backup',
           click: () => {
             mainWindow?.webContents.send('menu-backup');
-          }
+          },
         },
         { type: 'separator' },
         {
-          role: 'quit'
-        }
-      ]
+          role: 'quit',
+        },
+      ],
     },
     {
       label: 'Edit',
@@ -251,8 +249,8 @@ function createMenu(): void {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        { role: 'selectAll' }
-      ]
+        { role: 'selectAll' },
+      ],
     },
     {
       label: 'View',
@@ -265,8 +263,8 @@ function createMenu(): void {
         { role: 'zoomIn' },
         { role: 'zoomOut' },
         { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
+        { role: 'togglefullscreen' },
+      ],
     },
     {
       label: 'Tools',
@@ -275,19 +273,19 @@ function createMenu(): void {
           label: 'Database Statistics',
           click: () => {
             mainWindow?.webContents.send('menu-show-stats');
-          }
+          },
         },
         {
           label: 'Performance Monitor',
           click: () => {
             mainWindow?.webContents.send('menu-show-performance');
-          }
+          },
         },
         {
           label: 'Optimize Database',
           click: () => {
             mainWindow?.webContents.send('menu-optimize-db');
-          }
+          },
         },
         { type: 'separator' },
         {
@@ -295,9 +293,9 @@ function createMenu(): void {
           accelerator: 'CmdOrCtrl+,',
           click: () => {
             mainWindow?.webContents.send('menu-show-settings');
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       role: 'help',
@@ -306,16 +304,16 @@ function createMenu(): void {
           label: 'About',
           click: () => {
             mainWindow?.webContents.send('menu-show-about');
-          }
+          },
         },
         {
           label: 'Documentation',
           click: () => {
             shell.openExternal('https://docs.example.com/kb-assistant');
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   const menu = Menu.buildFromTemplate(template);
@@ -355,40 +353,40 @@ async function startApplication(): Promise<void> {
 app.whenReady().then(async () => {
   // Start optimized application startup
   await startApplication();
-  
+
   // Setup menu after startup
   createMenu();
-  
+
   // Setup auto-updater in production
   // TODO: Implement auto-updater for production
   // if (!isDevelopment) {
   //   const updater = new AppUpdater();
   //   updater.checkForUpdates();
   // }
-  
+
   // Start continuous performance monitoring
   if (startupManager && !performanceMonitor) {
     performanceMonitor = new PerformanceMonitor();
     performanceMonitor.startMonitoring(30000); // Monitor every 30 seconds
-    
+
     // Set up performance monitoring events
-    performanceMonitor.on('alert', (alert) => {
+    performanceMonitor.on('alert', alert => {
       console.warn(`⚠️ Performance Alert: ${alert.message}`);
-      
+
       // Send performance alerts to renderer if window is available
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('performance:alert', alert);
       }
     });
 
-    performanceMonitor.on('metrics:collected', (metrics) => {
+    performanceMonitor.on('metrics:collected', metrics => {
       // Optionally send metrics to renderer for display
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('performance:metrics', metrics);
       }
     });
   }
-  
+
   app.on('activate', async () => {
     // On macOS re-create window when dock icon is clicked
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -409,7 +407,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', async () => {
   console.log('🔄 Application shutdown initiated...');
-  
+
   try {
     // Stop performance monitoring
     if (performanceMonitor) {
@@ -426,7 +424,6 @@ app.on('before-quit', async () => {
     // ServiceManager handles graceful shutdown of all services
     await serviceManager.shutdown();
     console.log('✅ All services shut down gracefully');
-
   } catch (error) {
     console.error('❌ Error during application shutdown:', error);
   }

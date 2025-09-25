@@ -97,12 +97,9 @@ export class SearchHistoryService {
       this.startBatchProcessor();
     } catch (error) {
       console.error('SearchHistoryService initialization error:', error);
-      throw new AppError(
-        'Failed to initialize search history service',
-        'HISTORY_INIT_ERROR',
-        500,
-        { error: error.message }
-      );
+      throw new AppError('Failed to initialize search history service', 'HISTORY_INIT_ERROR', 500, {
+        error: error.message,
+      });
     }
   }
 
@@ -123,7 +120,6 @@ export class SearchHistoryService {
           this.flushBatch().catch(console.error);
         }, this.BATCH_TIMEOUT_MS);
       }
-
     } catch (error) {
       console.error('Record search error:', error);
       // Don't throw - history recording shouldn't break search functionality
@@ -135,7 +131,7 @@ export class SearchHistoryService {
    */
   async getHistory(params: GetHistoryParams): Promise<HistoryResult> {
     try {
-      const cutoffTime = Date.now() - (params.timeframe * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - params.timeframe * 60 * 60 * 1000;
 
       // Build dynamic query based on filters
       let query = `
@@ -210,23 +206,20 @@ export class SearchHistoryService {
         successful: Boolean(row.successful),
         ipAddress: row.ip_address,
         userAgent: row.user_agent,
-        requestId: row.request_id
+        requestId: row.request_id,
       }));
 
       return {
         entries,
         total,
-        hasMore
+        hasMore,
       };
-
     } catch (error) {
       console.error('Get history error:', error);
-      throw new AppError(
-        'Failed to retrieve search history',
-        'HISTORY_GET_ERROR',
-        500,
-        { params, error: error.message }
-      );
+      throw new AppError('Failed to retrieve search history', 'HISTORY_GET_ERROR', 500, {
+        params,
+        error: error.message,
+      });
     }
   }
 
@@ -235,10 +228,12 @@ export class SearchHistoryService {
    */
   async getAnalytics(timeframe: number = 24): Promise<HistoryAnalytics> {
     try {
-      const cutoffTime = Date.now() - (timeframe * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - timeframe * 60 * 60 * 1000;
 
       // Basic metrics
-      const basicMetrics = this.db.prepare(`
+      const basicMetrics = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as totalSearches,
           COUNT(DISTINCT user_id) as uniqueUsers,
@@ -248,16 +243,22 @@ export class SearchHistoryService {
           AVG(CASE WHEN used_ai = 1 THEN 1.0 ELSE 0.0 END) as aiUsageRate
         FROM search_history
         WHERE timestamp > ?
-      `).get(cutoffTime) as any;
+      `
+        )
+        .get(cutoffTime) as any;
 
       // Category summary
-      const categoryRows = this.db.prepare(`
+      const categoryRows = this.db
+        .prepare(
+          `
         SELECT category, COUNT(*) as count
         FROM search_history
         WHERE timestamp > ? AND category IS NOT NULL
         GROUP BY category
         ORDER BY count DESC
-      `).all(cutoffTime) as any[];
+      `
+        )
+        .all(cutoffTime) as any[];
 
       const categorySummary: Record<string, number> = {};
       categoryRows.forEach(row => {
@@ -265,7 +266,9 @@ export class SearchHistoryService {
       });
 
       // Hourly distribution
-      const hourlyRows = this.db.prepare(`
+      const hourlyRows = this.db
+        .prepare(
+          `
         SELECT
           CAST(strftime('%H', datetime(timestamp/1000, 'unixepoch')) AS INTEGER) as hour,
           COUNT(*) as count
@@ -273,25 +276,33 @@ export class SearchHistoryService {
         WHERE timestamp > ?
         GROUP BY hour
         ORDER BY hour
-      `).all(cutoffTime) as any[];
+      `
+        )
+        .all(cutoffTime) as any[];
 
       const hourlyDistribution = Array.from({ length: 24 }, (_, hour) => ({
         hour,
-        count: hourlyRows.find(row => row.hour === hour)?.count || 0
+        count: hourlyRows.find(row => row.hour === hour)?.count || 0,
       }));
 
       // Top queries
-      const topQueries = this.db.prepare(`
+      const topQueries = this.db
+        .prepare(
+          `
         SELECT query, COUNT(*) as count
         FROM search_history
         WHERE timestamp > ?
         GROUP BY query
         ORDER BY count DESC
         LIMIT 10
-      `).all(cutoffTime) as Array<{ query: string; count: number }>;
+      `
+        )
+        .all(cutoffTime) as Array<{ query: string; count: number }>;
 
       // Performance trend (hourly averages)
-      const performanceTrend = this.db.prepare(`
+      const performanceTrend = this.db
+        .prepare(
+          `
         SELECT
           CAST(strftime('%s', datetime(timestamp/1000, 'unixepoch', 'start of hour')) AS INTEGER) * 1000 as timestamp,
           AVG(response_time) as avgResponseTime
@@ -299,7 +310,9 @@ export class SearchHistoryService {
         WHERE timestamp > ?
         GROUP BY datetime(timestamp/1000, 'unixepoch', 'start of hour')
         ORDER BY timestamp
-      `).all(cutoffTime) as Array<{ timestamp: number; avgResponseTime: number }>;
+      `
+        )
+        .all(cutoffTime) as Array<{ timestamp: number; avgResponseTime: number }>;
 
       return {
         totalSearches: basicMetrics.totalSearches || 0,
@@ -311,24 +324,24 @@ export class SearchHistoryService {
         categorySummary,
         hourlyDistribution,
         topQueries,
-        performanceTrend
+        performanceTrend,
       };
-
     } catch (error) {
       console.error('Get analytics error:', error);
-      throw new AppError(
-        'Failed to retrieve history analytics',
-        'HISTORY_ANALYTICS_ERROR',
-        500,
-        { timeframe, error: error.message }
-      );
+      throw new AppError('Failed to retrieve history analytics', 'HISTORY_ANALYTICS_ERROR', 500, {
+        timeframe,
+        error: error.message,
+      });
     }
   }
 
   /**
    * Get user-specific search patterns for personalization
    */
-  async getUserPatterns(userId: string, limit: number = 20): Promise<{
+  async getUserPatterns(
+    userId: string,
+    limit: number = 20
+  ): Promise<{
     frequentQueries: Array<{ query: string; count: number; avgResponseTime: number }>;
     preferredCategories: Array<{ category: string; count: number }>;
     searchTimes: Array<{ hour: number; count: number }>;
@@ -336,26 +349,36 @@ export class SearchHistoryService {
   }> {
     try {
       // Frequent queries for this user
-      const frequentQueries = this.db.prepare(`
+      const frequentQueries = this.db
+        .prepare(
+          `
         SELECT query, COUNT(*) as count, AVG(response_time) as avgResponseTime
         FROM search_history
         WHERE user_id = ? AND timestamp > ?
         GROUP BY query
         ORDER BY count DESC
         LIMIT ?
-      `).all(userId, Date.now() - (30 * 24 * 60 * 60 * 1000), limit) as any[];
+      `
+        )
+        .all(userId, Date.now() - 30 * 24 * 60 * 60 * 1000, limit) as any[];
 
       // Preferred categories
-      const preferredCategories = this.db.prepare(`
+      const preferredCategories = this.db
+        .prepare(
+          `
         SELECT category, COUNT(*) as count
         FROM search_history
         WHERE user_id = ? AND category IS NOT NULL AND timestamp > ?
         GROUP BY category
         ORDER BY count DESC
-      `).all(userId, Date.now() - (30 * 24 * 60 * 60 * 1000)) as any[];
+      `
+        )
+        .all(userId, Date.now() - 30 * 24 * 60 * 60 * 1000) as any[];
 
       // Search time patterns
-      const searchTimes = this.db.prepare(`
+      const searchTimes = this.db
+        .prepare(
+          `
         SELECT
           CAST(strftime('%H', datetime(timestamp/1000, 'unixepoch')) AS INTEGER) as hour,
           COUNT(*) as count
@@ -363,10 +386,14 @@ export class SearchHistoryService {
         WHERE user_id = ? AND timestamp > ?
         GROUP BY hour
         ORDER BY count DESC
-      `).all(userId, Date.now() - (30 * 24 * 60 * 60 * 1000)) as any[];
+      `
+        )
+        .all(userId, Date.now() - 30 * 24 * 60 * 60 * 1000) as any[];
 
       // Successful patterns (simplified pattern matching)
-      const successfulPatterns = this.db.prepare(`
+      const successfulPatterns = this.db
+        .prepare(
+          `
         SELECT
           CASE
             WHEN LENGTH(query) <= 10 THEN 'short'
@@ -378,23 +405,22 @@ export class SearchHistoryService {
         WHERE user_id = ? AND timestamp > ?
         GROUP BY pattern
         ORDER BY successRate DESC
-      `).all(userId, Date.now() - (30 * 24 * 60 * 60 * 1000)) as any[];
+      `
+        )
+        .all(userId, Date.now() - 30 * 24 * 60 * 60 * 1000) as any[];
 
       return {
         frequentQueries,
         preferredCategories,
         searchTimes,
-        successfulPatterns
+        successfulPatterns,
       };
-
     } catch (error) {
       console.error('Get user patterns error:', error);
-      throw new AppError(
-        'Failed to retrieve user patterns',
-        'USER_PATTERNS_ERROR',
-        500,
-        { userId, error: error.message }
-      );
+      throw new AppError('Failed to retrieve user patterns', 'USER_PATTERNS_ERROR', 500, {
+        userId,
+        error: error.message,
+      });
     }
   }
 
@@ -403,24 +429,27 @@ export class SearchHistoryService {
    */
   async cleanup(retentionDays: number = 90): Promise<{ removed: number }> {
     try {
-      const cutoffTime = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
 
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         DELETE FROM search_history WHERE timestamp < ?
-      `).run(cutoffTime);
+      `
+        )
+        .run(cutoffTime);
 
-      console.log(`Search history cleanup: removed ${result.changes} entries older than ${retentionDays} days`);
+      console.log(
+        `Search history cleanup: removed ${result.changes} entries older than ${retentionDays} days`
+      );
 
       return { removed: result.changes };
-
     } catch (error) {
       console.error('History cleanup error:', error);
-      throw new AppError(
-        'Failed to cleanup history',
-        'HISTORY_CLEANUP_ERROR',
-        500,
-        { retentionDays, error: error.message }
-      );
+      throw new AppError('Failed to cleanup history', 'HISTORY_CLEANUP_ERROR', 500, {
+        retentionDays,
+        error: error.message,
+      });
     }
   }
 
@@ -434,13 +463,17 @@ export class SearchHistoryService {
     newestEntry: Date | null;
   } {
     try {
-      const stats = this.db.prepare(`
+      const stats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as total,
           MIN(timestamp) as oldest,
           MAX(timestamp) as newest
         FROM search_history
-      `).get() as any;
+      `
+        )
+        .get() as any;
 
       // Get database file size
       const dbStats = this.db.prepare('PRAGMA page_count').get() as { page_count: number };
@@ -451,16 +484,15 @@ export class SearchHistoryService {
         totalEntries: stats.total || 0,
         databaseSize,
         oldestEntry: stats.oldest ? new Date(stats.oldest) : null,
-        newestEntry: stats.newest ? new Date(stats.newest) : null
+        newestEntry: stats.newest ? new Date(stats.newest) : null,
       };
-
     } catch (error) {
       console.error('Get stats error:', error);
       return {
         totalEntries: 0,
         databaseSize: 0,
         oldestEntry: null,
-        newestEntry: null
+        newestEntry: null,
       };
     }
   }
@@ -479,7 +511,6 @@ export class SearchHistoryService {
 
       this.db.close();
       console.log('Search history service closed');
-
     } catch (error) {
       console.error('Error closing search history service:', error);
     }
@@ -522,7 +553,6 @@ export class SearchHistoryService {
         clearTimeout(this.batchTimeout);
         this.batchTimeout = undefined;
       }
-
     } catch (error) {
       console.error('Batch flush error:', error);
       // Reset batch to prevent data loss
@@ -545,11 +575,15 @@ export class SearchHistoryService {
     });
 
     process.on('SIGINT', () => {
-      this.flushBatch().catch(() => {}).finally(() => process.exit());
+      this.flushBatch()
+        .catch(() => {})
+        .finally(() => process.exit());
     });
 
     process.on('SIGTERM', () => {
-      this.flushBatch().catch(() => {}).finally(() => process.exit());
+      this.flushBatch()
+        .catch(() => {})
+        .finally(() => process.exit());
     });
   }
 }

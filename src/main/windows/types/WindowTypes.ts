@@ -1,6 +1,6 @@
 /**
  * Window Management Type Definitions
- * 
+ *
  * Comprehensive type system for progressive window management
  * supporting Knowledge-First MVP development approach
  */
@@ -8,26 +8,26 @@
 import { BrowserWindow, Rectangle } from 'electron';
 
 // Window Types by MVP Level
-export type WindowType = 
+export type WindowType =
   // MVP1: Knowledge Base Core
   | 'main'
-  
-  // MVP2: Pattern Detection & Enrichment  
+
+  // MVP2: Pattern Detection & Enrichment
   | 'pattern-dashboard'
   | 'alert'
   | 'pattern-viewer'
-  
+
   // MVP3: Code Analysis Integration
   | 'code-viewer'
   | 'debug-context'
   | 'code-search'
-  
+
   // MVP4: IDZ Integration & Templates
   | 'project-workspace'
   | 'template-editor'
   | 'export-manager'
   | 'import-wizard'
-  
+
   // MVP5: Enterprise Intelligence Platform
   | 'analytics-dashboard'
   | 'ai-assistant'
@@ -66,8 +66,8 @@ export interface WindowConfig {
   // Custom properties
   workspace?: string;
   persistent?: boolean; // Save state across sessions
-  singleton?: boolean;   // Only one instance allowed
-  autoFocus?: boolean;   // Auto focus when created
+  singleton?: boolean; // Only one instance allowed
+  autoFocus?: boolean; // Auto focus when created
   theme?: 'light' | 'dark' | 'auto';
 }
 
@@ -114,8 +114,8 @@ export interface WindowWorkspace {
 }
 
 export interface WorkspaceWindowConfig extends WindowConfig {
-  required: boolean;    // Must be open in this workspace
-  autoCreate: boolean;  // Create automatically when switching to workspace
+  required: boolean; // Must be open in this workspace
+  autoCreate: boolean; // Create automatically when switching to workspace
   position: 'relative' | 'absolute';
   relationships?: WindowRelationship[];
 }
@@ -144,7 +144,7 @@ export interface WindowRegistryEntry {
   instance: WindowInstance;
   relationships: WindowRelationship[];
   dependencies: string[]; // Other windows this depends on
-  dependents: string[];   // Windows that depend on this
+  dependents: string[]; // Windows that depend on this
   health: WindowHealth;
 }
 
@@ -179,7 +179,7 @@ export interface WindowIPCResponse {
 }
 
 // Window Events
-export type WindowEvent = 
+export type WindowEvent =
   | 'created'
   | 'destroyed'
   | 'focused'
@@ -233,66 +233,100 @@ export interface WindowManagerStats {
 }
 
 // Progressive Window Capabilities by MVP
-export const MVP_WINDOW_CAPABILITIES: Record<number, {
-  maxWindows: number;
-  availableTypes: WindowType[];
-  features: string[];
-  workspaceSupport: boolean;
-  multiMonitorSupport: boolean;
-}> = {
+export const MVP_WINDOW_CAPABILITIES: Record<
+  number,
+  {
+    maxWindows: number;
+    availableTypes: WindowType[];
+    features: string[];
+    workspaceSupport: boolean;
+    multiMonitorSupport: boolean;
+  }
+> = {
   1: {
     maxWindows: 1,
     availableTypes: ['main'],
     features: ['basic-window-management', 'state-persistence'],
     workspaceSupport: false,
-    multiMonitorSupport: false
+    multiMonitorSupport: false,
   },
   2: {
     maxWindows: 3,
     availableTypes: ['main', 'pattern-dashboard', 'alert', 'pattern-viewer'],
     features: ['multi-window', 'window-coordination', 'alert-popups'],
     workspaceSupport: false,
-    multiMonitorSupport: true
+    multiMonitorSupport: true,
   },
   3: {
     maxWindows: 5,
-    availableTypes: ['main', 'pattern-dashboard', 'alert', 'pattern-viewer', 'code-viewer', 'debug-context', 'code-search'],
+    availableTypes: [
+      'main',
+      'pattern-dashboard',
+      'alert',
+      'pattern-viewer',
+      'code-viewer',
+      'debug-context',
+      'code-search',
+    ],
     features: ['code-integration', 'context-windows', 'synchronized-scrolling'],
     workspaceSupport: false,
-    multiMonitorSupport: true
+    multiMonitorSupport: true,
   },
   4: {
     maxWindows: 8,
     availableTypes: [
-      'main', 'pattern-dashboard', 'alert', 'pattern-viewer',
-      'code-viewer', 'debug-context', 'code-search',
-      'project-workspace', 'template-editor', 'export-manager', 'import-wizard'
+      'main',
+      'pattern-dashboard',
+      'alert',
+      'pattern-viewer',
+      'code-viewer',
+      'debug-context',
+      'code-search',
+      'project-workspace',
+      'template-editor',
+      'export-manager',
+      'import-wizard',
     ],
     features: ['workspaces', 'project-management', 'template-editing', 'idz-integration'],
     workspaceSupport: true,
-    multiMonitorSupport: true
+    multiMonitorSupport: true,
   },
   5: {
     maxWindows: 10,
     availableTypes: [
-      'main', 'pattern-dashboard', 'alert', 'pattern-viewer',
-      'code-viewer', 'debug-context', 'code-search',
-      'project-workspace', 'template-editor', 'export-manager', 'import-wizard',
-      'analytics-dashboard', 'ai-assistant', 'auto-resolution-monitor', 'predictive-dashboard'
+      'main',
+      'pattern-dashboard',
+      'alert',
+      'pattern-viewer',
+      'code-viewer',
+      'debug-context',
+      'code-search',
+      'project-workspace',
+      'template-editor',
+      'export-manager',
+      'import-wizard',
+      'analytics-dashboard',
+      'ai-assistant',
+      'auto-resolution-monitor',
+      'predictive-dashboard',
     ],
     features: [
-      'enterprise-analytics', 'ai-integration', 'auto-resolution', 
-      'predictive-analysis', 'advanced-workspaces', 'role-based-windows'
+      'enterprise-analytics',
+      'ai-integration',
+      'auto-resolution',
+      'predictive-analysis',
+      'advanced-workspaces',
+      'role-based-windows',
     ],
     workspaceSupport: true,
-    multiMonitorSupport: true
-  }
+    multiMonitorSupport: true,
+  },
 };
 
 // Default Window Configurations by Type
 export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
   // MVP1
-  'main': {
+  main: {
     type: 'main',
     title: 'Mainframe Knowledge Assistant',
     width: 1400,
@@ -303,7 +337,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     show: false,
     persistent: true,
     singleton: true,
-    autoFocus: true
+    autoFocus: true,
   },
 
   // MVP2
@@ -317,10 +351,10 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: true
+    singleton: true,
   },
 
-  'alert': {
+  alert: {
     type: 'alert',
     title: 'System Alert',
     width: 400,
@@ -334,7 +368,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     alwaysOnTop: true,
     show: true,
     persistent: false,
-    singleton: false
+    singleton: false,
   },
 
   'pattern-viewer': {
@@ -347,7 +381,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: false,
-    singleton: false
+    singleton: false,
   },
 
   // MVP3
@@ -361,7 +395,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: false
+    singleton: false,
   },
 
   'debug-context': {
@@ -374,7 +408,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: false,
-    singleton: false
+    singleton: false,
   },
 
   'code-search': {
@@ -387,7 +421,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: false,
-    singleton: true
+    singleton: true,
   },
 
   // MVP4
@@ -401,7 +435,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: false
+    singleton: false,
   },
 
   'template-editor': {
@@ -414,7 +448,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: false
+    singleton: false,
   },
 
   'export-manager': {
@@ -427,7 +461,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: false,
-    singleton: true
+    singleton: true,
   },
 
   'import-wizard': {
@@ -441,7 +475,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     modal: true,
     show: true,
     persistent: false,
-    singleton: true
+    singleton: true,
   },
 
   // MVP5
@@ -455,7 +489,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: true
+    singleton: true,
   },
 
   'ai-assistant': {
@@ -469,7 +503,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     show: false,
     persistent: true,
     singleton: true,
-    alwaysOnTop: false
+    alwaysOnTop: false,
   },
 
   'auto-resolution-monitor': {
@@ -482,7 +516,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: true
+    singleton: true,
   },
 
   'predictive-dashboard': {
@@ -495,8 +529,8 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowType, WindowConfig> = {
     resizable: true,
     show: false,
     persistent: true,
-    singleton: true
-  }
+    singleton: true,
+  },
 };
 
 // Validation Functions

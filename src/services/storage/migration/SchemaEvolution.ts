@@ -96,32 +96,32 @@ export class SchemaEvolution {
 
     // Analyze current schema to detect MVP
     const currentSchema = this.captureCurrentSchema();
-    
+
     // Check for MVP5 features (enterprise)
     if (this.hasTable('ml_models') && this.hasTable('auto_resolutions')) {
       return 5;
     }
-    
+
     // Check for MVP4 features (IDZ integration)
     if (this.hasTable('projects') && this.hasTable('templates')) {
       return 4;
     }
-    
+
     // Check for MVP3 features (code analysis)
     if (this.hasTable('code_files') && this.hasTable('kb_code_links')) {
       return 3;
     }
-    
+
     // Check for MVP2 features (pattern detection)
     if (this.hasTable('incidents') && this.hasTable('patterns')) {
       return 2;
     }
-    
+
     // Check for MVP1 features (basic KB)
     if (this.hasTable('kb_entries')) {
       return 1;
     }
-    
+
     return 0;
   }
 
@@ -132,7 +132,7 @@ export class SchemaEvolution {
     const currentMVP = this.detectCurrentMVP();
     const currentSchema = this.captureCurrentSchema();
     const targetSchema = await this.generateTargetSchema(targetMVP);
-    
+
     const evolutionSteps = await this.calculateEvolutionSteps(currentSchema, targetSchema);
     const compatibilityMatrix = this.generateCompatibilityMatrix(currentMVP, targetMVP);
     const riskAssessment = this.assessEvolutionRisk(evolutionSteps);
@@ -142,7 +142,7 @@ export class SchemaEvolution {
       targetSchema,
       evolutionSteps,
       compatibilityMatrix,
-      riskAssessment
+      riskAssessment,
     };
   }
 
@@ -152,17 +152,16 @@ export class SchemaEvolution {
   async recordMVPUpgrade(mvp: number): Promise<void> {
     const schema = this.captureCurrentSchema();
     schema.mvp = mvp;
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(
+        `
       INSERT INTO schema_evolution_log (
         mvp, schema_version, timestamp, schema_snapshot, changes_applied
       ) VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
-    `).run(
-      mvp,
-      schema.version,
-      JSON.stringify(schema),
-      JSON.stringify(this.getRecentChanges())
-    );
+    `
+      )
+      .run(mvp, schema.version, JSON.stringify(schema), JSON.stringify(this.getRecentChanges()));
 
     this.emit('mvpUpgradeRecorded', { mvp, schema });
   }
@@ -170,7 +169,10 @@ export class SchemaEvolution {
   /**
    * Analyze schema compatibility between versions
    */
-  async analyzeCompatibility(fromVersion: number, toVersion: number): Promise<{
+  async analyzeCompatibility(
+    fromVersion: number,
+    toVersion: number
+  ): Promise<{
     compatible: boolean;
     issues: Array<{
       type: 'breaking' | 'warning' | 'info';
@@ -183,22 +185,25 @@ export class SchemaEvolution {
   }> {
     const fromSchema = await this.getSchemaAtVersion(fromVersion);
     const toSchema = await this.getSchemaAtVersion(toVersion);
-    
+
     const issues = this.compareSchemas(fromSchema, toSchema);
     const breakingChanges = issues.filter(i => i.type === 'breaking');
-    
+
     return {
       compatible: breakingChanges.length === 0,
       issues,
       migrationRequired: issues.length > 0,
-      autoMigratable: breakingChanges.length === 0
+      autoMigratable: breakingChanges.length === 0,
     };
   }
 
   /**
    * Generate schema diff between versions
    */
-  generateSchemaDiff(fromVersion: number, toVersion: number): {
+  generateSchemaDiff(
+    fromVersion: number,
+    toVersion: number
+  ): {
     tablesAdded: string[];
     tablesRemoved: string[];
     tablesModified: Array<{
@@ -213,7 +218,7 @@ export class SchemaEvolution {
   } {
     const fromSchema = this.getSchemaAtVersion(fromVersion);
     const toSchema = this.getSchemaAtVersion(toVersion);
-    
+
     return this.calculateSchemaDiff(fromSchema, toSchema);
   }
 
@@ -238,26 +243,26 @@ export class SchemaEvolution {
     };
   }> {
     const issues: any[] = [];
-    
+
     // Check table structure integrity
     const structureIssues = await this.validateTableStructures();
     issues.push(...structureIssues);
-    
+
     // Check referential integrity
     const referenceIssues = await this.validateReferentialIntegrity();
     issues.push(...referenceIssues);
-    
+
     // Check index integrity
     const indexIssues = await this.validateIndexIntegrity();
     issues.push(...indexIssues);
-    
+
     // Gather statistics
     const statistics = await this.gatherSchemaStatistics();
-    
+
     return {
       valid: issues.filter(i => i.severity === 'error').length === 0,
       issues,
-      statistics
+      statistics,
     };
   }
 
@@ -268,13 +273,17 @@ export class SchemaEvolution {
     const schema = this.captureCurrentSchema();
     const backupId = this.generateBackupId();
     const backupPath = `schema_backup_${backupId}.json`;
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(
+        `
       INSERT INTO schema_backups (
         backup_id, timestamp, schema_snapshot, backup_path
       ) VALUES (?, CURRENT_TIMESTAMP, ?, ?)
-    `).run(backupId, JSON.stringify(schema), backupPath);
-    
+    `
+      )
+      .run(backupId, JSON.stringify(schema), backupPath);
+
     return backupId;
   }
 
@@ -282,14 +291,18 @@ export class SchemaEvolution {
    * Restore schema from backup
    */
   async restoreSchemaFromBackup(backupId: string): Promise<void> {
-    const backup = this.db.prepare(`
+    const backup = this.db
+      .prepare(
+        `
       SELECT schema_snapshot FROM schema_backups WHERE backup_id = ?
-    `).get(backupId) as { schema_snapshot: string } | undefined;
-    
+    `
+      )
+      .get(backupId) as { schema_snapshot: string } | undefined;
+
     if (!backup) {
       throw new Error(`Schema backup ${backupId} not found`);
     }
-    
+
     const schema = JSON.parse(backup.schema_snapshot) as SchemaSnapshot;
     await this.restoreSchemaStructure(schema);
   }
@@ -336,16 +349,16 @@ export class SchemaEvolution {
           name: 'kb_entries',
           columns: ['id', 'title', 'problem', 'solution', 'category', 'created_at'],
           primaryKey: 'id',
-          indexes: ['category', 'created_at']
+          indexes: ['category', 'created_at'],
         },
         {
           name: 'kb_tags',
           columns: ['entry_id', 'tag'],
           primaryKey: ['entry_id', 'tag'],
-          foreignKeys: [{ column: 'entry_id', references: 'kb_entries(id)' }]
-        }
+          foreignKeys: [{ column: 'entry_id', references: 'kb_entries(id)' }],
+        },
       ],
-      features: ['basic_search', 'categorization', 'tagging']
+      features: ['basic_search', 'categorization', 'tagging'],
     });
 
     this.mvpSchemaDefinitions.set(2, {
@@ -356,16 +369,16 @@ export class SchemaEvolution {
           name: 'incidents',
           columns: ['id', 'ticket_id', 'timestamp', 'description', 'component'],
           primaryKey: 'id',
-          indexes: ['timestamp', 'component']
+          indexes: ['timestamp', 'component'],
         },
         {
           name: 'patterns',
           columns: ['id', 'type', 'confidence', 'first_seen', 'last_seen'],
           primaryKey: 'id',
-          indexes: ['type', 'confidence']
-        }
+          indexes: ['type', 'confidence'],
+        },
       ],
-      features: ['incident_tracking', 'pattern_detection', 'alerting']
+      features: ['incident_tracking', 'pattern_detection', 'alerting'],
     });
 
     // Continue for MVP 3, 4, 5...
@@ -376,7 +389,7 @@ export class SchemaEvolution {
     const indexes = this.getCurrentIndexes();
     const constraints = this.getCurrentConstraints();
     const triggers = this.getCurrentTriggers();
-    
+
     const snapshot: SchemaSnapshot = {
       version: this.getCurrentSchemaVersion(),
       mvp: this.detectCurrentMVP(),
@@ -385,21 +398,25 @@ export class SchemaEvolution {
       indexes,
       constraints,
       triggers,
-      checksum: this.calculateSchemaChecksum(tables, indexes, constraints, triggers)
+      checksum: this.calculateSchemaChecksum(tables, indexes, constraints, triggers),
     };
 
     return snapshot;
   }
 
   private getCurrentTables(): TableDefinition[] {
-    const tables = this.db.prepare(`
+    const tables = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'
-    `).all() as { name: string }[];
+    `
+      )
+      .all() as { name: string }[];
 
     return tables.map(table => {
       const columns = this.db.prepare(`PRAGMA table_info(${table.name})`).all();
       const foreignKeys = this.db.prepare(`PRAGMA foreign_key_list(${table.name})`).all();
-      
+
       return {
         name: table.name,
         columns: columns.map((col: any) => ({
@@ -407,61 +424,77 @@ export class SchemaEvolution {
           type: col.type,
           nullable: !col.notnull,
           defaultValue: col.dflt_value,
-          primaryKey: col.pk > 0
+          primaryKey: col.pk > 0,
         })),
         foreignKeys: foreignKeys.map((fk: any) => ({
           column: fk.from,
-          references: `${fk.table}(${fk.to})`
-        }))
+          references: `${fk.table}(${fk.to})`,
+        })),
       };
     });
   }
 
   private getCurrentIndexes(): IndexDefinition[] {
-    const indexes = this.db.prepare(`
+    const indexes = this.db
+      .prepare(
+        `
       SELECT name, sql FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'
-    `).all() as { name: string; sql: string }[];
+    `
+      )
+      .all() as { name: string; sql: string }[];
 
     return indexes.map(index => ({
       name: index.name,
       table: this.extractTableFromIndexSql(index.sql),
       columns: this.extractColumnsFromIndexSql(index.sql),
       unique: index.sql?.includes('UNIQUE') || false,
-      sql: index.sql
+      sql: index.sql,
     }));
   }
 
   private getCurrentConstraints(): ConstraintDefinition[] {
-    // SQLite doesn't have separate constraint tables, 
+    // SQLite doesn't have separate constraint tables,
     // constraints are part of table definitions
     return [];
   }
 
   private getCurrentTriggers(): TriggerDefinition[] {
-    const triggers = this.db.prepare(`
+    const triggers = this.db
+      .prepare(
+        `
       SELECT name, sql FROM sqlite_master WHERE type='trigger'
-    `).all() as { name: string; sql: string }[];
+    `
+      )
+      .all() as { name: string; sql: string }[];
 
     return triggers.map(trigger => ({
       name: trigger.name,
       table: this.extractTableFromTriggerSql(trigger.sql),
       event: this.extractEventFromTriggerSql(trigger.sql),
-      sql: trigger.sql
+      sql: trigger.sql,
     }));
   }
 
   private hasTable(tableName: string): boolean {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master WHERE type='table' AND name = ?
-    `).get(tableName);
+    `
+      )
+      .get(tableName);
     return !!result;
   }
 
   private getCurrentSchemaVersion(): number {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations
-      `).get() as { version: number };
+      `
+        )
+        .get() as { version: number };
       return result.version;
     } catch {
       return 0;
@@ -478,9 +511,9 @@ export class SchemaEvolution {
       tables: tables.sort((a, b) => a.name.localeCompare(b.name)),
       indexes: indexes.sort((a, b) => a.name.localeCompare(b.name)),
       constraints: constraints.sort((a, b) => a.name.localeCompare(b.name)),
-      triggers: triggers.sort((a, b) => a.name.localeCompare(b.name))
+      triggers: triggers.sort((a, b) => a.name.localeCompare(b.name)),
     });
-    
+
     return crypto.createHash('sha256').update(schemaString).digest('hex');
   }
 
@@ -493,7 +526,7 @@ export class SchemaEvolution {
     // Build cumulative schema including all previous MVPs
     const allTables: TableDefinition[] = [];
     const allIndexes: IndexDefinition[] = [];
-    
+
     for (let mvp = 1; mvp <= targetMVP; mvp++) {
       const mvpSchema = this.mvpSchemaDefinitions.get(mvp);
       if (mvpSchema) {
@@ -509,7 +542,7 @@ export class SchemaEvolution {
       indexes: allIndexes,
       constraints: [],
       triggers: [],
-      checksum: this.calculateSchemaChecksum(allTables, allIndexes, [], [])
+      checksum: this.calculateSchemaChecksum(allTables, allIndexes, [], []),
     };
   }
 
@@ -519,7 +552,7 @@ export class SchemaEvolution {
   ): Promise<SchemaEvolutionStep[]> {
     const steps: SchemaEvolutionStep[] = [];
     const diff = this.calculateSchemaDiff(currentSchema, targetSchema);
-    
+
     let stepNumber = 1;
 
     // Add new tables
@@ -533,7 +566,7 @@ export class SchemaEvolution {
           reversible: true,
           estimatedDuration: 30, // 30 seconds
           dataImpact: 'none',
-          dependencies: []
+          dependencies: [],
         });
       }
     }
@@ -549,7 +582,7 @@ export class SchemaEvolution {
           reversible: true,
           estimatedDuration: 60, // 1 minute
           dataImpact: 'minimal',
-          dependencies: []
+          dependencies: [],
         });
       }
     }
@@ -568,7 +601,8 @@ export class SchemaEvolution {
           compatibility[fromVersion][toVersion] = 'compatible';
         } else if (toVersion > fromVersion) {
           // Forward compatibility (older client with newer schema)
-          compatibility[fromVersion][toVersion] = toVersion - fromVersion <= 1 ? 'compatible' : 'degraded';
+          compatibility[fromVersion][toVersion] =
+            toVersion - fromVersion <= 1 ? 'compatible' : 'degraded';
         } else {
           // Backward compatibility (newer client with older schema)
           compatibility[fromVersion][toVersion] = 'incompatible';
@@ -589,7 +623,7 @@ export class SchemaEvolution {
           factor: 'Table deletion detected',
           severity: 'high',
           impact: 'Permanent data loss possible',
-          mitigation: 'Ensure complete backup before proceeding'
+          mitigation: 'Ensure complete backup before proceeding',
         });
         overallRiskScore += 10;
       }
@@ -599,7 +633,7 @@ export class SchemaEvolution {
           factor: 'Column deletion detected',
           severity: 'medium',
           impact: 'Data loss in specific columns',
-          mitigation: 'Backup affected data separately'
+          mitigation: 'Backup affected data separately',
         });
         overallRiskScore += 5;
       }
@@ -618,13 +652,13 @@ export class SchemaEvolution {
     return {
       overallRisk,
       riskFactors,
-      recommendations: this.generateRiskRecommendations(overallRisk, riskFactors)
+      recommendations: this.generateRiskRecommendations(overallRisk, riskFactors),
     };
   }
 
   private generateRiskRecommendations(risk: string, factors: any[]): string[] {
     const recommendations = ['Complete database backup before starting'];
-    
+
     if (risk === 'critical' || risk === 'high') {
       recommendations.push('Plan for extended maintenance window');
       recommendations.push('Have rollback plan ready');
@@ -662,7 +696,7 @@ export class SchemaEvolution {
 
   private generateCreateTableSql(tableDef: TableDefinition): string {
     let sql = `CREATE TABLE ${tableDef.name} (\n`;
-    
+
     const columnDefs = tableDef.columns.map(col => {
       let colDef = `  ${col.name} ${col.type}`;
       if (!col.nullable) colDef += ' NOT NULL';
@@ -670,16 +704,16 @@ export class SchemaEvolution {
       if (col.primaryKey) colDef += ' PRIMARY KEY';
       return colDef;
     });
-    
+
     sql += columnDefs.join(',\n');
-    
+
     if (tableDef.foreignKeys && tableDef.foreignKeys.length > 0) {
-      const fkDefs = tableDef.foreignKeys.map(fk => 
-        `  FOREIGN KEY (${fk.column}) REFERENCES ${fk.references}`
+      const fkDefs = tableDef.foreignKeys.map(
+        fk => `  FOREIGN KEY (${fk.column}) REFERENCES ${fk.references}`
       );
       sql += ',\n' + fkDefs.join(',\n');
     }
-    
+
     sql += '\n)';
     return sql;
   }
@@ -701,7 +735,7 @@ export class SchemaEvolution {
       tablesModified: [],
       indexesAdded: [],
       indexesRemoved: [],
-      constraintsChanged: []
+      constraintsChanged: [],
     };
   }
 
@@ -731,7 +765,7 @@ export class SchemaEvolution {
       totalIndexes: 0,
       totalConstraints: 0,
       orphanedRecords: 0,
-      integrityViolations: 0
+      integrityViolations: 0,
     };
   }
 

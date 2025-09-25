@@ -28,7 +28,7 @@ export { default as PerformanceDashboard } from './PerformanceDashboard';
 export {
   initializeMainPerformanceMonitoring,
   getPerformanceIntegration,
-  cleanupMainPerformanceMonitoring
+  cleanupMainPerformanceMonitoring,
 } from './main-performance-integration';
 
 // Preload script exports
@@ -98,7 +98,7 @@ export const performanceDefaults = {
     searchResponse: 1000, // 1 second
     memoryGrowthRate: 10, // 10MB per hour
     ipcLatency: 5, // 5ms
-    windowOperation: 100 // 100ms
+    windowOperation: 100, // 100ms
   },
 
   monitoringInterval: 1000, // 1 second
@@ -115,7 +115,7 @@ export function createBasicPerformanceMonitor(options?: {
 }) {
   const thresholds = {
     ...performanceDefaults.thresholds,
-    ...options?.thresholds
+    ...options?.thresholds,
   };
 
   const integration = new PerformanceIntegration();
@@ -257,7 +257,7 @@ export default {
   cleanupMainPerformanceMonitoring,
 
   // Constants
-  performanceDefaults
+  performanceDefaults,
 };
 
 /**

@@ -140,7 +140,7 @@ export function injectFloatingCostWidget() {
   });
 
   // Add pause button functionality
-  widgetContainer.querySelector('#widget-pause-btn')?.addEventListener('click', function() {
+  widgetContainer.querySelector('#widget-pause-btn')?.addEventListener('click', function () {
     const isPaused = this.textContent?.includes('Pause');
     this.innerHTML = isPaused ? '▶️ Resume' : '⏸️ Pause AI';
     console.log('AI', isPaused ? 'paused' : 'resumed');
@@ -201,7 +201,7 @@ export function injectFloatingCostWidget() {
         const el = document.getElementById('widget-projected');
         if (el) el.textContent = `$${data.projected.toFixed(2)}`;
       }
-    }
+    },
   };
 }
 

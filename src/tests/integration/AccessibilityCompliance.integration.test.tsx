@@ -25,7 +25,7 @@ import {
   createMockTag,
   createMockCategory,
   createRealisticCategorySet,
-  createRealisticTagSet
+  createRealisticTagSet,
 } from '../utils/mockData';
 
 // Add jest-axe matcher
@@ -39,9 +39,9 @@ configureAxe({
     'focus-order-semantics': { enabled: true },
     'landmark-complementary-is-top-level': { enabled: true },
     'page-has-heading-one': { enabled: false }, // Not applicable for components
-    'region': { enabled: false } // Components don't need to be complete pages
+    region: { enabled: false }, // Components don't need to be complete pages
   },
-  tags: ['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice']
+  tags: ['wcag2a', 'wcag2aa', 'wcag21aa', 'best-practice'],
 });
 
 // ===========================
@@ -55,7 +55,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
     createMockKBEntry(`entry-${i}`, {
       title: `Test Entry ${i}`,
       category: mockCategories[i % mockCategories.length].name,
-      tags: [mockTags[i % mockTags.length].name, mockTags[(i + 1) % mockTags.length].name]
+      tags: [mockTags[i % mockTags.length].name, mockTags[(i + 1) % mockTags.length].name],
     })
   );
 
@@ -68,10 +68,10 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           suggestions={mockTags.map(tag => ({
             tag,
             score: Math.random(),
-            source: 'existing' as const
+            source: 'existing' as const,
           }))}
-          ariaLabel="Entry tags"
-          ariaDescribedBy="tag-help-text"
+          ariaLabel='Entry tags'
+          ariaDescribedBy='tag-help-text'
           announceChanges={true}
         />
       );
@@ -99,9 +99,9 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           suggestions={mockTags.slice(2, 7).map(tag => ({
             tag,
             score: Math.random(),
-            source: 'existing' as const
+            source: 'existing' as const,
           }))}
-          ariaLabel="Knowledge base entry tags"
+          ariaLabel='Knowledge base entry tags'
         />
       );
 
@@ -116,9 +116,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
       await user.keyboard('{Enter}');
 
       expect(mockOnChange).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ name: 'new-test-tag' })
-        ])
+        expect.arrayContaining([expect.objectContaining({ name: 'new-test-tag' })])
       );
 
       // Test suggestion navigation
@@ -157,8 +155,8 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
         <EnhancedTagInput
           value={mockTags.slice(0, 3)}
           onChange={() => {}}
-          ariaLabel="Project tags"
-          ariaDescribedBy="tag-instructions"
+          ariaLabel='Project tags'
+          ariaDescribedBy='tag-instructions'
           maxTags={10}
         />
       );
@@ -195,7 +193,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           value={[]}
           onChange={() => {}}
           announceChanges={true}
-          ariaLabel="Tag input with announcements"
+          ariaLabel='Tag input with announcements'
         />
       );
 
@@ -216,18 +214,14 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
     test('should handle high contrast mode correctly', () => {
       // Simulate high contrast mode
       const originalMatchMedia = window.matchMedia;
-      window.matchMedia = jest.fn().mockImplementation((query) => ({
+      window.matchMedia = jest.fn().mockImplementation(query => ({
         matches: query === '(prefers-contrast: high)',
         addListener: jest.fn(),
         removeListener: jest.fn(),
       }));
 
       const { container } = render(
-        <EnhancedTagInput
-          value={mockTags.slice(0, 2)}
-          onChange={() => {}}
-          colorScheme="auto"
-        />
+        <EnhancedTagInput value={mockTags.slice(0, 2)} onChange={() => {}} colorScheme='auto' />
       );
 
       // Check that high contrast styles are applied
@@ -248,15 +242,15 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
       children: [],
       depth: 0,
       path: [cat.name],
-      parent: null
+      parent: null,
     }));
 
     test('should have no accessibility violations', async () => {
       const { container } = render(
         <EnhancedCategoryTree
           categories={categoryTrees}
-          ariaLabel="Knowledge base categories"
-          ariaDescribedBy="category-help"
+          ariaLabel='Knowledge base categories'
+          ariaDescribedBy='category-help'
           announceChanges={true}
           enableKeyboardNavigation={true}
         />
@@ -283,7 +277,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           categories={categoryTrees}
           onSelectionChange={mockOnSelectionChange}
           enableKeyboardNavigation={true}
-          ariaLabel="Category tree navigation"
+          ariaLabel='Category tree navigation'
         />
       );
 
@@ -355,20 +349,17 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
               children: [],
               depth: 1,
               path: ['Parent Category', 'Child Category 1'],
-              parent: null
-            }
+              parent: null,
+            },
           ],
           depth: 0,
           path: ['Parent Category'],
-          parent: null
-        }
+          parent: null,
+        },
       ];
 
       render(
-        <EnhancedCategoryTree
-          categories={nestedCategories}
-          enableKeyboardNavigation={true}
-        />
+        <EnhancedCategoryTree categories={nestedCategories} enableKeyboardNavigation={true} />
       );
 
       // Find expandable item
@@ -437,7 +428,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           selectedEntries={mockEntries.slice(0, 5)}
           availableTags={mockTags}
           availableCategories={mockCategories}
-          ariaLabel="Bulk operations for selected entries"
+          ariaLabel='Bulk operations for selected entries'
           announceProgress={true}
         />
       );
@@ -450,7 +441,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
       const user = userEvent.setup();
       const mockOnExecute = jest.fn().mockImplementation(async () => {
         // Simulate operation with progress updates
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           setTimeout(() => {
             resolve({
               operation: { type: 'tag', label: 'Add Tags' },
@@ -461,7 +452,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
               errors: [],
               warnings: [],
               duration: 1000,
-              canUndo: true
+              canUndo: true,
             });
           }, 100);
         });
@@ -534,7 +525,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
 
       render(
         <div>
-          <div role="main">
+          <div role='main'>
             <BulkOperationsPanel
               selectedEntries={mockEntries}
               availableTags={mockTags}
@@ -567,7 +558,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           availableTags={mockTags}
           availableCategories={mockCategories}
           enableAIAssist={true}
-          ariaLabel="Knowledge base entry form"
+          ariaLabel='Knowledge base entry form'
         />
       );
 
@@ -657,10 +648,10 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           <EnhancedTagInput
             value={mockTags.slice(0, 2)}
             onChange={() => {}}
-            ariaLabel="Entry tags"
-            ariaDescribedBy="tag-help"
+            ariaLabel='Entry tags'
+            ariaDescribedBy='tag-help'
           />
-          <div id="tag-help">
+          <div id='tag-help'>
             Type tag names and press Enter to add them. Use Backspace to remove tags.
           </div>
         </div>
@@ -690,7 +681,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           availableTags={mockTags}
           availableCategories={mockCategories}
           showSelectionStats={true}
-          ariaLabel="Bulk operations panel"
+          ariaLabel='Bulk operations panel'
         />
       );
 
@@ -711,14 +702,12 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
 
         return (
           <div>
-            <button onClick={() => setTags([...tags, mockTags[tags.length]])}>
-              Add Tag
-            </button>
+            <button onClick={() => setTags([...tags, mockTags[tags.length]])}>Add Tag</button>
             <EnhancedTagInput
               value={tags}
               onChange={setTags}
               announceChanges={true}
-              ariaLabel="Dynamic tag input"
+              ariaLabel='Dynamic tag input'
             />
           </div>
         );
@@ -740,18 +729,14 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
   describe('Color and Contrast Accessibility', () => {
     test('should maintain sufficient color contrast', async () => {
       const { container } = render(
-        <EnhancedTagInput
-          value={mockTags.slice(0, 5)}
-          onChange={() => {}}
-          colorScheme="light"
-        />
+        <EnhancedTagInput value={mockTags.slice(0, 5)} onChange={() => {}} colorScheme='light' />
       );
 
       // Test with enhanced color contrast rule
       const results = await axe(container, {
         rules: {
-          'color-contrast-enhanced': { enabled: true }
-        }
+          'color-contrast-enhanced': { enabled: true },
+        },
       });
 
       expect(results).toHaveNoViolations();
@@ -762,11 +747,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
 
       for (const scheme of colorSchemes) {
         const { container, unmount } = render(
-          <EnhancedTagInput
-            value={mockTags.slice(0, 3)}
-            onChange={() => {}}
-            colorScheme={scheme}
-          />
+          <EnhancedTagInput value={mockTags.slice(0, 3)} onChange={() => {}} colorScheme={scheme} />
         );
 
         const results = await axe(container);
@@ -782,7 +763,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
           value={[
             createMockTag('success', 'success-tag', { color: '#00ff00' }),
             createMockTag('error', 'error-tag', { color: '#ff0000' }),
-            createMockTag('warning', 'warning-tag', { color: '#ffff00' })
+            createMockTag('warning', 'warning-tag', { color: '#ffff00' }),
           ]}
           onChange={() => {}}
         />
@@ -830,12 +811,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
     });
 
     test('should provide visible focus indicators', () => {
-      render(
-        <EnhancedTagInput
-          value={mockTags.slice(0, 2)}
-          onChange={() => {}}
-        />
-      );
+      render(<EnhancedTagInput value={mockTags.slice(0, 2)} onChange={() => {}} />);
 
       const input = screen.getByRole('textbox');
       input.focus();
@@ -851,7 +827,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
       const viewports = [
         { width: 320, height: 568 }, // Mobile
         { width: 768, height: 1024 }, // Tablet
-        { width: 1920, height: 1080 } // Desktop
+        { width: 1920, height: 1080 }, // Desktop
       ];
 
       for (const viewport of viewports) {
@@ -859,13 +835,13 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
         Object.defineProperty(window, 'innerWidth', {
           writable: true,
           configurable: true,
-          value: viewport.width
+          value: viewport.width,
         });
 
         Object.defineProperty(window, 'innerHeight', {
           writable: true,
           configurable: true,
-          value: viewport.height
+          value: viewport.height,
         });
 
         const { container, unmount } = render(
@@ -875,7 +851,7 @@ describe('Accessibility Compliance - WCAG 2.1 AA', () => {
               children: [],
               depth: 0,
               path: [cat.name],
-              parent: null
+              parent: null,
             }))}
             width={viewport.width - 40}
             height={Math.min(600, viewport.height - 200)}

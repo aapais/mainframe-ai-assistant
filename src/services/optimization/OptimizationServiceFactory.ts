@@ -65,7 +65,7 @@ export class OptimizationServiceFactory {
     this.services = {
       engine,
       dashboard: dashboard!,
-      metricsAggregator: metricsAggregator!
+      metricsAggregator: metricsAggregator!,
     };
 
     // Initialize services if auto-start is enabled
@@ -192,8 +192,8 @@ export class OptimizationServiceFactory {
         enableAutoRecommendations: true,
         monitoringInterval: 15, // 15 minutes
         minROI: 20,
-        maxRecommendations: 10
-      }
+        maxRecommendations: 10,
+      },
     });
   }
 
@@ -216,9 +216,9 @@ export class OptimizationServiceFactory {
           performanceCritical: 1000,
           cacheHitRatio: 0.9,
           queryResponseTime: 300,
-          memoryUsage: 0.7
-        }
-      }
+          memoryUsage: 0.7,
+        },
+      },
     });
   }
 
@@ -241,9 +241,9 @@ export class OptimizationServiceFactory {
           performanceCritical: 5000,
           cacheHitRatio: 0.7,
           queryResponseTime: 1000,
-          memoryUsage: 0.9
-        }
-      }
+          memoryUsage: 0.9,
+        },
+      },
     });
   }
 
@@ -259,8 +259,8 @@ export class OptimizationServiceFactory {
       optimization: {
         enableAutoRecommendations: false,
         minROI: 50,
-        maxRecommendations: 5
-      }
+        maxRecommendations: 5,
+      },
     });
   }
 

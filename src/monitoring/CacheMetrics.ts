@@ -169,18 +169,14 @@ class CacheMetricsCollector extends EventEmitter {
       performance: this.calculatePerformanceMetrics(recentMetrics),
       trends: this.calculateTrends(),
       topIssues: this.getTopIssues(),
-      recommendations: this.generateRecommendations(recentMetrics)
+      recommendations: this.generateRecommendations(recentMetrics),
     };
   }
 
   /**
    * Get metrics for a specific time range
    */
-  getMetrics(
-    startTime: Date,
-    endTime: Date,
-    metric?: string
-  ): MetricPoint[] {
+  getMetrics(startTime: Date, endTime: Date, metric?: string): MetricPoint[] {
     return this.metrics.filter(m => {
       const timeMatch = m.timestamp >= startTime && m.timestamp <= endTime;
       const metricMatch = !metric || m.metric === metric;
@@ -199,14 +195,14 @@ class CacheMetricsCollector extends EventEmitter {
         hitRate: 0.7,
         responseTime: 1000,
         errorRate: 0.05,
-        memoryUsage: 0.8
+        memoryUsage: 0.8,
       },
       exportOptions: {
         enabled: false,
         formats: ['json'],
-        destination: './metrics'
+        destination: './metrics',
       },
-      ...config
+      ...config,
     };
   }
 
@@ -221,12 +217,11 @@ class CacheMetricsCollector extends EventEmitter {
         metric: 'uptime',
         value: Date.now() - this.startTime.getTime(),
         tags: { source: 'collector' },
-        source: 'metrics_collector'
+        source: 'metrics_collector',
       });
 
       this.metrics.push(...newMetrics);
       this.emit('metrics', newMetrics);
-
     } catch (error) {
       console.error('Failed to collect metrics:', error);
       this.emit('error', error);
@@ -246,7 +241,7 @@ class CacheMetricsCollector extends EventEmitter {
     return {
       status: 'healthy',
       score: 95,
-      uptime: Date.now() - this.startTime.getTime()
+      uptime: Date.now() - this.startTime.getTime(),
     };
   }
 
@@ -255,7 +250,7 @@ class CacheMetricsCollector extends EventEmitter {
       hitRate: 0.85,
       avgResponseTime: 250,
       throughput: 100,
-      errorRate: 0.01
+      errorRate: 0.01,
     };
   }
 
@@ -263,7 +258,7 @@ class CacheMetricsCollector extends EventEmitter {
     return {
       hitRateTrend: 'stable',
       responseTrend: 'improving',
-      throughputTrend: 'stable'
+      throughputTrend: 'stable',
     };
   }
 
@@ -274,7 +269,7 @@ class CacheMetricsCollector extends EventEmitter {
   private generateRecommendations(metrics: MetricPoint[]): string[] {
     return [
       'System is operating within normal parameters',
-      'Consider monitoring during peak hours'
+      'Consider monitoring during peak hours',
     ];
   }
 }

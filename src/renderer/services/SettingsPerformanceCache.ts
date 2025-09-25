@@ -175,7 +175,7 @@ class MemoryCache implements CacheLayer {
         compressed,
         size,
         accessCount: 0,
-        lastAccessed: Date.now()
+        lastAccessed: Date.now(),
       };
 
       // Evict if necessary
@@ -204,8 +204,7 @@ class MemoryCache implements CacheLayer {
   }
 
   async size(): Promise<number> {
-    return Array.from(this.cache.values())
-      .reduce((total, entry) => total + entry.size, 0);
+    return Array.from(this.cache.values()).reduce((total, entry) => total + entry.size, 0);
   }
 
   private async evictIfNecessary(newEntrySize: number): Promise<void> {
@@ -247,7 +246,7 @@ class MemoryCache implements CacheLayer {
       entryCount: entries.length,
       totalSize: entries.reduce((sum, entry) => sum + entry.size, 0),
       oldestEntry: Math.min(...entries.map(e => e.timestamp)),
-      newestEntry: Math.max(...entries.map(e => e.timestamp))
+      newestEntry: Math.max(...entries.map(e => e.timestamp)),
     };
   }
 }
@@ -317,7 +316,7 @@ class LocalStorageCache implements CacheLayer {
         compressed,
         size,
         accessCount: 0,
-        lastAccessed: Date.now()
+        lastAccessed: Date.now(),
       };
 
       localStorage.setItem(this.prefix + key, JSON.stringify(entry));
@@ -481,11 +480,11 @@ class ServiceWorkerCache implements CacheLayer {
         ttl: ttl || this.config.defaultTTL,
         size: CompressionUtils.estimateSize(value),
         accessCount: 0,
-        lastAccessed: Date.now()
+        lastAccessed: Date.now(),
       };
 
       const response = new Response(JSON.stringify(entry), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
 
       await cache.put(key, response);
@@ -569,7 +568,7 @@ export class SettingsPerformanceCache {
       enableServiceWorker: true,
       enableMetrics: true,
       syncInterval: 5 * 60 * 1000, // 5 minutes
-      ...config
+      ...config,
     };
 
     this.metrics = {
@@ -579,13 +578,13 @@ export class SettingsPerformanceCache {
       memoryUsage: 0,
       storageUsage: 0,
       compressionRatio: 0,
-      averageAccessTime: 0
+      averageAccessTime: 0,
     };
 
     this.layers = [
       new MemoryCache(this.config),
       new LocalStorageCache(this.config),
-      new ServiceWorkerCache(this.config)
+      new ServiceWorkerCache(this.config),
     ];
 
     this.startSync();
@@ -617,25 +616,19 @@ export class SettingsPerformanceCache {
   }
 
   async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
-    const results = await Promise.allSettled(
-      this.layers.map(layer => layer.set(key, value, ttl))
-    );
+    const results = await Promise.allSettled(this.layers.map(layer => layer.set(key, value, ttl)));
 
     return results.some(result => result.status === 'fulfilled' && result.value);
   }
 
   async delete(key: string): Promise<boolean> {
-    const results = await Promise.allSettled(
-      this.layers.map(layer => layer.delete(key))
-    );
+    const results = await Promise.allSettled(this.layers.map(layer => layer.delete(key)));
 
     return results.some(result => result.status === 'fulfilled' && result.value);
   }
 
   async clear(): Promise<boolean> {
-    const results = await Promise.allSettled(
-      this.layers.map(layer => layer.clear())
-    );
+    const results = await Promise.allSettled(this.layers.map(layer => layer.clear()));
 
     return results.every(result => result.status === 'fulfilled' && result.value);
   }
@@ -686,7 +679,7 @@ export class SettingsPerformanceCache {
     const layerStats = await Promise.all(
       this.layers.map(async layer => ({
         name: layer.name,
-        size: await layer.size()
+        size: await layer.size(),
       }))
     );
 
@@ -697,15 +690,14 @@ export class SettingsPerformanceCache {
       layers: layerStats,
       totalSize,
       hitRate: totalRequests > 0 ? this.metrics.hits / totalRequests : 0,
-      missRate: totalRequests > 0 ? this.metrics.misses / totalRequests : 0
+      missRate: totalRequests > 0 ? this.metrics.misses / totalRequests : 0,
     };
   }
 
   private updateMetrics(startTime: number): void {
     if (this.config.enableMetrics) {
       const accessTime = performance.now() - startTime;
-      this.metrics.averageAccessTime =
-        (this.metrics.averageAccessTime + accessTime) / 2;
+      this.metrics.averageAccessTime = (this.metrics.averageAccessTime + accessTime) / 2;
     }
   }
 

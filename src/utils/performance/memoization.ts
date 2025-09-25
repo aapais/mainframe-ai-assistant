@@ -176,12 +176,7 @@ const getMemoryUsage = (): number => {
  * High-performance LRU Cache with TTL and monitoring
  */
 export const createLRUCache = <K, V>(options: MemoizationOptions = {}): LRUCache<K, V> => {
-  const {
-    maxSize = 100,
-    ttl,
-    enableMonitoring = false,
-    isEqual = deepEqual
-  } = options;
+  const { maxSize = 100, ttl, enableMonitoring = false, isEqual = deepEqual } = options;
 
   const cache = new Map<K, CacheEntry<V>>();
   const accessOrder = new Map<K, number>();
@@ -192,7 +187,7 @@ export const createLRUCache = <K, V>(options: MemoizationOptions = {}): LRUCache
     hits: 0,
     misses: 0,
     totalAccessTime: 0,
-    accessCount: 0
+    accessCount: 0,
   };
 
   const isExpired = (entry: CacheEntry<V>): boolean => {
@@ -260,7 +255,7 @@ export const createLRUCache = <K, V>(options: MemoizationOptions = {}): LRUCache
       timestamp: now,
       accessCount: 1,
       lastAccessed: now,
-      expiresAt
+      expiresAt,
     };
 
     cache.set(key, entry);
@@ -305,7 +300,7 @@ export const createLRUCache = <K, V>(options: MemoizationOptions = {}): LRUCache
       misses: stats.misses,
       size: cache.size,
       hitRate: total > 0 ? (stats.hits / total) * 100 : 0,
-      averageAccessTime: stats.accessCount > 0 ? stats.totalAccessTime / stats.accessCount : 0
+      averageAccessTime: stats.accessCount > 0 ? stats.totalAccessTime / stats.accessCount : 0,
     };
   };
 
@@ -315,8 +310,10 @@ export const createLRUCache = <K, V>(options: MemoizationOptions = {}): LRUCache
     has,
     delete: deleteKey,
     clear,
-    get size() { return cache.size; },
-    getStats
+    get size() {
+      return cache.size;
+    },
+    getStats,
   };
 };
 
@@ -392,18 +389,21 @@ export const useMemoizedFunction = <Args extends any[], Return>(
 ): ((...args: Args) => Return) => {
   const cacheRef = useRef(createLRUCache<string, Return>(options));
 
-  return useCallback((...args: Args): Return => {
-    const key = generateCacheKey(args);
-    const cached = cacheRef.current.get(key);
+  return useCallback(
+    (...args: Args): Return => {
+      const key = generateCacheKey(args);
+      const cached = cacheRef.current.get(key);
 
-    if (cached !== undefined) {
-      return cached;
-    }
+      if (cached !== undefined) {
+        return cached;
+      }
 
-    const result = fn(...args);
-    cacheRef.current.set(key, result);
-    return result;
-  }, [fn]);
+      const result = fn(...args);
+      cacheRef.current.set(key, result);
+      return result;
+    },
+    [fn]
+  );
 };
 
 // ========================
@@ -448,9 +448,7 @@ export const createRenderProfiler = (componentName: string) => {
 
       // Performance warnings
       if (renderTime > 16) {
-        console.warn(
-          `🐌 Slow render in ${componentName}: ${renderTime.toFixed(2)}ms`
-        );
+        console.warn(`🐌 Slow render in ${componentName}: ${renderTime.toFixed(2)}ms`);
       }
 
       return renderTime;
@@ -468,9 +466,9 @@ export const createRenderProfiler = (componentName: string) => {
         maxRenderTime: max,
         minRenderTime: min,
         sampleCount: renderTimes.length,
-        slowRenders: renderTimes.filter(t => t > 16).length
+        slowRenders: renderTimes.filter(t => t > 16).length,
       };
-    }
+    },
   };
 };
 
@@ -480,5 +478,5 @@ export default {
   useStableCallback,
   useMemoizedFunction,
   withMemoization,
-  createRenderProfiler
+  createRenderProfiler,
 };

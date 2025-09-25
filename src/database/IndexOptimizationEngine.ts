@@ -159,9 +159,7 @@ export class IndexOptimizationEngine {
       const indexes = await this.getAllIndexes();
 
       // Analyze each index
-      const indexAnalysis = await Promise.all(
-        indexes.map(index => this.analyzeIndex(index))
-      );
+      const indexAnalysis = await Promise.all(indexes.map(index => this.analyzeIndex(index)));
 
       // Generate recommendations
       const recommendations = await this.generateOptimizationRecommendations(indexAnalysis);
@@ -179,18 +177,19 @@ export class IndexOptimizationEngine {
         effective_indexes: effectiveIndexes,
         unused_indexes: unusedIndexes,
         recommendations_count: recommendations.length,
-        optimization_score: optimizationScore
+        optimization_score: optimizationScore,
       };
 
-      console.log(`✅ Index analysis completed: ${summary.total_indexes} indexes analyzed, ${summary.recommendations_count} recommendations generated`);
+      console.log(
+        `✅ Index analysis completed: ${summary.total_indexes} indexes analyzed, ${summary.recommendations_count} recommendations generated`
+      );
 
       return {
         summary,
         indexes: indexAnalysis,
         recommendations,
-        performance_metrics: performanceMetrics
+        performance_metrics: performanceMetrics,
       };
-
     } catch (error) {
       console.error('❌ Index analysis failed:', error);
       throw new Error(`Index analysis failed: ${error.message}`);
@@ -227,9 +226,8 @@ export class IndexOptimizationEngine {
         query_plan: queryPlan,
         execution_time_ms: executionTime,
         optimization_opportunities: optimizationOpportunities,
-        performance_score: performanceScore
+        performance_score: performanceScore,
       };
-
     } catch (error) {
       console.error('❌ Query analysis failed:', error);
       throw new Error(`Query analysis failed: ${error.message}`);
@@ -245,7 +243,9 @@ export class IndexOptimizationEngine {
     estimated_improvement: string;
     sql_statements: string[];
   }> {
-    console.log(`🔧 ${dryRun ? 'Simulating' : 'Creating'} optimal indexes based on query patterns...`);
+    console.log(
+      `🔧 ${dryRun ? 'Simulating' : 'Creating'} optimal indexes based on query patterns...`
+    );
 
     try {
       const createdIndexes: string[] = [];
@@ -256,7 +256,9 @@ export class IndexOptimizationEngine {
       const slowQueries = await this.getSlowQueryPatterns();
 
       for (const query of slowQueries) {
-        const recommendations = await this.generateIndexRecommendationsForQuery(query.pattern_template);
+        const recommendations = await this.generateIndexRecommendationsForQuery(
+          query.pattern_template
+        );
 
         for (const recommendation of recommendations) {
           if (recommendation.type === 'CREATE_INDEX' && recommendation.sql_statement) {
@@ -305,9 +307,8 @@ export class IndexOptimizationEngine {
         created_indexes: createdIndexes,
         dropped_indexes: droppedIndexes,
         estimated_improvement: estimatedImprovement,
-        sql_statements: sqlStatements
+        sql_statements: sqlStatements,
       };
-
     } catch (error) {
       console.error('❌ Index optimization failed:', error);
       throw new Error(`Index optimization failed: ${error.message}`);
@@ -322,12 +323,16 @@ export class IndexOptimizationEngine {
 
     try {
       // Update index usage counts from query performance data
-      const recentQueries = this.db.prepare(`
+      const recentQueries = this.db
+        .prepare(
+          `
         SELECT query_plan, execution_time_ms, timestamp
         FROM query_performance
         WHERE timestamp > datetime('now', '-24 hours')
           AND index_used = 1
-      `).all();
+      `
+        )
+        .all();
 
       const indexUsage = new Map<string, { count: number; totalTime: number }>();
 
@@ -338,7 +343,7 @@ export class IndexOptimizationEngine {
           const current = indexUsage.get(indexName) || { count: 0, totalTime: 0 };
           indexUsage.set(indexName, {
             count: current.count + 1,
-            totalTime: current.totalTime + query.execution_time_ms
+            totalTime: current.totalTime + query.execution_time_ms,
           });
         }
       }
@@ -358,7 +363,6 @@ export class IndexOptimizationEngine {
       }
 
       console.log(`✅ Updated statistics for ${indexUsage.size} indexes`);
-
     } catch (error) {
       console.error('❌ Failed to update index statistics:', error);
     }
@@ -396,7 +400,9 @@ export class IndexOptimizationEngine {
 
     try {
       // Get query performance metrics
-      const queryStats = this.db.prepare(`
+      const queryStats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as total_queries,
           AVG(execution_time_ms) as avg_time,
@@ -404,23 +410,29 @@ export class IndexOptimizationEngine {
           COUNT(CASE WHEN execution_time_ms > ? THEN 1 END) as slow_queries
         FROM query_performance
         WHERE timestamp > datetime('now', '-24 hours')
-      `).get(this.SLOW_QUERY_THRESHOLD) as any;
+      `
+        )
+        .get(this.SLOW_QUERY_THRESHOLD) as any;
 
       // Get index effectiveness metrics
-      const indexStats = this.db.prepare(`
+      const indexStats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as total_indexes,
           COUNT(CASE WHEN effectiveness_score >= 0.7 THEN 1 END) * 100.0 / COUNT(*) as effective_percent,
           COUNT(CASE WHEN usage_count = 0 THEN 1 END) as unused_count
         FROM index_usage_stats
-      `).get() as any;
+      `
+        )
+        .get() as any;
 
       // Generate recommendations by priority
       const allRecommendations = await this.generateOptimizationRecommendations([]);
       const recommendations = {
         high_priority: allRecommendations.filter(r => r.priority === 'HIGH'),
         medium_priority: allRecommendations.filter(r => r.priority === 'MEDIUM'),
-        low_priority: allRecommendations.filter(r => r.priority === 'LOW')
+        low_priority: allRecommendations.filter(r => r.priority === 'LOW'),
       };
 
       // Calculate trends
@@ -437,18 +449,17 @@ export class IndexOptimizationEngine {
           total_queries: queryStats.total_queries || 0,
           avg_response_time_ms: Math.round(queryStats.avg_time || 0),
           sub_second_queries_percent: Math.round(queryStats.sub_second_percent || 0),
-          slow_queries_count: queryStats.slow_queries || 0
+          slow_queries_count: queryStats.slow_queries || 0,
         },
         index_effectiveness: {
           total_indexes: indexStats.total_indexes || 0,
           effective_indexes_percent: Math.round(indexStats.effective_percent || 0),
           unused_indexes_count: indexStats.unused_count || 0,
-          coverage_score: this.calculateIndexCoverageScore()
+          coverage_score: this.calculateIndexCoverageScore(),
         },
         recommendations,
-        trends
+        trends,
       };
-
     } catch (error) {
       console.error('❌ Failed to generate performance report:', error);
       throw new Error(`Performance report generation failed: ${error.message}`);
@@ -462,13 +473,17 @@ export class IndexOptimizationEngine {
   /**
    * Get all custom database indexes
    */
-  private async getAllIndexes(): Promise<Array<{
-    name: string;
-    table: string;
-    sql: string;
-    unique: boolean;
-  }>> {
-    return this.db.prepare(`
+  private async getAllIndexes(): Promise<
+    Array<{
+      name: string;
+      table: string;
+      sql: string;
+      unique: boolean;
+    }>
+  > {
+    return this.db
+      .prepare(
+        `
       SELECT
         name,
         tbl_name as table_name,
@@ -479,7 +494,9 @@ export class IndexOptimizationEngine {
         AND name NOT LIKE 'sqlite_%'
         AND sql IS NOT NULL
       ORDER BY tbl_name, name
-    `).all() as any;
+    `
+      )
+      .all() as any;
   }
 
   /**
@@ -487,18 +504,24 @@ export class IndexOptimizationEngine {
    */
   private async analyzeIndex(index: any): Promise<IndexAnalysis> {
     // Get usage statistics
-    const usage = this.db.prepare(`
+    const usage = this.db
+      .prepare(
+        `
       SELECT usage_count, last_used, avg_query_time_ms, effectiveness_score
       FROM index_usage_stats
       WHERE index_name = ?
-    `).get(index.name) as any;
+    `
+      )
+      .get(index.name) as any;
 
     // Determine index type
     const indexType = this.determineIndexType(index.sql);
     const optimizationType = this.determineOptimizationType(index.name);
 
     // Calculate effectiveness score
-    const effectivenessScore = usage ? usage.effectiveness_score : this.calculateIndexEffectiveness(index);
+    const effectivenessScore = usage
+      ? usage.effectiveness_score
+      : this.calculateIndexEffectiveness(index);
 
     // Generate recommendations
     const recommendations = this.generateIndexRecommendations(index, usage, effectivenessScore);
@@ -513,7 +536,7 @@ export class IndexOptimizationEngine {
       size_estimate: this.estimateIndexSize(index.name),
       last_used: usage && usage.last_used ? new Date(usage.last_used) : null,
       avg_query_time_ms: usage ? usage.avg_query_time_ms : 0,
-      recommendations
+      recommendations,
     };
   }
 
@@ -531,7 +554,7 @@ export class IndexOptimizationEngine {
         estimated_cost: this.extractCostFromPlan(step.detail),
         uses_index: step.detail.includes('USING INDEX'),
         index_name: this.extractIndexNameFromPlan(step.detail),
-        table_scan: step.detail.includes('SCAN TABLE')
+        table_scan: step.detail.includes('SCAN TABLE'),
       }));
     } catch (error) {
       console.warn(`Failed to get query plan for: ${sql.substring(0, 100)}...`);
@@ -573,7 +596,7 @@ export class IndexOptimizationEngine {
         description: 'Table scan detected - consider adding index',
         sql_statement: this.generateIndexSQLForTableScan(sql, tableScans[0]),
         estimated_improvement: '50-80% query time reduction',
-        rationale: 'Table scans are inefficient for large datasets and should be avoided'
+        rationale: 'Table scans are inefficient for large datasets and should be avoided',
       });
     }
 
@@ -585,7 +608,7 @@ export class IndexOptimizationEngine {
         description: 'Query could benefit from covering index',
         sql_statement: this.generateCoveringIndexSQL(sql),
         estimated_improvement: '20-40% query time reduction',
-        rationale: 'Covering indexes eliminate additional table lookups'
+        rationale: 'Covering indexes eliminate additional table lookups',
       });
     }
 
@@ -598,7 +621,7 @@ export class IndexOptimizationEngine {
         description: 'Inefficient JOIN detected - add JOIN optimization index',
         sql_statement: this.generateJoinIndexSQL(sql),
         estimated_improvement: '40-70% query time reduction',
-        rationale: 'Proper JOIN indexes significantly improve multi-table query performance'
+        rationale: 'Proper JOIN indexes significantly improve multi-table query performance',
       });
     }
 
@@ -632,21 +655,29 @@ export class IndexOptimizationEngine {
   /**
    * Get slow query patterns for analysis
    */
-  private async getSlowQueryPatterns(): Promise<Array<{ pattern_template: string; avg_time: number }>> {
-    return this.db.prepare(`
+  private async getSlowQueryPatterns(): Promise<
+    Array<{ pattern_template: string; avg_time: number }>
+  > {
+    return this.db
+      .prepare(
+        `
       SELECT pattern_template, avg_execution_time_ms as avg_time
       FROM query_patterns
       WHERE avg_execution_time_ms > ?
         AND execution_count >= 5
       ORDER BY avg_execution_time_ms DESC
       LIMIT 20
-    `).all(this.SLOW_QUERY_THRESHOLD) as any;
+    `
+      )
+      .all(this.SLOW_QUERY_THRESHOLD) as any;
   }
 
   /**
    * Generate index recommendations for specific query
    */
-  private async generateIndexRecommendationsForQuery(queryTemplate: string): Promise<OptimizationRecommendation[]> {
+  private async generateIndexRecommendationsForQuery(
+    queryTemplate: string
+  ): Promise<OptimizationRecommendation[]> {
     const recommendations: OptimizationRecommendation[] = [];
 
     // Analyze query structure
@@ -660,7 +691,7 @@ export class IndexOptimizationEngine {
         description: `Covering index for query pattern: ${queryTemplate.substring(0, 50)}...`,
         sql_statement: this.generateCoveringIndexFromAnalysis(analysis),
         estimated_improvement: '30-50% performance improvement',
-        rationale: 'Covering index eliminates table lookups for this query pattern'
+        rationale: 'Covering index eliminates table lookups for this query pattern',
       });
     }
 
@@ -672,7 +703,7 @@ export class IndexOptimizationEngine {
         description: `Composite index for multi-column WHERE clause`,
         sql_statement: this.generateCompositeIndexFromAnalysis(analysis),
         estimated_improvement: '50-80% performance improvement',
-        rationale: 'Composite indexes significantly improve multi-column filtering performance'
+        rationale: 'Composite indexes significantly improve multi-column filtering performance',
       });
     }
 
@@ -683,7 +714,9 @@ export class IndexOptimizationEngine {
    * Get unused indexes for potential removal
    */
   private async getUnusedIndexes(): Promise<Array<{ name: string; table: string }>> {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT s.name, s.tbl_name as table_name
       FROM sqlite_master s
       LEFT JOIN index_usage_stats u ON s.name = u.index_name
@@ -692,14 +725,16 @@ export class IndexOptimizationEngine {
         AND (u.usage_count IS NULL OR u.usage_count = 0)
         AND s.name NOT LIKE '%_pkey%'
         AND s.name NOT LIKE '%_fkey%'
-    `).all() as any;
+    `
+      )
+      .all() as any;
   }
 
   /**
    * Calculate performance improvement estimate
    */
   private estimatePerformanceImprovement(createdCount: number, droppedCount: number): string {
-    const improvement = (createdCount * 25) + (droppedCount * 5);
+    const improvement = createdCount * 25 + droppedCount * 5;
 
     if (improvement >= 50) {
       return 'Significant improvement (50%+ faster queries)';
@@ -720,7 +755,7 @@ export class IndexOptimizationEngine {
 
     // Query performance component (40 points)
     const avgTime = queryStats.avg_time || 1000;
-    const queryScore = Math.max(0, 40 - (avgTime / 25)); // 1000ms = 0 points, 0ms = 40 points
+    const queryScore = Math.max(0, 40 - avgTime / 25); // 1000ms = 0 points, 0ms = 40 points
     score += queryScore;
 
     // Index effectiveness component (30 points)
@@ -749,17 +784,25 @@ export class IndexOptimizationEngine {
     // Simplified trend calculation
     // In production, this would analyze historical data
 
-    const recentAvgTime = this.db.prepare(`
+    const recentAvgTime = this.db
+      .prepare(
+        `
       SELECT AVG(execution_time_ms) as avg_time
       FROM query_performance
       WHERE timestamp > datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
-    const previousAvgTime = this.db.prepare(`
+    const previousAvgTime = this.db
+      .prepare(
+        `
       SELECT AVG(execution_time_ms) as avg_time
       FROM query_performance
       WHERE timestamp BETWEEN datetime('now', '-48 hours') AND datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     const queryTimeTrend = this.calculateTrend(
       previousAvgTime?.avg_time || 1000,
@@ -769,14 +812,16 @@ export class IndexOptimizationEngine {
     return {
       query_time_trend: queryTimeTrend,
       index_usage_trend: 'Stable', // Simplified
-      optimization_opportunities: await this.countOptimizationOpportunities()
+      optimization_opportunities: await this.countOptimizationOpportunities(),
     };
   }
 
   /**
    * Helper methods for various calculations and analysis
    */
-  private determineIndexType(sql: string): 'UNIQUE' | 'PARTIAL' | 'COMPOSITE' | 'SIMPLE' | 'COVERING' {
+  private determineIndexType(
+    sql: string
+  ): 'UNIQUE' | 'PARTIAL' | 'COMPOSITE' | 'SIMPLE' | 'COVERING' {
     if (sql.includes('UNIQUE')) return 'UNIQUE';
     if (sql.includes('WHERE')) return 'PARTIAL';
     if (sql.includes('covering') || sql.split(',').length > 3) return 'COVERING';
@@ -820,7 +865,9 @@ export class IndexOptimizationEngine {
     return recommendations;
   }
 
-  private async generateOptimizationRecommendations(indexes: IndexAnalysis[]): Promise<OptimizationRecommendation[]> {
+  private async generateOptimizationRecommendations(
+    indexes: IndexAnalysis[]
+  ): Promise<OptimizationRecommendation[]> {
     const recommendations: OptimizationRecommendation[] = [];
 
     // Add general recommendations based on system state
@@ -832,7 +879,7 @@ export class IndexOptimizationEngine {
         priority: 'HIGH',
         description: `${slowQueries.length} slow query patterns detected`,
         estimated_improvement: 'Up to 80% improvement',
-        rationale: 'Slow queries indicate missing or ineffective indexes'
+        rationale: 'Slow queries indicate missing or ineffective indexes',
       });
     }
 
@@ -840,7 +887,9 @@ export class IndexOptimizationEngine {
   }
 
   private async calculatePerformanceMetrics(): Promise<PerformanceMetrics> {
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT
         COUNT(*) as total_queries,
         AVG(execution_time_ms) as avg_time,
@@ -848,7 +897,9 @@ export class IndexOptimizationEngine {
         COUNT(CASE WHEN index_used THEN 1 END) * 100.0 / COUNT(*) as index_usage_rate
       FROM query_performance
       WHERE timestamp > datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     return {
       total_queries: stats.total_queries || 0,
@@ -864,18 +915,21 @@ export class IndexOptimizationEngine {
         index_usage_rate: stats.index_usage_rate || 0,
         table_scan_rate: 0,
         cache_hit_rate: 95,
-        optimization_score: 0
-      })
+        optimization_score: 0,
+      }),
     };
   }
 
-  private calculateOptimizationScore(indexes: IndexAnalysis[], metrics: PerformanceMetrics): number {
+  private calculateOptimizationScore(
+    indexes: IndexAnalysis[],
+    metrics: PerformanceMetrics
+  ): number {
     // Simplified optimization score calculation
     let score = 100;
 
-    score -= (metrics.avg_query_time_ms / 10); // Penalty for slow queries
-    score -= (metrics.slow_queries_count * 5); // Penalty for slow query count
-    score += (metrics.index_usage_rate / 2); // Bonus for index usage
+    score -= metrics.avg_query_time_ms / 10; // Penalty for slow queries
+    score -= metrics.slow_queries_count * 5; // Penalty for slow query count
+    score += metrics.index_usage_rate / 2; // Bonus for index usage
 
     return Math.max(0, Math.min(100, Math.round(score)));
   }
@@ -886,9 +940,13 @@ export class IndexOptimizationEngine {
   }
 
   private getTableNameForIndex(indexName: string): string {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT tbl_name FROM sqlite_master WHERE type = 'index' AND name = ?
-    `).get(indexName) as any;
+    `
+      )
+      .get(indexName) as any;
 
     return result ? result.tbl_name : 'unknown';
   }
@@ -952,9 +1010,7 @@ CREATE INDEX idx_auto_covering_${Date.now()} ON kb_entries(category, usage_count
   }
 
   private findInefficientJoins(sql: string, queryPlan: QueryPlan[]): QueryPlan[] {
-    return queryPlan.filter(step =>
-      step.detail.includes('JOIN') && !step.uses_index
-    );
+    return queryPlan.filter(step => step.detail.includes('JOIN') && !step.uses_index);
   }
 
   private generateJoinIndexSQL(sql: string): string {
@@ -970,7 +1026,7 @@ CREATE INDEX idx_auto_join_${Date.now()} ON kb_tags(entry_id);`;
     return {
       hasWhere: query.includes('WHERE'),
       selectColumns: ['id', 'title'], // Simplified
-      whereColumns: ['category'] // Simplified
+      whereColumns: ['category'], // Simplified
     };
   }
 

@@ -1,6 +1,6 @@
 /**
  * Search Performance Monitor
- * 
+ *
  * Comprehensive monitoring for search service to ensure <1s response time SLA.
  * Provides real-time performance tracking, alerting, and optimization insights.
  */
@@ -11,29 +11,29 @@ import { PerformanceMonitor } from '../database/PerformanceMonitor';
 
 export interface SearchMetrics {
   timestamp: Date;
-  
+
   // Response time metrics
   avgResponseTime: number;
   p50ResponseTime: number;
   p95ResponseTime: number;
   p99ResponseTime: number;
-  
+
   // Search performance
   queriesPerSecond: number;
   searchAccuracy: number;
-  
+
   // Cache performance
   cacheHitRate: number;
   cacheHitRateByType: Record<string, number>;
-  
+
   // Index performance
   indexSize: number;
   indexGrowthRate: number;
-  
+
   // Query analysis
   topQueries: Array<{ query: string; count: number; avgTime: number }>;
   slowQueries: Array<{ query: string; time: number; timestamp: Date }>;
-  
+
   // SLA compliance
   slaCompliance: number;
   slaViolations: number;
@@ -69,16 +69,16 @@ export interface QueryProfileData {
 export class SearchPerformanceMonitor extends EventEmitter {
   private db: Database.Database;
   private baseMonitor: PerformanceMonitor;
-  
+
   private metrics: SearchMetrics[] = [];
   private alerts: SearchAlert[] = [];
   private queryProfiles: Map<string, QueryProfileData> = new Map();
   private responseTimes: Array<{ time: number; query: string; timestamp: Date }> = [];
-  
+
   private readonly SLA_THRESHOLD = 1000; // 1 second in milliseconds
   private readonly SLOW_QUERY_THRESHOLD = 500;
   private readonly CRITICAL_THRESHOLD = 2000;
-  
+
   private config = {
     monitoringInterval: 15000, // 15 seconds for real-time monitoring
     retentionDays: 7,
@@ -89,13 +89,13 @@ export class SearchPerformanceMonitor extends EventEmitter {
 
   constructor(database: Database.Database, baseMonitor: PerformanceMonitor) {
     super();
-    
+
     this.db = database;
     this.baseMonitor = baseMonitor;
-    
+
     this.initializeMonitoringTables();
     this.startMonitoring();
-    
+
     console.log('🔍 Search performance monitor initialized');
   }
 
@@ -112,19 +112,19 @@ export class SearchPerformanceMonitor extends EventEmitter {
   ): void {
     const timestamp = new Date();
     const normalizedQuery = this.normalizeQuery(query);
-    
+
     // Record response time
     this.responseTimes.push({
       time: duration,
       query: normalizedQuery,
-      timestamp
+      timestamp,
     });
-    
+
     // Maintain response time buffer
     if (this.responseTimes.length > this.config.maxResponseTimeRecords) {
       this.responseTimes = this.responseTimes.slice(-25000);
     }
-    
+
     // Update query profile
     this.updateQueryProfile({
       query,
@@ -133,9 +133,9 @@ export class SearchPerformanceMonitor extends EventEmitter {
       cacheHit,
       strategy,
       indexesUsed,
-      timestamp
+      timestamp,
     });
-    
+
     // Store detailed search metric
     this.storeSearchMetric({
       query: normalizedQuery,
@@ -144,18 +144,18 @@ export class SearchPerformanceMonitor extends EventEmitter {
       cacheHit,
       strategy,
       indexesUsed: JSON.stringify(indexesUsed),
-      timestamp
+      timestamp,
     });
-    
+
     // Check for immediate alerts
     this.checkSearchAlert(query, duration, timestamp);
-    
+
     this.emit('search-recorded', {
       query: normalizedQuery,
       duration,
       resultCount,
       cacheHit,
-      slaCompliant: duration <= this.SLA_THRESHOLD
+      slaCompliant: duration <= this.SLA_THRESHOLD,
     });
   }
 
@@ -183,14 +183,14 @@ export class SearchPerformanceMonitor extends EventEmitter {
     const slowQueries = this.getSlowQueries(10);
     const activeAlerts = this.getActiveAlerts();
     const slaStatus = this.getSLAStatus();
-    
+
     return {
       currentMetrics,
       recentTrends,
       topQueries,
       slowQueries,
       activeAlerts,
-      slaStatus
+      slaStatus,
     };
   }
 
@@ -203,46 +203,47 @@ export class SearchPerformanceMonitor extends EventEmitter {
     slaCompliance: Array<{ time: Date; compliance: number; violations: number }>;
     cacheHitRate: Array<{ time: Date; rate: number }>;
   } {
-    const startTime = Date.now() - (hours * 60 * 60 * 1000);
+    const startTime = Date.now() - hours * 60 * 60 * 1000;
     const bucketSize = (hours * 60 * 60 * 1000) / 48; // 48 data points
-    
+
     const trends = {
       responseTime: [] as Array<{ time: Date; avg: number; p95: number; p99: number }>,
       throughput: [] as Array<{ time: Date; qps: number }>,
       slaCompliance: [] as Array<{ time: Date; compliance: number; violations: number }>,
-      cacheHitRate: [] as Array<{ time: Date; rate: number }>
+      cacheHitRate: [] as Array<{ time: Date; rate: number }>,
     };
-    
+
     // Get historical data from database
     const historicalData = this.getHistoricalMetrics(startTime);
-    
+
     // Group into time buckets
     for (let time = startTime; time < Date.now(); time += bucketSize) {
-      const bucketData = historicalData.filter(m => 
-        m.timestamp >= time && m.timestamp < time + bucketSize
+      const bucketData = historicalData.filter(
+        m => m.timestamp >= time && m.timestamp < time + bucketSize
       );
-      
+
       if (bucketData.length > 0) {
         const responseTimesInBucket = bucketData.map(d => d.duration);
         responseTimesInBucket.sort((a, b) => a - b);
-        
-        const avg = responseTimesInBucket.reduce((sum, t) => sum + t, 0) / responseTimesInBucket.length;
+
+        const avg =
+          responseTimesInBucket.reduce((sum, t) => sum + t, 0) / responseTimesInBucket.length;
         const p95 = this.calculatePercentile(responseTimesInBucket, 95);
         const p99 = this.calculatePercentile(responseTimesInBucket, 99);
-        
+
         const qps = bucketData.length / (bucketSize / 1000);
         const violations = bucketData.filter(d => d.duration > this.SLA_THRESHOLD).length;
         const compliance = (bucketData.length - violations) / bucketData.length;
         const cacheHits = bucketData.filter(d => d.cache_hit).length;
         const cacheHitRate = cacheHits / bucketData.length;
-        
+
         trends.responseTime.push({ time: new Date(time), avg, p95, p99 });
         trends.throughput.push({ time: new Date(time), qps });
         trends.slaCompliance.push({ time: new Date(time), compliance, violations });
         trends.cacheHitRate.push({ time: new Date(time), rate: cacheHitRate });
       }
     }
-    
+
     return trends;
   }
 
@@ -288,18 +289,18 @@ export class SearchPerformanceMonitor extends EventEmitter {
         data.lastTime = rt.timestamp > data.lastTime ? rt.timestamp : data.lastTime;
         return acc;
       }, new Map());
-    
+
     return Array.from(violations.entries())
       .map(([query, data]) => {
         const profile = this.queryProfiles.get(query);
         const violationRate = profile ? data.count / profile.executions : 1;
-        
+
         return {
           query,
           avgTime: data.totalTime / data.count,
           executions: profile?.executions || data.count,
           violationRate,
-          lastViolation: data.lastTime
+          lastViolation: data.lastTime,
         };
       })
       .sort((a, b) => b.violationRate - a.violationRate)
@@ -325,36 +326,38 @@ export class SearchPerformanceMonitor extends EventEmitter {
     worstQueries: Array<{ query: string; avgTime: number }>;
   } {
     const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
-    const dayAgo = now - (24 * 60 * 60 * 1000);
-    
+    const hourAgo = now - 60 * 60 * 1000;
+    const dayAgo = now - 24 * 60 * 60 * 1000;
+
     // Current compliance (last 15 minutes)
     const recent = this.responseTimes.filter(rt => rt.timestamp.getTime() > now - 900000);
     const recentViolations = recent.filter(rt => rt.time > this.SLA_THRESHOLD).length;
-    const currentCompliance = recent.length > 0 ? (recent.length - recentViolations) / recent.length : 1;
-    
+    const currentCompliance =
+      recent.length > 0 ? (recent.length - recentViolations) / recent.length : 1;
+
     // Hourly compliance
     const hourly = this.responseTimes.filter(rt => rt.timestamp.getTime() > hourAgo);
     const hourlyViolations = hourly.filter(rt => rt.time > this.SLA_THRESHOLD).length;
-    const hourlyCompliance = hourly.length > 0 ? (hourly.length - hourlyViolations) / hourly.length : 1;
-    
+    const hourlyCompliance =
+      hourly.length > 0 ? (hourly.length - hourlyViolations) / hourly.length : 1;
+
     // Daily compliance
     const daily = this.responseTimes.filter(rt => rt.timestamp.getTime() > dayAgo);
     const dailyViolations = daily.filter(rt => rt.time > this.SLA_THRESHOLD).length;
     const dailyCompliance = daily.length > 0 ? (daily.length - dailyViolations) / daily.length : 1;
-    
+
     // Worst performing queries
     const worstQueries = this.getSlowQueries(5).map(q => ({
       query: q.normalizedQuery,
-      avgTime: q.avgTime
+      avgTime: q.avgTime,
     }));
-    
+
     return {
       currentCompliance,
       hourlyCompliance,
       dailyCompliance,
       recentViolations,
-      worstQueries
+      worstQueries,
     };
   }
 
@@ -364,41 +367,45 @@ export class SearchPerformanceMonitor extends EventEmitter {
   getOptimizationRecommendations(): string[] {
     const recommendations: string[] = [];
     const currentMetrics = this.getCurrentMetrics();
-    
+
     if (!currentMetrics) {
       return ['Insufficient data for recommendations'];
     }
-    
+
     // Response time analysis
     if (currentMetrics.p95ResponseTime > this.SLA_THRESHOLD) {
       recommendations.push('95th percentile exceeds SLA - investigate slowest queries');
     }
-    
+
     if (currentMetrics.avgResponseTime > this.SLA_THRESHOLD * 0.7) {
-      recommendations.push('Average response time approaching SLA limit - optimize query performance');
+      recommendations.push(
+        'Average response time approaching SLA limit - optimize query performance'
+      );
     }
-    
+
     // Cache analysis
     if (currentMetrics.cacheHitRate < 0.8) {
       recommendations.push('Cache hit rate below 80% - review caching strategy');
     }
-    
+
     // Query analysis
     const slowQueries = this.getSlowQueries(5);
     if (slowQueries.length > 0) {
-      recommendations.push(`${slowQueries.length} queries consistently slow - review indexes and query optimization`);
+      recommendations.push(
+        `${slowQueries.length} queries consistently slow - review indexes and query optimization`
+      );
     }
-    
+
     // Index analysis
     if (currentMetrics.indexGrowthRate > 10) {
       recommendations.push('Index growing rapidly - consider maintenance and cleanup');
     }
-    
+
     // SLA analysis
     if (currentMetrics.slaCompliance < 0.95) {
       recommendations.push('SLA compliance below 95% - immediate performance review required');
     }
-    
+
     return recommendations;
   }
 
@@ -407,58 +414,59 @@ export class SearchPerformanceMonitor extends EventEmitter {
    */
   generatePerformanceReport(timeframe: 'hourly' | 'daily' | 'weekly' = 'daily'): any {
     const hours = timeframe === 'hourly' ? 1 : timeframe === 'daily' ? 24 : 168;
-    const startTime = Date.now() - (hours * 60 * 60 * 1000);
+    const startTime = Date.now() - hours * 60 * 60 * 1000;
     const metrics = this.getHistoricalMetrics(startTime);
-    
+
     if (metrics.length === 0) {
       return { error: 'No metrics available for specified timeframe' };
     }
-    
+
     const responseTimes = metrics.map(m => m.duration);
     responseTimes.sort((a, b) => a - b);
-    
+
     const slaViolations = metrics.filter(m => m.duration > this.SLA_THRESHOLD);
     const cacheHits = metrics.filter(m => m.cache_hit);
-    
+
     return {
       timeframe,
       period: {
         start: new Date(startTime),
         end: new Date(),
-        totalQueries: metrics.length
+        totalQueries: metrics.length,
       },
-      
+
       performance: {
         avgResponseTime: responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length,
         medianResponseTime: this.calculatePercentile(responseTimes, 50),
         p95ResponseTime: this.calculatePercentile(responseTimes, 95),
         p99ResponseTime: this.calculatePercentile(responseTimes, 99),
         minResponseTime: Math.min(...responseTimes),
-        maxResponseTime: Math.max(...responseTimes)
+        maxResponseTime: Math.max(...responseTimes),
       },
-      
+
       sla: {
         compliance: (metrics.length - slaViolations.length) / metrics.length,
         violations: slaViolations.length,
         violationRate: slaViolations.length / metrics.length,
-        worstViolation: slaViolations.length > 0 ? Math.max(...slaViolations.map(v => v.duration)) : 0
+        worstViolation:
+          slaViolations.length > 0 ? Math.max(...slaViolations.map(v => v.duration)) : 0,
       },
-      
+
       cache: {
         hitRate: cacheHits.length / metrics.length,
-        hitRateByStrategy: this.calculateCacheHitRateByStrategy(metrics)
+        hitRateByStrategy: this.calculateCacheHitRateByStrategy(metrics),
       },
-      
+
       queries: {
         totalQueries: metrics.length,
         uniqueQueries: new Set(metrics.map(m => m.query)).size,
         avgQPS: metrics.length / (hours * 3600),
         topQueries: this.getTopQueries(10),
-        slowQueries: this.getSlowQueries(10)
+        slowQueries: this.getSlowQueries(10),
       },
-      
+
       alerts: this.getAlertSummary(hours),
-      recommendations: this.getOptimizationRecommendations()
+      recommendations: this.getOptimizationRecommendations(),
     };
   }
 
@@ -467,55 +475,54 @@ export class SearchPerformanceMonitor extends EventEmitter {
   private async collectMetrics(): Promise<void> {
     try {
       const timestamp = new Date();
-      const recentData = this.responseTimes.filter(rt => 
-        rt.timestamp.getTime() > Date.now() - this.config.monitoringInterval
+      const recentData = this.responseTimes.filter(
+        rt => rt.timestamp.getTime() > Date.now() - this.config.monitoringInterval
       );
-      
+
       if (recentData.length === 0) {
         return; // No recent activity
       }
-      
+
       const responseTimes = recentData.map(d => d.time);
       responseTimes.sort((a, b) => a - b);
-      
+
       const metrics: SearchMetrics = {
         timestamp,
-        
+
         avgResponseTime: responseTimes.reduce((sum, t) => sum + t, 0) / responseTimes.length,
         p50ResponseTime: this.calculatePercentile(responseTimes, 50),
         p95ResponseTime: this.calculatePercentile(responseTimes, 95),
         p99ResponseTime: this.calculatePercentile(responseTimes, 99),
-        
+
         queriesPerSecond: recentData.length / (this.config.monitoringInterval / 1000),
         searchAccuracy: this.calculateSearchAccuracy(),
-        
+
         cacheHitRate: this.calculateCacheHitRate(),
         cacheHitRateByType: this.calculateCacheHitRateByType(),
-        
+
         indexSize: this.getIndexSize(),
         indexGrowthRate: this.calculateIndexGrowthRate(),
-        
+
         topQueries: this.getTopQueriesForMetrics(),
         slowQueries: this.getSlowQueriesForMetrics(),
-        
+
         slaCompliance: this.calculateSLACompliance(responseTimes),
-        slaViolations: responseTimes.filter(t => t > this.SLA_THRESHOLD).length
+        slaViolations: responseTimes.filter(t => t > this.SLA_THRESHOLD).length,
       };
-      
+
       this.metrics.push(metrics);
-      
+
       // Keep only recent metrics
-      const cutoff = Date.now() - (this.config.retentionDays * 24 * 60 * 60 * 1000);
+      const cutoff = Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000;
       this.metrics = this.metrics.filter(m => m.timestamp.getTime() > cutoff);
-      
+
       // Store in database
       await this.storeMetrics(metrics);
-      
+
       // Check for alerts
       await this.checkMetricAlerts(metrics);
-      
+
       this.emit('metrics-collected', metrics);
-      
     } catch (error) {
       console.error('Error collecting search metrics:', error);
     }
@@ -550,28 +557,29 @@ export class SearchPerformanceMonitor extends EventEmitter {
       cacheHitRate: 0,
       lastExecuted: data.timestamp,
       strategy: data.strategy,
-      indexesUsed: data.indexesUsed
+      indexesUsed: data.indexesUsed,
     };
-    
+
     profile.executions++;
     profile.totalTime += data.duration;
     profile.avgTime = profile.totalTime / profile.executions;
     profile.minTime = Math.min(profile.minTime, data.duration);
     profile.maxTime = Math.max(profile.maxTime, data.duration);
     profile.lastExecuted = data.timestamp;
-    
+
     if (data.cacheHit) {
       profile.cacheHits++;
     }
     profile.cacheHitRate = profile.cacheHits / profile.executions;
-    
+
     this.queryProfiles.set(data.normalizedQuery, profile);
-    
+
     // Cleanup old profiles
     if (this.queryProfiles.size > this.config.maxQueryProfiles) {
-      const sorted = Array.from(this.queryProfiles.entries())
-        .sort(([,a], [,b]) => a.lastExecuted.getTime() - b.lastExecuted.getTime());
-      
+      const sorted = Array.from(this.queryProfiles.entries()).sort(
+        ([, a], [, b]) => a.lastExecuted.getTime() - b.lastExecuted.getTime()
+      );
+
       const toRemove = sorted.slice(0, 1000);
       toRemove.forEach(([key]) => this.queryProfiles.delete(key));
     }
@@ -589,8 +597,8 @@ export class SearchPerformanceMonitor extends EventEmitter {
         recommendations: [
           'Review query execution plan',
           'Check index usage',
-          'Consider query optimization'
-        ]
+          'Consider query optimization',
+        ],
       });
     } else if (duration > this.SLA_THRESHOLD) {
       this.createAlert({
@@ -600,10 +608,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
         threshold: this.SLA_THRESHOLD,
         message: `SLA violation: ${duration}ms`,
         query,
-        recommendations: [
-          'Monitor query performance',
-          'Review caching strategy'
-        ]
+        recommendations: ['Monitor query performance', 'Review caching strategy'],
       });
     }
   }
@@ -620,11 +625,11 @@ export class SearchPerformanceMonitor extends EventEmitter {
         recommendations: [
           'Review slow queries',
           'Optimize cache strategy',
-          'Investigate system performance'
-        ]
+          'Investigate system performance',
+        ],
       });
     }
-    
+
     // P95 response time alert
     if (metrics.p95ResponseTime > this.SLA_THRESHOLD) {
       this.createAlert({
@@ -633,13 +638,10 @@ export class SearchPerformanceMonitor extends EventEmitter {
         currentValue: metrics.p95ResponseTime,
         threshold: this.SLA_THRESHOLD,
         message: `95th percentile exceeds SLA: ${metrics.p95ResponseTime}ms`,
-        recommendations: [
-          'Identify and optimize slowest queries',
-          'Review index performance'
-        ]
+        recommendations: ['Identify and optimize slowest queries', 'Review index performance'],
       });
     }
-    
+
     // Cache hit rate alert
     if (metrics.cacheHitRate < 0.7) {
       this.createAlert({
@@ -648,10 +650,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
         currentValue: metrics.cacheHitRate,
         threshold: 0.7,
         message: `Low cache hit rate: ${(metrics.cacheHitRate * 100).toFixed(1)}%`,
-        recommendations: [
-          'Review cache TTL settings',
-          'Improve cache warming strategies'
-        ]
+        recommendations: ['Review cache TTL settings', 'Improve cache warming strategies'],
       });
     }
   }
@@ -660,61 +659,64 @@ export class SearchPerformanceMonitor extends EventEmitter {
     const fullAlert: SearchAlert = {
       id: this.generateAlertId(),
       timestamp: new Date(),
-      ...alert
+      ...alert,
     };
-    
+
     // Check for recent similar alerts
-    const recentSimilar = this.alerts.find(a => 
-      a.metric === alert.metric && 
-      a.level === alert.level &&
-      Date.now() - a.timestamp.getTime() < this.config.alertCooldown
+    const recentSimilar = this.alerts.find(
+      a =>
+        a.metric === alert.metric &&
+        a.level === alert.level &&
+        Date.now() - a.timestamp.getTime() < this.config.alertCooldown
     );
-    
+
     if (recentSimilar) {
       return; // Skip duplicate alert
     }
-    
+
     this.alerts.push(fullAlert);
     this.storeAlert(fullAlert);
-    
+
     console.log(`🚨 Search alert: ${alert.level.toUpperCase()} - ${alert.message}`);
     this.emit('search-alert', fullAlert);
   }
 
   private calculatePercentile(sortedArray: number[], percentile: number): number {
     if (sortedArray.length === 0) return 0;
-    
+
     const index = (percentile / 100) * (sortedArray.length - 1);
     const lower = Math.floor(index);
     const upper = Math.ceil(index);
-    
+
     if (lower === upper) {
       return sortedArray[lower];
     }
-    
+
     const weight = index - lower;
     return sortedArray[lower] * (1 - weight) + sortedArray[upper] * weight;
   }
 
   private calculateSearchAccuracy(): number {
     // Simplified calculation - would need actual relevance feedback in practice
-    const recentQueries = Array.from(this.queryProfiles.values())
-      .filter(q => q.lastExecuted.getTime() > Date.now() - 3600000); // Last hour
-    
+    const recentQueries = Array.from(this.queryProfiles.values()).filter(
+      q => q.lastExecuted.getTime() > Date.now() - 3600000
+    ); // Last hour
+
     if (recentQueries.length === 0) return 1;
-    
+
     // Assume queries with good cache hit rates are accurate
-    const avgCacheHitRate = recentQueries.reduce((sum, q) => sum + q.cacheHitRate, 0) / recentQueries.length;
+    const avgCacheHitRate =
+      recentQueries.reduce((sum, q) => sum + q.cacheHitRate, 0) / recentQueries.length;
     return Math.min(1, avgCacheHitRate + 0.2);
   }
 
   private calculateCacheHitRate(): number {
-    const recent = this.responseTimes.filter(rt => 
-      rt.timestamp.getTime() > Date.now() - 3600000 // Last hour
+    const recent = this.responseTimes.filter(
+      rt => rt.timestamp.getTime() > Date.now() - 3600000 // Last hour
     );
-    
+
     if (recent.length === 0) return 0;
-    
+
     // Need to track cache hits - for now estimate based on response times
     const fastQueries = recent.filter(rt => rt.time < 100).length;
     return fastQueries / recent.length;
@@ -725,17 +727,21 @@ export class SearchPerformanceMonitor extends EventEmitter {
     return {
       exact: 0.95,
       fts: 0.75,
-      fuzzy: 0.60,
+      fuzzy: 0.6,
       category: 0.85,
-      tag: 0.80
+      tag: 0.8,
     };
   }
 
   private getIndexSize(): number {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM kb_entries WHERE archived = FALSE
-      `).get() as { count: number };
+      `
+        )
+        .get() as { count: number };
       return result.count;
     } catch (error) {
       return 0;
@@ -745,11 +751,15 @@ export class SearchPerformanceMonitor extends EventEmitter {
   private calculateIndexGrowthRate(): number {
     // Calculate growth rate based on recent entries
     try {
-      const recent = this.db.prepare(`
+      const recent = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM kb_entries 
         WHERE created_at > datetime('now', '-1 day') AND archived = FALSE
-      `).get() as { count: number };
-      
+      `
+        )
+        .get() as { count: number };
+
       return recent.count; // Entries per day
     } catch (error) {
       return 0;
@@ -760,7 +770,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
     return this.getTopQueries(5).map(q => ({
       query: q.normalizedQuery,
       count: q.executions,
-      avgTime: q.avgTime
+      avgTime: q.avgTime,
     }));
   }
 
@@ -768,57 +778,60 @@ export class SearchPerformanceMonitor extends EventEmitter {
     return this.getSlowQueries(5).map(q => ({
       query: q.normalizedQuery,
       time: q.avgTime,
-      timestamp: q.lastExecuted
+      timestamp: q.lastExecuted,
     }));
   }
 
   private calculateSLACompliance(responseTimes: number[]): number {
     if (responseTimes.length === 0) return 1;
-    
+
     const violations = responseTimes.filter(t => t > this.SLA_THRESHOLD).length;
     return (responseTimes.length - violations) / responseTimes.length;
   }
 
   private calculateCacheHitRateByStrategy(metrics: any[]): Record<string, number> {
-    const strategyGroups = metrics.reduce((acc, m) => {
-      if (!acc[m.strategy]) {
-        acc[m.strategy] = { total: 0, hits: 0 };
-      }
-      acc[m.strategy].total++;
-      if (m.cache_hit) {
-        acc[m.strategy].hits++;
-      }
-      return acc;
-    }, {} as Record<string, { total: number; hits: number }>);
-    
+    const strategyGroups = metrics.reduce(
+      (acc, m) => {
+        if (!acc[m.strategy]) {
+          acc[m.strategy] = { total: 0, hits: 0 };
+        }
+        acc[m.strategy].total++;
+        if (m.cache_hit) {
+          acc[m.strategy].hits++;
+        }
+        return acc;
+      },
+      {} as Record<string, { total: number; hits: number }>
+    );
+
     const result: Record<string, number> = {};
     Object.entries(strategyGroups).forEach(([strategy, data]) => {
       result[strategy] = data.hits / data.total;
     });
-    
+
     return result;
   }
 
   private getAlertSummary(hours: number): any {
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
     const recentAlerts = this.alerts.filter(a => a.timestamp.getTime() > cutoff);
-    
+
     return {
       total: recentAlerts.length,
       critical: recentAlerts.filter(a => a.level === 'critical').length,
       warning: recentAlerts.filter(a => a.level === 'warning').length,
       info: recentAlerts.filter(a => a.level === 'info').length,
-      topMetrics: this.getTopAlertMetrics(recentAlerts)
+      topMetrics: this.getTopAlertMetrics(recentAlerts),
     };
   }
 
   private getTopAlertMetrics(alerts: SearchAlert[]): Array<{ metric: string; count: number }> {
     const metricCounts = new Map<string, number>();
-    
+
     alerts.forEach(alert => {
       metricCounts.set(alert.metric, (metricCounts.get(alert.metric) || 0) + 1);
     });
-    
+
     return Array.from(metricCounts.entries())
       .map(([metric, count]) => ({ metric, count }))
       .sort((a, b) => b.count - a.count)
@@ -827,11 +840,15 @@ export class SearchPerformanceMonitor extends EventEmitter {
 
   private getHistoricalMetrics(startTime: number): any[] {
     try {
-      return this.db.prepare(`
+      return this.db
+        .prepare(
+          `
         SELECT * FROM search_metrics 
         WHERE timestamp > ?
         ORDER BY timestamp
-      `).all(startTime);
+      `
+        )
+        .all(startTime);
     } catch (error) {
       console.error('Failed to get historical metrics:', error);
       return [];
@@ -844,26 +861,30 @@ export class SearchPerformanceMonitor extends EventEmitter {
 
   private async storeMetrics(metrics: SearchMetrics): Promise<void> {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_performance_metrics (
           timestamp, avg_response_time, p50_response_time, p95_response_time,
           p99_response_time, queries_per_second, search_accuracy, cache_hit_rate,
           index_size, index_growth_rate, sla_compliance, sla_violations
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        metrics.timestamp.toISOString(),
-        metrics.avgResponseTime,
-        metrics.p50ResponseTime,
-        metrics.p95ResponseTime,
-        metrics.p99ResponseTime,
-        metrics.queriesPerSecond,
-        metrics.searchAccuracy,
-        metrics.cacheHitRate,
-        metrics.indexSize,
-        metrics.indexGrowthRate,
-        metrics.slaCompliance,
-        metrics.slaViolations
-      );
+      `
+        )
+        .run(
+          metrics.timestamp.toISOString(),
+          metrics.avgResponseTime,
+          metrics.p50ResponseTime,
+          metrics.p95ResponseTime,
+          metrics.p99ResponseTime,
+          metrics.queriesPerSecond,
+          metrics.searchAccuracy,
+          metrics.cacheHitRate,
+          metrics.indexSize,
+          metrics.indexGrowthRate,
+          metrics.slaCompliance,
+          metrics.slaViolations
+        );
     } catch (error) {
       console.error('Failed to store search metrics:', error);
     }
@@ -879,19 +900,23 @@ export class SearchPerformanceMonitor extends EventEmitter {
     timestamp: Date;
   }): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_operation_metrics (
           timestamp, query, duration_ms, result_count, cache_hit, strategy, indexes_used
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        data.timestamp.toISOString(),
-        data.query,
-        data.duration,
-        data.resultCount,
-        data.cacheHit ? 1 : 0,
-        data.strategy,
-        data.indexesUsed
-      );
+      `
+        )
+        .run(
+          data.timestamp.toISOString(),
+          data.query,
+          data.duration,
+          data.resultCount,
+          data.cacheHit ? 1 : 0,
+          data.strategy,
+          data.indexesUsed
+        );
     } catch (error) {
       // Non-critical error
       console.warn('Failed to store search operation metric:', error);
@@ -900,22 +925,26 @@ export class SearchPerformanceMonitor extends EventEmitter {
 
   private storeAlert(alert: SearchAlert): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_performance_alerts (
           alert_id, timestamp, level, metric, current_value, threshold,
           message, query, recommendations
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        alert.id,
-        alert.timestamp.toISOString(),
-        alert.level,
-        alert.metric,
-        alert.currentValue,
-        alert.threshold,
-        alert.message,
-        alert.query || null,
-        JSON.stringify(alert.recommendations)
-      );
+      `
+        )
+        .run(
+          alert.id,
+          alert.timestamp.toISOString(),
+          alert.level,
+          alert.metric,
+          alert.currentValue,
+          alert.threshold,
+          alert.message,
+          alert.query || null,
+          JSON.stringify(alert.recommendations)
+        );
     } catch (error) {
       console.error('Failed to store search alert:', error);
     }
@@ -976,7 +1005,7 @@ export class SearchPerformanceMonitor extends EventEmitter {
         CREATE INDEX IF NOT EXISTS idx_search_alerts_timestamp
         ON search_performance_alerts(timestamp DESC);
       `);
-      
+
       console.log('✅ Search monitoring tables initialized');
     } catch (error) {
       console.error('❌ Failed to initialize search monitoring tables:', error);
@@ -990,30 +1019,38 @@ export class SearchPerformanceMonitor extends EventEmitter {
         console.error('Error in search metrics collection:', error);
       });
     }, this.config.monitoringInterval);
-    
+
     // Cleanup old data every hour
-    setInterval(() => {
-      this.cleanupOldData();
-    }, 60 * 60 * 1000);
-    
+    setInterval(
+      () => {
+        this.cleanupOldData();
+      },
+      60 * 60 * 1000
+    );
+
     console.log('🔄 Search performance monitoring started');
   }
 
   private cleanupOldData(): void {
-    const cutoff = Date.now() - (this.config.retentionDays * 24 * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000;
+
     try {
       // Clean response times
       this.responseTimes = this.responseTimes.filter(rt => rt.timestamp.getTime() > cutoff);
-      
+
       // Clean alerts
       this.alerts = this.alerts.filter(a => a.timestamp.getTime() > cutoff);
-      
+
       // Clean database
-      this.db.prepare('DELETE FROM search_performance_metrics WHERE timestamp < ?').run(new Date(cutoff).toISOString());
-      this.db.prepare('DELETE FROM search_operation_metrics WHERE timestamp < ?').run(new Date(cutoff).toISOString());
-      this.db.prepare('DELETE FROM search_performance_alerts WHERE timestamp < ?').run(new Date(cutoff).toISOString());
-      
+      this.db
+        .prepare('DELETE FROM search_performance_metrics WHERE timestamp < ?')
+        .run(new Date(cutoff).toISOString());
+      this.db
+        .prepare('DELETE FROM search_operation_metrics WHERE timestamp < ?')
+        .run(new Date(cutoff).toISOString());
+      this.db
+        .prepare('DELETE FROM search_performance_alerts WHERE timestamp < ?')
+        .run(new Date(cutoff).toISOString());
     } catch (error) {
       console.error('Failed to cleanup old search monitoring data:', error);
     }

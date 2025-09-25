@@ -210,17 +210,14 @@ export class QueryOptimizationService {
       const optimizedAnalysis = await this.analyzeQueryPerformance(optimizedSQL);
 
       // Calculate improvement
-      const estimatedImprovement = this.calculateImprovement(
-        originalAnalysis,
-        optimizedAnalysis
-      );
+      const estimatedImprovement = this.calculateImprovement(originalAnalysis, optimizedAnalysis);
 
       const optimization: OptimizedQuery = {
         original_sql: sql,
         optimized_sql: optimizedSQL,
         optimization_techniques: techniques,
         estimated_improvement: estimatedImprovement,
-        explanation: this.generateOptimizationExplanation(techniques, estimatedImprovement)
+        explanation: this.generateOptimizationExplanation(techniques, estimatedImprovement),
       };
 
       // Cache the optimization
@@ -232,7 +229,6 @@ export class QueryOptimizationService {
       console.log(`✅ Query optimized with ${estimatedImprovement}% improvement`);
 
       return optimization;
-
     } catch (error) {
       console.error('❌ Query optimization failed:', error);
 
@@ -242,7 +238,7 @@ export class QueryOptimizationService {
         optimized_sql: sql,
         optimization_techniques: [],
         estimated_improvement: 0,
-        explanation: 'Optimization failed - using original query'
+        explanation: 'Optimization failed - using original query',
       };
     }
   }
@@ -289,7 +285,6 @@ export class QueryOptimizationService {
       }
 
       return { optimized_sql: optimizedSQL, improvements };
-
     } catch (error) {
       console.warn('JOIN optimization failed:', error);
       return { optimized_sql: sql, improvements: [] };
@@ -299,7 +294,9 @@ export class QueryOptimizationService {
   /**
    * Optimize subqueries for better performance
    */
-  async optimizeSubqueries(sql: string): Promise<{ optimized_sql: string; improvements: string[] }> {
+  async optimizeSubqueries(
+    sql: string
+  ): Promise<{ optimized_sql: string; improvements: string[] }> {
     const improvements: string[] = [];
     let optimizedSQL = sql;
 
@@ -333,7 +330,6 @@ export class QueryOptimizationService {
       }
 
       return { optimized_sql: optimizedSQL, improvements };
-
     } catch (error) {
       console.warn('Subquery optimization failed:', error);
       return { optimized_sql: sql, improvements: [] };
@@ -384,14 +380,13 @@ export class QueryOptimizationService {
         table_scans: tableScans,
         optimization_score: optimizationScore,
         bottlenecks: bottlenecks,
-        recommendations: recommendations
+        recommendations: recommendations,
       };
 
       // Store analysis for future reference
       this.performanceStats.set(this.generateQueryHash(sql), analysis);
 
       return analysis;
-
     } catch (error) {
       console.error('Query performance analysis failed:', error);
 
@@ -403,7 +398,7 @@ export class QueryOptimizationService {
         table_scans: [],
         optimization_score: 0,
         bottlenecks: ['Query execution failed'],
-        recommendations: ['Fix query syntax errors']
+        recommendations: ['Fix query syntax errors'],
       };
     }
   }
@@ -411,7 +406,10 @@ export class QueryOptimizationService {
   /**
    * Execute query with caching and performance monitoring
    */
-  async executeOptimizedQuery<T = any>(sql: string, params: any[] = []): Promise<{
+  async executeOptimizedQuery<T = any>(
+    sql: string,
+    params: any[] = []
+  ): Promise<{
     results: T[];
     execution_time_ms: number;
     cache_hit: boolean;
@@ -422,13 +420,13 @@ export class QueryOptimizationService {
 
     // Check cache first
     const cached = this.queryCache.get(queryKey);
-    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
       cached.hitCount++;
       return {
         results: cached.result,
         execution_time_ms: Date.now() - startTime,
         cache_hit: true,
-        optimization_applied: false
+        optimization_applied: false,
       };
     }
 
@@ -438,7 +436,8 @@ export class QueryOptimizationService {
       let optimizationApplied = false;
 
       const queryComplexity = this.assessQueryComplexity(sql);
-      if (queryComplexity > 5) { // Complex query threshold
+      if (queryComplexity > 5) {
+        // Complex query threshold
         const optimization = await this.optimizeQuery(sql);
         if (optimization.estimated_improvement > 10) {
           optimizedSQL = optimization.optimized_sql;
@@ -455,14 +454,15 @@ export class QueryOptimizationService {
       this.queryCache.set(queryKey, {
         result: results,
         timestamp: Date.now(),
-        hitCount: 1
+        hitCount: 1,
       });
 
       // Record performance metrics
       await this.recordPerformanceMetrics(sql, executionTime, optimizationApplied);
 
       // Clean old cache entries periodically
-      if (Math.random() < 0.01) { // 1% chance
+      if (Math.random() < 0.01) {
+        // 1% chance
         this.cleanQueryCache();
       }
 
@@ -470,9 +470,8 @@ export class QueryOptimizationService {
         results,
         execution_time_ms: executionTime,
         cache_hit: false,
-        optimization_applied: optimizationApplied
+        optimization_applied: optimizationApplied,
       };
-
     } catch (error) {
       console.error('Optimized query execution failed:', error);
       throw error;
@@ -501,24 +500,34 @@ export class QueryOptimizationService {
     };
     recommendations: string[];
   } {
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT
         COUNT(*) as total_queries,
         AVG(execution_time_ms) as avg_time,
         COUNT(CASE WHEN cache_hit THEN 1 END) * 100.0 / COUNT(*) as cache_hit_rate
       FROM query_performance
       WHERE timestamp > datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
-    const optimizations = this.db.prepare(`
+    const optimizations = this.db
+      .prepare(
+        `
       SELECT
         COUNT(*) as queries_optimized,
         AVG(performance_improvement) as avg_improvement
       FROM query_optimizations
       WHERE created_at > datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
-    const slowQueries = this.db.prepare(`
+    const slowQueries = this.db
+      .prepare(
+        `
       SELECT
         query_text,
         execution_time_ms,
@@ -528,26 +537,32 @@ export class QueryOptimizationService {
         AND timestamp > datetime('now', '-24 hours')
       ORDER BY execution_time_ms DESC
       LIMIT 5
-    `).all(this.SLOW_QUERY_THRESHOLD) as any[];
+    `
+      )
+      .all(this.SLOW_QUERY_THRESHOLD) as any[];
 
     return {
       overview: {
         total_queries: stats.total_queries || 0,
         avg_execution_time_ms: Math.round(stats.avg_time || 0),
         cache_hit_rate: Math.round(stats.cache_hit_rate || 0),
-        optimization_rate: Math.round((optimizations.queries_optimized || 0) / (stats.total_queries || 1) * 100)
+        optimization_rate: Math.round(
+          ((optimizations.queries_optimized || 0) / (stats.total_queries || 1)) * 100
+        ),
       },
       slow_queries: slowQueries.map(q => ({
         sql: q.query_text.substring(0, 100) + '...',
         execution_time_ms: q.execution_time_ms,
-        optimization_suggestions: this.generateQuickOptimizationSuggestions(q.query_text)
+        optimization_suggestions: this.generateQuickOptimizationSuggestions(q.query_text),
       })),
       optimization_impact: {
         queries_optimized: optimizations.queries_optimized || 0,
         avg_improvement_percent: Math.round(optimizations.avg_improvement || 0),
-        total_time_saved_ms: Math.round((optimizations.avg_improvement || 0) * (optimizations.queries_optimized || 0) * 100)
+        total_time_saved_ms: Math.round(
+          (optimizations.avg_improvement || 0) * (optimizations.queries_optimized || 0) * 100
+        ),
       },
-      recommendations: this.generateSystemRecommendations()
+      recommendations: this.generateSystemRecommendations(),
     };
   }
 
@@ -557,12 +572,16 @@ export class QueryOptimizationService {
 
   private loadOptimizationPatterns(): void {
     // Load saved optimization patterns from database
-    const patterns = this.db.prepare(`
+    const patterns = this.db
+      .prepare(
+        `
       SELECT original_query_hash, optimized_query, optimization_techniques, performance_improvement
       FROM query_optimizations
       WHERE usage_count > 0
       ORDER BY performance_improvement DESC
-    `).all();
+    `
+      )
+      .all();
 
     patterns.forEach((pattern: any) => {
       this.optimizationPatterns.set(pattern.original_query_hash, {
@@ -570,7 +589,7 @@ export class QueryOptimizationService {
         optimized_sql: pattern.optimized_query,
         optimization_techniques: JSON.parse(pattern.optimization_techniques || '[]'),
         estimated_improvement: pattern.performance_improvement,
-        explanation: 'Cached optimization pattern'
+        explanation: 'Cached optimization pattern',
       });
     });
 
@@ -615,7 +634,7 @@ export class QueryOptimizationService {
       hasJOINs: matches.length > 0,
       joinCount: matches.length,
       tables: matches.map(m => m[2]),
-      joinTypes: matches.map(m => m[1] || 'INNER')
+      joinTypes: matches.map(m => m[1] || 'INNER'),
     };
   }
 
@@ -781,7 +800,9 @@ export class QueryOptimizationService {
   ): number {
     if (original.execution_time_ms === 0) return 0;
 
-    const timeImprovement = ((original.execution_time_ms - optimized.execution_time_ms) / original.execution_time_ms) * 100;
+    const timeImprovement =
+      ((original.execution_time_ms - optimized.execution_time_ms) / original.execution_time_ms) *
+      100;
     const scoreImprovement = optimized.optimization_score - original.optimization_score;
 
     return Math.max(0, Math.round((timeImprovement + scoreImprovement) / 2));
@@ -793,32 +814,38 @@ export class QueryOptimizationService {
     }
 
     const techniqueDescriptions = {
-      'JOIN_OPTIMIZATION': 'Optimized JOIN operations for better performance',
-      'SUBQUERY_OPTIMIZATION': 'Converted subqueries to more efficient JOINs',
-      'WHERE_OPTIMIZATION': 'Reordered WHERE conditions for better index usage',
-      'SELECT_OPTIMIZATION': 'Optimized SELECT clause to reduce data transfer',
-      'HINT_OPTIMIZATION': 'Added performance hints for better execution plan'
+      JOIN_OPTIMIZATION: 'Optimized JOIN operations for better performance',
+      SUBQUERY_OPTIMIZATION: 'Converted subqueries to more efficient JOINs',
+      WHERE_OPTIMIZATION: 'Reordered WHERE conditions for better index usage',
+      SELECT_OPTIMIZATION: 'Optimized SELECT clause to reduce data transfer',
+      HINT_OPTIMIZATION: 'Added performance hints for better execution plan',
     };
 
-    const descriptions = techniques.map(t => techniqueDescriptions[t as keyof typeof techniqueDescriptions] || t);
+    const descriptions = techniques.map(
+      t => techniqueDescriptions[t as keyof typeof techniqueDescriptions] || t
+    );
 
     return `Applied ${techniques.length} optimization technique(s): ${descriptions.join(', ')}. Estimated improvement: ${improvement}%`;
   }
 
   private async storeOptimization(optimization: OptimizedQuery): Promise<void> {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO query_optimizations (
           original_query_hash, original_query, optimized_query,
           optimization_techniques, performance_improvement
         ) VALUES (?, ?, ?, ?, ?)
-      `).run(
-        this.generateQueryHash(optimization.original_sql),
-        optimization.original_sql,
-        optimization.optimized_sql,
-        JSON.stringify(optimization.optimization_techniques),
-        optimization.estimated_improvement
-      );
+      `
+        )
+        .run(
+          this.generateQueryHash(optimization.original_sql),
+          optimization.original_sql,
+          optimization.optimized_sql,
+          JSON.stringify(optimization.optimization_techniques),
+          optimization.estimated_improvement
+        );
     } catch (error) {
       console.warn('Failed to store optimization:', error);
     }
@@ -848,16 +875,20 @@ export class QueryOptimizationService {
     optimizationApplied: boolean
   ): Promise<void> {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO query_performance (
           query_hash, query_text, execution_time_ms, cache_hit, timestamp
         ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `).run(
-        this.generateQueryHash(sql),
-        sql.substring(0, 1000), // Limit stored query length
-        executionTime,
-        false
-      );
+      `
+        )
+        .run(
+          this.generateQueryHash(sql),
+          sql.substring(0, 1000), // Limit stored query length
+          executionTime,
+          false
+        );
     } catch (error) {
       console.warn('Failed to record performance metrics:', error);
     }
@@ -881,14 +912,20 @@ export class QueryOptimizationService {
 
   private analyzeSystemPerformance(): void {
     // Analyze overall system performance trends
-    const recentPerformance = this.db.prepare(`
+    const recentPerformance = this.db
+      .prepare(
+        `
       SELECT AVG(execution_time_ms) as avg_time
       FROM query_performance
       WHERE timestamp > datetime('now', '-1 hour')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     if (recentPerformance && recentPerformance.avg_time > this.SLOW_QUERY_THRESHOLD) {
-      console.warn(`⚠️ System performance degraded: ${recentPerformance.avg_time}ms average query time`);
+      console.warn(
+        `⚠️ System performance degraded: ${recentPerformance.avg_time}ms average query time`
+      );
     }
   }
 
@@ -899,7 +936,7 @@ export class QueryOptimizationService {
       suggestions.push('Avoid SELECT * - specify only needed columns');
     }
 
-    if (sql.includes('LIKE \'%')) {
+    if (sql.includes("LIKE '%")) {
       suggestions.push('Avoid leading wildcards in LIKE clauses');
     }
 
@@ -920,13 +957,19 @@ export class QueryOptimizationService {
     }
 
     // Check for frequent optimizations
-    const recentOptimizations = this.db.prepare(`
+    const recentOptimizations = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM query_optimizations
       WHERE created_at > datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     if (recentOptimizations && recentOptimizations.count > 50) {
-      recommendations.push('High optimization activity - review query patterns for systemic issues');
+      recommendations.push(
+        'High optimization activity - review query patterns for systemic issues'
+      );
     }
 
     return recommendations;

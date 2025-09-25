@@ -127,36 +127,36 @@ export class PerformanceIntegration extends EventEmitter {
    */
   private setupEventListeners(): void {
     // Electron metrics events
-    this.electronMetrics.on('threshold-violation', (data) => {
+    this.electronMetrics.on('threshold-violation', data => {
       this.addAlert('threshold-violation', 'electron', data.message, 'medium', data);
     });
 
     // Renderer tracker events
-    this.rendererTracker.on('performance-violation', (data) => {
+    this.rendererTracker.on('performance-violation', data => {
       this.addAlert('threshold-violation', 'renderer', data.message, 'medium', data);
     });
 
     // Search monitor events
-    this.searchMonitor.on('performance-violation', (data) => {
+    this.searchMonitor.on('performance-violation', data => {
       this.addAlert('threshold-violation', 'search', data.message, 'medium', data);
     });
 
     // IPC tracker events
-    this.ipcTracker.on('performance-violation', (data) => {
+    this.ipcTracker.on('performance-violation', data => {
       this.addAlert('threshold-violation', 'ipc', data.message, 'medium', data);
     });
 
     // Memory detector events
-    this.memoryDetector.on('leak-detected', (leak) => {
+    this.memoryDetector.on('leak-detected', leak => {
       this.addAlert('memory-leak', 'memory', leak.description, leak.severity as any, leak);
     });
 
-    this.memoryDetector.on('threshold-violation', (data) => {
+    this.memoryDetector.on('threshold-violation', data => {
       this.addAlert('threshold-violation', 'memory', data.message, 'high', data);
     });
 
     // Window tracker events
-    this.windowTracker.on('performance-violation', (data) => {
+    this.windowTracker.on('performance-violation', data => {
       this.addAlert('threshold-violation', 'window', data.message, 'medium', data);
     });
   }
@@ -178,7 +178,7 @@ export class PerformanceIntegration extends EventEmitter {
       severity,
       message,
       timestamp: Date.now(),
-      data
+      data,
     };
 
     this.alerts.push(alert);
@@ -209,14 +209,16 @@ export class PerformanceIntegration extends EventEmitter {
       memory: this.memoryDetector.getCurrentAnalysis(),
       window: this.windowTracker.getPerformanceSummary(),
       overallHealth: this.calculateOverallHealth(),
-      alertCount: this.alerts.filter(alert => Date.now() - alert.timestamp < 300000).length // Last 5 minutes
+      alertCount: this.alerts.filter(alert => Date.now() - alert.timestamp < 300000).length, // Last 5 minutes
     };
 
     this.performanceHistory.push(integratedData);
 
     // Keep history within limits
     if (this.performanceHistory.length > this.maxHistorySize) {
-      this.performanceHistory = this.performanceHistory.slice(-Math.floor(this.maxHistorySize * 0.8));
+      this.performanceHistory = this.performanceHistory.slice(
+        -Math.floor(this.maxHistorySize * 0.8)
+      );
     }
 
     this.emit('data-collected', integratedData);
@@ -304,7 +306,8 @@ export class PerformanceIntegration extends EventEmitter {
   /**
    * Clear old alerts
    */
-  public clearOldAlerts(olderThanMs = 3600000): number { // 1 hour default
+  public clearOldAlerts(olderThanMs = 3600000): number {
+    // 1 hour default
     const cutoff = Date.now() - olderThanMs;
     const initialCount = this.alerts.length;
 
@@ -341,9 +344,8 @@ export class PerformanceIntegration extends EventEmitter {
     recommendations: string[];
   } {
     const currentData = this.getCurrentData();
-    const monitoringDuration = this.performanceHistory.length > 0
-      ? Date.now() - this.performanceHistory[0].timestamp
-      : 0;
+    const monitoringDuration =
+      this.performanceHistory.length > 0 ? Date.now() - this.performanceHistory[0].timestamp : 0;
 
     const criticalAlerts = this.alerts.filter(alert => alert.severity === 'critical').length;
 
@@ -360,9 +362,10 @@ export class PerformanceIntegration extends EventEmitter {
       return met / 5;
     });
 
-    const averageTargetCompliance = targetCompliance.length > 0
-      ? targetCompliance.reduce((sum, val) => sum + val, 0) / targetCompliance.length
-      : 0;
+    const averageTargetCompliance =
+      targetCompliance.length > 0
+        ? targetCompliance.reduce((sum, val) => sum + val, 0) / targetCompliance.length
+        : 0;
 
     return {
       summary: {
@@ -370,7 +373,7 @@ export class PerformanceIntegration extends EventEmitter {
         monitoringDuration,
         totalAlerts: this.alerts.length,
         criticalAlerts,
-        averageTargetCompliance
+        averageTargetCompliance,
       },
       components: {
         electron: this.electronMetrics.getPerformanceSummary(),
@@ -378,10 +381,10 @@ export class PerformanceIntegration extends EventEmitter {
         search: this.searchMonitor.getSummary(),
         ipc: this.ipcTracker.getPerformanceSummary(),
         memory: this.memoryDetector.getMemorySummary(),
-        window: this.windowTracker.getPerformanceSummary()
+        window: this.windowTracker.getPerformanceSummary(),
       },
       alerts: this.getAlerts(20), // Last 20 alerts
-      recommendations: this.generateRecommendations()
+      recommendations: this.generateRecommendations(),
     };
   }
 
@@ -453,8 +456,14 @@ export class PerformanceIntegration extends EventEmitter {
     if (format === 'csv') {
       // Simplified CSV export with key metrics
       const headers = [
-        'timestamp', 'overallHealth', 'renderTime', 'searchTime',
-        'memoryUsage', 'ipcLatency', 'windowTime', 'alertCount'
+        'timestamp',
+        'overallHealth',
+        'renderTime',
+        'searchTime',
+        'memoryUsage',
+        'ipcLatency',
+        'windowTime',
+        'alertCount',
       ];
 
       const rows = this.performanceHistory.map(data => [
@@ -465,17 +474,21 @@ export class PerformanceIntegration extends EventEmitter {
         data.electron?.memoryUsage?.heapUsed || 0,
         data.electron?.ipcLatency || 0,
         data.electron?.windowOperationTime || 0,
-        data.alertCount
+        data.alertCount,
       ]);
 
       return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     }
 
-    return JSON.stringify({
-      performanceHistory: this.performanceHistory,
-      alerts: this.alerts,
-      report: this.getPerformanceReport()
-    }, null, 2);
+    return JSON.stringify(
+      {
+        performanceHistory: this.performanceHistory,
+        alerts: this.alerts,
+        report: this.getPerformanceReport(),
+      },
+      null,
+      2
+    );
   }
 
   /**
@@ -505,7 +518,7 @@ export class PerformanceIntegration extends EventEmitter {
       search: this.searchMonitor,
       ipc: this.ipcTracker,
       memory: this.memoryDetector,
-      window: this.windowTracker
+      window: this.windowTracker,
     };
   }
 }

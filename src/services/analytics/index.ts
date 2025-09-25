@@ -11,7 +11,7 @@ export type {
   EngagementEvent,
   CTRMetrics,
   EngagementMetrics,
-  PositionAnalysis
+  PositionAnalysis,
 } from './ResultEffectivenessTracker';
 
 export { RelevanceScorer } from './RelevanceScorer';
@@ -20,7 +20,7 @@ export type {
   ScoringResult,
   RelevanceMetrics,
   UserFeedback,
-  ContextualFactors
+  ContextualFactors,
 } from './RelevanceScorer';
 
 export { UserSatisfactionMetrics } from './UserSatisfactionMetrics';
@@ -29,7 +29,7 @@ export type {
   ImplicitFeedback,
   SatisfactionMetrics,
   UserJourney,
-  PredictiveInsights
+  PredictiveInsights,
 } from './UserSatisfactionMetrics';
 
 export { ConversionTracker } from './ConversionTracker';
@@ -40,7 +40,7 @@ export type {
   ConversionMetrics,
   FunnelStage,
   ConversionFunnel,
-  AttributionModel
+  AttributionModel,
 } from './ConversionTracker';
 
 export { ABTestingFramework } from './ABTestingFramework';
@@ -51,7 +51,7 @@ export type {
   ABTestEvent,
   ABTestResults,
   BayesianAnalysis,
-  MultiArmedBanditConfig
+  MultiArmedBanditConfig,
 } from './ABTestingFramework';
 
 // Enhanced query analytics services
@@ -61,7 +61,7 @@ export type {
   QueryCluster,
   QueryAnalysisReport,
   PatternMatch,
-  ClusteringResult
+  ClusteringResult,
 } from './QueryAnalyzer';
 
 export { SearchIntentClassifier } from './SearchIntentClassifier';
@@ -70,7 +70,7 @@ export type {
   IntentClassification,
   IntentFeatures,
   IntentLearningData,
-  ClassificationResult
+  ClassificationResult,
 } from './SearchIntentClassifier';
 
 export { QueryComplexityAnalyzer } from './QueryComplexityAnalyzer';
@@ -78,7 +78,7 @@ export type {
   ComplexityDimension,
   ComplexityScore,
   ComplexityFactor,
-  ComplexityAnalysisReport
+  ComplexityAnalysisReport,
 } from './QueryComplexityAnalyzer';
 
 export { FailedSearchDetector } from './FailedSearchDetector';
@@ -87,7 +87,7 @@ export type {
   FailureType,
   FailureReason,
   FailureAnalysisReport,
-  ResolutionSuggestion
+  ResolutionSuggestion,
 } from './FailedSearchDetector';
 
 export { UserBehaviorTracker } from './UserBehaviorTracker';
@@ -96,16 +96,12 @@ export type {
   BehaviorPattern,
   BehaviorAnalysisReport,
   SessionAnalytics,
-  PatternType
+  PatternType,
 } from './UserBehaviorTracker';
 
 // Orchestrator and unified interface
 export { AnalyticsOrchestrator } from './AnalyticsOrchestrator';
-export type {
-  AnalyticsConfig,
-  UnifiedAnalytics,
-  SearchExperience
-} from './AnalyticsOrchestrator';
+export type { AnalyticsConfig, UnifiedAnalytics, SearchExperience } from './AnalyticsOrchestrator';
 
 // Analytics dashboard components
 export { default as EffectivenessDashboard } from '../components/analytics/EffectivenessDashboard';
@@ -114,7 +110,9 @@ export { default as QueryAnalyticsDashboard } from '../components/analytics/Quer
 /**
  * Create a configured analytics orchestrator instance
  */
-export function createAnalyticsOrchestrator(config?: Partial<import('./AnalyticsOrchestrator').AnalyticsConfig>) {
+export function createAnalyticsOrchestrator(
+  config?: Partial<import('./AnalyticsOrchestrator').AnalyticsConfig>
+) {
   return new AnalyticsOrchestrator(config);
 }
 
@@ -145,7 +143,7 @@ export const defaultAnalyticsConfig: import('./AnalyticsOrchestrator').Analytics
     enableBayesianAnalysis: true,
     enableMultivariateTesting: true,
     enableCohortAnalysis: true,
-    enableStatisticalSignificanceTesting: true
+    enableStatisticalSignificanceTesting: true,
   },
   queryAnalytics: {
     enablePatternDetection: true,
@@ -154,8 +152,8 @@ export const defaultAnalyticsConfig: import('./AnalyticsOrchestrator').Analytics
     enableFailureDetection: true,
     enableBehaviorTracking: true,
     patternCacheSize: 1000,
-    complexityThreshold: 0.7
-  }
+    complexityThreshold: 0.7,
+  },
 };
 
 /**
@@ -171,7 +169,7 @@ export const developmentAnalyticsConfig: import('./AnalyticsOrchestrator').Analy
     enableBayesianAnalysis: false,
     enableMultivariateTesting: false,
     enableCohortAnalysis: false,
-    enableStatisticalSignificanceTesting: true
+    enableStatisticalSignificanceTesting: true,
   },
   queryAnalytics: {
     enablePatternDetection: true,
@@ -180,8 +178,8 @@ export const developmentAnalyticsConfig: import('./AnalyticsOrchestrator').Analy
     enableFailureDetection: true,
     enableBehaviorTracking: false, // Disable in development
     patternCacheSize: 100,
-    complexityThreshold: 0.8
-  }
+    complexityThreshold: 0.8,
+  },
 };
 
 /**
@@ -201,11 +199,12 @@ export const analyticsUtils = {
   ): { pValue: number; isSignificant: boolean; confidenceLevel: number } {
     // Simplified t-test calculation
     const pooledStdDev = Math.sqrt(
-      ((controlSize - 1) * Math.pow(controlStdDev, 2) + (variantSize - 1) * Math.pow(variantStdDev, 2)) /
-      (controlSize + variantSize - 2)
+      ((controlSize - 1) * Math.pow(controlStdDev, 2) +
+        (variantSize - 1) * Math.pow(variantStdDev, 2)) /
+        (controlSize + variantSize - 2)
     );
 
-    const standardError = pooledStdDev * Math.sqrt((1 / controlSize) + (1 / variantSize));
+    const standardError = pooledStdDev * Math.sqrt(1 / controlSize + 1 / variantSize);
     const tStatistic = Math.abs(variantMean - controlMean) / standardError;
     const degreesOfFreedom = controlSize + variantSize - 2;
 
@@ -232,10 +231,7 @@ export const analyticsUtils = {
     const standardError = Math.sqrt((proportion * (1 - proportion)) / trials);
     const margin = zScore * standardError;
 
-    return [
-      Math.max(0, proportion - margin),
-      Math.min(1, proportion + margin)
-    ];
+    return [Math.max(0, proportion - margin), Math.min(1, proportion + margin)];
   },
 
   /**
@@ -254,7 +250,11 @@ export const analyticsUtils = {
     const p2 = baselineRate * (1 + minimumDetectableEffect);
     const pooledP = (p1 + p2) / 2;
 
-    const numerator = Math.pow(zAlpha * Math.sqrt(2 * pooledP * (1 - pooledP)) + zBeta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)), 2);
+    const numerator = Math.pow(
+      zAlpha * Math.sqrt(2 * pooledP * (1 - pooledP)) +
+        zBeta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)),
+      2
+    );
     const denominator = Math.pow(p2 - p1, 2);
 
     return Math.ceil(numerator / denominator);
@@ -270,7 +270,8 @@ export const analyticsUtils = {
     if (values.length < 3) return [];
 
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (values.length - 1);
+    const variance =
+      values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (values.length - 1);
     const stdDev = Math.sqrt(variance);
 
     return values.map((value, index) => {
@@ -279,7 +280,7 @@ export const analyticsUtils = {
         index,
         value,
         zscore,
-        isAnomaly: zscore > threshold
+        isAnomaly: zscore > threshold,
       };
     });
   },
@@ -293,15 +294,15 @@ export const analyticsUtils = {
     const n = x.length;
     const sumX = x.reduce((sum, val) => sum + val, 0);
     const sumY = y.reduce((sum, val) => sum + val, 0);
-    const sumXY = x.reduce((sum, val, i) => sum + (val * y[i]), 0);
-    const sumX2 = x.reduce((sum, val) => sum + (val * val), 0);
-    const sumY2 = y.reduce((sum, val) => sum + (val * val), 0);
+    const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0);
+    const sumX2 = x.reduce((sum, val) => sum + val * val, 0);
+    const sumY2 = y.reduce((sum, val) => sum + val * val, 0);
 
     const numerator = n * sumXY - sumX * sumY;
     const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
 
     return denominator !== 0 ? numerator / denominator : 0;
-  }
+  },
 };
 
 /**
@@ -339,7 +340,7 @@ export const AnalyticsEventTypes = {
   // A/B test events
   VARIANT_ASSIGNED: 'variant_assigned',
   EXPERIMENT_EXPOSED: 'experiment_exposed',
-  EXPERIMENT_CONVERTED: 'experiment_converted'
+  EXPERIMENT_CONVERTED: 'experiment_converted',
 } as const;
 
 /**
@@ -394,18 +395,18 @@ export const MetricCalculators = {
     // Calculate DCG
     const dcg = scores.reduce((sum, score, index) => {
       const discount = index === 0 ? 1 : Math.log2(index + 1);
-      return sum + (score / discount);
+      return sum + score / discount;
     }, 0);
 
     // Calculate IDCG (ideal DCG)
     const idealScores = [...scores].sort((a, b) => b - a);
     const idcg = idealScores.reduce((sum, score, index) => {
       const discount = index === 0 ? 1 : Math.log2(index + 1);
-      return sum + (score / discount);
+      return sum + score / discount;
     }, 0);
 
     return idcg > 0 ? dcg / idcg : 0;
-  }
+  },
 };
 
 /**
@@ -435,7 +436,7 @@ export const QueryAnalyticsEventTypes = {
   // Behavior tracking events
   BEHAVIOR_PATTERN_DETECTED: 'behavior_pattern_detected',
   USER_JOURNEY_ANALYZED: 'user_journey_analyzed',
-  ANOMALY_DETECTED: 'anomaly_detected'
+  ANOMALY_DETECTED: 'anomaly_detected',
 } as const;
 
 /**
@@ -472,5 +473,5 @@ export default {
   analyticsUtils,
   AnalyticsEventTypes,
   QueryAnalyticsEventTypes,
-  MetricCalculators
+  MetricCalculators,
 };

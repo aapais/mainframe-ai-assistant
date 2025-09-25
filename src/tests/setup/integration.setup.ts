@@ -18,14 +18,14 @@ Object.defineProperty(window, 'electron', {
       invoke: jest.fn(),
       send: jest.fn(),
       on: jest.fn(),
-      removeAllListeners: jest.fn()
+      removeAllListeners: jest.fn(),
     },
     store: {
       get: jest.fn(),
       set: jest.fn(),
-      delete: jest.fn()
-    }
-  }
+      delete: jest.fn(),
+    },
+  },
 });
 
 // Mock ResizeObserver
@@ -72,19 +72,25 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value.toString(); },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; }
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 });
 
 // Mock sessionStorage
 Object.defineProperty(window, 'sessionStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 });
 
 // Mock URL.createObjectURL
@@ -126,8 +132,8 @@ Object.defineProperty(navigator, 'clipboard', {
     writeText: jest.fn().mockResolvedValue(undefined),
     readText: jest.fn().mockResolvedValue(''),
     write: jest.fn().mockResolvedValue(undefined),
-    read: jest.fn().mockResolvedValue([])
-  }
+    read: jest.fn().mockResolvedValue([]),
+  },
 });
 
 // Console warnings filter
@@ -137,11 +143,9 @@ console.warn = (...args) => {
   const message = args[0];
   if (
     typeof message === 'string' &&
-    (
-      message.includes('Warning: ReactDOM.render is deprecated') ||
+    (message.includes('Warning: ReactDOM.render is deprecated') ||
       message.includes('Warning: findDOMNode is deprecated') ||
-      message.includes('Warning: componentWillReceiveProps has been renamed')
-    )
+      message.includes('Warning: componentWillReceiveProps has been renamed'))
   ) {
     return;
   }
@@ -152,10 +156,11 @@ console.warn = (...args) => {
 if (process.env.ENABLE_PERFORMANCE_MONITORING === 'true') {
   const { PerformanceObserver } = require('perf_hooks');
 
-  const obs = new PerformanceObserver((list) => {
+  const obs = new PerformanceObserver(list => {
     const entries = list.getEntries();
-    entries.forEach((entry) => {
-      if (entry.duration > 1000) { // Log slow operations
+    entries.forEach(entry => {
+      if (entry.duration > 1000) {
+        // Log slow operations
         console.warn(`Slow operation detected: ${entry.name} took ${entry.duration.toFixed(2)}ms`);
       }
     });
@@ -178,8 +183,11 @@ if (process.env.ENABLE_MEMORY_PROFILING === 'true') {
     const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
     const memoryGrowth = finalMemory - initialMemory;
 
-    if (memoryGrowth > 10 * 1024 * 1024) { // 10MB threshold
-      console.warn(`Potential memory leak detected: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB growth`);
+    if (memoryGrowth > 10 * 1024 * 1024) {
+      // 10MB threshold
+      console.warn(
+        `Potential memory leak detected: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB growth`
+      );
     }
   });
 }
@@ -200,7 +208,7 @@ global.testUtils = {
     const result = await operation();
     const end = performance.now();
     return { result, duration: end - start };
-  }
+  },
 };
 
 // Extend Jest matchers for integration tests
@@ -224,16 +232,18 @@ expect.extend({
     const pass = received.duration <= maxMs;
     if (pass) {
       return {
-        message: () => `expected operation taking ${received.duration.toFixed(2)}ms not to be within ${maxMs}ms`,
+        message: () =>
+          `expected operation taking ${received.duration.toFixed(2)}ms not to be within ${maxMs}ms`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected operation taking ${received.duration.toFixed(2)}ms to be within ${maxMs}ms`,
+        message: () =>
+          `expected operation taking ${received.duration.toFixed(2)}ms to be within ${maxMs}ms`,
         pass: false,
       };
     }
-  }
+  },
 });
 
 // Add custom Jest matchers types
@@ -248,7 +258,9 @@ declare global {
   const testUtils: {
     waitForAsyncOperations: () => Promise<void>;
     advanceTimersByTime: (ms: number) => void;
-    measurePerformance: <T>(operation: () => Promise<T>) => Promise<{ result: T; duration: number }>;
+    measurePerformance: <T>(
+      operation: () => Promise<T>
+    ) => Promise<{ result: T; duration: number }>;
   };
 }
 

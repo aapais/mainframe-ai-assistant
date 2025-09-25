@@ -1,20 +1,20 @@
 /**
  * Window Registry - Active Window Tracking System
- * 
+ *
  * Maintains central registry of all active windows with their relationships,
  * dependencies, and health status for the Knowledge-First architecture
  */
 
 import { EventEmitter } from 'events';
 import { BrowserWindow } from 'electron';
-import { 
-  WindowInstance, 
-  WindowType, 
-  WindowRegistryEntry, 
-  WindowHealth, 
+import {
+  WindowInstance,
+  WindowType,
+  WindowRegistryEntry,
+  WindowHealth,
   WindowRelationship,
   WindowEvent,
-  WindowEventData
+  WindowEventData,
 } from './types/WindowTypes';
 
 /**
@@ -36,14 +36,14 @@ export class WindowRegistry extends EventEmitter {
     maxHealthErrors: 5,
     maxHealthWarnings: 10,
     trackMemoryUsage: true,
-    trackCPUUsage: false // Requires additional libraries
+    trackCPUUsage: false, // Requires additional libraries
   };
 
   private stats = {
     totalRegistered: 0,
     totalUnregistered: 0,
     healthCheckCount: 0,
-    healthCheckFailures: 0
+    healthCheckFailures: 0,
   };
 
   constructor() {
@@ -52,14 +52,14 @@ export class WindowRegistry extends EventEmitter {
   }
 
   // Registration Management
-  
+
   register(windowInstance: WindowInstance): void {
     const registryEntry: WindowRegistryEntry = {
       instance: windowInstance,
       relationships: [],
       dependencies: [],
       dependents: [],
-      health: this.createInitialHealth()
+      health: this.createInitialHealth(),
     };
 
     // Store in main registry
@@ -116,7 +116,7 @@ export class WindowRegistry extends EventEmitter {
   }
 
   // Lookup Operations
-  
+
   getWindow(idOrType: string | WindowType): WindowInstance | null {
     // Try direct ID lookup first
     const entry = this.windows.get(idOrType);
@@ -161,7 +161,7 @@ export class WindowRegistry extends EventEmitter {
   }
 
   // Health Management
-  
+
   getWindowHealth(windowId: string): WindowHealth | null {
     const entry = this.windows.get(windowId);
     return entry?.health || null;
@@ -176,7 +176,7 @@ export class WindowRegistry extends EventEmitter {
     entry.health = {
       ...entry.health,
       ...health,
-      lastHealthCheck: new Date()
+      lastHealthCheck: new Date(),
     };
 
     // Emit health events
@@ -202,7 +202,7 @@ export class WindowRegistry extends EventEmitter {
   }
 
   // Relationship Management
-  
+
   addRelationship(windowId: string, relationship: WindowRelationship): boolean {
     const entry = this.windows.get(windowId);
     if (!entry) {
@@ -210,8 +210,8 @@ export class WindowRegistry extends EventEmitter {
     }
 
     // Avoid duplicate relationships
-    const exists = entry.relationships.some(r => 
-      r.type === relationship.type && r.targetWindowId === relationship.targetWindowId
+    const exists = entry.relationships.some(
+      r => r.type === relationship.type && r.targetWindowId === relationship.targetWindowId
     );
 
     if (!exists) {
@@ -223,14 +223,18 @@ export class WindowRegistry extends EventEmitter {
     return true;
   }
 
-  removeRelationship(windowId: string, targetWindowId: string, type: WindowRelationship['type']): boolean {
+  removeRelationship(
+    windowId: string,
+    targetWindowId: string,
+    type: WindowRelationship['type']
+  ): boolean {
     const entry = this.windows.get(windowId);
     if (!entry) {
       return false;
     }
 
-    const index = entry.relationships.findIndex(r => 
-      r.targetWindowId === targetWindowId && r.type === type
+    const index = entry.relationships.findIndex(
+      r => r.targetWindowId === targetWindowId && r.type === type
     );
 
     if (index >= 0) {
@@ -271,7 +275,7 @@ export class WindowRegistry extends EventEmitter {
   }
 
   // Query Operations
-  
+
   findWindows(predicate: (instance: WindowInstance) => boolean): WindowInstance[] {
     return Array.from(this.windows.values())
       .map(entry => entry.instance)
@@ -287,20 +291,21 @@ export class WindowRegistry extends EventEmitter {
   }
 
   getVisibleWindows(): WindowInstance[] {
-    return this.findWindows(instance => 
-      !instance.window.isDestroyed() && 
-      instance.window.isVisible() && 
-      !instance.window.isMinimized()
+    return this.findWindows(
+      instance =>
+        !instance.window.isDestroyed() &&
+        instance.window.isVisible() &&
+        !instance.window.isMinimized()
     );
   }
 
   // Statistics and Monitoring
-  
+
   getStats() {
     const healthyCount = this.getHealthyWindows().length;
     const unhealthyCount = this.getUnhealthyWindows().length;
     const typeBreakdown: Record<string, number> = {};
-    
+
     for (const [type, windowIds] of this.typeIndex) {
       typeBreakdown[type] = windowIds.size;
     }
@@ -311,8 +316,11 @@ export class WindowRegistry extends EventEmitter {
       healthyWindows: healthyCount,
       unhealthyWindows: unhealthyCount,
       typeBreakdown,
-      relationships: Array.from(this.windows.values()).reduce((sum, entry) => sum + entry.relationships.length, 0),
-      parentChildRelationships: this.parentChildMap.size
+      relationships: Array.from(this.windows.values()).reduce(
+        (sum, entry) => sum + entry.relationships.length,
+        0
+      ),
+      parentChildRelationships: this.parentChildMap.size,
     };
   }
 
@@ -327,18 +335,18 @@ export class WindowRegistry extends EventEmitter {
     this.windows.clear();
     this.typeIndex.clear();
     this.parentChildMap.clear();
-    
+
     this.emit('registryCleared');
   }
 
   // Private Implementation
-  
+
   private createInitialHealth(): WindowHealth {
     return {
       responsive: true,
       lastHealthCheck: new Date(),
       errors: [],
-      warnings: []
+      warnings: [],
     };
   }
 
@@ -347,8 +355,18 @@ export class WindowRegistry extends EventEmitter {
 
     // Track window events
     const events: WindowEvent[] = [
-      'focused', 'blurred', 'minimized', 'maximized', 'restored',
-      'moved', 'resized', 'closed', 'hidden', 'shown', 'unresponsive', 'responsive'
+      'focused',
+      'blurred',
+      'minimized',
+      'maximized',
+      'restored',
+      'moved',
+      'resized',
+      'closed',
+      'hidden',
+      'shown',
+      'unresponsive',
+      'responsive',
     ];
 
     events.forEach(eventName => {
@@ -377,7 +395,7 @@ export class WindowRegistry extends EventEmitter {
       windowId: windowInstance.id,
       windowType: windowInstance.type,
       event,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     // Update health based on event
@@ -420,7 +438,7 @@ export class WindowRegistry extends EventEmitter {
   private updateDependencyMap(windowId: string, relationship: WindowRelationship): void {
     const entry = this.windows.get(windowId);
     const targetEntry = this.windows.get(relationship.targetWindowId);
-    
+
     if (!entry || !targetEntry) {
       return;
     }
@@ -439,11 +457,11 @@ export class WindowRegistry extends EventEmitter {
   private cleanupDependencyMap(windowId: string, relationship: WindowRelationship): void {
     const entry = this.windows.get(windowId);
     const targetEntry = this.windows.get(relationship.targetWindowId);
-    
+
     if (entry) {
       entry.dependencies = entry.dependencies.filter(id => id !== relationship.targetWindowId);
     }
-    
+
     if (targetEntry) {
       targetEntry.dependents = targetEntry.dependents.filter(id => id !== windowId);
     }
@@ -490,11 +508,11 @@ export class WindowRegistry extends EventEmitter {
         await this.checkWindowHealth(entry);
       } catch (error) {
         this.stats.healthCheckFailures++;
-        
+
         // Add error to window health
         const errorMsg = `Health check failed: ${error.message}`;
         entry.health.errors.push(errorMsg);
-        
+
         // Keep error list manageable
         if (entry.health.errors.length > this.config.maxHealthErrors) {
           entry.health.errors = entry.health.errors.slice(-this.config.maxHealthErrors);
@@ -505,7 +523,7 @@ export class WindowRegistry extends EventEmitter {
 
   private async checkWindowHealth(entry: WindowRegistryEntry): Promise<void> {
     const window = entry.instance.window;
-    
+
     if (window.isDestroyed()) {
       entry.health.responsive = false;
       entry.health.errors.push('Window destroyed');
@@ -521,11 +539,11 @@ export class WindowRegistry extends EventEmitter {
       try {
         const memoryInfo = await window.webContents.getProcessMemoryInfo();
         entry.health.memoryUsage = memoryInfo.workingSetSize;
-        
+
         // Warning for high memory usage (>500MB)
         if (memoryInfo.workingSetSize > 500 * 1024 * 1024) {
           entry.health.warnings.push('High memory usage detected');
-          
+
           // Keep warnings list manageable
           if (entry.health.warnings.length > this.config.maxHealthWarnings) {
             entry.health.warnings = entry.health.warnings.slice(-this.config.maxHealthWarnings);

@@ -1,6 +1,6 @@
 /**
  * Enhanced IPC Communication System
- * 
+ *
  * This module provides an optimized IPC system for Electron applications with:
  * - Request batching for bulk operations
  * - Response streaming for large datasets
@@ -18,7 +18,11 @@ export { StreamingHandler } from './StreamingHandler';
 export { IPCHandlers } from './handlers';
 
 // Integration utilities
-export { IPCIntegration, initializeEnhancedIPC, registerCustomHandler } from './example-integration';
+export {
+  IPCIntegration,
+  initializeEnhancedIPC,
+  registerCustomHandler,
+} from './example-integration';
 
 // Type definitions
 export type {
@@ -26,27 +30,18 @@ export type {
   IPCResponse,
   IPCHandler,
   IPCHandlerConfig,
-  IPCMetrics
+  IPCMetrics,
 } from './IPCManager';
 
-export type {
-  BatchRequest,
-  BatchConfig,
-  BatchMetrics
-} from './RequestBatcher';
+export type { BatchRequest, BatchConfig, BatchMetrics } from './RequestBatcher';
 
-export type {
-  StreamConfig,
-  StreamMetrics,
-  StreamProgress,
-  StreamChunk
-} from './StreamingHandler';
+export type { StreamConfig, StreamMetrics, StreamProgress, StreamChunk } from './StreamingHandler';
 
 // Re-export preload types for renderer usage
 export type {
   IPCResponse as PreloadIPCResponse,
   StreamChunk as PreloadStreamChunk,
-  ElectronAPI
+  ElectronAPI,
 } from '../preload';
 
 /**
@@ -57,28 +52,28 @@ export const DEFAULT_IPC_CONFIG = {
   batching: {
     maxBatchSize: 50,
     maxDelayMs: 100,
-    maxConcurrentBatches: 10
+    maxConcurrentBatches: 10,
   },
-  
+
   // Streaming defaults
   streaming: {
     chunkSize: 1000,
     maxBufferSize: 10000,
     timeoutMs: 30000,
-    enableBackpressure: true
+    enableBackpressure: true,
   },
-  
+
   // Caching defaults
   caching: {
     defaultTTL: 300000, // 5 minutes
-    maxCacheSize: 1000
+    maxCacheSize: 1000,
   },
-  
+
   // Rate limiting defaults
   rateLimiting: {
     defaultRequests: 100,
-    defaultWindow: 60000 // 1 minute
-  }
+    defaultWindow: 60000, // 1 minute
+  },
 } as const;
 
 /**
@@ -92,9 +87,9 @@ export const PERFORMANCE_PRESETS = {
     batchDelay: 25,
     cacheable: true,
     cacheTTL: 60000, // 1 minute
-    rateLimit: { requests: 200, window: 60000 }
+    rateLimit: { requests: 200, window: 60000 },
   },
-  
+
   // For medium-frequency operations with moderate complexity
   MEDIUM_FREQUENCY: {
     batchable: true,
@@ -102,31 +97,31 @@ export const PERFORMANCE_PRESETS = {
     batchDelay: 100,
     cacheable: true,
     cacheTTL: 300000, // 5 minutes
-    rateLimit: { requests: 100, window: 60000 }
+    rateLimit: { requests: 100, window: 60000 },
   },
-  
+
   // For low-frequency, expensive operations
   LOW_FREQUENCY: {
     batchable: false,
     cacheable: true,
     cacheTTL: 1800000, // 30 minutes
-    rateLimit: { requests: 20, window: 60000 }
+    rateLimit: { requests: 20, window: 60000 },
   },
-  
+
   // For large dataset operations
   STREAMING: {
     streamable: true,
     streamChunkSize: 1000,
     cacheable: false,
-    rateLimit: { requests: 10, window: 60000 }
+    rateLimit: { requests: 10, window: 60000 },
   },
-  
+
   // For real-time operations
   REAL_TIME: {
     batchable: false,
     cacheable: false,
-    rateLimit: { requests: 500, window: 60000 }
-  }
+    rateLimit: { requests: 500, window: 60000 },
+  },
 } as const;
 
 /**
@@ -136,39 +131,41 @@ export const VALIDATION_HELPERS = {
   // String validation
   nonEmptyString: (args: any[]) => {
     return args[0] && typeof args[0] === 'string' && args[0].trim().length > 0
-      ? true : 'Must provide a non-empty string';
+      ? true
+      : 'Must provide a non-empty string';
   },
-  
+
   // ID validation (alphanumeric with hyphens/underscores)
   validId: (args: any[]) => {
     return args[0] && typeof args[0] === 'string' && /^[a-zA-Z0-9-_]+$/.test(args[0])
-      ? true : 'ID must contain only alphanumeric characters, hyphens, and underscores';
+      ? true
+      : 'ID must contain only alphanumeric characters, hyphens, and underscores';
   },
-  
+
   // Object validation
   requiredObject: (args: any[]) => {
     return args[0] && typeof args[0] === 'object' && args[0] !== null
-      ? true : 'Must provide a valid object';
+      ? true
+      : 'Must provide a valid object';
   },
-  
+
   // Number validation
   positiveNumber: (args: any[]) => {
     return args[0] && typeof args[0] === 'number' && args[0] > 0
-      ? true : 'Must provide a positive number';
+      ? true
+      : 'Must provide a positive number';
   },
-  
+
   // Boolean validation
   validBoolean: (args: any[]) => {
-    return typeof args[0] === 'boolean'
-      ? true : 'Must provide a boolean value';
+    return typeof args[0] === 'boolean' ? true : 'Must provide a boolean value';
   },
-  
+
   // Array validation
   nonEmptyArray: (args: any[]) => {
-    return Array.isArray(args[0]) && args[0].length > 0
-      ? true : 'Must provide a non-empty array';
+    return Array.isArray(args[0]) && args[0].length > 0 ? true : 'Must provide a non-empty array';
   },
-  
+
   // Composite validation for search operations
   searchQuery: (args: any[]) => {
     if (!args[0] || typeof args[0] !== 'string') {
@@ -181,7 +178,7 @@ export const VALIDATION_HELPERS = {
       return 'Search query too long (max 1000 characters)';
     }
     return true;
-  }
+  },
 } as const;
 
 /**
@@ -194,19 +191,19 @@ export const IPC_ERROR_CODES = {
   VALIDATION_FAILED: 'IPC_VALIDATION_FAILED',
   RATE_LIMIT_EXCEEDED: 'IPC_RATE_LIMIT_EXCEEDED',
   UNHANDLED_REJECTION: 'IPC_UNHANDLED_REJECTION',
-  
+
   // Batching errors
   BATCH_MAX_CONCURRENT: 'BATCH_MAX_CONCURRENT',
   BATCH_DESTROYED: 'BATCH_DESTROYED',
-  
+
   // Streaming errors
   STREAM_NO_DATA: 'STREAM_NO_DATA',
   STREAM_TIMEOUT: 'STREAM_TIMEOUT',
   STREAM_CANCELLED: 'STREAM_CANCELLED',
-  
+
   // Cache errors
   CACHE_ERROR: 'CACHE_ERROR',
-  CACHE_INVALIDATION_ERROR: 'CACHE_INVALIDATION_ERROR'
+  CACHE_INVALIDATION_ERROR: 'CACHE_INVALIDATION_ERROR',
 } as const;
 
 /**
@@ -218,7 +215,7 @@ export function createHandlerConfig(
 ): IPCHandlerConfig {
   return {
     ...PERFORMANCE_PRESETS[preset],
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -243,14 +240,17 @@ export function createValidationChain(
  * Utility function to measure IPC performance
  */
 export class IPCPerformanceMonitor {
-  private metrics = new Map<string, {
-    totalCalls: number;
-    totalTime: number;
-    averageTime: number;
-    minTime: number;
-    maxTime: number;
-    errorCount: number;
-  }>();
+  private metrics = new Map<
+    string,
+    {
+      totalCalls: number;
+      totalTime: number;
+      averageTime: number;
+      minTime: number;
+      maxTime: number;
+      errorCount: number;
+    }
+  >();
 
   recordCall(channel: string, executionTime: number, success: boolean): void {
     const existing = this.metrics.get(channel) || {
@@ -259,7 +259,7 @@ export class IPCPerformanceMonitor {
       averageTime: 0,
       minTime: Infinity,
       maxTime: 0,
-      errorCount: 0
+      errorCount: 0,
     };
 
     existing.totalCalls++;
@@ -267,7 +267,7 @@ export class IPCPerformanceMonitor {
     existing.averageTime = existing.totalTime / existing.totalCalls;
     existing.minTime = Math.min(existing.minTime, executionTime);
     existing.maxTime = Math.max(existing.maxTime, executionTime);
-    
+
     if (!success) {
       existing.errorCount++;
     }
@@ -292,14 +292,14 @@ export class IPCPerformanceMonitor {
 
   getTopSlowest(limit: number = 10) {
     return Array.from(this.metrics.entries())
-      .sort(([,a], [,b]) => b.averageTime - a.averageTime)
+      .sort(([, a], [, b]) => b.averageTime - a.averageTime)
       .slice(0, limit)
       .map(([channel, metrics]) => ({ channel, ...metrics }));
   }
 
   getTopErrors(limit: number = 10) {
     return Array.from(this.metrics.entries())
-      .sort(([,a], [,b]) => b.errorCount - a.errorCount)
+      .sort(([, a], [, b]) => b.errorCount - a.errorCount)
       .slice(0, limit)
       .map(([channel, metrics]) => ({ channel, ...metrics }));
   }

@@ -105,12 +105,15 @@ export class SearchWebSocketService extends EventEmitter {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
   private messageQueue: WebSocketMessage[] = [];
-  private pendingMessages = new Map<string, {
-    message: WebSocketMessage;
-    resolve: (value: any) => void;
-    reject: (reason: any) => void;
-    timestamp: number;
-  }>();
+  private pendingMessages = new Map<
+    string,
+    {
+      message: WebSocketMessage;
+      resolve: (value: any) => void;
+      reject: (reason: any) => void;
+      timestamp: number;
+    }
+  >();
 
   private connectionStartTime = 0;
   private lastHeartbeat = 0;
@@ -127,7 +130,7 @@ export class SearchWebSocketService extends EventEmitter {
       queueSize: 100,
       enableCompression: false,
       enableEncryption: false,
-      ...config
+      ...config,
     };
 
     this.metrics = {
@@ -138,7 +141,7 @@ export class SearchWebSocketService extends EventEmitter {
       averageLatency: 0,
       lastConnected: 0,
       uptime: 0,
-      errors: []
+      errors: [],
     };
 
     // Cleanup pending messages periodically
@@ -165,19 +168,18 @@ export class SearchWebSocketService extends EventEmitter {
           resolve();
         };
 
-        this.ws.onmessage = (event) => {
+        this.ws.onmessage = event => {
           this.handleMessage(event);
         };
 
-        this.ws.onclose = (event) => {
+        this.ws.onclose = event => {
           this.handleClose(event);
         };
 
-        this.ws.onerror = (error) => {
+        this.ws.onerror = error => {
           this.handleError(error);
           reject(error);
         };
-
       } catch (error) {
         this.recordError('connection', error);
         reject(error);
@@ -221,7 +223,7 @@ export class SearchWebSocketService extends EventEmitter {
       payload,
       timestamp: Date.now(),
       userId: this.getUserId(),
-      sessionId: this.getSessionId()
+      sessionId: this.getSessionId(),
     };
 
     if (options.requireAck) {
@@ -259,15 +261,15 @@ export class SearchWebSocketService extends EventEmitter {
    * Subscribe to KB entry changes
    */
   subscribeToKBChanges(callback: (change: KBEntryChangePayload) => void): () => void {
-    const unsubscribeCreate = this.subscribe('kb_entry_created', (payload) => {
+    const unsubscribeCreate = this.subscribe('kb_entry_created', payload => {
       callback({ ...payload, changeType: 'created' });
     });
 
-    const unsubscribeUpdate = this.subscribe('kb_entry_updated', (payload) => {
+    const unsubscribeUpdate = this.subscribe('kb_entry_updated', payload => {
       callback({ ...payload, changeType: 'updated' });
     });
 
-    const unsubscribeDelete = this.subscribe('kb_entry_deleted', (payload) => {
+    const unsubscribeDelete = this.subscribe('kb_entry_deleted', payload => {
       callback({ ...payload, changeType: 'deleted' });
     });
 
@@ -288,7 +290,9 @@ export class SearchWebSocketService extends EventEmitter {
   /**
    * Subscribe to system notifications
    */
-  subscribeToNotifications(callback: (notification: SystemNotificationPayload) => void): () => void {
+  subscribeToNotifications(
+    callback: (notification: SystemNotificationPayload) => void
+  ): () => void {
     return this.subscribe('system_notification', callback);
   }
 
@@ -300,7 +304,7 @@ export class SearchWebSocketService extends EventEmitter {
       userId: this.getUserId(),
       query,
       timestamp: Date.now(),
-      resultCount
+      resultCount,
     });
   }
 
@@ -308,11 +312,15 @@ export class SearchWebSocketService extends EventEmitter {
    * Request fresh search results from server
    */
   async requestSearchUpdate(query: string, options: any = {}): Promise<SearchResult[]> {
-    return this.sendMessage('search_update', {
-      query,
-      options,
-      requestId: this.generateMessageId()
-    }, { requireAck: true });
+    return this.sendMessage(
+      'search_update',
+      {
+        query,
+        options,
+        requestId: this.generateMessageId(),
+      },
+      { requireAck: true }
+    );
   }
 
   /**
@@ -322,11 +330,16 @@ export class SearchWebSocketService extends EventEmitter {
     if (!this.ws) return 'closed';
 
     switch (this.ws.readyState) {
-      case WebSocket.CONNECTING: return 'connecting';
-      case WebSocket.OPEN: return 'open';
-      case WebSocket.CLOSING: return 'closing';
-      case WebSocket.CLOSED: return 'closed';
-      default: return 'closed';
+      case WebSocket.CONNECTING:
+        return 'connecting';
+      case WebSocket.OPEN:
+        return 'open';
+      case WebSocket.CLOSING:
+        return 'closing';
+      case WebSocket.CLOSED:
+        return 'closed';
+      default:
+        return 'closed';
     }
   }
 
@@ -336,7 +349,7 @@ export class SearchWebSocketService extends EventEmitter {
   getMetrics(): WebSocketMetrics {
     return {
       ...this.metrics,
-      uptime: this.connectionStartTime ? Date.now() - this.connectionStartTime : 0
+      uptime: this.connectionStartTime ? Date.now() - this.connectionStartTime : 0,
     };
   }
 
@@ -389,7 +402,6 @@ export class SearchWebSocketService extends EventEmitter {
 
       // Emit specific message type events
       this.emit(message.type, message.payload);
-
     } catch (error) {
       console.error('Failed to parse WebSocket message:', error);
       this.recordError('message_parse', error);
@@ -459,7 +471,7 @@ export class SearchWebSocketService extends EventEmitter {
         id: this.generateMessageId(),
         type: 'heartbeat',
         payload: { timestamp: this.lastHeartbeat },
-        timestamp: this.lastHeartbeat
+        timestamp: this.lastHeartbeat,
       });
     }
   }
@@ -476,7 +488,7 @@ export class SearchWebSocketService extends EventEmitter {
         message,
         resolve,
         reject,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Send message
@@ -582,7 +594,7 @@ export class SearchWebSocketService extends EventEmitter {
     this.metrics.errors.push({
       timestamp: Date.now(),
       error: error instanceof Error ? error.message : String(error),
-      type
+      type,
     });
 
     // Keep only last 100 errors
@@ -655,7 +667,7 @@ export function useSearchWebSocket(config?: Partial<WebSocketConfig>): {
     connectionStatus,
     metrics,
     connect: () => service.connect(),
-    disconnect: () => service.disconnect()
+    disconnect: () => service.disconnect(),
   };
 }
 

@@ -52,10 +52,13 @@ export class AutocompleteService {
   private config: AutocompleteConfig;
 
   // In-memory cache for ultra-fast suggestions
-  private suggestionCache = new Map<string, {
-    suggestions: AutocompleteSuggestion[];
-    timestamp: number;
-  }>();
+  private suggestionCache = new Map<
+    string,
+    {
+      suggestions: AutocompleteSuggestion[];
+      timestamp: number;
+    }
+  >();
 
   // Prepared statements for performance
   private getQuerySuggestionsStmt!: Database.Statement;
@@ -77,14 +80,14 @@ export class AutocompleteService {
         frequency: 0.3,
         recency: 0.2,
         personalization: 0.3,
-        textMatch: 0.2
+        textMatch: 0.2,
       },
       cacheSettings: {
         enabled: true,
         ttlSeconds: 300, // 5 minutes
-        maxEntries: 1000
+        maxEntries: 1000,
       },
-      ...config
+      ...config,
     };
 
     this.prepareStatements();
@@ -122,7 +125,6 @@ export class AutocompleteService {
       }
 
       return suggestions;
-
     } catch (error) {
       console.error('Query suggestions error:', error);
       return [];
@@ -162,7 +164,7 @@ export class AutocompleteService {
             frequency,
             category,
             relevanceScore: this.calculateCategoryScore(category, query),
-            source: 'system'
+            source: 'system',
           });
         }
       });
@@ -175,7 +177,6 @@ export class AutocompleteService {
       }
 
       return results;
-
     } catch (error) {
       console.error('Category suggestions error:', error);
       return [];
@@ -200,14 +201,18 @@ export class AutocompleteService {
       }
 
       // Query knowledge base titles (assuming kb_entries table exists)
-      const titleResults = this.db.prepare(`
+      const titleResults = this.db
+        .prepare(
+          `
         SELECT title, category, usage_count
         FROM kb_entries
         WHERE title LIKE ? || '%'
         AND archived != 1
         ORDER BY usage_count DESC, length(title) ASC
         LIMIT ?
-      `).all(query, limit * 2) as any[]; // Get more to filter
+      `
+        )
+        .all(query, limit * 2) as any[]; // Get more to filter
 
       const suggestions = titleResults
         .map(row => ({
@@ -216,7 +221,7 @@ export class AutocompleteService {
           frequency: row.usage_count || 1,
           category: row.category,
           relevanceScore: this.calculateTitleScore(row.title, query, row.usage_count),
-          source: 'system' as const
+          source: 'system' as const,
         }))
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
         .slice(0, limit);
@@ -226,7 +231,6 @@ export class AutocompleteService {
       }
 
       return suggestions;
-
     } catch (error) {
       console.error('Title suggestions error:', error);
       return [];
@@ -251,21 +255,25 @@ export class AutocompleteService {
       }
 
       // Query tags from knowledge base (assuming kb_tags table exists)
-      const tagResults = this.db.prepare(`
+      const tagResults = this.db
+        .prepare(
+          `
         SELECT tag, COUNT(*) as frequency
         FROM kb_tags
         WHERE tag LIKE ? || '%'
         GROUP BY tag
         ORDER BY frequency DESC, length(tag) ASC
         LIMIT ?
-      `).all(query, limit) as any[];
+      `
+        )
+        .all(query, limit) as any[];
 
       const suggestions = tagResults.map(row => ({
         text: row.tag,
         type: 'tag' as const,
         frequency: row.frequency,
         relevanceScore: this.calculateTagScore(row.tag, query, row.frequency),
-        source: 'system' as const
+        source: 'system' as const,
       }));
 
       if (this.config.cacheSettings.enabled) {
@@ -273,7 +281,6 @@ export class AutocompleteService {
       }
 
       return suggestions;
-
     } catch (error) {
       console.error('Tag suggestions error:', error);
       return [];
@@ -300,13 +307,7 @@ export class AutocompleteService {
 
       // If suggestion doesn't exist, create it
       if (updateResult.changes === 0) {
-        this.insertSuggestionStmt.run(
-          selectedSuggestion,
-          'query',
-          Date.now(),
-          'user',
-          0
-        );
+        this.insertSuggestionStmt.run(selectedSuggestion, 'query', Date.now(), 'user', 0);
       }
 
       // Learn user patterns if userId provided
@@ -316,7 +317,6 @@ export class AutocompleteService {
 
       // Invalidate relevant cache entries
       this.invalidateCache(originalQuery);
-
     } catch (error) {
       console.error('Learn from selection error:', error);
       // Don't throw - learning failures shouldn't break functionality
@@ -337,7 +337,9 @@ export class AutocompleteService {
       }
 
       // Get user's recent and frequent queries
-      const userQueries = this.db.prepare(`
+      const userQueries = this.db
+        .prepare(
+          `
         SELECT query, COUNT(*) as frequency, MAX(timestamp) as last_used
         FROM search_history
         WHERE user_id = ?
@@ -346,21 +348,27 @@ export class AutocompleteService {
         GROUP BY query
         ORDER BY frequency DESC, last_used DESC
         LIMIT ?
-      `).all(
-        userId,
-        query,
-        Date.now() - (30 * 24 * 60 * 60 * 1000), // Last 30 days
-        limit
-      ) as any[];
+      `
+        )
+        .all(
+          userId,
+          query,
+          Date.now() - 30 * 24 * 60 * 60 * 1000, // Last 30 days
+          limit
+        ) as any[];
 
       return userQueries.map(row => ({
         text: row.query,
         type: 'query' as const,
         frequency: row.frequency,
-        relevanceScore: this.calculatePersonalizedScore(row.query, query, row.frequency, row.last_used),
-        source: 'user' as const
+        relevanceScore: this.calculatePersonalizedScore(
+          row.query,
+          query,
+          row.frequency,
+          row.last_used
+        ),
+        source: 'user' as const,
       }));
-
     } catch (error) {
       console.error('Personalized suggestions error:', error);
       return [];
@@ -376,9 +384,11 @@ export class AutocompleteService {
     timeWindowHours: number = 24
   ): Promise<AutocompleteSuggestion[]> {
     try {
-      const cutoffTime = Date.now() - (timeWindowHours * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - timeWindowHours * 60 * 60 * 1000;
 
-      const trendingQueries = this.db.prepare(`
+      const trendingQueries = this.db
+        .prepare(
+          `
         SELECT
           query,
           COUNT(*) as recent_frequency,
@@ -389,16 +399,22 @@ export class AutocompleteService {
         GROUP BY query
         ORDER BY recent_frequency DESC, success_rate DESC
         LIMIT ?
-      `).all(query, cutoffTime, limit) as any[];
+      `
+        )
+        .all(query, cutoffTime, limit) as any[];
 
       return trendingQueries.map(row => ({
         text: row.query,
         type: 'query' as const,
         frequency: row.recent_frequency,
-        relevanceScore: this.calculateTrendingScore(row.query, query, row.recent_frequency, row.success_rate),
-        source: 'system' as const
+        relevanceScore: this.calculateTrendingScore(
+          row.query,
+          query,
+          row.recent_frequency,
+          row.success_rate
+        ),
+        source: 'system' as const,
       }));
-
     } catch (error) {
       console.error('Trending suggestions error:', error);
       return [];
@@ -424,7 +440,7 @@ export class AutocompleteService {
     return {
       size: this.suggestionCache.size,
       hitRate: 0.8, // Placeholder
-      memoryUsage: this.suggestionCache.size * 1024 // Rough estimate
+      memoryUsage: this.suggestionCache.size * 1024, // Rough estimate
     };
   }
 
@@ -438,26 +454,31 @@ export class AutocompleteService {
     const suggestions = new Map<string, AutocompleteSuggestion>();
 
     // Get suggestions from multiple sources in parallel
-    const [
-      systemSuggestions,
-      historySuggestions,
-      personalizedSuggestions,
-      trendingSuggestions
-    ] = await Promise.all([
-      this.getSystemSuggestions(query, limit),
-      this.getHistorySuggestions(query, limit),
-      context?.userId ? this.getPersonalizedSuggestions(query, context.userId, limit) : Promise.resolve([]),
-      this.getTrendingSuggestions(query, limit)
-    ]);
+    const [systemSuggestions, historySuggestions, personalizedSuggestions, trendingSuggestions] =
+      await Promise.all([
+        this.getSystemSuggestions(query, limit),
+        this.getHistorySuggestions(query, limit),
+        context?.userId
+          ? this.getPersonalizedSuggestions(query, context.userId, limit)
+          : Promise.resolve([]),
+        this.getTrendingSuggestions(query, limit),
+      ]);
 
     // Combine all suggestions
-    [...systemSuggestions, ...historySuggestions, ...personalizedSuggestions, ...trendingSuggestions]
-      .forEach(suggestion => {
-        const key = suggestion.text.toLowerCase();
-        if (!suggestions.has(key) || suggestions.get(key)!.relevanceScore < suggestion.relevanceScore) {
-          suggestions.set(key, suggestion);
-        }
-      });
+    [
+      ...systemSuggestions,
+      ...historySuggestions,
+      ...personalizedSuggestions,
+      ...trendingSuggestions,
+    ].forEach(suggestion => {
+      const key = suggestion.text.toLowerCase();
+      if (
+        !suggestions.has(key) ||
+        suggestions.get(key)!.relevanceScore < suggestion.relevanceScore
+      ) {
+        suggestions.set(key, suggestion);
+      }
+    });
 
     // Apply personalization boost if context available
     if (context) {
@@ -469,23 +490,32 @@ export class AutocompleteService {
       .slice(0, limit);
   }
 
-  private async getSystemSuggestions(query: string, limit: number): Promise<AutocompleteSuggestion[]> {
+  private async getSystemSuggestions(
+    query: string,
+    limit: number
+  ): Promise<AutocompleteSuggestion[]> {
     const results = this.getQuerySuggestionsStmt.all(query, limit) as any[];
 
-    return results.filter(row => row.source === 'system').map(row => ({
-      text: row.text,
-      type: 'query' as const,
-      frequency: row.frequency,
-      category: row.category,
-      relevanceScore: row.relevance_score || this.calculateBaseScore(row.text, query, row.frequency),
-      source: 'system' as const
-    }));
+    return results
+      .filter(row => row.source === 'system')
+      .map(row => ({
+        text: row.text,
+        type: 'query' as const,
+        frequency: row.frequency,
+        category: row.category,
+        relevanceScore:
+          row.relevance_score || this.calculateBaseScore(row.text, query, row.frequency),
+        source: 'system' as const,
+      }));
   }
 
-  private async getHistorySuggestions(query: string, limit: number): Promise<AutocompleteSuggestion[]> {
+  private async getHistorySuggestions(
+    query: string,
+    limit: number
+  ): Promise<AutocompleteSuggestion[]> {
     const results = this.getHistorySuggestionsStmt.all(
       query,
-      Date.now() - (7 * 24 * 60 * 60 * 1000), // Last week
+      Date.now() - 7 * 24 * 60 * 60 * 1000, // Last week
       limit
     ) as any[];
 
@@ -494,7 +524,7 @@ export class AutocompleteService {
       type: 'query' as const,
       frequency: row.frequency,
       relevanceScore: this.calculateHistoryScore(row.text, query, row.frequency, row.success_rate),
-      source: 'user' as const
+      source: 'user' as const,
     }));
   }
 
@@ -504,7 +534,7 @@ export class AutocompleteService {
       { name: 'VSAM', frequency: 80 },
       { name: 'DB2', frequency: 70 },
       { name: 'Batch', frequency: 60 },
-      { name: 'Functional', frequency: 40 }
+      { name: 'Functional', frequency: 40 },
     ];
 
     return categories.slice(0, limit).map(cat => ({
@@ -513,14 +543,18 @@ export class AutocompleteService {
       frequency: cat.frequency,
       category: cat.name,
       relevanceScore: cat.frequency,
-      source: 'system' as const
+      source: 'system' as const,
     }));
   }
 
   private getCategoryFrequency(category: string): number {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM search_history WHERE category = ?
-    `).get(category) as { count: number };
+    `
+      )
+      .get(category) as { count: number };
 
     return result.count || 1;
   }
@@ -569,7 +603,9 @@ export class AutocompleteService {
     // Exact word matches get bonus
     const queryWords = query.toLowerCase().split(/\s+/);
     const titleWords = title.toLowerCase().split(/\s+/);
-    const matches = queryWords.filter(word => titleWords.some(titleWord => titleWord.includes(word)));
+    const matches = queryWords.filter(word =>
+      titleWords.some(titleWord => titleWord.includes(word))
+    );
     score += matches.length * 10;
 
     return score;
@@ -579,7 +615,12 @@ export class AutocompleteService {
     return this.calculateBaseScore(tag, query, frequency);
   }
 
-  private calculatePersonalizedScore(text: string, query: string, frequency: number, lastUsed: number): number {
+  private calculatePersonalizedScore(
+    text: string,
+    query: string,
+    frequency: number,
+    lastUsed: number
+  ): number {
     let score = this.calculateBaseScore(text, query, frequency);
 
     // Recency boost
@@ -593,7 +634,12 @@ export class AutocompleteService {
     return score;
   }
 
-  private calculateHistoryScore(text: string, query: string, frequency: number, successRate: number): number {
+  private calculateHistoryScore(
+    text: string,
+    query: string,
+    frequency: number,
+    successRate: number
+  ): number {
     let score = this.calculateBaseScore(text, query, frequency);
 
     // Success rate boost
@@ -602,7 +648,12 @@ export class AutocompleteService {
     return score;
   }
 
-  private calculateTrendingScore(text: string, query: string, recentFreq: number, successRate: number): number {
+  private calculateTrendingScore(
+    text: string,
+    query: string,
+    recentFreq: number,
+    successRate: number
+  ): number {
     let score = this.calculateBaseScore(text, query, recentFreq);
 
     // Trending boost
@@ -614,7 +665,9 @@ export class AutocompleteService {
 
   private calculateFuzzyScore(str1: string, str2: string): number {
     // Simple Levenshtein distance-based scoring
-    const matrix: number[][] = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+    const matrix: number[][] = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
 
     for (let i = 0; i <= str1.length; i++) {
       matrix[0][i] = i;
@@ -640,7 +693,10 @@ export class AutocompleteService {
     return maxLength > 0 ? (maxLength - distance) / maxLength : 0;
   }
 
-  private applyPersonalizationBoost(suggestions: AutocompleteSuggestion[], context: SuggestionContext): void {
+  private applyPersonalizationBoost(
+    suggestions: AutocompleteSuggestion[],
+    context: SuggestionContext
+  ): void {
     if (!context.preferredCategories) return;
 
     suggestions.forEach(suggestion => {
@@ -676,7 +732,7 @@ export class AutocompleteService {
 
     this.suggestionCache.set(key, {
       suggestions: [...suggestions],
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -692,18 +748,21 @@ export class AutocompleteService {
 
   private startCacheCleanup(): void {
     // Clean expired cache entries every 5 minutes
-    setInterval(() => {
-      const now = Date.now();
-      const keysToDelete: string[] = [];
+    setInterval(
+      () => {
+        const now = Date.now();
+        const keysToDelete: string[] = [];
 
-      this.suggestionCache.forEach((cached, key) => {
-        if (now - cached.timestamp > this.config.cacheSettings.ttlSeconds * 1000) {
-          keysToDelete.push(key);
-        }
-      });
+        this.suggestionCache.forEach((cached, key) => {
+          if (now - cached.timestamp > this.config.cacheSettings.ttlSeconds * 1000) {
+            keysToDelete.push(key);
+          }
+        });
 
-      keysToDelete.forEach(key => this.suggestionCache.delete(key));
-    }, 5 * 60 * 1000);
+        keysToDelete.forEach(key => this.suggestionCache.delete(key));
+      },
+      5 * 60 * 1000
+    );
   }
 
   private prepareStatements(): void {
@@ -786,7 +845,9 @@ export class AutocompleteService {
       // Update user search patterns (simplified implementation)
       const queryHash = this.hashQuery(selectedSuggestion);
 
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO user_search_patterns
         (user_id, query_hash, search_count, last_searched, updated_at)
         VALUES (
@@ -796,8 +857,9 @@ export class AutocompleteService {
           ?,
           ?
         )
-      `).run(userId, queryHash, userId, queryHash, Date.now(), Date.now());
-
+      `
+        )
+        .run(userId, queryHash, userId, queryHash, Date.now(), Date.now());
     } catch (error) {
       console.error('Update user patterns error:', error);
     }
@@ -808,7 +870,7 @@ export class AutocompleteService {
     let hash = 0;
     for (let i = 0; i < query.length; i++) {
       const char = query.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);

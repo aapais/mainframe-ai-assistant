@@ -1,6 +1,6 @@
 /**
  * Health Check System for SQLite Database
- * 
+ *
  * Provides comprehensive database health monitoring including integrity checks,
  * schema validation, performance health, and automated remediation.
  */
@@ -88,14 +88,14 @@ export class HealthCheck extends EventEmitter {
         diskSpaceLow: 1000, // 1GB
         memoryUsageHigh: 1024, // 1GB
         connectionFailures: 5,
-        queryFailureRate: 10 // 10%
+        queryFailureRate: 10, // 10%
       },
       remediationActions: {
         vacuum: true,
         reindex: true,
         checkpoint: true,
         connectionPoolReset: false,
-        cacheFlush: true
+        cacheFlush: true,
       },
       ...config,
       criticalThresholds: {
@@ -106,9 +106,9 @@ export class HealthCheck extends EventEmitter {
           diskSpaceLow: 1000,
           memoryUsageHigh: 1024,
           connectionFailures: 5,
-          queryFailureRate: 10
+          queryFailureRate: 10,
         },
-        ...config?.criticalThresholds
+        ...config?.criticalThresholds,
       },
       remediationActions: {
         ...{
@@ -116,10 +116,10 @@ export class HealthCheck extends EventEmitter {
           reindex: true,
           checkpoint: true,
           connectionPoolReset: false,
-          cacheFlush: true
+          cacheFlush: true,
         },
-        ...config?.remediationActions
-      }
+        ...config?.remediationActions,
+      },
     };
   }
 
@@ -241,7 +241,7 @@ export class HealthCheck extends EventEmitter {
             message: `Health check failed: ${error.message}`,
             timestamp: Date.now(),
             duration: 0,
-            remediation: ['Review health check implementation', 'Check database connectivity']
+            remediation: ['Review health check implementation', 'Check database connectivity'],
           };
         }
       });
@@ -258,7 +258,7 @@ export class HealthCheck extends EventEmitter {
         checks: results,
         score: healthScore,
         lastCheck: Date.now(),
-        uptime: Date.now() - this.startTime
+        uptime: Date.now() - this.startTime,
       };
 
       this.lastHealthStatus = healthStatus;
@@ -273,7 +273,6 @@ export class HealthCheck extends EventEmitter {
 
       this.emit('health-check-completed', healthStatus);
       return healthStatus;
-
     } catch (error) {
       console.error('Health check run failed:', error);
       return this.createUnknownStatus();
@@ -286,7 +285,7 @@ export class HealthCheck extends EventEmitter {
 
   private async checkDatabaseIntegrity(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Run SQLite integrity check
       const result = this.db.pragma('integrity_check');
@@ -295,19 +294,19 @@ export class HealthCheck extends EventEmitter {
       if (Array.isArray(result)) {
         // Check if all results are "ok"
         const issues = result.filter(r => r !== 'ok');
-        
+
         if (issues.length === 0) {
           return {
             name: 'database_integrity',
             status: 'healthy',
             message: 'Database integrity check passed',
             timestamp: Date.now(),
-            duration
+            duration,
           };
         } else {
           // Log integrity issues
           await this.recordIntegrityIssues(issues);
-          
+
           return {
             name: 'database_integrity',
             status: 'critical',
@@ -319,8 +318,8 @@ export class HealthCheck extends EventEmitter {
               'Backup database immediately',
               'Run .recover command',
               'Consider restoring from backup',
-              'Contact database administrator'
-            ]
+              'Contact database administrator',
+            ],
           };
         }
       } else {
@@ -329,7 +328,7 @@ export class HealthCheck extends EventEmitter {
           status: 'healthy',
           message: 'Database integrity check passed',
           timestamp: Date.now(),
-          duration
+          duration,
         };
       }
     } catch (error) {
@@ -339,28 +338,37 @@ export class HealthCheck extends EventEmitter {
         message: `Integrity check failed: ${error.message}`,
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: ['Check database file permissions', 'Verify database is not corrupted']
+        remediation: ['Check database file permissions', 'Verify database is not corrupted'],
       };
     }
   }
 
   private async checkSchemaValidation(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Check for required tables
       const requiredTables = [
-        'kb_entries', 'kb_tags', 'search_history', 'usage_metrics',
-        'performance_metrics', 'performance_alerts'
+        'kb_entries',
+        'kb_tags',
+        'search_history',
+        'usage_metrics',
+        'performance_metrics',
+        'performance_alerts',
       ];
-      
-      const existingTables = this.db.prepare(`
+
+      const existingTables = this.db
+        .prepare(
+          `
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
-      `).all().map((row: any) => row.name);
+      `
+        )
+        .all()
+        .map((row: any) => row.name);
 
       const missingTables = requiredTables.filter(table => !existingTables.includes(table));
-      
+
       if (missingTables.length > 0) {
         return {
           name: 'schema_validation',
@@ -372,23 +380,26 @@ export class HealthCheck extends EventEmitter {
           remediation: [
             'Run database migration script',
             'Verify application initialization',
-            'Check database creation process'
-          ]
+            'Check database creation process',
+          ],
         };
       }
 
       // Check for indexes
-      const indexes = this.db.prepare(`
+      const indexes = this.db
+        .prepare(
+          `
         SELECT name FROM sqlite_master 
         WHERE type='index' AND name NOT LIKE 'sqlite_%'
-      `).all().map((row: any) => row.name);
+      `
+        )
+        .all()
+        .map((row: any) => row.name);
 
-      const requiredIndexes = [
-        'idx_perf_timestamp', 'idx_perf_operation', 'idx_perf_duration'
-      ];
-      
+      const requiredIndexes = ['idx_perf_timestamp', 'idx_perf_operation', 'idx_perf_duration'];
+
       const missingIndexes = requiredIndexes.filter(index => !indexes.includes(index));
-      
+
       if (missingIndexes.length > 0) {
         return {
           name: 'schema_validation',
@@ -397,10 +408,7 @@ export class HealthCheck extends EventEmitter {
           details: { missingIndexes },
           timestamp: Date.now(),
           duration: Date.now() - startTime,
-          remediation: [
-            'Create missing indexes',
-            'Run index optimization'
-          ]
+          remediation: ['Create missing indexes', 'Run index optimization'],
         };
       }
 
@@ -409,9 +417,8 @@ export class HealthCheck extends EventEmitter {
         status: 'healthy',
         message: 'Database schema validation passed',
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
-
     } catch (error) {
       return {
         name: 'schema_validation',
@@ -419,21 +426,25 @@ export class HealthCheck extends EventEmitter {
         message: `Schema validation failed: ${error.message}`,
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: ['Check database connectivity', 'Verify database structure']
+        remediation: ['Check database connectivity', 'Verify database structure'],
       };
     }
   }
 
   private async checkPerformanceHealth(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Get recent performance metrics
-      const recentMetrics = this.db.prepare(`
+      const recentMetrics = this.db
+        .prepare(
+          `
         SELECT AVG(duration) as avg_duration, COUNT(*) as query_count
         FROM performance_metrics 
         WHERE timestamp > ?
-      `).get(Date.now() - (60 * 60 * 1000)); // Last hour
+      `
+        )
+        .get(Date.now() - 60 * 60 * 1000); // Last hour
 
       if (!recentMetrics || recentMetrics.query_count === 0) {
         return {
@@ -442,7 +453,7 @@ export class HealthCheck extends EventEmitter {
           message: 'No recent performance data available',
           timestamp: Date.now(),
           duration: Date.now() - startTime,
-          remediation: ['Verify performance monitoring is active']
+          remediation: ['Verify performance monitoring is active'],
         };
       }
 
@@ -450,14 +461,18 @@ export class HealthCheck extends EventEmitter {
       const queryCount = recentMetrics.query_count;
 
       // Get baseline for comparison
-      const baselineMetrics = this.db.prepare(`
+      const baselineMetrics = this.db
+        .prepare(
+          `
         SELECT AVG(duration) as avg_duration
         FROM performance_metrics 
         WHERE timestamp BETWEEN ? AND ?
-      `).get(
-        Date.now() - (7 * 24 * 60 * 60 * 1000), // 7 days ago
-        Date.now() - (6 * 24 * 60 * 60 * 1000)  // 6 days ago
-      );
+      `
+        )
+        .get(
+          Date.now() - 7 * 24 * 60 * 60 * 1000, // 7 days ago
+          Date.now() - 6 * 24 * 60 * 60 * 1000 // 6 days ago
+        );
 
       let status: 'healthy' | 'warning' | 'critical' = 'healthy';
       let message = `Average query time: ${Math.round(avgDuration)}ms (${queryCount} queries)`;
@@ -481,12 +496,16 @@ export class HealthCheck extends EventEmitter {
 
       // Compare with baseline
       if (baselineMetrics && baselineMetrics.avg_duration) {
-        const degradationPercent = ((avgDuration - baselineMetrics.avg_duration) / baselineMetrics.avg_duration) * 100;
-        
+        const degradationPercent =
+          ((avgDuration - baselineMetrics.avg_duration) / baselineMetrics.avg_duration) * 100;
+
         if (degradationPercent > this.config.criticalThresholds.performanceDegradation) {
           status = 'critical';
           message += ` (${Math.round(degradationPercent)}% slower than baseline)`;
-          remediation.push('Performance has degraded significantly', 'Compare with historical patterns');
+          remediation.push(
+            'Performance has degraded significantly',
+            'Compare with historical patterns'
+          );
         }
       }
 
@@ -497,31 +516,30 @@ export class HealthCheck extends EventEmitter {
         details: {
           avgDuration: Math.round(avgDuration),
           queryCount,
-          baseline: baselineMetrics?.avg_duration ? Math.round(baselineMetrics.avg_duration) : null
+          baseline: baselineMetrics?.avg_duration ? Math.round(baselineMetrics.avg_duration) : null,
         },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: remediation.length > 0 ? remediation : undefined
+        remediation: remediation.length > 0 ? remediation : undefined,
       };
-
     } catch (error) {
       return {
         name: 'performance_health',
         status: 'unknown',
         message: `Performance check failed: ${error.message}`,
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
 
   private async checkConnectionHealth(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Test basic connectivity
       const testResult = this.db.prepare('SELECT 1 as test').get();
-      
+
       if (!testResult || testResult.test !== 1) {
         return {
           name: 'connection_health',
@@ -532,17 +550,18 @@ export class HealthCheck extends EventEmitter {
           remediation: [
             'Check database file permissions',
             'Verify database file is not locked',
-            'Restart database connection'
-          ]
+            'Restart database connection',
+          ],
         };
       }
 
       // Check WAL mode status
       const walMode = this.db.pragma('journal_mode');
       const walStatus = walMode === 'wal' ? 'healthy' : 'warning';
-      const walMessage = walMode === 'wal' ? 
-        'Database in WAL mode (recommended)' : 
-        `Database in ${walMode} mode (consider WAL for better performance)`;
+      const walMessage =
+        walMode === 'wal'
+          ? 'Database in WAL mode (recommended)'
+          : `Database in ${walMode} mode (consider WAL for better performance)`;
 
       return {
         name: 'connection_health',
@@ -551,9 +570,8 @@ export class HealthCheck extends EventEmitter {
         details: { journalMode: walMode },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: walMode !== 'wal' ? ['Consider switching to WAL mode'] : undefined
+        remediation: walMode !== 'wal' ? ['Consider switching to WAL mode'] : undefined,
       };
-
     } catch (error) {
       return {
         name: 'connection_health',
@@ -564,18 +582,22 @@ export class HealthCheck extends EventEmitter {
         remediation: [
           'Check database file existence',
           'Verify file permissions',
-          'Check disk space'
-        ]
+          'Check disk space',
+        ],
       };
     }
   }
 
   private async checkDiskSpace(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Get database file size
-      const dbSize = this.db.prepare('SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()').get();
+      const dbSize = this.db
+        .prepare(
+          'SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()'
+        )
+        .get();
       const sizeInMB = Math.round(dbSize.size / (1024 * 1024));
 
       // This is a simplified check - in a real implementation, you'd check actual disk space
@@ -583,13 +605,15 @@ export class HealthCheck extends EventEmitter {
       let message = `Database size: ${sizeInMB}MB`;
       const remediation: string[] = [];
 
-      if (sizeInMB > 1000) { // 1GB
+      if (sizeInMB > 1000) {
+        // 1GB
         status = 'warning';
         message += ' (large database size)';
         remediation.push('Monitor database growth', 'Consider archiving old data');
       }
 
-      if (sizeInMB > 5000) { // 5GB
+      if (sizeInMB > 5000) {
+        // 5GB
         status = 'critical';
         message += ' (very large database)';
         remediation.push(
@@ -606,23 +630,22 @@ export class HealthCheck extends EventEmitter {
         details: { sizeInMB, sizeInBytes: dbSize.size },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: remediation.length > 0 ? remediation : undefined
+        remediation: remediation.length > 0 ? remediation : undefined,
       };
-
     } catch (error) {
       return {
         name: 'disk_space',
         status: 'unknown',
         message: `Disk space check failed: ${error.message}`,
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
 
   private async checkMemoryUsage(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       const memUsage = process.memoryUsage();
       const heapUsedMB = Math.round(memUsage.heapUsed / (1024 * 1024));
@@ -654,27 +677,26 @@ export class HealthCheck extends EventEmitter {
           heapUsedMB,
           rssMB,
           heapTotalMB: Math.round(memUsage.heapTotal / (1024 * 1024)),
-          externalMB: Math.round(memUsage.external / (1024 * 1024))
+          externalMB: Math.round(memUsage.external / (1024 * 1024)),
         },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: remediation.length > 0 ? remediation : undefined
+        remediation: remediation.length > 0 ? remediation : undefined,
       };
-
     } catch (error) {
       return {
         name: 'memory_usage',
         status: 'unknown',
         message: `Memory check failed: ${error.message}`,
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
 
   private async checkQueryPerformance(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Test query performance with a simple operation
       const queryStart = Date.now();
@@ -707,9 +729,8 @@ export class HealthCheck extends EventEmitter {
         details: { queryDuration, resultCount: result?.count },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: remediation.length > 0 ? remediation : undefined
+        remediation: remediation.length > 0 ? remediation : undefined,
       };
-
     } catch (error) {
       return {
         name: 'query_performance',
@@ -720,15 +741,15 @@ export class HealthCheck extends EventEmitter {
         remediation: [
           'Database query execution failed',
           'Check database connectivity',
-          'Verify database integrity'
-        ]
+          'Verify database integrity',
+        ],
       };
     }
   }
 
   private async checkDataConsistency(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       const issues: string[] = [];
 
@@ -744,13 +765,17 @@ export class HealthCheck extends EventEmitter {
 
       // Check for orphaned records in kb_tags
       try {
-        const orphanedTags = this.db.prepare(`
+        const orphanedTags = this.db
+          .prepare(
+            `
           SELECT COUNT(*) as count 
           FROM kb_tags t 
           LEFT JOIN kb_entries e ON t.entry_id = e.id 
           WHERE e.id IS NULL
-        `).get();
-        
+        `
+          )
+          .get();
+
         if (orphanedTags && orphanedTags.count > 0) {
           issues.push(`${orphanedTags.count} orphaned tag records found`);
         }
@@ -760,12 +785,16 @@ export class HealthCheck extends EventEmitter {
 
       // Check for negative usage counts
       try {
-        const negativeUsage = this.db.prepare(`
+        const negativeUsage = this.db
+          .prepare(
+            `
           SELECT COUNT(*) as count 
           FROM kb_entries 
           WHERE usage_count < 0 OR success_count < 0 OR failure_count < 0
-        `).get();
-        
+        `
+          )
+          .get();
+
         if (negativeUsage && negativeUsage.count > 0) {
           issues.push(`${negativeUsage.count} records with negative usage counts`);
         }
@@ -773,10 +802,11 @@ export class HealthCheck extends EventEmitter {
         // Table might not exist
       }
 
-      const status = issues.length === 0 ? 'healthy' : (issues.length > 5 ? 'critical' : 'warning');
-      const message = issues.length === 0 ? 
-        'Data consistency check passed' : 
-        `Data consistency issues found: ${issues.join(', ')}`;
+      const status = issues.length === 0 ? 'healthy' : issues.length > 5 ? 'critical' : 'warning';
+      const message =
+        issues.length === 0
+          ? 'Data consistency check passed'
+          : `Data consistency issues found: ${issues.join(', ')}`;
 
       return {
         name: 'data_consistency',
@@ -785,46 +815,52 @@ export class HealthCheck extends EventEmitter {
         details: { issues },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: issues.length > 0 ? [
-          'Review data integrity',
-          'Clean up orphaned records',
-          'Verify application logic',
-          'Consider data repair scripts'
-        ] : undefined
+        remediation:
+          issues.length > 0
+            ? [
+                'Review data integrity',
+                'Clean up orphaned records',
+                'Verify application logic',
+                'Consider data repair scripts',
+              ]
+            : undefined,
       };
-
     } catch (error) {
       return {
         name: 'data_consistency',
         status: 'unknown',
         message: `Data consistency check failed: ${error.message}`,
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
 
   private async checkIndexHealth(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Get index statistics
-      const indexes = this.db.prepare(`
+      const indexes = this.db
+        .prepare(
+          `
         SELECT name FROM sqlite_master 
         WHERE type='index' AND name NOT LIKE 'sqlite_%'
-      `).all();
+      `
+        )
+        .all();
 
       const indexStats = indexes.map((index: any) => {
         try {
           // This is a simplified check - SQLite doesn't provide detailed index stats
           return {
             name: index.name,
-            exists: true
+            exists: true,
           };
         } catch {
           return {
             name: index.name,
-            exists: false
+            exists: false,
           };
         }
       });
@@ -849,43 +885,42 @@ export class HealthCheck extends EventEmitter {
         details: {
           totalIndexes: indexStats.length,
           healthyIndexes: healthyIndexes.length,
-          problematicIndexes: missingIndexes.length
+          problematicIndexes: missingIndexes.length,
         },
         timestamp: Date.now(),
         duration: Date.now() - startTime,
-        remediation: remediation.length > 0 ? remediation : undefined
+        remediation: remediation.length > 0 ? remediation : undefined,
       };
-
     } catch (error) {
       return {
         name: 'index_health',
         status: 'unknown',
         message: `Index health check failed: ${error.message}`,
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
 
   private async checkTransactionLog(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       // Check WAL file size if in WAL mode
       const journalMode = this.db.pragma('journal_mode');
-      
+
       if (journalMode === 'wal') {
         // In a real implementation, you'd check the actual WAL file size
         // For now, we'll just verify WAL mode is working
         const walInfo = this.db.pragma('wal_checkpoint');
-        
+
         return {
           name: 'transaction_log',
           status: 'healthy',
           message: 'Transaction log (WAL) is healthy',
           details: { journalMode, walInfo },
           timestamp: Date.now(),
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         };
       } else {
         return {
@@ -895,24 +930,25 @@ export class HealthCheck extends EventEmitter {
           details: { journalMode },
           timestamp: Date.now(),
           duration: Date.now() - startTime,
-          remediation: ['Consider enabling WAL mode for better performance']
+          remediation: ['Consider enabling WAL mode for better performance'],
         };
       }
-
     } catch (error) {
       return {
         name: 'transaction_log',
         status: 'unknown',
         message: `Transaction log check failed: ${error.message}`,
         timestamp: Date.now(),
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
 
   // Helper methods
 
-  private calculateOverallStatus(results: HealthCheckResult[]): 'healthy' | 'warning' | 'critical' | 'unknown' {
+  private calculateOverallStatus(
+    results: HealthCheckResult[]
+  ): 'healthy' | 'warning' | 'critical' | 'unknown' {
     if (results.some(r => r.status === 'critical')) return 'critical';
     if (results.some(r => r.status === 'warning')) return 'warning';
     if (results.some(r => r.status === 'unknown')) return 'unknown';
@@ -924,11 +960,16 @@ export class HealthCheck extends EventEmitter {
 
     const scores = results.map(result => {
       switch (result.status) {
-        case 'healthy': return 100;
-        case 'warning': return 60;
-        case 'critical': return 20;
-        case 'unknown': return 30;
-        default: return 0;
+        case 'healthy':
+          return 100;
+        case 'warning':
+          return 60;
+        case 'critical':
+          return 20;
+        case 'unknown':
+          return 30;
+        default:
+          return 0;
       }
     });
 
@@ -941,7 +982,7 @@ export class HealthCheck extends EventEmitter {
       checks: [],
       score: 0,
       lastCheck: Date.now(),
-      uptime: Date.now() - this.startTime
+      uptime: Date.now() - this.startTime,
     };
   }
 
@@ -993,16 +1034,16 @@ export class HealthCheck extends EventEmitter {
 
   private async triggerAutomaticRemediation(results: HealthCheckResult[]): Promise<void> {
     const criticalResults = results.filter(r => r.status === 'critical');
-    
+
     for (const result of criticalResults) {
       if (result.name === 'performance_health' && this.config.remediationActions.vacuum) {
         await this.executeRemediation('vacuum', result.name);
       }
-      
+
       if (result.name === 'index_health' && this.config.remediationActions.reindex) {
         await this.executeRemediation('reindex', result.name);
       }
-      
+
       if (result.name === 'connection_health' && this.config.remediationActions.checkpoint) {
         await this.executeRemediation('checkpoint', result.name);
       }
@@ -1011,52 +1052,63 @@ export class HealthCheck extends EventEmitter {
 
   private async executeRemediation(action: string, triggeredBy: string): Promise<void> {
     const actionId = `${Date.now()}_${action}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Record action start
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO remediation_actions (id, action_type, triggered_by, status, started_at)
       VALUES (?, ?, ?, 'running', ?)
-    `).run(actionId, action, triggeredBy, Date.now());
+    `
+      )
+      .run(actionId, action, triggeredBy, Date.now());
 
     try {
       let result: any = {};
-      
+
       switch (action) {
         case 'vacuum':
           this.db.exec('VACUUM');
           result.message = 'Database vacuumed successfully';
           break;
-          
+
         case 'checkpoint':
           const checkpointResult = this.db.pragma('wal_checkpoint(FULL)');
           result = { checkpointResult };
           break;
-          
+
         case 'reindex':
           this.db.exec('REINDEX');
           result.message = 'Database reindexed successfully';
           break;
-          
+
         default:
           throw new Error(`Unknown remediation action: ${action}`);
       }
 
       // Record success
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         UPDATE remediation_actions 
         SET status = 'completed', completed_at = ?, result = ?
         WHERE id = ?
-      `).run(Date.now(), JSON.stringify(result), actionId);
+      `
+        )
+        .run(Date.now(), JSON.stringify(result), actionId);
 
       this.emit('remediation-completed', { actionId, action, result });
-
     } catch (error) {
       // Record failure
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         UPDATE remediation_actions 
         SET status = 'failed', completed_at = ?, error_message = ?
         WHERE id = ?
-      `).run(Date.now(), error.message, actionId);
+      `
+        )
+        .run(Date.now(), error.message, actionId);
 
       this.emit('remediation-failed', { actionId, action, error: error.message });
     }
@@ -1075,14 +1127,13 @@ export class HealthCheck extends EventEmitter {
       `);
 
       // Clean up old integrity issues (older than 30 days)
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      this.db.prepare('DELETE FROM integrity_issues WHERE detected_at < ? AND resolved = TRUE')
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      this.db
+        .prepare('DELETE FROM integrity_issues WHERE detected_at < ? AND resolved = TRUE')
         .run(thirtyDaysAgo);
 
       // Clean up old remediation actions (older than 30 days)
-      this.db.prepare('DELETE FROM remediation_actions WHERE started_at < ?')
-        .run(thirtyDaysAgo);
-
+      this.db.prepare('DELETE FROM remediation_actions WHERE started_at < ?').run(thirtyDaysAgo);
     } catch (error) {
       console.error('Failed to cleanup health history:', error);
     }
@@ -1115,7 +1166,7 @@ export class HealthCheck extends EventEmitter {
         details: row.details ? JSON.parse(row.details) : undefined,
         timestamp: row.timestamp,
         duration: row.duration,
-        remediation: row.remediation ? JSON.parse(row.remediation) : undefined
+        remediation: row.remediation ? JSON.parse(row.remediation) : undefined,
       }));
     } catch (error) {
       console.error('Failed to get health history:', error);
@@ -1125,11 +1176,15 @@ export class HealthCheck extends EventEmitter {
 
   public getIntegrityIssues(resolved = false): IntegrityIssue[] {
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT * FROM integrity_issues 
         WHERE resolved = ? 
         ORDER BY detected_at DESC
-      `).all(resolved);
+      `
+        )
+        .all(resolved);
 
       return results.map((row: any) => ({
         type: row.type,
@@ -1137,7 +1192,7 @@ export class HealthCheck extends EventEmitter {
         table: row.table_name,
         description: row.description,
         affectedRows: row.affected_rows,
-        remediation: JSON.parse(row.remediation)
+        remediation: JSON.parse(row.remediation),
       }));
     } catch (error) {
       console.error('Failed to get integrity issues:', error);

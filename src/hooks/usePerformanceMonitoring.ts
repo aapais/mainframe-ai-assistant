@@ -69,73 +69,85 @@ export function useInteractionTracking(componentName: string) {
   const interactionStartTime = useRef<number>(0);
   const interactionId = useRef<string>('');
 
-  const startInteraction = useCallback((type: InteractionMetric['type'], payload?: any) => {
-    interactionStartTime.current = performance.now();
-    interactionId.current = `${componentName}-${type}-${Date.now()}`;
+  const startInteraction = useCallback(
+    (type: InteractionMetric['type'], payload?: any) => {
+      interactionStartTime.current = performance.now();
+      interactionId.current = `${componentName}-${type}-${Date.now()}`;
 
-    // Use React's experimental profiler to detect if interaction is blocking
-    if ('scheduler' in window && (window as any).scheduler?.isInputPending) {
-      const isBlocking = (window as any).scheduler.isInputPending();
+      // Use React's experimental profiler to detect if interaction is blocking
+      if ('scheduler' in window && (window as any).scheduler?.isInputPending) {
+        const isBlocking = (window as any).scheduler.isInputPending();
 
-      if (isBlocking && process.env.NODE_ENV === 'development') {
-        console.warn(`🚨 Blocking interaction detected in ${componentName}:`, type);
+        if (isBlocking && process.env.NODE_ENV === 'development') {
+          console.warn(`🚨 Blocking interaction detected in ${componentName}:`, type);
+        }
       }
-    }
-  }, [componentName]);
+    },
+    [componentName]
+  );
 
-  const endInteraction = useCallback((type: InteractionMetric['type'], payload?: any) => {
-    if (interactionStartTime.current === 0) return;
+  const endInteraction = useCallback(
+    (type: InteractionMetric['type'], payload?: any) => {
+      if (interactionStartTime.current === 0) return;
 
-    const duration = performance.now() - interactionStartTime.current;
-    const isBlocking = duration > 16; // Consider blocking if > 16ms
+      const duration = performance.now() - interactionStartTime.current;
+      const isBlocking = duration > 16; // Consider blocking if > 16ms
 
-    const interaction: InteractionMetric = {
-      id: interactionId.current || `${componentName}-${type}-${Date.now()}`,
-      type,
-      timestamp: Date.now(),
-      duration,
-      targetComponent: componentName,
-      payload,
-      blocking: isBlocking
-    };
+      const interaction: InteractionMetric = {
+        id: interactionId.current || `${componentName}-${type}-${Date.now()}`,
+        type,
+        timestamp: Date.now(),
+        duration,
+        targetComponent: componentName,
+        payload,
+        blocking: isBlocking,
+      };
 
-    setInteractions(prev => [interaction, ...prev.slice(0, 49)]); // Keep last 50
+      setInteractions(prev => [interaction, ...prev.slice(0, 49)]); // Keep last 50
 
-    // Log slow interactions
-    if (isBlocking && process.env.NODE_ENV === 'development') {
-      console.warn(
-        `🐌 Slow interaction in ${componentName}: ${type} took ${duration.toFixed(2)}ms`,
-        interaction
-      );
-    }
+      // Log slow interactions
+      if (isBlocking && process.env.NODE_ENV === 'development') {
+        console.warn(
+          `🐌 Slow interaction in ${componentName}: ${type} took ${duration.toFixed(2)}ms`,
+          interaction
+        );
+      }
 
-    interactionStartTime.current = 0;
-    interactionId.current = '';
-  }, [componentName]);
+      interactionStartTime.current = 0;
+      interactionId.current = '';
+    },
+    [componentName]
+  );
 
-  const trackClick = useCallback((event: React.MouseEvent) => {
-    startInteraction('click', {
-      target: event.currentTarget.tagName,
-      button: event.button
-    });
+  const trackClick = useCallback(
+    (event: React.MouseEvent) => {
+      startInteraction('click', {
+        target: event.currentTarget.tagName,
+        button: event.button,
+      });
 
-    // Use requestIdleCallback to end the interaction when the browser is idle
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => endInteraction('click'));
-    } else {
-      setTimeout(() => endInteraction('click'), 0);
-    }
-  }, [startInteraction, endInteraction]);
+      // Use requestIdleCallback to end the interaction when the browser is idle
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => endInteraction('click'));
+      } else {
+        setTimeout(() => endInteraction('click'), 0);
+      }
+    },
+    [startInteraction, endInteraction]
+  );
 
-  const trackInput = useCallback((event: React.ChangeEvent) => {
-    startInteraction('input', {
-      inputType: event.target.type,
-      valueLength: event.target.value?.length
-    });
+  const trackInput = useCallback(
+    (event: React.ChangeEvent) => {
+      startInteraction('input', {
+        inputType: event.target.type,
+        valueLength: event.target.value?.length,
+      });
 
-    // End after a short delay to capture immediate effects
-    setTimeout(() => endInteraction('input'), 5);
-  }, [startInteraction, endInteraction]);
+      // End after a short delay to capture immediate effects
+      setTimeout(() => endInteraction('input'), 5);
+    },
+    [startInteraction, endInteraction]
+  );
 
   return {
     interactions,
@@ -143,7 +155,7 @@ export function useInteractionTracking(componentName: string) {
     trackInput,
     startInteraction,
     endInteraction,
-    clearInteractions: () => setInteractions([])
+    clearInteractions: () => setInteractions([]),
   };
 }
 
@@ -176,14 +188,15 @@ export function useMemoryTracking(componentName: string, interval = 5000) {
         usedJSMemory: usedMemory,
         totalJSMemory: totalMemory,
         jsMemoryDelta: memoryDelta,
-        componentName
+        componentName,
       };
 
       setMemoryMetrics(prev => [metric, ...prev.slice(0, 99)]); // Keep last 100
       previousMemoryRef.current = usedMemory;
 
       // Detect potential memory leaks
-      if (memoryDelta > 1024 * 1024 && process.env.NODE_ENV === 'development') { // 1MB increase
+      if (memoryDelta > 1024 * 1024 && process.env.NODE_ENV === 'development') {
+        // 1MB increase
         console.warn(
           `🧠 Memory increase detected in ${componentName}: +${(memoryDelta / 1024 / 1024).toFixed(2)}MB`,
           metric
@@ -206,9 +219,12 @@ export function useMemoryTracking(componentName: string, interval = 5000) {
 
     // Check if memory has been consistently increasing over last 10 measurements
     const recent = memoryMetrics.slice(0, 10);
-    const increases = recent.slice(0, -1).filter((metric, index) =>
-      metric.jsMemoryDelta > 0 && metric.jsMemoryDelta > recent[index + 1].jsMemoryDelta
-    );
+    const increases = recent
+      .slice(0, -1)
+      .filter(
+        (metric, index) =>
+          metric.jsMemoryDelta > 0 && metric.jsMemoryDelta > recent[index + 1].jsMemoryDelta
+      );
 
     return increases.length >= 7; // 70% of recent measurements show increase
   }, [memoryMetrics]);
@@ -229,7 +245,7 @@ export function useMemoryTracking(componentName: string, interval = 5000) {
     hasMemoryLeak: hasMemoryLeak(),
     memoryTrend: getMemoryTrend(),
     currentMemoryUsage: memoryMetrics[0]?.usedJSMemory || 0,
-    clearMetrics: () => setMemoryMetrics([])
+    clearMetrics: () => setMemoryMetrics([]),
   };
 }
 
@@ -271,7 +287,7 @@ export function useBatchPerformanceAnalysis(componentName: string, batchDuration
       maxRenderTime: 0,
       slowRenders: 0,
       interactions: [],
-      memoryUsage: []
+      memoryUsage: [],
     };
 
     // Set timeout for batch completion
@@ -296,12 +312,11 @@ export function useBatchPerformanceAnalysis(componentName: string, batchDuration
 
   // Update current batch with new metrics
   useEffect(() => {
-    const unsubscribe = performanceStore.subscribe((store) => {
+    const unsubscribe = performanceStore.subscribe(store => {
       if (!currentBatchRef.current) return;
 
-      const componentMetrics = store.metrics.filter(m =>
-        m.id.includes(componentName) &&
-        m.timestamp > currentBatchRef.current!.startTime!
+      const componentMetrics = store.metrics.filter(
+        m => m.id.includes(componentName) && m.timestamp > currentBatchRef.current!.startTime!
       );
 
       if (componentMetrics.length > 0) {
@@ -313,7 +328,7 @@ export function useBatchPerformanceAnalysis(componentName: string, batchDuration
           totalRenderTime: renderTimes.reduce((a, b) => a + b, 0),
           avgRenderTime: renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length,
           maxRenderTime: Math.max(...renderTimes),
-          slowRenders: slowRenders.length
+          slowRenders: slowRenders.length,
         });
       }
     });
@@ -338,7 +353,7 @@ export function useBatchPerformanceAnalysis(componentName: string, batchDuration
     batches,
     currentBatch: currentBatchRef.current,
     startNewBatch,
-    clearBatches: () => setBatches([])
+    clearBatches: () => setBatches([]),
   };
 }
 
@@ -359,15 +374,15 @@ export function useComponentHealth(componentName: string): ComponentHealthScore 
       avgRenderTime: 0,
       slowRenderRatio: 0,
       memoryLeaks: false,
-      excessiveReRenders: false
-    }
+      excessiveReRenders: false,
+    },
   });
 
   const { memoryMetrics, hasMemoryLeak } = useMemoryTracking(componentName);
   const { batches } = useBatchPerformanceAnalysis(componentName);
 
   useEffect(() => {
-    const unsubscribe = performanceStore.subscribe((store) => {
+    const unsubscribe = performanceStore.subscribe(store => {
       const componentMetrics = store.metrics.filter(m => m.id.includes(componentName));
 
       if (componentMetrics.length === 0) return;
@@ -378,9 +393,7 @@ export function useComponentHealth(componentName: string): ComponentHealthScore 
       const slowRenderRatio = slowRenders.length / componentMetrics.length;
 
       // Check for excessive re-renders (more than 10 renders in last 5 seconds)
-      const recentRenders = componentMetrics.filter(m =>
-        Date.now() - m.timestamp < 5000
-      );
+      const recentRenders = componentMetrics.filter(m => Date.now() - m.timestamp < 5000);
       const excessiveReRenders = recentRenders.length > 10;
 
       let score = 100;
@@ -420,10 +433,8 @@ export function useComponentHealth(componentName: string): ComponentHealthScore 
       }
 
       // Grade calculation
-      const grade = score >= 90 ? 'A' :
-                   score >= 80 ? 'B' :
-                   score >= 70 ? 'C' :
-                   score >= 60 ? 'D' : 'F';
+      const grade =
+        score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
 
       setHealthScore({
         score: Math.max(0, score),
@@ -434,8 +445,8 @@ export function useComponentHealth(componentName: string): ComponentHealthScore 
           avgRenderTime,
           slowRenderRatio,
           memoryLeaks: hasMemoryLeak,
-          excessiveReRenders
-        }
+          excessiveReRenders,
+        },
       });
     });
 
@@ -468,7 +479,7 @@ export function usePerformanceComparison() {
         avgRenderTime: renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length,
         maxRenderTime: Math.max(...renderTimes),
         minRenderTime: Math.min(...renderTimes),
-        slowRenders: metrics.filter(m => m.exceededThreshold).length
+        slowRenders: metrics.filter(m => m.exceededThreshold).length,
       };
     };
 
@@ -488,15 +499,15 @@ export function usePerformanceComparison() {
         avgRenderTimeDiff: statsA.avgRenderTime - statsB.avgRenderTime,
         maxRenderTimeDiff: statsA.maxRenderTime - statsB.maxRenderTime,
         slowRendersDiff: statsA.slowRenders - statsB.slowRenders,
-        winner: statsA.avgRenderTime < statsB.avgRenderTime ? componentA : componentB
-      }
+        winner: statsA.avgRenderTime < statsB.avgRenderTime ? componentA : componentB,
+      },
     };
   }, []);
 
   const compareTimePeriods = useCallback((componentName: string, hours: number) => {
     const store = performanceStore.getStore();
     const now = Date.now();
-    const cutoff = now - (hours * 60 * 60 * 1000);
+    const cutoff = now - hours * 60 * 60 * 1000;
 
     const allMetrics = store.metrics.filter(m => m.id.includes(componentName));
     const recentMetrics = allMetrics.filter(m => m.timestamp > cutoff);
@@ -509,7 +520,7 @@ export function usePerformanceComparison() {
       return {
         count: metrics.length,
         avgRenderTime: renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length,
-        slowRenders: metrics.filter(m => m.exceededThreshold).length
+        slowRenders: metrics.filter(m => m.exceededThreshold).length,
       };
     };
 
@@ -528,14 +539,14 @@ export function usePerformanceComparison() {
       trend: {
         avgRenderTimeChange: recentStats.avgRenderTime - olderStats.avgRenderTime,
         slowRendersChange: recentStats.slowRenders - olderStats.slowRenders,
-        improving: recentStats.avgRenderTime < olderStats.avgRenderTime
-      }
+        improving: recentStats.avgRenderTime < olderStats.avgRenderTime,
+      },
     };
   }, []);
 
   return {
     compareComponents,
-    compareTimePeriods
+    compareTimePeriods,
   };
 }
 
@@ -543,9 +554,4 @@ export function usePerformanceComparison() {
 // EXPORTS
 // =========================
 
-export type {
-  InteractionMetric,
-  MemoryMetric,
-  PerformanceBatch,
-  ComponentHealthScore
-};
+export type { InteractionMetric, MemoryMetric, PerformanceBatch, ComponentHealthScore };

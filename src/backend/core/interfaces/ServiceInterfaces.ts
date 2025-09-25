@@ -74,7 +74,7 @@ export interface IKnowledgeService extends IBaseService {
 
   // Batch operations for performance
   bulkCreate(entries: CreateKBEntry[]): Promise<OperationResult<string[]>>;
-  bulkUpdate(updates: Array<{id: string, data: UpdateKBEntry}>): Promise<OperationResult<void>>;
+  bulkUpdate(updates: Array<{ id: string; data: UpdateKBEntry }>): Promise<OperationResult<void>>;
   bulkDelete(ids: string[]): Promise<OperationResult<void>>;
 
   // Statistics and analytics
@@ -86,7 +86,10 @@ export interface IKnowledgeService extends IBaseService {
   // Category and tag operations
   getCategories(): Promise<OperationResult<CategoryInfo[]>>;
   getTags(limit?: number): Promise<OperationResult<TagInfo[]>>;
-  findByCategory(category: string, options?: SearchOptions): Promise<OperationResult<SearchResult[]>>;
+  findByCategory(
+    category: string,
+    options?: SearchOptions
+  ): Promise<OperationResult<SearchResult[]>>;
   findByTags(tags: string[], options?: SearchOptions): Promise<OperationResult<SearchResult[]>>;
 
   // Feedback and usage tracking
@@ -105,7 +108,7 @@ export interface ICacheService extends IBaseService {
 
   // Advanced caching features
   mget(keys: string[]): Promise<Array<any | null>>;
-  mset(items: Array<{key: string, value: any, ttl?: number}>): Promise<void>;
+  mset(items: Array<{ key: string; value: any; ttl?: number }>): Promise<void>;
   mdelete(keys: string[]): Promise<number>;
 
   // Pattern operations
@@ -142,7 +145,11 @@ export interface ISearchService extends IBaseService {
   rebuildIndex(): Promise<OperationResult<void>>;
 
   // Search analytics
-  recordSearch(query: string, results: SearchResult[], metadata?: any): Promise<OperationResult<void>>;
+  recordSearch(
+    query: string,
+    results: SearchResult[],
+    metadata?: any
+  ): Promise<OperationResult<void>>;
   getSearchAnalytics(): Promise<OperationResult<SearchAnalytics>>;
 }
 
@@ -218,14 +225,18 @@ export interface IRepository<T, CreateT = Omit<T, 'id'>, UpdateT = Partial<T>> {
   count(filters?: any): Promise<RepositoryResult<number>>;
 }
 
-export interface IKnowledgeBaseRepository extends IRepository<KBEntry, CreateKBEntry, UpdateKBEntry> {
+export interface IKnowledgeBaseRepository
+  extends IRepository<KBEntry, CreateKBEntry, UpdateKBEntry> {
   // Search operations
   search(query: SearchQuery): Promise<RepositoryResult<SearchResult[]>>;
   searchWithFacets(query: SearchQuery): Promise<RepositoryResult<SearchWithFacets>>;
   autocomplete(query: string, limit?: number): Promise<RepositoryResult<AutocompleteResult[]>>;
 
   // Category and tag operations
-  findByCategory(category: string, options?: SearchOptions): Promise<RepositoryResult<SearchResult[]>>;
+  findByCategory(
+    category: string,
+    options?: SearchOptions
+  ): Promise<RepositoryResult<SearchResult[]>>;
   findByTags(tags: string[], options?: SearchOptions): Promise<RepositoryResult<SearchResult[]>>;
   getAllCategories(): Promise<RepositoryResult<CategoryInfo[]>>;
   getAllTags(): Promise<RepositoryResult<TagInfo[]>>;
@@ -663,7 +674,18 @@ export interface LogQueryOptions {
 // Incident Types and Enums
 export type IncidentPriority = 'P1' | 'P2' | 'P3' | 'P4';
 export type IncidentStatus = 'Open' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed';
-export type IncidentCategory = 'System Outage' | 'Performance' | 'Database' | 'Application' | 'Security' | 'Network' | 'Hardware' | 'Capacity' | 'Data' | 'Configuration' | 'Other';
+export type IncidentCategory =
+  | 'System Outage'
+  | 'Performance'
+  | 'Database'
+  | 'Application'
+  | 'Security'
+  | 'Network'
+  | 'Hardware'
+  | 'Capacity'
+  | 'Data'
+  | 'Configuration'
+  | 'Other';
 export type IncidentImpact = 'Critical' | 'High' | 'Medium' | 'Low';
 
 // Core Incident Data Structures

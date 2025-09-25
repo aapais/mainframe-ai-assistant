@@ -115,10 +115,22 @@ export class CacheMaintenanceJobs {
     try {
       // Schedule all maintenance jobs
       this.scheduleJob('cleanup', this.config.schedule.cleanup, this.cleanupJob.bind(this));
-      this.scheduleJob('optimization', this.config.schedule.optimization, this.optimizationJob.bind(this));
+      this.scheduleJob(
+        'optimization',
+        this.config.schedule.optimization,
+        this.optimizationJob.bind(this)
+      );
       this.scheduleJob('warming', this.config.schedule.warming, this.warmingJob.bind(this));
-      this.scheduleJob('healthCheck', this.config.schedule.healthCheck, this.healthCheckJob.bind(this));
-      this.scheduleJob('metrics', this.config.schedule.metrics, this.metricsCollectionJob.bind(this));
+      this.scheduleJob(
+        'healthCheck',
+        this.config.schedule.healthCheck,
+        this.healthCheckJob.bind(this)
+      );
+      this.scheduleJob(
+        'metrics',
+        this.config.schedule.metrics,
+        this.metricsCollectionJob.bind(this)
+      );
 
       // Run initial health check
       setTimeout(() => this.healthCheckJob(), 5000);
@@ -174,7 +186,7 @@ export class CacheMaintenanceJobs {
    * Get historical metrics
    */
   getMetricsHistory(hours: number = 24): typeof this.metricsHistory {
-    const cutoff = new Date(Date.now() - (hours * 60 * 60 * 1000));
+    const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
     return this.metricsHistory.filter(entry => entry.timestamp > cutoff);
   }
 
@@ -239,7 +251,9 @@ export class CacheMaintenanceJobs {
       }
 
       // Clean up old metrics history
-      const cutoff = new Date(Date.now() - (this.config.retention.metricsHistory * 24 * 60 * 60 * 1000));
+      const cutoff = new Date(
+        Date.now() - this.config.retention.metricsHistory * 24 * 60 * 60 * 1000
+      );
       const originalLength = this.metricsHistory.length;
       this.metricsHistory = this.metricsHistory.filter(entry => entry.timestamp > cutoff);
       improvements.oldMetricsRemoved = originalLength - this.metricsHistory.length;
@@ -254,7 +268,7 @@ export class CacheMaintenanceJobs {
       processed += 1;
 
       // Clean up resolved alerts older than 24 hours
-      const alertCutoff = new Date(Date.now() - (24 * 60 * 60 * 1000));
+      const alertCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
       let removedAlerts = 0;
 
       for (const [key, alert] of this.activeAlerts) {
@@ -274,14 +288,13 @@ export class CacheMaintenanceJobs {
         duration: endTime.getTime() - startTime.getTime(),
         status: errors > 0 ? 'partial' : 'success',
         details: { processed, skipped: 0, errors, improvements },
-        nextRun: this.calculateNextRun('cleanup')
+        nextRun: this.calculateNextRun('cleanup'),
       };
 
       this.recordJobResult(result);
 
       console.log(`✅ Cleanup job completed: ${processed} tasks, ${errors} errors`);
       return result;
-
     } catch (error) {
       const endTime = new Date();
       const result: JobResult = {
@@ -290,7 +303,7 @@ export class CacheMaintenanceJobs {
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
         status: 'failed',
-        details: { processed, skipped: 0, errors: errors + 1, improvements }
+        details: { processed, skipped: 0, errors: errors + 1, improvements },
       };
 
       this.recordJobResult(result);
@@ -328,7 +341,8 @@ export class CacheMaintenanceJobs {
           hitRate: metricsBefore.hitRates.overall,
           avgResponseTime: metricsBefore.performance.avgResponseTime,
           throughput: metricsBefore.performance.throughput,
-          errorRate: metricsBefore.operations.errors / Math.max(metricsBefore.operations.totalQueries, 1)
+          errorRate:
+            metricsBefore.operations.errors / Math.max(metricsBefore.operations.totalQueries, 1),
         });
 
         improvements.entriesWarmed = warmingResult.reduce((sum, r) => sum + r.warmed, 0);
@@ -349,8 +363,10 @@ export class CacheMaintenanceJobs {
       }
 
       const metricsAfter = this.cachedSearchService.getMetrics();
-      improvements.hitRateImprovement = metricsAfter.hitRates.overall - metricsBefore.hitRates.overall;
-      improvements.responseTimeImprovement = metricsBefore.performance.avgResponseTime - metricsAfter.performance.avgResponseTime;
+      improvements.hitRateImprovement =
+        metricsAfter.hitRates.overall - metricsBefore.hitRates.overall;
+      improvements.responseTimeImprovement =
+        metricsBefore.performance.avgResponseTime - metricsAfter.performance.avgResponseTime;
 
       const endTime = new Date();
       const result: JobResult = {
@@ -361,14 +377,15 @@ export class CacheMaintenanceJobs {
         status: 'success',
         details: { processed, skipped: 0, errors, improvements },
         nextRun: this.calculateNextRun('optimization'),
-        recommendations: optimization.changes
+        recommendations: optimization.changes,
       };
 
       this.recordJobResult(result);
 
-      console.log(`✅ Optimization job completed: ${optimization.changes.length} optimizations applied`);
+      console.log(
+        `✅ Optimization job completed: ${optimization.changes.length} optimizations applied`
+      );
       return result;
-
     } catch (error) {
       const endTime = new Date();
       const result: JobResult = {
@@ -377,7 +394,7 @@ export class CacheMaintenanceJobs {
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
         status: 'failed',
-        details: { processed, skipped: 0, errors: errors + 1, improvements }
+        details: { processed, skipped: 0, errors: errors + 1, improvements },
       };
 
       this.recordJobResult(result);
@@ -427,14 +444,13 @@ export class CacheMaintenanceJobs {
         duration: endTime.getTime() - startTime.getTime(),
         status: errors > 0 ? 'partial' : 'success',
         details: { processed, skipped: 0, errors, improvements },
-        nextRun: this.calculateNextRun('warming')
+        nextRun: this.calculateNextRun('warming'),
       };
 
       this.recordJobResult(result);
 
       console.log(`✅ Warming job completed: ${warmingResult.warmed} entries warmed`);
       return result;
-
     } catch (error) {
       const endTime = new Date();
       const result: JobResult = {
@@ -443,7 +459,7 @@ export class CacheMaintenanceJobs {
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
         status: 'failed',
-        details: { processed, skipped: 0, errors: errors + 1, improvements }
+        details: { processed, skipped: 0, errors: errors + 1, improvements },
       };
 
       this.recordJobResult(result);
@@ -503,14 +519,15 @@ export class CacheMaintenanceJobs {
         status: health.status === 'critical' ? 'partial' : 'success',
         details: { processed, skipped: 0, errors, improvements },
         nextRun: this.calculateNextRun('healthCheck'),
-        recommendations: health.recommendations
+        recommendations: health.recommendations,
       };
 
       this.recordJobResult(result);
 
-      console.log(`✅ Health check completed: ${health.status} status, ${newAlerts.length} new alerts`);
+      console.log(
+        `✅ Health check completed: ${health.status} status, ${newAlerts.length} new alerts`
+      );
       return result;
-
     } catch (error) {
       const endTime = new Date();
       const result: JobResult = {
@@ -519,7 +536,7 @@ export class CacheMaintenanceJobs {
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
         status: 'failed',
-        details: { processed, skipped: 0, errors: errors + 1, improvements }
+        details: { processed, skipped: 0, errors: errors + 1, improvements },
       };
 
       this.recordJobResult(result);
@@ -552,14 +569,16 @@ export class CacheMaintenanceJobs {
         responseTime: searchMetrics.performance.avgResponseTime,
         memoryUsage: searchMetrics.storage.totalSize + httpMetrics.storage.totalSize,
         throughput: searchMetrics.performance.throughput,
-        errors: searchMetrics.operations.errors
+        errors: searchMetrics.operations.errors,
       };
 
       this.metricsHistory.push(metricsEntry);
       processed += 1;
 
       // Trim metrics history to configured retention period
-      const cutoff = new Date(Date.now() - (this.config.retention.metricsHistory * 24 * 60 * 60 * 1000));
+      const cutoff = new Date(
+        Date.now() - this.config.retention.metricsHistory * 24 * 60 * 60 * 1000
+      );
       const originalLength = this.metricsHistory.length;
       this.metricsHistory = this.metricsHistory.filter(entry => entry.timestamp > cutoff);
       improvements.metricsRetained = this.metricsHistory.length;
@@ -574,12 +593,11 @@ export class CacheMaintenanceJobs {
         duration: endTime.getTime() - startTime.getTime(),
         status: 'success',
         details: { processed, skipped: 0, errors, improvements },
-        nextRun: this.calculateNextRun('metrics')
+        nextRun: this.calculateNextRun('metrics'),
       };
 
       this.recordJobResult(result);
       return result;
-
     } catch (error) {
       const endTime = new Date();
       const result: JobResult = {
@@ -588,7 +606,7 @@ export class CacheMaintenanceJobs {
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
         status: 'failed',
-        details: { processed, skipped: 0, errors: errors + 1, improvements }
+        details: { processed, skipped: 0, errors: errors + 1, improvements },
       };
 
       this.recordJobResult(result);
@@ -610,29 +628,33 @@ export class CacheMaintenanceJobs {
         optimization: '0 0 */12 * * *', // Every 12 hours
         warming: '0 */15 * * * *', // Every 15 minutes
         healthCheck: '0 */5 * * * *', // Every 5 minutes
-        metrics: '0 * * * * *' // Every minute
+        metrics: '0 * * * * *', // Every minute
       },
       thresholds: {
         memoryUsage: 0.8, // 80%
         hitRate: 0.7, // 70%
         responseTime: 1000, // 1 second
-        errorRate: 0.05 // 5%
+        errorRate: 0.05, // 5%
       },
       alerts: {
         enabled: true,
         recipients: [],
-        channels: ['webhook']
+        channels: ['webhook'],
       },
       retention: {
         metricsHistory: 7, // 7 days
         performanceLogs: 3,
-        errorLogs: 7
+        errorLogs: 7,
       },
-      ...config
+      ...config,
     };
   }
 
-  private scheduleJob(jobName: string, schedule: string, jobFunction: () => Promise<JobResult>): void {
+  private scheduleJob(
+    jobName: string,
+    schedule: string,
+    jobFunction: () => Promise<JobResult>
+  ): void {
     // Convert cron-like schedule to interval (simplified implementation)
     const interval = this.cronToInterval(schedule);
 
@@ -676,8 +698,7 @@ export class CacheMaintenanceJobs {
     }
 
     // Log job completion
-    const status = result.status === 'success' ? '✅' :
-                  result.status === 'partial' ? '⚠️' : '❌';
+    const status = result.status === 'success' ? '✅' : result.status === 'partial' ? '⚠️' : '❌';
     console.log(`${status} Job ${result.jobName} completed in ${result.duration}ms`);
   }
 
@@ -719,7 +740,9 @@ export class CacheMaintenanceJobs {
       .map(([word]) => word);
 
     if (commonWords.length > 0) {
-      optimizations.push(`Consider pre-warming queries with common terms: ${commonWords.join(', ')}`);
+      optimizations.push(
+        `Consider pre-warming queries with common terms: ${commonWords.join(', ')}`
+      );
     }
 
     return optimizations;
@@ -752,7 +775,7 @@ export class CacheMaintenanceJobs {
           metric: 'hitRate',
           currentValue: searchMetrics.hitRates.overall,
           threshold: this.config.thresholds.hitRate,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         this.activeAlerts.set(alertKey, alert);
@@ -765,12 +788,15 @@ export class CacheMaintenanceJobs {
       const alertKey = 'high-response-time';
       if (!this.activeAlerts.has(alertKey)) {
         const alert: MaintenanceAlert = {
-          severity: searchMetrics.performance.avgResponseTime > this.config.thresholds.responseTime * 2 ? 'error' : 'warning',
+          severity:
+            searchMetrics.performance.avgResponseTime > this.config.thresholds.responseTime * 2
+              ? 'error'
+              : 'warning',
           message: 'Average response time above threshold',
           metric: 'responseTime',
           currentValue: searchMetrics.performance.avgResponseTime,
           threshold: this.config.thresholds.responseTime,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         this.activeAlerts.set(alertKey, alert);
@@ -788,7 +814,7 @@ export class CacheMaintenanceJobs {
           metric: 'memoryUsage',
           currentValue: searchMetrics.storage.memoryPressure,
           threshold: this.config.thresholds.memoryUsage,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         this.activeAlerts.set(alertKey, alert);
@@ -797,7 +823,8 @@ export class CacheMaintenanceJobs {
     }
 
     // Check error rate threshold
-    const errorRate = searchMetrics.operations.errors / Math.max(searchMetrics.operations.totalQueries, 1);
+    const errorRate =
+      searchMetrics.operations.errors / Math.max(searchMetrics.operations.totalQueries, 1);
     if (errorRate > this.config.thresholds.errorRate) {
       const alertKey = 'high-error-rate';
       if (!this.activeAlerts.has(alertKey)) {
@@ -807,7 +834,7 @@ export class CacheMaintenanceJobs {
           metric: 'errorRate',
           currentValue: errorRate,
           threshold: this.config.thresholds.errorRate,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         this.activeAlerts.set(alertKey, alert);
@@ -832,13 +859,16 @@ export class CacheMaintenanceJobs {
           shouldResolve = searchMetrics.hitRates.overall >= this.config.thresholds.hitRate;
           break;
         case 'responseTime':
-          shouldResolve = searchMetrics.performance.avgResponseTime <= this.config.thresholds.responseTime;
+          shouldResolve =
+            searchMetrics.performance.avgResponseTime <= this.config.thresholds.responseTime;
           break;
         case 'memoryUsage':
-          shouldResolve = searchMetrics.storage.memoryPressure <= this.config.thresholds.memoryUsage;
+          shouldResolve =
+            searchMetrics.storage.memoryPressure <= this.config.thresholds.memoryUsage;
           break;
         case 'errorRate':
-          const errorRate = searchMetrics.operations.errors / Math.max(searchMetrics.operations.totalQueries, 1);
+          const errorRate =
+            searchMetrics.operations.errors / Math.max(searchMetrics.operations.totalQueries, 1);
           shouldResolve = errorRate <= this.config.thresholds.errorRate;
           break;
       }

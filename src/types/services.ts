@@ -15,7 +15,7 @@ import type {
   KnowledgeBaseEntry,
   IncidentEntry,
   isIncident,
-  isKnowledge
+  isKnowledge,
 } from './unified';
 
 // ========================
@@ -492,13 +492,13 @@ export interface UsageActivity {
   metadata?: any;
 }
 
-export type UsageAction = 
-  | 'view' 
-  | 'search' 
-  | 'rate_success' 
-  | 'rate_failure' 
-  | 'create' 
-  | 'update' 
+export type UsageAction =
+  | 'view'
+  | 'search'
+  | 'rate_success'
+  | 'rate_failure'
+  | 'create'
+  | 'update'
   | 'delete'
   | 'export'
   | 'share';
@@ -586,41 +586,61 @@ export class ServiceError extends Error {
       statusCode: this.statusCode,
       details: this.details,
       recoverable: this.recoverable,
-      stack: this.stack
+      stack: this.stack,
     };
   }
 }
 
 export class ValidationError extends ServiceError {
-  constructor(message: string, public field: string, public value?: any) {
+  constructor(
+    message: string,
+    public field: string,
+    public value?: any
+  ) {
     super(message, 'VALIDATION_ERROR', 400, { field, value }, true);
     this.name = 'ValidationError';
   }
 }
 
 export class DatabaseError extends ServiceError {
-  constructor(message: string, public operation: string, public details?: any) {
+  constructor(
+    message: string,
+    public operation: string,
+    public details?: any
+  ) {
     super(message, 'DATABASE_ERROR', 500, { operation, ...details }, false);
     this.name = 'DatabaseError';
   }
 }
 
 export class SearchError extends ServiceError {
-  constructor(message: string, public query: string, public details?: any) {
+  constructor(
+    message: string,
+    public query: string,
+    public details?: any
+  ) {
     super(message, 'SEARCH_ERROR', 500, { query, ...details }, true);
     this.name = 'SearchError';
   }
 }
 
 export class CacheError extends ServiceError {
-  constructor(message: string, public operation: string, public details?: any) {
+  constructor(
+    message: string,
+    public operation: string,
+    public details?: any
+  ) {
     super(message, 'CACHE_ERROR', 500, { operation, ...details }, true);
     this.name = 'CacheError';
   }
 }
 
 export class AIServiceError extends ServiceError {
-  constructor(message: string, public provider: string, public details?: any) {
+  constructor(
+    message: string,
+    public provider: string,
+    public details?: any
+  ) {
     super(message, 'AI_SERVICE_ERROR', 503, { provider, ...details }, true);
     this.name = 'AIServiceError';
   }
@@ -636,7 +656,9 @@ export interface ServiceEvents {
   'entry:updated': (entry: KBEntry, changes: KBEntryUpdate) => void;
   'entry:deleted': (entryId: string) => void;
   'entries:batch-created': (entries: KBEntry[]) => void;
-  'entries:batch-updated': (updates: Array<{ id: string; entry: KBEntry; changes: KBEntryUpdate }>) => void;
+  'entries:batch-updated': (
+    updates: Array<{ id: string; entry: KBEntry; changes: KBEntryUpdate }>
+  ) => void;
   'entries:batch-deleted': (entryIds: string[]) => void;
 
   // Search events
@@ -755,45 +777,45 @@ export const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
       cache_size: -64000,
       foreign_keys: 'ON',
       temp_store: 'MEMORY',
-      mmap_size: 268435456 // 256MB
+      mmap_size: 268435456, // 256MB
     },
     backup: {
       enabled: true,
       interval: 3600000, // 1 hour
       retention: 7, // 7 backups
-      path: './backups'
+      path: './backups',
     },
     performance: {
       connectionPool: 5,
       busyTimeout: 10000,
-      cacheSize: 64000
-    }
+      cacheSize: 64000,
+    },
   },
   search: {
     fts: {
       tokenize: 'porter',
       remove_diacritics: 1,
-      categories: 'simple'
+      categories: 'simple',
     },
     ai: {
       enabled: true,
       fallback: true,
       timeout: 5000,
       retries: 2,
-      batchSize: 10
+      batchSize: 10,
     },
     cache: {
       enabled: true,
       ttl: 300000, // 5 minutes
-      maxSize: 1000
-    }
+      maxSize: 1000,
+    },
   },
   cache: {
     maxSize: 10000,
     ttl: 300000, // 5 minutes
     checkPeriod: 600000, // 10 minutes
     strategy: 'lru',
-    persistent: false
+    persistent: false,
   },
   metrics: {
     enabled: true,
@@ -801,16 +823,16 @@ export const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
     aggregation: {
       enabled: true,
       interval: 3600000, // 1 hour
-      batch: 1000
+      batch: 1000,
     },
     alerts: {
       enabled: true,
       thresholds: {
         searchTime: 1000,
         errorRate: 0.05,
-        cacheHitRate: 0.8
-      }
-    }
+        cacheHitRate: 0.8,
+      },
+    },
   },
   validation: {
     strict: false,
@@ -819,17 +841,17 @@ export const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
       title: 200,
       problem: 5000,
       solution: 10000,
-      tags: 50
+      tags: 50,
     },
     minLength: {
       title: 5,
       problem: 10,
-      solution: 10
+      solution: 10,
     },
     patterns: {
       tag: /^[a-zA-Z0-9-_]+$/,
-      category: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'IMS', 'CICS', 'System', 'Other']
-    }
+      category: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'IMS', 'CICS', 'System', 'Other'],
+    },
   },
   logging: {
     level: 'info',
@@ -837,11 +859,11 @@ export const DEFAULT_SERVICE_CONFIG: ServiceConfig = {
       enabled: true,
       path: './logs',
       maxSize: 10485760, // 10MB
-      maxFiles: 5
+      maxFiles: 5,
     },
     console: true,
-    structured: true
-  }
+    structured: true,
+  },
 };
 
 // ========================
@@ -852,11 +874,29 @@ export type ExportFormat = 'json' | 'csv' | 'xml' | 'parquet' | 'avro' | 'orc';
 export type ImportFormat = ExportFormat;
 
 export interface IExportService {
-  export(format: ExportFormat, outputPath: string, options?: ExportOptions, progressCallback?: ProgressCallback): Promise<ExportResult>;
-  exportStream(format: ExportFormat, options?: ExportOptions & ExportStreamOptions): Promise<Readable>;
-  exportBatch(jobs: Array<{format: ExportFormat; outputPath: string; options?: ExportOptions}>): Promise<ExportResult[]>;
-  exportForSystem(targetSystem: string, outputPath: string, options?: ExportOptions): Promise<ExportResult>;
-  exportCompatible(targetVersion: string, outputPath: string, options?: ExportOptions): Promise<ExportResult>;
+  export(
+    format: ExportFormat,
+    outputPath: string,
+    options?: ExportOptions,
+    progressCallback?: ProgressCallback
+  ): Promise<ExportResult>;
+  exportStream(
+    format: ExportFormat,
+    options?: ExportOptions & ExportStreamOptions
+  ): Promise<Readable>;
+  exportBatch(
+    jobs: Array<{ format: ExportFormat; outputPath: string; options?: ExportOptions }>
+  ): Promise<ExportResult[]>;
+  exportForSystem(
+    targetSystem: string,
+    outputPath: string,
+    options?: ExportOptions
+  ): Promise<ExportResult>;
+  exportCompatible(
+    targetVersion: string,
+    outputPath: string,
+    options?: ExportOptions
+  ): Promise<ExportResult>;
   getJobStatus(jobId: string): ExportJob | null;
   cancelJob(jobId: string): Promise<boolean>;
   getSupportedFormats(): ExportFormat[];
@@ -864,11 +904,33 @@ export interface IExportService {
 }
 
 export interface IImportService {
-  import(filePath: string, format: ImportFormat, options?: ImportOptions, progressCallback?: ProgressCallback): Promise<ImportResult>;
-  importStream(stream: Readable, format: ImportFormat, options?: ImportOptions, progressCallback?: ProgressCallback): Promise<ImportResult>;
-  validateImport(filePath: string, format: ImportFormat, options?: ImportValidationOptions): Promise<ValidationResult>;
-  importFromSystem(filePath: string, sourceSystem: string, options?: ImportOptions): Promise<ImportResult>;
-  importCompatible(filePath: string, sourceVersion: string, options?: ImportOptions): Promise<ImportResult>;
+  import(
+    filePath: string,
+    format: ImportFormat,
+    options?: ImportOptions,
+    progressCallback?: ProgressCallback
+  ): Promise<ImportResult>;
+  importStream(
+    stream: Readable,
+    format: ImportFormat,
+    options?: ImportOptions,
+    progressCallback?: ProgressCallback
+  ): Promise<ImportResult>;
+  validateImport(
+    filePath: string,
+    format: ImportFormat,
+    options?: ImportValidationOptions
+  ): Promise<ValidationResult>;
+  importFromSystem(
+    filePath: string,
+    sourceSystem: string,
+    options?: ImportOptions
+  ): Promise<ImportResult>;
+  importCompatible(
+    filePath: string,
+    sourceVersion: string,
+    options?: ImportOptions
+  ): Promise<ImportResult>;
   resumeImport(jobId: string): Promise<ImportResult>;
   getJobStatus(jobId: string): ImportJob | null;
   cancelJob(jobId: string): Promise<boolean>;
@@ -1044,11 +1106,20 @@ export interface IUnifiedStorageService {
  */
 export interface ILegacyKBStorageService {
   // Legacy KB operations mapped to unified storage
-  addEntry(entry: Omit<KnowledgeBaseEntry, 'id' | 'entry_type' | 'created_at' | 'updated_at' | 'version'>): Promise<string>;
-  getEntries(query?: { category?: string; tags?: string[]; limit?: number }): Promise<KnowledgeBaseEntry[]>;
+  addEntry(
+    entry: Omit<KnowledgeBaseEntry, 'id' | 'entry_type' | 'created_at' | 'updated_at' | 'version'>
+  ): Promise<string>;
+  getEntries(query?: {
+    category?: string;
+    tags?: string[];
+    limit?: number;
+  }): Promise<KnowledgeBaseEntry[]>;
   updateEntry(id: string, updates: Partial<KnowledgeBaseEntry>): Promise<void>;
   deleteEntry(id: string): Promise<void>;
-  searchEntries(query: string, useAI?: boolean): Promise<Array<{ entry: KnowledgeBaseEntry; score: number }>>;
+  searchEntries(
+    query: string,
+    useAI?: boolean
+  ): Promise<Array<{ entry: KnowledgeBaseEntry; score: number }>>;
 }
 
 /**
@@ -1077,7 +1148,11 @@ export interface IUnifiedSearchService {
   getRelatedEntries(entryId: string, limit?: number): Promise<UnifiedEntry[]>;
 
   // Search analytics
-  recordSearch(query: string, results: UnifiedSearchResult[], userSelection?: string): Promise<void>;
+  recordSearch(
+    query: string,
+    results: UnifiedSearchResult[],
+    userSelection?: string
+  ): Promise<void>;
   getSearchAnalytics(): Promise<SearchAnalytics>;
 }
 
@@ -1086,8 +1161,14 @@ export interface IUnifiedSearchService {
  */
 export interface IIncidentService {
   // Incident lifecycle
-  createIncident(input: Omit<IncidentEntry, 'id' | 'entry_type' | 'created_at' | 'updated_at' | 'version'>): Promise<string>;
-  updateIncidentStatus(id: string, status: IncidentEntry['status'], comment?: string): Promise<void>;
+  createIncident(
+    input: Omit<IncidentEntry, 'id' | 'entry_type' | 'created_at' | 'updated_at' | 'version'>
+  ): Promise<string>;
+  updateIncidentStatus(
+    id: string,
+    status: IncidentEntry['status'],
+    comment?: string
+  ): Promise<void>;
   assignIncident(id: string, assigneeId: string): Promise<void>;
   resolveIncident(id: string, solution: string, resolutionType?: string): Promise<void>;
   closeIncident(id: string): Promise<void>;
@@ -1104,13 +1185,18 @@ export interface IIncidentService {
   getTeamPerformance(teamId?: string, timeframe?: string): Promise<TeamPerformanceReport>;
 
   // Knowledge base integration
-  suggestKBEntries(incidentId: string): Promise<Array<{ kb_entry: KnowledgeBaseEntry; relevance: number }>>;
+  suggestKBEntries(
+    incidentId: string
+  ): Promise<Array<{ kb_entry: KnowledgeBaseEntry; relevance: number }>>;
   createKBFromIncident(incidentId: string, metadata?: any): Promise<string>;
 
   // Bulk operations
   bulkAssign(incidentIds: string[], assigneeId: string): Promise<void>;
   bulkUpdateStatus(incidentIds: string[], status: IncidentEntry['status']): Promise<void>;
-  bulkEscalate(incidentIds: string[], escalationLevel: IncidentEntry['escalation_level']): Promise<void>;
+  bulkEscalate(
+    incidentIds: string[],
+    escalationLevel: IncidentEntry['escalation_level']
+  ): Promise<void>;
 }
 
 // ===========================
@@ -1234,8 +1320,14 @@ export type UnifiedEntryEvent =
   | { type: 'ENTRY_CREATED'; payload: { entry: UnifiedEntry } }
   | { type: 'ENTRY_UPDATED'; payload: { id: string; before: UnifiedEntry; after: UnifiedEntry } }
   | { type: 'ENTRY_DELETED'; payload: { id: string; entry: UnifiedEntry } }
-  | { type: 'SEARCH_PERFORMED'; payload: { query: UnifiedSearchQuery; results: UnifiedSearchResult[] } }
-  | { type: 'INCIDENT_STATUS_CHANGED'; payload: { incident: IncidentEntry; from_status: string; to_status: string } }
+  | {
+      type: 'SEARCH_PERFORMED';
+      payload: { query: UnifiedSearchQuery; results: UnifiedSearchResult[] };
+    }
+  | {
+      type: 'INCIDENT_STATUS_CHANGED';
+      payload: { incident: IncidentEntry; from_status: string; to_status: string };
+    }
   | { type: 'KB_SUGGESTION_APPLIED'; payload: { incident_id: string; kb_entry_id: string } };
 
 /**
@@ -1250,6 +1342,9 @@ export interface IEventHandler<T = any> {
  */
 export interface IEventBus {
   emit(event: UnifiedEntryEvent): void;
-  subscribe<T extends UnifiedEntryEvent>(eventType: T['type'], handler: IEventHandler<T>): () => void;
+  subscribe<T extends UnifiedEntryEvent>(
+    eventType: T['type'],
+    handler: IEventHandler<T>
+  ): () => void;
   unsubscribe(eventType: string, handler: IEventHandler): void;
 }

@@ -85,7 +85,7 @@ export class ValidationService {
       invalidRecords: 0,
       duplicateRecords: 0,
       missingFields: {},
-      invalidFieldValues: {}
+      invalidFieldValues: {},
     };
 
     const errors: string[] = [];
@@ -125,12 +125,12 @@ export class ValidationService {
       for (let i = 0; i < data.length; i++) {
         const record = data[i];
         const recordValidation = await this.validateRecord(record, i, options);
-        
+
         if (recordValidation.valid) {
           stats.validRecords++;
         } else {
           stats.invalidRecords++;
-          
+
           recordValidation.issues.forEach(issue => {
             if (issue.level === 'error') {
               errors.push(`Record ${i + 1}: ${issue.message}`);
@@ -143,7 +143,8 @@ export class ValidationService {
               if (issue.level === 'error' && issue.message.includes('missing')) {
                 stats.missingFields[issue.field] = (stats.missingFields[issue.field] || 0) + 1;
               } else if (issue.level === 'error') {
-                stats.invalidFieldValues[issue.field] = (stats.invalidFieldValues[issue.field] || 0) + 1;
+                stats.invalidFieldValues[issue.field] =
+                  (stats.invalidFieldValues[issue.field] || 0) + 1;
               }
             }
           });
@@ -157,15 +158,14 @@ export class ValidationService {
         valid: errors.length === 0 || (options.allowPartialImport && stats.validRecords > 0),
         errors,
         warnings,
-        stats
+        stats,
       };
-
     } catch (error) {
       return {
         valid: false,
         errors: [`Validation process failed: ${error.message}`],
         warnings: [],
-        stats
+        stats,
       };
     }
   }
@@ -193,7 +193,7 @@ export class ValidationService {
             field,
             message: `Required field '${field}' is missing or empty`,
             recordIndex: index,
-            suggestion: `Provide a value for ${field}`
+            suggestion: `Provide a value for ${field}`,
           });
         }
       });
@@ -208,7 +208,7 @@ export class ValidationService {
             message: titleValidation.message || 'Invalid title format',
             recordIndex: index,
             value: record.title,
-            suggestion: titleValidation.suggestion
+            suggestion: titleValidation.suggestion,
           });
         }
       }
@@ -222,7 +222,7 @@ export class ValidationService {
             message: categoryValidation.message || 'Invalid category',
             recordIndex: index,
             value: record.category,
-            suggestion: categoryValidation.suggestion
+            suggestion: categoryValidation.suggestion,
           });
         }
       }
@@ -236,7 +236,7 @@ export class ValidationService {
             message: tagsValidation.message || 'Invalid tags format',
             recordIndex: index,
             value: record.tags,
-            suggestion: tagsValidation.suggestion
+            suggestion: tagsValidation.suggestion,
           });
         }
       }
@@ -249,7 +249,7 @@ export class ValidationService {
           message: 'Invalid date format',
           recordIndex: index,
           value: record.created_at,
-          suggestion: 'Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)'
+          suggestion: 'Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)',
         });
       }
 
@@ -261,20 +261,19 @@ export class ValidationService {
 
       return {
         valid: issues.filter(i => i.level === 'error').length === 0,
-        issues
+        issues,
       };
-
     } catch (error) {
       issues.push({
         level: 'error',
         field: 'general',
         message: `Record validation failed: ${error.message}`,
-        recordIndex: index
+        recordIndex: index,
       });
 
       return {
         valid: false,
-        issues
+        issues,
       };
     }
   }
@@ -289,22 +288,19 @@ export class ValidationService {
   ): Promise<ValidationResult> {
     try {
       const batchValidation = await this.validateImportData(batch, options);
-      
+
       // Adjust error messages to include batch context
-      const adjustedErrors = batchValidation.errors.map(error => 
-        `Batch ${batchIndex}: ${error}`
-      );
-      
-      const adjustedWarnings = batchValidation.warnings.map(warning => 
-        `Batch ${batchIndex}: ${warning}`
+      const adjustedErrors = batchValidation.errors.map(error => `Batch ${batchIndex}: ${error}`);
+
+      const adjustedWarnings = batchValidation.warnings.map(
+        warning => `Batch ${batchIndex}: ${warning}`
       );
 
       return {
         ...batchValidation,
         errors: adjustedErrors,
-        warnings: adjustedWarnings
+        warnings: adjustedWarnings,
       };
-
     } catch (error) {
       return {
         valid: false,
@@ -316,8 +312,8 @@ export class ValidationService {
           invalidRecords: batch.length,
           duplicateRecords: 0,
           missingFields: {},
-          invalidFieldValues: {}
-        }
+          invalidFieldValues: {},
+        },
       };
     }
   }
@@ -332,7 +328,7 @@ export class ValidationService {
       consistency: 0,
       uniqueness: 0,
       timeliness: 0,
-      validity: 0
+      validity: 0,
     };
 
     if (data.length === 0) {
@@ -386,8 +382,8 @@ export class ValidationService {
 
       // Timeliness: % of records with recent timestamps
       const now = new Date();
-      const sixMonthsAgo = new Date(now.getTime() - (6 * 30 * 24 * 60 * 60 * 1000));
-      
+      const sixMonthsAgo = new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000);
+
       let recentRecords = 0;
       let recordsWithDates = 0;
 
@@ -418,7 +414,6 @@ export class ValidationService {
       metrics.consistency = (metrics.completeness + metrics.accuracy + metrics.uniqueness) / 3;
 
       return metrics;
-
     } catch (error) {
       console.error('Error calculating data quality metrics:', error);
       return metrics;
@@ -428,11 +423,7 @@ export class ValidationService {
   /**
    * Get validation rule suggestions for failed validations
    */
-  getValidationSuggestions(
-    field: string,
-    value: any,
-    validationError: string
-  ): string[] {
+  getValidationSuggestions(field: string, value: any, validationError: string): string[] {
     const suggestions: string[] = [];
 
     switch (field) {
@@ -481,7 +472,7 @@ export class ValidationService {
       tags: z.array(z.string()).optional(),
       created_by: z.string().optional(),
       created_at: z.date().optional(),
-      updated_at: z.date().optional()
+      updated_at: z.date().optional(),
     });
   }
 
@@ -493,9 +484,9 @@ export class ValidationService {
       description: 'Validates title format and length',
       field: 'title',
       type: 'format',
-      validator: (value) => this.validateTitle(value),
+      validator: value => this.validateTitle(value),
       severity: 'error',
-      category: 'format'
+      category: 'format',
     });
 
     // Category validation rule
@@ -505,9 +496,9 @@ export class ValidationService {
       description: 'Ensures category is from allowed list',
       field: 'category',
       type: 'format',
-      validator: (value) => this.validateCategory(value),
+      validator: value => this.validateCategory(value),
       severity: 'error',
-      category: 'business'
+      category: 'business',
     });
   }
 
@@ -528,9 +519,9 @@ export class ValidationService {
 
           const problemWords = record.problem.toLowerCase().split(/\s+/);
           const solutionWords = value.toLowerCase().split(/\s+/);
-          
-          const commonWords = problemWords.filter(word => 
-            word.length > 3 && solutionWords.includes(word)
+
+          const commonWords = problemWords.filter(
+            word => word.length > 3 && solutionWords.includes(word)
           );
 
           const overlap = commonWords.length / Math.min(problemWords.length, solutionWords.length);
@@ -539,15 +530,15 @@ export class ValidationService {
             return {
               valid: false,
               message: 'Problem and solution appear unrelated',
-              suggestion: 'Ensure solution addresses the specific problem described'
+              suggestion: 'Ensure solution addresses the specific problem described',
             };
           }
 
           return { valid: true };
         },
         severity: 'warning',
-        category: 'business'
-      }
+        category: 'business',
+      },
     ]);
   }
 
@@ -586,18 +577,18 @@ export class ValidationService {
 
     for (let i = 0; i < data.length; i++) {
       const record = data[i];
-      
+
       for (const rule of rules) {
         try {
           const result = rule.validator(record[rule.field], record);
-          
+
           if (!result.valid) {
             issues.push({
               level: rule.severity,
               field: rule.field,
               message: result.message || `Business rule '${rule.name}' failed`,
               recordIndex: i,
-              suggestion: result.suggestion
+              suggestion: result.suggestion,
             });
           }
         } catch (error) {
@@ -605,7 +596,7 @@ export class ValidationService {
             level: 'error',
             field: rule.field,
             message: `Business rule validation error: ${error.message}`,
-            recordIndex: i
+            recordIndex: i,
           });
         }
       }
@@ -631,13 +622,16 @@ export class ValidationService {
       }
 
       if (metrics.uniqueness < 95) {
-        warnings.push(`Potential duplicate records detected: ${(100 - metrics.uniqueness).toFixed(1)}% duplication rate`);
+        warnings.push(
+          `Potential duplicate records detected: ${(100 - metrics.uniqueness).toFixed(1)}% duplication rate`
+        );
       }
 
       if (metrics.validity < 70) {
-        warnings.push(`Many records fail validation: ${(100 - metrics.validity).toFixed(1)}% invalid`);
+        warnings.push(
+          `Many records fail validation: ${(100 - metrics.validity).toFixed(1)}% invalid`
+        );
       }
-
     } catch (error) {
       warnings.push(`Data quality check failed: ${error.message}`);
     }
@@ -655,7 +649,7 @@ export class ValidationService {
         field: 'title',
         message: 'Title is very long',
         recordIndex: index,
-        suggestion: 'Consider shortening to under 200 characters'
+        suggestion: 'Consider shortening to under 200 characters',
       });
     }
 
@@ -665,7 +659,7 @@ export class ValidationService {
         field: 'problem',
         message: 'Problem description is very short',
         recordIndex: index,
-        suggestion: 'Provide more detailed problem description'
+        suggestion: 'Provide more detailed problem description',
       });
     }
 
@@ -675,7 +669,7 @@ export class ValidationService {
         field: 'solution',
         message: 'Solution description is very short',
         recordIndex: index,
-        suggestion: 'Provide more detailed solution steps'
+        suggestion: 'Provide more detailed solution steps',
       });
     }
 
@@ -686,7 +680,7 @@ export class ValidationService {
         field: 'title',
         message: 'Title starts with non-alphabetic character',
         recordIndex: index,
-        suggestion: 'Consider starting with a descriptive word'
+        suggestion: 'Consider starting with a descriptive word',
       });
     }
 
@@ -698,17 +692,17 @@ export class ValidationService {
       return {
         valid: false,
         message: 'Title must be a non-empty string',
-        suggestion: 'Provide a descriptive title'
+        suggestion: 'Provide a descriptive title',
       };
     }
 
     const title = value.trim();
-    
+
     if (title.length < 5) {
       return {
         valid: false,
         message: 'Title too short (minimum 5 characters)',
-        suggestion: 'Provide a more descriptive title'
+        suggestion: 'Provide a more descriptive title',
       };
     }
 
@@ -717,7 +711,7 @@ export class ValidationService {
         valid: false,
         message: 'Title too long (maximum 200 characters)',
         suggestion: 'Shorten the title',
-        correctedValue: title.substring(0, 197) + '...'
+        correctedValue: title.substring(0, 197) + '...',
       };
     }
 
@@ -726,12 +720,12 @@ export class ValidationService {
 
   private validateCategory(value: any): ValidationRuleResult {
     const validCategories = ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'];
-    
+
     if (!value || typeof value !== 'string') {
       return {
         valid: false,
         message: 'Category must be a string',
-        suggestion: `Use one of: ${validCategories.join(', ')}`
+        suggestion: `Use one of: ${validCategories.join(', ')}`,
       };
     }
 
@@ -741,8 +735,10 @@ export class ValidationService {
       return {
         valid: false,
         message: `Invalid category: ${value}`,
-        suggestion: suggestion ? `Did you mean '${suggestion}'?` : `Use one of: ${validCategories.join(', ')}`,
-        correctedValue: suggestion
+        suggestion: suggestion
+          ? `Did you mean '${suggestion}'?`
+          : `Use one of: ${validCategories.join(', ')}`,
+        correctedValue: suggestion,
       };
     }
 
@@ -755,15 +751,15 @@ export class ValidationService {
     }
 
     if (Array.isArray(value)) {
-      const invalidTags = value.filter(tag => 
-        typeof tag !== 'string' || tag.length === 0 || tag.length > 20
+      const invalidTags = value.filter(
+        tag => typeof tag !== 'string' || tag.length === 0 || tag.length > 20
       );
 
       if (invalidTags.length > 0) {
         return {
           valid: false,
           message: 'Invalid tags found',
-          suggestion: 'Tags must be strings between 1-20 characters'
+          suggestion: 'Tags must be strings between 1-20 characters',
         };
       }
     } else if (typeof value === 'string') {
@@ -774,14 +770,14 @@ export class ValidationService {
         return {
           valid: false,
           message: 'Invalid tag format',
-          suggestion: 'Use comma-separated tags, each 1-20 characters'
+          suggestion: 'Use comma-separated tags, each 1-20 characters',
         };
       }
     } else {
       return {
         valid: false,
         message: 'Tags must be array or comma-separated string',
-        suggestion: 'Provide tags as array or comma-separated string'
+        suggestion: 'Provide tags as array or comma-separated string',
       };
     }
 
@@ -790,7 +786,7 @@ export class ValidationService {
 
   private isValidDate(value: any): boolean {
     if (!value) return false;
-    
+
     const date = new Date(value);
     return !isNaN(date.getTime());
   }
@@ -815,10 +811,10 @@ export class ValidationService {
 
   private findClosestCategory(input: string, validCategories: string[]): string | null {
     const inputLower = input.toLowerCase();
-    
+
     // Direct match attempts
-    const directMatches = validCategories.filter(cat => 
-      cat.toLowerCase().includes(inputLower) || inputLower.includes(cat.toLowerCase())
+    const directMatches = validCategories.filter(
+      cat => cat.toLowerCase().includes(inputLower) || inputLower.includes(cat.toLowerCase())
     );
 
     if (directMatches.length > 0) {
@@ -826,10 +822,12 @@ export class ValidationService {
     }
 
     // Fuzzy matching (simplified)
-    const fuzzyMatches = validCategories.map(cat => ({
-      category: cat,
-      score: this.calculateSimilarity(inputLower, cat.toLowerCase())
-    })).filter(match => match.score > 0.5);
+    const fuzzyMatches = validCategories
+      .map(cat => ({
+        category: cat,
+        score: this.calculateSimilarity(inputLower, cat.toLowerCase()),
+      }))
+      .filter(match => match.score > 0.5);
 
     if (fuzzyMatches.length > 0) {
       fuzzyMatches.sort((a, b) => b.score - a.score);
@@ -843,10 +841,10 @@ export class ValidationService {
     // Simple character overlap similarity
     const chars1 = new Set(str1.split(''));
     const chars2 = new Set(str2.split(''));
-    
+
     const intersection = new Set([...chars1].filter(c => chars2.has(c)));
     const union = new Set([...chars1, ...chars2]);
-    
+
     return intersection.size / union.size;
   }
 }

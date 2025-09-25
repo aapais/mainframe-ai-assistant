@@ -162,8 +162,7 @@ router.post('/process', upload.single('document'), async (req, res) => {
             }
 
             try {
-
-                    for (const entry of entries) {
+                for (const entry of entries) {
                         const query = `
                             INSERT INTO knowledge_base (
                                 uuid, title, content, summary, category, tags,
@@ -209,6 +208,9 @@ router.post('/process', upload.single('document'), async (req, res) => {
                     console.error('Database import error:', dbError);
                     // Continue without import, return SQL for manual execution
                 }
+            } catch (error) {
+                console.error('Document processing error:', error);
+                // Continue without stopping the request
             }
         }
 

@@ -5,14 +5,14 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { 
-  KBEntry, 
-  KBEntryInput, 
-  KBEntryUpdate, 
-  SearchResult, 
-  SearchQuery, 
+import type {
+  KBEntry,
+  KBEntryInput,
+  KBEntryUpdate,
+  SearchResult,
+  SearchQuery,
   DatabaseMetrics,
-  KBCategory
+  KBCategory,
 } from '../types';
 
 // Define the ElectronAPI interface exposed to renderer
@@ -54,7 +54,13 @@ export interface ElectronAPI {
     bulkImport: (data: any[], userId: string) => Promise<any>;
     getQueue: (filters?: any) => Promise<any>;
     getStats: () => Promise<any>;
-    logAction: (entryId: string, actionType: string, userId: string, description?: string, metadata?: any) => Promise<any>;
+    logAction: (
+      entryId: string,
+      actionType: string,
+      userId: string,
+      description?: string,
+      metadata?: any
+    ) => Promise<any>;
   };
 
   // Unified operations (maintaining UnifiedHandler compatibility)
@@ -84,25 +90,25 @@ export interface ElectronAPI {
     getMigrationStatus: () => Promise<any>;
     getSchemaInfo: () => Promise<any>;
   };
-  
+
   // Search operations
   searchLocal: (query: string, options?: SearchQuery) => Promise<SearchResult[]>;
   searchWithAI: (query: string, options?: SearchQuery) => Promise<SearchResult[]>;
-  
+
   // Rating and feedback
   rateEntry: (id: string, successful: boolean, comment?: string) => Promise<void>;
   recordEntryView: (id: string) => Promise<void>;
-  
+
   // System operations
   getMetrics: () => Promise<DatabaseMetrics>;
   exportKB: (path?: string) => Promise<string>;
   importKB: (path?: string) => Promise<number>;
-  
+
   // Database operations
   checkDatabase: () => Promise<{ connected: boolean; isEmpty: boolean }>;
   loadInitialTemplates: () => Promise<void>;
   checkAIService: () => Promise<{ available: boolean; model?: string }>;
-  
+
   // Application lifecycle
   closeApplication: () => Promise<void>;
   minimizeWindow: (windowId: string) => Promise<void>;
@@ -110,25 +116,25 @@ export interface ElectronAPI {
   restoreWindow: (windowId: string) => Promise<void>;
   focusWindow: (windowId: string) => Promise<void>;
   closeWindow: (windowId: string) => Promise<void>;
-  
+
   // Window management
   getWindowState: (windowId: string) => Promise<any>;
   updateWindowState: (windowId: string, state: any) => Promise<void>;
-  
+
   // Theme operations
   getTheme: () => Promise<'light' | 'dark'>;
   setTheme: (theme: 'light' | 'dark') => Promise<void>;
-  
+
   // Development tools
   openDevTools: () => void;
   getAppVersion: () => Promise<string>;
   checkForUpdates: () => Promise<boolean>;
-  
+
   // Event listeners
   onThemeChanged: (callback: (theme: 'light' | 'dark') => void) => void;
   onWindowStateChanged: (callback: (state: any) => void) => void;
   onKBUpdated: (callback: (data: any) => void) => void;
-  
+
   // Remove listeners
   removeAllListeners: (channel: string) => void;
 }
@@ -148,7 +154,7 @@ const kbAPI = {
           entry,
           score: 100,
           matchType: 'exact' as const,
-          highlights: []
+          highlights: [],
         }));
       }
     } catch (error) {
@@ -173,7 +179,7 @@ const kbAPI = {
 
   getEntry: async (id: string): Promise<KBEntry | null> => {
     return await ipcRenderer.invoke('db:getEntry', id);
-  }
+  },
 };
 
 // Search API methods
@@ -195,7 +201,7 @@ const searchAPI = {
       // Fallback to local search
       return await ipcRenderer.invoke('db:search', query, options);
     }
-  }
+  },
 };
 
 // Rating and feedback API
@@ -206,7 +212,7 @@ const feedbackAPI = {
 
   recordEntryView: async (id: string): Promise<void> => {
     await ipcRenderer.invoke('db:recordUsage', id, true);
-  }
+  },
 };
 
 // System operations API
@@ -221,7 +227,7 @@ const systemAPI = {
         searches_today: 0,
         avg_response_time: 0,
         cache_hit_rate: 0,
-        storage_used_mb: 0
+        storage_used_mb: 0,
       };
     }
   },
@@ -252,7 +258,7 @@ const systemAPI = {
       const stats = await ipcRenderer.invoke('db:getStats');
       return {
         connected: healthCheck.healthy,
-        isEmpty: stats.total_entries === 0
+        isEmpty: stats.total_entries === 0,
       };
     } catch (error) {
       console.error('Database check failed:', error);
@@ -275,7 +281,7 @@ const systemAPI = {
       console.log('AI service not available:', error);
       return { available: false };
     }
-  }
+  },
 };
 
 // Application lifecycle API
@@ -291,17 +297,23 @@ const appAPI = {
 
   minimizeWindow: async (windowId: string): Promise<void> => {
     // These functionalities need to be added to window management service
-    console.warn('Window minimize functionality needs to be implemented in window management service');
+    console.warn(
+      'Window minimize functionality needs to be implemented in window management service'
+    );
     return Promise.resolve();
   },
 
   maximizeWindow: async (windowId: string): Promise<void> => {
-    console.warn('Window maximize functionality needs to be implemented in window management service');
+    console.warn(
+      'Window maximize functionality needs to be implemented in window management service'
+    );
     return Promise.resolve();
   },
 
   restoreWindow: async (windowId: string): Promise<void> => {
-    console.warn('Window restore functionality needs to be implemented in window management service');
+    console.warn(
+      'Window restore functionality needs to be implemented in window management service'
+    );
     return Promise.resolve();
   },
 
@@ -311,7 +323,7 @@ const appAPI = {
 
   closeWindow: async (windowId: string): Promise<void> => {
     await ipcRenderer.invoke('window-manager:close-window', windowId);
-  }
+  },
 };
 
 // Window management API
@@ -329,7 +341,7 @@ const windowAPI = {
   updateWindowState: async (windowId: string, state: any): Promise<void> => {
     console.warn('Update window state functionality needs to be implemented');
     return Promise.resolve();
-  }
+  },
 };
 
 // Theme API
@@ -347,11 +359,17 @@ const themeAPI = {
 
   setTheme: async (theme: 'light' | 'dark'): Promise<void> => {
     try {
-      await ipcRenderer.invoke('config:set', 'theme', theme, 'string', 'Application theme preference');
+      await ipcRenderer.invoke(
+        'config:set',
+        'theme',
+        theme,
+        'string',
+        'Application theme preference'
+      );
     } catch (error) {
       console.error('Failed to set theme:', error);
     }
-  }
+  },
 };
 
 // Development tools API
@@ -376,7 +394,7 @@ const devAPI = {
     // For MVP1, updates are not implemented
     console.warn('Update checking not implemented in MVP1');
     return Promise.resolve(false);
-  }
+  },
 };
 
 // Event listener API
@@ -395,7 +413,7 @@ const eventAPI = {
 
   removeAllListeners: (channel: string): void => {
     ipcRenderer.removeAllListeners(channel);
-  }
+  },
 };
 
 // Incident Management API (preserving ALL existing IPC handlers)
@@ -405,31 +423,58 @@ const incidentAPI = {
   create: async (incidentData: any) => await ipcRenderer.invoke('incident:create', incidentData),
   updateStatus: async (params: any) => await ipcRenderer.invoke('incident:updateStatus', params),
   assign: async (params: any) => await ipcRenderer.invoke('incident:assign', params),
-  updatePriority: async (params: any) => await ipcRenderer.invoke('incident:updatePriority', params),
-  bulkOperation: async (operation: any) => await ipcRenderer.invoke('incident:bulkOperation', operation),
+  updatePriority: async (params: any) =>
+    await ipcRenderer.invoke('incident:updatePriority', params),
+  bulkOperation: async (operation: any) =>
+    await ipcRenderer.invoke('incident:bulkOperation', operation),
   addComment: async (params: any) => await ipcRenderer.invoke('incident:addComment', params),
-  getComments: async (params: { incidentId: string }) => await ipcRenderer.invoke('incident:getComments', params),
-  getStatusHistory: async (params: { incidentId: string }) => await ipcRenderer.invoke('incident:getStatusHistory', params),
-  getMetrics: async (params: { timeframe: string }) => await ipcRenderer.invoke('incident:getMetrics', params),
+  getComments: async (params: { incidentId: string }) =>
+    await ipcRenderer.invoke('incident:getComments', params),
+  getStatusHistory: async (params: { incidentId: string }) =>
+    await ipcRenderer.invoke('incident:getStatusHistory', params),
+  getMetrics: async (params: { timeframe: string }) =>
+    await ipcRenderer.invoke('incident:getMetrics', params),
   escalate: async (params: any) => await ipcRenderer.invoke('incident:escalate', params),
   resolve: async (params: any) => await ipcRenderer.invoke('incident:resolve', params),
   update: async (params: any) => await ipcRenderer.invoke('incident:update', params),
   search: async (params: any) => await ipcRenderer.invoke('incident:search', params),
   getSLABreaches: async () => await ipcRenderer.invoke('incident:getSLABreaches'),
   updateSLA: async (params: any) => await ipcRenderer.invoke('incident:updateSLA', params),
-  getTrends: async (params: { timeframe: string }) => await ipcRenderer.invoke('incident:getTrends', params),
-  requestAIAnalysis: async (entryId: string, userId: string) => await ipcRenderer.invoke('incident:requestAIAnalysis', entryId, userId),
-  executeAIAnalysis: async (operationId: string, userId: string) => await ipcRenderer.invoke('incident:executeAIAnalysis', operationId, userId),
-  semanticSearch: async (query: string, options: any, userId: string) => await ipcRenderer.invoke('incident:semanticSearch', query, options, userId),
-  suggestSolution: async (entryId: string, context: any, userId: string) => await ipcRenderer.invoke('incident:suggestSolution', entryId, context, userId),
-  authorizeAI: async (operationId: string, decision: string, userId: string) => await ipcRenderer.invoke('incident:authorizeAI', operationId, decision, userId),
-  acceptSolution: async (entryId: string, userId: string, rating?: number) => await ipcRenderer.invoke('incident:acceptSolution', entryId, userId, rating),
-  rejectSolution: async (entryId: string, userId: string, reason?: string) => await ipcRenderer.invoke('incident:rejectSolution', entryId, userId, reason),
-  bulkImport: async (data: any[], userId: string) => await ipcRenderer.invoke('incident:bulkImport', data, userId),
+  getTrends: async (params: { timeframe: string }) =>
+    await ipcRenderer.invoke('incident:getTrends', params),
+  requestAIAnalysis: async (entryId: string, userId: string) =>
+    await ipcRenderer.invoke('incident:requestAIAnalysis', entryId, userId),
+  executeAIAnalysis: async (operationId: string, userId: string) =>
+    await ipcRenderer.invoke('incident:executeAIAnalysis', operationId, userId),
+  semanticSearch: async (query: string, options: any, userId: string) =>
+    await ipcRenderer.invoke('incident:semanticSearch', query, options, userId),
+  suggestSolution: async (entryId: string, context: any, userId: string) =>
+    await ipcRenderer.invoke('incident:suggestSolution', entryId, context, userId),
+  authorizeAI: async (operationId: string, decision: string, userId: string) =>
+    await ipcRenderer.invoke('incident:authorizeAI', operationId, decision, userId),
+  acceptSolution: async (entryId: string, userId: string, rating?: number) =>
+    await ipcRenderer.invoke('incident:acceptSolution', entryId, userId, rating),
+  rejectSolution: async (entryId: string, userId: string, reason?: string) =>
+    await ipcRenderer.invoke('incident:rejectSolution', entryId, userId, reason),
+  bulkImport: async (data: any[], userId: string) =>
+    await ipcRenderer.invoke('incident:bulkImport', data, userId),
   getQueue: async (filters?: any) => await ipcRenderer.invoke('incident:getQueue', filters),
   getStats: async () => await ipcRenderer.invoke('incident:getStats'),
-  logAction: async (entryId: string, actionType: string, userId: string, description?: string, metadata?: any) =>
-    await ipcRenderer.invoke('incident:logAction', entryId, actionType, userId, description, metadata)
+  logAction: async (
+    entryId: string,
+    actionType: string,
+    userId: string,
+    description?: string,
+    metadata?: any
+  ) =>
+    await ipcRenderer.invoke(
+      'incident:logAction',
+      entryId,
+      actionType,
+      userId,
+      description,
+      metadata
+    ),
 };
 
 // Unified operations API (preserving UnifiedHandler compatibility)
@@ -437,27 +482,28 @@ const unifiedAPI = {
   search: async (params: any) => await ipcRenderer.invoke('unified:search', params),
   getEntry: async (params: { id: string }) => await ipcRenderer.invoke('unified:getEntry', params),
   createEntry: async (entryData: any) => await ipcRenderer.invoke('unified:createEntry', entryData),
-  updateEntry: async (params: any) => await ipcRenderer.invoke('unified:updateEntry', params)
+  updateEntry: async (params: any) => await ipcRenderer.invoke('unified:updateEntry', params),
 };
 
 // Settings API (preserving ALL AI and system settings)
 const settingsAPI = {
   getAI: async () => await ipcRenderer.invoke('settings:get-ai'),
   saveAIKey: async (apiKey: string) => await ipcRenderer.invoke('settings:save-ai-key', apiKey),
-  saveAIBudgets: async (budgets: any) => await ipcRenderer.invoke('settings:save-ai-budgets', budgets)
+  saveAIBudgets: async (budgets: any) =>
+    await ipcRenderer.invoke('settings:save-ai-budgets', budgets),
 };
 
 // AI operations API (maintaining all existing AI functionality)
 const aiAPI = {
   checkStatus: async () => await ipcRenderer.invoke('ai:check-status'),
-  testConnection: async () => await ipcRenderer.invoke('ai:test-connection')
+  testConnection: async () => await ipcRenderer.invoke('ai:test-connection'),
 };
 
 // System capabilities API
 const systemCapabilitiesAPI = {
   getCapabilities: async () => await ipcRenderer.invoke('system:getCapabilities'),
   getMigrationStatus: async () => await ipcRenderer.invoke('system:getMigrationStatus'),
-  getSchemaInfo: async () => await ipcRenderer.invoke('system:getSchemaInfo')
+  getSchemaInfo: async () => await ipcRenderer.invoke('system:getSchemaInfo'),
 };
 
 // Combine all APIs into the complete ElectronAPI
@@ -502,7 +548,7 @@ const electronAPI: ElectronAPI = {
   ai: aiAPI,
 
   // System capabilities
-  system: systemCapabilitiesAPI
+  system: systemCapabilitiesAPI,
 };
 
 // Security: Only expose the API if we're in the correct context
@@ -525,11 +571,11 @@ ipcRenderer.on('api:error', (_, error) => {
 });
 
 // Handle uncaught errors in preload
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('Preload uncaught exception:', error);
 });
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', reason => {
   console.error('Preload unhandled rejection:', reason);
 });
 

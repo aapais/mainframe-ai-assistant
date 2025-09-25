@@ -59,25 +59,31 @@ export const ImportResultSchema = z.object({
     skipped: z.number().int().min(0),
     failed: z.number().int().min(0),
   }),
-  conflicts: z.array(z.object({
-    type: z.enum(['duplicate_name', 'invalid_parent', 'depth_exceeded', 'invalid_data']),
-    category: z.object({
-      name: z.string(),
-      path: z.array(z.string()),
-    }),
-    existing: z.object({
-      id: z.string(),
-      name: z.string(),
-      path: z.array(z.string()),
-    }).optional(),
-    resolution: z.enum(['merged', 'replaced', 'skipped', 'failed']),
-    message: z.string(),
-  })),
-  errors: z.array(z.object({
-    category: z.string().optional(),
-    message: z.string(),
-    code: z.string().optional(),
-  })),
+  conflicts: z.array(
+    z.object({
+      type: z.enum(['duplicate_name', 'invalid_parent', 'depth_exceeded', 'invalid_data']),
+      category: z.object({
+        name: z.string(),
+        path: z.array(z.string()),
+      }),
+      existing: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          path: z.array(z.string()),
+        })
+        .optional(),
+      resolution: z.enum(['merged', 'replaced', 'skipped', 'failed']),
+      message: z.string(),
+    })
+  ),
+  errors: z.array(
+    z.object({
+      category: z.string().optional(),
+      message: z.string(),
+      code: z.string().optional(),
+    })
+  ),
   backupPath: z.string().optional(),
   rollbackAvailable: z.boolean(),
 });
@@ -91,12 +97,14 @@ export const CategoryTemplateSchema = z.object({
   version: z.string().default('1.0'),
   author: z.string().max(100).optional(),
   created_at: z.date(),
-  categories: z.array(z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    parent_path: z.array(z.string()).default([]),
-    metadata: z.record(z.any()).optional(),
-  })),
+  categories: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string().optional(),
+      parent_path: z.array(z.string()).default([]),
+      metadata: z.record(z.any()).optional(),
+    })
+  ),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -142,14 +150,18 @@ export class CategoryImportExportService {
     }
   }
 
-  private filterCategoriesForExport(categories: CategoryTree[], options: ExportOptions): CategoryTree[] {
+  private filterCategoriesForExport(
+    categories: CategoryTree[],
+    options: ExportOptions
+  ): CategoryTree[] {
     let filtered = [...categories];
 
     // Filter by root category
     if (options.rootCategoryId) {
-      filtered = filtered.filter(cat =>
-        cat.node.id === options.rootCategoryId ||
-        this.isDescendantOf(cat, options.rootCategoryId!)
+      filtered = filtered.filter(
+        cat =>
+          cat.node.id === options.rootCategoryId ||
+          this.isDescendantOf(cat, options.rootCategoryId!)
       );
     }
 
@@ -166,7 +178,10 @@ export class CategoryImportExportService {
     return filtered;
   }
 
-  private exportAsJSON(categories: CategoryTree[], options: ExportOptions): { data: string; filename: string; contentType: string } {
+  private exportAsJSON(
+    categories: CategoryTree[],
+    options: ExportOptions
+  ): { data: string; filename: string; contentType: string } {
     const exportData = {
       version: '1.0',
       exported_at: new Date().toISOString(),
@@ -175,14 +190,16 @@ export class CategoryImportExportService {
         includeMetadata: options.includeMetadata,
         includeStatistics: options.includeStatistics,
       },
-      categories: options.flattenHierarchy ?
-        this.flattenCategories(categories) :
-        this.serializeCategoryTree(categories, options),
-      metadata: options.includeMetadata ? {
-        total_categories: this.countTotalCategories(categories),
-        max_depth: this.calculateMaxDepth(categories),
-        export_timestamp: new Date().toISOString(),
-      } : undefined,
+      categories: options.flattenHierarchy
+        ? this.flattenCategories(categories)
+        : this.serializeCategoryTree(categories, options),
+      metadata: options.includeMetadata
+        ? {
+            total_categories: this.countTotalCategories(categories),
+            max_depth: this.calculateMaxDepth(categories),
+            export_timestamp: new Date().toISOString(),
+          }
+        : undefined,
     };
 
     const data = JSON.stringify(exportData, null, 2);
@@ -191,11 +208,14 @@ export class CategoryImportExportService {
     return {
       data: options.compressOutput ? this.compressJSON(data) : data,
       filename,
-      contentType: 'application/json'
+      contentType: 'application/json',
     };
   }
 
-  private exportAsCSV(categories: CategoryTree[], options: ExportOptions): { data: string; filename: string; contentType: string } {
+  private exportAsCSV(
+    categories: CategoryTree[],
+    options: ExportOptions
+  ): { data: string; filename: string; contentType: string } {
     const flatCategories = this.flattenCategories(categories);
     const headers = [
       'id',
@@ -208,7 +228,7 @@ export class CategoryImportExportService {
       'is_active',
       'is_system',
       'created_at',
-      'updated_at'
+      'updated_at',
     ];
 
     if (options.includeStatistics) {
@@ -217,7 +237,7 @@ export class CategoryImportExportService {
 
     const rows = [
       headers.join(','),
-      ...flatCategories.map(cat => this.categoryToCSVRow(cat, headers, options))
+      ...flatCategories.map(cat => this.categoryToCSVRow(cat, headers, options)),
     ];
 
     const data = rows.join('\n');
@@ -226,22 +246,27 @@ export class CategoryImportExportService {
     return {
       data,
       filename,
-      contentType: 'text/csv'
+      contentType: 'text/csv',
     };
   }
 
-  private exportAsXML(categories: CategoryTree[], options: ExportOptions): { data: string; filename: string; contentType: string } {
+  private exportAsXML(
+    categories: CategoryTree[],
+    options: ExportOptions
+  ): { data: string; filename: string; contentType: string } {
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
     const rootOpen = '<categories>\n';
     const rootClose = '</categories>';
 
-    const metadata = options.includeMetadata ? `
+    const metadata = options.includeMetadata
+      ? `
   <metadata>
     <version>1.0</version>
     <exported_at>${new Date().toISOString()}</exported_at>
     <total_categories>${this.countTotalCategories(categories)}</total_categories>
     <max_depth>${this.calculateMaxDepth(categories)}</max_depth>
-  </metadata>\n` : '';
+  </metadata>\n`
+      : '';
 
     const categoriesXML = this.categoriesToXML(categories, options, 1);
 
@@ -251,7 +276,7 @@ export class CategoryImportExportService {
     return {
       data,
       filename,
-      contentType: 'application/xml'
+      contentType: 'application/xml',
     };
   }
 
@@ -313,11 +338,10 @@ export class CategoryImportExportService {
       result.errors.push(...processResult.errors);
 
       result.success = result.summary.failed === 0;
-
     } catch (error) {
       result.errors.push({
         message: `Import failed: ${error.message}`,
-        code: 'IMPORT_ERROR'
+        code: 'IMPORT_ERROR',
       });
     }
 
@@ -419,7 +443,10 @@ export class CategoryImportExportService {
     return categories;
   }
 
-  private validateCategoryStructure(categories: any[], options: ImportOptions): Array<{ message: string; code: string }> {
+  private validateCategoryStructure(
+    categories: any[],
+    options: ImportOptions
+  ): Array<{ message: string; code: string }> {
     const errors: Array<{ message: string; code: string }> = [];
 
     categories.forEach((category, index) => {
@@ -427,7 +454,7 @@ export class CategoryImportExportService {
       if (!category.name || typeof category.name !== 'string') {
         errors.push({
           message: `Row ${index + 1}: Category name is required and must be a string`,
-          code: 'INVALID_NAME'
+          code: 'INVALID_NAME',
         });
       }
 
@@ -435,7 +462,7 @@ export class CategoryImportExportService {
       if (category.name && category.name.length > 100) {
         errors.push({
           message: `Row ${index + 1}: Category name exceeds maximum length (100 characters)`,
-          code: 'NAME_TOO_LONG'
+          code: 'NAME_TOO_LONG',
         });
       }
 
@@ -443,7 +470,7 @@ export class CategoryImportExportService {
       if (category.description && category.description.length > 500) {
         errors.push({
           message: `Row ${index + 1}: Description exceeds maximum length (500 characters)`,
-          code: 'DESCRIPTION_TOO_LONG'
+          code: 'DESCRIPTION_TOO_LONG',
         });
       }
 
@@ -451,7 +478,7 @@ export class CategoryImportExportService {
       if (category.parent_path && category.parent_path.length >= options.maxDepth) {
         errors.push({
           message: `Row ${index + 1}: Category depth exceeds maximum (${options.maxDepth})`,
-          code: 'DEPTH_EXCEEDED'
+          code: 'DEPTH_EXCEEDED',
         });
       }
     });
@@ -459,7 +486,10 @@ export class CategoryImportExportService {
     return errors;
   }
 
-  private async processCategoryImport(categories: any[], options: ImportOptions): Promise<{
+  private async processCategoryImport(
+    categories: any[],
+    options: ImportOptions
+  ): Promise<{
     summary: ImportResult['summary'];
     conflicts: ImportResult['conflicts'];
     errors: ImportResult['errors'];
@@ -491,13 +521,12 @@ export class CategoryImportExportService {
         if (result.conflict) {
           conflicts.push(result.conflict);
         }
-
       } catch (error) {
         summary.failed++;
         errors.push({
           category: categoryData.name,
           message: error.message,
-          code: 'PROCESSING_ERROR'
+          code: 'PROCESSING_ERROR',
         });
       }
     }
@@ -505,7 +534,10 @@ export class CategoryImportExportService {
     return { summary, conflicts, errors };
   }
 
-  private async processCategory(categoryData: any, options: ImportOptions): Promise<{
+  private async processCategory(
+    categoryData: any,
+    options: ImportOptions
+  ): Promise<{
     action: 'imported' | 'updated' | 'skipped' | 'failed';
     conflict?: ImportResult['conflicts'][0];
   }> {
@@ -612,13 +644,13 @@ export class CategoryImportExportService {
           sort_order: cat.sort_order,
           color: cat.color,
           icon: cat.icon,
-        }
+        },
       })),
       metadata: {
         total_categories: this.countTotalCategories(categories),
         max_depth: this.calculateMaxDepth(categories),
         created_timestamp: new Date().toISOString(),
-      }
+      },
     };
 
     this.templates.set(template.id, template);
@@ -639,7 +671,7 @@ export class CategoryImportExportService {
     // Convert template to importable format
     const importData = JSON.stringify({
       version: template.version,
-      categories: template.categories
+      categories: template.categories,
     });
 
     return this.importCategories(importData, 'json', options);
@@ -681,7 +713,7 @@ export class CategoryImportExportService {
     this.backupHistory.push({
       path: backupPath,
       timestamp,
-      categories: currentCategories
+      categories: currentCategories,
     });
 
     // Keep only last 10 backups
@@ -712,7 +744,7 @@ export class CategoryImportExportService {
     return this.backupHistory.map(backup => ({
       path: backup.path,
       timestamp: backup.timestamp,
-      categoryCount: backup.categories.length
+      categoryCount: backup.categories.length,
     }));
   }
 
@@ -732,14 +764,22 @@ export class CategoryImportExportService {
       categories: [
         { name: 'JCL', description: 'Job Control Language', parent_path: [] },
         { name: 'Syntax Errors', description: 'JCL syntax issues', parent_path: ['JCL'] },
-        { name: 'Allocation Issues', description: 'Dataset allocation problems', parent_path: ['JCL'] },
+        {
+          name: 'Allocation Issues',
+          description: 'Dataset allocation problems',
+          parent_path: ['JCL'],
+        },
         { name: 'VSAM', description: 'Virtual Storage Access Method', parent_path: [] },
         { name: 'Status Codes', description: 'VSAM status code errors', parent_path: ['VSAM'] },
-        { name: 'File Operations', description: 'VSAM file operation issues', parent_path: ['VSAM'] },
+        {
+          name: 'File Operations',
+          description: 'VSAM file operation issues',
+          parent_path: ['VSAM'],
+        },
         { name: 'DB2', description: 'Database management', parent_path: [] },
         { name: 'SQL Errors', description: 'SQL execution errors', parent_path: ['DB2'] },
         { name: 'Connection Issues', description: 'Database connectivity', parent_path: ['DB2'] },
-      ]
+      ],
     };
 
     this.templates.set(mainframeTemplate.id, mainframeTemplate);
@@ -748,13 +788,16 @@ export class CategoryImportExportService {
   private serializeCategoryTree(categories: CategoryTree[], options: ExportOptions): any[] {
     return categories.map(cat => ({
       ...cat.node,
-      children: cat.children.length > 0 ? this.serializeCategoryTree(cat.children, options) : undefined,
+      children:
+        cat.children.length > 0 ? this.serializeCategoryTree(cat.children, options) : undefined,
       path: cat.path,
       depth: cat.depth,
-      statistics: options.includeStatistics ? {
-        entry_count: cat.node.entry_count,
-        // Add more statistics as needed
-      } : undefined,
+      statistics: options.includeStatistics
+        ? {
+            entry_count: cat.node.entry_count,
+            // Add more statistics as needed
+          }
+        : undefined,
     }));
   }
 
@@ -774,33 +817,43 @@ export class CategoryImportExportService {
     return flattened;
   }
 
-  private categoryToCSVRow(category: CategoryNode, headers: string[], options: ExportOptions): string {
-    return headers.map(header => {
-      let value = category[header as keyof CategoryNode];
+  private categoryToCSVRow(
+    category: CategoryNode,
+    headers: string[],
+    options: ExportOptions
+  ): string {
+    return headers
+      .map(header => {
+        let value = category[header as keyof CategoryNode];
 
-      if (value === null || value === undefined) {
-        return '';
-      }
+        if (value === null || value === undefined) {
+          return '';
+        }
 
-      if (typeof value === 'boolean') {
-        return value.toString();
-      }
+        if (typeof value === 'boolean') {
+          return value.toString();
+        }
 
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
 
-      // Escape commas and quotes in CSV
-      const stringValue = String(value);
-      if (stringValue.includes(',') || stringValue.includes('"')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
+        // Escape commas and quotes in CSV
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
 
-      return stringValue;
-    }).join(',');
+        return stringValue;
+      })
+      .join(',');
   }
 
-  private categoriesToXML(categories: CategoryTree[], options: ExportOptions, indent: number): string {
+  private categoriesToXML(
+    categories: CategoryTree[],
+    options: ExportOptions,
+    indent: number
+  ): string {
     const indentStr = '  '.repeat(indent);
     let xml = '';
 
@@ -918,7 +971,7 @@ export class CategoryImportExportService {
   private limitDepth(categories: CategoryTree[], maxDepth: number): CategoryTree[] {
     return categories.map(cat => ({
       ...cat,
-      children: cat.depth < maxDepth ? this.limitDepth(cat.children, maxDepth) : []
+      children: cat.depth < maxDepth ? this.limitDepth(cat.children, maxDepth) : [],
     }));
   }
 
@@ -955,11 +1008,16 @@ export class CategoryImportExportService {
 
   // Abstract methods that would be implemented by concrete storage layer
   protected abstract findCategoryByPath(path: string[]): Promise<string | null>;
-  protected abstract findExistingCategory(name: string, parentId: string | null): Promise<CategoryNode | null>;
+  protected abstract findExistingCategory(
+    name: string,
+    parentId: string | null
+  ): Promise<CategoryNode | null>;
   protected abstract createMissingParents(path: string[], options: ImportOptions): Promise<string>;
   protected abstract getCategoryPath(categoryId: string): Promise<string[]>;
   protected abstract getCategoryLevel(categoryId: string): Promise<number>;
-  protected abstract createCategory(category: Omit<CategoryNode, 'id' | 'created_at' | 'updated_at'>): Promise<CategoryNode>;
+  protected abstract createCategory(
+    category: Omit<CategoryNode, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<CategoryNode>;
   protected abstract updateCategory(id: string, updates: Partial<CategoryNode>): Promise<void>;
   protected abstract getAllCategories(): Promise<CategoryNode[]>;
   protected abstract restoreCategories(categories: CategoryNode[]): Promise<void>;

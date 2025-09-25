@@ -1,79 +1,134 @@
 import { EventEmitter } from 'events';
-import { IStorageService, StorageConfig, KBEntry, KBEntryInput, KBEntryUpdate, SearchResult, SearchOptions, PatternData, Pattern, PatternCriteria, PatternUpdate, IncidentData, Incident, IncidentCriteria, IncidentUpdate, CodeAnalysis, CodeCriteria, CodeAnalysisUpdate, RepositoryData, Repository, ScanResult, CodeTemplate, TemplateCriteria, TemplateUpdate, TemplateMetadata, ProjectData, Project, ProjectCriteria, ProjectUpdate, PredictionData, Prediction, PredictionCriteria, MLModelData, MLModel, ModelMetrics, TimeRange, AnalyticsData, BackupOptions, BackupResult, RestoreOptions, RestoreResult, ExportFormat, ImportFormat, ExportOptions, ImportOptions, ImportResult, MigrationResult, StorageMetrics, OptimizationResult, HealthStatus, IStoragePlugin, LinkType } from './IStorageService';
+import {
+  IStorageService,
+  StorageConfig,
+  KBEntry,
+  KBEntryInput,
+  KBEntryUpdate,
+  SearchResult,
+  SearchOptions,
+  PatternData,
+  Pattern,
+  PatternCriteria,
+  PatternUpdate,
+  IncidentData,
+  Incident,
+  IncidentCriteria,
+  IncidentUpdate,
+  CodeAnalysis,
+  CodeCriteria,
+  CodeAnalysisUpdate,
+  RepositoryData,
+  Repository,
+  ScanResult,
+  CodeTemplate,
+  TemplateCriteria,
+  TemplateUpdate,
+  TemplateMetadata,
+  ProjectData,
+  Project,
+  ProjectCriteria,
+  ProjectUpdate,
+  PredictionData,
+  Prediction,
+  PredictionCriteria,
+  MLModelData,
+  MLModel,
+  ModelMetrics,
+  TimeRange,
+  AnalyticsData,
+  BackupOptions,
+  BackupResult,
+  RestoreOptions,
+  RestoreResult,
+  ExportFormat,
+  ImportFormat,
+  ExportOptions,
+  ImportOptions,
+  ImportResult,
+  MigrationResult,
+  StorageMetrics,
+  OptimizationResult,
+  HealthStatus,
+  IStoragePlugin,
+  LinkType,
+} from './IStorageService';
 export declare class StorageService extends EventEmitter implements IStorageService {
-    private adapter;
-    private config;
-    private plugins;
-    private backupService;
-    private migrationService;
-    private performanceMonitor;
-    private cacheManager;
-    private initialized;
-    constructor();
-    initialize(config: StorageConfig): Promise<void>;
-    close(): Promise<void>;
-    private ensureInitialized;
-    createEntry(entry: KBEntryInput): Promise<string>;
-    readEntry(id: string): Promise<KBEntry | null>;
-    updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean>;
-    deleteEntry(id: string): Promise<boolean>;
-    searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]>;
-    createEntries(entries: KBEntryInput[]): Promise<string[]>;
-    readEntries(ids: string[]): Promise<KBEntry[]>;
-    updateEntries(updates: Array<{
-        id: string;
-        updates: KBEntryUpdate;
-    }>): Promise<boolean[]>;
-    deleteEntries(ids: string[]): Promise<boolean[]>;
-    createPattern(pattern: PatternData): Promise<string>;
-    getPatterns(criteria: PatternCriteria): Promise<Pattern[]>;
-    updatePattern(id: string, updates: PatternUpdate): Promise<boolean>;
-    deletePattern(id: string): Promise<boolean>;
-    createIncident(incident: IncidentData): Promise<string>;
-    getIncidents(criteria: IncidentCriteria): Promise<Incident[]>;
-    updateIncident(id: string, updates: IncidentUpdate): Promise<boolean>;
-    linkIncidentToPattern(incidentId: string, patternId: string): Promise<void>;
-    storeCodeAnalysis(analysis: CodeAnalysis): Promise<string>;
-    getCodeAnalysis(criteria: CodeCriteria): Promise<CodeAnalysis[]>;
-    linkCodeToKB(codeId: string, kbId: string, linkType: LinkType): Promise<void>;
-    updateCodeAnalysis(id: string, updates: CodeAnalysisUpdate): Promise<boolean>;
-    createRepository(repo: RepositoryData): Promise<string>;
-    getRepositories(): Promise<Repository[]>;
-    scanRepository(repoId: string): Promise<ScanResult>;
-    storeTemplate(template: CodeTemplate): Promise<string>;
-    getTemplates(criteria: TemplateCriteria): Promise<CodeTemplate[]>;
-    updateTemplate(id: string, updates: TemplateUpdate): Promise<boolean>;
-    generateTemplate(sourceCode: string, metadata: TemplateMetadata): Promise<string>;
-    createProject(project: ProjectData): Promise<string>;
-    getProjects(criteria: ProjectCriteria): Promise<Project[]>;
-    updateProject(id: string, updates: ProjectUpdate): Promise<boolean>;
-    storePrediction(prediction: PredictionData): Promise<string>;
-    getPredictions(criteria: PredictionCriteria): Promise<Prediction[]>;
-    getAnalytics(timeRange: TimeRange, metrics: string[]): Promise<AnalyticsData>;
-    storeModel(model: MLModelData): Promise<string>;
-    getModel(id: string): Promise<MLModel | null>;
-    updateModelMetrics(id: string, metrics: ModelMetrics): Promise<boolean>;
-    backup(options?: BackupOptions): Promise<BackupResult>;
-    restore(backupPath: string, options?: RestoreOptions): Promise<RestoreResult>;
-    export(format: ExportFormat, options?: ExportOptions): Promise<string>;
-    import(data: string, format: ImportFormat, options?: ImportOptions): Promise<ImportResult>;
-    migrate(targetVersion: string): Promise<MigrationResult[]>;
-    getMetrics(): Promise<StorageMetrics>;
-    optimize(): Promise<OptimizationResult>;
-    healthCheck(): Promise<HealthStatus>;
-    loadPlugin(plugin: IStoragePlugin): Promise<void>;
-    unloadPlugin(pluginName: string): Promise<void>;
-    getLoadedPlugins(): string[];
-    private loadMVPPlugins;
-    private validateMVPFeature;
-    private getPlugin;
-    private generateSearchCacheKey;
-    private calculateSearchCacheTTL;
-    private calculateUsageMetrics;
-    private generateHealthRecommendations;
-    private registerDataOperation;
-    private logInitializationStats;
-    private formatBytes;
+  private adapter;
+  private config;
+  private plugins;
+  private backupService;
+  private migrationService;
+  private performanceMonitor;
+  private cacheManager;
+  private initialized;
+  constructor();
+  initialize(config: StorageConfig): Promise<void>;
+  close(): Promise<void>;
+  private ensureInitialized;
+  createEntry(entry: KBEntryInput): Promise<string>;
+  readEntry(id: string): Promise<KBEntry | null>;
+  updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean>;
+  deleteEntry(id: string): Promise<boolean>;
+  searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]>;
+  createEntries(entries: KBEntryInput[]): Promise<string[]>;
+  readEntries(ids: string[]): Promise<KBEntry[]>;
+  updateEntries(
+    updates: Array<{
+      id: string;
+      updates: KBEntryUpdate;
+    }>
+  ): Promise<boolean[]>;
+  deleteEntries(ids: string[]): Promise<boolean[]>;
+  createPattern(pattern: PatternData): Promise<string>;
+  getPatterns(criteria: PatternCriteria): Promise<Pattern[]>;
+  updatePattern(id: string, updates: PatternUpdate): Promise<boolean>;
+  deletePattern(id: string): Promise<boolean>;
+  createIncident(incident: IncidentData): Promise<string>;
+  getIncidents(criteria: IncidentCriteria): Promise<Incident[]>;
+  updateIncident(id: string, updates: IncidentUpdate): Promise<boolean>;
+  linkIncidentToPattern(incidentId: string, patternId: string): Promise<void>;
+  storeCodeAnalysis(analysis: CodeAnalysis): Promise<string>;
+  getCodeAnalysis(criteria: CodeCriteria): Promise<CodeAnalysis[]>;
+  linkCodeToKB(codeId: string, kbId: string, linkType: LinkType): Promise<void>;
+  updateCodeAnalysis(id: string, updates: CodeAnalysisUpdate): Promise<boolean>;
+  createRepository(repo: RepositoryData): Promise<string>;
+  getRepositories(): Promise<Repository[]>;
+  scanRepository(repoId: string): Promise<ScanResult>;
+  storeTemplate(template: CodeTemplate): Promise<string>;
+  getTemplates(criteria: TemplateCriteria): Promise<CodeTemplate[]>;
+  updateTemplate(id: string, updates: TemplateUpdate): Promise<boolean>;
+  generateTemplate(sourceCode: string, metadata: TemplateMetadata): Promise<string>;
+  createProject(project: ProjectData): Promise<string>;
+  getProjects(criteria: ProjectCriteria): Promise<Project[]>;
+  updateProject(id: string, updates: ProjectUpdate): Promise<boolean>;
+  storePrediction(prediction: PredictionData): Promise<string>;
+  getPredictions(criteria: PredictionCriteria): Promise<Prediction[]>;
+  getAnalytics(timeRange: TimeRange, metrics: string[]): Promise<AnalyticsData>;
+  storeModel(model: MLModelData): Promise<string>;
+  getModel(id: string): Promise<MLModel | null>;
+  updateModelMetrics(id: string, metrics: ModelMetrics): Promise<boolean>;
+  backup(options?: BackupOptions): Promise<BackupResult>;
+  restore(backupPath: string, options?: RestoreOptions): Promise<RestoreResult>;
+  export(format: ExportFormat, options?: ExportOptions): Promise<string>;
+  import(data: string, format: ImportFormat, options?: ImportOptions): Promise<ImportResult>;
+  migrate(targetVersion: string): Promise<MigrationResult[]>;
+  getMetrics(): Promise<StorageMetrics>;
+  optimize(): Promise<OptimizationResult>;
+  healthCheck(): Promise<HealthStatus>;
+  loadPlugin(plugin: IStoragePlugin): Promise<void>;
+  unloadPlugin(pluginName: string): Promise<void>;
+  getLoadedPlugins(): string[];
+  private loadMVPPlugins;
+  private validateMVPFeature;
+  private getPlugin;
+  private generateSearchCacheKey;
+  private calculateSearchCacheTTL;
+  private calculateUsageMetrics;
+  private generateHealthRecommendations;
+  private registerDataOperation;
+  private logInitializationStats;
+  private formatBytes;
 }
 export declare function createStorageService(config: StorageConfig): Promise<StorageService>;
 //# sourceMappingURL=StorageService.d.ts.map

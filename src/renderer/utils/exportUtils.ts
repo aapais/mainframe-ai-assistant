@@ -10,7 +10,7 @@ import {
   UsageData,
   DateRange,
   ExportOptions,
-  ExportData
+  ExportData,
 } from '../types/dashboard';
 
 // Extend jsPDF types
@@ -26,7 +26,7 @@ export class DashboardExporter {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 4
+      maximumFractionDigits: 4,
     }).format(amount);
   }
 
@@ -43,7 +43,7 @@ export class DashboardExporter {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   }
 
@@ -61,7 +61,9 @@ export class DashboardExporter {
     // Add header information
     csvData.push('AI Transparency Dashboard Export');
     csvData.push(`Generated: ${this.formatDate(new Date())}`);
-    csvData.push(`Date Range: ${this.formatDate(dateRange?.start || '')} - ${this.formatDate(dateRange?.end || '')}`);
+    csvData.push(
+      `Date Range: ${this.formatDate(dateRange?.start || '')} - ${this.formatDate(dateRange?.end || '')}`
+    );
     csvData.push('');
 
     // Overview section
@@ -71,9 +73,13 @@ export class DashboardExporter {
       csvData.push(`Total Operations,${exportData.summary.operations}`);
       csvData.push(`Total Cost,${this.formatCurrency(exportData.summary.totalCost)}`);
       csvData.push(`Success Rate,${exportData.summary.successRate.toFixed(1)}%`);
-      csvData.push(`Average Response Time,${this.formatDuration(exportData.summary.avgResponseTime)}`);
+      csvData.push(
+        `Average Response Time,${this.formatDuration(exportData.summary.avgResponseTime)}`
+      );
       csvData.push(`Tokens Used,${exportData.summary.tokensUsed.toLocaleString()}`);
-      csvData.push(`Cost per Operation,${this.formatCurrency(exportData.summary.costPerOperation)}`);
+      csvData.push(
+        `Cost per Operation,${this.formatCurrency(exportData.summary.costPerOperation)}`
+      );
       csvData.push('');
     }
 
@@ -96,13 +102,13 @@ export class DashboardExporter {
       exportData.decisions.forEach(decision => {
         csvData.push(
           `${this.formatDate(decision.timestamp)},` +
-          `"${decision.operation}",` +
-          `${decision.operationType},` +
-          `${decision.decision},` +
-          `${decision.cost},` +
-          `${decision.duration},` +
-          `"${decision.reason || ''}",` +
-          `${decision.tokens?.total || ''}`
+            `"${decision.operation}",` +
+            `${decision.operationType},` +
+            `${decision.decision},` +
+            `${decision.cost},` +
+            `${decision.duration},` +
+            `"${decision.reason || ''}",` +
+            `${decision.tokens?.total || ''}`
         );
       });
       csvData.push('');
@@ -115,13 +121,13 @@ export class DashboardExporter {
       exportData.operations.forEach(operation => {
         csvData.push(
           `${this.formatDate(operation.timestamp)},` +
-          `"${operation.operation}",` +
-          `${operation.operationType},` +
-          `${operation.status},` +
-          `${operation.duration},` +
-          `${operation.cost},` +
-          `${operation.tokens || ''},` +
-          `"${operation.details || ''}"`
+            `"${operation.operation}",` +
+            `${operation.operationType},` +
+            `${operation.status},` +
+            `${operation.duration},` +
+            `${operation.cost},` +
+            `${operation.tokens || ''},` +
+            `"${operation.details || ''}"`
         );
       });
       csvData.push('');
@@ -134,11 +140,11 @@ export class DashboardExporter {
       exportData.usageBreakdown.forEach(usage => {
         csvData.push(
           `${usage.operationType},` +
-          `${usage.count},` +
-          `${usage.cost},` +
-          `${usage.tokens},` +
-          `${usage.avgDuration},` +
-          `${usage.successRate.toFixed(1)}%`
+            `${usage.count},` +
+            `${usage.cost},` +
+            `${usage.tokens},` +
+            `${usage.avgDuration},` +
+            `${usage.successRate.toFixed(1)}%`
         );
       });
     }
@@ -166,7 +172,9 @@ export class DashboardExporter {
       const overviewData = [
         ['AI Transparency Dashboard Export'],
         [`Generated: ${this.formatDate(new Date())}`],
-        [`Date Range: ${this.formatDate(dateRange?.start || '')} - ${this.formatDate(dateRange?.end || '')}`],
+        [
+          `Date Range: ${this.formatDate(dateRange?.start || '')} - ${this.formatDate(dateRange?.end || '')}`,
+        ],
         [],
         ['Metric', 'Value'],
         ['Total Operations', exportData.summary.operations],
@@ -174,7 +182,7 @@ export class DashboardExporter {
         ['Success Rate', `${exportData.summary.successRate.toFixed(1)}%`],
         ['Average Response Time', this.formatDuration(exportData.summary.avgResponseTime)],
         ['Tokens Used', exportData.summary.tokensUsed.toLocaleString()],
-        ['Cost per Operation', this.formatCurrency(exportData.summary.costPerOperation)]
+        ['Cost per Operation', this.formatCurrency(exportData.summary.costPerOperation)],
       ];
 
       const overviewWS = XLSX.utils.aoa_to_sheet(overviewData);
@@ -190,8 +198,8 @@ export class DashboardExporter {
           item.cost,
           item.operations,
           item.tokens,
-          item.prediction || ''
-        ])
+          item.prediction || '',
+        ]),
       ];
 
       const costWS = XLSX.utils.aoa_to_sheet(costData);
@@ -210,8 +218,8 @@ export class DashboardExporter {
           decision.cost,
           decision.duration,
           decision.reason || '',
-          decision.tokens?.total || ''
-        ])
+          decision.tokens?.total || '',
+        ]),
       ];
 
       const decisionsWS = XLSX.utils.aoa_to_sheet(decisionsData);
@@ -230,8 +238,8 @@ export class DashboardExporter {
           operation.duration,
           operation.cost,
           operation.tokens || '',
-          operation.details || ''
-        ])
+          operation.details || '',
+        ]),
       ];
 
       const operationsWS = XLSX.utils.aoa_to_sheet(operationsData);
@@ -248,8 +256,8 @@ export class DashboardExporter {
           usage.cost,
           usage.tokens,
           usage.avgDuration,
-          `${usage.successRate.toFixed(1)}%`
-        ])
+          `${usage.successRate.toFixed(1)}%`,
+        ]),
       ];
 
       const breakdownWS = XLSX.utils.aoa_to_sheet(breakdownData);
@@ -258,7 +266,9 @@ export class DashboardExporter {
 
     // Generate and download Excel file
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
     const fileName = `dashboard-export-${new Date().toISOString().split('T')[0]}.xlsx`;
     saveAs(blob, fileName);
   }
@@ -287,7 +297,11 @@ export class DashboardExporter {
     yPosition += 5;
 
     if (dateRange) {
-      doc.text(`Date Range: ${this.formatDate(dateRange.start)} - ${this.formatDate(dateRange.end)}`, 20, yPosition);
+      doc.text(
+        `Date Range: ${this.formatDate(dateRange.start)} - ${this.formatDate(dateRange.end)}`,
+        20,
+        yPosition
+      );
       yPosition += 15;
     }
 
@@ -305,7 +319,7 @@ export class DashboardExporter {
         ['Success Rate', `${exportData.summary.successRate.toFixed(1)}%`],
         ['Average Response Time', this.formatDuration(exportData.summary.avgResponseTime)],
         ['Tokens Used', exportData.summary.tokensUsed.toLocaleString()],
-        ['Cost per Operation', this.formatCurrency(exportData.summary.costPerOperation)]
+        ['Cost per Operation', this.formatCurrency(exportData.summary.costPerOperation)],
       ];
 
       doc.autoTable({
@@ -314,7 +328,7 @@ export class DashboardExporter {
         body: overviewData.slice(1),
         theme: 'striped',
         headStyles: { fillColor: [160, 32, 240] },
-        margin: { left: 20, right: 20 }
+        margin: { left: 20, right: 20 },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 20;
@@ -333,13 +347,15 @@ export class DashboardExporter {
       doc.text('Cost Analysis', 20, yPosition);
       yPosition += 10;
 
-      const costTableData = exportData.costData.slice(0, 20).map(item => [
-        item.date,
-        this.formatCurrency(item.cost),
-        item.operations.toString(),
-        item.tokens.toLocaleString(),
-        item.prediction ? this.formatCurrency(item.prediction) : '-'
-      ]);
+      const costTableData = exportData.costData
+        .slice(0, 20)
+        .map(item => [
+          item.date,
+          this.formatCurrency(item.cost),
+          item.operations.toString(),
+          item.tokens.toLocaleString(),
+          item.prediction ? this.formatCurrency(item.prediction) : '-',
+        ]);
 
       doc.autoTable({
         startY: yPosition,
@@ -348,7 +364,7 @@ export class DashboardExporter {
         theme: 'striped',
         headStyles: { fillColor: [160, 32, 240] },
         margin: { left: 20, right: 20 },
-        styles: { fontSize: 8 }
+        styles: { fontSize: 8 },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 20;
@@ -369,10 +385,12 @@ export class DashboardExporter {
 
       const decisionsTableData = exportData.decisions.slice(0, 15).map(decision => [
         this.formatDate(decision.timestamp).split(',')[0], // Date only
-        decision.operation.length > 30 ? decision.operation.substring(0, 27) + '...' : decision.operation,
+        decision.operation.length > 30
+          ? decision.operation.substring(0, 27) + '...'
+          : decision.operation,
         decision.decision.toUpperCase(),
         this.formatCurrency(decision.cost),
-        this.formatDuration(decision.duration)
+        this.formatDuration(decision.duration),
       ]);
 
       doc.autoTable({
@@ -382,14 +400,18 @@ export class DashboardExporter {
         theme: 'striped',
         headStyles: { fillColor: [160, 32, 240] },
         margin: { left: 20, right: 20 },
-        styles: { fontSize: 8 }
+        styles: { fontSize: 8 },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 20;
     }
 
     // Usage breakdown section
-    if (sections.includes('breakdown') && exportData.usageBreakdown && exportData.usageBreakdown.length > 0) {
+    if (
+      sections.includes('breakdown') &&
+      exportData.usageBreakdown &&
+      exportData.usageBreakdown.length > 0
+    ) {
       // Check if new page is needed
       if (yPosition > 200) {
         doc.addPage();
@@ -406,7 +428,7 @@ export class DashboardExporter {
         usage.count.toLocaleString(),
         this.formatCurrency(usage.cost),
         usage.tokens.toLocaleString(),
-        `${usage.successRate.toFixed(1)}%`
+        `${usage.successRate.toFixed(1)}%`,
       ]);
 
       doc.autoTable({
@@ -416,7 +438,7 @@ export class DashboardExporter {
         theme: 'striped',
         headStyles: { fillColor: [160, 32, 240] },
         margin: { left: 20, right: 20 },
-        styles: { fontSize: 9 }
+        styles: { fontSize: 9 },
       });
 
       yPosition = (doc as any).lastAutoTable.finalY + 20;
@@ -452,9 +474,9 @@ export class DashboardExporter {
         exportedAt: new Date().toISOString(),
         version: 'MVP1-v8',
         format: 'json',
-        ...exportData.metadata
+        ...exportData.metadata,
       },
-      data: exportData
+      data: exportData,
     };
 
     const jsonString = JSON.stringify(jsonData, null, 2);
@@ -509,13 +531,13 @@ export class DashboardExporter {
         generatedAt: new Date().toISOString(),
         dateRange,
         totalOperations: summary.operations,
-        totalCost: summary.totalCost
+        totalCost: summary.totalCost,
       },
       summary,
       costData,
       decisions,
       operations,
-      usageBreakdown
+      usageBreakdown,
     };
   }
 }
@@ -538,11 +560,11 @@ export const exportUtils = {
     format: 'csv',
     dateRange: {
       start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-      end: new Date()
+      end: new Date(),
     },
     includeCharts: false,
     includeDetailedData: true,
-    sections: ['overview', 'costs', 'decisions', 'breakdown']
+    sections: ['overview', 'costs', 'decisions', 'breakdown'],
   }),
 
   estimateFileSize: (exportData: ExportData, format: string): number => {
@@ -550,11 +572,16 @@ export const exportUtils = {
     const baseSize = JSON.stringify(exportData).length / 1024;
 
     switch (format) {
-      case 'csv': return Math.round(baseSize * 0.5);
-      case 'xlsx': return Math.round(baseSize * 0.8);
-      case 'pdf': return Math.round(baseSize * 1.5);
-      case 'json': return Math.round(baseSize);
-      default: return Math.round(baseSize);
+      case 'csv':
+        return Math.round(baseSize * 0.5);
+      case 'xlsx':
+        return Math.round(baseSize * 0.8);
+      case 'pdf':
+        return Math.round(baseSize * 1.5);
+      case 'json':
+        return Math.round(baseSize);
+      default:
+        return Math.round(baseSize);
     }
-  }
+  },
 };

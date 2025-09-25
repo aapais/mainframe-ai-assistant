@@ -14,7 +14,7 @@ import {
   SearchOptions,
   ValidationConfig,
   KB_CATEGORIES,
-  ServiceError
+  ServiceError,
 } from '../types/services';
 
 /**
@@ -40,7 +40,7 @@ export class ValidationService implements IValidationService {
         code: 'REQUIRED',
         message: 'Title is required',
         value: entry.title,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -50,7 +50,7 @@ export class ValidationService implements IValidationService {
         code: 'REQUIRED',
         message: 'Problem description is required',
         value: entry.problem,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -60,7 +60,7 @@ export class ValidationService implements IValidationService {
         code: 'REQUIRED',
         message: 'Solution description is required',
         value: entry.solution,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -70,7 +70,7 @@ export class ValidationService implements IValidationService {
         code: 'REQUIRED',
         message: 'Category is required',
         value: entry.category,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -81,7 +81,7 @@ export class ValidationService implements IValidationService {
         code: 'MAX_LENGTH',
         message: `Title exceeds maximum length of ${this.config.maxLength.title} characters`,
         value: entry.title.length,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -92,7 +92,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: `Title must be at least ${this.config.minLength.title} characters`,
           value: entry.title.trim().length,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         warnings.push({
@@ -100,7 +100,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: `Title should be at least ${this.config.minLength.title} characters`,
           suggestion: 'Consider providing a more descriptive title',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -111,7 +111,7 @@ export class ValidationService implements IValidationService {
         code: 'MAX_LENGTH',
         message: `Problem description exceeds maximum length of ${this.config.maxLength.problem} characters`,
         value: entry.problem.length,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -122,7 +122,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: `Problem description must be at least ${this.config.minLength.problem} characters`,
           value: entry.problem.trim().length,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         warnings.push({
@@ -130,7 +130,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: `Problem description should be at least ${this.config.minLength.problem} characters`,
           suggestion: 'Consider providing more details about the problem',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -141,7 +141,7 @@ export class ValidationService implements IValidationService {
         code: 'MAX_LENGTH',
         message: `Solution description exceeds maximum length of ${this.config.maxLength.solution} characters`,
         value: entry.solution.length,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -152,7 +152,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: `Solution description must be at least ${this.config.minLength.solution} characters`,
           value: entry.solution.trim().length,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         warnings.push({
@@ -160,7 +160,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: `Solution description should be at least ${this.config.minLength.solution} characters`,
           suggestion: 'Consider providing step-by-step instructions',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -172,7 +172,7 @@ export class ValidationService implements IValidationService {
         code: 'INVALID_CATEGORY',
         message: `Category must be one of: ${this.config.patterns.category.join(', ')}`,
         value: entry.category,
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -184,7 +184,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_TYPE',
           message: 'Tags must be an array of strings',
           value: entry.tags,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         entry.tags.forEach((tag, index) => {
@@ -194,7 +194,7 @@ export class ValidationService implements IValidationService {
               code: 'INVALID_TYPE',
               message: 'Each tag must be a string',
               value: tag,
-              severity: 'error'
+              severity: 'error',
             });
           } else if (tag.length > this.config.maxLength.tags) {
             errors.push({
@@ -202,15 +202,16 @@ export class ValidationService implements IValidationService {
               code: 'MAX_LENGTH',
               message: `Tag exceeds maximum length of ${this.config.maxLength.tags} characters`,
               value: tag.length,
-              severity: 'error'
+              severity: 'error',
             });
           } else if (!this.config.patterns.tag.test(tag)) {
             errors.push({
               field: `tags[${index}]`,
               code: 'INVALID_FORMAT',
-              message: 'Tag contains invalid characters (only alphanumeric, hyphens, and underscores allowed)',
+              message:
+                'Tag contains invalid characters (only alphanumeric, hyphens, and underscores allowed)',
               value: tag,
-              severity: 'error'
+              severity: 'error',
             });
           }
         });
@@ -223,7 +224,7 @@ export class ValidationService implements IValidationService {
             code: 'DUPLICATE_TAGS',
             message: 'Duplicate tags detected',
             suggestion: 'Remove duplicate tags to avoid redundancy',
-            severity: 'warning'
+            severity: 'warning',
           });
         }
 
@@ -234,7 +235,7 @@ export class ValidationService implements IValidationService {
             code: 'TOO_MANY_TAGS',
             message: 'Consider using fewer tags for better organization',
             suggestion: 'Limit tags to the most relevant ones (recommended: 3-7 tags)',
-            severity: 'warning'
+            severity: 'warning',
           });
         }
       }
@@ -248,7 +249,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_FORMAT',
           message: 'Created by must be a non-empty string',
           value: entry.created_by,
-          severity: 'error'
+          severity: 'error',
         });
       } else if (entry.created_by.length > 100) {
         errors.push({
@@ -256,7 +257,7 @@ export class ValidationService implements IValidationService {
           code: 'MAX_LENGTH',
           message: 'Created by exceeds maximum length of 100 characters',
           value: entry.created_by.length,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -274,7 +275,7 @@ export class ValidationService implements IValidationService {
       valid: errors.length === 0,
       errors,
       warnings,
-      score: this.calculateQualityScore(entry, errors, warnings)
+      score: this.calculateQualityScore(entry, errors, warnings),
     };
   }
 
@@ -288,14 +289,14 @@ export class ValidationService implements IValidationService {
     // Check if at least one field is being updated
     const updatableFields = ['title', 'problem', 'solution', 'category', 'tags'];
     const hasUpdates = updatableFields.some(field => updates[field] !== undefined);
-    
+
     if (!hasUpdates) {
       warnings.push({
         field: 'general',
         code: 'NO_UPDATES',
         message: 'No fields are being updated',
         suggestion: 'Provide at least one field to update',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -307,7 +308,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Title cannot be empty',
           value: updates.title,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         if (updates.title.length > this.config.maxLength.title) {
@@ -316,7 +317,7 @@ export class ValidationService implements IValidationService {
             code: 'MAX_LENGTH',
             message: `Title exceeds maximum length of ${this.config.maxLength.title} characters`,
             value: updates.title.length,
-            severity: 'error'
+            severity: 'error',
           });
         }
         if (updates.title.trim().length < this.config.minLength.title) {
@@ -326,7 +327,7 @@ export class ValidationService implements IValidationService {
               code: 'MIN_LENGTH',
               message: `Title must be at least ${this.config.minLength.title} characters`,
               value: updates.title.trim().length,
-              severity: 'error'
+              severity: 'error',
             });
           } else {
             warnings.push({
@@ -334,7 +335,7 @@ export class ValidationService implements IValidationService {
               code: 'MIN_LENGTH',
               message: `Title should be at least ${this.config.minLength.title} characters`,
               suggestion: 'Consider providing a more descriptive title',
-              severity: 'warning'
+              severity: 'warning',
             });
           }
         }
@@ -348,7 +349,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Problem description cannot be empty',
           value: updates.problem,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         if (updates.problem.length > this.config.maxLength.problem) {
@@ -357,7 +358,7 @@ export class ValidationService implements IValidationService {
             code: 'MAX_LENGTH',
             message: `Problem description exceeds maximum length of ${this.config.maxLength.problem} characters`,
             value: updates.problem.length,
-            severity: 'error'
+            severity: 'error',
           });
         }
         if (updates.problem.trim().length < this.config.minLength.problem) {
@@ -367,7 +368,7 @@ export class ValidationService implements IValidationService {
               code: 'MIN_LENGTH',
               message: `Problem description must be at least ${this.config.minLength.problem} characters`,
               value: updates.problem.trim().length,
-              severity: 'error'
+              severity: 'error',
             });
           }
         }
@@ -381,7 +382,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Solution description cannot be empty',
           value: updates.solution,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         if (updates.solution.length > this.config.maxLength.solution) {
@@ -390,7 +391,7 @@ export class ValidationService implements IValidationService {
             code: 'MAX_LENGTH',
             message: `Solution description exceeds maximum length of ${this.config.maxLength.solution} characters`,
             value: updates.solution.length,
-            severity: 'error'
+            severity: 'error',
           });
         }
         if (updates.solution.trim().length < this.config.minLength.solution) {
@@ -400,7 +401,7 @@ export class ValidationService implements IValidationService {
               code: 'MIN_LENGTH',
               message: `Solution description must be at least ${this.config.minLength.solution} characters`,
               value: updates.solution.trim().length,
-              severity: 'error'
+              severity: 'error',
             });
           }
         }
@@ -414,7 +415,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_CATEGORY',
           message: `Category must be one of: ${this.config.patterns.category.join(', ')}`,
           value: updates.category,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -426,7 +427,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_TYPE',
           message: 'Tags must be an array of strings',
           value: updates.tags,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         updates.tags.forEach((tag, index) => {
@@ -436,7 +437,7 @@ export class ValidationService implements IValidationService {
               code: 'INVALID_TYPE',
               message: 'Each tag must be a string',
               value: tag,
-              severity: 'error'
+              severity: 'error',
             });
           } else if (tag.length > this.config.maxLength.tags) {
             errors.push({
@@ -444,7 +445,7 @@ export class ValidationService implements IValidationService {
               code: 'MAX_LENGTH',
               message: `Tag exceeds maximum length of ${this.config.maxLength.tags} characters`,
               value: tag.length,
-              severity: 'error'
+              severity: 'error',
             });
           } else if (!this.config.patterns.tag.test(tag)) {
             errors.push({
@@ -452,7 +453,7 @@ export class ValidationService implements IValidationService {
               code: 'INVALID_FORMAT',
               message: 'Tag contains invalid characters',
               value: tag,
-              severity: 'error'
+              severity: 'error',
             });
           }
         });
@@ -466,7 +467,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_FORMAT',
           message: 'Updated by must be a non-empty string',
           value: updates.updated_by,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -480,7 +481,7 @@ export class ValidationService implements IValidationService {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -498,7 +499,7 @@ export class ValidationService implements IValidationService {
         code: 'REQUIRED',
         message: 'Search query is required',
         value: query,
-        severity: 'error'
+        severity: 'error',
       });
     } else {
       if (query.trim().length === 0) {
@@ -507,7 +508,7 @@ export class ValidationService implements IValidationService {
           code: 'EMPTY',
           message: 'Search query cannot be empty',
           value: query,
-          severity: 'error'
+          severity: 'error',
         });
       }
 
@@ -517,7 +518,7 @@ export class ValidationService implements IValidationService {
           code: 'MAX_LENGTH',
           message: 'Search query is too long (max 500 characters)',
           value: query.length,
-          severity: 'error'
+          severity: 'error',
         });
       }
 
@@ -527,7 +528,7 @@ export class ValidationService implements IValidationService {
           code: 'MIN_LENGTH',
           message: 'Search query is very short',
           suggestion: 'Use at least 2 characters for better search results',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
 
@@ -535,7 +536,7 @@ export class ValidationService implements IValidationService {
       const sqlInjectionPatterns = [
         /(['"])\s*(;|--|\*|\/\*)/i,
         /(union|select|insert|update|delete|drop|create|alter)\s+/i,
-        /(\b(or|and)\b\s*\d+\s*=\s*\d+)/i
+        /(\b(or|and)\b\s*\d+\s*=\s*\d+)/i,
       ];
 
       if (sqlInjectionPatterns.some(pattern => pattern.test(query))) {
@@ -544,7 +545,7 @@ export class ValidationService implements IValidationService {
           code: 'SECURITY_RISK',
           message: 'Query contains potentially malicious content',
           value: query,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -557,7 +558,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Limit must be a positive integer',
           value: options.limit,
-          severity: 'error'
+          severity: 'error',
         });
       } else if (options.limit > 1000) {
         warnings.push({
@@ -565,7 +566,7 @@ export class ValidationService implements IValidationService {
           code: 'HIGH_VALUE',
           message: 'Large limit may impact performance',
           suggestion: 'Consider using pagination for better performance',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -577,7 +578,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Offset must be a non-negative integer',
           value: options.offset,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -589,7 +590,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_CATEGORY',
           message: `Category must be one of: ${this.config.patterns.category.join(', ')}`,
           value: options.category,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -601,7 +602,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_TYPE',
           message: 'Tags must be an array of strings',
           value: options.tags,
-          severity: 'error'
+          severity: 'error',
         });
       } else {
         options.tags.forEach((tag, index) => {
@@ -611,7 +612,7 @@ export class ValidationService implements IValidationService {
               code: 'INVALID_TYPE',
               message: 'Each tag must be a string',
               value: tag,
-              severity: 'error'
+              severity: 'error',
             });
           }
         });
@@ -626,7 +627,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: `Sort field must be one of: ${validSortFields.join(', ')}`,
           value: options.sortBy,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -638,7 +639,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Sort order must be "asc" or "desc"',
           value: options.sortOrder,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -650,7 +651,7 @@ export class ValidationService implements IValidationService {
           code: 'INVALID_VALUE',
           message: 'Threshold must be a number between 0 and 1',
           value: options.threshold,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -658,7 +659,7 @@ export class ValidationService implements IValidationService {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -684,13 +685,15 @@ export class ValidationService implements IValidationService {
       } catch (error) {
         return {
           valid: false,
-          errors: [{
-            field: `entry[${index}]`,
-            code: 'VALIDATION_ERROR',
-            message: `Validation failed: ${error.message}`,
-            severity: 'error' as const
-          }],
-          warnings: []
+          errors: [
+            {
+              field: `entry[${index}]`,
+              code: 'VALIDATION_ERROR',
+              message: `Validation failed: ${error.message}`,
+              severity: 'error' as const,
+            },
+          ],
+          warnings: [],
         };
       }
     });
@@ -814,7 +817,7 @@ export class ValidationService implements IValidationService {
   }
 
   private performContentQualityChecks(
-    entry: KBEntryInput | KBEntryUpdate, 
+    entry: KBEntryInput | KBEntryUpdate,
     warnings: ValidationWarning[]
   ): void {
     // Check for minimum information content
@@ -824,7 +827,7 @@ export class ValidationService implements IValidationService {
         code: 'CONTENT_QUALITY',
         message: 'Problem description seems too brief',
         suggestion: 'Consider providing more context about the problem',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -834,7 +837,7 @@ export class ValidationService implements IValidationService {
         code: 'CONTENT_QUALITY',
         message: 'Solution description seems too brief',
         suggestion: 'Consider providing step-by-step instructions',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -842,32 +845,39 @@ export class ValidationService implements IValidationService {
     if (entry.problem || entry.solution) {
       const text = `${entry.problem || ''} ${entry.solution || ''}`.toLowerCase();
       const mainframeTerms = ['jcl', 'cobol', 'vsam', 'db2', 'cics', 'ims', 'mvs', 'tso', 'ispf'];
-      
+
       if (!mainframeTerms.some(term => text.includes(term))) {
         warnings.push({
           field: 'general',
           code: 'CONTENT_RELEVANCE',
           message: 'Content may not be mainframe-related',
           suggestion: 'Verify this entry is relevant to mainframe systems',
-          severity: 'info' as any
+          severity: 'info' as any,
         });
       }
     }
 
     // Check for action words in solution
     if (entry.solution) {
-      const actionWords = ['check', 'verify', 'run', 'execute', 'modify', 'update', 'add', 'remove'];
-      const hasActionWords = actionWords.some(word => 
-        entry.solution!.toLowerCase().includes(word)
-      );
-      
+      const actionWords = [
+        'check',
+        'verify',
+        'run',
+        'execute',
+        'modify',
+        'update',
+        'add',
+        'remove',
+      ];
+      const hasActionWords = actionWords.some(word => entry.solution!.toLowerCase().includes(word));
+
       if (!hasActionWords) {
         warnings.push({
           field: 'solution',
           code: 'CONTENT_QUALITY',
           message: 'Solution may lack actionable steps',
           suggestion: 'Consider adding specific action steps (check, run, modify, etc.)',
-          severity: 'info' as any
+          severity: 'info' as any,
         });
       }
     }
@@ -895,7 +905,7 @@ export class ValidationService implements IValidationService {
             code: 'SENSITIVE_DATA',
             message: 'Potentially sensitive information detected',
             suggestion: 'Remove passwords, API keys, or personal information',
-            severity: 'warning'
+            severity: 'warning',
           });
         }
       });
@@ -911,7 +921,7 @@ export class ValidationService implements IValidationService {
               code: 'SENSITIVE_URL',
               message: 'URL may contain sensitive parameters',
               suggestion: 'Remove sensitive parameters from URLs',
-              severity: 'warning'
+              severity: 'warning',
             });
           }
         });
@@ -939,7 +949,7 @@ export class ValidationService implements IValidationService {
                 code: validator.code,
                 message: validator.message,
                 value: data[field],
-                severity: 'error'
+                severity: 'error',
               });
             }
           } catch (error) {

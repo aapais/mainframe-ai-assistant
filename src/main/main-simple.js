@@ -36,7 +36,7 @@ function createWindow() {
               document.getElementById('searchInput').value = '';
               document.getElementById('searchInput').focus();
             `);
-          }
+          },
         },
         { type: 'separator' },
         {
@@ -44,17 +44,17 @@ function createWindow() {
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
           click: () => {
             app.quit();
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Edit',
       submenu: [
         { label: 'Copy', accelerator: 'CmdOrCtrl+C', role: 'copy' },
         { label: 'Paste', accelerator: 'CmdOrCtrl+V', role: 'paste' },
-        { label: 'Select All', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }
-      ]
+        { label: 'Select All', accelerator: 'CmdOrCtrl+A', role: 'selectAll' },
+      ],
     },
     {
       label: 'View',
@@ -66,8 +66,8 @@ function createWindow() {
         { label: 'Zoom Out', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
         { label: 'Reset Zoom', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
         { type: 'separator' },
-        { label: 'Toggle Fullscreen', accelerator: 'F11', role: 'togglefullscreen' }
-      ]
+        { label: 'Toggle Fullscreen', accelerator: 'F11', role: 'togglefullscreen' },
+      ],
     },
     {
       label: 'Help',
@@ -78,17 +78,17 @@ function createWindow() {
             mainWindow.webContents.executeJavaScript(`
               alert('Accenture Mainframe AI Assistant\\nVersion 1.0.0\\n\\n© 2025 Accenture. All rights reserved.\\n\\nEnterprise Knowledge Base Solution\\nPowered by AI and decades of mainframe expertise');
             `);
-          }
+          },
         },
         { type: 'separator' },
         {
           label: 'View Documentation',
           click: () => {
             require('electron').shell.openExternal('https://www.accenture.com');
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   const menu = Menu.buildFromTemplate(template);

@@ -39,7 +39,7 @@ class PerformanceTracker {
       cls: null,
       ttfb: null,
       renderCount: 0,
-      rerenderReasons: []
+      rerenderReasons: [],
     };
     this.componentData = new Map();
     this.observers = new Map();
@@ -58,7 +58,7 @@ class PerformanceTracker {
 
     // Observe paint metrics (FCP, LCP)
     try {
-      const paintObserver = new PerformanceObserver((list) => {
+      const paintObserver = new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (entry.name === 'first-contentful-paint') {
             this.metrics.fcp = entry.startTime;
@@ -74,7 +74,7 @@ class PerformanceTracker {
 
     // Observe LCP
     try {
-      const lcpObserver = new PerformanceObserver((list) => {
+      const lcpObserver = new PerformanceObserver(list => {
         const entries = list.getEntries();
         if (entries.length > 0) {
           this.metrics.lcp = entries[entries.length - 1].startTime;
@@ -89,7 +89,7 @@ class PerformanceTracker {
 
     // Observe FID
     try {
-      const fidObserver = new PerformanceObserver((list) => {
+      const fidObserver = new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           this.metrics.fid = (entry as any).processingStart - entry.startTime;
         }
@@ -103,7 +103,7 @@ class PerformanceTracker {
 
     // Observe CLS
     try {
-      const clsObserver = new PerformanceObserver((list) => {
+      const clsObserver = new PerformanceObserver(list => {
         let clsValue = 0;
         for (const entry of list.getEntries()) {
           if (!(entry as any).hadRecentInput) {
@@ -126,7 +126,11 @@ class PerformanceTracker {
     }
   }
 
-  public trackComponentRender(componentName: string, renderTime: number, reasons: string[] = []): void {
+  public trackComponentRender(
+    componentName: string,
+    renderTime: number,
+    reasons: string[] = []
+  ): void {
     if (!this.componentData.has(componentName)) {
       this.componentData.set(componentName, []);
     }
@@ -138,7 +142,7 @@ class PerformanceTracker {
       renderCount: data.length + 1,
       propsChanged: reasons.includes('props'),
       contextChanged: reasons.includes('context'),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     this.metrics.renderCount++;
@@ -205,20 +209,23 @@ export const usePerformanceTracking = (componentName: string) => {
   const renderCount = useRef<number>(0);
   const tracker = PerformanceTracker.getInstance();
 
-  const trackRender = useCallback((props?: any, reasons: string[] = []) => {
-    const renderTime = Date.now() - renderStartTime.current;
-    renderCount.current++;
+  const trackRender = useCallback(
+    (props?: any, reasons: string[] = []) => {
+      const renderTime = Date.now() - renderStartTime.current;
+      renderCount.current++;
 
-    // Detect prop changes
-    if (previousProps.current && props) {
-      const propsChanged = JSON.stringify(previousProps.current) !== JSON.stringify(props);
-      if (propsChanged) reasons.push('props');
-    }
+      // Detect prop changes
+      if (previousProps.current && props) {
+        const propsChanged = JSON.stringify(previousProps.current) !== JSON.stringify(props);
+        if (propsChanged) reasons.push('props');
+      }
 
-    tracker.trackComponentRender(componentName, renderTime, reasons);
-    previousProps.current = props;
-    renderStartTime.current = Date.now();
-  }, [componentName, tracker]);
+      tracker.trackComponentRender(componentName, renderTime, reasons);
+      previousProps.current = props;
+      renderStartTime.current = Date.now();
+    },
+    [componentName, tracker]
+  );
 
   useEffect(() => {
     trackRender();
@@ -229,7 +236,9 @@ export const usePerformanceTracking = (componentName: string) => {
 
 // Performance Monitoring Dashboard Component
 export const PerformanceDashboard: React.FC = () => {
-  const [metrics, setMetrics] = useState<PerformanceMetrics>(PerformanceTracker.getInstance().getMetrics());
+  const [metrics, setMetrics] = useState<PerformanceMetrics>(
+    PerformanceTracker.getInstance().getMetrics()
+  );
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -260,55 +269,50 @@ export const PerformanceDashboard: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 bg-white shadow-2xl rounded-lg p-4 z-[9999] max-w-sm border">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-bold text-lg">Performance Monitor</h3>
-        <button
-          onClick={() => setIsVisible(false)}
-          className="text-gray-500 hover:text-gray-700"
-        >
+    <div className='fixed top-4 right-4 bg-white shadow-2xl rounded-lg p-4 z-[9999] max-w-sm border'>
+      <div className='flex justify-between items-center mb-3'>
+        <h3 className='font-bold text-lg'>Performance Monitor</h3>
+        <button onClick={() => setIsVisible(false)} className='text-gray-500 hover:text-gray-700'>
           ×
         </button>
       </div>
 
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
+      <div className='space-y-2 text-sm'>
+        <div className='flex justify-between'>
           <span>FCP:</span>
           <span className={`font-mono text-${getScoreColor(metrics.fcp, [1800, 3000])}-600`}>
             {metrics.fcp ? `${metrics.fcp.toFixed(0)}ms` : 'N/A'}
           </span>
         </div>
 
-        <div className="flex justify-between">
+        <div className='flex justify-between'>
           <span>LCP:</span>
           <span className={`font-mono text-${getScoreColor(metrics.lcp, [2500, 4000])}-600`}>
             {metrics.lcp ? `${metrics.lcp.toFixed(0)}ms` : 'N/A'}
           </span>
         </div>
 
-        <div className="flex justify-between">
+        <div className='flex justify-between'>
           <span>FID:</span>
           <span className={`font-mono text-${getScoreColor(metrics.fid, [100, 300])}-600`}>
             {metrics.fid ? `${metrics.fid.toFixed(0)}ms` : 'N/A'}
           </span>
         </div>
 
-        <div className="flex justify-between">
+        <div className='flex justify-between'>
           <span>CLS:</span>
           <span className={`font-mono text-${getScoreColor(metrics.cls, [0.1, 0.25])}-600`}>
             {metrics.cls ? metrics.cls.toFixed(3) : 'N/A'}
           </span>
         </div>
 
-        <div className="flex justify-between">
+        <div className='flex justify-between'>
           <span>Renders:</span>
-          <span className="font-mono">{metrics.renderCount}</span>
+          <span className='font-mono'>{metrics.renderCount}</span>
         </div>
       </div>
 
-      <div className="mt-3 pt-3 border-t text-xs text-gray-500">
-        Press Ctrl+Shift+P to toggle
-      </div>
+      <div className='mt-3 pt-3 border-t text-xs text-gray-500'>Press Ctrl+Shift+P to toggle</div>
     </div>
   );
 };
@@ -319,7 +323,8 @@ export const withPerformanceTracking = <P extends object>(
   componentName?: string
 ) => {
   const PerformanceTrackedComponent = React.memo((props: P) => {
-    const name = componentName || WrappedComponent.displayName || WrappedComponent.name || 'Unknown';
+    const name =
+      componentName || WrappedComponent.displayName || WrappedComponent.name || 'Unknown';
     usePerformanceTracking(name);
 
     return <WrappedComponent {...props} />;

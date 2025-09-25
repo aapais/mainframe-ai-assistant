@@ -65,7 +65,7 @@ export class ReportingSystem extends EventEmitter {
       schedulerCheckInterval: config.schedulerCheckInterval || 60000, // 1 minute
       alertEvaluationInterval: config.alertEvaluationInterval || 60000, // 1 minute
       maxHistoryPerReport: config.maxHistoryPerReport || 100,
-      maxCacheSize: config.maxCacheSize || 100
+      maxCacheSize: config.maxCacheSize || 100,
     };
 
     // Initialize components
@@ -111,7 +111,6 @@ export class ReportingSystem extends EventEmitter {
       this.isInitialized = true;
       this.logger.info('Reporting system initialized successfully');
       this.emit('systemInitialized');
-
     } catch (error) {
       this.logger.error('Failed to initialize reporting system', error);
       this.emit('systemError', error);
@@ -140,7 +139,6 @@ export class ReportingSystem extends EventEmitter {
       this.isInitialized = false;
       this.logger.info('Reporting system shutdown complete');
       this.emit('systemShutdown');
-
     } catch (error) {
       this.logger.error('Error during reporting system shutdown', error);
       this.emit('systemError', error);
@@ -175,15 +173,18 @@ export class ReportingSystem extends EventEmitter {
       performance: {
         averageReportGenerationTime: 0, // Would need to track this
         averageExportTime: 0, // Would need to track this
-        averageAlertResponseTime: alertMetrics.averageResolutionTime
-      }
+        averageAlertResponseTime: alertMetrics.averageResolutionTime,
+      },
     };
   }
 
   /**
    * Perform health check on all components
    */
-  public async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'unhealthy'; details: Record<string, any> }> {
+  public async healthCheck(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    details: Record<string, any>;
+  }> {
     const health = {
       status: 'healthy' as 'healthy' | 'degraded' | 'unhealthy',
       details: {
@@ -191,22 +192,22 @@ export class ReportingSystem extends EventEmitter {
         scheduler: {
           running: this.reportScheduler['isRunning'],
           activeReports: this.reportScheduler.getActiveReports().length,
-          queuedExecutions: this.reportScheduler.getMetrics().queuedExecutions
+          queuedExecutions: this.reportScheduler.getMetrics().queuedExecutions,
         },
         alertManager: {
           running: this.alertManager['isRunning'],
           activeRules: this.alertManager.listAlertRules(true).length,
-          activeAlerts: this.alertManager.getActiveAlerts().length
+          activeAlerts: this.alertManager.getActiveAlerts().length,
         },
         dataExporter: {
           supportedFormats: this.dataExporter.getSupportedFormats(),
-          activeJobs: this.dataExporter.listJobs('processing').length
+          activeJobs: this.dataExporter.listJobs('processing').length,
         },
         cache: {
           reportCacheSize: this.reportGenerator['reportCache'].size,
-          maxCacheSize: this.config.maxCacheSize
-        }
-      }
+          maxCacheSize: this.config.maxCacheSize,
+        },
+      },
     };
 
     // Determine overall health status
@@ -241,71 +242,71 @@ export class ReportingSystem extends EventEmitter {
 
   private setupEventHandlers(): void {
     // Report Generator events
-    this.reportGenerator.on('reportStarted', (event) => {
+    this.reportGenerator.on('reportStarted', event => {
       this.emit('reportStarted', event);
     });
 
-    this.reportGenerator.on('reportCompleted', (event) => {
+    this.reportGenerator.on('reportCompleted', event => {
       this.emit('reportCompleted', event);
     });
 
-    this.reportGenerator.on('reportError', (event) => {
+    this.reportGenerator.on('reportError', event => {
       this.emit('reportError', event);
     });
 
     // Custom Report Builder events
-    this.customReportBuilder.on('templateCreated', (event) => {
+    this.customReportBuilder.on('templateCreated', event => {
       this.emit('templateCreated', event);
     });
 
-    this.customReportBuilder.on('builderCreated', (event) => {
+    this.customReportBuilder.on('builderCreated', event => {
       this.emit('builderCreated', event);
     });
 
     // Data Exporter events
-    this.dataExporter.on('jobCreated', (event) => {
+    this.dataExporter.on('jobCreated', event => {
       this.emit('exportJobCreated', event);
     });
 
-    this.dataExporter.on('jobCompleted', (event) => {
+    this.dataExporter.on('jobCompleted', event => {
       this.emit('exportJobCompleted', event);
     });
 
-    this.dataExporter.on('jobFailed', (event) => {
+    this.dataExporter.on('jobFailed', event => {
       this.emit('exportJobFailed', event);
     });
 
     // Report Scheduler events
-    this.reportScheduler.on('scheduledReportCreated', (event) => {
+    this.reportScheduler.on('scheduledReportCreated', event => {
       this.emit('scheduledReportCreated', event);
     });
 
-    this.reportScheduler.on('executionStarted', (event) => {
+    this.reportScheduler.on('executionStarted', event => {
       this.emit('scheduledExecutionStarted', event);
     });
 
-    this.reportScheduler.on('executionCompleted', (event) => {
+    this.reportScheduler.on('executionCompleted', event => {
       this.emit('scheduledExecutionCompleted', event);
     });
 
-    this.reportScheduler.on('executionFailed', (event) => {
+    this.reportScheduler.on('executionFailed', event => {
       this.emit('scheduledExecutionFailed', event);
     });
 
     // Alert Manager events
-    this.alertManager.on('alertRuleCreated', (event) => {
+    this.alertManager.on('alertRuleCreated', event => {
       this.emit('alertRuleCreated', event);
     });
 
-    this.alertManager.on('alertTriggered', (event) => {
+    this.alertManager.on('alertTriggered', event => {
       this.emit('alertTriggered', event);
     });
 
-    this.alertManager.on('alertResolved', (event) => {
+    this.alertManager.on('alertResolved', event => {
       this.emit('alertResolved', event);
     });
 
-    this.alertManager.on('alertAcknowledged', (event) => {
+    this.alertManager.on('alertAcknowledged', event => {
       this.emit('alertAcknowledged', event);
     });
   }
@@ -327,7 +328,7 @@ export class ReportingSystem extends EventEmitter {
       type: 'custom' as const,
       dataSource,
       format,
-      parameters: {}
+      parameters: {},
     };
 
     return await this.reportGenerator.generateReport(config);
@@ -338,7 +339,7 @@ export class ReportingSystem extends EventEmitter {
     const config = {
       format,
       fileName,
-      options: {}
+      options: {},
     };
 
     return await this.dataExporter.exportData(data, config);
@@ -360,7 +361,7 @@ export class ReportingSystem extends EventEmitter {
         type: 'threshold',
         metric,
         comparison,
-        value: threshold
+        value: threshold,
       },
       [
         {
@@ -369,18 +370,18 @@ export class ReportingSystem extends EventEmitter {
             type: 'threshold',
             metric,
             comparison,
-            value: threshold
+            value: threshold,
           },
           message: `${metric} ${comparison} ${threshold}`,
-          autoResolve: true
-        }
+          autoResolve: true,
+        },
       ],
       notificationEmails.map(email => ({
         type: 'email',
-        recipients: [email]
+        recipients: [email],
       })),
       {
-        timezone: 'UTC'
+        timezone: 'UTC',
       },
       'system'
     );
@@ -390,9 +391,14 @@ export class ReportingSystem extends EventEmitter {
 // Export singleton instance factory
 let reportingSystemInstance: ReportingSystem | null = null;
 
-export function createReportingSystem(logger: Logger, config?: ReportingSystemConfig): ReportingSystem {
+export function createReportingSystem(
+  logger: Logger,
+  config?: ReportingSystemConfig
+): ReportingSystem {
   if (reportingSystemInstance) {
-    throw new Error('Reporting system instance already exists. Use getReportingSystem() to access it.');
+    throw new Error(
+      'Reporting system instance already exists. Use getReportingSystem() to access it.'
+    );
   }
 
   reportingSystemInstance = new ReportingSystem(logger, config);

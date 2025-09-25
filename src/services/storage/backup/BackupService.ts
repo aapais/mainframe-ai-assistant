@@ -1,6 +1,6 @@
 /**
  * Comprehensive Backup Service
- * 
+ *
  * Advanced backup service that extends the existing BackupSystem with enterprise-grade features
  * including multiple backup strategies, destinations, retention policies, and comprehensive
  * monitoring and recovery capabilities.
@@ -160,12 +160,15 @@ export interface BackupInventory {
   totalBackups: number;
   totalSize: number;
   byStrategy: Record<BackupStrategyType, number>;
-  byDestination: Record<string, {
-    count: number;
-    size: number;
-    oldestBackup: Date;
-    newestBackup: Date;
-  }>;
+  byDestination: Record<
+    string,
+    {
+      count: number;
+      size: number;
+      oldestBackup: Date;
+      newestBackup: Date;
+    }
+  >;
   retentionStatus: {
     expiredBackups: number;
     orphanedBackups: number;
@@ -218,7 +221,7 @@ export class BackupService extends EventEmitter {
 
       // Start background services
       await this.scheduler.initialize();
-      
+
       // Start cleanup scheduler
       this.startRetentionPolicyEnforcement();
 
@@ -227,7 +230,6 @@ export class BackupService extends EventEmitter {
 
       console.log('✅ Backup Service initialized successfully');
       await this.logServiceStats();
-
     } catch (error) {
       console.error('❌ Backup Service initialization failed:', error);
       throw error;
@@ -264,7 +266,7 @@ export class BackupService extends EventEmitter {
     this.ensureInitialized();
 
     const jobId = request.id || this.generateJobId();
-    
+
     try {
       // Create backup job
       const job = await this.createBackupJob(jobId, request);
@@ -280,7 +282,6 @@ export class BackupService extends EventEmitter {
 
       this.emit('backup:started', job);
       return jobId;
-
     } catch (error) {
       console.error(`❌ Failed to create backup ${jobId}:`, error);
       this.emit('backup:failed', { id: jobId, error: error.message });
@@ -329,26 +330,22 @@ export class BackupService extends EventEmitter {
     }
 
     if (filter?.destination) {
-      filteredJobs = filteredJobs.filter(job => 
+      filteredJobs = filteredJobs.filter(job =>
         job.destinations.some(dest => dest.id === filter.destination)
       );
     }
 
     if (filter?.fromDate) {
-      filteredJobs = filteredJobs.filter(job => 
-        job.startTime && job.startTime >= filter.fromDate!
-      );
+      filteredJobs = filteredJobs.filter(job => job.startTime && job.startTime >= filter.fromDate!);
     }
 
     if (filter?.toDate) {
-      filteredJobs = filteredJobs.filter(job => 
-        job.startTime && job.startTime <= filter.toDate!
-      );
+      filteredJobs = filteredJobs.filter(job => job.startTime && job.startTime <= filter.toDate!);
     }
 
     if (filter?.tags && filter.tags.length > 0) {
-      filteredJobs = filteredJobs.filter(job => 
-        job.request.tags && job.request.tags.some(tag => filter.tags!.includes(tag))
+      filteredJobs = filteredJobs.filter(
+        job => job.request.tags && job.request.tags.some(tag => filter.tags!.includes(tag))
       );
     }
 
@@ -391,7 +388,6 @@ export class BackupService extends EventEmitter {
 
       console.log(`🚫 Backup cancelled: ${jobId}`);
       return true;
-
     } catch (error) {
       console.error(`❌ Failed to cancel backup ${jobId}:`, error);
       return false;
@@ -457,11 +453,11 @@ export class BackupService extends EventEmitter {
         activeJobs: activeJobCount,
         totalJobs,
         successRate,
-        uptime: process.uptime()
+        uptime: process.uptime(),
       },
       destinations: await this.getDestinationMetrics(),
       strategies: await this.getStrategyMetrics(),
-      performance: await this.getPerformanceMetrics()
+      performance: await this.getPerformanceMetrics(),
     };
   }
 
@@ -479,14 +475,14 @@ export class BackupService extends EventEmitter {
       retentionStatus: {
         expiredBackups: 0,
         orphanedBackups: 0,
-        corruptedBackups: 0
-      }
+        corruptedBackups: 0,
+      },
     };
 
     // Calculate totals and groupings
     for (const job of completedJobs) {
       // Strategy grouping
-      inventory.byStrategy[job.request.strategy] = 
+      inventory.byStrategy[job.request.strategy] =
         (inventory.byStrategy[job.request.strategy] || 0) + 1;
 
       // Destination grouping and size calculation
@@ -499,7 +495,7 @@ export class BackupService extends EventEmitter {
               count: 0,
               size: 0,
               oldestBackup: job.startTime!,
-              newestBackup: job.startTime!
+              newestBackup: job.startTime!,
             };
           }
 
@@ -552,14 +548,14 @@ export class BackupService extends EventEmitter {
       issues.push(`Average backup time exceeds threshold`);
     }
 
-    const status = failedDestinations.length > 0 ? 'critical' :
-                   issues.length > 0 ? 'warning' : 'healthy';
+    const status =
+      failedDestinations.length > 0 ? 'critical' : issues.length > 0 ? 'warning' : 'healthy';
 
     return {
       status,
       issues,
       destinations: destinationHealth,
-      performance
+      performance,
     };
   }
 
@@ -641,13 +637,12 @@ export class BackupService extends EventEmitter {
 
       return {
         success: true,
-        responseTime
+        responseTime,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -664,24 +659,24 @@ export class BackupService extends EventEmitter {
 
   private async initializeStrategies(): Promise<void> {
     const { BackupStrategy } = await import('./BackupStrategy');
-    
+
     this.strategies.set('full', new BackupStrategy('full'));
     this.strategies.set('incremental', new BackupStrategy('incremental'));
     this.strategies.set('differential', new BackupStrategy('differential'));
-    
+
     console.log(`📋 Initialized ${this.strategies.size} backup strategies`);
   }
 
   private async validateDestinations(): Promise<void> {
     for (const destination of this.config.destinations) {
       await this.validateDestination(destination);
-      
+
       // Ensure destination directory exists
       if (!fs.existsSync(destination.path)) {
         fs.mkdirSync(destination.path, { recursive: true });
       }
     }
-    
+
     console.log(`📁 Validated ${this.config.destinations.length} backup destinations`);
   }
 
@@ -760,8 +755,8 @@ export class BackupService extends EventEmitter {
     // Determine destinations
     let destinations: BackupDestination[];
     if (request.destinations && request.destinations.length > 0) {
-      destinations = this.config.destinations.filter(d => 
-        request.destinations!.includes(d.id) && d.enabled
+      destinations = this.config.destinations.filter(
+        d => request.destinations!.includes(d.id) && d.enabled
       );
     } else {
       destinations = this.config.destinations.filter(d => d.enabled);
@@ -787,9 +782,9 @@ export class BackupService extends EventEmitter {
         phase: 'initializing',
         percentage: 0,
         bytesProcessed: 0,
-        totalBytes: 0
+        totalBytes: 0,
       },
-      results: []
+      results: [],
     };
 
     return job;
@@ -799,14 +794,14 @@ export class BackupService extends EventEmitter {
     try {
       job.status = 'running';
       job.startTime = new Date();
-      
+
       this.emit('backup:progress', job);
 
       // Get source data information
       const sourceInfo = await this.adapter.getMetrics();
       job.progress.totalBytes = sourceInfo.size || 0;
       job.progress.phase = 'preparing';
-      
+
       this.emit('backup:progress', job);
 
       // Execute backup strategy
@@ -817,16 +812,16 @@ export class BackupService extends EventEmitter {
       this.emit('backup:progress', job);
 
       // Upload to all destinations in parallel (with concurrency limit)
-      const uploadPromises = job.destinations.map(dest => 
+      const uploadPromises = job.destinations.map(dest =>
         this.uploadToDestination(dest, backupData, job)
       );
 
       const results = await Promise.allSettled(uploadPromises);
-      
+
       // Process results
       results.forEach((result, index) => {
         const destination = job.destinations[index];
-        
+
         if (result.status === 'fulfilled') {
           job.results.push(result.value);
         } else {
@@ -837,7 +832,7 @@ export class BackupService extends EventEmitter {
             size: 0,
             checksums: { original: '', backup: '' },
             duration: 0,
-            error: result.reason?.message || 'Upload failed'
+            error: result.reason?.message || 'Upload failed',
           });
         }
       });
@@ -857,7 +852,7 @@ export class BackupService extends EventEmitter {
       // Determine final status
       const successfulResults = job.results.filter(r => r.success);
       job.status = successfulResults.length > 0 ? 'completed' : 'failed';
-      
+
       if (job.status === 'failed') {
         job.error = 'All backup destinations failed';
       }
@@ -875,27 +870,26 @@ export class BackupService extends EventEmitter {
       this.emit(job.status === 'completed' ? 'backup:completed' : 'backup:failed', job);
 
       console.log(`${job.status === 'completed' ? '✅' : '❌'} Backup ${job.status}: ${job.id}`);
-
     } catch (error) {
       job.status = 'failed';
       job.error = error.message;
       job.endTime = new Date();
-      
+
       this.activeJobs.delete(job.id);
       this.emit('backup:failed', job);
-      
+
       console.error(`❌ Backup execution failed: ${job.id}`, error);
       throw error;
     }
   }
 
   private async uploadToDestination(
-    destination: BackupDestination, 
-    data: Buffer, 
+    destination: BackupDestination,
+    data: Buffer,
     job: BackupJob
   ): Promise<BackupJobResult> {
     const startTime = Date.now();
-    
+
     try {
       // Generate backup filename
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -930,9 +924,9 @@ export class BackupService extends EventEmitter {
         compressedSize: finalData.length,
         checksums: {
           original: originalChecksum,
-          backup: backupChecksum
+          backup: backupChecksum,
         },
-        duration
+        duration,
       };
 
       // Validate if requested
@@ -941,7 +935,6 @@ export class BackupService extends EventEmitter {
       }
 
       return result;
-
     } catch (error) {
       return {
         destinationId: destination.id,
@@ -950,7 +943,7 @@ export class BackupService extends EventEmitter {
         size: 0,
         checksums: { original: '', backup: '' },
         duration: Date.now() - startTime,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -959,7 +952,7 @@ export class BackupService extends EventEmitter {
     for (const result of job.results) {
       if (result.success && !result.validationResult) {
         result.validationResult = await this.validator.validate(
-          result.backupPath, 
+          result.backupPath,
           result.checksums.original
         );
       }
@@ -969,10 +962,13 @@ export class BackupService extends EventEmitter {
   private calculateBackupMetrics(job: BackupJob): BackupMetrics {
     const totalDuration = (job.endTime!.getTime() - job.startTime!.getTime()) / 1000;
     const successfulResults = job.results.filter(r => r.success);
-    
+
     const totalSize = successfulResults.reduce((sum, r) => sum + r.size, 0);
-    const totalCompressedSize = successfulResults.reduce((sum, r) => sum + (r.compressedSize || r.size), 0);
-    
+    const totalCompressedSize = successfulResults.reduce(
+      (sum, r) => sum + (r.compressedSize || r.size),
+      0
+    );
+
     const compressionRatio = totalSize > 0 ? (totalSize - totalCompressedSize) / totalSize : 0;
     const transferRate = totalDuration > 0 ? totalSize / totalDuration : 0;
 
@@ -985,8 +981,8 @@ export class BackupService extends EventEmitter {
         destinationId: result.destinationId,
         uploadTime: result.duration / 1000,
         transferRate: result.duration > 0 ? result.size / (result.duration / 1000) : 0,
-        retryCount: 0 // TODO: Track retries
-      }))
+        retryCount: 0, // TODO: Track retries
+      })),
     };
   }
 
@@ -1005,16 +1001,13 @@ export class BackupService extends EventEmitter {
         JSON.stringify(job.progress),
         JSON.stringify(job.results),
         job.error,
-        JSON.stringify(job.metrics)
+        JSON.stringify(job.metrics),
       ]
     );
   }
 
   private async getCompletedJob(jobId: string): Promise<BackupJob | null> {
-    const rows = await this.adapter.executeSQL(
-      'SELECT * FROM backup_jobs WHERE id = ?',
-      [jobId]
-    );
+    const rows = await this.adapter.executeSQL('SELECT * FROM backup_jobs WHERE id = ?', [jobId]);
 
     if (!rows || rows.length === 0) {
       return null;
@@ -1061,16 +1054,17 @@ export class BackupService extends EventEmitter {
       request: JSON.parse(row.request_data),
       status: row.status,
       strategy: this.strategies.get(JSON.parse(row.request_data).strategy)!,
-      destinations: this.config.destinations.filter(d => 
-        JSON.parse(row.request_data).destinations?.includes(d.id) || 
-        !JSON.parse(row.request_data).destinations
+      destinations: this.config.destinations.filter(
+        d =>
+          JSON.parse(row.request_data).destinations?.includes(d.id) ||
+          !JSON.parse(row.request_data).destinations
       ),
       startTime: row.start_time ? new Date(row.start_time) : undefined,
       endTime: row.end_time ? new Date(row.end_time) : undefined,
       progress: JSON.parse(row.progress_data),
       results: JSON.parse(row.results_data),
       error: row.error_message,
-      metrics: row.metrics_data ? JSON.parse(row.metrics_data) : undefined
+      metrics: row.metrics_data ? JSON.parse(row.metrics_data) : undefined,
     };
   }
 
@@ -1112,7 +1106,7 @@ export class BackupService extends EventEmitter {
 
   private async getDestinationMetrics(): Promise<any[]> {
     return Promise.all(
-      this.config.destinations.map(async (dest) => {
+      this.config.destinations.map(async dest => {
         const testResult = await this.testDestination(dest.id);
         return {
           id: dest.id,
@@ -1121,7 +1115,7 @@ export class BackupService extends EventEmitter {
           enabled: dest.enabled,
           healthy: testResult.success,
           responseTime: testResult.responseTime,
-          error: testResult.error
+          error: testResult.error,
         };
       })
     );
@@ -1145,7 +1139,7 @@ export class BackupService extends EventEmitter {
       totalJobs: stat.total_jobs,
       successfulJobs: stat.successful_jobs,
       successRate: stat.total_jobs > 0 ? (stat.successful_jobs / stat.total_jobs) * 100 : 0,
-      averageDuration: stat.avg_duration || 0
+      averageDuration: stat.avg_duration || 0,
     }));
   }
 
@@ -1166,12 +1160,12 @@ export class BackupService extends EventEmitter {
     `);
 
     const stats = result[0] || {};
-    
+
     return {
       averageBackupTime: stats.avg_backup_time || 0,
       maxBackupTime: stats.max_backup_time || 0,
       minBackupTime: stats.min_backup_time || 0,
-      activeJobs: this.activeJobs.size
+      activeJobs: this.activeJobs.size,
     };
   }
 
@@ -1188,26 +1182,28 @@ export class BackupService extends EventEmitter {
     `);
 
     // TODO: Implement logic for orphaned and corrupted backup detection
-    
+
     return {
       expiredBackups: expiredBackups[0]?.count || 0,
       orphanedBackups: 0,
-      corruptedBackups: 0
+      corruptedBackups: 0,
     };
   }
 
-  private async checkDestinationHealth(): Promise<Array<{
-    id: string;
-    status: string;
-    message?: string;
-  }>> {
+  private async checkDestinationHealth(): Promise<
+    Array<{
+      id: string;
+      status: string;
+      message?: string;
+    }>
+  > {
     return Promise.all(
-      this.config.destinations.map(async (dest) => {
+      this.config.destinations.map(async dest => {
         const testResult = await this.testDestination(dest.id);
         return {
           id: dest.id,
           status: testResult.success ? 'healthy' : 'failed',
-          message: testResult.error
+          message: testResult.error,
         };
       })
     );
@@ -1233,13 +1229,16 @@ export class BackupService extends EventEmitter {
 
   private startRetentionPolicyEnforcement(): void {
     // Run retention policy enforcement every hour
-    setInterval(async () => {
-      try {
-        await this.enforceRetentionPolicy();
-      } catch (error) {
-        console.error('❌ Retention policy enforcement failed:', error);
-      }
-    }, 60 * 60 * 1000); // 1 hour
+    setInterval(
+      async () => {
+        try {
+          await this.enforceRetentionPolicy();
+        } catch (error) {
+          console.error('❌ Retention policy enforcement failed:', error);
+        }
+      },
+      60 * 60 * 1000
+    ); // 1 hour
   }
 
   private async enforceRetentionPolicy(): Promise<void> {
@@ -1247,24 +1246,27 @@ export class BackupService extends EventEmitter {
     const now = new Date();
 
     // Calculate cutoff dates
-    const dailyCutoff = new Date(now.getTime() - (policy.keepDaily * 24 * 60 * 60 * 1000));
-    const weeklyCutoff = new Date(now.getTime() - (policy.keepWeekly * 7 * 24 * 60 * 60 * 1000));
-    const monthlyCutoff = new Date(now.getTime() - (policy.keepMonthly * 30 * 24 * 60 * 60 * 1000));
-    const yearlyCutoff = new Date(now.getTime() - (policy.keepYearly * 365 * 24 * 60 * 60 * 1000));
+    const dailyCutoff = new Date(now.getTime() - policy.keepDaily * 24 * 60 * 60 * 1000);
+    const weeklyCutoff = new Date(now.getTime() - policy.keepWeekly * 7 * 24 * 60 * 60 * 1000);
+    const monthlyCutoff = new Date(now.getTime() - policy.keepMonthly * 30 * 24 * 60 * 60 * 1000);
+    const yearlyCutoff = new Date(now.getTime() - policy.keepYearly * 365 * 24 * 60 * 60 * 1000);
 
     // Find expired backups
-    const expiredJobs = await this.adapter.executeSQL(`
+    const expiredJobs = await this.adapter.executeSQL(
+      `
       SELECT id, results_data FROM backup_jobs 
       WHERE status = 'completed' 
       AND start_time < ?
-    `, [yearlyCutoff.toISOString()]);
+    `,
+      [yearlyCutoff.toISOString()]
+    );
 
     let deletedCount = 0;
 
     for (const job of expiredJobs) {
       try {
         const results = JSON.parse(job.results_data);
-        
+
         // Delete backup files
         for (const result of results) {
           if (result.success && result.backupPath && fs.existsSync(result.backupPath)) {
@@ -1275,7 +1277,6 @@ export class BackupService extends EventEmitter {
         // Delete job metadata
         await this.adapter.executeSQL('DELETE FROM backup_jobs WHERE id = ?', [job.id]);
         deletedCount++;
-
       } catch (error) {
         console.warn(`⚠️ Failed to delete expired backup ${job.id}:`, error);
       }

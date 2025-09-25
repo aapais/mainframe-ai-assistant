@@ -4,361 +4,366 @@
  */
 
 class AuditDashboard {
-    constructor() {
-        this.socket = null;
-        this.charts = {};
-        this.currentSection = 'overview';
-        this.data = {
-            metrics: {},
-            logs: [],
-            alerts: [],
-            compliance: {},
-            analytics: {}
-        };
+  constructor() {
+    this.socket = null;
+    this.charts = {};
+    this.currentSection = 'overview';
+    this.data = {
+      metrics: {},
+      logs: [],
+      alerts: [],
+      compliance: {},
+      analytics: {},
+    };
 
-        this.init();
+    this.init();
+  }
+
+  /**
+   * Inicializa o dashboard
+   */
+  init() {
+    this.setupSocketConnection();
+    this.setupNavigation();
+    this.setupEventHandlers();
+    this.setupCharts();
+    this.setupModals();
+
+    // Carrega dados iniciais
+    this.loadInitialData();
+  }
+
+  /**
+   * Configura conexão WebSocket
+   */
+  setupSocketConnection() {
+    this.socket = io();
+
+    this.socket.on('connect', () => {
+      console.log('Connected to audit server');
+      this.updateConnectionStatus(true);
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('Disconnected from audit server');
+      this.updateConnectionStatus(false);
+    });
+
+    this.socket.on('initialData', data => {
+      this.data = { ...this.data, ...data };
+      this.updateDashboard();
+    });
+
+    this.socket.on('newAuditEntry', entry => {
+      this.data.logs.unshift(entry.data);
+      if (this.data.logs.length > 100) {
+        this.data.logs.pop();
+      }
+      this.updateLogsTable();
+      this.updateMetrics();
+    });
+
+    this.socket.on('newAlerts', alerts => {
+      this.data.alerts.unshift(...alerts.data);
+      this.updateAlertsSection();
+      this.showNotification('Novos alertas recebidos', 'warning');
+    });
+
+    this.socket.on('metricsUpdate', metrics => {
+      this.data.metrics = metrics.data;
+      this.updateMetrics();
+    });
+
+    this.socket.on('dataUpdate', update => {
+      this.data[update.type] = update.data;
+      this.updateSection(update.type);
+    });
+
+    this.socket.on('error', error => {
+      this.showNotification(error.message, 'error');
+    });
+  }
+
+  /**
+   * Configura navegação entre seções
+   */
+  setupNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+
+        const section = link.dataset.section;
+        this.switchSection(section);
+
+        // Atualiza estado ativo dos links
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      });
+    });
+  }
+
+  /**
+   * Configura event handlers
+   */
+  setupEventHandlers() {
+    // Refresh buttons
+    document.getElementById('refreshOverview')?.addEventListener('click', () => {
+      this.refreshData();
+    });
+
+    // Log filters
+    document.getElementById('filterLogs')?.addEventListener('click', () => {
+      this.applyLogFilters();
+    });
+
+    document.getElementById('logSearch')?.addEventListener('input', e => {
+      this.searchLogs(e.target.value);
+    });
+
+    // Export buttons
+    document.getElementById('exportLogs')?.addEventListener('click', () => {
+      this.showExportModal();
+    });
+
+    // Report generation
+    document.getElementById('generateReport')?.addEventListener('click', () => {
+      this.generateComplianceReport();
+    });
+
+    // Analytics timeframe
+    document.getElementById('analyticsTimeframe')?.addEventListener('change', e => {
+      this.updateAnalyticsTimeframe(e.target.value);
+    });
+  }
+
+  /**
+   * Configura gráficos Chart.js
+   */
+  setupCharts() {
+    // Gráfico de eventos por hora
+    const eventsCtx = document.getElementById('eventsChart');
+    if (eventsCtx) {
+      this.charts.events = new Chart(eventsCtx, {
+        type: 'line',
+        data: {
+          labels: this.generateHourLabels(),
+          datasets: [
+            {
+              label: 'Eventos',
+              data: new Array(24).fill(0),
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.1)',
+              tension: 0.4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
     }
 
-    /**
-     * Inicializa o dashboard
-     */
-    init() {
-        this.setupSocketConnection();
-        this.setupNavigation();
-        this.setupEventHandlers();
-        this.setupCharts();
-        this.setupModals();
-
-        // Carrega dados iniciais
-        this.loadInitialData();
+    // Gráfico de performance
+    const performanceCtx = document.getElementById('performanceChart');
+    if (performanceCtx) {
+      this.charts.performance = new Chart(performanceCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Dentro do SLA', 'Fora do SLA'],
+          datasets: [
+            {
+              data: [85, 15],
+              backgroundColor: ['#10b981', '#ef4444'],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+        },
+      });
     }
 
-    /**
-     * Configura conexão WebSocket
-     */
-    setupSocketConnection() {
-        this.socket = io();
-
-        this.socket.on('connect', () => {
-            console.log('Connected to audit server');
-            this.updateConnectionStatus(true);
-        });
-
-        this.socket.on('disconnect', () => {
-            console.log('Disconnected from audit server');
-            this.updateConnectionStatus(false);
-        });
-
-        this.socket.on('initialData', (data) => {
-            this.data = { ...this.data, ...data };
-            this.updateDashboard();
-        });
-
-        this.socket.on('newAuditEntry', (entry) => {
-            this.data.logs.unshift(entry.data);
-            if (this.data.logs.length > 100) {
-                this.data.logs.pop();
-            }
-            this.updateLogsTable();
-            this.updateMetrics();
-        });
-
-        this.socket.on('newAlerts', (alerts) => {
-            this.data.alerts.unshift(...alerts.data);
-            this.updateAlertsSection();
-            this.showNotification('Novos alertas recebidos', 'warning');
-        });
-
-        this.socket.on('metricsUpdate', (metrics) => {
-            this.data.metrics = metrics.data;
-            this.updateMetrics();
-        });
-
-        this.socket.on('dataUpdate', (update) => {
-            this.data[update.type] = update.data;
-            this.updateSection(update.type);
-        });
-
-        this.socket.on('error', (error) => {
-            this.showNotification(error.message, 'error');
-        });
+    // Gráfico de tendências
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+      this.charts.trend = new Chart(trendCtx, {
+        type: 'bar',
+        data: {
+          labels: this.generateDayLabels(),
+          datasets: [
+            {
+              label: 'Incidentes',
+              data: new Array(7).fill(0),
+              backgroundColor: '#8b5cf6',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
     }
+  }
 
-    /**
-     * Configura navegação entre seções
-     */
-    setupNavigation() {
-        const navLinks = document.querySelectorAll('.nav-link');
+  /**
+   * Configura modais
+   */
+  setupModals() {
+    const modals = document.querySelectorAll('.modal');
 
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
+    modals.forEach(modal => {
+      const closeButtons = modal.querySelectorAll('.modal-close');
 
-                const section = link.dataset.section;
-                this.switchSection(section);
-
-                // Atualiza estado ativo dos links
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-            });
+      closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          this.closeModal(modal);
         });
-    }
+      });
 
-    /**
-     * Configura event handlers
-     */
-    setupEventHandlers() {
-        // Refresh buttons
-        document.getElementById('refreshOverview')?.addEventListener('click', () => {
-            this.refreshData();
-        });
-
-        // Log filters
-        document.getElementById('filterLogs')?.addEventListener('click', () => {
-            this.applyLogFilters();
-        });
-
-        document.getElementById('logSearch')?.addEventListener('input', (e) => {
-            this.searchLogs(e.target.value);
-        });
-
-        // Export buttons
-        document.getElementById('exportLogs')?.addEventListener('click', () => {
-            this.showExportModal();
-        });
-
-        // Report generation
-        document.getElementById('generateReport')?.addEventListener('click', () => {
-            this.generateComplianceReport();
-        });
-
-        // Analytics timeframe
-        document.getElementById('analyticsTimeframe')?.addEventListener('change', (e) => {
-            this.updateAnalyticsTimeframe(e.target.value);
-        });
-    }
-
-    /**
-     * Configura gráficos Chart.js
-     */
-    setupCharts() {
-        // Gráfico de eventos por hora
-        const eventsCtx = document.getElementById('eventsChart');
-        if (eventsCtx) {
-            this.charts.events = new Chart(eventsCtx, {
-                type: 'line',
-                data: {
-                    labels: this.generateHourLabels(),
-                    datasets: [{
-                        label: 'Eventos',
-                        data: new Array(24).fill(0),
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+      // Fecha modal clicando fora
+      modal.addEventListener('click', e => {
+        if (e.target === modal) {
+          this.closeModal(modal);
         }
+      });
+    });
 
-        // Gráfico de performance
-        const performanceCtx = document.getElementById('performanceChart');
-        if (performanceCtx) {
-            this.charts.performance = new Chart(performanceCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Dentro do SLA', 'Fora do SLA'],
-                    datasets: [{
-                        data: [85, 15],
-                        backgroundColor: ['#10b981', '#ef4444']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-
-        // Gráfico de tendências
-        const trendCtx = document.getElementById('trendChart');
-        if (trendCtx) {
-            this.charts.trend = new Chart(trendCtx, {
-                type: 'bar',
-                data: {
-                    labels: this.generateDayLabels(),
-                    datasets: [{
-                        label: 'Incidentes',
-                        data: new Array(7).fill(0),
-                        backgroundColor: '#8b5cf6'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
+    // Form de exportação
+    const exportForm = document.getElementById('exportForm');
+    if (exportForm) {
+      exportForm.addEventListener('submit', e => {
+        e.preventDefault();
+        this.handleExport();
+      });
     }
+  }
 
-    /**
-     * Configura modais
-     */
-    setupModals() {
-        const modals = document.querySelectorAll('.modal');
+  /**
+   * Carrega dados iniciais
+   */
+  async loadInitialData() {
+    try {
+      // Solicita dados iniciais via Socket.IO
+      this.socket.emit('requestData', 'metrics');
+      this.socket.emit('requestData', 'analytics');
+      this.socket.emit('requestData', 'compliance');
 
-        modals.forEach(modal => {
-            const closeButtons = modal.querySelectorAll('.modal-close');
-
-            closeButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    this.closeModal(modal);
-                });
-            });
-
-            // Fecha modal clicando fora
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.closeModal(modal);
-                }
-            });
-        });
-
-        // Form de exportação
-        const exportForm = document.getElementById('exportForm');
-        if (exportForm) {
-            exportForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleExport();
-            });
-        }
-    }
-
-    /**
-     * Carrega dados iniciais
-     */
-    async loadInitialData() {
-        try {
-            // Solicita dados iniciais via Socket.IO
-            this.socket.emit('requestData', 'metrics');
-            this.socket.emit('requestData', 'analytics');
-            this.socket.emit('requestData', 'compliance');
-
-            // Carrega logs recentes via API REST
-            const response = await fetch('/api/logs/recent?limit=50');
-            if (response.ok) {
-                this.data.logs = await response.json();
-                this.updateLogsTable();
-            }
-
-            // Carrega alertas
-            const alertsResponse = await fetch('/api/alerts');
-            if (alertsResponse.ok) {
-                this.data.alerts = await alertsResponse.json();
-                this.updateAlertsSection();
-            }
-
-        } catch (error) {
-            console.error('Failed to load initial data:', error);
-            this.showNotification('Erro ao carregar dados iniciais', 'error');
-        }
-    }
-
-    /**
-     * Atualiza dashboard completo
-     */
-    updateDashboard() {
-        this.updateMetrics();
-        this.updateCharts();
+      // Carrega logs recentes via API REST
+      const response = await fetch('/api/logs/recent?limit=50');
+      if (response.ok) {
+        this.data.logs = await response.json();
         this.updateLogsTable();
+      }
+
+      // Carrega alertas
+      const alertsResponse = await fetch('/api/alerts');
+      if (alertsResponse.ok) {
+        this.data.alerts = await alertsResponse.json();
         this.updateAlertsSection();
-        this.updateComplianceSection();
-        this.updateLastUpdateTime();
+      }
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+      this.showNotification('Erro ao carregar dados iniciais', 'error');
+    }
+  }
+
+  /**
+   * Atualiza dashboard completo
+   */
+  updateDashboard() {
+    this.updateMetrics();
+    this.updateCharts();
+    this.updateLogsTable();
+    this.updateAlertsSection();
+    this.updateComplianceSection();
+    this.updateLastUpdateTime();
+  }
+
+  /**
+   * Atualiza métricas principais
+   */
+  updateMetrics() {
+    const metrics = this.data.metrics;
+
+    if (metrics.audit) {
+      this.updateElement('totalEvents', metrics.audit.totalEvents || 0);
+      this.updateElement('criticalAlerts', metrics.audit.criticalEvents || 0);
     }
 
-    /**
-     * Atualiza métricas principais
-     */
-    updateMetrics() {
-        const metrics = this.data.metrics;
-
-        if (metrics.audit) {
-            this.updateElement('totalEvents', metrics.audit.totalEvents || 0);
-            this.updateElement('criticalAlerts', metrics.audit.criticalEvents || 0);
-        }
-
-        if (metrics.analytics) {
-            this.updateElement('slaCompliance', this.formatPercentage(metrics.analytics.slaCompliance));
-            this.updateElement('llmSuccessRate', this.formatPercentage(metrics.analytics.llmSuccessRate));
-        }
-
-        // Atualiza gráficos se houver dados
-        if (this.charts.events && metrics.analytics) {
-            this.updateEventsChart(metrics.analytics);
-        }
+    if (metrics.analytics) {
+      this.updateElement('slaCompliance', this.formatPercentage(metrics.analytics.slaCompliance));
+      this.updateElement('llmSuccessRate', this.formatPercentage(metrics.analytics.llmSuccessRate));
     }
 
-    /**
-     * Atualiza gráficos
-     */
-    updateCharts() {
-        // Atualiza gráfico de eventos se houver dados
-        if (this.data.analytics && this.charts.events) {
-            const hourlyData = this.generateHourlyData();
-            this.charts.events.data.datasets[0].data = hourlyData;
-            this.charts.events.update();
-        }
+    // Atualiza gráficos se houver dados
+    if (this.charts.events && metrics.analytics) {
+      this.updateEventsChart(metrics.analytics);
+    }
+  }
 
-        // Atualiza gráfico de performance
-        if (this.data.metrics && this.charts.performance) {
-            const slaCompliance = this.data.metrics.analytics?.slaCompliance || 0;
-            this.charts.performance.data.datasets[0].data = [
-                slaCompliance * 100,
-                (1 - slaCompliance) * 100
-            ];
-            this.charts.performance.update();
-        }
+  /**
+   * Atualiza gráficos
+   */
+  updateCharts() {
+    // Atualiza gráfico de eventos se houver dados
+    if (this.data.analytics && this.charts.events) {
+      const hourlyData = this.generateHourlyData();
+      this.charts.events.data.datasets[0].data = hourlyData;
+      this.charts.events.update();
     }
 
-    /**
-     * Atualiza tabela de logs
-     */
-    updateLogsTable() {
-        const tbody = document.querySelector('#logsTable tbody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        this.data.logs.slice(0, 50).forEach(log => {
-            const row = this.createLogRow(log);
-            tbody.appendChild(row);
-        });
+    // Atualiza gráfico de performance
+    if (this.data.metrics && this.charts.performance) {
+      const slaCompliance = this.data.metrics.analytics?.slaCompliance || 0;
+      this.charts.performance.data.datasets[0].data = [
+        slaCompliance * 100,
+        (1 - slaCompliance) * 100,
+      ];
+      this.charts.performance.update();
     }
+  }
 
-    /**
-     * Cria linha da tabela de logs
-     */
-    createLogRow(log) {
-        const row = document.createElement('tr');
+  /**
+   * Atualiza tabela de logs
+   */
+  updateLogsTable() {
+    const tbody = document.querySelector('#logsTable tbody');
+    if (!tbody) return;
 
-        const timestamp = new Date(log.timestamp).toLocaleString('pt-BR');
-        const severity = log.impact?.severity || log.severity || 'LOW';
-        const severityClass = severity.toLowerCase();
+    tbody.innerHTML = '';
 
-        row.innerHTML = `
+    this.data.logs.slice(0, 50).forEach(log => {
+      const row = this.createLogRow(log);
+      tbody.appendChild(row);
+    });
+  }
+
+  /**
+   * Cria linha da tabela de logs
+   */
+  createLogRow(log) {
+    const row = document.createElement('tr');
+
+    const timestamp = new Date(log.timestamp).toLocaleString('pt-BR');
+    const severity = log.impact?.severity || log.severity || 'LOW';
+    const severityClass = severity.toLowerCase();
+
+    row.innerHTML = `
             <td>${timestamp}</td>
             <td><span class="log-type">${log.eventType}</span></td>
             <td><code>${log.incidentId?.substring(0, 8)}...</code></td>
@@ -372,34 +377,34 @@ class AuditDashboard {
             </td>
         `;
 
-        return row;
-    }
+    return row;
+  }
 
-    /**
-     * Atualiza seção de alertas
-     */
-    updateAlertsSection() {
-        const alertsList = document.getElementById('alertsList');
-        if (!alertsList) return;
+  /**
+   * Atualiza seção de alertas
+   */
+  updateAlertsSection() {
+    const alertsList = document.getElementById('alertsList');
+    if (!alertsList) return;
 
-        alertsList.innerHTML = '';
+    alertsList.innerHTML = '';
 
-        this.data.alerts.slice(0, 20).forEach(alert => {
-            const alertElement = this.createAlertElement(alert);
-            alertsList.appendChild(alertElement);
-        });
-    }
+    this.data.alerts.slice(0, 20).forEach(alert => {
+      const alertElement = this.createAlertElement(alert);
+      alertsList.appendChild(alertElement);
+    });
+  }
 
-    /**
-     * Cria elemento de alerta
-     */
-    createAlertElement(alert) {
-        const div = document.createElement('div');
-        div.className = `alert-item ${alert.severity?.toLowerCase() || 'medium'}`;
+  /**
+   * Cria elemento de alerta
+   */
+  createAlertElement(alert) {
+    const div = document.createElement('div');
+    div.className = `alert-item ${alert.severity?.toLowerCase() || 'medium'}`;
 
-        const time = new Date(alert.timestamp).toLocaleString('pt-BR');
+    const time = new Date(alert.timestamp).toLocaleString('pt-BR');
 
-        div.innerHTML = `
+    div.innerHTML = `
             <div class="alert-header">
                 <span class="alert-title">${alert.type || 'Alerta'}</span>
                 <span class="alert-time">${time}</span>
@@ -413,276 +418,276 @@ class AuditDashboard {
             </div>
         `;
 
-        return div;
-    }
+    return div;
+  }
 
-    /**
-     * Atualiza seção de compliance
-     */
-    updateComplianceSection() {
-        // Implementa atualização dos cards de compliance
-        // baseado nos dados recebidos
-    }
+  /**
+   * Atualiza seção de compliance
+   */
+  updateComplianceSection() {
+    // Implementa atualização dos cards de compliance
+    // baseado nos dados recebidos
+  }
 
-    /**
-     * Troca seção ativa
-     */
-    switchSection(sectionId) {
-        // Esconde todas as seções
-        document.querySelectorAll('.dashboard-section').forEach(section => {
-            section.classList.remove('active');
-        });
+  /**
+   * Troca seção ativa
+   */
+  switchSection(sectionId) {
+    // Esconde todas as seções
+    document.querySelectorAll('.dashboard-section').forEach(section => {
+      section.classList.remove('active');
+    });
 
-        // Mostra seção selecionada
-        const targetSection = document.getElementById(sectionId);
-        if (targetSection) {
-            targetSection.classList.add('active');
-            this.currentSection = sectionId;
+    // Mostra seção selecionada
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+      targetSection.classList.add('active');
+      this.currentSection = sectionId;
 
-            // Solicita dados específicos da seção se necessário
-            if (sectionId === 'analytics') {
-                this.socket.emit('requestData', 'analytics');
-            } else if (sectionId === 'compliance') {
-                this.socket.emit('requestData', 'compliance');
-            }
-        }
-    }
-
-    /**
-     * Aplica filtros nos logs
-     */
-    applyLogFilters() {
-        const eventType = document.getElementById('eventTypeFilter')?.value;
-        const severity = document.getElementById('severityFilter')?.value;
-        const startDate = document.getElementById('startDate')?.value;
-        const endDate = document.getElementById('endDate')?.value;
-
-        const filter = {};
-        if (eventType) filter.eventType = eventType;
-        if (severity) filter.severity = severity;
-        if (startDate) filter.startDate = startDate;
-        if (endDate) filter.endDate = endDate;
-
-        this.socket.emit('applyLogFilter', filter);
-    }
-
-    /**
-     * Busca logs por texto
-     */
-    searchLogs(searchTerm) {
-        if (!searchTerm.trim()) {
-            this.updateLogsTable();
-            return;
-        }
-
-        const filteredLogs = this.data.logs.filter(log => {
-            const searchableText = [
-                log.description,
-                log.action,
-                log.operatorId,
-                log.incidentId,
-                log.eventType
-            ].join(' ').toLowerCase();
-
-            return searchableText.includes(searchTerm.toLowerCase());
-        });
-
-        this.renderFilteredLogs(filteredLogs);
-    }
-
-    /**
-     * Renderiza logs filtrados
-     */
-    renderFilteredLogs(logs) {
-        const tbody = document.querySelector('#logsTable tbody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        logs.forEach(log => {
-            const row = this.createLogRow(log);
-            tbody.appendChild(row);
-        });
-    }
-
-    /**
-     * Mostra detalhes do log
-     */
-    showLogDetail(incidentId) {
-        const log = this.data.logs.find(l => l.incidentId === incidentId);
-        if (!log) return;
-
-        const modal = document.getElementById('logDetailModal');
-        const content = document.getElementById('logDetailContent');
-
-        content.textContent = JSON.stringify(log, null, 2);
-        this.showModal(modal);
-    }
-
-    /**
-     * Mostra modal de exportação
-     */
-    showExportModal() {
-        const modal = document.getElementById('exportModal');
-        this.showModal(modal);
-    }
-
-    /**
-     * Processa exportação
-     */
-    handleExport() {
-        const type = document.getElementById('exportType').value;
-        const format = document.getElementById('exportFormat').value;
-        const startDate = document.getElementById('exportStartDate').value;
-        const endDate = document.getElementById('exportEndDate').value;
-
-        const exportConfig = {
-            type,
-            format,
-            period: { startDate, endDate }
-        };
-
-        this.socket.emit('exportData', exportConfig);
-        this.showNotification('Exportação iniciada...', 'info');
-        this.closeModal(document.getElementById('exportModal'));
-    }
-
-    /**
-     * Gera relatório de compliance
-     */
-    async generateComplianceReport() {
-        try {
-            this.showNotification('Gerando relatório...', 'info');
-
-            const response = await fetch('/api/reports/sox');
-            if (response.ok) {
-                const report = await response.json();
-                this.showNotification('Relatório gerado com sucesso!', 'success');
-                // Implementar download ou visualização do relatório
-            } else {
-                throw new Error('Falha ao gerar relatório');
-            }
-        } catch (error) {
-            this.showNotification('Erro ao gerar relatório', 'error');
-        }
-    }
-
-    /**
-     * Atualiza timeframe do analytics
-     */
-    updateAnalyticsTimeframe(timeframe) {
-        // Solicita novos dados baseados no timeframe
-        this.socket.emit('requestData', 'analytics', { timeframe });
-    }
-
-    /**
-     * Atualiza dados
-     */
-    refreshData() {
-        this.socket.emit('requestData', 'metrics');
+      // Solicita dados específicos da seção se necessário
+      if (sectionId === 'analytics') {
         this.socket.emit('requestData', 'analytics');
-        this.showNotification('Dados atualizados', 'success');
+      } else if (sectionId === 'compliance') {
+        this.socket.emit('requestData', 'compliance');
+      }
+    }
+  }
+
+  /**
+   * Aplica filtros nos logs
+   */
+  applyLogFilters() {
+    const eventType = document.getElementById('eventTypeFilter')?.value;
+    const severity = document.getElementById('severityFilter')?.value;
+    const startDate = document.getElementById('startDate')?.value;
+    const endDate = document.getElementById('endDate')?.value;
+
+    const filter = {};
+    if (eventType) filter.eventType = eventType;
+    if (severity) filter.severity = severity;
+    if (startDate) filter.startDate = startDate;
+    if (endDate) filter.endDate = endDate;
+
+    this.socket.emit('applyLogFilter', filter);
+  }
+
+  /**
+   * Busca logs por texto
+   */
+  searchLogs(searchTerm) {
+    if (!searchTerm.trim()) {
+      this.updateLogsTable();
+      return;
     }
 
-    /**
-     * Atualiza status da conexão
-     */
-    updateConnectionStatus(connected) {
-        const statusElement = document.getElementById('connectionStatus');
-        if (statusElement) {
-            statusElement.innerHTML = connected ?
-                '<i class="icon-circle"></i> Conectado' :
-                '<i class="icon-circle"></i> Desconectado';
-            statusElement.className = `status-indicator ${connected ? '' : 'disconnected'}`;
-        }
+    const filteredLogs = this.data.logs.filter(log => {
+      const searchableText = [
+        log.description,
+        log.action,
+        log.operatorId,
+        log.incidentId,
+        log.eventType,
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return searchableText.includes(searchTerm.toLowerCase());
+    });
+
+    this.renderFilteredLogs(filteredLogs);
+  }
+
+  /**
+   * Renderiza logs filtrados
+   */
+  renderFilteredLogs(logs) {
+    const tbody = document.querySelector('#logsTable tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    logs.forEach(log => {
+      const row = this.createLogRow(log);
+      tbody.appendChild(row);
+    });
+  }
+
+  /**
+   * Mostra detalhes do log
+   */
+  showLogDetail(incidentId) {
+    const log = this.data.logs.find(l => l.incidentId === incidentId);
+    if (!log) return;
+
+    const modal = document.getElementById('logDetailModal');
+    const content = document.getElementById('logDetailContent');
+
+    content.textContent = JSON.stringify(log, null, 2);
+    this.showModal(modal);
+  }
+
+  /**
+   * Mostra modal de exportação
+   */
+  showExportModal() {
+    const modal = document.getElementById('exportModal');
+    this.showModal(modal);
+  }
+
+  /**
+   * Processa exportação
+   */
+  handleExport() {
+    const type = document.getElementById('exportType').value;
+    const format = document.getElementById('exportFormat').value;
+    const startDate = document.getElementById('exportStartDate').value;
+    const endDate = document.getElementById('exportEndDate').value;
+
+    const exportConfig = {
+      type,
+      format,
+      period: { startDate, endDate },
+    };
+
+    this.socket.emit('exportData', exportConfig);
+    this.showNotification('Exportação iniciada...', 'info');
+    this.closeModal(document.getElementById('exportModal'));
+  }
+
+  /**
+   * Gera relatório de compliance
+   */
+  async generateComplianceReport() {
+    try {
+      this.showNotification('Gerando relatório...', 'info');
+
+      const response = await fetch('/api/reports/sox');
+      if (response.ok) {
+        const report = await response.json();
+        this.showNotification('Relatório gerado com sucesso!', 'success');
+        // Implementar download ou visualização do relatório
+      } else {
+        throw new Error('Falha ao gerar relatório');
+      }
+    } catch (error) {
+      this.showNotification('Erro ao gerar relatório', 'error');
     }
+  }
 
-    /**
-     * Atualiza hora da última atualização
-     */
-    updateLastUpdateTime() {
-        const updateElement = document.getElementById('lastUpdate');
-        if (updateElement) {
-            const now = new Date().toLocaleTimeString('pt-BR');
-            updateElement.textContent = `Última atualização: ${now}`;
-        }
+  /**
+   * Atualiza timeframe do analytics
+   */
+  updateAnalyticsTimeframe(timeframe) {
+    // Solicita novos dados baseados no timeframe
+    this.socket.emit('requestData', 'analytics', { timeframe });
+  }
+
+  /**
+   * Atualiza dados
+   */
+  refreshData() {
+    this.socket.emit('requestData', 'metrics');
+    this.socket.emit('requestData', 'analytics');
+    this.showNotification('Dados atualizados', 'success');
+  }
+
+  /**
+   * Atualiza status da conexão
+   */
+  updateConnectionStatus(connected) {
+    const statusElement = document.getElementById('connectionStatus');
+    if (statusElement) {
+      statusElement.innerHTML = connected
+        ? '<i class="icon-circle"></i> Conectado'
+        : '<i class="icon-circle"></i> Desconectado';
+      statusElement.className = `status-indicator ${connected ? '' : 'disconnected'}`;
     }
+  }
 
-    /**
-     * Mostra modal
-     */
-    showModal(modal) {
-        modal.classList.add('active');
+  /**
+   * Atualiza hora da última atualização
+   */
+  updateLastUpdateTime() {
+    const updateElement = document.getElementById('lastUpdate');
+    if (updateElement) {
+      const now = new Date().toLocaleTimeString('pt-BR');
+      updateElement.textContent = `Última atualização: ${now}`;
     }
+  }
 
-    /**
-     * Fecha modal
-     */
-    closeModal(modal) {
-        modal.classList.remove('active');
+  /**
+   * Mostra modal
+   */
+  showModal(modal) {
+    modal.classList.add('active');
+  }
+
+  /**
+   * Fecha modal
+   */
+  closeModal(modal) {
+    modal.classList.remove('active');
+  }
+
+  /**
+   * Mostra notificação
+   */
+  showNotification(message, type = 'info') {
+    // Implementação simples de notificação
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+  /**
+   * Métodos auxiliares
+   */
+  updateElement(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
     }
+  }
 
-    /**
-     * Mostra notificação
-     */
-    showNotification(message, type = 'info') {
-        // Implementação simples de notificação
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
+  formatPercentage(value) {
+    return value ? `${(value * 100).toFixed(1)}%` : '0%';
+  }
 
-        document.body.appendChild(notification);
+  truncateText(text, maxLength) {
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
 
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
+  generateHourLabels() {
+    return Array.from({ length: 24 }, (_, i) => `${i}:00`);
+  }
 
-    /**
-     * Métodos auxiliares
-     */
-    updateElement(id, value) {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
-        }
-    }
+  generateDayLabels() {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return days;
+  }
 
-    formatPercentage(value) {
-        return value ? `${(value * 100).toFixed(1)}%` : '0%';
-    }
+  generateHourlyData() {
+    // Simula dados por hora baseado nos logs
+    const hourlyCount = new Array(24).fill(0);
 
-    truncateText(text, maxLength) {
-        return text.length > maxLength ?
-            text.substring(0, maxLength) + '...' :
-            text;
-    }
+    this.data.logs.forEach(log => {
+      const hour = new Date(log.timestamp).getHours();
+      hourlyCount[hour]++;
+    });
 
-    generateHourLabels() {
-        return Array.from({ length: 24 }, (_, i) => `${i}:00`);
-    }
-
-    generateDayLabels() {
-        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        return days;
-    }
-
-    generateHourlyData() {
-        // Simula dados por hora baseado nos logs
-        const hourlyCount = new Array(24).fill(0);
-
-        this.data.logs.forEach(log => {
-            const hour = new Date(log.timestamp).getHours();
-            hourlyCount[hour]++;
-        });
-
-        return hourlyCount;
-    }
+    return hourlyCount;
+  }
 }
 
 // Inicializa dashboard quando DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
-    window.dashboard = new AuditDashboard();
+  window.dashboard = new AuditDashboard();
 });
 
 // Adiciona estilos de notificação

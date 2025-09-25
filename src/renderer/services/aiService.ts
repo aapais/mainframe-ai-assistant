@@ -4,14 +4,21 @@
  */
 
 import { EventEmitter } from 'events';
-import { AIOperation, AIProvider, AIOperationType, AITokensEstimate, AICostEstimate, AIOperationLog } from '../types/ai';
+import {
+  AIOperation,
+  AIProvider,
+  AIOperationType,
+  AITokensEstimate,
+  AICostEstimate,
+  AIOperationLog,
+} from '../types/ai';
 
 export interface AICostConfig {
   provider: AIProvider;
   model: string;
-  inputTokenPrice: number;  // Price per 1000 tokens
+  inputTokenPrice: number; // Price per 1000 tokens
   outputTokenPrice: number; // Price per 1000 tokens
-  minimumCost: number;      // Minimum charge per operation
+  minimumCost: number; // Minimum charge per operation
 }
 
 export interface AIBudgetLimits {
@@ -42,36 +49,36 @@ export class AIService extends EventEmitter {
       model: 'gpt-4',
       inputTokenPrice: 0.03, // $0.03 per 1k tokens
       outputTokenPrice: 0.06, // $0.06 per 1k tokens
-      minimumCost: 0.001
+      minimumCost: 0.001,
     },
     'openai-gpt-3.5': {
       provider: 'openai',
       model: 'gpt-3.5-turbo',
       inputTokenPrice: 0.0015, // $0.0015 per 1k tokens
       outputTokenPrice: 0.002, // $0.002 per 1k tokens
-      minimumCost: 0.0005
+      minimumCost: 0.0005,
     },
     'claude-sonnet': {
       provider: 'claude',
       model: 'claude-3-sonnet',
       inputTokenPrice: 0.003, // $0.003 per 1k tokens
       outputTokenPrice: 0.015, // $0.015 per 1k tokens
-      minimumCost: 0.0008
+      minimumCost: 0.0008,
     },
     'claude-haiku': {
       provider: 'claude',
       model: 'claude-3-haiku',
       inputTokenPrice: 0.00025, // $0.00025 per 1k tokens
       outputTokenPrice: 0.00125, // $0.00125 per 1k tokens
-      minimumCost: 0.0003
+      minimumCost: 0.0003,
     },
     'gemini-pro': {
       provider: 'gemini',
       model: 'gemini-pro',
       inputTokenPrice: 0.0005, // $0.0005 per 1k tokens
       outputTokenPrice: 0.0015, // $0.0015 per 1k tokens
-      minimumCost: 0.0002
-    }
+      minimumCost: 0.0002,
+    },
   };
 
   constructor(budgetLimits?: Partial<AIBudgetLimits>) {
@@ -81,7 +88,7 @@ export class AIService extends EventEmitter {
       dailyLimit: budgetLimits?.dailyLimit || 10.0,
       monthlyLimit: budgetLimits?.monthlyLimit || 100.0,
       perOperationLimit: budgetLimits?.perOperationLimit || 1.0,
-      warningThreshold: budgetLimits?.warningThreshold || 80.0
+      warningThreshold: budgetLimits?.warningThreshold || 80.0,
     };
 
     this.loadUsageData();
@@ -91,7 +98,13 @@ export class AIService extends EventEmitter {
    * Estimate tokens required for a search operation
    */
   estimateSearchTokens(context: AISearchContext): AITokensEstimate {
-    const { query, estimatedComplexity, expectedResultCount, useSemanticSearch, includeExplanations } = context;
+    const {
+      query,
+      estimatedComplexity,
+      expectedResultCount,
+      useSemanticSearch,
+      includeExplanations,
+    } = context;
 
     // Base tokens for query processing
     let inputTokens = Math.ceil(query.length / 4); // Rough approximation: 4 chars per token
@@ -130,7 +143,7 @@ export class AIService extends EventEmitter {
     return {
       input: inputTokens,
       output: outputTokens,
-      total: inputTokens + outputTokens
+      total: inputTokens + outputTokens,
     };
   }
 
@@ -159,8 +172,8 @@ export class AIService extends EventEmitter {
         inputTokens: tokensEstimate.input,
         outputTokens: tokensEstimate.output,
         inputRate: config.inputTokenPrice,
-        outputRate: config.outputTokenPrice
-      }
+        outputRate: config.outputTokenPrice,
+      },
     };
   }
 
@@ -190,7 +203,7 @@ export class AIService extends EventEmitter {
       estimatedComplexity: complexity,
       expectedResultCount: options.expectedResultCount || 10,
       useSemanticSearch: options.useSemanticSearch || true,
-      includeExplanations: options.includeExplanations || false
+      includeExplanations: options.includeExplanations || false,
     };
 
     const tokens = this.estimateSearchTokens(context);
@@ -203,7 +216,7 @@ export class AIService extends EventEmitter {
       tokens,
       cost,
       canAfford,
-      budgetWarnings: warnings
+      budgetWarnings: warnings,
     };
   }
 
@@ -217,7 +230,9 @@ export class AIService extends EventEmitter {
     // Check per-operation limit
     if (estimatedCost > this.budgetLimits.perOperationLimit) {
       canAfford = false;
-      warnings.push(`Operation cost (${this.formatCurrency(estimatedCost)}) exceeds per-operation limit (${this.formatCurrency(this.budgetLimits.perOperationLimit)})`);
+      warnings.push(
+        `Operation cost (${this.formatCurrency(estimatedCost)}) exceeds per-operation limit (${this.formatCurrency(this.budgetLimits.perOperationLimit)})`
+      );
     }
 
     // Check daily usage
@@ -227,9 +242,16 @@ export class AIService extends EventEmitter {
 
     if (newDailyTotal > this.budgetLimits.dailyLimit) {
       canAfford = false;
-      warnings.push(`Would exceed daily limit. Current: ${this.formatCurrency(todayUsage)}, Limit: ${this.formatCurrency(this.budgetLimits.dailyLimit)}`);
-    } else if ((newDailyTotal / this.budgetLimits.dailyLimit) * 100 >= this.budgetLimits.warningThreshold) {
-      warnings.push(`Approaching daily limit (${((newDailyTotal / this.budgetLimits.dailyLimit) * 100).toFixed(1)}%)`);
+      warnings.push(
+        `Would exceed daily limit. Current: ${this.formatCurrency(todayUsage)}, Limit: ${this.formatCurrency(this.budgetLimits.dailyLimit)}`
+      );
+    } else if (
+      (newDailyTotal / this.budgetLimits.dailyLimit) * 100 >=
+      this.budgetLimits.warningThreshold
+    ) {
+      warnings.push(
+        `Approaching daily limit (${((newDailyTotal / this.budgetLimits.dailyLimit) * 100).toFixed(1)}%)`
+      );
     }
 
     // Check monthly usage
@@ -239,9 +261,16 @@ export class AIService extends EventEmitter {
 
     if (newMonthlyTotal > this.budgetLimits.monthlyLimit) {
       canAfford = false;
-      warnings.push(`Would exceed monthly limit. Current: ${this.formatCurrency(monthlyUsage)}, Limit: ${this.formatCurrency(this.budgetLimits.monthlyLimit)}`);
-    } else if ((newMonthlyTotal / this.budgetLimits.monthlyLimit) * 100 >= this.budgetLimits.warningThreshold) {
-      warnings.push(`Approaching monthly limit (${((newMonthlyTotal / this.budgetLimits.monthlyLimit) * 100).toFixed(1)}%)`);
+      warnings.push(
+        `Would exceed monthly limit. Current: ${this.formatCurrency(monthlyUsage)}, Limit: ${this.formatCurrency(this.budgetLimits.monthlyLimit)}`
+      );
+    } else if (
+      (newMonthlyTotal / this.budgetLimits.monthlyLimit) * 100 >=
+      this.budgetLimits.warningThreshold
+    ) {
+      warnings.push(
+        `Approaching monthly limit (${((newMonthlyTotal / this.budgetLimits.monthlyLimit) * 100).toFixed(1)}%)`
+      );
     }
 
     return { canAfford, warnings };
@@ -269,8 +298,8 @@ export class AIService extends EventEmitter {
       metadata: {
         userAgent: navigator.userAgent,
         sessionId: this.getCurrentSessionId(),
-        buildInfo: await this.getBuildInfo()
-      }
+        buildInfo: await this.getBuildInfo(),
+      },
     };
 
     this.operationHistory.unshift(operationLog);
@@ -298,13 +327,15 @@ export class AIService extends EventEmitter {
   /**
    * Get operation history with filtering options
    */
-  getOperationHistory(options: {
-    limit?: number;
-    operationType?: AIOperationType;
-    provider?: AIProvider;
-    since?: Date;
-    successOnly?: boolean;
-  } = {}): AIOperationLog[] {
+  getOperationHistory(
+    options: {
+      limit?: number;
+      operationType?: AIOperationType;
+      provider?: AIProvider;
+      since?: Date;
+      successOnly?: boolean;
+    } = {}
+  ): AIOperationLog[] {
     let filtered = [...this.operationHistory];
 
     if (options.operationType) {
@@ -353,17 +384,17 @@ export class AIService extends EventEmitter {
         date: today,
         usage: dailyUsage,
         limit: this.budgetLimits.dailyLimit,
-        percentage: (dailyUsage / this.budgetLimits.dailyLimit) * 100
+        percentage: (dailyUsage / this.budgetLimits.dailyLimit) * 100,
       },
       monthly: {
         month: currentMonth,
         usage: monthlyUsage,
         limit: this.budgetLimits.monthlyLimit,
-        percentage: (monthlyUsage / this.budgetLimits.monthlyLimit) * 100
+        percentage: (monthlyUsage / this.budgetLimits.monthlyLimit) * 100,
       },
       totalOperations: this.operationHistory.length,
       totalCost,
-      averageCost: successfulOperations > 0 ? totalCost / successfulOperations : 0
+      averageCost: successfulOperations > 0 ? totalCost / successfulOperations : 0,
     };
   }
 
@@ -390,7 +421,16 @@ export class AIService extends EventEmitter {
    */
   exportHistory(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
-      const headers = ['timestamp', 'operationType', 'provider', 'model', 'cost', 'inputTokens', 'outputTokens', 'success'];
+      const headers = [
+        'timestamp',
+        'operationType',
+        'provider',
+        'model',
+        'cost',
+        'inputTokens',
+        'outputTokens',
+        'success',
+      ];
       const rows = this.operationHistory.map(log => [
         log.timestamp.toISOString(),
         log.operation.operationType || '',
@@ -399,7 +439,7 @@ export class AIService extends EventEmitter {
         log.actualCost?.toString() || '0',
         log.actualTokens?.input.toString() || '0',
         log.actualTokens?.output.toString() || '0',
-        log.success.toString()
+        log.success.toString(),
       ]);
 
       return [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -438,7 +478,7 @@ export class AIService extends EventEmitter {
         type: 'daily',
         usage: usage.daily.usage,
         limit: usage.daily.limit,
-        percentage: usage.daily.percentage
+        percentage: usage.daily.percentage,
       });
     }
 
@@ -447,7 +487,7 @@ export class AIService extends EventEmitter {
         type: 'monthly',
         usage: usage.monthly.usage,
         limit: usage.monthly.limit,
-        percentage: usage.monthly.percentage
+        percentage: usage.monthly.percentage,
       });
     }
   }
@@ -456,7 +496,7 @@ export class AIService extends EventEmitter {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 4
+      minimumFractionDigits: 4,
     }).format(amount);
   }
 
@@ -489,7 +529,7 @@ export class AIService extends EventEmitter {
         const parsed = JSON.parse(historyData);
         this.operationHistory = parsed.map((log: any) => ({
           ...log,
-          timestamp: new Date(log.timestamp)
+          timestamp: new Date(log.timestamp),
         }));
       }
 
@@ -505,7 +545,10 @@ export class AIService extends EventEmitter {
   private saveUsageData(): void {
     try {
       localStorage.setItem('ai-daily-usage', JSON.stringify(Array.from(this.dailyUsage.entries())));
-      localStorage.setItem('ai-monthly-usage', JSON.stringify(Array.from(this.monthlyUsage.entries())));
+      localStorage.setItem(
+        'ai-monthly-usage',
+        JSON.stringify(Array.from(this.monthlyUsage.entries()))
+      );
     } catch (error) {
       console.warn('Failed to save usage data:', error);
     }

@@ -50,7 +50,7 @@ export class QueryBuilder {
     return {
       countQuery,
       dataQuery,
-      parameters: this.parameters
+      parameters: this.parameters,
     };
   }
 
@@ -137,7 +137,7 @@ export class QueryBuilder {
     const dateFormat = {
       day: '%Y-%m-%d',
       week: '%Y-W%W',
-      month: '%Y-%m'
+      month: '%Y-%m',
     }[period];
 
     return `
@@ -219,8 +219,11 @@ export class QueryBuilder {
 
     // Handle null/undefined values
     if (value === null || value === undefined) {
-      return operator === 'is_null' ? `${field} IS NULL` :
-             operator === 'is_not_null' ? `${field} IS NOT NULL` : null;
+      return operator === 'is_null'
+        ? `${field} IS NULL`
+        : operator === 'is_not_null'
+          ? `${field} IS NOT NULL`
+          : null;
     }
 
     switch (operator) {
@@ -300,20 +303,20 @@ export class QueryBuilder {
   private getFieldPath(field: string): string {
     // Map field names to actual database columns/expressions
     const fieldMappings: Record<string, string> = {
-      'tags': 't.tag',
-      'success_rate': `CASE WHEN (e.success_count + e.failure_count) > 0
+      tags: 't.tag',
+      success_rate: `CASE WHEN (e.success_count + e.failure_count) > 0
                             THEN CAST(e.success_count AS REAL) / (e.success_count + e.failure_count) * 100
                             ELSE 0 END`,
-      'created_by': 'e.created_by',
-      'category': 'e.category',
-      'severity': 'e.severity',
-      'title': 'e.title',
-      'problem': 'e.problem',
-      'solution': 'e.solution',
-      'created_at': 'e.created_at',
-      'updated_at': 'e.updated_at',
-      'last_used': 'e.last_used',
-      'usage_count': 'e.usage_count'
+      created_by: 'e.created_by',
+      category: 'e.category',
+      severity: 'e.severity',
+      title: 'e.title',
+      problem: 'e.problem',
+      solution: 'e.solution',
+      created_at: 'e.created_at',
+      updated_at: 'e.updated_at',
+      last_used: 'e.last_used',
+      usage_count: 'e.usage_count',
     };
 
     return fieldMappings[field] || `e.${field}`;
@@ -389,7 +392,11 @@ export class QueryBuilder {
     }
   }
 
-  private applySorting(sortBy: SortField, direction: 'asc' | 'desc', multiSort?: SortField[]): void {
+  private applySorting(
+    sortBy: SortField,
+    direction: 'asc' | 'desc',
+    multiSort?: SortField[]
+  ): void {
     // Handle multi-sort first
     if (multiSort && multiSort.length > 0) {
       multiSort.forEach(field => {
@@ -408,28 +415,27 @@ export class QueryBuilder {
 
   private getSortField(field: SortField): string {
     const sortMappings: Record<SortField, string> = {
-      'title': 'e.title',
-      'category': 'e.category',
-      'created_at': 'e.created_at',
-      'updated_at': 'e.updated_at',
-      'usage_count': 'e.usage_count',
-      'success_rate': `CASE WHEN (e.success_count + e.failure_count) > 0
+      title: 'e.title',
+      category: 'e.category',
+      created_at: 'e.created_at',
+      updated_at: 'e.updated_at',
+      usage_count: 'e.usage_count',
+      success_rate: `CASE WHEN (e.success_count + e.failure_count) > 0
                             THEN CAST(e.success_count AS REAL) / (e.success_count + e.failure_count)
                             ELSE 0 END`,
-      'rating': `CASE WHEN (e.success_count + e.failure_count) > 0
+      rating: `CASE WHEN (e.success_count + e.failure_count) > 0
                       THEN CAST(e.success_count AS REAL) / (e.success_count + e.failure_count)
                       ELSE 0 END`,
-      'last_used': 'COALESCE(e.last_used, e.created_at)',
-      'relevance': 'e.usage_count' // Default relevance to usage count
+      last_used: 'COALESCE(e.last_used, e.created_at)',
+      relevance: 'e.usage_count', // Default relevance to usage count
     };
 
     return sortMappings[field] || `e.${field}`;
   }
 
   private buildCountQuery(): string {
-    const whereClause = this.whereConditions.length > 0
-      ? 'WHERE ' + this.whereConditions.join(' AND ')
-      : '';
+    const whereClause =
+      this.whereConditions.length > 0 ? 'WHERE ' + this.whereConditions.join(' AND ') : '';
 
     return `
       SELECT COUNT(DISTINCT e.id) as total
@@ -440,21 +446,15 @@ export class QueryBuilder {
   }
 
   private buildDataQuery(page: number, pageSize: number): string {
-    const whereClause = this.whereConditions.length > 0
-      ? 'WHERE ' + this.whereConditions.join(' AND ')
-      : '';
+    const whereClause =
+      this.whereConditions.length > 0 ? 'WHERE ' + this.whereConditions.join(' AND ') : '';
 
-    const groupByClause = this.groupBy.length > 0
-      ? 'GROUP BY ' + this.groupBy.join(', ')
-      : '';
+    const groupByClause = this.groupBy.length > 0 ? 'GROUP BY ' + this.groupBy.join(', ') : '';
 
-    const orderByClause = this.orderBy.length > 0
-      ? 'ORDER BY ' + this.orderBy.join(', ')
-      : '';
+    const orderByClause = this.orderBy.length > 0 ? 'ORDER BY ' + this.orderBy.join(', ') : '';
 
-    const havingClause = this.havingConditions.length > 0
-      ? 'HAVING ' + this.havingConditions.join(' AND ')
-      : '';
+    const havingClause =
+      this.havingConditions.length > 0 ? 'HAVING ' + this.havingConditions.join(' AND ') : '';
 
     const offset = (page - 1) * pageSize;
 
@@ -483,7 +483,7 @@ export class IndexOptimizer {
         name: 'idx_kb_entries_listing_primary',
         table: 'kb_entries',
         columns: ['archived', 'category', 'created_at'],
-        unique: false
+        unique: false,
       },
 
       // Sorting optimization indexes
@@ -491,14 +491,14 @@ export class IndexOptimizer {
         name: 'idx_kb_entries_usage_stats',
         table: 'kb_entries',
         columns: ['usage_count', 'success_count', 'failure_count'],
-        unique: false
+        unique: false,
       },
 
       {
         name: 'idx_kb_entries_timestamps',
         table: 'kb_entries',
         columns: ['updated_at', 'created_at', 'last_used'],
-        unique: false
+        unique: false,
       },
 
       // Search optimization indexes
@@ -506,7 +506,7 @@ export class IndexOptimizer {
         name: 'idx_kb_entries_search',
         table: 'kb_entries',
         columns: ['category', 'severity', 'archived'],
-        unique: false
+        unique: false,
       },
 
       // Tag filtering optimization
@@ -514,7 +514,7 @@ export class IndexOptimizer {
         name: 'idx_kb_tags_lookup',
         table: 'kb_tags',
         columns: ['tag', 'entry_id'],
-        unique: false
+        unique: false,
       },
 
       // Foreign key optimization
@@ -522,7 +522,7 @@ export class IndexOptimizer {
         name: 'idx_kb_tags_entry_ref',
         table: 'kb_tags',
         columns: ['entry_id'],
-        unique: false
+        unique: false,
       },
 
       // Usage metrics optimization
@@ -530,7 +530,7 @@ export class IndexOptimizer {
         name: 'idx_usage_metrics_analysis',
         table: 'usage_metrics',
         columns: ['entry_id', 'timestamp', 'action'],
-        unique: false
+        unique: false,
       },
 
       // Saved searches optimization
@@ -538,8 +538,8 @@ export class IndexOptimizer {
         name: 'idx_saved_searches_user',
         table: 'saved_searches',
         columns: ['user_id', 'is_public', 'usage_count'],
-        unique: false
-      }
+        unique: false,
+      },
     ];
 
     indexes.forEach(index => {
@@ -552,10 +552,14 @@ export class IndexOptimizer {
 
   private createIndexIfNotExists(index: any): void {
     try {
-      const indexExists = this.db.prepare(`
+      const indexExists = this.db
+        .prepare(
+          `
         SELECT name FROM sqlite_master
         WHERE type='index' AND name=?
-      `).get(index.name);
+      `
+        )
+        .get(index.name);
 
       if (!indexExists) {
         const uniqueClause = index.unique ? 'UNIQUE' : '';

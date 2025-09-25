@@ -80,7 +80,7 @@ export class PersonalizedRanker {
           clickPatterns: {},
           timePatterns: {},
           categoryAffinities: {},
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
         });
       }
 
@@ -179,7 +179,7 @@ export class PersonalizedRanker {
       // Normalize
       const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
       if (magnitude > 0) {
-        embedding.forEach((val, idx) => embedding[idx] = val / magnitude);
+        embedding.forEach((val, idx) => (embedding[idx] = val / magnitude));
       }
 
       this.categoryEmbeddings.set(category, embedding);
@@ -190,7 +190,7 @@ export class PersonalizedRanker {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash);
@@ -232,14 +232,14 @@ export class PersonalizedRanker {
         'historical_ctr',
         'time_preference',
         'popularity_score',
-        'diversity_penalty'
+        'diversity_penalty',
       ],
       hyperparameters: {
         learningRate: 0.01,
         treeDepth: 6,
         numTrees: 100,
-        subsampleRatio: 0.8
-      }
+        subsampleRatio: 0.8,
+      },
     };
   }
 
@@ -251,13 +251,13 @@ export class PersonalizedRanker {
       f1Score: 0.78,
       auc: 0.84,
       featureImportance: {
-        'relevance_score': 0.30,
-        'user_category_affinity': 0.25,
-        'historical_ctr': 0.20,
-        'time_preference': 0.10,
-        'popularity_score': 0.10,
-        'diversity_penalty': 0.05
-      }
+        relevance_score: 0.3,
+        user_category_affinity: 0.25,
+        historical_ctr: 0.2,
+        time_preference: 0.1,
+        popularity_score: 0.1,
+        diversity_penalty: 0.05,
+      },
     };
   }
 
@@ -288,7 +288,7 @@ export class PersonalizedRanker {
       return {
         ...result,
         personalizedScore,
-        rankingFeatures
+        rankingFeatures,
       };
     });
 
@@ -316,7 +316,7 @@ export class PersonalizedRanker {
       clickPatterns: {},
       timePatterns: {},
       categoryAffinities: {},
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
   }
 
@@ -338,7 +338,7 @@ export class PersonalizedRanker {
     const now = Date.now();
     const resultAge = now - result.timestamp.getTime();
     const maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
-    const recencyScore = Math.max(0, 1 - (resultAge / maxAge));
+    const recencyScore = Math.max(0, 1 - resultAge / maxAge);
 
     // Calculate quality score based on historical CTR
     const historicalCTR = this.clickThroughRates.get(result.id) || 0.1;
@@ -346,7 +346,10 @@ export class PersonalizedRanker {
     const qualityScore = historicalCTR / globalCTR;
 
     // Calculate diversity score (penalize similar results)
-    const diversityScore = this.calculateDiversityScore(result, personalizationFeatures.searchHistory);
+    const diversityScore = this.calculateDiversityScore(
+      result,
+      personalizationFeatures.searchHistory
+    );
 
     return {
       relevanceScore,
@@ -354,7 +357,7 @@ export class PersonalizedRanker {
       personalizedScore: normalizedAffinity,
       recencyScore,
       qualityScore,
-      diversityScore
+      diversityScore,
     };
   }
 
@@ -368,14 +371,14 @@ export class PersonalizedRanker {
       const titleWords = result.title.toLowerCase().split(' ');
       const contentWords = result.content.toLowerCase().split(' ');
 
-      const overlap = queryWords.filter(word =>
-        titleWords.includes(word) || contentWords.includes(word)
+      const overlap = queryWords.filter(
+        word => titleWords.includes(word) || contentWords.includes(word)
       ).length;
 
       similarityPenalty += overlap / queryWords.length;
     });
 
-    return Math.max(0, 1 - (similarityPenalty / recentQueries.length));
+    return Math.max(0, 1 - similarityPenalty / recentQueries.length);
   }
 
   private calculatePersonalizedScore(features: RankingFeatures): number {
@@ -384,9 +387,9 @@ export class PersonalizedRanker {
       relevance: 0.35,
       popularity: 0.15,
       personalized: 0.25,
-      recency: 0.10,
-      quality: 0.10,
-      diversity: 0.05
+      recency: 0.1,
+      quality: 0.1,
+      diversity: 0.05,
     };
 
     return (
@@ -476,7 +479,7 @@ export class PersonalizedRanker {
       userProfiles: Array.from(this.userProfiles.entries()),
       globalFeatures: Array.from(this.globalFeatures.entries()),
       categoryEmbeddings: Array.from(this.categoryEmbeddings.entries()),
-      clickThroughRates: Array.from(this.clickThroughRates.entries())
+      clickThroughRates: Array.from(this.clickThroughRates.entries()),
     };
 
     console.log(`Personalized ranker model saved to ${path}`, modelData);

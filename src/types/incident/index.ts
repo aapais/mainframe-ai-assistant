@@ -10,12 +10,12 @@ import { KBEntry } from '../index';
 // ===========================
 
 export type IncidentStatus =
-  | 'aberto'          // open
-  | 'em_tratamento'   // in_progress (covers both assigned and in_progress)
-  | 'em_revisao'      // pending_review (bulk/API imports)
-  | 'resolvido'       // resolved
-  | 'fechado'         // closed
-  | 'reaberto';       // reopened
+  | 'aberto' // open
+  | 'em_tratamento' // in_progress (covers both assigned and in_progress)
+  | 'em_revisao' // pending_review (bulk/API imports)
+  | 'resolvido' // resolved
+  | 'fechado' // closed
+  | 'reaberto'; // reopened
 
 export type IncidentPriority = 'P1' | 'P2' | 'P3' | 'P4';
 
@@ -37,7 +37,7 @@ export interface IncidentKBEntry extends KBEntry {
   affected_systems?: string[];
   business_impact?: 'low' | 'medium' | 'high' | 'critical';
   customer_impact?: boolean;
-  
+
   // Tracking fields
   reporter?: string;
   resolver?: string;
@@ -232,7 +232,7 @@ export interface PriorityDistributionData {
 // UTILITY TYPES
 // ===========================
 
-export type IncidentSortField = 
+export type IncidentSortField =
   | 'priority'
   | 'status'
   | 'created_at'
@@ -266,12 +266,12 @@ export const PRIORITY_COLORS: Record<IncidentPriority, string> = {
 };
 
 export const STATUS_COLORS: Record<IncidentStatus, string> = {
-  aberto: '#6b7280',        // gray-500 (open)
+  aberto: '#6b7280', // gray-500 (open)
   em_tratamento: '#f59e0b', // amber-500 (in_progress)
-  em_revisao: '#8b5cf6',    // violet-500 (pending_review)
-  resolvido: '#10b981',     // emerald-500 (resolved)
-  fechado: '#6b7280',       // gray-500 (closed)
-  reaberto: '#ef4444',      // red-500 (reopened)
+  em_revisao: '#8b5cf6', // violet-500 (pending_review)
+  resolvido: '#10b981', // emerald-500 (resolved)
+  fechado: '#6b7280', // gray-500 (closed)
+  reaberto: '#ef4444', // red-500 (reopened)
 };
 
 export const PRIORITY_LABELS: Record<IncidentPriority, string> = {
@@ -282,17 +282,17 @@ export const PRIORITY_LABELS: Record<IncidentPriority, string> = {
 };
 
 export const STATUS_LABELS: Record<IncidentStatus, string> = {
-  aberto: 'Aberto',               // Open
+  aberto: 'Aberto', // Open
   em_tratamento: 'Em Tratamento', // In Progress/Assigned
-  em_revisao: 'Em Revisão',       // Pending Review
-  resolvido: 'Resolvido',         // Resolved
-  fechado: 'Fechado',             // Closed
-  reaberto: 'Reaberto',           // Reopened
+  em_revisao: 'Em Revisão', // Pending Review
+  resolvido: 'Resolvido', // Resolved
+  fechado: 'Fechado', // Closed
+  reaberto: 'Reaberto', // Reopened
 };
 
 export const DEFAULT_SLA_MINUTES: Record<IncidentPriority, number> = {
-  P1: 60,     // 1 hour
-  P2: 240,    // 4 hours
-  P3: 480,    // 8 hours
-  P4: 1440,   // 24 hours
+  P1: 60, // 1 hour
+  P2: 240, // 4 hours
+  P3: 480, // 8 hours
+  P4: 1440, // 24 hours
 };

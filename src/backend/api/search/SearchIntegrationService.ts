@@ -12,7 +12,7 @@ import {
   SearchResult,
   SearchServiceConfig,
   FTS5SearchOptions,
-  PaginatedSearchResponse
+  PaginatedSearchResponse,
 } from '../../../types/services';
 
 export interface IntegrationConfig {
@@ -44,7 +44,11 @@ export class SearchIntegrationService extends EventEmitter {
   private config: IntegrationConfig;
   private syncStatus: SyncStatus;
   private syncInterval?: ReturnType<typeof setTimeout>;
-  private changeQueue: Array<{ action: 'create' | 'update' | 'delete'; entryId: string; timestamp: Date }> = [];
+  private changeQueue: Array<{
+    action: 'create' | 'update' | 'delete';
+    entryId: string;
+    timestamp: Date;
+  }> = [];
 
   constructor(
     searchConfig: SearchServiceConfig,
@@ -65,7 +69,7 @@ export class SearchIntegrationService extends EventEmitter {
       enableSearchAnalytics: true,
       retryAttempts: 3,
       retryDelay: 1000,
-      ...integrationConfig
+      ...integrationConfig,
     };
 
     this.syncStatus = {
@@ -73,7 +77,7 @@ export class SearchIntegrationService extends EventEmitter {
       totalEntries: 0,
       pendingChanges: 0,
       indexHealth: 'healthy',
-      syncInProgress: false
+      syncInProgress: false,
     };
 
     this.setupEventHandlers();
@@ -95,7 +99,6 @@ export class SearchIntegrationService extends EventEmitter {
 
       this.emit('integration:initialized');
       console.log('✅ Search Integration Service initialized successfully');
-
     } catch (error) {
       this.emit('integration:error', error);
       throw new Error(`Search integration initialization failed: ${error.message}`);
@@ -130,14 +133,11 @@ export class SearchIntegrationService extends EventEmitter {
       const enrichedResults = await this.enrichSearchResults(ftsResults.results);
 
       // Convert to standard SearchResult format
-      const standardResults = await this.integrationAdapter.adaptSearchResults(
-        enrichedResults,
-        {
-          query,
-          pagination: ftsResults.pagination,
-          facets: ftsResults.facets
-        }
-      );
+      const standardResults = await this.integrationAdapter.adaptSearchResults(enrichedResults, {
+        query,
+        pagination: ftsResults.pagination,
+        facets: ftsResults.facets,
+      });
 
       // Record search analytics if enabled
       if (this.config.enableSearchAnalytics) {
@@ -155,10 +155,9 @@ export class SearchIntegrationService extends EventEmitter {
           fts_results: ftsResults.results.length,
           kb_enriched: enrichedResults.length,
           cache_status: 'active',
-          processing_time: processingTime
-        }
+          processing_time: processingTime,
+        },
       };
-
     } catch (error) {
       this.emit('search:error', { query, options, error: error.message });
       throw new Error(`Integrated search failed: ${error.message}`);
@@ -171,12 +170,14 @@ export class SearchIntegrationService extends EventEmitter {
   async getSuggestions(
     partialQuery: string,
     limit: number = 10
-  ): Promise<Array<{
-    text: string;
-    type: 'query' | 'title' | 'category' | 'tag';
-    frequency: number;
-    source: 'fts' | 'kb' | 'history';
-  }>> {
+  ): Promise<
+    Array<{
+      text: string;
+      type: 'query' | 'title' | 'category' | 'tag';
+      frequency: number;
+      source: 'fts' | 'kb' | 'history';
+    }>
+  > {
     try {
       // Get FTS suggestions
       const ftsSuggestions = await this.ftsSearchService.getSuggestions(partialQuery, limit);
@@ -190,18 +191,21 @@ export class SearchIntegrationService extends EventEmitter {
           text,
           type: 'query' as const,
           frequency: 1,
-          source: 'fts' as const
+          source: 'fts' as const,
         })),
-        ...kbSuggestions
+        ...kbSuggestions,
       ];
 
       // Remove duplicates and sort by relevance
       const uniqueSuggestions = this.deduplicateSuggestions(allSuggestions);
 
       return uniqueSuggestions
-        .sort((a, b) => this.calculateSuggestionScore(b, partialQuery) - this.calculateSuggestionScore(a, partialQuery))
+        .sort(
+          (a, b) =>
+            this.calculateSuggestionScore(b, partialQuery) -
+            this.calculateSuggestionScore(a, partialQuery)
+        )
         .slice(0, limit);
-
     } catch (error) {
       console.error('Error getting integrated suggestions:', error);
       return [];
@@ -225,8 +229,8 @@ export class SearchIntegrationService extends EventEmitter {
         sync_interval: this.config.syncInterval,
         batch_size: this.config.batchSize,
         pending_changes: this.changeQueue.length,
-        real_time_sync: this.config.enableRealTimeSync
-      }
+        real_time_sync: this.config.enableRealTimeSync,
+      },
     };
   }
 
@@ -260,7 +264,6 @@ export class SearchIntegrationService extends EventEmitter {
 
       this.syncStatus.indexHealth = 'healthy';
       this.emit('index:rebuild_complete');
-
     } catch (error) {
       this.syncStatus.indexHealth = 'error';
       this.emit('index:rebuild_error', error);
@@ -310,11 +313,11 @@ export class SearchIntegrationService extends EventEmitter {
     }
 
     // Listen to FTS service events
-    this.ftsSearchService.on('search:completed', (data) => {
+    this.ftsSearchService.on('search:completed', data => {
       this.emit('integration:search_completed', data);
     });
 
-    this.ftsSearchService.on('search:error', (data) => {
+    this.ftsSearchService.on('search:error', data => {
       this.emit('integration:search_error', data);
     });
   }
@@ -335,7 +338,7 @@ export class SearchIntegrationService extends EventEmitter {
     this.changeQueue.push({
       action,
       entryId,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     this.syncStatus.pendingChanges = this.changeQueue.length;
@@ -367,9 +370,8 @@ export class SearchIntegrationService extends EventEmitter {
 
       this.emit('sync:batch_completed', {
         processed: changes.length,
-        remaining: this.changeQueue.length
+        remaining: this.changeQueue.length,
       });
-
     } catch (error) {
       // Re-queue failed changes
       this.changeQueue.unshift(...this.changeQueue.splice(-this.config.batchSize));
@@ -379,7 +381,11 @@ export class SearchIntegrationService extends EventEmitter {
     }
   }
 
-  private async processChange(change: { action: string; entryId: string; timestamp: Date }): Promise<void> {
+  private async processChange(change: {
+    action: string;
+    entryId: string;
+    timestamp: Date;
+  }): Promise<void> {
     try {
       switch (change.action) {
         case 'create':
@@ -395,7 +401,10 @@ export class SearchIntegrationService extends EventEmitter {
           break;
       }
     } catch (error) {
-      console.error(`Failed to process change ${change.action} for entry ${change.entryId}:`, error);
+      console.error(
+        `Failed to process change ${change.action} for entry ${change.entryId}:`,
+        error
+      );
       throw error;
     }
   }
@@ -415,9 +424,8 @@ export class SearchIntegrationService extends EventEmitter {
 
       this.emit('sync:full_completed', {
         total_entries: allEntries.total,
-        sync_time: new Date()
+        sync_time: new Date(),
       });
-
     } catch (error) {
       this.syncStatus.indexHealth = 'error';
       throw error;
@@ -452,8 +460,8 @@ export class SearchIntegrationService extends EventEmitter {
               ...result.entry,
               // Add any additional KB data
               latest_version: kbEntry.version,
-              full_metadata: kbEntry
-            }
+              full_metadata: kbEntry,
+            },
           });
         } else {
           enrichedResults.push(result);
@@ -470,12 +478,14 @@ export class SearchIntegrationService extends EventEmitter {
   private async getKBSuggestions(
     partialQuery: string,
     limit: number
-  ): Promise<Array<{
-    text: string;
-    type: 'title' | 'category' | 'tag';
-    frequency: number;
-    source: 'kb';
-  }>> {
+  ): Promise<
+    Array<{
+      text: string;
+      type: 'title' | 'category' | 'tag';
+      frequency: number;
+      source: 'kb';
+    }>
+  > {
     try {
       // Get suggestions from KB entries
       const entries = await this.knowledgeBaseService.list({ limit: 100 });
@@ -488,7 +498,7 @@ export class SearchIntegrationService extends EventEmitter {
             text: entry.title,
             type: 'title' as const,
             frequency: entry.usage_count || 1,
-            source: 'kb' as const
+            source: 'kb' as const,
           });
         }
 
@@ -498,7 +508,7 @@ export class SearchIntegrationService extends EventEmitter {
             text: entry.category,
             type: 'category' as const,
             frequency: 1,
-            source: 'kb' as const
+            source: 'kb' as const,
           });
         }
 
@@ -509,14 +519,13 @@ export class SearchIntegrationService extends EventEmitter {
               text: tag,
               type: 'tag' as const,
               frequency: 1,
-              source: 'kb' as const
+              source: 'kb' as const,
             });
           }
         });
       });
 
       return suggestions.slice(0, limit);
-
     } catch (error) {
       console.error('Error getting KB suggestions:', error);
       return [];

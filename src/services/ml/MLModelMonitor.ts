@@ -77,7 +77,7 @@ export class MLModelMonitor {
       timestamp,
       input,
       prediction,
-      actualValue
+      actualValue,
     });
 
     // Check for drift
@@ -99,7 +99,7 @@ export class MLModelMonitor {
       memoryUsage: 100 * 1024 * 1024, // 100MB
       lastUpdated: new Date(),
       predictionCount: 0,
-      driftScore: 0
+      driftScore: 0,
     };
   }
 
@@ -109,7 +109,7 @@ export class MLModelMonitor {
       featureStats: new Map<string, { mean: number; std: number; samples: number[] }>(),
       labelDistribution: new Map<string, number>(),
       windowSize: 1000,
-      driftThreshold: 0.1
+      driftThreshold: 0.1,
     };
 
     this.driftDetectors.set(modelId, detector);
@@ -123,7 +123,7 @@ export class MLModelMonitor {
       ...currentMetrics,
       latency: this.updateMovingAverage(currentMetrics.latency, predictionData.latency, 0.1),
       predictionCount: currentMetrics.predictionCount + 1,
-      lastUpdated: predictionData.timestamp
+      lastUpdated: predictionData.timestamp,
     };
 
     // Store metrics history
@@ -140,17 +140,20 @@ export class MLModelMonitor {
 
   private getCurrentMetrics(modelId: string): ModelMetrics {
     const metricsHistory = this.modelMetrics.get(modelId) || [];
-    return metricsHistory[metricsHistory.length - 1] || this.performanceBaselines.get(modelId) || {
-      modelId,
-      accuracy: 0,
-      latency: 0,
-      throughput: 0,
-      errorRate: 0,
-      memoryUsage: 0,
-      lastUpdated: new Date(),
-      predictionCount: 0,
-      driftScore: 0
-    };
+    return (
+      metricsHistory[metricsHistory.length - 1] ||
+      this.performanceBaselines.get(modelId) || {
+        modelId,
+        accuracy: 0,
+        latency: 0,
+        throughput: 0,
+        errorRate: 0,
+        memoryUsage: 0,
+        lastUpdated: new Date(),
+        predictionCount: 0,
+        driftScore: 0,
+      }
+    );
   }
 
   private updateMovingAverage(current: number, newValue: number, alpha: number): number {
@@ -176,7 +179,11 @@ export class MLModelMonitor {
     const conceptDrift = await this.detectConceptDrift(modelId, prediction, actualValue, detector);
 
     // Calculate overall drift score
-    const driftScore = Math.max(featureDrift.driftScore, labelDrift.driftScore, conceptDrift.driftScore);
+    const driftScore = Math.max(
+      featureDrift.driftScore,
+      labelDrift.driftScore,
+      conceptDrift.driftScore
+    );
 
     // Update model metrics with drift score
     const currentMetrics = this.getCurrentMetrics(modelId);
@@ -189,12 +196,16 @@ export class MLModelMonitor {
         driftScore,
         driftType: this.determineDriftType(featureDrift, labelDrift, conceptDrift),
         affectedFeatures: featureDrift.affectedFeatures || [],
-        recommendation: driftScore > 0.3 ? 'retrain' : 'monitor'
+        recommendation: driftScore > 0.3 ? 'retrain' : 'monitor',
       });
     }
   }
 
-  private async detectFeatureDrift(modelId: string, input: any, detector: any): Promise<{
+  private async detectFeatureDrift(
+    modelId: string,
+    input: any,
+    detector: any
+  ): Promise<{
     driftScore: number;
     affectedFeatures: string[];
   }> {
@@ -209,7 +220,7 @@ export class MLModelMonitor {
         detector.featureStats.set(featureName, {
           mean: value,
           std: 0,
-          samples: [value]
+          samples: [value],
         });
         continue;
       }
@@ -225,13 +236,15 @@ export class MLModelMonitor {
       // Update statistics
       const newMean = stats.samples.reduce((sum, val) => sum + val, 0) / stats.samples.length;
       const newStd = Math.sqrt(
-        stats.samples.reduce((sum, val) => sum + Math.pow(val - newMean, 2), 0) / stats.samples.length
+        stats.samples.reduce((sum, val) => sum + Math.pow(val - newMean, 2), 0) /
+          stats.samples.length
       );
 
       // Calculate drift using Kolmogorov-Smirnov-like test
       const drift = Math.abs(newMean - stats.mean) / (stats.std + 0.001); // Avoid division by zero
 
-      if (drift > 2.0) { // 2-sigma threshold
+      if (drift > 2.0) {
+        // 2-sigma threshold
         affectedFeatures.push(featureName);
         maxDrift = Math.max(maxDrift, drift / 5.0); // Normalize to 0-1 scale
       }
@@ -243,11 +256,15 @@ export class MLModelMonitor {
 
     return {
       driftScore: Math.min(maxDrift, 1.0),
-      affectedFeatures
+      affectedFeatures,
     };
   }
 
-  private async detectLabelDrift(modelId: string, actualValue: any, detector: any): Promise<{
+  private async detectLabelDrift(
+    modelId: string,
+    actualValue: any,
+    detector: any
+  ): Promise<{
     driftScore: number;
   }> {
     const labelStr = String(actualValue);
@@ -259,8 +276,10 @@ export class MLModelMonitor {
     detector.labelDistribution.set(labelStr, detector.labelDistribution.get(labelStr)! + 1);
 
     // Simple drift detection based on label distribution changes
-    const totalSamples = Array.from(detector.labelDistribution.values())
-      .reduce((sum, count) => sum + count, 0);
+    const totalSamples = Array.from(detector.labelDistribution.values()).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
     if (totalSamples < 100) {
       return { driftScore: 0 }; // Not enough samples
@@ -299,7 +318,8 @@ export class MLModelMonitor {
       return { driftScore: 0 };
     }
 
-    const recentAccuracy = detector.accuracyWindow.reduce((sum: number, val: number) => sum + val, 0) /
+    const recentAccuracy =
+      detector.accuracyWindow.reduce((sum: number, val: number) => sum + val, 0) /
       detector.accuracyWindow.length;
 
     const baseline = this.performanceBaselines.get(modelId);
@@ -352,15 +372,26 @@ export class MLModelMonitor {
     return String(prediction) === String(actualValue);
   }
 
-  private determineDriftType(featureDrift: any, labelDrift: any, conceptDrift: any): DriftDetectionResult['driftType'] {
-    const maxDrift = Math.max(featureDrift.driftScore, labelDrift.driftScore, conceptDrift.driftScore);
+  private determineDriftType(
+    featureDrift: any,
+    labelDrift: any,
+    conceptDrift: any
+  ): DriftDetectionResult['driftType'] {
+    const maxDrift = Math.max(
+      featureDrift.driftScore,
+      labelDrift.driftScore,
+      conceptDrift.driftScore
+    );
 
     if (conceptDrift.driftScore === maxDrift) return 'concept';
     if (labelDrift.driftScore === maxDrift) return 'label';
     return 'feature';
   }
 
-  private async generateDriftAlert(modelId: string, driftResult: DriftDetectionResult): Promise<void> {
+  private async generateDriftAlert(
+    modelId: string,
+    driftResult: DriftDetectionResult
+  ): Promise<void> {
     const alert: ModelAlert = {
       modelId,
       type: 'drift_detected',
@@ -369,9 +400,9 @@ export class MLModelMonitor {
       timestamp: new Date(),
       metrics: {
         drift_score: driftResult.driftScore,
-        affected_features: driftResult.affectedFeatures.length
+        affected_features: driftResult.affectedFeatures.length,
       },
-      recommendations: this.getDriftRecommendations(driftResult)
+      recommendations: this.getDriftRecommendations(driftResult),
     };
 
     this.alerts.push(alert);
@@ -413,7 +444,7 @@ export class MLModelMonitor {
     if (currentMetrics.latency > baseline.latency * 2) {
       await this.generatePerformanceAlert(modelId, 'high_latency', {
         current_latency: currentMetrics.latency,
-        baseline_latency: baseline.latency
+        baseline_latency: baseline.latency,
       });
     }
 
@@ -421,7 +452,7 @@ export class MLModelMonitor {
     if (currentMetrics.errorRate > baseline.errorRate * 3) {
       await this.generatePerformanceAlert(modelId, 'error_spike', {
         current_error_rate: currentMetrics.errorRate,
-        baseline_error_rate: baseline.errorRate
+        baseline_error_rate: baseline.errorRate,
       });
     }
   }
@@ -438,7 +469,7 @@ export class MLModelMonitor {
       message: `Performance issue detected: ${type}`,
       timestamp: new Date(),
       metrics,
-      recommendations: this.getPerformanceRecommendations(type)
+      recommendations: this.getPerformanceRecommendations(type),
     };
 
     this.alerts.push(alert);
@@ -451,13 +482,13 @@ export class MLModelMonitor {
         return [
           'Check server resources and scaling',
           'Optimize model inference code',
-          'Consider model compression techniques'
+          'Consider model compression techniques',
         ];
       case 'error_spike':
         return [
           'Check input data quality',
           'Review recent model or code changes',
-          'Monitor system dependencies'
+          'Monitor system dependencies',
         ];
       default:
         return ['Investigate the performance issue'];
@@ -482,7 +513,10 @@ export class MLModelMonitor {
 
     if (recentAlerts.some(alert => alert.severity === 'critical')) {
       status = 'critical';
-    } else if (recentAlerts.some(alert => alert.severity === 'high') || currentMetrics.driftScore > 0.3) {
+    } else if (
+      recentAlerts.some(alert => alert.severity === 'high') ||
+      currentMetrics.driftScore > 0.3
+    ) {
       status = 'warning';
     }
 
@@ -490,7 +524,7 @@ export class MLModelMonitor {
       status,
       metrics: currentMetrics,
       recentAlerts,
-      trends
+      trends,
     };
   }
 
@@ -516,7 +550,7 @@ export class MLModelMonitor {
         trend: trend.slope > 0.01 ? 'improving' : trend.slope < -0.01 ? 'degrading' : 'stable',
         changeRate: trend.slope,
         significance: trend.r2,
-        timeWindow: '50 measurements'
+        timeWindow: '50 measurements',
       });
     }
 
@@ -543,7 +577,7 @@ export class MLModelMonitor {
       return sum + Math.pow(values[i] - predicted, 2);
     }, 0);
 
-    const r2 = 1 - (ssResidual / ssTotal);
+    const r2 = 1 - ssResidual / ssTotal;
 
     return { slope, r2 };
   }

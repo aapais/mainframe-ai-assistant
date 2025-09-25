@@ -124,7 +124,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
     const surveyRecord: SatisfactionSurvey = {
       ...survey,
       id: this.generateId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (!this.surveys.has(survey.userId)) {
@@ -148,7 +148,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
     const feedbackRecord: ImplicitFeedback = {
       ...feedback,
       id: this.generateId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (!this.implicitFeedback.has(feedback.userId)) {
@@ -171,7 +171,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
       sessionId,
       startTime: Date.now(),
       steps: [],
-      outcome: 'abandoned' // Will be updated as journey progresses
+      outcome: 'abandoned', // Will be updated as journey progresses
     };
 
     this.userJourneys.set(sessionId, journey);
@@ -195,7 +195,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
         action,
         timestamp: Date.now(),
         data,
-        satisfaction
+        satisfaction,
       });
 
       this.emit('journeyStepAdded', { sessionId, step: journey.steps[journey.steps.length - 1] });
@@ -244,11 +244,13 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
     // Overall metrics
     const overallRatings = surveys.map(s => s.responses.overallSatisfaction);
-    const averageRating = overallRatings.reduce((sum, rating) => sum + rating, 0) / overallRatings.length;
-    const satisfaction = (overallRatings.filter(rating => rating >= 4).length / overallRatings.length) * 100;
+    const averageRating =
+      overallRatings.reduce((sum, rating) => sum + rating, 0) / overallRatings.length;
+    const satisfaction =
+      (overallRatings.filter(rating => rating >= 4).length / overallRatings.length) * 100;
 
     // Net Promoter Score
-    const recommendationScores = surveys.map(s => s.responses.wouldRecommend ? 1 : 0);
+    const recommendationScores = surveys.map(s => (s.responses.wouldRecommend ? 1 : 0));
     const promoters = recommendationScores.filter(score => score === 1).length;
     const detractors = recommendationScores.filter(score => score === 0).length;
     const nps = ((promoters - detractors) / surveys.length) * 100;
@@ -260,7 +262,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
       satisfaction,
       nps,
       confidence,
-      sampleSize: surveys.length
+      sampleSize: surveys.length,
     };
 
     // Dimensional analysis
@@ -268,28 +270,28 @@ export class UserSatisfactionMetrics extends EventEmitter {
       relevance: this.calculateDimensionScore(surveys, 'resultRelevance'),
       speed: this.calculateDimensionScore(surveys, 'searchSpeed'),
       usability: this.calculateDimensionScore(surveys, 'interfaceUsability'),
-      completeness: this.calculateCompletenessScore(surveys, implicitData)
+      completeness: this.calculateCompletenessScore(surveys, implicitData),
     };
 
     // Trend analysis
     const trends = {
       daily: this.calculateTrends(surveys, 'daily'),
       weekly: this.calculateTrends(surveys, 'weekly'),
-      monthly: this.calculateTrends(surveys, 'monthly')
+      monthly: this.calculateTrends(surveys, 'monthly'),
     };
 
     // Segmentation analysis
     const segments = {
       byUserType: this.calculateSegmentScores(surveys, 'userType'),
       byQueryType: this.calculateSegmentScores(surveys, 'queryType'),
-      byPlatform: this.calculateSegmentScores(surveys, 'platform')
+      byPlatform: this.calculateSegmentScores(surveys, 'platform'),
     };
 
     const metrics: SatisfactionMetrics = {
       overall,
       dimensions,
       trends,
-      segments
+      segments,
     };
 
     this.setCachedMetrics(cacheKey, metrics);
@@ -323,7 +325,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
       satisfactionPrediction,
       riskFactors,
       opportunityAreas,
-      userSegmentInsights
+      userSegmentInsights,
     };
   }
 
@@ -363,32 +365,40 @@ export class UserSatisfactionMetrics extends EventEmitter {
     }>;
   }> {
     const now = Date.now();
-    const last24Hours = now - (24 * 60 * 60 * 1000);
+    const last24Hours = now - 24 * 60 * 60 * 1000;
 
     const recentSurveys = this.getFilteredSurveys({
-      timeRange: [last24Hours, now]
+      timeRange: [last24Hours, now],
     });
 
     // Current metrics
     const currentMetrics = {
-      satisfaction: recentSurveys.length > 0
-        ? (recentSurveys.filter(s => s.responses.overallSatisfaction >= 4).length / recentSurveys.length) * 100
-        : 0,
+      satisfaction:
+        recentSurveys.length > 0
+          ? (recentSurveys.filter(s => s.responses.overallSatisfaction >= 4).length /
+              recentSurveys.length) *
+            100
+          : 0,
       nps: this.calculateNPS(recentSurveys),
-      avgRating: recentSurveys.length > 0
-        ? recentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / recentSurveys.length
-        : 0,
-      responsesCount: recentSurveys.length
+      avgRating:
+        recentSurveys.length > 0
+          ? recentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) /
+            recentSurveys.length
+          : 0,
+      responsesCount: recentSurveys.length,
     };
 
     // Recent feedback
     const recentFeedback = recentSurveys
       .filter(s => s.feedback.comments)
       .map(s => ({
-        type: this.classifyFeedbackSentiment(s.feedback.comments) as 'positive' | 'negative' | 'neutral',
+        type: this.classifyFeedbackSentiment(s.feedback.comments) as
+          | 'positive'
+          | 'negative'
+          | 'neutral',
         comment: s.feedback.comments,
         timestamp: s.timestamp,
-        rating: s.responses.overallSatisfaction
+        rating: s.responses.overallSatisfaction,
       }))
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 10);
@@ -407,7 +417,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
       recentFeedback,
       alertsAndInsights,
       topIssues,
-      improvementOpportunities
+      improvementOpportunities,
     };
   }
 
@@ -456,7 +466,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
       correlations,
       keyDrivers,
       seasonalPatterns,
-      userBehaviorInsights
+      userBehaviorInsights,
     };
   }
 
@@ -515,7 +525,9 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
     if (filters.timeRange) {
       const [start, end] = filters.timeRange;
-      journeys = journeys.filter(journey => journey.startTime >= start && (journey.endTime || Date.now()) <= end);
+      journeys = journeys.filter(
+        journey => journey.startTime >= start && (journey.endTime || Date.now()) <= end
+      );
     }
 
     if (filters.outcome) {
@@ -525,41 +537,61 @@ export class UserSatisfactionMetrics extends EventEmitter {
     return journeys;
   }
 
-  private calculateDimensionScore(surveys: SatisfactionSurvey[], dimension: keyof SatisfactionSurvey['responses']): number {
-    const scores = surveys.map(s => s.responses[dimension] as number).filter(score => typeof score === 'number');
+  private calculateDimensionScore(
+    surveys: SatisfactionSurvey[],
+    dimension: keyof SatisfactionSurvey['responses']
+  ): number {
+    const scores = surveys
+      .map(s => s.responses[dimension] as number)
+      .filter(score => typeof score === 'number');
     return scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
   }
 
-  private calculateCompletenessScore(surveys: SatisfactionSurvey[], implicitData: ImplicitFeedback[]): number {
+  private calculateCompletenessScore(
+    surveys: SatisfactionSurvey[],
+    implicitData: ImplicitFeedback[]
+  ): number {
     // Calculate completeness based on user journey success and satisfaction
-    const journeyCompletions = Array.from(this.userJourneys.values())
-      .filter(journey => journey.outcome === 'successful').length;
+    const journeyCompletions = Array.from(this.userJourneys.values()).filter(
+      journey => journey.outcome === 'successful'
+    ).length;
     const totalJourneys = this.userJourneys.size;
 
     const completionRate = totalJourneys > 0 ? journeyCompletions / totalJourneys : 0;
 
     // Incorporate implicit signals for completeness
     const dwellTimeData = implicitData.filter(data => data.type === 'dwell_time');
-    const avgDwellTime = dwellTimeData.length > 0
-      ? dwellTimeData.reduce((sum, data) => sum + data.value, 0) / dwellTimeData.length
-      : 0;
+    const avgDwellTime =
+      dwellTimeData.length > 0
+        ? dwellTimeData.reduce((sum, data) => sum + data.value, 0) / dwellTimeData.length
+        : 0;
 
     // Normalize dwell time to 0-5 scale (assuming 300 seconds is excellent)
-    const dwellTimeScore = Math.min(avgDwellTime / 300 * 5, 5);
+    const dwellTimeScore = Math.min((avgDwellTime / 300) * 5, 5);
 
     return (completionRate * 5 + dwellTimeScore) / 2;
   }
 
-  private calculateTrends(surveys: SatisfactionSurvey[], granularity: 'daily' | 'weekly' | 'monthly'): Array<{ date: string; score: number }> {
+  private calculateTrends(
+    surveys: SatisfactionSurvey[],
+    granularity: 'daily' | 'weekly' | 'monthly'
+  ): Array<{ date: string; score: number }> {
     const groupedData = this.groupSurveysByTime(surveys, granularity);
 
-    return Object.entries(groupedData).map(([timeKey, surveysInPeriod]) => {
-      const avgScore = surveysInPeriod.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / surveysInPeriod.length;
-      return { date: timeKey, score: avgScore };
-    }).sort((a, b) => a.date.localeCompare(b.date));
+    return Object.entries(groupedData)
+      .map(([timeKey, surveysInPeriod]) => {
+        const avgScore =
+          surveysInPeriod.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) /
+          surveysInPeriod.length;
+        return { date: timeKey, score: avgScore };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  private calculateSegmentScores(surveys: SatisfactionSurvey[], segmentType: string): Record<string, number> {
+  private calculateSegmentScores(
+    surveys: SatisfactionSurvey[],
+    segmentType: string
+  ): Record<string, number> {
     const segments: Record<string, SatisfactionSurvey[]> = {};
 
     surveys.forEach(survey => {
@@ -582,7 +614,9 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
     const scores: Record<string, number> = {};
     Object.entries(segments).forEach(([segment, segmentSurveys]) => {
-      scores[segment] = segmentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / segmentSurveys.length;
+      scores[segment] =
+        segmentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) /
+        segmentSurveys.length;
     });
 
     return scores;
@@ -614,15 +648,16 @@ export class UserSatisfactionMetrics extends EventEmitter {
     if (surveys.length === 0) return 0.5;
 
     const recentSurveys = surveys.slice(-10); // Last 10 surveys
-    const avgRecentSatisfaction = recentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / recentSurveys.length;
+    const avgRecentSatisfaction =
+      recentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) /
+      recentSurveys.length;
 
     // Adjust based on implicit signals
-    const recentDwellTime = implicitData
-      .filter(data => data.type === 'dwell_time')
-      .slice(-5);
+    const recentDwellTime = implicitData.filter(data => data.type === 'dwell_time').slice(-5);
 
     if (recentDwellTime.length > 0) {
-      const avgDwellTime = recentDwellTime.reduce((sum, data) => sum + data.value, 0) / recentDwellTime.length;
+      const avgDwellTime =
+        recentDwellTime.reduce((sum, data) => sum + data.value, 0) / recentDwellTime.length;
       const dwellTimeInfluence = avgDwellTime > 180 ? 0.1 : -0.1; // 3 minutes threshold
       return Math.max(0, Math.min(5, avgRecentSatisfaction + dwellTimeInfluence));
     }
@@ -645,7 +680,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
         riskFactors.push({
           factor: 'Declining satisfaction trend',
           impact: Math.abs(trend),
-          recommendation: 'Investigate recent changes and gather detailed feedback'
+          recommendation: 'Investigate recent changes and gather detailed feedback',
         });
       }
     }
@@ -657,20 +692,21 @@ export class UserSatisfactionMetrics extends EventEmitter {
       riskFactors.push({
         factor: 'High user abandonment rate',
         impact: abandonmentRate,
-        recommendation: 'Simplify user flows and reduce friction points'
+        recommendation: 'Simplify user flows and reduce friction points',
       });
     }
 
     // Low engagement signals
-    const lowEngagementSessions = implicitData.filter(data =>
-      data.type === 'dwell_time' && data.value < 30
+    const lowEngagementSessions = implicitData.filter(
+      data => data.type === 'dwell_time' && data.value < 30
     ).length;
-    const engagementRate = implicitData.length > 0 ? lowEngagementSessions / implicitData.length : 0;
+    const engagementRate =
+      implicitData.length > 0 ? lowEngagementSessions / implicitData.length : 0;
     if (engagementRate > 0.4) {
       riskFactors.push({
         factor: 'Low user engagement',
         impact: engagementRate,
-        recommendation: 'Improve content relevance and interface design'
+        recommendation: 'Improve content relevance and interface design',
       });
     }
 
@@ -687,11 +723,12 @@ export class UserSatisfactionMetrics extends EventEmitter {
     const improvementAreas = this.extractImprovementAreas(surveys);
 
     Object.entries(improvementAreas).forEach(([area, frequency]) => {
-      if (frequency > 3) { // More than 3 mentions
+      if (frequency > 3) {
+        // More than 3 mentions
         opportunities.push({
           area,
           potential: frequency / surveys.length,
-          actionItems: this.generateActionItems(area)
+          actionItems: this.generateActionItems(area),
         });
       }
     });
@@ -707,8 +744,8 @@ export class UserSatisfactionMetrics extends EventEmitter {
           'Optimize search algorithms',
           'Implement caching strategies',
           'Reduce server response time',
-          'Optimize frontend rendering'
-        ]
+          'Optimize frontend rendering',
+        ],
       });
     }
 
@@ -718,16 +755,20 @@ export class UserSatisfactionMetrics extends EventEmitter {
   private async generateSegmentInsights(
     surveys: SatisfactionSurvey[],
     implicitData: ImplicitFeedback[]
-  ): Promise<Array<{
-    segment: string;
-    satisfaction: number;
-    keyDrivers: string[];
-    improvementActions: string[];
-  }>> {
+  ): Promise<
+    Array<{
+      segment: string;
+      satisfaction: number;
+      keyDrivers: string[];
+      improvementActions: string[];
+    }>
+  > {
     const segments = this.groupSurveysBySegment(surveys);
 
     return Object.entries(segments).map(([segment, segmentSurveys]) => {
-      const satisfaction = segmentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / segmentSurveys.length;
+      const satisfaction =
+        segmentSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) /
+        segmentSurveys.length;
       const keyDrivers = this.identifySegmentDrivers(segmentSurveys);
       const improvementActions = this.generateSegmentActions(segment, segmentSurveys);
 
@@ -735,17 +776,19 @@ export class UserSatisfactionMetrics extends EventEmitter {
         segment,
         satisfaction,
         keyDrivers,
-        improvementActions
+        improvementActions,
       };
     });
   }
 
-  private async generateAlertsAndInsights(surveys: SatisfactionSurvey[]): Promise<Array<{
-    type: 'alert' | 'insight' | 'recommendation';
-    severity: 'high' | 'medium' | 'low';
-    message: string;
-    actionRequired: boolean;
-  }>> {
+  private async generateAlertsAndInsights(surveys: SatisfactionSurvey[]): Promise<
+    Array<{
+      type: 'alert' | 'insight' | 'recommendation';
+      severity: 'high' | 'medium' | 'low';
+      message: string;
+      actionRequired: boolean;
+    }>
+  > {
     const alerts: Array<{
       type: 'alert' | 'insight' | 'recommendation';
       severity: 'high' | 'medium' | 'low';
@@ -756,39 +799,42 @@ export class UserSatisfactionMetrics extends EventEmitter {
     if (surveys.length === 0) return alerts;
 
     // Check for low satisfaction
-    const avgSatisfaction = surveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / surveys.length;
+    const avgSatisfaction =
+      surveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / surveys.length;
     if (avgSatisfaction < 3) {
       alerts.push({
         type: 'alert',
         severity: 'high',
         message: `Critical: Average satisfaction is ${avgSatisfaction.toFixed(1)}/5`,
-        actionRequired: true
+        actionRequired: true,
       });
     }
 
     // Check for negative feedback patterns
-    const negativeComments = surveys.filter(s =>
-      s.feedback.comments && this.classifyFeedbackSentiment(s.feedback.comments) === 'negative'
+    const negativeComments = surveys.filter(
+      s => s.feedback.comments && this.classifyFeedbackSentiment(s.feedback.comments) === 'negative'
     ).length;
 
     if (negativeComments / surveys.length > 0.3) {
       alerts.push({
         type: 'insight',
         severity: 'medium',
-        message: `${Math.round(negativeComments / surveys.length * 100)}% of recent feedback is negative`,
-        actionRequired: true
+        message: `${Math.round((negativeComments / surveys.length) * 100)}% of recent feedback is negative`,
+        actionRequired: true,
       });
     }
 
     return alerts;
   }
 
-  private async identifyTopIssues(surveys: SatisfactionSurvey[]): Promise<Array<{
-    issue: string;
-    frequency: number;
-    impact: number;
-    suggestedAction: string;
-  }>> {
+  private async identifyTopIssues(surveys: SatisfactionSurvey[]): Promise<
+    Array<{
+      issue: string;
+      frequency: number;
+      impact: number;
+      suggestedAction: string;
+    }>
+  > {
     const issues = this.extractIssues(surveys);
 
     return Object.entries(issues)
@@ -796,23 +842,25 @@ export class UserSatisfactionMetrics extends EventEmitter {
         issue,
         frequency: data.frequency,
         impact: data.impact,
-        suggestedAction: this.generateIssueAction(issue)
+        suggestedAction: this.generateIssueAction(issue),
       }))
-      .sort((a, b) => (b.frequency * b.impact) - (a.frequency * a.impact))
+      .sort((a, b) => b.frequency * b.impact - a.frequency * a.impact)
       .slice(0, 5);
   }
 
-  private async identifyImprovementOpportunities(surveys: SatisfactionSurvey[]): Promise<Array<{
-    area: string;
-    potential: number;
-    effort: number;
-    roi: number;
-  }>> {
+  private async identifyImprovementOpportunities(surveys: SatisfactionSurvey[]): Promise<
+    Array<{
+      area: string;
+      potential: number;
+      effort: number;
+      roi: number;
+    }>
+  > {
     const opportunities = [
       { area: 'Search Speed', potential: 0.8, effort: 0.6, roi: 1.33 },
       { area: 'Result Relevance', potential: 0.9, effort: 0.8, roi: 1.13 },
       { area: 'Interface Design', potential: 0.7, effort: 0.4, roi: 1.75 },
-      { area: 'Mobile Experience', potential: 0.85, effort: 0.7, roi: 1.21 }
+      { area: 'Mobile Experience', potential: 0.85, effort: 0.7, roi: 1.21 },
     ];
 
     return opportunities.sort((a, b) => b.roi - a.roi);
@@ -820,7 +868,10 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
   // Additional helper methods
 
-  private groupSurveysByTime(surveys: SatisfactionSurvey[], granularity: string): Record<string, SatisfactionSurvey[]> {
+  private groupSurveysByTime(
+    surveys: SatisfactionSurvey[],
+    granularity: string
+  ): Record<string, SatisfactionSurvey[]> {
     const grouped: Record<string, SatisfactionSurvey[]> = {};
 
     surveys.forEach(survey => {
@@ -857,7 +908,15 @@ export class UserSatisfactionMetrics extends EventEmitter {
   private classifyFeedbackSentiment(comment: string): string {
     // Simple sentiment analysis
     const positiveWords = ['good', 'great', 'excellent', 'perfect', 'amazing', 'helpful', 'useful'];
-    const negativeWords = ['bad', 'terrible', 'awful', 'useless', 'slow', 'confusing', 'frustrating'];
+    const negativeWords = [
+      'bad',
+      'terrible',
+      'awful',
+      'useless',
+      'slow',
+      'confusing',
+      'frustrating',
+    ];
 
     const words = comment.toLowerCase().split(/\s+/);
     const positiveCount = words.filter(word => positiveWords.includes(word)).length;
@@ -873,8 +932,8 @@ export class UserSatisfactionMetrics extends EventEmitter {
     const n = values.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = values.reduce((sum, val) => sum + val, 0);
-    const sumXY = values.reduce((sum, val, index) => sum + (index * val), 0);
-    const sumX2 = values.reduce((sum, _, index) => sum + (index * index), 0);
+    const sumXY = values.reduce((sum, val, index) => sum + index * val, 0);
+    const sumX2 = values.reduce((sum, _, index) => sum + index * index, 0);
 
     return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
   }
@@ -893,30 +952,32 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
   private generateActionItems(area: string): string[] {
     const actionMap: Record<string, string[]> = {
-      'search_speed': [
+      search_speed: [
         'Implement search result caching',
         'Optimize database queries',
         'Add search suggestions',
-        'Use CDN for static assets'
+        'Use CDN for static assets',
       ],
-      'result_relevance': [
+      result_relevance: [
         'Improve ranking algorithms',
         'Add personalization features',
         'Implement user feedback loops',
-        'Enhance content analysis'
+        'Enhance content analysis',
       ],
-      'interface_design': [
+      interface_design: [
         'Conduct usability testing',
         'Simplify navigation',
         'Improve visual hierarchy',
-        'Add keyboard shortcuts'
-      ]
+        'Add keyboard shortcuts',
+      ],
     };
 
     return actionMap[area] || ['Investigate user feedback', 'Conduct detailed analysis'];
   }
 
-  private groupSurveysBySegment(surveys: SatisfactionSurvey[]): Record<string, SatisfactionSurvey[]> {
+  private groupSurveysBySegment(
+    surveys: SatisfactionSurvey[]
+  ): Record<string, SatisfactionSurvey[]> {
     const segments: Record<string, SatisfactionSurvey[]> = {};
 
     surveys.forEach(survey => {
@@ -943,27 +1004,21 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
   private generateSegmentActions(segment: string, surveys: SatisfactionSurvey[]): string[] {
     const actionMap: Record<string, string[]> = {
-      'power_user': [
+      power_user: [
         'Add advanced search filters',
         'Provide detailed result metadata',
-        'Implement export functionality'
+        'Implement export functionality',
       ],
-      'casual_user': [
-        'Simplify interface',
-        'Add search suggestions',
-        'Provide quick tutorials'
-      ],
-      'quick_searcher': [
-        'Optimize for speed',
-        'Add instant search',
-        'Implement voice search'
-      ]
+      casual_user: ['Simplify interface', 'Add search suggestions', 'Provide quick tutorials'],
+      quick_searcher: ['Optimize for speed', 'Add instant search', 'Implement voice search'],
     };
 
     return actionMap[segment] || ['Gather more specific feedback'];
   }
 
-  private extractIssues(surveys: SatisfactionSurvey[]): Record<string, { frequency: number; impact: number }> {
+  private extractIssues(
+    surveys: SatisfactionSurvey[]
+  ): Record<string, { frequency: number; impact: number }> {
     const issues: Record<string, { frequency: number; impact: number }> = {};
 
     surveys.forEach(survey => {
@@ -986,10 +1041,10 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
   private generateIssueAction(issue: string): string {
     const actionMap: Record<string, string> = {
-      'slow_search': 'Optimize search performance and caching',
-      'poor_results': 'Improve ranking algorithms and relevance',
-      'difficult_interface': 'Redesign user interface for better usability',
-      'mobile_issues': 'Enhance mobile responsiveness and touch interactions'
+      slow_search: 'Optimize search performance and caching',
+      poor_results: 'Improve ranking algorithms and relevance',
+      difficult_interface: 'Redesign user interface for better usability',
+      mobile_issues: 'Enhance mobile responsiveness and touch interactions',
     };
 
     return actionMap[issue] || 'Investigate and address user concerns';
@@ -998,9 +1053,10 @@ export class UserSatisfactionMetrics extends EventEmitter {
   private analyzeJourneyPatterns(journey: UserJourney): void {
     // Analyze completed journey for patterns and insights
     const totalSteps = journey.steps.length;
-    const avgStepSatisfaction = journey.steps
-      .filter(step => step.satisfaction !== undefined)
-      .reduce((sum, step) => sum + (step.satisfaction || 0), 0) / totalSteps;
+    const avgStepSatisfaction =
+      journey.steps
+        .filter(step => step.satisfaction !== undefined)
+        .reduce((sum, step) => sum + (step.satisfaction || 0), 0) / totalSteps;
 
     this.emit('journeyAnalyzed', {
       journey,
@@ -1008,8 +1064,8 @@ export class UserSatisfactionMetrics extends EventEmitter {
         totalSteps,
         avgStepSatisfaction,
         outcome: journey.outcome,
-        duration: journey.endTime ? journey.endTime - journey.startTime : 0
-      }
+        duration: journey.endTime ? journey.endTime - journey.startTime : 0,
+      },
     });
   }
 
@@ -1021,15 +1077,24 @@ export class UserSatisfactionMetrics extends EventEmitter {
   }> {
     // Simplified correlation analysis
     const factors = ['overallSatisfaction', 'resultRelevance', 'searchSpeed', 'interfaceUsability'];
-    const correlations: Array<{ factor1: string; factor2: string; correlation: number; significance: number }> = [];
+    const correlations: Array<{
+      factor1: string;
+      factor2: string;
+      correlation: number;
+      significance: number;
+    }> = [];
 
     for (let i = 0; i < factors.length; i++) {
       for (let j = i + 1; j < factors.length; j++) {
         const factor1 = factors[i];
         const factor2 = factors[j];
 
-        const values1 = surveys.map(s => s.responses[factor1 as keyof typeof s.responses] as number);
-        const values2 = surveys.map(s => s.responses[factor2 as keyof typeof s.responses] as number);
+        const values1 = surveys.map(
+          s => s.responses[factor1 as keyof typeof s.responses] as number
+        );
+        const values2 = surveys.map(
+          s => s.responses[factor2 as keyof typeof s.responses] as number
+        );
 
         const correlation = this.calculatePearsonCorrelation(values1, values2);
 
@@ -1037,7 +1102,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
           factor1,
           factor2,
           correlation,
-          significance: Math.abs(correlation) > 0.5 ? 0.95 : 0.7
+          significance: Math.abs(correlation) > 0.5 ? 0.95 : 0.7,
         });
       }
     }
@@ -1049,9 +1114,9 @@ export class UserSatisfactionMetrics extends EventEmitter {
     const n = x.length;
     const sumX = x.reduce((sum, val) => sum + val, 0);
     const sumY = y.reduce((sum, val) => sum + val, 0);
-    const sumXY = x.reduce((sum, val, i) => sum + (val * y[i]), 0);
-    const sumX2 = x.reduce((sum, val) => sum + (val * val), 0);
-    const sumY2 = y.reduce((sum, val) => sum + (val * val), 0);
+    const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0);
+    const sumX2 = x.reduce((sum, val) => sum + val * val, 0);
+    const sumY2 = y.reduce((sum, val) => sum + val * val, 0);
 
     const numerator = n * sumXY - sumX * sumY;
     const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
@@ -1059,7 +1124,10 @@ export class UserSatisfactionMetrics extends EventEmitter {
     return denominator !== 0 ? numerator / denominator : 0;
   }
 
-  private identifyKeyDrivers(surveys: SatisfactionSurvey[], implicitData: ImplicitFeedback[]): Array<{
+  private identifyKeyDrivers(
+    surveys: SatisfactionSurvey[],
+    implicitData: ImplicitFeedback[]
+  ): Array<{
     driver: string;
     impact: number;
     elasticity: number;
@@ -1067,8 +1135,8 @@ export class UserSatisfactionMetrics extends EventEmitter {
     // Simplified driver analysis
     return [
       { driver: 'Result Relevance', impact: 0.45, elasticity: 0.8 },
-      { driver: 'Search Speed', impact: 0.30, elasticity: 0.6 },
-      { driver: 'Interface Usability', impact: 0.25, elasticity: 0.4 }
+      { driver: 'Search Speed', impact: 0.3, elasticity: 0.6 },
+      { driver: 'Interface Usability', impact: 0.25, elasticity: 0.4 },
     ];
   }
 
@@ -1081,17 +1149,22 @@ export class UserSatisfactionMetrics extends EventEmitter {
     const monthlyData = this.groupSurveysByTime(surveys, 'monthly');
 
     return Object.entries(monthlyData).map(([month, monthSurveys]) => {
-      const avgSatisfaction = monthSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) / monthSurveys.length;
+      const avgSatisfaction =
+        monthSurveys.reduce((sum, s) => sum + s.responses.overallSatisfaction, 0) /
+        monthSurveys.length;
 
       return {
         period: month,
         avgSatisfaction,
-        trend: 'stable' as 'increasing' | 'decreasing' | 'stable' // Simplified
+        trend: 'stable' as 'increasing' | 'decreasing' | 'stable', // Simplified
       };
     });
   }
 
-  private extractBehaviorInsights(surveys: SatisfactionSurvey[], implicitData: ImplicitFeedback[]): Array<{
+  private extractBehaviorInsights(
+    surveys: SatisfactionSurvey[],
+    implicitData: ImplicitFeedback[]
+  ): Array<{
     pattern: string;
     description: string;
     recommendation: string;
@@ -1100,13 +1173,13 @@ export class UserSatisfactionMetrics extends EventEmitter {
       {
         pattern: 'Quick Exit Pattern',
         description: 'Users who leave quickly tend to have lower satisfaction',
-        recommendation: 'Improve first-impression experience and result quality'
+        recommendation: 'Improve first-impression experience and result quality',
       },
       {
         pattern: 'Deep Engagement Correlation',
         description: 'Users with longer session times report higher satisfaction',
-        recommendation: 'Encourage exploration with related suggestions'
-      }
+        recommendation: 'Encourage exploration with related suggestions',
+      },
     ];
   }
 
@@ -1133,7 +1206,7 @@ export class UserSatisfactionMetrics extends EventEmitter {
   private setCachedMetrics(key: string, data: any): void {
     this.metricsCache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -1154,12 +1227,15 @@ export class UserSatisfactionMetrics extends EventEmitter {
 
   private startContinuousLearning(): void {
     // Start continuous learning process
-    setInterval(() => {
-      this.emit('continuousLearning', {
-        timestamp: Date.now(),
-        modelsUpdated: Array.from(this.mlModels.keys())
-      });
-    }, 60 * 60 * 1000); // Every hour
+    setInterval(
+      () => {
+        this.emit('continuousLearning', {
+          timestamp: Date.now(),
+          modelsUpdated: Array.from(this.mlModels.keys()),
+        });
+      },
+      60 * 60 * 1000
+    ); // Every hour
   }
 
   private updatePredictiveModels(survey: SatisfactionSurvey): void {

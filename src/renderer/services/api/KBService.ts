@@ -6,7 +6,11 @@
 import { BaseService, ServiceResponse, ServiceOptions } from './BaseService';
 import { KBEntry, SearchResult, SearchOptions, KBCategory } from '../../../types/services';
 
-export interface KBEntryInput extends Omit<KBEntry, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'success_count' | 'failure_count'> {
+export interface KBEntryInput
+  extends Omit<
+    KBEntry,
+    'id' | 'created_at' | 'updated_at' | 'usage_count' | 'success_count' | 'failure_count'
+  > {
   id?: string;
 }
 
@@ -46,17 +50,17 @@ export class KBService extends BaseService {
     options: ServiceOptions = {}
   ): Promise<ServiceResponse<KBEntriesResponse>> {
     const cacheKey = `entries:${JSON.stringify(filters)}`;
-    
+
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.getKBEntries) {
           throw new Error('getKBEntries method not available');
         }
 
         const response = await electronAPI.getKBEntries(filters);
-        
+
         // Normalize response format
         if (Array.isArray(response)) {
           return {
@@ -66,7 +70,7 @@ export class KBService extends BaseService {
             pageSize: filters.pageSize || response.length,
           };
         }
-        
+
         return response;
       },
       {
@@ -83,16 +87,13 @@ export class KBService extends BaseService {
   /**
    * Get a single KB entry by ID
    */
-  async getEntryById(
-    id: string,
-    options: ServiceOptions = {}
-  ): Promise<ServiceResponse<KBEntry>> {
+  async getEntryById(id: string, options: ServiceOptions = {}): Promise<ServiceResponse<KBEntry>> {
     const cacheKey = `entry:${id}`;
-    
+
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.getKBEntry) {
           throw new Error('getKBEntry method not available');
         }
@@ -101,7 +102,7 @@ export class KBService extends BaseService {
         if (!entry) {
           throw new Error(`Entry with ID ${id} not found`);
         }
-        
+
         return entry;
       },
       {
@@ -125,7 +126,7 @@ export class KBService extends BaseService {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.addKBEntry) {
           throw new Error('addKBEntry method not available');
         }
@@ -145,10 +146,10 @@ export class KBService extends BaseService {
         }
 
         const newEntry = await electronAPI.addKBEntry(entry);
-        
+
         // Clear related cache entries
         this.clearRelatedCache();
-        
+
         return newEntry;
       },
       {
@@ -169,7 +170,7 @@ export class KBService extends BaseService {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.updateKBEntry) {
           throw new Error('updateKBEntry method not available');
         }
@@ -186,11 +187,11 @@ export class KBService extends BaseService {
         }
 
         const updatedEntry = await electronAPI.updateKBEntry(id, updates);
-        
+
         // Clear related cache entries
         this.clearRelatedCache();
         this.cache.delete(`${this.serviceName}:entry:${id}`);
-        
+
         return updatedEntry;
       },
       {
@@ -203,20 +204,17 @@ export class KBService extends BaseService {
   /**
    * Delete a KB entry
    */
-  async deleteEntry(
-    id: string,
-    options: ServiceOptions = {}
-  ): Promise<ServiceResponse<void>> {
+  async deleteEntry(id: string, options: ServiceOptions = {}): Promise<ServiceResponse<void>> {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.deleteKBEntry) {
           throw new Error('deleteKBEntry method not available');
         }
 
         await electronAPI.deleteKBEntry(id);
-        
+
         // Clear related cache entries
         this.clearRelatedCache();
         this.cache.delete(`${this.serviceName}:entry:${id}`);
@@ -240,13 +238,13 @@ export class KBService extends BaseService {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.rateKBEntry) {
           throw new Error('rateKBEntry method not available');
         }
 
         await electronAPI.rateKBEntry(id, successful, comment);
-        
+
         // Clear entry cache to reflect updated stats
         this.cache.delete(`${this.serviceName}:entry:${id}`);
         this.clearRelatedCache();
@@ -261,21 +259,18 @@ export class KBService extends BaseService {
   /**
    * Record entry view
    */
-  async recordEntryView(
-    id: string,
-    options: ServiceOptions = {}
-  ): Promise<ServiceResponse<void>> {
+  async recordEntryView(id: string, options: ServiceOptions = {}): Promise<ServiceResponse<void>> {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.recordEntryView) {
           // This is optional functionality, don't throw
           return;
         }
 
         await electronAPI.recordEntryView(id);
-        
+
         // Update cache to reflect new view count
         this.cache.delete(`${this.serviceName}:entry:${id}`);
       },
@@ -290,18 +285,21 @@ export class KBService extends BaseService {
   /**
    * Get KB categories
    */
-  async getCategories(
-    options: ServiceOptions = {}
-  ): Promise<ServiceResponse<KBCategory[]>> {
+  async getCategories(options: ServiceOptions = {}): Promise<ServiceResponse<KBCategory[]>> {
     const cacheKey = 'categories';
-    
+
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         // Use default categories if API method not available
         const defaultCategories: KBCategory[] = [
-          'JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'Other'
+          'JCL',
+          'VSAM',
+          'DB2',
+          'Batch',
+          'Functional',
+          'Other',
         ];
 
         if (!electronAPI.getKBCategories) {
@@ -325,21 +323,21 @@ export class KBService extends BaseService {
   /**
    * Get KB statistics
    */
-  async getStatistics(
-    options: ServiceOptions = {}
-  ): Promise<ServiceResponse<{
-    totalEntries: number;
-    entriesByCategory: Record<KBCategory, number>;
-    searchesToday: number;
-    mostUsedEntries: KBEntry[];
-    recentlyAdded: KBEntry[];
-  }>> {
+  async getStatistics(options: ServiceOptions = {}): Promise<
+    ServiceResponse<{
+      totalEntries: number;
+      entriesByCategory: Record<KBCategory, number>;
+      searchesToday: number;
+      mostUsedEntries: KBEntry[];
+      recentlyAdded: KBEntry[];
+    }>
+  > {
     const cacheKey = 'statistics';
-    
+
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.getKBStatistics) {
           throw new Error('getKBStatistics method not available');
         }
@@ -368,7 +366,7 @@ export class KBService extends BaseService {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.exportKBEntries) {
           throw new Error('exportKBEntries method not available');
         }
@@ -394,16 +392,16 @@ export class KBService extends BaseService {
     return this.executeWithRetry(
       async () => {
         const electronAPI = this.getElectronAPI();
-        
+
         if (!electronAPI.importKBEntries) {
           throw new Error('importKBEntries method not available');
         }
 
         const result = await electronAPI.importKBEntries(data, format);
-        
+
         // Clear all cache after import
         this.clearCache();
-        
+
         return result;
       },
       {
@@ -430,7 +428,7 @@ export class KBService extends BaseService {
         }
 
         const electronAPI = this.getElectronAPI();
-        
+
         // Basic health check
         const healthStatus: KBHealthStatus = {
           healthy: true,
@@ -455,8 +453,9 @@ export class KBService extends BaseService {
           }
 
           healthStatus.healthy = healthStatus.databaseConnected;
-          healthStatus.message = healthStatus.healthy ? 'All systems operational' : 'Database connection issues';
-
+          healthStatus.message = healthStatus.healthy
+            ? 'All systems operational'
+            : 'Database connection issues';
         } catch (error) {
           healthStatus.healthy = false;
           healthStatus.message = error instanceof Error ? error.message : 'Health check failed';
@@ -477,14 +476,16 @@ export class KBService extends BaseService {
    */
   private clearRelatedCache(): void {
     const keysToDelete: string[] = [];
-    
+
     for (const key of this.cache.keys()) {
-      if (key.startsWith(`${this.serviceName}:entries`) ||
-          key.startsWith(`${this.serviceName}:statistics`)) {
+      if (
+        key.startsWith(`${this.serviceName}:entries`) ||
+        key.startsWith(`${this.serviceName}:statistics`)
+      ) {
         keysToDelete.push(key);
       }
     }
-    
+
     keysToDelete.forEach(key => this.cache.delete(key));
   }
 
@@ -495,12 +496,9 @@ export class KBService extends BaseService {
     try {
       // Preload categories
       await this.getCategories({ cacheOptions: { refreshCache: true } });
-      
+
       // Preload recent entries
-      await this.getEntries(
-        { pageSize: 20 },
-        { cacheOptions: { refreshCache: true } }
-      );
+      await this.getEntries({ pageSize: 20 }, { cacheOptions: { refreshCache: true } });
 
       this.emit('preload-complete', { service: this.serviceName });
     } catch (error) {

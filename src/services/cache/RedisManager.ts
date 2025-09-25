@@ -56,7 +56,7 @@ export class RedisManager extends EventEmitter {
       hitRate: 0,
       avgResponseTime: 0,
       memoryUsage: 0,
-      operations: { get: 0, set: 0, del: 0 }
+      operations: { get: 0, set: 0, del: 0 },
     };
     this.initializeClient();
   }
@@ -65,10 +65,12 @@ export class RedisManager extends EventEmitter {
     try {
       // Mock Redis client for testing - replace with actual Redis in production
       this.client = {
-        connect: async () => { this.isConnected = true; },
-        get: async (key: string) => { 
+        connect: async () => {
+          this.isConnected = true;
+        },
+        get: async (key: string) => {
           this.metrics.operations.get++;
-          return this.mockGet(key); 
+          return this.mockGet(key);
         },
         set: async (key: string, value: string, ttl?: number) => {
           this.metrics.operations.set++;
@@ -80,7 +82,7 @@ export class RedisManager extends EventEmitter {
         },
         keys: async (pattern: string) => [],
         flushdb: async () => true,
-        info: async () => 'used_memory:1024'
+        info: async () => 'used_memory:1024',
       };
 
       await this.client.connect();
@@ -107,7 +109,7 @@ export class RedisManager extends EventEmitter {
   private mockSet(key: string, value: string, ttl: number = this.config.ttl.default): boolean {
     this.mockStorage.set(key, {
       value,
-      expires: Date.now() + (ttl * 1000)
+      expires: Date.now() + ttl * 1000,
     });
     return true;
   }
@@ -122,16 +124,16 @@ export class RedisManager extends EventEmitter {
       const data = await this.client.get(this.getKey(key));
       const responseTime = Date.now() - startTime;
       this.updateMetrics('hit', responseTime);
-      
+
       if (!data) {
         this.metrics.misses++;
         return null;
       }
 
       const entry: CacheEntry<T> = JSON.parse(data);
-      
+
       // Check if entry has expired
-      if (Date.now() > entry.timestamp + (entry.ttl * 1000)) {
+      if (Date.now() > entry.timestamp + entry.ttl * 1000) {
         await this.del(key);
         this.metrics.misses++;
         return null;
@@ -147,8 +149,8 @@ export class RedisManager extends EventEmitter {
   }
 
   async set<T>(
-    key: string, 
-    data: T, 
+    key: string,
+    data: T,
     ttl: number = this.config.ttl.default,
     tags?: string[]
   ): Promise<boolean> {
@@ -158,12 +160,12 @@ export class RedisManager extends EventEmitter {
         timestamp: Date.now(),
         ttl,
         tags,
-        version: '1.0'
+        version: '1.0',
       };
 
       const serialized = JSON.stringify(entry);
       const compressed = this.shouldCompress(serialized);
-      
+
       if (compressed) {
         entry.compressed = true;
         // In production, use actual compression like gzip
@@ -223,7 +225,7 @@ export class RedisManager extends EventEmitter {
 
   async warming(keys: { key: string; fetcher: () => Promise<any>; ttl?: number }[]): Promise<void> {
     console.log(`Starting cache warming for ${keys.length} keys`);
-    
+
     const batchSize = 10;
     for (let i = 0; i < keys.length; i += batchSize) {
       const batch = keys.slice(i, i + batchSize);
@@ -238,7 +240,7 @@ export class RedisManager extends EventEmitter {
         })
       );
     }
-    
+
     console.log('Cache warming completed');
   }
 
@@ -262,10 +264,10 @@ export class RedisManager extends EventEmitter {
     } else {
       this.metrics.misses++;
     }
-    
+
     // Update average response time
     const totalOps = this.metrics.operations.get;
-    this.metrics.avgResponseTime = 
+    this.metrics.avgResponseTime =
       (this.metrics.avgResponseTime * (totalOps - 1) + responseTime) / totalOps;
   }
 
@@ -276,7 +278,7 @@ export class RedisManager extends EventEmitter {
       hitRate: 0,
       avgResponseTime: 0,
       memoryUsage: 0,
-      operations: { get: 0, set: 0, del: 0 }
+      operations: { get: 0, set: 0, del: 0 },
     };
   }
 

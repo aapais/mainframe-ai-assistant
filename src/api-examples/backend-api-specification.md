@@ -1,15 +1,18 @@
 # Backend API Specification for localhost:3001
 
-This document specifies the REST API endpoints that the AI-enhanced frontend expects to be available at `localhost:3001`.
+This document specifies the REST API endpoints that the AI-enhanced frontend
+expects to be available at `localhost:3001`.
 
 ## Authentication
 
 All protected endpoints require a Bearer token in the Authorization header:
+
 ```
 Authorization: Bearer <token>
 ```
 
 ## Base URL
+
 ```
 http://localhost:3001/api
 ```
@@ -19,9 +22,11 @@ http://localhost:3001/api
 ## 1. AI Categorization Endpoints
 
 ### POST /ai/categorize
+
 Categorize an incident using AI.
 
 **Request Body:**
+
 ```json
 {
   "title": "Erro CICS região PROD01",
@@ -34,6 +39,7 @@ Categorize an incident using AI.
 ```
 
 **Response:**
+
 ```json
 {
   "category": "CICS",
@@ -45,12 +51,15 @@ Categorize an incident using AI.
 ```
 
 ### GET /ai/categorize/history
+
 Get categorization history.
 
 **Query Parameters:**
+
 - `limit` (optional): Number of records to return (default: 50)
 
 **Response:**
+
 ```json
 {
   "history": [
@@ -70,9 +79,11 @@ Get categorization history.
 ## 2. Semantic Search Endpoints
 
 ### POST /knowledge/semantic-search
+
 Perform semantic search on knowledge base.
 
 **Request Body:**
+
 ```json
 {
   "query": "Como resolver erro CICS ABEND S0C7",
@@ -88,6 +99,7 @@ Perform semantic search on knowledge base.
 ```
 
 **Response:**
+
 ```json
 {
   "results": [
@@ -112,36 +124,42 @@ Perform semantic search on knowledge base.
 ```
 
 ### GET /knowledge/search-analytics
+
 Get search analytics.
 
 **Query Parameters:**
+
 - `timeframe`: 1d, 7d, 30d, 90d (default: 7d)
 
 **Response:**
+
 ```json
 {
   "total_searches": 1547,
   "avg_results_per_search": 7.3,
   "top_categories": [
-    {"category": "CICS", "count": 234},
-    {"category": "DB2", "count": 189}
+    { "category": "CICS", "count": 234 },
+    { "category": "DB2", "count": 189 }
   ],
   "search_success_rate": 0.87
 }
 ```
 
 ### GET /knowledge/popular-searches
+
 Get popular search terms.
 
 **Query Parameters:**
+
 - `limit` (optional): Number of terms to return (default: 20)
 
 **Response:**
+
 ```json
 {
   "popular_terms": [
-    {"term": "CICS error", "count": 89, "trend": "up"},
-    {"term": "DB2 performance", "count": 67, "trend": "stable"}
+    { "term": "CICS error", "count": 89, "trend": "up" },
+    { "term": "DB2 performance", "count": 67, "trend": "stable" }
   ]
 }
 ```
@@ -151,9 +169,11 @@ Get popular search terms.
 ## 3. RAG Pipeline Endpoints
 
 ### POST /rag/generate-resolution
+
 Generate resolution using RAG pipeline.
 
 **Request Body:**
+
 ```json
 {
   "incident": {
@@ -179,6 +199,7 @@ Generate resolution using RAG pipeline.
 ```
 
 **Response:**
+
 ```json
 {
   "resolution": "Baseado na análise de documentos similares...",
@@ -190,23 +211,20 @@ Generate resolution using RAG pipeline.
       "document_id": "doc_123"
     }
   ],
-  "steps": [
-    "1. Verificar logs do sistema",
-    "2. Ajustar parâmetros de memória"
-  ],
+  "steps": ["1. Verificar logs do sistema", "2. Ajustar parâmetros de memória"],
   "rationale": "Similar incidents were resolved using memory optimization",
   "estimated_time": "2-4 hours",
   "risk_level": "low",
-  "alternatives": [
-    "Alternative approach: Full system restart"
-  ]
+  "alternatives": ["Alternative approach: Full system restart"]
 }
 ```
 
 ### GET /rag/metrics
+
 Get RAG pipeline metrics.
 
 **Response:**
+
 ```json
 {
   "total_generations": 1234,
@@ -222,9 +240,11 @@ Get RAG pipeline metrics.
 ```
 
 ### POST /rag/feedback
+
 Provide feedback on RAG response.
 
 **Request Body:**
+
 ```json
 {
   "resolution_id": "res_123",
@@ -239,6 +259,7 @@ Provide feedback on RAG response.
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -251,9 +272,11 @@ Provide feedback on RAG response.
 ## 4. Similar Incidents Endpoints
 
 ### POST /incidents/find-similar
+
 Find similar incidents.
 
 **Request Body:**
+
 ```json
 {
   "incident": {
@@ -272,6 +295,7 @@ Find similar incidents.
 ```
 
 **Response:**
+
 ```json
 {
   "similar_incidents": [
@@ -295,13 +319,16 @@ Find similar incidents.
 ```
 
 ### GET /incidents/resolution-patterns
+
 Get incident resolution patterns.
 
 **Query Parameters:**
+
 - `category`: Incident category
 - `timeframe`: Time period (30d, 90d, all)
 
 **Response:**
+
 ```json
 {
   "patterns": [
@@ -322,9 +349,11 @@ Get incident resolution patterns.
 ## 5. Dashboard & Metrics Endpoints
 
 ### GET /dashboard/ai-metrics
+
 Get real-time AI metrics.
 
 **Response:**
+
 ```json
 {
   "active_models": 5,
@@ -332,9 +361,9 @@ Get real-time AI metrics.
   "avg_accuracy": 94.2,
   "response_times": [1200, 890, 1100, 950],
   "model_status": {
-    "categorization": {"status": "healthy", "accuracy": 96.1},
-    "semantic_search": {"status": "healthy", "accuracy": 93.8},
-    "rag_pipeline": {"status": "healthy", "accuracy": 91.5}
+    "categorization": { "status": "healthy", "accuracy": 96.1 },
+    "semantic_search": { "status": "healthy", "accuracy": 93.8 },
+    "rag_pipeline": { "status": "healthy", "accuracy": 91.5 }
   },
   "realtime_events": [
     {
@@ -348,14 +377,17 @@ Get real-time AI metrics.
 ```
 
 ### WebSocket /dashboard/realtime
+
 Real-time updates via WebSocket.
 
 **Connection URL:**
+
 ```
 ws://localhost:3001/api/dashboard/realtime
 ```
 
 **Subscribe Message:**
+
 ```json
 {
   "type": "subscribe",
@@ -364,6 +396,7 @@ ws://localhost:3001/api/dashboard/realtime
 ```
 
 **Update Messages:**
+
 ```json
 {
   "channel": "ai-metrics",
@@ -377,9 +410,11 @@ ws://localhost:3001/api/dashboard/realtime
 ```
 
 ### GET /dashboard/performance
+
 Get system performance metrics.
 
 **Response:**
+
 ```json
 {
   "cpu_usage": 45.2,
@@ -403,9 +438,11 @@ Get system performance metrics.
 ## 6. Incident Management Endpoints
 
 ### POST /incidents
+
 Create new incident.
 
 **Request Body:**
+
 ```json
 {
   "title": "Erro CICS região PROD01",
@@ -422,6 +459,7 @@ Create new incident.
 ```
 
 **Response:**
+
 ```json
 {
   "id": 1001,
@@ -437,9 +475,11 @@ Create new incident.
 ```
 
 ### PATCH /incidents/{id}
+
 Update incident.
 
 **Request Body:**
+
 ```json
 {
   "status": "Em Tratamento",
@@ -450,6 +490,7 @@ Update incident.
 ```
 
 **Response:**
+
 ```json
 {
   "id": 1001,
@@ -460,9 +501,11 @@ Update incident.
 ```
 
 ### GET /incidents
+
 Get incidents with filters.
 
 **Query Parameters:**
+
 - `status`: Filter by status
 - `category`: Filter by category
 - `priority`: Filter by priority
@@ -471,6 +514,7 @@ Get incidents with filters.
 - `offset`: Pagination offset (default: 0)
 
 **Response:**
+
 ```json
 {
   "incidents": [
@@ -497,9 +541,11 @@ Get incidents with filters.
 ## 7. Authentication Endpoints
 
 ### POST /auth/login
+
 Authenticate user.
 
 **Request Body:**
+
 ```json
 {
   "username": "admin",
@@ -508,6 +554,7 @@ Authenticate user.
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -521,9 +568,11 @@ Authenticate user.
 ```
 
 ### GET /health
+
 Check API health.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -544,6 +593,7 @@ Check API health.
 All endpoints may return these error responses:
 
 ### 400 Bad Request
+
 ```json
 {
   "error": "bad_request",
@@ -556,6 +606,7 @@ All endpoints may return these error responses:
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "error": "unauthorized",
@@ -564,6 +615,7 @@ All endpoints may return these error responses:
 ```
 
 ### 403 Forbidden
+
 ```json
 {
   "error": "forbidden",
@@ -572,6 +624,7 @@ All endpoints may return these error responses:
 ```
 
 ### 429 Too Many Requests
+
 ```json
 {
   "error": "rate_limit_exceeded",
@@ -581,6 +634,7 @@ All endpoints may return these error responses:
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "error": "internal_server_error",
@@ -599,6 +653,7 @@ All endpoints may return these error responses:
 - **Dashboard endpoints**: 200 requests per minute per user
 
 Rate limit headers are included in responses:
+
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95

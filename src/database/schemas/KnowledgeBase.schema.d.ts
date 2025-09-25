@@ -34,46 +34,49 @@ export type DatabaseStats = z.infer<typeof DatabaseStatsSchema>;
 export declare const QueryPerformanceSchema: any;
 export type QueryPerformance = z.infer<typeof QueryPerformanceSchema>;
 export declare class SchemaValidator {
-    static validateKBEntry(data: unknown): CreateKBEntry;
-    static validateKBEntryUpdate(data: unknown): UpdateKBEntry;
-    static validateSearchQuery(data: unknown): SearchQuery;
-    static validateFeedback(data: unknown): EntryFeedback;
-    static safeParse<T>(schema: z.ZodType<T>, data: unknown): {
-        success: boolean;
-        data?: T;
-        error?: string;
-    };
+  static validateKBEntry(data: unknown): CreateKBEntry;
+  static validateKBEntryUpdate(data: unknown): UpdateKBEntry;
+  static validateSearchQuery(data: unknown): SearchQuery;
+  static validateFeedback(data: unknown): EntryFeedback;
+  static safeParse<T>(
+    schema: z.ZodType<T>,
+    data: unknown
+  ): {
+    success: boolean;
+    data?: T;
+    error?: string;
+  };
 }
 export declare const DatabaseSchemas: {
-    readonly KBEntry: any;
-    readonly CreateKBEntry: any;
-    readonly UpdateKBEntry: any;
-    readonly SearchResult: any;
-    readonly SearchQuery: any;
-    readonly SearchWithFacets: any;
-    readonly EntryFeedback: any;
-    readonly UsageMetric: any;
-    readonly SearchHistory: any;
-    readonly SystemConfig: any;
-    readonly BackupLog: any;
-    readonly AuditLog: any;
-    readonly DatabaseStats: any;
-    readonly QueryPerformance: any;
+  readonly KBEntry: any;
+  readonly CreateKBEntry: any;
+  readonly UpdateKBEntry: any;
+  readonly SearchResult: any;
+  readonly SearchQuery: any;
+  readonly SearchWithFacets: any;
+  readonly EntryFeedback: any;
+  readonly UsageMetric: any;
+  readonly SearchHistory: any;
+  readonly SystemConfig: any;
+  readonly BackupLog: any;
+  readonly AuditLog: any;
+  readonly DatabaseStats: any;
+  readonly QueryPerformance: any;
 };
 export type DatabaseSchemaTypes = {
-    KBEntry: KBEntry;
-    CreateKBEntry: CreateKBEntry;
-    UpdateKBEntry: UpdateKBEntry;
-    SearchResult: SearchResult;
-    SearchQuery: SearchQuery;
-    SearchWithFacets: SearchWithFacets;
-    EntryFeedback: EntryFeedback;
-    UsageMetric: UsageMetric;
-    SearchHistory: SearchHistory;
-    SystemConfig: SystemConfig;
-    BackupLog: BackupLog;
-    AuditLog: AuditLog;
-    DatabaseStats: DatabaseStats;
-    QueryPerformance: QueryPerformance;
+  KBEntry: KBEntry;
+  CreateKBEntry: CreateKBEntry;
+  UpdateKBEntry: UpdateKBEntry;
+  SearchResult: SearchResult;
+  SearchQuery: SearchQuery;
+  SearchWithFacets: SearchWithFacets;
+  EntryFeedback: EntryFeedback;
+  UsageMetric: UsageMetric;
+  SearchHistory: SearchHistory;
+  SystemConfig: SystemConfig;
+  BackupLog: BackupLog;
+  AuditLog: AuditLog;
+  DatabaseStats: DatabaseStats;
+  QueryPerformance: QueryPerformance;
 };
 //# sourceMappingURL=KnowledgeBase.schema.d.ts.map

@@ -31,11 +31,14 @@ export interface QueryCacheStats {
 
 export class QueryCache {
   private cacheOrchestrator: CacheOrchestrator;
-  private queryStats: Map<string, {
-    hits: number;
-    totalTime: number;
-    lastAccess: number;
-  }> = new Map();
+  private queryStats: Map<
+    string,
+    {
+      hits: number;
+      totalTime: number;
+      lastAccess: number;
+    }
+  > = new Map();
   private config: {
     maxCacheSize: number;
     defaultTTL: number;
@@ -49,7 +52,7 @@ export class QueryCache {
       maxCacheSize: 1000,
       defaultTTL: 600, // 10 minutes
       maxQueryTime: 30000, // 30 seconds
-      enableStats: true
+      enableStats: true,
     }
   ) {
     this.cacheOrchestrator = cacheOrchestrator;
@@ -67,7 +70,7 @@ export class QueryCache {
       type: 'search',
       operation: 'query',
       parameters: { query, filters },
-      version: '1.0'
+      version: '1.0',
     };
 
     return this.executeWithCache(queryKey, executor, ttl || this.config.defaultTTL);
@@ -84,7 +87,7 @@ export class QueryCache {
       type: 'db',
       operation: 'sql',
       parameters: { sql, params },
-      version: '1.0'
+      version: '1.0',
     };
 
     return this.executeWithCache(queryKey, executor, ttl || this.config.defaultTTL);
@@ -102,7 +105,7 @@ export class QueryCache {
       type: 'api',
       operation: `${method}:${endpoint}`,
       parameters: params,
-      version: '1.0'
+      version: '1.0',
     };
 
     return this.executeWithCache(queryKey, executor, ttl || this.config.defaultTTL);
@@ -120,7 +123,7 @@ export class QueryCache {
     try {
       // Try to get from cache first
       const cached = await this.cacheOrchestrator.get<CachedQuery<T>>(cacheKey);
-      
+
       if (cached && this.isCacheValid(cached)) {
         this.recordCacheHit(cacheKey, Date.now() - startTime);
         return cached.result;
@@ -138,7 +141,7 @@ export class QueryCache {
         timestamp: Date.now(),
         ttl,
         executionTime,
-        size: this.estimateSize(result)
+        size: this.estimateSize(result),
       };
 
       // Store in cache with appropriate tags
@@ -147,7 +150,6 @@ export class QueryCache {
 
       this.recordCacheMiss(cacheKey, Date.now() - startTime, executionTime);
       return result;
-
     } catch (error) {
       console.error('Query cache execution error:', error);
       // Fallback to direct execution without caching
@@ -162,11 +164,11 @@ export class QueryCache {
     paramPattern?: any;
   }): Promise<number> {
     const tags = [];
-    
+
     if (pattern.type) {
       tags.push(`query-type:${pattern.type}`);
     }
-    
+
     if (pattern.operation) {
       tags.push(`query-op:${pattern.operation}`);
     }
@@ -180,21 +182,23 @@ export class QueryCache {
   }
 
   // Pre-warm cache with popular queries
-  async warmCache(queries: Array<{
-    key: QueryCacheKey;
-    executor: QueryExecutor;
-    priority: number;
-    ttl?: number;
-  }>): Promise<void> {
+  async warmCache(
+    queries: Array<{
+      key: QueryCacheKey;
+      executor: QueryExecutor;
+      priority: number;
+      ttl?: number;
+    }>
+  ): Promise<void> {
     console.log(`Warming query cache with ${queries.length} queries`);
-    
+
     // Sort by priority
     const sortedQueries = queries.sort((a, b) => b.priority - a.priority);
-    
+
     const batchSize = 5;
     for (let i = 0; i < sortedQueries.length; i += batchSize) {
       const batch = sortedQueries.slice(i, i + batchSize);
-      
+
       await Promise.allSettled(
         batch.map(async ({ key, executor, ttl }) => {
           try {
@@ -205,7 +209,7 @@ export class QueryCache {
         })
       );
     }
-    
+
     console.log('Query cache warming completed');
   }
 
@@ -214,12 +218,12 @@ export class QueryCache {
     const stats = Array.from(this.queryStats.entries());
     const totalQueries = stats.reduce((sum, [, stat]) => sum + stat.hits, 0);
     const totalTime = stats.reduce((sum, [, stat]) => sum + stat.totalTime, 0);
-    
+
     const topQueries = stats
       .map(([key, stat]) => ({
         key,
         hits: stat.hits,
-        avgTime: stat.totalTime / stat.hits
+        avgTime: stat.totalTime / stat.hits,
       }))
       .sort((a, b) => b.hits - a.hits)
       .slice(0, 10);
@@ -231,7 +235,7 @@ export class QueryCache {
       avgExecutionTime: totalTime / totalQueries || 0,
       avgCacheRetrievalTime: 15, // Estimated cache retrieval time
       memorySaved: this.estimateMemorySaved(),
-      topQueries
+      topQueries,
     };
   }
 
@@ -247,16 +251,12 @@ export class QueryCache {
   }
 
   private generateTags(queryKey: QueryCacheKey, customTags?: string[]): string[] {
-    const tags = [
-      'query',
-      `query-type:${queryKey.type}`,
-      `query-op:${queryKey.operation}`
-    ];
-    
+    const tags = ['query', `query-type:${queryKey.type}`, `query-op:${queryKey.operation}`];
+
     if (customTags) {
       tags.push(...customTags);
     }
-    
+
     return tags;
   }
 
@@ -273,36 +273,34 @@ export class QueryCache {
     if (typeof params !== 'object' || params === null) {
       return params;
     }
-    
+
     if (Array.isArray(params)) {
       return params.map(item => this.normalizeParams(item));
     }
-    
+
     const normalized: any = {};
     const keys = Object.keys(params).sort();
-    
+
     for (const key of keys) {
       normalized[key] = this.normalizeParams(params[key]);
     }
-    
+
     return normalized;
   }
 
   private isCacheValid(cached: CachedQuery): boolean {
     const now = Date.now();
-    return now < cached.timestamp + (cached.ttl * 1000);
+    return now < cached.timestamp + cached.ttl * 1000;
   }
 
-  private async executeWithTimeout<T>(
-    executor: QueryExecutor<T>,
-    timeout: number
-  ): Promise<T> {
+  private async executeWithTimeout<T>(executor: QueryExecutor<T>, timeout: number): Promise<T> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`Query execution timeout after ${timeout}ms`));
       }, timeout);
-      
-      executor.execute()
+
+      executor
+        .execute()
         .then(result => {
           clearTimeout(timer);
           resolve(result);
@@ -316,7 +314,7 @@ export class QueryCache {
 
   private recordCacheHit(cacheKey: string, retrievalTime: number): void {
     if (!this.config.enableStats) return;
-    
+
     const stat = this.queryStats.get(cacheKey) || { hits: 0, totalTime: 0, lastAccess: 0 };
     stat.hits++;
     stat.totalTime += retrievalTime;
@@ -326,7 +324,7 @@ export class QueryCache {
 
   private recordCacheMiss(cacheKey: string, totalTime: number, executionTime: number): void {
     if (!this.config.enableStats) return;
-    
+
     const stat = this.queryStats.get(cacheKey) || { hits: 0, totalTime: 0, lastAccess: 0 };
     stat.totalTime += totalTime;
     stat.lastAccess = Date.now();
@@ -343,7 +341,7 @@ export class QueryCache {
     const stats = Array.from(this.queryStats.values());
     return stats.reduce((total, stat) => {
       // Assume each cache hit saves 1KB of processing
-      return total + (stat.hits * 1024);
+      return total + stat.hits * 1024;
     }, 0);
   }
 

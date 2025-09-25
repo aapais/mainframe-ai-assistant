@@ -27,8 +27,10 @@ export const mockComponents = {
 // Test data factories
 export const createValidKBEntry = (overrides = {}) => ({
   title: 'Test VSAM Status 35 Error',
-  problem: 'Job fails with VSAM status code 35 when trying to open a dataset. This usually indicates the file was not found or is not properly cataloged.',
-  solution: '1. Verify dataset exists using LISTCAT command\n2. Check JCL DD statement for correct DSN\n3. Ensure file is cataloged properly\n4. Verify RACF permissions',
+  problem:
+    'Job fails with VSAM status code 35 when trying to open a dataset. This usually indicates the file was not found or is not properly cataloged.',
+  solution:
+    '1. Verify dataset exists using LISTCAT command\n2. Check JCL DD statement for correct DSN\n3. Ensure file is cataloged properly\n4. Verify RACF permissions',
   category: 'VSAM' as const,
   tags: ['vsam', 'status-35', 'file-not-found'],
   ...overrides,
@@ -55,19 +57,41 @@ export const createLongKBEntry = (overrides = {}) => ({
 // Mock services and utilities
 export const createMockValidationService = () => {
   return {
-    validateEntry: jest.fn().mockImplementation((entry) => ({
+    validateEntry: jest.fn().mockImplementation(entry => ({
       valid: !!(entry.title && entry.problem && entry.solution),
       errors: [
-        ...(entry.title ? [] : [{ field: 'title', code: 'REQUIRED', message: 'Title is required', severity: 'error' }]),
-        ...(entry.problem ? [] : [{ field: 'problem', code: 'REQUIRED', message: 'Problem is required', severity: 'error' }]),
-        ...(entry.solution ? [] : [{ field: 'solution', code: 'REQUIRED', message: 'Solution is required', severity: 'error' }]),
+        ...(entry.title
+          ? []
+          : [
+              { field: 'title', code: 'REQUIRED', message: 'Title is required', severity: 'error' },
+            ]),
+        ...(entry.problem
+          ? []
+          : [
+              {
+                field: 'problem',
+                code: 'REQUIRED',
+                message: 'Problem is required',
+                severity: 'error',
+              },
+            ]),
+        ...(entry.solution
+          ? []
+          : [
+              {
+                field: 'solution',
+                code: 'REQUIRED',
+                message: 'Solution is required',
+                severity: 'error',
+              },
+            ]),
       ],
       warnings: [],
       score: entry.title && entry.problem && entry.solution ? 85 : 45,
     })),
     validateUpdate: jest.fn().mockReturnValue({ valid: true, errors: [], warnings: [] }),
     validateSearch: jest.fn().mockReturnValue({ valid: true, errors: [], warnings: [] }),
-    sanitizeEntry: jest.fn().mockImplementation((entry) => entry),
+    sanitizeEntry: jest.fn().mockImplementation(entry => entry),
   };
 };
 
@@ -85,7 +109,7 @@ export const FormInteractionHelpers = {
     await user.type(screen.getByLabelText(/title/i), data.title);
     await user.type(screen.getByLabelText(/problem description/i), data.problem);
     await user.type(screen.getByLabelText(/solution/i), data.solution);
-    
+
     if (data.category !== 'Other') {
       await user.selectOptions(screen.getByLabelText(/category/i), data.category);
     }
@@ -93,7 +117,7 @@ export const FormInteractionHelpers = {
 
   async addTags(user: ReturnType<typeof userEvent.setup>, tags: string[]) {
     const tagInput = screen.getByLabelText(/tags/i);
-    
+
     for (const tag of tags) {
       await user.type(tagInput, tag);
       await user.keyboard('{Enter}');
@@ -121,7 +145,7 @@ export const FormInteractionHelpers = {
   async triggerValidationErrors(user: ReturnType<typeof userEvent.setup>) {
     // Submit empty form to trigger validation
     await this.submitForm(user);
-    
+
     await waitFor(() => {
       expect(screen.getByText('Title is required')).toBeInTheDocument();
     });
@@ -150,7 +174,7 @@ export const AccessibilityHelpers = {
     const inputs = screen.getAllByRole('textbox');
     const selects = screen.getAllByRole('combobox');
     const allInputs = [...inputs, ...selects];
-    
+
     allInputs.forEach(input => {
       const id = input.getAttribute('id');
       if (id) {
@@ -163,7 +187,7 @@ export const AccessibilityHelpers = {
   expectErrorsAssociatedWithFields() {
     const errorMessages = screen.getAllByText(/required$/);
     expect(errorMessages.length).toBeGreaterThan(0);
-    
+
     // Each error should be associated with its field
     errorMessages.forEach(error => {
       expect(error).toHaveClass('error-message');
@@ -171,10 +195,11 @@ export const AccessibilityHelpers = {
   },
 
   expectKeyboardNavigation() {
-    const focusableElements = screen.getAllByRole('textbox')
+    const focusableElements = screen
+      .getAllByRole('textbox')
       .concat(screen.getAllByRole('combobox'))
       .concat(screen.getAllByRole('button'));
-    
+
     focusableElements.forEach(element => {
       expect(element).not.toHaveAttribute('tabindex', '-1');
     });
@@ -203,12 +228,12 @@ export const PerformanceHelpers = {
 
   async testRapidInteractions(user: ReturnType<typeof userEvent.setup>, count = 10) {
     const tagInput = screen.getByLabelText(/tags/i);
-    
+
     const promises = [];
     for (let i = 0; i < count; i++) {
       promises.push(user.type(tagInput, `rapid${i}{Enter}`, { delay: 1 }));
     }
-    
+
     await Promise.all(promises);
   },
 };
@@ -223,16 +248,14 @@ export const ErrorSimulationHelpers = {
       quota: 'Storage quota exceeded',
       generic: 'An unexpected error occurred',
     };
-    
-    return jest.fn().mockRejectedValue(
-      new Error(errorMessages[errorType as keyof typeof errorMessages])
-    );
+
+    return jest
+      .fn()
+      .mockRejectedValue(new Error(errorMessages[errorType as keyof typeof errorMessages]));
   },
 
   createSlowSubmitHandler(delay = 500) {
-    return jest.fn().mockImplementation(
-      () => new Promise(resolve => setTimeout(resolve, delay))
-    );
+    return jest.fn().mockImplementation(() => new Promise(resolve => setTimeout(resolve, delay)));
   },
 
   createIntermittentFailureHandler(failureRate = 0.5) {
@@ -254,12 +277,9 @@ export const ErrorSimulationHelpers = {
 };
 
 // Custom render function with providers
-export const renderWithProviders = (
-  ui: React.ReactElement,
-  options: RenderOptions = {}
-) => {
+export const renderWithProviders = (ui: React.ReactElement, options: RenderOptions = {}) => {
   const AllProviders = ({ children }: { children: React.ReactNode }) => {
-    return <div data-testid="test-provider">{children}</div>;
+    return <div data-testid='test-provider'>{children}</div>;
   };
 
   return render(ui, { wrapper: AllProviders, ...options });
@@ -268,9 +288,12 @@ export const renderWithProviders = (
 // Async helpers
 export const AsyncHelpers = {
   async waitForFormSubmission() {
-    await waitFor(() => {
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
-    }, { timeout: 2000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+      },
+      { timeout: 2000 }
+    );
   },
 
   async waitForError(errorMessage: string) {
@@ -293,10 +316,10 @@ export const SnapshotHelpers = {
     // Check basic form structure exists
     const form = container.querySelector('form');
     expect(form).toBeInTheDocument();
-    
+
     const inputs = container.querySelectorAll('input, textarea, select');
     expect(inputs.length).toBeGreaterThan(0);
-    
+
     const buttons = container.querySelectorAll('button');
     expect(buttons.length).toBeGreaterThan(0);
   },
@@ -304,7 +327,7 @@ export const SnapshotHelpers = {
   expectErrorStructure(container: HTMLElement) {
     const errorMessages = container.querySelectorAll('.error-message');
     const errorInputs = container.querySelectorAll('.error');
-    
+
     expect(errorMessages.length).toBeGreaterThan(0);
     expect(errorInputs.length).toBeGreaterThan(0);
   },
@@ -350,12 +373,7 @@ export const TestEnvironmentHelpers = {
 };
 
 // Export everything for easy importing
-export {
-  render,
-  screen,
-  waitFor,
-  userEvent,
-};
+export { render, screen, waitFor, userEvent };
 
 export default {
   mockComponents,

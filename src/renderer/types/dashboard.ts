@@ -94,13 +94,7 @@ export type OperationType =
   | 'validation'
   | 'transformation';
 
-export type DecisionStatus =
-  | 'approved'
-  | 'denied'
-  | 'pending'
-  | 'timeout'
-  | 'cancelled'
-  | 'error';
+export type DecisionStatus = 'approved' | 'denied' | 'pending' | 'timeout' | 'cancelled' | 'error';
 
 export interface TokenUsage {
   input: number;
@@ -431,11 +425,29 @@ export type OptionalFields<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, 
 // Event Types for IPC Communication
 export interface IPCEvents {
   'dashboard:loadData': (params: { startDate: string; endDate: string }) => Promise<DashboardData>;
-  'dashboard:getCostData': (params: { startDate: string; endDate: string; granularity: TimeView }) => Promise<CostData[]>;
-  'dashboard:getDecisionHistory': (params: { startDate: string; endDate: string }) => Promise<Decision[]>;
-  'dashboard:getOperationTimeline': (params: { startDate: string; endDate: string }) => Promise<TimelineOperation[]>;
-  'dashboard:getUsageBreakdown': (params: { startDate: string; endDate: string }) => Promise<UsageData[]>;
-  'dashboard:export': (params: { format: 'csv' | 'pdf'; data: any; dateRange: DateRange; tab: string }) => Promise<void>;
+  'dashboard:getCostData': (params: {
+    startDate: string;
+    endDate: string;
+    granularity: TimeView;
+  }) => Promise<CostData[]>;
+  'dashboard:getDecisionHistory': (params: {
+    startDate: string;
+    endDate: string;
+  }) => Promise<Decision[]>;
+  'dashboard:getOperationTimeline': (params: {
+    startDate: string;
+    endDate: string;
+  }) => Promise<TimelineOperation[]>;
+  'dashboard:getUsageBreakdown': (params: {
+    startDate: string;
+    endDate: string;
+  }) => Promise<UsageData[]>;
+  'dashboard:export': (params: {
+    format: 'csv' | 'pdf';
+    data: any;
+    dateRange: DateRange;
+    tab: string;
+  }) => Promise<void>;
   'dashboard:dataUpdate': (data: Partial<DashboardData>) => void;
   'dashboard:newDecision': (decision: Decision) => void;
   'dashboard:newOperation': (operation: TimelineOperation) => void;
@@ -451,10 +463,7 @@ declare global {
           ...args: Parameters<IPCEvents[K]>
         ): ReturnType<IPCEvents[K]>;
 
-        on<K extends keyof IPCEvents>(
-          channel: K,
-          listener: IPCEvents[K]
-        ): () => void;
+        on<K extends keyof IPCEvents>(channel: K, listener: IPCEvents[K]): () => void;
       };
     };
   }

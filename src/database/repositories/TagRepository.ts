@@ -13,7 +13,7 @@ import {
   BulkTagOperation,
   BulkOperationResult,
   TagAnalytics,
-  HierarchicalSchemaValidator
+  HierarchicalSchemaValidator,
 } from '../schemas/HierarchicalCategories.schema';
 import { AppError, ErrorCode } from '../../core/errors/AppError';
 
@@ -51,14 +51,19 @@ export class TagRepository {
 
   private initializePreparedStatements(): void {
     // Basic CRUD operations
-    this.preparedStatements.set('insertTag', this.db.prepare(`
+    this.preparedStatements.set(
+      'insertTag',
+      this.db.prepare(`
       INSERT INTO tags (
         id, name, display_name, description, category_id,
         color, is_system, is_suggested, created_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('updateTag', this.db.prepare(`
+    this.preparedStatements.set(
+      'updateTag',
+      this.db.prepare(`
       UPDATE tags SET
         name = COALESCE(?, name),
         display_name = COALESCE(?, display_name),
@@ -68,62 +73,92 @@ export class TagRepository {
         is_suggested = COALESCE(?, is_suggested),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ? AND is_system = FALSE
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('deleteTag', this.db.prepare(`
+    this.preparedStatements.set(
+      'deleteTag',
+      this.db.prepare(`
       DELETE FROM tags WHERE id = ? AND is_system = FALSE
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectById', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectById',
+      this.db.prepare(`
       SELECT * FROM v_tag_stats WHERE id = ?
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectByName', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectByName',
+      this.db.prepare(`
       SELECT * FROM v_tag_stats WHERE name = ?
-    `));
+    `)
+    );
 
     // Association operations
-    this.preparedStatements.set('insertAssociation', this.db.prepare(`
+    this.preparedStatements.set(
+      'insertAssociation',
+      this.db.prepare(`
       INSERT INTO tag_associations (
         id, entry_id, tag_id, relevance_score, assigned_by, confidence, created_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('deleteAssociation', this.db.prepare(`
+    this.preparedStatements.set(
+      'deleteAssociation',
+      this.db.prepare(`
       DELETE FROM tag_associations WHERE entry_id = ? AND tag_id = ?
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('deleteAllAssociations', this.db.prepare(`
+    this.preparedStatements.set(
+      'deleteAllAssociations',
+      this.db.prepare(`
       DELETE FROM tag_associations WHERE entry_id = ?
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectEntryTags', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectEntryTags',
+      this.db.prepare(`
       SELECT t.*, ta.relevance_score, ta.assigned_by, ta.confidence, ta.created_at as associated_at
       FROM tags t
       JOIN tag_associations ta ON t.id = ta.tag_id
       WHERE ta.entry_id = ?
       ORDER BY ta.relevance_score DESC NULLS LAST, t.name ASC
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('selectTagEntries', this.db.prepare(`
+    this.preparedStatements.set(
+      'selectTagEntries',
+      this.db.prepare(`
       SELECT e.*, ta.relevance_score, ta.assigned_by, ta.confidence
       FROM kb_entries e
       JOIN tag_associations ta ON e.id = ta.entry_id
       WHERE ta.tag_id = ?
       ORDER BY ta.relevance_score DESC NULLS LAST, e.updated_at DESC
-    `));
+    `)
+    );
 
     // Search and suggestions
-    this.preparedStatements.set('searchTags', this.db.prepare(`
+    this.preparedStatements.set(
+      'searchTags',
+      this.db.prepare(`
       SELECT * FROM v_tag_stats
       WHERE (name LIKE ? OR display_name LIKE ? OR description LIKE ?)
       ${'{CATEGORY_FILTER}'}
       ${'{EXCLUDE_FILTER}'}
       ORDER BY usage_count DESC, name ASC
       LIMIT ?
-    `));
+    `)
+    );
 
-    this.preparedStatements.set('searchTagsFTS', this.db.prepare(`
+    this.preparedStatements.set(
+      'searchTagsFTS',
+      this.db.prepare(`
       SELECT t.*, rank
       FROM tags_fts fts
       JOIN v_tag_stats t ON fts.id = t.id
@@ -132,19 +167,26 @@ export class TagRepository {
       ${'{EXCLUDE_FILTER}'}
       ORDER BY rank, usage_count DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // Analytics
-    this.preparedStatements.set('updateTagAnalytics', this.db.prepare(`
+    this.preparedStatements.set(
+      'updateTagAnalytics',
+      this.db.prepare(`
       INSERT OR REPLACE INTO tag_analytics (
         tag_id, usage_count, entry_count, last_updated
       ) VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `));
+    `)
+    );
 
     // Bulk operations
-    this.preparedStatements.set('mergeTag', this.db.prepare(`
+    this.preparedStatements.set(
+      'mergeTag',
+      this.db.prepare(`
       UPDATE tag_associations SET tag_id = ? WHERE tag_id = ?
-    `));
+    `)
+    );
   }
 
   /**
@@ -162,7 +204,9 @@ export class TagRepository {
 
       // Verify category exists if specified
       if (validatedData.category_id) {
-        const category = this.db.prepare('SELECT id FROM categories WHERE id = ?').get(validatedData.category_id);
+        const category = this.db
+          .prepare('SELECT id FROM categories WHERE id = ?')
+          .get(validatedData.category_id);
         if (!category) {
           throw new AppError(ErrorCode.VALIDATION_ERROR, 'Category not found');
         }
@@ -171,17 +215,19 @@ export class TagRepository {
       const id = uuidv4();
 
       // Insert tag
-      this.preparedStatements.get('insertTag')!.run(
-        id,
-        validatedData.name,
-        validatedData.display_name,
-        validatedData.description || null,
-        validatedData.category_id || null,
-        validatedData.color || null,
-        validatedData.is_system === true,
-        validatedData.is_suggested === true,
-        userId || 'system'
-      );
+      this.preparedStatements
+        .get('insertTag')!
+        .run(
+          id,
+          validatedData.name,
+          validatedData.display_name,
+          validatedData.description || null,
+          validatedData.category_id || null,
+          validatedData.color || null,
+          validatedData.is_system === true,
+          validatedData.is_suggested === true,
+          userId || 'system'
+        );
 
       return this.preparedStatements.get('selectById')!.get(id) as Tag;
     });
@@ -207,7 +253,9 @@ export class TagRepository {
 
       // Check name uniqueness if changing
       if (validatedUpdates.name && validatedUpdates.name !== existing.name) {
-        const duplicateCheck = this.preparedStatements.get('selectByName')!.get(validatedUpdates.name);
+        const duplicateCheck = this.preparedStatements
+          .get('selectByName')!
+          .get(validatedUpdates.name);
         if (duplicateCheck) {
           throw new AppError(ErrorCode.VALIDATION_ERROR, 'Tag name already exists');
         }
@@ -215,22 +263,26 @@ export class TagRepository {
 
       // Verify category exists if changing
       if (validatedUpdates.category_id) {
-        const category = this.db.prepare('SELECT id FROM categories WHERE id = ?').get(validatedUpdates.category_id);
+        const category = this.db
+          .prepare('SELECT id FROM categories WHERE id = ?')
+          .get(validatedUpdates.category_id);
         if (!category) {
           throw new AppError(ErrorCode.VALIDATION_ERROR, 'Category not found');
         }
       }
 
       // Update tag
-      this.preparedStatements.get('updateTag')!.run(
-        validatedUpdates.name,
-        validatedUpdates.display_name,
-        validatedUpdates.description,
-        validatedUpdates.category_id,
-        validatedUpdates.color,
-        validatedUpdates.is_suggested,
-        id
-      );
+      this.preparedStatements
+        .get('updateTag')!
+        .run(
+          validatedUpdates.name,
+          validatedUpdates.display_name,
+          validatedUpdates.description,
+          validatedUpdates.category_id,
+          validatedUpdates.color,
+          validatedUpdates.is_suggested,
+          id
+        );
 
       return this.preparedStatements.get('selectById')!.get(id) as Tag;
     });
@@ -253,9 +305,9 @@ export class TagRepository {
       }
 
       // Check for associations
-      const associationCount = this.db.prepare(
-        'SELECT COUNT(*) as count FROM tag_associations WHERE tag_id = ?'
-      ).get(id) as any;
+      const associationCount = this.db
+        .prepare('SELECT COUNT(*) as count FROM tag_associations WHERE tag_id = ?')
+        .get(id) as any;
 
       if (associationCount.count > 0 && !options?.force) {
         throw new AppError(
@@ -404,9 +456,9 @@ export class TagRepository {
       }
 
       // Check if association already exists
-      const existing = this.db.prepare(
-        'SELECT id FROM tag_associations WHERE entry_id = ? AND tag_id = ?'
-      ).get(entryId, tagId);
+      const existing = this.db
+        .prepare('SELECT id FROM tag_associations WHERE entry_id = ? AND tag_id = ?')
+        .get(entryId, tagId);
 
       if (existing) {
         throw new AppError(ErrorCode.VALIDATION_ERROR, 'Tag is already associated with this entry');
@@ -415,15 +467,17 @@ export class TagRepository {
       const associationId = uuidv4();
 
       // Create association
-      this.preparedStatements.get('insertAssociation')!.run(
-        associationId,
-        entryId,
-        tagId,
-        options.relevanceScore || null,
-        options.assignedBy || 'user',
-        options.confidence || null,
-        userId || 'system'
-      );
+      this.preparedStatements
+        .get('insertAssociation')!
+        .run(
+          associationId,
+          entryId,
+          tagId,
+          options.relevanceScore || null,
+          options.assignedBy || 'user',
+          options.confidence || null,
+          userId || 'system'
+        );
     });
 
     transaction();
@@ -480,15 +534,17 @@ export class TagRepository {
         }
 
         const associationId = uuidv4();
-        this.preparedStatements.get('insertAssociation')!.run(
-          associationId,
-          entryId,
-          tagId,
-          options.relevanceScore || null,
-          options.assignedBy || 'user',
-          options.confidence || null,
-          userId || 'system'
-        );
+        this.preparedStatements
+          .get('insertAssociation')!
+          .run(
+            associationId,
+            entryId,
+            tagId,
+            options.relevanceScore || null,
+            options.assignedBy || 'user',
+            options.confidence || null,
+            userId || 'system'
+          );
       }
     });
 
@@ -510,24 +566,30 @@ export class TagRepository {
     const suggestions = new Map<string, Tag>();
 
     // 1. Exact name matches
-    const exactMatches = this.db.prepare(`
+    const exactMatches = this.db
+      .prepare(
+        `
       SELECT * FROM v_tag_stats
       WHERE name LIKE ? OR display_name LIKE ?
       ${options.categoryId ? 'AND category_id = ?' : ''}
       ORDER BY usage_count DESC
       LIMIT ?
-    `).all(
-      `${query}%`,
-      `${query}%`,
-      ...(options.categoryId ? [options.categoryId] : []),
-      limit
-    ) as Tag[];
+    `
+      )
+      .all(
+        `${query}%`,
+        `${query}%`,
+        ...(options.categoryId ? [options.categoryId] : []),
+        limit
+      ) as Tag[];
 
     exactMatches.forEach(tag => suggestions.set(tag.id, tag));
 
     // 2. FTS matches if we have fewer than limit
     if (suggestions.size < limit) {
-      const ftsMatches = this.db.prepare(`
+      const ftsMatches = this.db
+        .prepare(
+          `
         SELECT t.*, rank
         FROM tags_fts fts
         JOIN v_tag_stats t ON fts.id = t.id
@@ -535,11 +597,13 @@ export class TagRepository {
         ${options.categoryId ? 'AND t.category_id = ?' : ''}
         ORDER BY rank, usage_count DESC
         LIMIT ?
-      `).all(
-        query,
-        ...(options.categoryId ? [options.categoryId] : []),
-        limit - suggestions.size
-      ) as Tag[];
+      `
+        )
+        .all(
+          query,
+          ...(options.categoryId ? [options.categoryId] : []),
+          limit - suggestions.size
+        ) as Tag[];
 
       ftsMatches.forEach(tag => {
         if (!suggestions.has(tag.id)) {
@@ -550,7 +614,9 @@ export class TagRepository {
 
     // 3. Context-based suggestions if we have an entry context
     if (options.contextEntryId && suggestions.size < limit) {
-      const contextTags = this.db.prepare(`
+      const contextTags = this.db
+        .prepare(
+          `
         SELECT DISTINCT t.*, 1.0 as relevance_boost
         FROM tags t
         JOIN tag_associations ta1 ON t.id = ta1.tag_id
@@ -561,11 +627,9 @@ export class TagRepository {
         AND t.name LIKE ?
         ORDER BY t.usage_count DESC
         LIMIT ?
-      `).all(
-        options.contextEntryId,
-        `%${query}%`,
-        limit - suggestions.size
-      ) as Tag[];
+      `
+        )
+        .all(options.contextEntryId, `%${query}%`, limit - suggestions.size) as Tag[];
 
       contextTags.forEach(tag => {
         if (!suggestions.has(tag.id)) {
@@ -590,7 +654,7 @@ export class TagRepository {
       failed: 0,
       errors: [],
       execution_time: 0,
-      transaction_id: transactionId
+      transaction_id: transactionId,
     };
 
     const transaction = this.db.transaction(() => {
@@ -640,7 +704,7 @@ export class TagRepository {
           result.errors.push({
             item_id: item.id,
             error: error instanceof Error ? error.message : 'Unknown error',
-            details: { item }
+            details: { item },
           });
         }
       }
@@ -651,10 +715,12 @@ export class TagRepository {
     } catch (error) {
       result.failed = result.total_items;
       result.successful = 0;
-      result.errors = [{
-        error: error instanceof Error ? error.message : 'Transaction failed',
-        details: { operation }
-      }];
+      result.errors = [
+        {
+          error: error instanceof Error ? error.message : 'Transaction failed',
+          details: { operation },
+        },
+      ];
     }
 
     result.execution_time = Date.now() - startTime;
@@ -665,7 +731,9 @@ export class TagRepository {
    * Get tag analytics
    */
   async getAnalytics(tagId: string): Promise<TagAnalytics | null> {
-    const analytics = this.db.prepare(`
+    const analytics = this.db
+      .prepare(
+        `
       SELECT
         ta.*,
         (
@@ -712,7 +780,9 @@ export class TagRepository {
         ) as co_occurrence_json
       FROM tag_analytics ta
       WHERE ta.tag_id = ?
-    `).get(tagId) as any;
+    `
+      )
+      .get(tagId) as any;
 
     if (!analytics) return null;
 
@@ -740,7 +810,7 @@ export class TagRepository {
       ...analytics,
       categories,
       co_occurrence: coOccurrence,
-      last_updated: new Date(analytics.last_updated)
+      last_updated: new Date(analytics.last_updated),
     };
   }
 
@@ -748,23 +818,25 @@ export class TagRepository {
    * Update tag analytics
    */
   async updateAnalytics(tagId: string, analytics: Partial<TagAnalytics>): Promise<void> {
-    this.preparedStatements.get('updateTagAnalytics')!.run(
-      tagId,
-      analytics.usage_count || 0,
-      analytics.entry_count || 0
-    );
+    this.preparedStatements
+      .get('updateTagAnalytics')!
+      .run(tagId, analytics.usage_count || 0, analytics.entry_count || 0);
   }
 
   /**
    * Get most used tags
    */
   async getMostUsed(limit: number = 20): Promise<Tag[]> {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT * FROM v_tag_stats
       WHERE usage_count > 0
       ORDER BY usage_count DESC
       LIMIT ?
-    `).all(limit) as Tag[];
+    `
+      )
+      .all(limit) as Tag[];
   }
 
   /**
@@ -774,7 +846,9 @@ export class TagRepository {
     days: number = 7,
     limit: number = 20
   ): Promise<(Tag & { recent_usage: number })[]> {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT
         t.*,
         COUNT(ta.id) as recent_usage
@@ -784,7 +858,9 @@ export class TagRepository {
       GROUP BY t.id
       ORDER BY recent_usage DESC
       LIMIT ?
-    `).all(days, limit) as (Tag & { recent_usage: number })[];
+    `
+      )
+      .all(days, limit) as (Tag & { recent_usage: number })[];
   }
 
   /**

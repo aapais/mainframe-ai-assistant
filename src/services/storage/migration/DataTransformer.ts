@@ -54,7 +54,7 @@ export class DataTransformer extends EventEmitter {
   private db: Database.Database;
   private transformationRegistry: Map<string, DataTransformation> = new Map();
   private mvpMigrations: Map<string, MVPDataMigration> = new Map();
-  
+
   constructor(db: Database.Database) {
     super();
     this.db = db;
@@ -68,13 +68,13 @@ export class DataTransformer extends EventEmitter {
   async prepareForMigration(plan: any): Promise<TransformationPlan> {
     const transformations = await this.identifyRequiredTransformations(plan);
     const executionOrder = this.calculateOptimalExecutionOrder(transformations);
-    
+
     const transformationPlan: TransformationPlan = {
       transformations,
       executionOrder,
       totalEstimatedDuration: this.calculateTotalDuration(transformations),
       dataVolumeImpact: await this.estimateDataVolumeImpact(transformations),
-      riskLevel: this.assessTransformationRisk(transformations)
+      riskLevel: this.assessTransformationRisk(transformations),
     };
 
     await this.validateTransformationPlan(transformationPlan);
@@ -86,13 +86,13 @@ export class DataTransformer extends EventEmitter {
    */
   async executeMigrationWithTransformation(migration: Migration): Promise<MigrationResult> {
     const startTime = Date.now();
-    
+
     try {
       // Start transaction
       const transaction = this.db.transaction(() => {
         // Apply schema changes first
         this.db.exec(migration.up);
-        
+
         // Apply data transformations if needed
         const transformations = this.getTransformationsForMigration(migration);
         for (const transformation of transformations) {
@@ -105,22 +105,21 @@ export class DataTransformer extends EventEmitter {
       const result: MigrationResult = {
         success: true,
         version: migration.version,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
 
       this.emit('migrationWithTransformationCompleted', {
         migration: migration.version,
-        result
+        result,
       });
 
       return result;
-
     } catch (error) {
       return {
         success: false,
         version: migration.version,
         error: error.message,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   }
@@ -138,7 +137,7 @@ export class DataTransformer extends EventEmitter {
     risks: string[];
   }> {
     const transformations = this.getTransformationsForMigration(migration);
-    
+
     let totalRowsAffected = 0;
     const tablesModified = new Set<string>();
     let totalDuration = 0;
@@ -160,9 +159,9 @@ export class DataTransformer extends EventEmitter {
       estimatedImpact: {
         rowsAffected: totalRowsAffected,
         tablesModified: Array.from(tablesModified),
-        duration: totalDuration
+        duration: totalDuration,
       },
-      risks
+      risks,
     };
   }
 
@@ -180,7 +179,7 @@ export class DataTransformer extends EventEmitter {
   ): Promise<TransformationResult[]> {
     const migrationKey = `${fromMVP}->${toMVP}`;
     const mvpMigration = this.mvpMigrations.get(migrationKey);
-    
+
     if (!mvpMigration) {
       throw new Error(`No data migration defined for MVP ${fromMVP} to MVP ${toMVP}`);
     }
@@ -226,7 +225,10 @@ export class DataTransformer extends EventEmitter {
   /**
    * Archive old data before major migrations
    */
-  async archiveOldData(mvp: number, archiveStrategy: 'compress' | 'export' | 'delete'): Promise<{
+  async archiveOldData(
+    mvp: number,
+    archiveStrategy: 'compress' | 'export' | 'delete'
+  ): Promise<{
     archivedTables: string[];
     archivedRows: number;
     archiveSize: number;
@@ -243,7 +245,7 @@ export class DataTransformer extends EventEmitter {
       totalArchivedRows += result.rowsArchived;
       totalArchiveSize += result.dataSize;
       archivedTables.push(table.name);
-      
+
       if (result.archivePath && !archivePath) {
         archivePath = result.archivePath;
       }
@@ -253,7 +255,7 @@ export class DataTransformer extends EventEmitter {
       archivedTables,
       archivedRows: totalArchivedRows,
       archiveSize: totalArchiveSize,
-      archivePath
+      archivePath,
     };
   }
 
@@ -286,7 +288,7 @@ export class DataTransformer extends EventEmitter {
         // Validate target table integrity
         const tableIssues = await this.validateTableIntegrity(transformation.targetTable);
         issues.push(...tableIssues);
-        
+
         totalRowsValidated += result.rowsProcessed;
         tablesChecked.add(transformation.targetTable);
         integrityViolations += tableIssues.filter(i => i.severity === 'error').length;
@@ -299,8 +301,8 @@ export class DataTransformer extends EventEmitter {
       statistics: {
         totalRowsValidated,
         tablesChecked: tablesChecked.size,
-        integrityViolations
-      }
+        integrityViolations,
+      },
     };
   }
 
@@ -361,13 +363,11 @@ export class DataTransformer extends EventEmitter {
           estimatedRows: 100,
           estimatedDuration: 30,
           dependencies: [],
-          validationQueries: [
-            'SELECT COUNT(*) FROM incidents WHERE ticket_id LIKE "KB-%"'
-          ]
-        }
+          validationQueries: ['SELECT COUNT(*) FROM incidents WHERE ticket_id LIKE "KB-%"'],
+        },
       ],
       dataPreservationStrategy: 'full',
-      rollbackStrategy: 'delete_converted_records'
+      rollbackStrategy: 'delete_converted_records',
     });
 
     // MVP2 to MVP3: Add code analysis data structures
@@ -397,13 +397,11 @@ export class DataTransformer extends EventEmitter {
           estimatedRows: 50,
           estimatedDuration: 15,
           dependencies: [],
-          validationQueries: [
-            'SELECT COUNT(*) FROM kb_code_links WHERE link_type = "pattern"'
-          ]
-        }
+          validationQueries: ['SELECT COUNT(*) FROM kb_code_links WHERE link_type = "pattern"'],
+        },
       ],
       dataPreservationStrategy: 'full',
-      rollbackStrategy: 'delete_generated_links'
+      rollbackStrategy: 'delete_generated_links',
     });
 
     // MVP3 to MVP4: Add project and template data
@@ -433,13 +431,11 @@ export class DataTransformer extends EventEmitter {
           estimatedRows: 20,
           estimatedDuration: 45,
           dependencies: [],
-          validationQueries: [
-            'SELECT COUNT(*) FROM templates WHERE source_pattern IS NOT NULL'
-          ]
-        }
+          validationQueries: ['SELECT COUNT(*) FROM templates WHERE source_pattern IS NOT NULL'],
+        },
       ],
       dataPreservationStrategy: 'full',
-      rollbackStrategy: 'delete_auto_generated_templates'
+      rollbackStrategy: 'delete_auto_generated_templates',
     });
 
     // MVP4 to MVP5: Add enterprise and ML data
@@ -474,23 +470,21 @@ export class DataTransformer extends EventEmitter {
           estimatedRows: 100,
           estimatedDuration: 60,
           dependencies: [],
-          validationQueries: [
-            'SELECT COUNT(*) FROM ml_training_data WHERE outcome IS NOT NULL'
-          ]
-        }
+          validationQueries: ['SELECT COUNT(*) FROM ml_training_data WHERE outcome IS NOT NULL'],
+        },
       ],
       dataPreservationStrategy: 'selective',
-      rollbackStrategy: 'archive_ml_data'
+      rollbackStrategy: 'archive_ml_data',
     });
   }
 
   private async identifyRequiredTransformations(plan: any): Promise<DataTransformation[]> {
     const transformations: DataTransformation[] = [];
-    
+
     // Get transformations from MVP migration registry
     const migrationKey = `${plan.currentMVP}->${plan.targetMVP}`;
     const mvpMigration = this.mvpMigrations.get(migrationKey);
-    
+
     if (mvpMigration) {
       transformations.push(...mvpMigration.transformations);
     }
@@ -514,20 +508,20 @@ export class DataTransformer extends EventEmitter {
       if (visiting.has(transformationId)) {
         throw new Error(`Circular dependency detected in transformation: ${transformationId}`);
       }
-      
+
       if (visited.has(transformationId)) {
         return;
       }
 
       visiting.add(transformationId);
-      
+
       const transformation = transformations.find(t => t.id === transformationId);
       if (transformation) {
         for (const dependency of transformation.dependencies) {
           visit(dependency);
         }
       }
-      
+
       visiting.delete(transformationId);
       visited.add(transformationId);
       order.push(transformationId);
@@ -548,26 +542,28 @@ export class DataTransformer extends EventEmitter {
 
   private async estimateDataVolumeImpact(transformations: DataTransformation[]): Promise<number> {
     let totalImpact = 0;
-    
+
     for (const transformation of transformations) {
       // Estimate based on current table sizes
       const sourceRows = this.getTableRowCount(transformation.sourceTable);
       totalImpact += sourceRows;
     }
-    
+
     return totalImpact;
   }
 
-  private assessTransformationRisk(transformations: DataTransformation[]): 'low' | 'medium' | 'high' | 'critical' {
+  private assessTransformationRisk(
+    transformations: DataTransformation[]
+  ): 'low' | 'medium' | 'high' | 'critical' {
     let riskScore = 0;
-    
+
     for (const transformation of transformations) {
       if (!transformation.reversible) riskScore += 10;
       if (transformation.transformationType === 'merge') riskScore += 5;
       if (transformation.estimatedRows > 10000) riskScore += 3;
       if (transformation.sql.includes('DELETE')) riskScore += 8;
     }
-    
+
     if (riskScore >= 20) return 'critical';
     if (riskScore >= 12) return 'high';
     if (riskScore >= 6) return 'medium';
@@ -587,7 +583,9 @@ export class DataTransformer extends EventEmitter {
     // Validate table dependencies
     for (const transformation of plan.transformations) {
       if (!this.tableExists(transformation.sourceTable)) {
-        throw new Error(`Source table ${transformation.sourceTable} does not exist for transformation ${transformation.id}`);
+        throw new Error(
+          `Source table ${transformation.sourceTable} does not exist for transformation ${transformation.id}`
+        );
       }
     }
   }
@@ -595,69 +593,77 @@ export class DataTransformer extends EventEmitter {
   private getTransformationsForMigration(migration: Migration): DataTransformation[] {
     // Return relevant transformations for the specific migration
     // This is a simplified implementation
-    return Array.from(this.transformationRegistry.values()).filter(t =>
-      migration.up.includes(t.targetTable) || migration.up.includes(t.sourceTable)
+    return Array.from(this.transformationRegistry.values()).filter(
+      t => migration.up.includes(t.targetTable) || migration.up.includes(t.sourceTable)
     );
   }
 
   private executeTransformation(transformation: DataTransformation): void {
     const startTime = Date.now();
-    
+
     try {
       const result = this.db.exec(transformation.sql);
-      
-      this.db.prepare(`
+
+      this.db
+        .prepare(
+          `
         INSERT INTO data_transformations_log 
         (transformation_id, rows_processed, success, completed_at)
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-      `).run(transformation.id, transformation.estimatedRows, 1);
-      
+      `
+        )
+        .run(transformation.id, transformation.estimatedRows, 1);
     } catch (error) {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO data_transformations_log 
         (transformation_id, success, error_message, completed_at)
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-      `).run(transformation.id, 0, error.message);
-      
+      `
+        )
+        .run(transformation.id, 0, error.message);
+
       throw error;
     }
   }
 
-  private async executeTransformationWithValidation(transformation: DataTransformation): Promise<TransformationResult> {
+  private async executeTransformationWithValidation(
+    transformation: DataTransformation
+  ): Promise<TransformationResult> {
     const startTime = Date.now();
-    
+
     try {
       // Register transformation
       this.transformationRegistry.set(transformation.id, transformation);
-      
+
       // Execute the transformation
       const result = this.db.exec(transformation.sql);
-      
+
       // Run validation queries
       const validationResults: ValidationResult[] = [];
       for (const query of transformation.validationQueries) {
         const validationResult = await this.runValidationQuery(query);
         validationResults.push(validationResult);
       }
-      
+
       const transformationResult: TransformationResult = {
         transformationId: transformation.id,
         success: true,
         rowsProcessed: transformation.estimatedRows,
         duration: Date.now() - startTime,
-        validationResults
+        validationResults,
       };
-      
+
       this.emit('transformationCompleted', transformationResult);
       return transformationResult;
-      
     } catch (error) {
       return {
         transformationId: transformation.id,
         success: false,
         rowsProcessed: 0,
         duration: Date.now() - startTime,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -684,34 +690,40 @@ export class DataTransformer extends EventEmitter {
   private async createDataBackup(mvp: number): Promise<string> {
     const backupId = `backup_${mvp}_${Date.now()}`;
     const backupPath = `./backups/${backupId}.db`;
-    
+
     // Create backup
     this.db.backup(backupPath);
-    
+
     // Log backup
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO data_backups (backup_id, mvp_version, backup_path, created_at)
       VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(backupId, mvp, backupPath);
-    
+    `
+      )
+      .run(backupId, mvp, backupPath);
+
     return backupId;
   }
 
   private detectCustomTransformations(migration: Migration): DataTransformation[] {
     // Analyze migration SQL to detect potential data transformations needed
     const transformations: DataTransformation[] = [];
-    
+
     // Simple pattern detection - in practice this would be more sophisticated
     if (migration.up.includes('ALTER TABLE') && migration.up.includes('ADD COLUMN')) {
       // Might need data migration for new columns
     }
-    
+
     return transformations;
   }
 
   private getTableRowCount(tableName: string): number {
     try {
-      const result = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as { count: number };
+      const result = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as {
+        count: number;
+      };
       return result.count;
     } catch {
       return 0;
@@ -719,9 +731,13 @@ export class DataTransformer extends EventEmitter {
   }
 
   private tableExists(tableName: string): boolean {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master WHERE type='table' AND name = ?
-    `).get(tableName);
+    `
+      )
+      .get(tableName);
     return !!result;
   }
 
@@ -732,7 +748,7 @@ export class DataTransformer extends EventEmitter {
         query,
         expected: null, // Would need to be defined per validation
         actual: result,
-        passed: true
+        passed: true,
       };
     } catch (error) {
       return {
@@ -740,7 +756,7 @@ export class DataTransformer extends EventEmitter {
         expected: null,
         actual: null,
         passed: false,
-        message: error.message
+        message: error.message,
       };
     }
   }
@@ -753,7 +769,9 @@ export class DataTransformer extends EventEmitter {
       case 'convert':
         return `DELETE FROM ${transformation.targetTable} WHERE created_by_transformation = '${transformation.id}'`;
       default:
-        throw new Error(`No rollback strategy defined for transformation type: ${transformation.transformationType}`);
+        throw new Error(
+          `No rollback strategy defined for transformation type: ${transformation.transformationType}`
+        );
     }
   }
 
@@ -762,7 +780,9 @@ export class DataTransformer extends EventEmitter {
     return [];
   }
 
-  private async executeDataEnrichment(transformation: DataTransformation): Promise<TransformationResult> {
+  private async executeDataEnrichment(
+    transformation: DataTransformation
+  ): Promise<TransformationResult> {
     return this.executeTransformationWithValidation(transformation);
   }
 
@@ -774,7 +794,7 @@ export class DataTransformer extends EventEmitter {
     return {
       rowsArchived: 0,
       dataSize: 0,
-      archivePath: null
+      archivePath: null,
     };
   }
 

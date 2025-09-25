@@ -4,7 +4,10 @@
  */
 
 import { EventEmitter } from 'events';
-import { CategoryRepository, CategoryQueryOptions } from '../database/repositories/CategoryRepository';
+import {
+  CategoryRepository,
+  CategoryQueryOptions,
+} from '../database/repositories/CategoryRepository';
 import { CacheService } from './CacheService';
 import {
   CategoryNode,
@@ -14,7 +17,7 @@ import {
   BulkCategoryOperation,
   BulkOperationResult,
   CategoryAnalytics,
-  HierarchicalSchemaValidator
+  HierarchicalSchemaValidator,
 } from '../database/schemas/HierarchicalCategories.schema';
 import { AppError, ErrorCode } from '../core/errors/AppError';
 
@@ -85,7 +88,11 @@ export class CategoryService extends EventEmitter {
   /**
    * Update an existing category
    */
-  async updateCategory(id: string, updates: UpdateCategory, userId?: string): Promise<CategoryNode> {
+  async updateCategory(
+    id: string,
+    updates: UpdateCategory,
+    userId?: string
+  ): Promise<CategoryNode> {
     try {
       // Get existing category for validation
       const existing = await this.categoryRepository.findById(id);
@@ -105,7 +112,10 @@ export class CategoryService extends EventEmitter {
         await this.cacheService.delete(`category:${id}`);
 
         // If parent changed, invalidate old parent's children cache
-        if (validatedUpdates.parent_id !== undefined && existing.parent_id !== validatedUpdates.parent_id) {
+        if (
+          validatedUpdates.parent_id !== undefined &&
+          existing.parent_id !== validatedUpdates.parent_id
+        ) {
           if (existing.parent_id) {
             await this.cacheService.delete(`category:${existing.parent_id}:children`);
           }
@@ -161,7 +171,10 @@ export class CategoryService extends EventEmitter {
   /**
    * Get category by ID
    */
-  async getCategoryById(id: string, options: CategoryQueryOptions = {}): Promise<CategoryNode | null> {
+  async getCategoryById(
+    id: string,
+    options: CategoryQueryOptions = {}
+  ): Promise<CategoryNode | null> {
     const cacheKey = `category:${id}`;
 
     try {
@@ -193,7 +206,10 @@ export class CategoryService extends EventEmitter {
   /**
    * Get category by slug
    */
-  async getCategoryBySlug(slug: string, options: CategoryQueryOptions = {}): Promise<CategoryNode | null> {
+  async getCategoryBySlug(
+    slug: string,
+    options: CategoryQueryOptions = {}
+  ): Promise<CategoryNode | null> {
     const cacheKey = `category:slug:${slug}`;
 
     try {
@@ -351,7 +367,11 @@ export class CategoryService extends EventEmitter {
   /**
    * Reorder categories
    */
-  async reorderCategories(parentId: string | null, categoryIds: string[], userId?: string): Promise<void> {
+  async reorderCategories(
+    parentId: string | null,
+    categoryIds: string[],
+    userId?: string
+  ): Promise<void> {
     try {
       // Validate that all categories belong to the same parent
       for (const id of categoryIds) {
@@ -387,7 +407,11 @@ export class CategoryService extends EventEmitter {
   /**
    * Move category to a new parent
    */
-  async moveCategory(categoryId: string, newParentId: string | null, userId?: string): Promise<CategoryNode> {
+  async moveCategory(
+    categoryId: string,
+    newParentId: string | null,
+    userId?: string
+  ): Promise<CategoryNode> {
     try {
       // Get original category for event
       const originalCategory = await this.categoryRepository.findById(categoryId);
@@ -419,7 +443,7 @@ export class CategoryService extends EventEmitter {
         category: movedCategory,
         originalParentId: originalCategory.parent_id,
         newParentId,
-        userId
+        userId,
       });
 
       return movedCategory;
@@ -432,10 +456,14 @@ export class CategoryService extends EventEmitter {
   /**
    * Bulk operations on categories
    */
-  async bulkOperation(operation: BulkCategoryOperation, userId?: string): Promise<BulkOperationResult> {
+  async bulkOperation(
+    operation: BulkCategoryOperation,
+    userId?: string
+  ): Promise<BulkOperationResult> {
     try {
       // Validate operation
-      const validatedOperation = HierarchicalSchemaValidator.validateBulkCategoryOperation(operation);
+      const validatedOperation =
+        HierarchicalSchemaValidator.validateBulkCategoryOperation(operation);
 
       // Perform bulk operation
       const result = await this.categoryRepository.bulkOperation(validatedOperation);
@@ -492,7 +520,10 @@ export class CategoryService extends EventEmitter {
   /**
    * Update category analytics
    */
-  async updateCategoryAnalytics(categoryId: string, analytics: Partial<CategoryAnalytics>): Promise<void> {
+  async updateCategoryAnalytics(
+    categoryId: string,
+    analytics: Partial<CategoryAnalytics>
+  ): Promise<void> {
     if (!this.config.analyticsEnabled) {
       return;
     }
@@ -536,7 +567,10 @@ export class CategoryService extends EventEmitter {
       }
 
       // Get hierarchy to calculate stats
-      const hierarchy = await this.getCategoryHierarchy({ includeInactive: true, includeSystem: true });
+      const hierarchy = await this.getCategoryHierarchy({
+        includeInactive: true,
+        includeSystem: true,
+      });
 
       const stats = this.calculateHierarchyStats(hierarchy);
 
@@ -555,16 +589,20 @@ export class CategoryService extends EventEmitter {
   /**
    * Search categories
    */
-  async searchCategories(query: string, options: CategoryQueryOptions = {}): Promise<CategoryNode[]> {
+  async searchCategories(
+    query: string,
+    options: CategoryQueryOptions = {}
+  ): Promise<CategoryNode[]> {
     // This is a simple implementation - could be enhanced with FTS in the future
     const allCategories = await this.getCategoryHierarchy(options);
     const flatCategories = this.flattenHierarchy(allCategories);
 
     const lowerQuery = query.toLowerCase();
-    return flatCategories.filter(cat =>
-      cat.name.toLowerCase().includes(lowerQuery) ||
-      (cat.description && cat.description.toLowerCase().includes(lowerQuery)) ||
-      cat.slug.toLowerCase().includes(lowerQuery)
+    return flatCategories.filter(
+      cat =>
+        cat.name.toLowerCase().includes(lowerQuery) ||
+        (cat.description && cat.description.toLowerCase().includes(lowerQuery)) ||
+        cat.slug.toLowerCase().includes(lowerQuery)
     );
   }
 
@@ -574,7 +612,10 @@ export class CategoryService extends EventEmitter {
   async validateHierarchyIntegrity(): Promise<{ valid: boolean; errors: string[] }> {
     try {
       // Get all categories
-      const allCategories = await this.getCategoryHierarchy({ includeInactive: true, includeSystem: true });
+      const allCategories = await this.getCategoryHierarchy({
+        includeInactive: true,
+        includeSystem: true,
+      });
       const flatCategories = this.flattenHierarchy(allCategories);
 
       // Use schema validator
@@ -599,7 +640,7 @@ export class CategoryService extends EventEmitter {
       'category:*:children:*',
       'category:*:descendants:*',
       'category:*:ancestors',
-      'category:stats'
+      'category:stats',
     ];
 
     for (const pattern of patterns) {
@@ -655,7 +696,7 @@ export class CategoryService extends EventEmitter {
       activeCategories,
       systemCategories,
       maxDepth,
-      rootCategories: hierarchy.length
+      rootCategories: hierarchy.length,
     };
   }
 

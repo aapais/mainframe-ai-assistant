@@ -1,7 +1,7 @@
 /**
  * SQLite Storage Adapter
  * Provides SQLite-specific implementation of the storage adapter interface
- * 
+ *
  * Features:
  * - High-performance SQLite operations with WAL mode
  * - Full-text search with FTS5
@@ -14,18 +14,18 @@ import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
-import { 
-  IStorageAdapter, 
-  StorageTransaction, 
-  AdapterHealthStatus, 
-  SchemaInfo, 
-  AdapterConfig, 
-  TableInfo, 
-  ColumnInfo, 
+import {
+  IStorageAdapter,
+  StorageTransaction,
+  AdapterHealthStatus,
+  SchemaInfo,
+  AdapterConfig,
+  TableInfo,
+  ColumnInfo,
   IndexInfo,
   ConnectionError,
   QueryError,
-  TransactionError
+  TransactionError,
 } from './IStorageAdapter';
 import {
   KBEntry,
@@ -39,7 +39,7 @@ import {
   ImportOptions,
   ImportResult,
   OptimizationResult,
-  DatabaseMetrics
+  DatabaseMetrics,
 } from '../IStorageService';
 
 export class SQLiteAdapter implements IStorageAdapter {
@@ -62,51 +62,53 @@ export class SQLiteAdapter implements IStorageAdapter {
   async initialize(): Promise<void> {
     try {
       console.log('🔗 Initializing SQLite adapter...');
-      
+
       // Create database connection
       const dbPath = this.config.connectionString;
       this.db = new Database(dbPath);
-      
+
       // Apply performance configuration
       this.applyPragmas();
-      
+
       // Initialize schema
       await this.initializeSchema();
-      
+
       // Create indexes
       await this.createIndexes();
-      
+
       // Enable query performance monitoring
       if (this.config.performanceTuning.enableQueryPlan) {
         this.enableQueryMonitoring();
       }
-      
+
       this.isInitialized = true;
       console.log(`✅ SQLite adapter initialized: ${dbPath}`);
-      
     } catch (error) {
       console.error('❌ SQLite adapter initialization failed:', error);
-      throw new ConnectionError(`Failed to initialize SQLite adapter: ${error.message}`, 'sqlite', error);
+      throw new ConnectionError(
+        `Failed to initialize SQLite adapter: ${error.message}`,
+        'sqlite',
+        error
+      );
     }
   }
 
   async close(): Promise<void> {
     if (!this.isInitialized || !this.db) return;
-    
+
     try {
       console.log('🔒 Closing SQLite adapter...');
-      
+
       // Perform final checkpoint if WAL mode is enabled
       if (this.config.backup.enableWALCheckpoint) {
         this.db.pragma('wal_checkpoint(TRUNCATE)');
       }
-      
+
       // Close database connection
       this.db.close();
       this.isInitialized = false;
-      
+
       console.log('✅ SQLite adapter closed');
-      
     } catch (error) {
       console.error('❌ Error closing SQLite adapter:', error);
       throw error;
@@ -119,25 +121,29 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async createEntry(entry: KBEntryInput): Promise<string> {
     this.ensureInitialized();
-    
+
     const id = uuidv4();
     const transaction = this.db.transaction(() => {
       try {
         // Insert main entry
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO kb_entries (
             id, title, problem, solution, category, severity, created_by
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          id,
-          entry.title,
-          entry.problem,
-          entry.solution,
-          entry.category,
-          entry.severity || 'medium',
-          entry.created_by || 'system'
-        );
-        
+        `
+          )
+          .run(
+            id,
+            entry.title,
+            entry.problem,
+            entry.solution,
+            entry.category,
+            entry.severity || 'medium',
+            entry.created_by || 'system'
+          );
+
         // Insert tags
         if (entry.tags && entry.tags.length > 0) {
           const tagStmt = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
@@ -145,27 +151,28 @@ export class SQLiteAdapter implements IStorageAdapter {
             tagStmt.run(id, tag.toLowerCase().trim());
           });
         }
-        
+
         // Update FTS index
         this.updateFTSIndex(id, entry);
-        
+
         this.queryCount++;
         return id;
-        
       } catch (error) {
         this.errorCount++;
         throw new QueryError(`Failed to create entry: ${error.message}`, 'sqlite', 'INSERT', error);
       }
     });
-    
+
     return transaction();
   }
 
   async readEntry(id: string): Promise<KBEntry | null> {
     this.ensureInitialized();
-    
+
     try {
-      const entry = this.db.prepare(`
+      const entry = this.db
+        .prepare(
+          `
         SELECT 
           e.*,
           GROUP_CONCAT(t.tag, ', ') as tags
@@ -173,14 +180,15 @@ export class SQLiteAdapter implements IStorageAdapter {
         LEFT JOIN kb_tags t ON e.id = t.entry_id
         WHERE e.id = ?
         GROUP BY e.id
-      `).get(id) as any;
-      
+      `
+        )
+        .get(id) as any;
+
       this.queryCount++;
-      
+
       if (!entry) return null;
-      
+
       return this.mapRowToEntry(entry);
-      
     } catch (error) {
       this.errorCount++;
       throw new QueryError(`Failed to read entry: ${error.message}`, 'sqlite', 'SELECT', error);
@@ -189,13 +197,13 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async updateEntry(id: string, updates: KBEntryUpdate): Promise<boolean> {
     this.ensureInitialized();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Build dynamic update query
         const setClause = [];
         const values = [];
-        
+
         if (updates.title !== undefined) {
           setClause.push('title = ?');
           values.push(updates.title);
@@ -220,27 +228,31 @@ export class SQLiteAdapter implements IStorageAdapter {
           setClause.push('archived = ?');
           values.push(updates.archived ? 1 : 0);
         }
-        
+
         if (setClause.length > 0) {
           setClause.push('updated_at = CURRENT_TIMESTAMP');
           values.push(id);
-          
-          const result = this.db.prepare(`
+
+          const result = this.db
+            .prepare(
+              `
             UPDATE kb_entries 
             SET ${setClause.join(', ')}
             WHERE id = ?
-          `).run(...values);
-          
+          `
+            )
+            .run(...values);
+
           if (result.changes === 0) {
             return false;
           }
         }
-        
+
         // Update tags if provided
         if (updates.tags !== undefined) {
           // Remove existing tags
           this.db.prepare('DELETE FROM kb_tags WHERE entry_id = ?').run(id);
-          
+
           // Add new tags
           if (updates.tags.length > 0) {
             const tagStmt = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
@@ -249,45 +261,43 @@ export class SQLiteAdapter implements IStorageAdapter {
             });
           }
         }
-        
+
         // Update FTS index
         this.updateFTSIndexForUpdate(id, updates);
-        
+
         this.queryCount++;
         return true;
-        
       } catch (error) {
         this.errorCount++;
         throw new QueryError(`Failed to update entry: ${error.message}`, 'sqlite', 'UPDATE', error);
       }
     });
-    
+
     return transaction();
   }
 
   async deleteEntry(id: string): Promise<boolean> {
     this.ensureInitialized();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Delete from FTS index first
         this.db.prepare('DELETE FROM kb_fts WHERE id = ?').run(id);
-        
+
         // Delete tags
         this.db.prepare('DELETE FROM kb_tags WHERE entry_id = ?').run(id);
-        
+
         // Delete main entry
         const result = this.db.prepare('DELETE FROM kb_entries WHERE id = ?').run(id);
-        
+
         this.queryCount++;
         return result.changes > 0;
-        
       } catch (error) {
         this.errorCount++;
         throw new QueryError(`Failed to delete entry: ${error.message}`, 'sqlite', 'DELETE', error);
       }
     });
-    
+
     return transaction();
   }
 
@@ -297,22 +307,22 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async createEntries(entries: KBEntryInput[]): Promise<string[]> {
     this.ensureInitialized();
-    
+
     const transaction = this.db.transaction(() => {
       const ids: string[] = [];
-      
+
       try {
         const entryStmt = this.db.prepare(`
           INSERT INTO kb_entries (
             id, title, problem, solution, category, severity, created_by
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
-        
+
         const tagStmt = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
-        
+
         for (const entry of entries) {
           const id = uuidv4();
-          
+
           entryStmt.run(
             id,
             entry.title,
@@ -322,37 +332,43 @@ export class SQLiteAdapter implements IStorageAdapter {
             entry.severity || 'medium',
             entry.created_by || 'system'
           );
-          
+
           if (entry.tags && entry.tags.length > 0) {
             entry.tags.forEach(tag => {
               tagStmt.run(id, tag.toLowerCase().trim());
             });
           }
-          
+
           this.updateFTSIndex(id, entry);
           ids.push(id);
         }
-        
+
         this.queryCount += entries.length;
         return ids;
-        
       } catch (error) {
         this.errorCount++;
-        throw new QueryError(`Failed to create entries: ${error.message}`, 'sqlite', 'INSERT BATCH', error);
+        throw new QueryError(
+          `Failed to create entries: ${error.message}`,
+          'sqlite',
+          'INSERT BATCH',
+          error
+        );
       }
     });
-    
+
     return transaction();
   }
 
   async readEntries(ids: string[]): Promise<(KBEntry | null)[]> {
     this.ensureInitialized();
-    
+
     if (ids.length === 0) return [];
-    
+
     try {
       const placeholders = ids.map(() => '?').join(',');
-      const entries = this.db.prepare(`
+      const entries = this.db
+        .prepare(
+          `
         SELECT 
           e.*,
           GROUP_CONCAT(t.tag, ', ') as tags
@@ -360,74 +376,88 @@ export class SQLiteAdapter implements IStorageAdapter {
         LEFT JOIN kb_tags t ON e.id = t.entry_id
         WHERE e.id IN (${placeholders})
         GROUP BY e.id
-      `).all(...ids) as any[];
-      
+      `
+        )
+        .all(...ids) as any[];
+
       this.queryCount++;
-      
+
       // Create result array maintaining order
       const entryMap = new Map(entries.map(e => [e.id, this.mapRowToEntry(e)]));
       return ids.map(id => entryMap.get(id) || null);
-      
     } catch (error) {
       this.errorCount++;
-      throw new QueryError(`Failed to read entries: ${error.message}`, 'sqlite', 'SELECT BATCH', error);
+      throw new QueryError(
+        `Failed to read entries: ${error.message}`,
+        'sqlite',
+        'SELECT BATCH',
+        error
+      );
     }
   }
 
   async updateEntries(updates: Array<{ id: string; updates: KBEntryUpdate }>): Promise<boolean[]> {
     this.ensureInitialized();
-    
+
     const transaction = this.db.transaction(() => {
       const results: boolean[] = [];
-      
+
       try {
         for (const { id, updates: entryUpdates } of updates) {
           // Reuse single entry update logic
           const success = this.updateSingleEntryInTransaction(id, entryUpdates);
           results.push(success);
         }
-        
+
         this.queryCount += updates.length;
         return results;
-        
       } catch (error) {
         this.errorCount++;
-        throw new QueryError(`Failed to update entries: ${error.message}`, 'sqlite', 'UPDATE BATCH', error);
+        throw new QueryError(
+          `Failed to update entries: ${error.message}`,
+          'sqlite',
+          'UPDATE BATCH',
+          error
+        );
       }
     });
-    
+
     return transaction();
   }
 
   async deleteEntries(ids: string[]): Promise<boolean[]> {
     this.ensureInitialized();
-    
+
     if (ids.length === 0) return [];
-    
+
     const transaction = this.db.transaction(() => {
       const results: boolean[] = [];
-      
+
       try {
         const deleteEntryStmt = this.db.prepare('DELETE FROM kb_entries WHERE id = ?');
         const deleteTagsStmt = this.db.prepare('DELETE FROM kb_tags WHERE entry_id = ?');
         const deleteFTSStmt = this.db.prepare('DELETE FROM kb_fts WHERE id = ?');
-        
+
         for (const id of ids) {
           deleteFTSStmt.run(id);
           deleteTagsStmt.run(id);
           const result = deleteEntryStmt.run(id);
           results.push(result.changes > 0);
         }
-        
+
         this.queryCount += ids.length;
         return results;
-        
       } catch (error) {
         this.errorCount++;
-        throw new QueryError(`Failed to delete entries: ${error.message}`, 'sqlite', 'DELETE BATCH', error);
+        throw new QueryError(
+          `Failed to delete entries: ${error.message}`,
+          'sqlite',
+          'DELETE BATCH',
+          error
+        );
       }
     });
-    
+
     return transaction();
   }
 
@@ -437,22 +467,21 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async searchEntries(query: string, options?: SearchOptions): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     try {
       const searchOptions = {
         limit: 10,
         offset: 0,
         sortBy: 'relevance',
-        ...options
+        ...options,
       };
-      
+
       // Choose search strategy based on query
       const strategy = this.selectSearchStrategy(query, searchOptions);
       const results = await this.executeSearch(strategy, query, searchOptions);
-      
+
       this.queryCount++;
       return results;
-      
     } catch (error) {
       this.errorCount++;
       throw new QueryError(`Failed to search entries: ${error.message}`, 'sqlite', 'SEARCH', error);
@@ -461,9 +490,11 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async getPopularEntries(limit: number = 10): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     try {
-      const entries = this.db.prepare(`
+      const entries = this.db
+        .prepare(
+          `
         SELECT 
           e.*,
           GROUP_CONCAT(t.tag, ', ') as tags,
@@ -474,28 +505,36 @@ export class SQLiteAdapter implements IStorageAdapter {
         GROUP BY e.id
         ORDER BY popularity_score DESC, e.usage_count DESC
         LIMIT ?
-      `).all(limit) as any[];
-      
+      `
+        )
+        .all(limit) as any[];
+
       this.queryCount++;
-      
+
       return entries.map(entry => ({
         entry: this.mapRowToEntry(entry),
         score: entry.popularity_score || 0,
         matchType: 'popular' as any,
-        highlights: []
+        highlights: [],
       }));
-      
     } catch (error) {
       this.errorCount++;
-      throw new QueryError(`Failed to get popular entries: ${error.message}`, 'sqlite', 'SELECT', error);
+      throw new QueryError(
+        `Failed to get popular entries: ${error.message}`,
+        'sqlite',
+        'SELECT',
+        error
+      );
     }
   }
 
   async getRecentEntries(limit: number = 10): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     try {
-      const entries = this.db.prepare(`
+      const entries = this.db
+        .prepare(
+          `
         SELECT 
           e.*,
           GROUP_CONCAT(t.tag, ', ') as tags
@@ -505,30 +544,38 @@ export class SQLiteAdapter implements IStorageAdapter {
         GROUP BY e.id
         ORDER BY e.created_at DESC
         LIMIT ?
-      `).all(limit) as any[];
-      
+      `
+        )
+        .all(limit) as any[];
+
       this.queryCount++;
-      
+
       return entries.map(entry => ({
         entry: this.mapRowToEntry(entry),
         score: 100,
         matchType: 'recent' as any,
-        highlights: []
+        highlights: [],
       }));
-      
     } catch (error) {
       this.errorCount++;
-      throw new QueryError(`Failed to get recent entries: ${error.message}`, 'sqlite', 'SELECT', error);
+      throw new QueryError(
+        `Failed to get recent entries: ${error.message}`,
+        'sqlite',
+        'SELECT',
+        error
+      );
     }
   }
 
   async getSearchSuggestions(query: string, limit: number = 5): Promise<string[]> {
     this.ensureInitialized();
-    
+
     if (!query || query.length < 2) return [];
-    
+
     try {
-      const suggestions = this.db.prepare(`
+      const suggestions = this.db
+        .prepare(
+          `
         WITH suggestions AS (
           -- Common search terms from history
           SELECT DISTINCT 
@@ -574,14 +621,21 @@ export class SQLiteAdapter implements IStorageAdapter {
         WHERE suggestion IS NOT NULL
         ORDER BY score DESC, length(suggestion) ASC
         LIMIT ?
-      `).all(query, query, query, query, limit).map((row: any) => row.suggestion);
-      
+      `
+        )
+        .all(query, query, query, query, limit)
+        .map((row: any) => row.suggestion);
+
       this.queryCount++;
       return suggestions;
-      
     } catch (error) {
       this.errorCount++;
-      throw new QueryError(`Failed to get search suggestions: ${error.message}`, 'sqlite', 'SELECT', error);
+      throw new QueryError(
+        `Failed to get search suggestions: ${error.message}`,
+        'sqlite',
+        'SELECT',
+        error
+      );
     }
   }
 
@@ -591,22 +645,21 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async executeSQL(sql: string, params: any[] = []): Promise<any> {
     this.ensureInitialized();
-    
+
     try {
       let result;
-      
+
       // Determine if this is a SELECT or modification query
       const isSelect = sql.trim().toLowerCase().startsWith('select');
-      
+
       if (isSelect) {
         result = this.db.prepare(sql).all(...params);
       } else {
         result = this.db.prepare(sql).run(...params);
       }
-      
+
       this.queryCount++;
       return result;
-      
     } catch (error) {
       this.errorCount++;
       throw new QueryError(`Failed to execute SQL: ${error.message}`, 'sqlite', sql, error);
@@ -615,37 +668,41 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async beginTransaction(): Promise<StorageTransaction> {
     this.ensureInitialized();
-    
+
     return new SQLiteTransaction(this.db);
   }
 
   async export(format: ExportFormat, options?: ExportOptions): Promise<string> {
     this.ensureInitialized();
-    
+
     // Implementation would depend on format
     // For now, return JSON export
     const entries = await this.getAllEntries(options);
-    return JSON.stringify({
-      version: '1.0',
-      format,
-      exported_at: new Date().toISOString(),
-      entries
-    }, null, 2);
+    return JSON.stringify(
+      {
+        version: '1.0',
+        format,
+        exported_at: new Date().toISOString(),
+        entries,
+      },
+      null,
+      2
+    );
   }
 
   async import(data: string, format: ImportFormat, options?: ImportOptions): Promise<ImportResult> {
     this.ensureInitialized();
-    
+
     // Basic JSON import implementation
     try {
       const importData = JSON.parse(data);
       const entries = importData.entries || [];
-      
+
       let imported = 0;
       let updated = 0;
       let skipped = 0;
       const errors: any[] = [];
-      
+
       for (const entry of entries) {
         try {
           if (options?.updateExisting && entry.id) {
@@ -667,11 +724,11 @@ export class SQLiteAdapter implements IStorageAdapter {
             line: entries.indexOf(entry) + 1,
             field: 'entry',
             message: error.message,
-            code: 'IMPORT_ERROR'
+            code: 'IMPORT_ERROR',
           });
         }
       }
-      
+
       return {
         success: errors.length === 0,
         imported,
@@ -679,9 +736,8 @@ export class SQLiteAdapter implements IStorageAdapter {
         skipped,
         errors,
         warnings: [],
-        duration: 0
+        duration: 0,
       };
-      
     } catch (error) {
       throw new QueryError(`Failed to import data: ${error.message}`, 'sqlite', 'IMPORT', error);
     }
@@ -693,25 +749,28 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async getMetrics(): Promise<DatabaseMetrics> {
     this.ensureInitialized();
-    
+
     try {
       const dbInfo = this.db.prepare('PRAGMA database_list').all() as any[];
-      const tableInfo = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
-      const indexInfo = this.db.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as any[];
-      
+      const tableInfo = this.db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+        .all() as any[];
+      const indexInfo = this.db
+        .prepare("SELECT name FROM sqlite_master WHERE type='index'")
+        .all() as any[];
+
       const pageCount = this.db.pragma('page_count') as number;
       const pageSize = this.db.pragma('page_size') as number;
       const size = pageCount * pageSize;
-      
+
       return {
         size,
         tableCount: tableInfo.length,
         indexCount: indexInfo.length,
         connectionCount: 1, // SQLite is single connection
         queryCount: this.queryCount,
-        averageQueryTime: 0 // TODO: Implement timing
+        averageQueryTime: 0, // TODO: Implement timing
       };
-      
     } catch (error) {
       throw new QueryError(`Failed to get metrics: ${error.message}`, 'sqlite', 'PRAGMA', error);
     }
@@ -719,14 +778,16 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async optimize(): Promise<OptimizationResult> {
     this.ensureInitialized();
-    
+
     const startTime = Date.now();
     const optimizations: any[] = [];
-    
+
     try {
       // Analyze tables
-      const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as any[];
-      
+      const tables = this.db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+        .all() as any[];
+
       for (const table of tables) {
         try {
           this.db.prepare(`ANALYZE ${table.name}`).run();
@@ -734,7 +795,7 @@ export class SQLiteAdapter implements IStorageAdapter {
             type: 'analyze',
             description: `Analyzed table ${table.name}`,
             impact: 'medium',
-            executed: true
+            executed: true,
           });
         } catch (error) {
           optimizations.push({
@@ -742,11 +803,11 @@ export class SQLiteAdapter implements IStorageAdapter {
             description: `Failed to analyze table ${table.name}`,
             impact: 'medium',
             executed: false,
-            error: error.message
+            error: error.message,
           });
         }
       }
-      
+
       // Vacuum if enabled
       if (this.config.performanceTuning.autoVacuum) {
         try {
@@ -755,7 +816,7 @@ export class SQLiteAdapter implements IStorageAdapter {
             type: 'vacuum',
             description: 'Performed database vacuum',
             impact: 'high',
-            executed: true
+            executed: true,
           });
         } catch (error) {
           optimizations.push({
@@ -763,24 +824,28 @@ export class SQLiteAdapter implements IStorageAdapter {
             description: 'Failed to vacuum database',
             impact: 'high',
             executed: false,
-            error: error.message
+            error: error.message,
           });
         }
       }
-      
+
       const duration = Date.now() - startTime;
       const successfulOptimizations = optimizations.filter(o => o.executed).length;
       const performanceImprovement = Math.min(successfulOptimizations * 10, 50); // Estimate
-      
+
       return {
         success: optimizations.some(o => o.executed),
         optimizations,
         performanceImprovement,
-        duration
+        duration,
       };
-      
     } catch (error) {
-      throw new QueryError(`Failed to optimize database: ${error.message}`, 'sqlite', 'OPTIMIZE', error);
+      throw new QueryError(
+        `Failed to optimize database: ${error.message}`,
+        'sqlite',
+        'OPTIMIZE',
+        error
+      );
     }
   }
 
@@ -788,23 +853,27 @@ export class SQLiteAdapter implements IStorageAdapter {
     try {
       // Test basic database operation
       this.db.prepare('SELECT 1').get();
-      
+
       const uptime = Date.now() - this.connectionStartTime;
       const errorRate = this.queryCount > 0 ? this.errorCount / this.queryCount : 0;
-      
+
       const issues: any[] = [];
-      
+
       if (errorRate > 0.05) {
         issues.push({
           severity: 'warning',
           message: `High error rate: ${(errorRate * 100).toFixed(2)}%`,
-          details: { errorCount: this.errorCount, queryCount: this.queryCount }
+          details: { errorCount: this.errorCount, queryCount: this.queryCount },
         });
       }
-      
-      const status = issues.length === 0 ? 'healthy' : 
-                    issues.some(i => i.severity === 'critical') ? 'critical' : 'warning';
-      
+
+      const status =
+        issues.length === 0
+          ? 'healthy'
+          : issues.some(i => i.severity === 'critical')
+            ? 'critical'
+            : 'warning';
+
       return {
         status,
         uptime,
@@ -812,11 +881,10 @@ export class SQLiteAdapter implements IStorageAdapter {
         metrics: {
           queryCount: this.queryCount,
           errorCount: this.errorCount,
-          errorRate: errorRate
+          errorRate: errorRate,
         },
-        issues
+        issues,
       };
-      
     } catch (error) {
       return {
         status: 'critical',
@@ -826,34 +894,40 @@ export class SQLiteAdapter implements IStorageAdapter {
         metrics: {
           queryCount: this.queryCount,
           errorCount: this.errorCount + 1,
-          errorRate: 1
+          errorRate: 1,
         },
-        issues: [{
-          severity: 'critical',
-          message: 'Database health check failed',
-          details: error
-        }]
+        issues: [
+          {
+            severity: 'critical',
+            message: 'Database health check failed',
+            details: error,
+          },
+        ],
       };
     }
   }
 
   async getSchemaInfo(): Promise<SchemaInfo> {
     this.ensureInitialized();
-    
+
     try {
       const tables = await this.getTableInfo();
       const indexes = await this.getIndexInfo();
-      
+
       return {
         version: '1.0',
         tables,
         indexes,
         triggers: [], // TODO: Implement trigger info
-        constraints: [] // TODO: Implement constraint info
+        constraints: [], // TODO: Implement constraint info
       };
-      
     } catch (error) {
-      throw new QueryError(`Failed to get schema info: ${error.message}`, 'sqlite', 'SCHEMA', error);
+      throw new QueryError(
+        `Failed to get schema info: ${error.message}`,
+        'sqlite',
+        'SCHEMA',
+        error
+      );
     }
   }
 
@@ -867,7 +941,7 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   async updateConfig(config: Partial<AdapterConfig>): Promise<void> {
     this.config = { ...this.config, ...config };
-    
+
     // Apply pragma changes if needed
     if (config.pragma) {
       this.applyPragmas();
@@ -886,7 +960,7 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   private applyPragmas(): void {
     if (!this.config.pragma) return;
-    
+
     for (const [key, value] of Object.entries(this.config.pragma)) {
       try {
         this.db.pragma(`${key} = ${value}`);
@@ -898,10 +972,10 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   private async initializeSchema(): Promise<void> {
     // Check if schema exists
-    const tables = this.db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='kb_entries'"
-    ).get();
-    
+    const tables = this.db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='kb_entries'")
+      .get();
+
     if (!tables) {
       // Create base schema
       await this.createBaseSchema();
@@ -999,7 +1073,7 @@ export class SQLiteAdapter implements IStorageAdapter {
       'CREATE INDEX IF NOT EXISTS idx_kb_tags_tag ON kb_tags(tag)',
       'CREATE INDEX IF NOT EXISTS idx_search_history_timestamp ON search_history(timestamp DESC)',
       'CREATE INDEX IF NOT EXISTS idx_usage_metrics_entry_id ON usage_metrics(entry_id)',
-      'CREATE INDEX IF NOT EXISTS idx_usage_metrics_timestamp ON usage_metrics(timestamp DESC)'
+      'CREATE INDEX IF NOT EXISTS idx_usage_metrics_timestamp ON usage_metrics(timestamp DESC)',
     ];
 
     for (const indexSQL of indexes) {
@@ -1020,17 +1094,21 @@ export class SQLiteAdapter implements IStorageAdapter {
 
   private updateFTSIndex(id: string, entry: KBEntryInput): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO kb_fts (id, title, problem, solution, tags, category)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        id,
-        entry.title,
-        entry.problem,
-        entry.solution,
-        entry.tags?.join(' ') || '',
-        entry.category
-      );
+      `
+        )
+        .run(
+          id,
+          entry.title,
+          entry.problem,
+          entry.solution,
+          entry.tags?.join(' ') || '',
+          entry.category
+        );
     } catch (error) {
       console.warn('Failed to update FTS index:', error);
     }
@@ -1040,30 +1118,35 @@ export class SQLiteAdapter implements IStorageAdapter {
     try {
       // Remove old entry
       this.db.prepare('DELETE FROM kb_fts WHERE id = ?').run(id);
-      
+
       // Get current entry data
       const current = this.db.prepare('SELECT * FROM kb_entries WHERE id = ?').get(id) as any;
       if (!current) return;
-      
+
       // Update with new data
       const title = updates.title !== undefined ? updates.title : current.title;
       const problem = updates.problem !== undefined ? updates.problem : current.problem;
       const solution = updates.solution !== undefined ? updates.solution : current.solution;
       const category = updates.category !== undefined ? updates.category : current.category;
-      
+
       let tags = '';
       if (updates.tags !== undefined) {
         tags = updates.tags.join(' ');
       } else {
-        const currentTags = this.db.prepare('SELECT GROUP_CONCAT(tag, " ") as tags FROM kb_tags WHERE entry_id = ?').get(id) as any;
+        const currentTags = this.db
+          .prepare('SELECT GROUP_CONCAT(tag, " ") as tags FROM kb_tags WHERE entry_id = ?')
+          .get(id) as any;
         tags = currentTags?.tags || '';
       }
-      
-      this.db.prepare(`
+
+      this.db
+        .prepare(
+          `
         INSERT INTO kb_fts (id, title, problem, solution, tags, category)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(id, title, problem, solution, tags, category);
-      
+      `
+        )
+        .run(id, title, problem, solution, tags, category);
     } catch (error) {
       console.warn('Failed to update FTS index for update:', error);
     }
@@ -1085,36 +1168,43 @@ export class SQLiteAdapter implements IStorageAdapter {
       success_count: row.success_count || 0,
       failure_count: row.failure_count || 0,
       last_used: row.last_used ? new Date(row.last_used) : undefined,
-      archived: Boolean(row.archived)
+      archived: Boolean(row.archived),
     };
   }
 
-  private selectSearchStrategy(query: string, options: SearchOptions): 'exact' | 'fts' | 'fuzzy' | 'category' | 'tag' {
+  private selectSearchStrategy(
+    query: string,
+    options: SearchOptions
+  ): 'exact' | 'fts' | 'fuzzy' | 'category' | 'tag' {
     // Error code patterns
     if (/^[A-Z]\d{3,4}[A-Z]?$/.test(query) || /^S\d{3}[A-Z]?$/.test(query)) {
       return 'exact';
     }
-    
+
     // Category search
     if (query.startsWith('category:') || options.category) {
       return 'category';
     }
-    
+
     // Tag search
     if (query.startsWith('tag:')) {
       return 'tag';
     }
-    
+
     // Short queries - use fuzzy
     if (query.length < 4) {
       return 'fuzzy';
     }
-    
+
     // Default to FTS
     return 'fts';
   }
 
-  private async executeSearch(strategy: string, query: string, options: SearchOptions): Promise<SearchResult[]> {
+  private async executeSearch(
+    strategy: string,
+    query: string,
+    options: SearchOptions
+  ): Promise<SearchResult[]> {
     switch (strategy) {
       case 'exact':
         return this.executeExactSearch(query, options);
@@ -1132,7 +1222,9 @@ export class SQLiteAdapter implements IStorageAdapter {
   }
 
   private executeExactSearch(query: string, options: SearchOptions): SearchResult[] {
-    const entries = this.db.prepare(`
+    const entries = this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1145,25 +1237,31 @@ export class SQLiteAdapter implements IStorageAdapter {
       GROUP BY e.id
       ORDER BY e.usage_count DESC
       LIMIT ? OFFSET ?
-    `).all(
-      `%${query}%`, `%${query}%`, `%${query}%`,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10,
-      options.offset || 0
-    ) as any[];
+    `
+      )
+      .all(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        ...(options.category ? [options.category] : []),
+        options.limit || 10,
+        options.offset || 0
+      ) as any[];
 
     return entries.map(entry => ({
       entry: this.mapRowToEntry(entry),
       score: 100,
       matchType: 'exact' as any,
-      highlights: this.generateHighlights(query, entry)
+      highlights: this.generateHighlights(query, entry),
     }));
   }
 
   private executeFTSSearch(query: string, options: SearchOptions): SearchResult[] {
     const ftsQuery = this.prepareFTSQuery(query);
-    
-    const entries = this.db.prepare(`
+
+    const entries = this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1177,23 +1275,27 @@ export class SQLiteAdapter implements IStorageAdapter {
       GROUP BY e.id
       ORDER BY relevance_score DESC
       LIMIT ? OFFSET ?
-    `).all(
-      ftsQuery,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10,
-      options.offset || 0
-    ) as any[];
+    `
+      )
+      .all(
+        ftsQuery,
+        ...(options.category ? [options.category] : []),
+        options.limit || 10,
+        options.offset || 0
+      ) as any[];
 
     return entries.map(entry => ({
       entry: this.mapRowToEntry(entry),
       score: Math.abs(entry.relevance_score) * 10,
       matchType: 'fuzzy' as any,
-      highlights: this.generateHighlights(query, entry)
+      highlights: this.generateHighlights(query, entry),
     }));
   }
 
   private executeFuzzySearch(query: string, options: SearchOptions): SearchResult[] {
-    const entries = this.db.prepare(`
+    const entries = this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1209,26 +1311,34 @@ export class SQLiteAdapter implements IStorageAdapter {
       HAVING relevance_score > 0
       ORDER BY relevance_score DESC, e.usage_count DESC
       LIMIT ? OFFSET ?
-    `).all(
-      `%${query}%`, `%${query}%`, `%${query}%`,
-      `%${query}%`, `%${query}%`, `%${query}%`,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10,
-      options.offset || 0
-    ) as any[];
+    `
+      )
+      .all(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        ...(options.category ? [options.category] : []),
+        options.limit || 10,
+        options.offset || 0
+      ) as any[];
 
     return entries.map(entry => ({
       entry: this.mapRowToEntry(entry),
       score: entry.relevance_score * 20,
       matchType: 'fuzzy' as any,
-      highlights: this.generateHighlights(query, entry)
+      highlights: this.generateHighlights(query, entry),
     }));
   }
 
   private executeCategorySearch(query: string, options: SearchOptions): SearchResult[] {
     const category = options.category || query.replace('category:', '');
-    
-    const entries = this.db.prepare(`
+
+    const entries = this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1240,24 +1350,24 @@ export class SQLiteAdapter implements IStorageAdapter {
       GROUP BY e.id
       ORDER BY e.usage_count DESC
       LIMIT ? OFFSET ?
-    `).all(
-      category,
-      options.limit || 10,
-      options.offset || 0
-    ) as any[];
+    `
+      )
+      .all(category, options.limit || 10, options.offset || 0) as any[];
 
     return entries.map(entry => ({
       entry: this.mapRowToEntry(entry),
       score: 90,
       matchType: 'category' as any,
-      highlights: []
+      highlights: [],
     }));
   }
 
   private executeTagSearch(query: string, options: SearchOptions): SearchResult[] {
     const tag = query.replace('tag:', '');
-    
-    const entries = this.db.prepare(`
+
+    const entries = this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1270,29 +1380,31 @@ export class SQLiteAdapter implements IStorageAdapter {
       GROUP BY e.id
       ORDER BY e.usage_count DESC
       LIMIT ? OFFSET ?
-    `).all(
-      tag,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10,
-      options.offset || 0
-    ) as any[];
+    `
+      )
+      .all(
+        tag,
+        ...(options.category ? [options.category] : []),
+        options.limit || 10,
+        options.offset || 0
+      ) as any[];
 
     return entries.map(entry => ({
       entry: this.mapRowToEntry(entry),
       score: 85,
       matchType: 'tag' as any,
-      highlights: []
+      highlights: [],
     }));
   }
 
   private generateHighlights(query: string, entry: any): string[] {
     const highlights: string[] = [];
     const queryLower = query.toLowerCase();
-    
+
     const fields = [
       { name: 'title', content: entry.title },
       { name: 'problem', content: entry.problem },
-      { name: 'solution', content: entry.solution }
+      { name: 'solution', content: entry.solution },
     ];
 
     fields.forEach(field => {
@@ -1317,18 +1429,18 @@ export class SQLiteAdapter implements IStorageAdapter {
     if (query.startsWith('tag:')) {
       return `tags:${query.substring(4)}`;
     }
-    
+
     // Clean and prepare query
     let ftsQuery = query.trim().replace(/['"]/g, '');
     const terms = ftsQuery.split(/\s+/).filter(term => term.length > 1);
-    
+
     if (terms.length === 0) return ftsQuery;
-    
+
     // Use phrase search for multi-word queries
     if (terms.length > 1) {
       return `"${terms.join(' ')}"`;
     }
-    
+
     // Single term with prefix matching
     return `${terms[0]}*`;
   }
@@ -1336,10 +1448,10 @@ export class SQLiteAdapter implements IStorageAdapter {
   private updateSingleEntryInTransaction(id: string, updates: KBEntryUpdate): boolean {
     // This is a helper method for batch updates within a transaction
     // Implementation similar to updateEntry but without transaction wrapper
-    
+
     const setClause = [];
     const values = [];
-    
+
     if (updates.title !== undefined) {
       setClause.push('title = ?');
       values.push(updates.title);
@@ -1364,26 +1476,30 @@ export class SQLiteAdapter implements IStorageAdapter {
       setClause.push('archived = ?');
       values.push(updates.archived ? 1 : 0);
     }
-    
+
     if (setClause.length > 0) {
       setClause.push('updated_at = CURRENT_TIMESTAMP');
       values.push(id);
-      
-      const result = this.db.prepare(`
+
+      const result = this.db
+        .prepare(
+          `
         UPDATE kb_entries 
         SET ${setClause.join(', ')}
         WHERE id = ?
-      `).run(...values);
-      
+      `
+        )
+        .run(...values);
+
       if (result.changes === 0) {
         return false;
       }
     }
-    
+
     // Update tags if provided
     if (updates.tags !== undefined) {
       this.db.prepare('DELETE FROM kb_tags WHERE entry_id = ?').run(id);
-      
+
       if (updates.tags.length > 0) {
         const tagStmt = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
         updates.tags.forEach(tag => {
@@ -1391,28 +1507,34 @@ export class SQLiteAdapter implements IStorageAdapter {
         });
       }
     }
-    
+
     // Update FTS index
     this.updateFTSIndexForUpdate(id, updates);
-    
+
     return true;
   }
 
   private async getAllEntries(options?: ExportOptions): Promise<KBEntry[]> {
     let whereClause = 'WHERE e.archived = 0';
     const params: any[] = [];
-    
+
     if (options?.filter?.categories) {
-      whereClause += ' AND e.category IN (' + options.filter.categories.map(() => '?').join(',') + ')';
+      whereClause +=
+        ' AND e.category IN (' + options.filter.categories.map(() => '?').join(',') + ')';
       params.push(...options.filter.categories);
     }
-    
+
     if (options?.filter?.dateRange) {
       whereClause += ' AND e.created_at BETWEEN ? AND ?';
-      params.push(options.filter.dateRange.start.toISOString(), options.filter.dateRange.end.toISOString());
+      params.push(
+        options.filter.dateRange.start.toISOString(),
+        options.filter.dateRange.end.toISOString()
+      );
     }
-    
-    const entries = this.db.prepare(`
+
+    const entries = this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags
@@ -1421,22 +1543,24 @@ export class SQLiteAdapter implements IStorageAdapter {
       ${whereClause}
       GROUP BY e.id
       ORDER BY e.created_at DESC
-    `).all(...params) as any[];
-    
+    `
+      )
+      .all(...params) as any[];
+
     return entries.map(entry => this.mapRowToEntry(entry));
   }
 
   private async getTableInfo(): Promise<TableInfo[]> {
-    const tables = this.db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-    ).all() as any[];
-    
+    const tables = this.db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+      .all() as any[];
+
     const tableInfos: TableInfo[] = [];
-    
+
     for (const table of tables) {
       const columns = this.db.prepare(`PRAGMA table_info(${table.name})`).all() as any[];
       const rowCount = this.db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as any;
-      
+
       const columnInfos: ColumnInfo[] = columns.map(col => ({
         name: col.name,
         type: col.type,
@@ -1445,23 +1569,25 @@ export class SQLiteAdapter implements IStorageAdapter {
         isPrimaryKey: Boolean(col.pk),
         isForeignKey: false, // TODO: Detect foreign keys
       }));
-      
+
       tableInfos.push({
         name: table.name,
         columns: columnInfos,
         rowCount: rowCount.count,
-        size: 0 // TODO: Calculate table size
+        size: 0, // TODO: Calculate table size
       });
     }
-    
+
     return tableInfos;
   }
 
   private async getIndexInfo(): Promise<IndexInfo[]> {
-    const indexes = this.db.prepare(
-      "SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'"
-    ).all() as any[];
-    
+    const indexes = this.db
+      .prepare(
+        "SELECT name, tbl_name, sql FROM sqlite_master WHERE type='index' AND name NOT LIKE 'sqlite_%'"
+      )
+      .all() as any[];
+
     return indexes.map(index => ({
       name: index.name,
       table: index.tbl_name,
@@ -1471,8 +1597,8 @@ export class SQLiteAdapter implements IStorageAdapter {
       size: 0, // TODO: Calculate index size
       usage: {
         scanCount: 0,
-        seekCount: 0
-      }
+        seekCount: 0,
+      },
     }));
   }
 }
@@ -1489,10 +1615,10 @@ class SQLiteTransaction implements StorageTransaction {
     if (!this.active) {
       throw new TransactionError('Transaction is not active', 'sqlite');
     }
-    
+
     try {
       const isSelect = sql.trim().toLowerCase().startsWith('select');
-      
+
       if (isSelect) {
         return this.db.prepare(sql).all(...params);
       } else {
@@ -1507,7 +1633,7 @@ class SQLiteTransaction implements StorageTransaction {
     if (!this.active) {
       throw new TransactionError('Transaction is not active', 'sqlite');
     }
-    
+
     try {
       this.transaction();
       this.active = false;
@@ -1520,7 +1646,7 @@ class SQLiteTransaction implements StorageTransaction {
     if (!this.active) {
       throw new TransactionError('Transaction is not active', 'sqlite');
     }
-    
+
     try {
       // SQLite auto-rollbacks on error, so just mark as inactive
       this.active = false;

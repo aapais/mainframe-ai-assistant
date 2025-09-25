@@ -1,6 +1,6 @@
 /**
  * Backup Scheduler
- * 
+ *
  * Advanced scheduling system for automated backups with cron-like expressions,
  * intelligent retry logic, and adaptive scheduling based on system conditions.
  */
@@ -43,7 +43,7 @@ export interface ScheduleConditions {
 
 export interface TimeWindow {
   start: string; // HH:MM format
-  end: string;   // HH:MM format
+  end: string; // HH:MM format
   weekdays?: number[]; // 0-6, 0 = Sunday
   timezone?: string;
 }
@@ -100,14 +100,16 @@ class CronParser {
     hour: [0, 23],
     dayOfMonth: [1, 31],
     month: [1, 12],
-    dayOfWeek: [0, 6] // 0 = Sunday
+    dayOfWeek: [0, 6], // 0 = Sunday
   };
 
   static parse(expression: string): CronExpression {
     const parts = expression.trim().split(/\s+/);
-    
+
     if (parts.length !== 5) {
-      throw new Error(`Invalid cron expression: ${expression}. Expected 5 fields (minute hour day month weekday)`);
+      throw new Error(
+        `Invalid cron expression: ${expression}. Expected 5 fields (minute hour day month weekday)`
+      );
     }
 
     const parsedFields: Record<string, number[]> = {};
@@ -116,7 +118,7 @@ class CronParser {
       const fieldName = this.CRON_FIELDS[i];
       const fieldValue = parts[i];
       const [min, max] = this.FIELD_RANGES[fieldName];
-      
+
       parsedFields[fieldName] = this.parseField(fieldValue, min, max, fieldName);
     }
 
@@ -152,18 +154,19 @@ class CronParser {
   private static parseStep(field: string, min: number, max: number): number[] {
     const [range, step] = field.split('/');
     const stepValue = parseInt(step, 10);
-    
+
     if (isNaN(stepValue) || stepValue <= 0) {
       throw new Error(`Invalid step value: ${step}`);
     }
 
-    const baseRange = range === '*' ? this.range(min, max) : this.parseField(range, min, max, 'step');
+    const baseRange =
+      range === '*' ? this.range(min, max) : this.parseField(range, min, max, 'step');
     return baseRange.filter((_, index) => index % stepValue === 0);
   }
 
   private static parseRange(field: string, min: number, max: number): number[] {
     const [start, end] = field.split('-').map(x => parseInt(x, 10));
-    
+
     if (isNaN(start) || isNaN(end) || start < min || end > max || start > end) {
       throw new Error(`Invalid range: ${field}`);
     }
@@ -204,7 +207,8 @@ class CronExpression {
     next.setMinutes(next.getMinutes() + 1); // Start from next minute
 
     // Find next valid time
-    for (let i = 0; i < 366 * 24 * 60; i++) { // Max 1 year ahead
+    for (let i = 0; i < 366 * 24 * 60; i++) {
+      // Max 1 year ahead
       if (this.matches(next)) {
         return next;
       }
@@ -236,7 +240,7 @@ class CronExpression {
       this.fields.hour.join(','),
       this.fields.dayOfMonth.join(','),
       this.fields.month.join(','),
-      this.fields.dayOfWeek.join(',')
+      this.fields.dayOfWeek.join(','),
     ].join(' ');
   }
 }
@@ -280,7 +284,6 @@ export class BackupScheduler extends EventEmitter {
       this.emit('scheduler:initialized');
 
       console.log(`✅ Backup Scheduler initialized with ${this.schedules.size} schedules`);
-
     } catch (error) {
       console.error('❌ Backup Scheduler initialization failed:', error);
       throw error;
@@ -342,7 +345,7 @@ export class BackupScheduler extends EventEmitter {
     }
 
     const scheduleId = this.generateScheduleId();
-    
+
     const schedule: ScheduleConfig = {
       id: scheduleId,
       name: options.name || `Backup Schedule ${scheduleId}`,
@@ -355,15 +358,15 @@ export class BackupScheduler extends EventEmitter {
         backoffMultiplier: 2,
         maxRetryDelayMs: 3600000, // 1 hour
         retryOnFailure: true,
-        ...options.retryPolicy
+        ...options.retryPolicy,
       },
       conditions: options.conditions,
       notifications: options.notifications,
       priority: options.priority || 'normal',
       metadata: {
         createdAt: new Date().toISOString(),
-        createdBy: 'system'
-      }
+        createdBy: 'system',
+      },
     };
 
     this.schedules.set(scheduleId, schedule);
@@ -481,8 +484,10 @@ export class BackupScheduler extends EventEmitter {
       .filter(e => e.actualStartTime && e.endTime)
       .map(e => e.endTime!.getTime() - e.actualStartTime!.getTime());
 
-    const averageExecutionTime = executionTimes.length > 0 ?
-      executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length : 0;
+    const averageExecutionTime =
+      executionTimes.length > 0
+        ? executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
+        : 0;
 
     const successRate = total > 0 ? (successful / total) * 100 : 100;
 
@@ -509,7 +514,7 @@ export class BackupScheduler extends EventEmitter {
       lastExecution: history.length > 0 ? history[history.length - 1].scheduledTime : undefined,
       nextExecution,
       successRate,
-      reliability
+      reliability,
     };
   }
 
@@ -622,8 +627,9 @@ export class BackupScheduler extends EventEmitter {
     if (!this.isRunning) return;
 
     const now = new Date();
-    const activeExecutions = Array.from(this.executions.values())
-      .filter(e => e.status === 'running').length;
+    const activeExecutions = Array.from(this.executions.values()).filter(
+      e => e.status === 'running'
+    ).length;
 
     // Check if we're at max concurrent backup limit
     if (activeExecutions >= this.config.maxConcurrentBackups) {
@@ -639,9 +645,11 @@ export class BackupScheduler extends EventEmitter {
 
     // Check for failed executions that should retry
     for (const execution of this.executions.values()) {
-      if (execution.status === 'failed' && 
-          execution.nextRetryTime && 
-          execution.nextRetryTime <= now) {
+      if (
+        execution.status === 'failed' &&
+        execution.nextRetryTime &&
+        execution.nextRetryTime <= now
+      ) {
         await this.retryFailedExecution(execution);
       }
     }
@@ -666,7 +674,6 @@ export class BackupScheduler extends EventEmitter {
       }
 
       await this.scheduleExecutionAt(scheduleId, nextTime);
-
     } catch (error) {
       console.error(`❌ Failed to schedule next execution for ${scheduleId}:`, error);
     }
@@ -674,13 +681,13 @@ export class BackupScheduler extends EventEmitter {
 
   private async scheduleExecutionAt(scheduleId: string, time: Date): Promise<void> {
     const executionId = this.generateExecutionId();
-    
+
     const execution: ScheduleExecution = {
       id: executionId,
       scheduleId,
       scheduledTime: time,
       status: 'pending',
-      attempt: 1
+      attempt: 1,
     };
 
     this.executions.set(executionId, execution);
@@ -725,9 +732,10 @@ export class BackupScheduler extends EventEmitter {
 
     // Check system load (simplified check)
     if (conditions.systemLoadThreshold) {
-      const activeBackups = Array.from(this.executions.values())
-        .filter(e => e.status === 'running').length;
-      
+      const activeBackups = Array.from(this.executions.values()).filter(
+        e => e.status === 'running'
+      ).length;
+
       if (activeBackups >= (conditions.maxConcurrentBackups || this.config.maxConcurrentBackups)) {
         console.log(`⏸️ Skipping execution due to concurrent backup limit: ${schedule.name}`);
         return true;
@@ -790,7 +798,7 @@ export class BackupScheduler extends EventEmitter {
       if (result.success) {
         execution.status = 'completed';
         this.emit('execution:completed', execution);
-        
+
         // Send success notification if configured
         if (schedule.notifications?.onSuccess) {
           await this.sendNotification(schedule, execution, 'success');
@@ -798,7 +806,6 @@ export class BackupScheduler extends EventEmitter {
 
         // Schedule next execution
         await this.scheduleNextExecution(execution.scheduleId);
-
       } else {
         execution.status = 'failed';
         execution.error = result.error;
@@ -807,26 +814,26 @@ export class BackupScheduler extends EventEmitter {
         // Handle retry logic
         await this.handleExecutionFailure(execution, schedule);
       }
-
     } catch (error) {
       execution.status = 'failed';
       execution.error = error.message;
       this.emit('execution:failed', execution);
 
       await this.handleExecutionFailure(execution, schedule);
-
     } finally {
       execution.endTime = new Date();
       this.executions.delete(execution.id);
     }
   }
 
-  private async waitForBackupCompletion(backupJobId: string): Promise<{ success: boolean; error?: string }> {
-    return new Promise((resolve) => {
+  private async waitForBackupCompletion(
+    backupJobId: string
+  ): Promise<{ success: boolean; error?: string }> {
+    return new Promise(resolve => {
       const checkStatus = async () => {
         try {
           const job = await this.backupService.getBackupJob(backupJobId);
-          
+
           if (!job) {
             resolve({ success: false, error: 'Backup job not found' });
             return;
@@ -840,7 +847,6 @@ export class BackupScheduler extends EventEmitter {
             // Still running, check again in 10 seconds
             setTimeout(checkStatus, 10000);
           }
-
         } catch (error) {
           resolve({ success: false, error: error.message });
         }
@@ -850,7 +856,10 @@ export class BackupScheduler extends EventEmitter {
     });
   }
 
-  private async handleExecutionFailure(execution: ScheduleExecution, schedule: ScheduleConfig): Promise<void> {
+  private async handleExecutionFailure(
+    execution: ScheduleExecution,
+    schedule: ScheduleConfig
+  ): Promise<void> {
     const retryPolicy = schedule.retryPolicy;
 
     // Send failure notification if configured
@@ -870,13 +879,14 @@ export class BackupScheduler extends EventEmitter {
 
       this.emit('execution:retry_scheduled', execution);
 
-      console.log(`🔄 Retry scheduled for ${execution.scheduleId} in ${delay}ms (attempt ${execution.attempt}/${retryPolicy.maxAttempts})`);
+      console.log(
+        `🔄 Retry scheduled for ${execution.scheduleId} in ${delay}ms (attempt ${execution.attempt}/${retryPolicy.maxAttempts})`
+      );
 
       // Send retry notification if configured
       if (schedule.notifications?.onRetry) {
         await this.sendNotification(schedule, execution, 'retry');
       }
-
     } else {
       // No more retries, schedule next execution
       console.log(`❌ Execution failed permanently: ${execution.scheduleId} (${execution.error})`);
@@ -896,8 +906,8 @@ export class BackupScheduler extends EventEmitter {
   }
 
   private async sendNotification(
-    schedule: ScheduleConfig, 
-    execution: ScheduleExecution, 
+    schedule: ScheduleConfig,
+    execution: ScheduleExecution,
     type: 'success' | 'failure' | 'retry'
   ): Promise<void> {
     if (!schedule.notifications) return;
@@ -914,12 +924,20 @@ export class BackupScheduler extends EventEmitter {
           switch (channel) {
             case 'webhook':
               if (schedule.notifications.webhookUrl) {
-                await this.sendWebhookNotification(schedule.notifications.webhookUrl, message, type);
+                await this.sendWebhookNotification(
+                  schedule.notifications.webhookUrl,
+                  message,
+                  type
+                );
               }
               break;
             case 'email':
               if (schedule.notifications.emailRecipients) {
-                await this.sendEmailNotification(schedule.notifications.emailRecipients, message, type);
+                await this.sendEmailNotification(
+                  schedule.notifications.emailRecipients,
+                  message,
+                  type
+                );
               }
               break;
             case 'log':
@@ -934,12 +952,14 @@ export class BackupScheduler extends EventEmitter {
   }
 
   private buildNotificationMessage(
-    schedule: ScheduleConfig, 
-    execution: ScheduleExecution, 
+    schedule: ScheduleConfig,
+    execution: ScheduleExecution,
     type: 'success' | 'failure' | 'retry'
   ): string {
-    const duration = execution.endTime && execution.actualStartTime ?
-      execution.endTime.getTime() - execution.actualStartTime.getTime() : 0;
+    const duration =
+      execution.endTime && execution.actualStartTime
+        ? execution.endTime.getTime() - execution.actualStartTime.getTime()
+        : 0;
 
     switch (type) {
       case 'success':
@@ -958,7 +978,11 @@ export class BackupScheduler extends EventEmitter {
     console.log(`🔗 Webhook notification to ${url}: ${message}`);
   }
 
-  private async sendEmailNotification(recipients: string[], message: string, type: string): Promise<void> {
+  private async sendEmailNotification(
+    recipients: string[],
+    message: string,
+    type: string
+  ): Promise<void> {
     // TODO: Implement email notification
     console.log(`📧 Email notification to ${recipients.join(', ')}: ${message}`);
   }
@@ -995,7 +1019,7 @@ export function createCronExpression(options: {
     options.hour || '*',
     options.dayOfMonth || '*',
     options.month || '*',
-    options.dayOfWeek || '*'
+    options.dayOfWeek || '*',
   ].join(' ');
 }
 
@@ -1022,5 +1046,5 @@ export const COMMON_SCHEDULES = {
   EVERY_WEEK_SUNDAY_MIDNIGHT: '0 0 * * 0',
   EVERY_MONTH_FIRST_DAY: '0 0 1 * *',
   WEEKDAYS_6AM: '0 6 * * 1-5',
-  BUSINESS_HOURS_EVERY_4H: '0 8,12,16 * * 1-5'
+  BUSINESS_HOURS_EVERY_4H: '0 8,12,16 * * 1-5',
 };

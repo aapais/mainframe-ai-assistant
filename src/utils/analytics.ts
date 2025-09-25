@@ -66,7 +66,7 @@ class InteractionAnalytics {
       debug: false,
       privacyMode: true,
       sampleRate: 1.0,
-      ...config
+      ...config,
     };
 
     this.sessionId = this.generateSessionId();
@@ -97,7 +97,7 @@ class InteractionAnalytics {
       sessionId: this.sessionId,
       data: this.sanitizeData(data),
       performance: this.getPerformanceMetrics(),
-      accessibility: this.getAccessibilityContext()
+      accessibility: this.getAccessibilityContext(),
     };
 
     this.eventBuffer.push(event);
@@ -120,7 +120,7 @@ class InteractionAnalytics {
     this.track('keyboard_navigation', {
       action,
       ...data,
-      inputMethod: 'keyboard'
+      inputMethod: 'keyboard',
     });
   }
 
@@ -131,7 +131,7 @@ class InteractionAnalytics {
     this.track('touch_gesture', {
       action,
       ...data,
-      inputMethod: 'touch'
+      inputMethod: 'touch',
     });
   }
 
@@ -142,7 +142,7 @@ class InteractionAnalytics {
     this.track('voice_navigation', {
       action,
       ...data,
-      inputMethod: 'voice'
+      inputMethod: 'voice',
     });
   }
 
@@ -152,7 +152,7 @@ class InteractionAnalytics {
   trackSearchInteraction(action: string, data: Record<string, any> = {}): void {
     this.track('search_interaction', {
       action,
-      ...data
+      ...data,
     });
   }
 
@@ -162,7 +162,7 @@ class InteractionAnalytics {
   trackResultInteraction(action: string, data: Record<string, any> = {}): void {
     this.track('result_interaction', {
       action,
-      ...data
+      ...data,
     });
   }
 
@@ -172,7 +172,7 @@ class InteractionAnalytics {
   trackAccessibility(action: string, data: Record<string, any> = {}): void {
     this.track('accessibility', {
       action,
-      ...data
+      ...data,
     });
   }
 
@@ -183,7 +183,7 @@ class InteractionAnalytics {
     this.track('performance', {
       action,
       ...data,
-      sessionDuration: performance.now() - this.startTime
+      sessionDuration: performance.now() - this.startTime,
     });
   }
 
@@ -193,7 +193,7 @@ class InteractionAnalytics {
   trackPreferences(action: string, data: Record<string, any> = {}): void {
     this.track('user_preferences', {
       action,
-      ...data
+      ...data,
     });
   }
 
@@ -246,7 +246,7 @@ class InteractionAnalytics {
       sessionId: this.sessionId,
       eventCount: this.eventCount,
       sessionDuration,
-      topEvents
+      topEvents,
     };
   }
 
@@ -270,7 +270,7 @@ class InteractionAnalytics {
     return {
       config: this.config,
       summary: this.getSummary(),
-      events: this.getStoredEvents()
+      events: this.getStoredEvents(),
     };
   }
 
@@ -306,7 +306,7 @@ class InteractionAnalytics {
 
     return {
       memory: (performance as any).memory ? (performance as any).memory.usedJSHeapSize : undefined,
-      responseTime: performance.now() - this.startTime
+      responseTime: performance.now() - this.startTime,
     };
   }
 
@@ -318,7 +318,7 @@ class InteractionAnalytics {
       keyboardOnly: this.detectKeyboardOnly(),
       voiceNavigation: this.detectVoiceNavigation(),
       highContrast: window.matchMedia('(prefers-contrast: high)').matches,
-      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     };
   }
 
@@ -339,10 +339,7 @@ class InteractionAnalytics {
 
   private detectVoiceNavigation(): boolean {
     // Check for voice navigation features
-    return !!(
-      'webkitSpeechRecognition' in window ||
-      'SpeechRecognition' in window
-    );
+    return !!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
   }
 
   private async sendToEndpoint(events: InteractionEvent[]): Promise<void> {
@@ -352,13 +349,13 @@ class InteractionAnalytics {
       const response = await fetch(this.config.endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessionId: this.sessionId,
           events,
-          timestamp: Date.now()
-        })
+          timestamp: Date.now(),
+        }),
       });
 
       if (!response.ok) {

@@ -12,7 +12,7 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import { DatabaseManager } from '../../../database/DatabaseManager';
 import { HandlerUtils, HandlerConfigs } from './index';
@@ -79,7 +79,9 @@ export class SearchHistoryHandler {
   /**
    * Get search history with popular searches
    */
-  handleGetHistory: IPCHandlerFunction<'searchHistory:get'> = async (request: GetHistoryRequest) => {
+  handleGetHistory: IPCHandlerFunction<'searchHistory:get'> = async (
+    request: GetHistoryRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -101,7 +103,9 @@ export class SearchHistoryHandler {
         LIMIT ?
       `;
 
-      const history = this.dbManager.db.prepare(historyQuery).all(userId, limit) as SearchHistoryEntry[];
+      const history = this.dbManager.db
+        .prepare(historyQuery)
+        .all(userId, limit) as SearchHistoryEntry[];
 
       // Get popular searches
       const popularQuery = `
@@ -119,13 +123,16 @@ export class SearchHistoryHandler {
         LIMIT 20
       `;
 
-      const popular = this.dbManager.db.prepare(popularQuery).all(userId).map((row: any) => ({
-        query: row.query,
-        count: row.count,
-        lastUsed: new Date(row.lastUsed),
-        avgResultCount: Math.round(row.avgResultCount * 10) / 10,
-        successRate: Math.round(row.successRate * 100) / 100
-      }));
+      const popular = this.dbManager.db
+        .prepare(popularQuery)
+        .all(userId)
+        .map((row: any) => ({
+          query: row.query,
+          count: row.count,
+          lastUsed: new Date(row.lastUsed),
+          avgResultCount: Math.round(row.avgResultCount * 10) / 10,
+          successRate: Math.round(row.successRate * 100) / 100,
+        }));
 
       let analytics;
       if (includeAnalytics) {
@@ -144,16 +151,15 @@ export class SearchHistoryHandler {
           totalSearches: analyticsRow.totalSearches,
           uniqueQueries: analyticsRow.uniqueQueries,
           averageResultCount: Math.round(analyticsRow.averageResultCount * 10) / 10,
-          successRate: Math.round(analyticsRow.successRate * 100) / 100
+          successRate: Math.round(analyticsRow.successRate * 100) / 100,
         };
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { history, popular, analytics }
-      ) as GetHistoryResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        history,
+        popular,
+        analytics,
+      }) as GetHistoryResponse;
     } catch (error) {
       console.error('Get search history error:', error);
       return HandlerUtils.createErrorResponse(
@@ -189,10 +195,11 @@ export class SearchHistoryHandler {
         query: HandlerUtils.sanitizeString(entry.query, 500),
         timestamp: entry.timestamp || new Date(),
         resultCount: typeof entry.resultCount === 'number' ? Math.max(0, entry.resultCount) : null,
-        executionTime: typeof entry.executionTime === 'number' ? Math.max(0, entry.executionTime) : null,
+        executionTime:
+          typeof entry.executionTime === 'number' ? Math.max(0, entry.executionTime) : null,
         successful: typeof entry.successful === 'boolean' ? entry.successful : null,
         userId: entry.userId || 'default',
-        sessionId: entry.sessionId || `session-${Date.now()}`
+        sessionId: entry.sessionId || `session-${Date.now()}`,
       };
 
       // Insert into database
@@ -202,15 +209,17 @@ export class SearchHistoryHandler {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
 
-      this.dbManager.db.prepare(insertQuery).run(
-        sanitizedEntry.query,
-        sanitizedEntry.timestamp.toISOString(),
-        sanitizedEntry.resultCount,
-        sanitizedEntry.executionTime,
-        sanitizedEntry.successful,
-        sanitizedEntry.userId,
-        sanitizedEntry.sessionId
-      );
+      this.dbManager.db
+        .prepare(insertQuery)
+        .run(
+          sanitizedEntry.query,
+          sanitizedEntry.timestamp.toISOString(),
+          sanitizedEntry.resultCount,
+          sanitizedEntry.executionTime,
+          sanitizedEntry.successful,
+          sanitizedEntry.userId,
+          sanitizedEntry.sessionId
+        );
 
       // Cleanup old entries (keep last 1000 per user)
       const cleanupQuery = `
@@ -225,12 +234,10 @@ export class SearchHistoryHandler {
 
       this.dbManager.db.prepare(cleanupQuery).run(sanitizedEntry.userId, sanitizedEntry.userId);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { success: true, id: this.dbManager.db.prepare('SELECT last_insert_rowid()').get() }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        success: true,
+        id: this.dbManager.db.prepare('SELECT last_insert_rowid()').get(),
+      });
     } catch (error) {
       console.error('Add search history entry error:', error);
       return HandlerUtils.createErrorResponse(
@@ -245,7 +252,9 @@ export class SearchHistoryHandler {
   /**
    * Search within search history
    */
-  handleSearchHistory: IPCHandlerFunction<'searchHistory:search'> = async (request: SearchHistoryRequest) => {
+  handleSearchHistory: IPCHandlerFunction<'searchHistory:search'> = async (
+    request: SearchHistoryRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -277,24 +286,18 @@ export class SearchHistoryHandler {
         LIMIT ?
       `;
 
-      const results = this.dbManager.db.prepare(historySearchQuery).all(
-        userId,
-        `%${sanitizedQuery}%`,
-        limit
-      ).map((row: any) => ({
-        query: row.query,
-        timestamp: new Date(row.timestamp),
-        avgResultCount: Math.round(row.avgResultCount * 10) / 10,
-        frequency: row.frequency,
-        successRate: Math.round(row.successRate * 100) / 100
-      }));
+      const results = this.dbManager.db
+        .prepare(historySearchQuery)
+        .all(userId, `%${sanitizedQuery}%`, limit)
+        .map((row: any) => ({
+          query: row.query,
+          timestamp: new Date(row.timestamp),
+          avgResultCount: Math.round(row.avgResultCount * 10) / 10,
+          frequency: row.frequency,
+          successRate: Math.round(row.successRate * 100) / 100,
+        }));
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        results
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, results);
     } catch (error) {
       console.error('Search history error:', error);
       return HandlerUtils.createErrorResponse(
@@ -309,7 +312,9 @@ export class SearchHistoryHandler {
   /**
    * Remove specific entry from history
    */
-  handleRemoveEntry: IPCHandlerFunction<'searchHistory:remove'> = async (request: RemoveEntryRequest) => {
+  handleRemoveEntry: IPCHandlerFunction<'searchHistory:remove'> = async (
+    request: RemoveEntryRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -330,12 +335,10 @@ export class SearchHistoryHandler {
       const removeQuery = `DELETE FROM search_history WHERE user_id = ? AND query = ?`;
       const result = this.dbManager.db.prepare(removeQuery).run(userId, sanitizedQuery);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { success: true, deletedCount: result.changes }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        success: true,
+        deletedCount: result.changes,
+      });
     } catch (error) {
       console.error('Remove search history entry error:', error);
       return HandlerUtils.createErrorResponse(
@@ -350,7 +353,9 @@ export class SearchHistoryHandler {
   /**
    * Clear all search history for a user
    */
-  handleClearHistory: IPCHandlerFunction<'searchHistory:clear'> = async (request: ClearHistoryRequest) => {
+  handleClearHistory: IPCHandlerFunction<'searchHistory:clear'> = async (
+    request: ClearHistoryRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -370,12 +375,10 @@ export class SearchHistoryHandler {
       const clearQuery = `DELETE FROM search_history WHERE user_id = ?`;
       const result = this.dbManager.db.prepare(clearQuery).run(userId);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { success: true, deletedCount: result.changes }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        success: true,
+        deletedCount: result.changes,
+      });
     } catch (error) {
       console.error('Clear search history error:', error);
       return HandlerUtils.createErrorResponse(
@@ -390,7 +393,9 @@ export class SearchHistoryHandler {
   /**
    * Get search history analytics
    */
-  handleGetAnalytics: IPCHandlerFunction<'searchHistory:analytics'> = async (request: BaseIPCRequest) => {
+  handleGetAnalytics: IPCHandlerFunction<'searchHistory:analytics'> = async (
+    request: BaseIPCRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -443,9 +448,9 @@ export class SearchHistoryHandler {
           )) FROM top_queries) as top_queries
       `;
 
-      const result = this.dbManager.db.prepare(analyticsQuery).get(
-        userId, userId, userId, userId, userId, userId
-      ) as any;
+      const result = this.dbManager.db
+        .prepare(analyticsQuery)
+        .get(userId, userId, userId, userId, userId, userId) as any;
 
       const analytics = {
         totalSearches: result.total_searches,
@@ -453,15 +458,10 @@ export class SearchHistoryHandler {
         averageResultCount: Math.round(result.avg_result_count * 10) / 10,
         overallSuccessRate: Math.round(result.overall_success_rate * 100) / 100,
         dailyStats: JSON.parse(result.daily_stats || '[]'),
-        topQueries: JSON.parse(result.top_queries || '[]')
+        topQueries: JSON.parse(result.top_queries || '[]'),
       };
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        analytics
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, analytics);
     } catch (error) {
       console.error('Get search analytics error:', error);
       return HandlerUtils.createErrorResponse(
@@ -482,7 +482,7 @@ export const searchHistoryHandlerConfigs = {
   'searchHistory:remove': HandlerConfigs.WRITE_OPERATIONS,
   'searchHistory:clear': {
     ...HandlerConfigs.WRITE_OPERATIONS,
-    rateLimitConfig: { requests: 5, windowMs: 300000 } // More restrictive for clear operations
+    rateLimitConfig: { requests: 5, windowMs: 300000 }, // More restrictive for clear operations
   },
-  'searchHistory:analytics': HandlerConfigs.READ_OPERATIONS
+  'searchHistory:analytics': HandlerConfigs.READ_OPERATIONS,
 } as const;

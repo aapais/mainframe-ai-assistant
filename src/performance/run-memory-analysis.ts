@@ -21,7 +21,7 @@ import {
   setupMemoryMonitoring,
   runMemoryAnalysis,
   runLongSessionTest,
-  formatBytes
+  formatBytes,
 } from './memory-usage-example';
 
 interface AnalysisOptions {
@@ -42,7 +42,7 @@ class MemoryAnalysisRunner {
 
   async run(options: AnalysisOptions): Promise<void> {
     console.log('🚀 Starting Memory Analysis for Mainframe KB Assistant');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
 
     try {
       // Initialize coordination hooks
@@ -70,7 +70,6 @@ class MemoryAnalysisRunner {
       }
 
       console.log('✅ Memory analysis completed successfully');
-
     } catch (error) {
       console.error('❌ Memory analysis failed:', error);
       process.exit(1);
@@ -89,14 +88,16 @@ class MemoryAnalysisRunner {
       const execAsync = promisify(exec);
 
       try {
-        await execAsync('npx claude-flow@alpha hooks pre-task --description "comprehensive-memory-analysis"', {
-          timeout: 5000
-        });
+        await execAsync(
+          'npx claude-flow@alpha hooks pre-task --description "comprehensive-memory-analysis"',
+          {
+            timeout: 5000,
+          }
+        );
         console.log('✅ Coordination hooks initialized');
       } catch (hookError) {
         console.log('⚠️ Coordination hooks not available, continuing without coordination');
       }
-
     } catch (error) {
       console.log('⚠️ Coordination initialization skipped:', error.message);
     }
@@ -109,29 +110,31 @@ class MemoryAnalysisRunner {
       snapshotInterval: options.interval,
       maxSnapshots: options.mode === 'long-session' ? 10000 : 1000,
       leakThreshold: options.leakThreshold,
-      gcPressureThreshold: 50
+      gcPressureThreshold: 50,
     };
 
     const analyzer = new MemoryAnalyzer(config);
 
     // Setup event listeners
-    analyzer.on('monitoring:started', (baseline) => {
+    analyzer.on('monitoring:started', baseline => {
       console.log(`📊 Monitoring started. Baseline: ${formatBytes(baseline.heapUsed)}`);
     });
 
-    analyzer.on('snapshot:taken', (snapshot) => {
+    analyzer.on('snapshot:taken', snapshot => {
       if (options.verbose) {
-        console.log(`📸 Snapshot: ${formatBytes(snapshot.heapUsed)} heap, ${snapshot.leakSuspects.length} leaks`);
+        console.log(
+          `📸 Snapshot: ${formatBytes(snapshot.heapUsed)} heap, ${snapshot.leakSuspects.length} leaks`
+        );
       }
     });
 
-    analyzer.on('gc:occurred', (gcEvent) => {
+    analyzer.on('gc:occurred', gcEvent => {
       if (options.verbose && gcEvent.duration > 50) {
         console.log(`🗑️ GC: ${gcEvent.duration.toFixed(2)}ms`);
       }
     });
 
-    analyzer.on('long-session:alert', (issues) => {
+    analyzer.on('long-session:alert', issues => {
       console.warn(`🚨 Long session alert: ${issues.length} critical issues`);
       issues.forEach(issue => {
         console.warn(`  - ${issue.type}: ${issue.description}`);
@@ -267,13 +270,28 @@ class MemoryAnalysisRunner {
 
       switch (options.format) {
         case 'json':
-          await this.exportJSONReport(analysisReport, validationResult, options.output, baseFilename);
+          await this.exportJSONReport(
+            analysisReport,
+            validationResult,
+            options.output,
+            baseFilename
+          );
           break;
         case 'html':
-          await this.exportHTMLReport(analysisReport, validationResult, options.output, baseFilename);
+          await this.exportHTMLReport(
+            analysisReport,
+            validationResult,
+            options.output,
+            baseFilename
+          );
           break;
         case 'markdown':
-          await this.exportMarkdownReport(analysisReport, validationResult, options.output, baseFilename);
+          await this.exportMarkdownReport(
+            analysisReport,
+            validationResult,
+            options.output,
+            baseFilename
+          );
           break;
         case 'csv':
           await this.exportCSVReport(analysisReport, options.output, baseFilename);
@@ -286,7 +304,6 @@ class MemoryAnalysisRunner {
         await fs.writeFile(rawFile, JSON.stringify(analysisReport, null, 2));
         console.log(`📊 Raw data exported to: ${rawFile}`);
       }
-
     } catch (error) {
       console.error('❌ Failed to export reports:', error);
     }
@@ -305,8 +322,8 @@ class MemoryAnalysisRunner {
       metadata: {
         version: '2.0.0',
         tool: 'Memory Analysis System',
-        duration: Date.now() - this.startTime
-      }
+        duration: Date.now() - this.startTime,
+      },
     };
 
     const filename = path.join(path.dirname(outputPath), `${baseFilename}.json`);
@@ -332,7 +349,10 @@ class MemoryAnalysisRunner {
     outputPath: string,
     baseFilename: string
   ): Promise<void> {
-    const markdownContent = this.reportGenerator.generateMarkdownReport(analysisReport, validationResult);
+    const markdownContent = this.reportGenerator.generateMarkdownReport(
+      analysisReport,
+      validationResult
+    );
     const filename = path.join(path.dirname(outputPath), `${baseFilename}.md`);
     await fs.writeFile(filename, markdownContent);
     console.log(`📄 Markdown report exported to: ${filename}`);
@@ -351,7 +371,7 @@ class MemoryAnalysisRunner {
 
   private displaySummary(validationResult: any): void {
     console.log('\n📊 Analysis Summary');
-    console.log('=' .repeat(40));
+    console.log('='.repeat(40));
     console.log(`Overall Grade: ${validationResult.grade} (${validationResult.score}/100)`);
     console.log(`Status: ${validationResult.passed ? '✅ PASSED' : '❌ FAILED'}`);
     console.log(`Critical Issues: ${validationResult.summary.criticalIssues}`);
@@ -367,11 +387,13 @@ class MemoryAnalysisRunner {
 
   private displayValidationResults(validationResult: any): void {
     console.log('\n✅ Validation Results');
-    console.log('=' .repeat(40));
+    console.log('='.repeat(40));
 
     Object.entries(validationResult.metrics).forEach(([key, metric]: [string, any]) => {
       const status = metric.passed ? '✅' : '❌';
-      console.log(`${status} ${metric.name}: ${metric.actual} ${metric.unit} (target: ${metric.target})`);
+      console.log(
+        `${status} ${metric.name}: ${metric.actual} ${metric.unit} (target: ${metric.target})`
+      );
     });
 
     console.log('\n📋 Compliance Status:');
@@ -385,17 +407,23 @@ class MemoryAnalysisRunner {
   private parseDuration(duration: string): number {
     const match = duration.match(/^(\d+)([hms])$/);
     if (!match) {
-      throw new Error(`Invalid duration format: ${duration}. Use format like '2h', '30m', or '60s'`);
+      throw new Error(
+        `Invalid duration format: ${duration}. Use format like '2h', '30m', or '60s'`
+      );
     }
 
     const value = parseInt(match[1]);
     const unit = match[2];
 
     switch (unit) {
-      case 'h': return value * 60 * 60 * 1000;
-      case 'm': return value * 60 * 1000;
-      case 's': return value * 1000;
-      default: throw new Error(`Unknown time unit: ${unit}`);
+      case 'h':
+        return value * 60 * 60 * 1000;
+      case 'm':
+        return value * 60 * 1000;
+      case 's':
+        return value * 1000;
+      default:
+        throw new Error(`Unknown time unit: ${unit}`);
     }
   }
 
@@ -412,12 +440,15 @@ class MemoryAnalysisRunner {
         const { promisify } = await import('util');
         const execAsync = promisify(exec);
 
-        await execAsync('npx claude-flow@alpha hooks post-edit --memory-key "swarm/performance/memory" --file "memory-analysis-complete"', {
-          timeout: 5000
-        });
+        await execAsync(
+          'npx claude-flow@alpha hooks post-edit --memory-key "swarm/performance/memory" --file "memory-analysis-complete"',
+          {
+            timeout: 5000,
+          }
+        );
 
         await execAsync('npx claude-flow@alpha hooks post-task --task-id "memory-analysis"', {
-          timeout: 5000
+          timeout: 5000,
         });
 
         console.log('✅ Coordination hooks updated');
@@ -425,7 +456,6 @@ class MemoryAnalysisRunner {
         // Don't fail on hook errors
         console.log('⚠️ Coordination hook update skipped');
       }
-
     } catch (error) {
       console.error('⚠️ Cleanup error:', error.message);
     }
@@ -439,8 +469,16 @@ program
   .version('2.0.0');
 
 program
-  .option('-m, --mode <mode>', 'Analysis mode: snapshot, continuous, long-session, validation', 'snapshot')
-  .option('-d, --duration <duration>', 'Duration for continuous/long-session modes (e.g., 2h, 30m, 60s)', '1h')
+  .option(
+    '-m, --mode <mode>',
+    'Analysis mode: snapshot, continuous, long-session, validation',
+    'snapshot'
+  )
+  .option(
+    '-d, --duration <duration>',
+    'Duration for continuous/long-session modes (e.g., 2h, 30m, 60s)',
+    '1h'
+  )
   .option('-o, --output <path>', 'Output directory for reports', './reports')
   .option('-f, --format <format>', 'Report format: json, html, markdown, csv', 'html')
   .option('-t, --leak-threshold <bytes>', 'Memory leak threshold in bytes', '1048576') // 1MB

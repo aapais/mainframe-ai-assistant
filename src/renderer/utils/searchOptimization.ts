@@ -63,10 +63,43 @@ export class InvertedIndex {
   private index = new Map<string, SearchIndex>();
   private documents = new Map<string, SearchDocument>();
   private stopWords = new Set([
-    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
-    'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
-    'to', 'was', 'will', 'with', 'this', 'but', 'they', 'have', 'had',
-    'what', 'said', 'each', 'which', 'their', 'time', 'can', 'may'
+    'a',
+    'an',
+    'and',
+    'are',
+    'as',
+    'at',
+    'be',
+    'by',
+    'for',
+    'from',
+    'has',
+    'he',
+    'in',
+    'is',
+    'it',
+    'its',
+    'of',
+    'on',
+    'that',
+    'the',
+    'to',
+    'was',
+    'will',
+    'with',
+    'this',
+    'but',
+    'they',
+    'have',
+    'had',
+    'what',
+    'said',
+    'each',
+    'which',
+    'their',
+    'time',
+    'can',
+    'may',
   ]);
 
   // Build index from documents
@@ -106,7 +139,7 @@ export class InvertedIndex {
         this.index.set(term, {
           term,
           documents: new Set(),
-          frequency: 0
+          frequency: 0,
         });
       }
 
@@ -134,7 +167,10 @@ export class InvertedIndex {
       const exactMatches = this.index.get(term);
       if (exactMatches) {
         for (const docId of exactMatches.documents) {
-          candidateDocuments.set(docId, (candidateDocuments.get(docId) || 0) + exactMatches.frequency);
+          candidateDocuments.set(
+            docId,
+            (candidateDocuments.get(docId) || 0) + exactMatches.frequency
+          );
         }
       }
 
@@ -183,7 +219,10 @@ export class InvertedIndex {
     return matches;
   }
 
-  private findMatchPositions(doc: SearchDocument, query: string): Array<{
+  private findMatchPositions(
+    doc: SearchDocument,
+    query: string
+  ): Array<{
     field: string;
     start: number;
     end: number;
@@ -262,8 +301,8 @@ export class InvertedIndex {
         } else {
           matrix[i][j] = Math.min(
             matrix[i - 1][j - 1] + 1, // substitution
-            matrix[i][j - 1] + 1,     // insertion
-            matrix[i - 1][j] + 1      // deletion
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1 // deletion
           );
         }
       }
@@ -289,7 +328,8 @@ export class InvertedIndex {
     return {
       totalTerms: this.index.size,
       totalDocuments: this.documents.size,
-      averageTermsPerDocument: this.documents.size > 0 ? totalTermFrequency / this.documents.size : 0,
+      averageTermsPerDocument:
+        this.documents.size > 0 ? totalTermFrequency / this.documents.size : 0,
       indexSizeBytes,
     };
   }
@@ -351,7 +391,11 @@ export class BoyerMooreSearch {
 
   private suffixLength(p: number): number {
     let len = 0;
-    for (let i = p, j = this.pattern.length - 1; i >= 0 && this.pattern[i] === this.pattern[j]; i--, j--) {
+    for (
+      let i = p, j = this.pattern.length - 1;
+      i >= 0 && this.pattern[i] === this.pattern[j];
+      i--, j--
+    ) {
       len++;
     }
     return len;
@@ -443,7 +487,8 @@ export class SearchRanker {
     const successRate = totalRatings > 0 ? doc.success_count / totalRatings : 0.5;
 
     // Category match
-    const categoryMatch = categoryFilter && doc.category.toLowerCase() === categoryFilter.toLowerCase() ? 1 : 0;
+    const categoryMatch =
+      categoryFilter && doc.category.toLowerCase() === categoryFilter.toLowerCase() ? 1 : 0;
 
     // Tag match (if query matches any tags exactly)
     const queryLower = query.toLowerCase();
@@ -459,8 +504,15 @@ export class SearchRanker {
     };
   }
 
-  private static calculateTextRelevance(match: SearchMatch, doc: SearchDocument, query: string): number {
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 1);
+  private static calculateTextRelevance(
+    match: SearchMatch,
+    doc: SearchDocument,
+    query: string
+  ): number {
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(term => term.length > 1);
     let relevanceScore = 0;
 
     // Base score from match
@@ -473,9 +525,7 @@ export class SearchRanker {
     }
 
     // Boost for title matches (higher weight)
-    const titleMatches = queryTerms.filter(term =>
-      doc.title.toLowerCase().includes(term)
-    ).length;
+    const titleMatches = queryTerms.filter(term => doc.title.toLowerCase().includes(term)).length;
     relevanceScore += (titleMatches / queryTerms.length) * 0.4;
 
     // Boost for multiple term matches
@@ -489,13 +539,14 @@ export class SearchRanker {
 
   private static computeFinalScore(factors: RankingFactors): number {
     return (
-      factors.textRelevance * this.RANKING_WEIGHTS.textRelevance +
-      factors.freshness * this.RANKING_WEIGHTS.freshness +
-      factors.popularity * this.RANKING_WEIGHTS.popularity +
-      factors.successRate * this.RANKING_WEIGHTS.successRate +
-      factors.categoryMatch * this.RANKING_WEIGHTS.categoryMatch +
-      factors.tagMatch * this.RANKING_WEIGHTS.tagMatch
-    ) * 100; // Scale to 0-100
+      (factors.textRelevance * this.RANKING_WEIGHTS.textRelevance +
+        factors.freshness * this.RANKING_WEIGHTS.freshness +
+        factors.popularity * this.RANKING_WEIGHTS.popularity +
+        factors.successRate * this.RANKING_WEIGHTS.successRate +
+        factors.categoryMatch * this.RANKING_WEIGHTS.categoryMatch +
+        factors.tagMatch * this.RANKING_WEIGHTS.tagMatch) *
+      100
+    ); // Scale to 0-100
   }
 }
 
@@ -540,12 +591,7 @@ export class OptimizedSearchEngine {
       throw new Error('Documents must be indexed before searching');
     }
 
-    const {
-      limit = 50,
-      category,
-      sortBy = 'relevance',
-      useAdvancedRanking = true,
-    } = options;
+    const { limit = 50, category, sortBy = 'relevance', useAdvancedRanking = true } = options;
 
     console.time('Search execution');
 
@@ -601,8 +647,10 @@ export class OptimizedSearchEngine {
           const docB = this.documents.get(b.documentId);
           if (!docA || !docB) return 0;
 
-          const successRateA = docA.success_count / Math.max(1, docA.success_count + docA.failure_count);
-          const successRateB = docB.success_count / Math.max(1, docB.success_count + docB.failure_count);
+          const successRateA =
+            docA.success_count / Math.max(1, docA.success_count + docA.failure_count);
+          const successRateB =
+            docB.success_count / Math.max(1, docB.success_count + docB.failure_count);
 
           return successRateB - successRateA;
         });

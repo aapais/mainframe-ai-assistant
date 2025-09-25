@@ -1,6 +1,6 @@
 /**
  * Enhanced Performance Monitor for SQLite Database Operations
- * 
+ *
  * Provides real-time query performance tracking, resource monitoring,
  * and intelligent analysis for maintaining optimal database performance.
  */
@@ -96,7 +96,7 @@ export class PerformanceMonitor extends EventEmitter {
     avgCpuUsage: 0,
     cacheHitRate: 0,
     queryCount: 0,
-    lastUpdated: 0
+    lastUpdated: 0,
   };
 
   constructor(db: Database.Database, config?: Partial<MonitoringConfig>) {
@@ -115,7 +115,7 @@ export class PerformanceMonitor extends EventEmitter {
       ioWaitLimitMs: 2000,
       cacheHitRateMin: 0.8,
       connectionTimeoutMs: 30000,
-      maxConcurrentQueries: 100
+      maxConcurrentQueries: 100,
     };
 
     const defaultRules: AlertRule[] = [
@@ -128,7 +128,7 @@ export class PerformanceMonitor extends EventEmitter {
         duration: 0,
         severity: 'warning',
         enabled: true,
-        actions: ['log', 'metric']
+        actions: ['log', 'metric'],
       },
       {
         id: 'critical-query',
@@ -139,7 +139,7 @@ export class PerformanceMonitor extends EventEmitter {
         duration: 0,
         severity: 'critical',
         enabled: true,
-        actions: ['log', 'metric', 'alert']
+        actions: ['log', 'metric', 'alert'],
       },
       {
         id: 'high-memory',
@@ -150,7 +150,7 @@ export class PerformanceMonitor extends EventEmitter {
         duration: 60, // 1 minute
         severity: 'warning',
         enabled: true,
-        actions: ['log', 'metric']
+        actions: ['log', 'metric'],
       },
       {
         id: 'low-cache-hit-rate',
@@ -161,8 +161,8 @@ export class PerformanceMonitor extends EventEmitter {
         duration: 300, // 5 minutes
         severity: 'warning',
         enabled: true,
-        actions: ['log', 'metric']
-      }
+        actions: ['log', 'metric'],
+      },
     ];
 
     return {
@@ -178,7 +178,7 @@ export class PerformanceMonitor extends EventEmitter {
       thresholds: defaultThresholds,
       alertRules: defaultRules,
       ...config,
-      thresholds: { ...defaultThresholds, ...config?.thresholds }
+      thresholds: { ...defaultThresholds, ...config?.thresholds },
     };
   }
 
@@ -275,7 +275,7 @@ export class PerformanceMonitor extends EventEmitter {
 
   public startMonitoring(): void {
     if (this.isMonitoring) return;
-    
+
     this.isMonitoring = true;
 
     // Start periodic aggregation
@@ -286,9 +286,12 @@ export class PerformanceMonitor extends EventEmitter {
     }, this.config.aggregationInterval * 1000);
 
     // Start cleanup job
-    this.cleanupTimer = setInterval(() => {
-      this.cleanupOldData();
-    }, 24 * 60 * 60 * 1000); // Daily cleanup
+    this.cleanupTimer = setInterval(
+      () => {
+        this.cleanupOldData();
+      },
+      24 * 60 * 60 * 1000
+    ); // Daily cleanup
 
     this.emit('monitoring-started');
   }
@@ -321,7 +324,7 @@ export class PerformanceMonitor extends EventEmitter {
     const fullMetric: PerformanceMetric = {
       ...metric,
       id: this.generateId(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Add to buffer
@@ -370,12 +373,11 @@ export class PerformanceMonitor extends EventEmitter {
       }
 
       result = await executor();
-      
+
       // Estimate records affected (this would need to be passed in for accurate counts)
       if (typeof result === 'object' && result && 'length' in result) {
         recordsAffected = (result as any).length;
       }
-
     } catch (err) {
       error = err as Error;
       throw err;
@@ -394,7 +396,10 @@ export class PerformanceMonitor extends EventEmitter {
       // Record the metric
       this.recordMetric({
         operation,
-        query: this.config.slowQueryCapture && duration > this.config.thresholds.slowQueryMs ? query : undefined,
+        query:
+          this.config.slowQueryCapture && duration > this.config.thresholds.slowQueryMs
+            ? query
+            : undefined,
         duration,
         recordsAffected,
         memoryUsage: endMemory,
@@ -406,7 +411,7 @@ export class PerformanceMonitor extends EventEmitter {
         connectionId,
         userId: options?.userId,
         errorCode: error ? error.name : undefined,
-        warningCount: 0
+        warningCount: 0,
       });
     }
 
@@ -424,12 +429,13 @@ export class PerformanceMonitor extends EventEmitter {
   } {
     const now = Date.now();
     const lastMinute = now - 60000;
-    
+
     const recentMetrics = this.metricsBuffer.filter(m => m.timestamp > lastMinute);
-    
-    const avgResponseTime = recentMetrics.length > 0 
-      ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length 
-      : 0;
+
+    const avgResponseTime =
+      recentMetrics.length > 0
+        ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length
+        : 0;
 
     const cacheHits = recentMetrics.filter(m => m.cacheHit).length;
     const cacheHitRate = recentMetrics.length > 0 ? cacheHits / recentMetrics.length : 0;
@@ -440,7 +446,7 @@ export class PerformanceMonitor extends EventEmitter {
     const alertsCount = {
       info: recentAlerts.filter(a => a.severity === 'info').length,
       warning: recentAlerts.filter(a => a.severity === 'warning').length,
-      critical: recentAlerts.filter(a => a.severity === 'critical').length
+      critical: recentAlerts.filter(a => a.severity === 'critical').length,
     };
 
     return {
@@ -450,11 +456,14 @@ export class PerformanceMonitor extends EventEmitter {
       memoryUsage: process.memoryUsage().heapUsed,
       cacheHitRate: Math.round(cacheHitRate * 100) / 100,
       queriesPerSecond: Math.round(queriesPerSecond * 100) / 100,
-      alertsCount
+      alertsCount,
     };
   }
 
-  public getSlowQueries(limit = 10, hoursBack = 24): Array<{
+  public getSlowQueries(
+    limit = 10,
+    hoursBack = 24
+  ): Array<{
     query: string;
     operation: string;
     avgDuration: number;
@@ -462,10 +471,12 @@ export class PerformanceMonitor extends EventEmitter {
     lastSeen: number;
     queryPlan?: string;
   }> {
-    const cutoff = Date.now() - (hoursBack * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - hoursBack * 60 * 60 * 1000;
+
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT 
           operation,
           query,
@@ -480,7 +491,9 @@ export class PerformanceMonitor extends EventEmitter {
         GROUP BY operation, query
         ORDER BY avg_duration DESC
         LIMIT ?
-      `).all(cutoff, this.config.thresholds.slowQueryMs, limit);
+      `
+        )
+        .all(cutoff, this.config.thresholds.slowQueryMs, limit);
 
       return results.map((row: any) => ({
         query: row.query,
@@ -488,7 +501,7 @@ export class PerformanceMonitor extends EventEmitter {
         avgDuration: Math.round(row.avg_duration),
         count: row.count,
         lastSeen: row.last_seen,
-        queryPlan: row.query_plan
+        queryPlan: row.query_plan,
       }));
     } catch (error) {
       console.error('Failed to get slow queries:', error);
@@ -503,11 +516,13 @@ export class PerformanceMonitor extends EventEmitter {
     cacheHitRate: Array<{ timestamp: number; value: number }>;
     errorRate: Array<{ timestamp: number; value: number }>;
   } {
-    const cutoff = Date.now() - (hoursBack * 60 * 60 * 1000);
+    const cutoff = Date.now() - hoursBack * 60 * 60 * 1000;
     const bucketSize = (hoursBack * 60 * 60 * 1000) / 50; // 50 data points
-    
+
     try {
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(
+          `
         SELECT 
           (timestamp / ?) * ? as bucket,
           AVG(duration) as avg_duration,
@@ -519,14 +534,16 @@ export class PerformanceMonitor extends EventEmitter {
         WHERE timestamp > ?
         GROUP BY bucket
         ORDER BY bucket
-      `).all(bucketSize, bucketSize, cutoff);
+      `
+        )
+        .all(bucketSize, bucketSize, cutoff);
 
       const trends = {
         responseTime: [] as Array<{ timestamp: number; value: number }>,
         throughput: [] as Array<{ timestamp: number; value: number }>,
         memoryUsage: [] as Array<{ timestamp: number; value: number }>,
         cacheHitRate: [] as Array<{ timestamp: number; value: number }>,
-        errorRate: [] as Array<{ timestamp: number; value: number }>
+        errorRate: [] as Array<{ timestamp: number; value: number }>,
       };
 
       results.forEach((row: any) => {
@@ -546,7 +563,7 @@ export class PerformanceMonitor extends EventEmitter {
         throughput: [],
         memoryUsage: [],
         cacheHitRate: [],
-        errorRate: []
+        errorRate: [],
       };
     }
   }
@@ -555,7 +572,7 @@ export class PerformanceMonitor extends EventEmitter {
     if (this.metricsBuffer.length === 0) return;
 
     const metrics = this.metricsBuffer.splice(0);
-    
+
     try {
       const insertStmt = this.db.prepare(`
         INSERT INTO performance_metrics (
@@ -588,10 +605,9 @@ export class PerformanceMonitor extends EventEmitter {
       });
 
       transaction(metrics);
-      
+
       // Update hourly summaries
       this.updateHourlySummaries(metrics);
-
     } catch (error) {
       console.error('Failed to process metrics buffer:', error);
       // Put metrics back in buffer for retry
@@ -601,12 +617,12 @@ export class PerformanceMonitor extends EventEmitter {
 
   private updateHourlySummaries(metrics: PerformanceMetric[]): void {
     const summaries = new Map<string, any>();
-    
+
     metrics.forEach(metric => {
       const hourBucket = Math.floor(metric.timestamp / (60 * 60 * 1000)) * (60 * 60 * 1000);
       const queryHash = this.hashQuery(metric.query || '');
       const key = `${hourBucket}-${metric.operation}-${queryHash}`;
-      
+
       if (!summaries.has(key)) {
         summaries.set(key, {
           hour_bucket: hourBucket,
@@ -615,10 +631,10 @@ export class PerformanceMonitor extends EventEmitter {
           durations: [],
           total_records: 0,
           cache_hits: 0,
-          error_count: 0
+          error_count: 0,
         });
       }
-      
+
       const summary = summaries.get(key);
       summary.durations.push(metric.duration);
       summary.total_records += metric.recordsAffected;
@@ -645,12 +661,12 @@ export class PerformanceMonitor extends EventEmitter {
     summaries.forEach(summary => {
       const durations = summary.durations.sort((a: number, b: number) => a - b);
       const count = durations.length;
-      
+
       const p50 = durations[Math.floor(count * 0.5)];
       const p95 = durations[Math.floor(count * 0.95)];
       const p99 = durations[Math.floor(count * 0.99)];
       const avg = durations.reduce((sum: number, d: number) => sum + d, 0) / count;
-      
+
       upsertStmt.run(
         summary.hour_bucket,
         summary.operation,
@@ -677,34 +693,35 @@ export class PerformanceMonitor extends EventEmitter {
 
   private evaluateAlertRule(rule: AlertRule): void {
     const now = Date.now();
-    const cutoff = now - (rule.duration * 1000);
-    
+    const cutoff = now - rule.duration * 1000;
+
     let currentValue: number;
-    
+
     switch (rule.metric) {
       case 'query_duration':
         const recentMetrics = this.metricsBuffer.filter(m => m.timestamp > cutoff);
-        currentValue = recentMetrics.length > 0 
-          ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length 
-          : 0;
+        currentValue =
+          recentMetrics.length > 0
+            ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length
+            : 0;
         break;
-      
+
       case 'memory_usage':
         currentValue = process.memoryUsage().heapUsed;
         break;
-        
+
       case 'cache_hit_rate':
         const metrics = this.metricsBuffer.filter(m => m.timestamp > cutoff);
         const hits = metrics.filter(m => m.cacheHit).length;
         currentValue = metrics.length > 0 ? hits / metrics.length : 1;
         break;
-        
+
       default:
         return;
     }
-    
+
     const shouldAlert = this.checkThreshold(currentValue, rule.operator, rule.threshold);
-    
+
     if (shouldAlert) {
       this.createAlert(rule, currentValue, now);
     }
@@ -712,12 +729,18 @@ export class PerformanceMonitor extends EventEmitter {
 
   private checkThreshold(value: number, operator: string, threshold: number): boolean {
     switch (operator) {
-      case 'gt': return value > threshold;
-      case 'gte': return value >= threshold;
-      case 'lt': return value < threshold;
-      case 'lte': return value <= threshold;
-      case 'eq': return value === threshold;
-      default: return false;
+      case 'gt':
+        return value > threshold;
+      case 'gte':
+        return value >= threshold;
+      case 'lt':
+        return value < threshold;
+      case 'lte':
+        return value <= threshold;
+      case 'eq':
+        return value === threshold;
+      default:
+        return false;
     }
   }
 
@@ -732,11 +755,11 @@ export class PerformanceMonitor extends EventEmitter {
       threshold: rule.threshold,
       duration: rule.duration,
       resolved: false,
-      metadata: { rule: rule.name }
+      metadata: { rule: rule.name },
     };
 
     this.alertsBuffer.push(alert);
-    
+
     // Persist alert immediately for critical alerts
     if (alert.severity === 'critical') {
       this.persistAlert(alert);
@@ -747,23 +770,27 @@ export class PerformanceMonitor extends EventEmitter {
 
   private persistAlert(alert: PerformanceAlert): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO performance_alerts (
           timestamp, rule_id, severity, message, value, threshold,
           duration, resolved, resolved_at, metadata
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        alert.timestamp,
-        alert.ruleId,
-        alert.severity,
-        alert.message,
-        alert.value,
-        alert.threshold,
-        alert.duration,
-        alert.resolved,
-        alert.resolvedAt,
-        JSON.stringify(alert.metadata)
-      );
+      `
+        )
+        .run(
+          alert.timestamp,
+          alert.ruleId,
+          alert.severity,
+          alert.message,
+          alert.value,
+          alert.threshold,
+          alert.duration,
+          alert.resolved,
+          alert.resolvedAt,
+          JSON.stringify(alert.metadata)
+        );
     } catch (error) {
       console.error('Failed to persist alert:', error);
     }
@@ -782,9 +809,9 @@ export class PerformanceMonitor extends EventEmitter {
         threshold: this.config.thresholds.criticalQueryMs,
         duration: 0,
         resolved: false,
-        metadata: { operation: metric.operation, connectionId: metric.connectionId }
+        metadata: { operation: metric.operation, connectionId: metric.connectionId },
       };
-      
+
       this.alertsBuffer.push(alert);
       this.emit('alert', alert);
     }
@@ -792,7 +819,9 @@ export class PerformanceMonitor extends EventEmitter {
 
   private loadBaseline(): void {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT 
           AVG(duration) as avg_query_time,
           AVG(memory_usage) as avg_memory_usage,
@@ -800,7 +829,9 @@ export class PerformanceMonitor extends EventEmitter {
           COUNT(*) as query_count
         FROM performance_metrics 
         WHERE timestamp > ?
-      `).get(Date.now() - (7 * 24 * 60 * 60 * 1000)); // Last 7 days
+      `
+        )
+        .get(Date.now() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
 
       if (result) {
         this.baseline = {
@@ -809,7 +840,7 @@ export class PerformanceMonitor extends EventEmitter {
           avgCpuUsage: 0, // Would need historical CPU data
           cacheHitRate: result.cache_hit_rate || 0,
           queryCount: result.query_count || 0,
-          lastUpdated: Date.now()
+          lastUpdated: Date.now(),
         };
       }
     } catch (error) {
@@ -825,13 +856,15 @@ export class PerformanceMonitor extends EventEmitter {
   }
 
   private cleanupOldData(): void {
-    const metricsRetention = Date.now() - (this.config.metricsRetentionDays * 24 * 60 * 60 * 1000);
-    const alertsRetention = Date.now() - (this.config.alertRetentionDays * 24 * 60 * 60 * 1000);
+    const metricsRetention = Date.now() - this.config.metricsRetentionDays * 24 * 60 * 60 * 1000;
+    const alertsRetention = Date.now() - this.config.alertRetentionDays * 24 * 60 * 60 * 1000;
 
     try {
       const deleteMetrics = this.db.prepare('DELETE FROM performance_metrics WHERE timestamp < ?');
       const deleteAlerts = this.db.prepare('DELETE FROM performance_alerts WHERE timestamp < ?');
-      const deleteSummaries = this.db.prepare('DELETE FROM query_performance_summary WHERE hour_bucket < ?');
+      const deleteSummaries = this.db.prepare(
+        'DELETE FROM query_performance_summary WHERE hour_bucket < ?'
+      );
 
       deleteMetrics.run(metricsRetention);
       deleteAlerts.run(alertsRetention);
@@ -839,7 +872,6 @@ export class PerformanceMonitor extends EventEmitter {
 
       // Vacuum database periodically
       this.db.exec('VACUUM');
-      
     } catch (error) {
       console.error('Failed to cleanup old data:', error);
     }
@@ -856,11 +888,11 @@ export class PerformanceMonitor extends EventEmitter {
 
   private extractIndexesFromPlan(queryPlan?: string): string[] {
     if (!queryPlan) return [];
-    
+
     try {
       const plan = JSON.parse(queryPlan);
       const indexes: string[] = [];
-      
+
       plan.forEach((step: any) => {
         if (step.detail && step.detail.includes('USING INDEX')) {
           const match = step.detail.match(/USING INDEX (\w+)/);
@@ -869,7 +901,7 @@ export class PerformanceMonitor extends EventEmitter {
           }
         }
       });
-      
+
       return indexes;
     } catch {
       return [];
@@ -881,7 +913,7 @@ export class PerformanceMonitor extends EventEmitter {
     let hash = 0;
     for (let i = 0; i < query.length; i++) {
       const char = query.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString();
@@ -917,7 +949,7 @@ export class PerformanceMonitor extends EventEmitter {
       ``,
       `# HELP sqlite_active_queries Active queries`,
       `# TYPE sqlite_active_queries gauge`,
-      `sqlite_active_queries ${metrics.activeQueries}`
+      `sqlite_active_queries ${metrics.activeQueries}`,
     ].join('\n');
   }
 

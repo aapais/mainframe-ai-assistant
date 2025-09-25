@@ -15,7 +15,7 @@ import { PerformanceMonitor } from './PerformanceMonitor';
 /**
  * Core Knowledge Base Entry interface
  * Represents a single knowledge base entry with problem, solution, and metadata
- * 
+ *
  * @interface KBEntry
  * @example
  * ```typescript
@@ -68,7 +68,7 @@ export interface KBEntry {
 
 /**
  * Search result container with scoring and match information
- * 
+ *
  * @interface SearchResult
  * @example
  * ```typescript
@@ -93,7 +93,7 @@ export interface SearchResult {
 
 /**
  * Database statistics and health metrics
- * 
+ *
  * @interface DatabaseStats
  * @example
  * ```typescript
@@ -137,14 +137,14 @@ export interface DatabaseStats {
 
 /**
  * Main Knowledge Base Database Manager
- * 
+ *
  * Provides comprehensive knowledge base functionality including:
  * - CRUD operations for knowledge entries
  * - Advanced search with AI integration
  * - Performance monitoring and optimization
  * - Backup and restore capabilities
  * - Automatic database maintenance
- * 
+ *
  * @class KnowledgeDB
  * @example
  * ```typescript
@@ -153,7 +153,7 @@ export interface DatabaseStats {
  *   autoBackup: true,
  *   backupInterval: 24
  * });
- * 
+ *
  * // Add a new entry
  * const entryId = await db.addEntry({
  *   title: 'VSAM Status 35',
@@ -162,11 +162,11 @@ export interface DatabaseStats {
  *   category: 'VSAM',
  *   tags: ['vsam', 'file-error']
  * });
- * 
+ *
  * // Search the knowledge base
  * const results = await db.search('VSAM status 35');
  * console.log(`Found ${results.length} matching entries`);
- * 
+ *
  * // Get database statistics
  * const stats = await db.getStats();
  * console.log(`Database has ${stats.totalEntries} entries`);
@@ -187,19 +187,19 @@ export class KnowledgeDB {
 
   /**
    * Creates a new KnowledgeDB instance
-   * 
+   *
    * @param dbPath - Path to SQLite database file (default: './knowledge.db')
    * @param options - Configuration options
    * @param options.backupDir - Directory for backup files
    * @param options.maxBackups - Maximum number of backup files to retain (default: 10)
    * @param options.autoBackup - Enable automatic periodic backups (default: true)
    * @param options.backupInterval - Hours between automatic backups (default: 24)
-   * 
+   *
    * @example
    * ```typescript
    * // Basic initialization
    * const db = new KnowledgeDB();
-   * 
+   *
    * // Custom path and backup settings
    * const db = new KnowledgeDB('/data/kb.db', {
    *   backupDir: '/backups',
@@ -218,21 +218,17 @@ export class KnowledgeDB {
     }
   ) {
     console.log('🚀 Initializing Knowledge Database...');
-    
+
     // Initialize SQLite database
     this.db = new Database(dbPath);
-    
+
     // Initialize managers
     this.migrationManager = new MigrationManager(this.db);
     this.performanceTuner = new PerformanceTuner(this.db);
     this.queryOptimizer = new QueryOptimizer(this.db);
-    this.backupManager = new BackupManager(
-      this.db,
-      options?.backupDir,
-      options?.maxBackups
-    );
+    this.backupManager = new BackupManager(this.db, options?.backupDir, options?.maxBackups);
     this.dataSeeder = new DataSeeder(this);
-    
+
     // Initialize advanced performance components
     this.advancedIndexStrategy = new AdvancedIndexStrategy(this.db);
     this.queryCache = new QueryCache(this.db, {
@@ -240,22 +236,22 @@ export class KnowledgeDB {
       defaultTTL: 300000, // 5 minutes
       maxMemoryMB: 100,
       persistToDisk: true,
-      compressionEnabled: true
+      compressionEnabled: true,
     });
     this.connectionPool = new ConnectionPool(dbPath, {
       maxReaders: 5,
       maxWriters: 1,
       acquireTimeout: 30000,
       idleTimeout: 300000,
-      enableWAL: true
+      enableWAL: true,
     });
     this.performanceMonitor = new PerformanceMonitor(this.db, {
       slowQueryThreshold: 1000,
       criticalThreshold: 5000,
       enableRealTimeAlerts: true,
-      enableQueryPlanCapture: true
+      enableQueryPlanCapture: true,
     });
-    
+
     // Initialize database
     this.initialize(options);
   }
@@ -269,36 +265,35 @@ export class KnowledgeDB {
   }): Promise<void> {
     try {
       console.log('🔧 Setting up database schema and optimizations...');
-      
+
       // Run migrations
       const migrationResults = await this.migrationManager.migrate();
       if (migrationResults.some(r => !r.success)) {
         console.warn('⚠️ Some migrations failed, but continuing...');
       }
-      
+
       // Apply performance optimizations
       this.performanceTuner.optimize();
-      
+
       // Schedule maintenance
       this.performanceTuner.scheduleMaintenace();
-      
+
       // Setup automatic backups if enabled
       if (options?.autoBackup !== false) {
         this.backupManager.scheduleAutoBackups(options?.backupInterval || 24);
       }
-      
+
       // Seed initial data if needed
       if (await this.dataSeeder.needsSeeding()) {
         console.log('🌱 Database appears empty, seeding with initial data...');
         await this.dataSeeder.seedAll();
       }
-      
+
       this.initialized = true;
       console.log('✅ Knowledge Database initialized successfully');
-      
+
       // Log database stats
       this.logInitializationStats();
-      
     } catch (error) {
       console.error('❌ Database initialization failed:', error);
       throw error;
@@ -307,7 +302,7 @@ export class KnowledgeDB {
 
   /**
    * Add a new knowledge base entry
-   * 
+   *
    * @param entry - The knowledge base entry to add
    * @param entry.title - Brief, descriptive title (required)
    * @param entry.problem - Detailed problem description (required)
@@ -316,11 +311,11 @@ export class KnowledgeDB {
    * @param entry.severity - Severity level (optional, defaults to 'medium')
    * @param entry.tags - Array of searchable tags (optional)
    * @param userId - User ID creating the entry (optional, defaults to 'system')
-   * 
+   *
    * @returns Promise resolving to the unique entry ID
-   * 
+   *
    * @throws {Error} If entry validation fails or database operation fails
-   * 
+   *
    * @example
    * ```typescript
    * // Add a simple entry
@@ -332,32 +327,36 @@ export class KnowledgeDB {
    *   severity: 'high',
    *   tags: ['s0c7', 'abend', 'arithmetic']
    * }, 'john.smith');
-   * 
+   *
    * console.log(`Created entry with ID: ${id}`);
    * ```
    */
   async addEntry(entry: KBEntry, userId?: string): Promise<string> {
     this.ensureInitialized();
-    
+
     const id = entry.id || uuidv4();
-    
+
     const transaction = this.db.transaction(() => {
       try {
         // Insert main entry
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO kb_entries (
             id, title, problem, solution, category, severity, created_by
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          id,
-          entry.title,
-          entry.problem,
-          entry.solution,
-          entry.category,
-          entry.severity || 'medium',
-          userId || 'system'
-        );
-        
+        `
+          )
+          .run(
+            id,
+            entry.title,
+            entry.problem,
+            entry.solution,
+            entry.category,
+            entry.severity || 'medium',
+            userId || 'system'
+          );
+
         // Insert tags
         if (entry.tags && entry.tags.length > 0) {
           const tagStmt = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
@@ -365,14 +364,14 @@ export class KnowledgeDB {
             tagStmt.run(id, tag.toLowerCase().trim());
           });
         }
-        
+
         return id;
       } catch (error) {
         console.error('Failed to add entry:', error);
         throw error;
       }
     });
-    
+
     return transaction();
   }
 
@@ -381,12 +380,12 @@ export class KnowledgeDB {
    */
   async updateEntry(id: string, updates: Partial<KBEntry>, userId?: string): Promise<void> {
     this.ensureInitialized();
-    
+
     const transaction = this.db.transaction(() => {
       // Update main entry
       const setClause = [];
       const values = [];
-      
+
       if (updates.title !== undefined) {
         setClause.push('title = ?');
         values.push(updates.title);
@@ -411,23 +410,27 @@ export class KnowledgeDB {
         setClause.push('archived = ?');
         values.push(updates.archived);
       }
-      
+
       if (setClause.length > 0) {
         setClause.push('updated_at = CURRENT_TIMESTAMP');
         values.push(id);
-        
-        this.db.prepare(`
+
+        this.db
+          .prepare(
+            `
           UPDATE kb_entries 
           SET ${setClause.join(', ')}
           WHERE id = ?
-        `).run(...values);
+        `
+          )
+          .run(...values);
       }
-      
+
       // Update tags if provided
       if (updates.tags !== undefined) {
         // Remove existing tags
         this.db.prepare('DELETE FROM kb_tags WHERE entry_id = ?').run(id);
-        
+
         // Add new tags
         if (updates.tags.length > 0) {
           const tagStmt = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
@@ -437,20 +440,20 @@ export class KnowledgeDB {
         }
       }
     });
-    
+
     transaction();
   }
 
   /**
    * Perform advanced search on the knowledge base
-   * 
+   *
    * Uses intelligent query routing to select optimal search strategy:
    * - Exact matching for error codes (S0C7, IEF212I, etc.)
    * - Full-text search with BM25 ranking for general queries
    * - Fuzzy matching for partial/typo-tolerant search
    * - Category/tag filtering for structured searches
    * - Hybrid approach combining multiple strategies
-   * 
+   *
    * @param query - Search query string
    * @param options - Search configuration options
    * @param options.limit - Maximum number of results (default: 10, max: 100)
@@ -460,27 +463,27 @@ export class KnowledgeDB {
    * @param options.category - Filter by specific category
    * @param options.tags - Filter by specific tags
    * @param options.fuzzyThreshold - Fuzzy matching threshold 0-1 (default: 0.7)
-   * 
+   *
    * @returns Promise resolving to array of search results, sorted by relevance
-   * 
+   *
    * @example
    * ```typescript
    * // Simple search
    * const results = await db.search('VSAM status 35');
-   * 
+   *
    * // Advanced search with filters
    * const results = await db.search('file error', {
    *   category: 'VSAM',
    *   limit: 5,
    *   sortBy: 'usage'
    * });
-   * 
+   *
    * // Tag-based search
    * const results = await db.search('tag:s0c7');
-   * 
+   *
    * // Category search
    * const results = await db.search('category:JCL');
-   * 
+   *
    * // Process results
    * results.forEach(result => {
    *   console.log(`${result.entry.title} (${result.score.toFixed(1)}%)`);
@@ -493,64 +496,74 @@ export class KnowledgeDB {
    */
   async search(
     query: string,
-    options?: Partial<SearchOptions & {
-      streaming?: boolean;
-      fuzzyThreshold?: number;
-      enableAutoComplete?: boolean;
-    }>
+    options?: Partial<
+      SearchOptions & {
+        streaming?: boolean;
+        fuzzyThreshold?: number;
+        enableAutoComplete?: boolean;
+      }
+    >
   ): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     const searchOptions: SearchOptions & { streaming?: boolean } = {
       query,
       limit: 10,
       offset: 0,
       sortBy: 'relevance',
       includeArchived: false,
-      ...options
+      ...options,
     };
-    
+
     // Generate optimized cache key with query normalization
     const normalizedQuery = this.normalizeQuery(query);
     const cacheKey = this.generateSearchCacheKey(normalizedQuery, searchOptions);
-    
-    return this.performanceMonitor.measureOperation('search', async () => {
-      // Quick cache lookup with streaming support
-      return this.queryCache.get(cacheKey, async () => {
-        // Hybrid search strategy selection
-        const strategy = await this.selectSearchStrategy(normalizedQuery, searchOptions);
-        const result = await this.executeHybridSearch(strategy, normalizedQuery, searchOptions);
-        
-        // Convert to SearchResult format with enhanced highlights
-        const searchResults = result.results.map(row => ({
-          entry: {
-            id: row.id,
-            title: row.title,
-            problem: row.problem,
-            solution: row.solution,
-            category: row.category,
-            severity: row.severity,
-            tags: row.tags ? row.tags.split(', ') : [],
-            usage_count: row.usage_count,
-            success_count: row.success_count,
-            failure_count: row.failure_count,
-            last_used: row.last_used ? new Date(row.last_used) : undefined
+
+    return this.performanceMonitor.measureOperation(
+      'search',
+      async () => {
+        // Quick cache lookup with streaming support
+        return this.queryCache.get(
+          cacheKey,
+          async () => {
+            // Hybrid search strategy selection
+            const strategy = await this.selectSearchStrategy(normalizedQuery, searchOptions);
+            const result = await this.executeHybridSearch(strategy, normalizedQuery, searchOptions);
+
+            // Convert to SearchResult format with enhanced highlights
+            const searchResults = result.results.map(row => ({
+              entry: {
+                id: row.id,
+                title: row.title,
+                problem: row.problem,
+                solution: row.solution,
+                category: row.category,
+                severity: row.severity,
+                tags: row.tags ? row.tags.split(', ') : [],
+                usage_count: row.usage_count,
+                success_count: row.success_count,
+                failure_count: row.failure_count,
+                last_used: row.last_used ? new Date(row.last_used) : undefined,
+              },
+              score: this.calculateRelevanceScore(row, normalizedQuery, result.strategy),
+              matchType: result.strategy as any,
+              highlights: this.generateAdvancedHighlights(normalizedQuery, row),
+            }));
+
+            return searchResults;
           },
-          score: this.calculateRelevanceScore(row, normalizedQuery, result.strategy),
-          matchType: result.strategy as any,
-          highlights: this.generateAdvancedHighlights(normalizedQuery, row)
-        }));
-        
-        return searchResults;
-      }, {
-        ttl: this.calculateCacheTTL(searchOptions),
-        tags: this.generateCacheTags(searchOptions),
-        priority: this.getCachePriority(normalizedQuery)
-      });
-    }, {
-      recordsProcessed: searchOptions.limit || 10,
-      queryComplexity: this.calculateQueryComplexity(normalizedQuery)
-    });
+          {
+            ttl: this.calculateCacheTTL(searchOptions),
+            tags: this.generateCacheTags(searchOptions),
+            priority: this.getCachePriority(normalizedQuery),
+          }
+        );
+      },
+      {
+        recordsProcessed: searchOptions.limit || 10,
+        queryComplexity: this.calculateQueryComplexity(normalizedQuery),
+      }
+    );
   }
 
   /**
@@ -561,11 +574,15 @@ export class KnowledgeDB {
     limit: number = 5
   ): Promise<Array<{ suggestion: string; category: string; score: number }>> {
     if (!query || query.length < 2) return [];
-    
+
     const cacheKey = `autocomplete:${query.toLowerCase()}:${limit}`;
-    
-    return this.queryCache.get(cacheKey, async () => {
-      const suggestions = this.db.prepare(`
+
+    return this.queryCache.get(
+      cacheKey,
+      async () => {
+        const suggestions = this.db
+          .prepare(
+            `
         WITH suggestions AS (
           -- Common search terms
           SELECT DISTINCT 
@@ -615,13 +632,17 @@ export class KnowledgeDB {
         WHERE suggestion IS NOT NULL
         ORDER BY score DESC, length(suggestion) ASC
         LIMIT ?
-      `).all(query, query, query, query, limit);
-      
-      return suggestions;
-    }, {
-      ttl: 30000, // 30 seconds for auto-complete
-      priority: 'high'
-    });
+      `
+          )
+          .all(query, query, query, query, limit);
+
+        return suggestions;
+      },
+      {
+        ttl: 30000, // 30 seconds for auto-complete
+        priority: 'high',
+      }
+    );
   }
 
   /**
@@ -640,19 +661,23 @@ export class KnowledgeDB {
     totalCount: number;
   }> {
     const searchResults = await this.search(query, options);
-    
+
     const facetsCacheKey = `facets:${this.normalizeQuery(query)}`;
-    const facets = await this.queryCache.get(facetsCacheKey, async () => {
-      return this.calculateFacets(query, options);
-    }, {
-      ttl: 120000, // 2 minutes
-      tags: ['facets']
-    });
-    
+    const facets = await this.queryCache.get(
+      facetsCacheKey,
+      async () => {
+        return this.calculateFacets(query, options);
+      },
+      {
+        ttl: 120000, // 2 minutes
+        tags: ['facets'],
+      }
+    );
+
     return {
       results: searchResults,
       facets,
-      totalCount: searchResults.length
+      totalCount: searchResults.length,
     };
   }
 
@@ -661,10 +686,10 @@ export class KnowledgeDB {
    */
   async getEntry(id: string): Promise<KBEntry | null> {
     this.ensureInitialized();
-    
+
     const entry = this.queryOptimizer.getById(id);
     if (!entry) return null;
-    
+
     return {
       id: entry.id,
       title: entry.title,
@@ -680,7 +705,7 @@ export class KnowledgeDB {
       success_count: entry.success_count,
       failure_count: entry.failure_count,
       last_used: entry.last_used ? new Date(entry.last_used) : undefined,
-      archived: entry.archived
+      archived: entry.archived,
     };
   }
 
@@ -689,13 +714,17 @@ export class KnowledgeDB {
    */
   async recordUsage(entryId: string, successful: boolean, userId?: string): Promise<void> {
     this.ensureInitialized();
-    
+
     const action = successful ? 'rate_success' : 'rate_failure';
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(
+        `
       INSERT INTO usage_metrics (entry_id, action, user_id)
       VALUES (?, ?, ?)
-    `).run(entryId, action, userId || 'anonymous');
+    `
+      )
+      .run(entryId, action, userId || 'anonymous');
   }
 
   /**
@@ -703,9 +732,9 @@ export class KnowledgeDB {
    */
   async getPopular(limit: number = 10): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     const entries = this.queryOptimizer.getPopular(limit);
-    
+
     return entries.map(entry => ({
       entry: {
         id: entry.id,
@@ -715,10 +744,10 @@ export class KnowledgeDB {
         usage_count: entry.usage_count,
         success_count: entry.success_count,
         failure_count: entry.failure_count,
-        last_used: entry.last_used ? new Date(entry.last_used) : undefined
+        last_used: entry.last_used ? new Date(entry.last_used) : undefined,
       } as KBEntry,
       score: entry.success_rate,
-      matchType: 'popular' as any
+      matchType: 'popular' as any,
     }));
   }
 
@@ -727,9 +756,9 @@ export class KnowledgeDB {
    */
   async getRecent(limit: number = 10): Promise<SearchResult[]> {
     this.ensureInitialized();
-    
+
     const entries = this.queryOptimizer.getRecent(limit);
-    
+
     return entries.map(entry => ({
       entry: {
         id: entry.id,
@@ -737,10 +766,10 @@ export class KnowledgeDB {
         category: entry.category,
         tags: entry.tags ? entry.tags.split(', ') : [],
         created_at: new Date(entry.created_at),
-        usage_count: entry.usage_count
+        usage_count: entry.usage_count,
       } as KBEntry,
       score: 100,
-      matchType: 'recent' as any
+      matchType: 'recent' as any,
     }));
   }
 
@@ -749,8 +778,10 @@ export class KnowledgeDB {
    */
   async getStats(): Promise<DatabaseStats> {
     this.ensureInitialized();
-    
-    const stats = this.db.prepare(`
+
+    const stats = this.db
+      .prepare(
+        `
       SELECT 
         COUNT(*) as totalEntries,
         COUNT(CASE WHEN last_used > datetime('now', '-7 days') THEN 1 END) as recentActivity,
@@ -759,28 +790,42 @@ export class KnowledgeDB {
                  ELSE 0 END) as averageSuccessRate
       FROM kb_entries
       WHERE archived = FALSE
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
-    const categoryCounts = this.db.prepare(`
+    const categoryCounts = this.db
+      .prepare(
+        `
       SELECT category, COUNT(*) as count
       FROM kb_entries
       WHERE archived = FALSE
       GROUP BY category
-    `).all() as Array<{ category: string; count: number }>;
+    `
+      )
+      .all() as Array<{ category: string; count: number }>;
 
-    const searchesToday = this.db.prepare(`
+    const searchesToday = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM search_history
       WHERE date(timestamp) = date('now')
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
 
-    const topEntries = this.db.prepare(`
+    const topEntries = this.db
+      .prepare(
+        `
       SELECT title, usage_count
       FROM kb_entries
       WHERE archived = FALSE
       ORDER BY usage_count DESC
       LIMIT 5
-    `).all() as Array<{ title: string; usage_count: number }>;
+    `
+      )
+      .all() as Array<{ title: string; usage_count: number }>;
 
     const performance = this.queryOptimizer.getPerformanceStats();
     const diskUsage = this.getDiskUsage();
@@ -800,8 +845,8 @@ export class KnowledgeDB {
       diskUsage,
       performance: {
         avgSearchTime: performance.avgSearchTime,
-        cacheHitRate: performance.cacheHitRate
-      }
+        cacheHitRate: performance.cacheHitRate,
+      },
     };
   }
 
@@ -842,21 +887,32 @@ export class KnowledgeDB {
    */
   getConfig(key: string): string | null {
     this.ensureInitialized();
-    
-    const result = this.db.prepare('SELECT value FROM system_config WHERE key = ?').get(key) as { value: string } | undefined;
+
+    const result = this.db.prepare('SELECT value FROM system_config WHERE key = ?').get(key) as
+      | { value: string }
+      | undefined;
     return result?.value || null;
   }
 
   /**
    * Set system configuration value
    */
-  async setConfig(key: string, value: string, type: string = 'string', description?: string): Promise<void> {
+  async setConfig(
+    key: string,
+    value: string,
+    type: string = 'string',
+    description?: string
+  ): Promise<void> {
     this.ensureInitialized();
-    
-    this.db.prepare(`
+
+    this.db
+      .prepare(
+        `
       INSERT OR REPLACE INTO system_config (key, value, type, description)
       VALUES (?, ?, ?, ?)
-    `).run(key, value, type, description);
+    `
+      )
+      .run(key, value, type, description);
   }
 
   /**
@@ -864,8 +920,10 @@ export class KnowledgeDB {
    */
   getEntryCount(): number {
     this.ensureInitialized();
-    
-    const result = this.db.prepare('SELECT COUNT(*) as count FROM kb_entries WHERE archived = FALSE').get() as { count: number };
+
+    const result = this.db
+      .prepare('SELECT COUNT(*) as count FROM kb_entries WHERE archived = FALSE')
+      .get() as { count: number };
     return result.count;
   }
 
@@ -874,7 +932,7 @@ export class KnowledgeDB {
    */
   async optimize(): Promise<void> {
     this.ensureInitialized();
-    
+
     console.log('🔧 Optimizing database...');
     this.performanceTuner.optimize();
     this.queryOptimizer.optimize();
@@ -988,7 +1046,7 @@ export class KnowledgeDB {
     issues: string[];
   }> {
     this.ensureInitialized();
-    
+
     const issues: string[] = [];
     let dbHealthy = true;
     let cacheHealthy = true;
@@ -1046,7 +1104,7 @@ export class KnowledgeDB {
       cache: cacheHealthy,
       connections: connectionsHealthy,
       performance: performanceHealthy,
-      issues
+      issues,
     };
   }
 
@@ -1057,11 +1115,11 @@ export class KnowledgeDB {
     if (this.performanceMonitor) {
       this.performanceMonitor.stopMonitoring();
     }
-    
+
     if (this.connectionPool) {
       await this.connectionPool.close();
     }
-    
+
     if (this.db) {
       this.db.close();
     }
@@ -1077,10 +1135,14 @@ export class KnowledgeDB {
 
   private logSearch(query: string, resultCount: number, timeMs: number, userId?: string): void {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_history (query, results_count, search_time_ms, user_id)
         VALUES (?, ?, ?, ?)
-      `).run(query, resultCount, timeMs, userId || 'anonymous');
+      `
+        )
+        .run(query, resultCount, timeMs, userId || 'anonymous');
     } catch (error) {
       // Non-critical error, don't throw
       console.warn('Failed to log search:', error);
@@ -1088,7 +1150,7 @@ export class KnowledgeDB {
   }
 
   // Advanced search helper methods
-  
+
   /**
    * Normalize query for consistent processing and caching
    */
@@ -1110,43 +1172,42 @@ export class KnowledgeDB {
       options.category || 'all',
       options.sortBy || 'relevance',
       options.limit || 10,
-      options.offset || 0
+      options.offset || 0,
     ];
     return keyParts.join(':');
   }
 
   /**
    * Intelligent search strategy selection
-   * 
+   *
    * Analyzes the query structure and selects the most appropriate search algorithm
    * based on query characteristics and performance considerations.
    */
   private async selectSearchStrategy(
-    query: string, 
+    query: string,
     options: SearchOptions
   ): Promise<'exact' | 'fts' | 'fuzzy' | 'category' | 'tag' | 'hybrid'> {
-    
     // Strategy 1: Exact match for known error code patterns
     // Pattern matches: IEF212I, S0C7, WER027A, etc.
     if (/^[A-Z]\d{3,4}[A-Z]?$/.test(query) || /^S\d{3}[A-Z]?$/.test(query)) {
       return 'exact'; // Highest priority - direct string matching
     }
-    
+
     // Strategy 2: Category-specific search using indexes
     // Faster than full-text when filtering by category
     if (query.startsWith('category:') || options.category) {
       return 'category'; // Uses category index for fast filtering
     }
-    
+
     // Strategy 3: Tag-based search for precise categorization
     // Leverages tag indexes for exact tag matches
     if (query.startsWith('tag:') || (options.tags && options.tags.length > 0)) {
       return 'tag'; // Direct tag lookup via junction table
     }
-    
+
     // Strategy 4: Analyze query complexity to choose between FTS, fuzzy, or hybrid
     const complexity = this.calculateQueryComplexity(query);
-    
+
     if (complexity.isComplex) {
       // Complex queries: multiple terms, operators, or long phrases
       // Use hybrid approach combining multiple strategies
@@ -1197,7 +1258,7 @@ export class KnowledgeDB {
     }
 
     const executionTime = Date.now() - startTime;
-    
+
     // Log slow queries for optimization
     if (executionTime > 500) {
       console.warn(`Slow ${strategy} search (${executionTime}ms): "${query}"`);
@@ -1210,7 +1271,9 @@ export class KnowledgeDB {
    * Execute exact search for error codes and specific terms
    */
   private async executeExactSearch(query: string, options: SearchOptions): Promise<any[]> {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1226,11 +1289,15 @@ export class KnowledgeDB {
       GROUP BY e.id
       ORDER BY e.usage_count DESC, success_rate DESC
       LIMIT ?
-    `).all(
-      `%${query}%`, `%${query}%`, `%${query}%`,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        ...(options.category ? [options.category] : []),
+        options.limit || 10
+      );
   }
 
   /**
@@ -1238,8 +1305,10 @@ export class KnowledgeDB {
    */
   private async executeFTSSearch(query: string, options: SearchOptions): Promise<any[]> {
     const ftsQuery = this.prepareFTSQuery(query);
-    
-    return this.db.prepare(`
+
+    return this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1262,12 +1331,14 @@ export class KnowledgeDB {
           ELSE relevance_score
         END DESC
       LIMIT ?
-    `).all(
-      ftsQuery,
-      ...(options.category ? [options.category] : []),
-      options.sortBy || 'relevance',
-      options.limit || 10
-    );
+    `
+      )
+      .all(
+        ftsQuery,
+        ...(options.category ? [options.category] : []),
+        options.sortBy || 'relevance',
+        options.limit || 10
+      );
   }
 
   /**
@@ -1275,13 +1346,15 @@ export class KnowledgeDB {
    */
   private async executeFuzzySearch(query: string, options: SearchOptions): Promise<any[]> {
     const fuzzyTerms = query.split(/\s+/).filter(term => term.length > 2);
-    const likeConditions = fuzzyTerms.map(() => 
-      '(e.title LIKE ? OR e.problem LIKE ? OR e.solution LIKE ?)'
-    ).join(' AND ');
-    
+    const likeConditions = fuzzyTerms
+      .map(() => '(e.title LIKE ? OR e.problem LIKE ? OR e.solution LIKE ?)')
+      .join(' AND ');
+
     const params = fuzzyTerms.flatMap(term => [`%${term}%`, `%${term}%`, `%${term}%`]);
-    
-    return this.db.prepare(`
+
+    return this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1300,12 +1373,14 @@ export class KnowledgeDB {
       HAVING relevance_score > 0
       ORDER BY relevance_score DESC, e.usage_count DESC
       LIMIT ?
-    `).all(
-      ...params,
-      ...fuzzyTerms.flatMap(term => [`%${term}%`, `%${term}%`, `%${term}%`]),
-      ...(options.category ? [options.category] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(
+        ...params,
+        ...fuzzyTerms.flatMap(term => [`%${term}%`, `%${term}%`, `%${term}%`]),
+        ...(options.category ? [options.category] : []),
+        options.limit || 10
+      );
   }
 
   /**
@@ -1313,8 +1388,10 @@ export class KnowledgeDB {
    */
   private async executeCategorySearch(query: string, options: SearchOptions): Promise<any[]> {
     const category = options.category || query.replace('category:', '');
-    
-    return this.db.prepare(`
+
+    return this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1335,12 +1412,16 @@ export class KnowledgeDB {
       GROUP BY e.id
       ORDER BY relevance_score DESC, e.usage_count DESC
       LIMIT ?
-    `).all(
-      ...(query && !query.startsWith('category:') ? [`%${query}%`, `%${query}%`, `%${query}%`] : ['', '', '']),
-      category,
-      ...(query && !query.startsWith('category:') ? [`%${query}%`, `%${query}%`] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(
+        ...(query && !query.startsWith('category:')
+          ? [`%${query}%`, `%${query}%`, `%${query}%`]
+          : ['', '', '']),
+        category,
+        ...(query && !query.startsWith('category:') ? [`%${query}%`, `%${query}%`] : []),
+        options.limit || 10
+      );
   }
 
   /**
@@ -1349,8 +1430,10 @@ export class KnowledgeDB {
   private async executeTagSearch(query: string, options: SearchOptions): Promise<any[]> {
     const tags = options.tags || [query.replace('tag:', '')];
     const tagPlaceholders = tags.map(() => '?').join(',');
-    
-    return this.db.prepare(`
+
+    return this.db
+      .prepare(
+        `
       SELECT 
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -1366,17 +1449,14 @@ export class KnowledgeDB {
       GROUP BY e.id
       ORDER BY tag_matches DESC, e.usage_count DESC
       LIMIT ?
-    `).all(
-      ...tags,
-      ...tags,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(...tags, ...tags, ...(options.category ? [options.category] : []), options.limit || 10);
   }
 
   /**
    * Execute multi-strategy search with result fusion
-   * 
+   *
    * Combines multiple search algorithms in parallel and uses intelligent
    * result fusion to provide comprehensive coverage while maintaining performance.
    */
@@ -1385,15 +1465,15 @@ export class KnowledgeDB {
     // Each strategy provides different coverage: FTS for relevance, fuzzy for flexibility, exact for precision
     const strategies = ['fts', 'fuzzy', 'exact'];
     const allResults = new Map<string, any>(); // Use Map to deduplicate by entry ID
-    
+
     // Execute multiple search strategies in parallel for better performance
-    const searchPromises = strategies.map(async (strategy) => {
+    const searchPromises = strategies.map(async strategy => {
       try {
         let results: any[] = [];
-        
+
         // Limit each strategy to 5 results to prevent overwhelming the final result set
         const strategyOptions = { ...options, limit: 5 };
-        
+
         switch (strategy) {
           case 'fts':
             // Full-text search with BM25 ranking - best for semantic relevance
@@ -1408,7 +1488,7 @@ export class KnowledgeDB {
             results = await this.executeExactSearch(query, strategyOptions);
             break;
         }
-        
+
         // Tag results with their strategy for fusion algorithm
         return results.map(r => ({ ...r, strategy }));
       } catch (error) {
@@ -1421,7 +1501,7 @@ export class KnowledgeDB {
 
     // Wait for all strategies to complete
     const strategyResults = await Promise.all(searchPromises);
-    
+
     // Result fusion algorithm: merge results from different strategies
     strategyResults.forEach(results => {
       results.forEach(result => {
@@ -1430,7 +1510,7 @@ export class KnowledgeDB {
           // Entry found by multiple strategies - boost its score
           // Take the highest relevance score from any strategy
           existing.relevance_score = Math.max(existing.relevance_score, result.relevance_score);
-          
+
           // Track how many strategies found this result (diversity bonus)
           existing.strategy_count = (existing.strategy_count || 1) + 1;
         } else {
@@ -1455,7 +1535,7 @@ export class KnowledgeDB {
 
   /**
    * Calculate advanced relevance score
-   * 
+   *
    * Combines multiple signals to produce a comprehensive relevance score:
    * - Base search relevance (from algorithm-specific scoring)
    * - Usage popularity (logarithmic to prevent dominance)
@@ -1465,28 +1545,29 @@ export class KnowledgeDB {
   private calculateRelevanceScore(row: any, query: string, strategy: string): number {
     // Start with algorithm-specific base score (0-100)
     let baseScore = row.relevance_score || 0;
-    
+
     // Signal 1: Usage popularity boost (logarithmic scaling)
     // Popular entries are more likely to be useful, but we use log to prevent
     // a few heavily-used entries from dominating search results
     const usageBoost = Math.log(row.usage_count + 1) * 10; // Max ~46 points for 100 uses
-    
+
     // Signal 2: Success rate boost (user feedback quality indicator)
     // Entries with higher success rates get priority in rankings
     const successRate = row.success_rate || 0; // 0-1 normalized success rate
     const successBoost = successRate * 20; // Max 20 points for 100% success rate
-    
+
     // Signal 3: Strategy confidence multipliers
     // Different algorithms have different precision characteristics
-    const strategyMultiplier = {
-      'exact': 1.5,    // Exact matches are highly reliable
-      'fts': 1.0,      // Full-text search baseline
-      'fuzzy': 0.8,    // Fuzzy matching less precise
-      'category': 1.2, // Category matches are quite reliable
-      'tag': 1.1,      // Tag matches are moderately reliable
-      'hybrid': 1.3    // Hybrid results benefit from multi-algorithm consensus
-    }[strategy] || 1.0;
-    
+    const strategyMultiplier =
+      {
+        exact: 1.5, // Exact matches are highly reliable
+        fts: 1.0, // Full-text search baseline
+        fuzzy: 0.8, // Fuzzy matching less precise
+        category: 1.2, // Category matches are quite reliable
+        tag: 1.1, // Tag matches are moderately reliable
+        hybrid: 1.3, // Hybrid results benefit from multi-algorithm consensus
+      }[strategy] || 1.0;
+
     // Combine all signals with strategy multiplier
     // Cap at 100 to maintain consistent scoring scale
     const finalScore = (baseScore + usageBoost + successBoost) * strategyMultiplier;
@@ -1498,13 +1579,16 @@ export class KnowledgeDB {
    */
   private generateAdvancedHighlights(query: string, row: any): string[] {
     const highlights: string[] = [];
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
-    
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 2);
+
     // Check each field for matches
     const fields = [
       { name: 'title', content: row.title, weight: 3 },
       { name: 'problem', content: row.problem, weight: 2 },
-      { name: 'solution', content: row.solution, weight: 1 }
+      { name: 'solution', content: row.solution, weight: 1 },
     ];
 
     fields.forEach(field => {
@@ -1515,11 +1599,11 @@ export class KnowledgeDB {
           const start = Math.max(0, index - 30);
           const end = Math.min(field.content.length, index + term.length + 30);
           const snippet = field.content.substring(start, end);
-          
+
           highlights.push({
             field: field.name,
             snippet: start > 0 ? '...' + snippet : snippet,
-            term: term
+            term: term,
           } as any);
         }
       });
@@ -1540,12 +1624,12 @@ export class KnowledgeDB {
     const terms = query.split(/\s+/);
     const hasOperators = /[:@]/.test(query);
     const hasFuzzyTerms = terms.some(term => term.length < 3 || /[*?]/.test(term));
-    
+
     return {
       isComplex: terms.length > 3 || hasOperators,
       hasFuzzyTerms,
       termCount: terms.length,
-      hasOperators
+      hasOperators,
     };
   }
 
@@ -1557,7 +1641,7 @@ export class KnowledgeDB {
     if (options.category || (options.tags && options.tags.length > 0)) {
       return 600000; // 10 minutes
     }
-    
+
     // Shorter TTL for text searches (content may change)
     return 300000; // 5 minutes
   }
@@ -1567,11 +1651,11 @@ export class KnowledgeDB {
    */
   private generateCacheTags(options: SearchOptions): string[] {
     const tags = ['search'];
-    
+
     if (options.category) tags.push(`category:${options.category}`);
     if (options.sortBy) tags.push(`sort:${options.sortBy}`);
     if (options.tags) tags.push(...options.tags.map(tag => `tag:${tag}`));
-    
+
     return tags;
   }
 
@@ -1583,41 +1667,50 @@ export class KnowledgeDB {
     if (/^[A-Z]\d{3,4}[A-Z]?$/.test(query) || /^S\d{3}[A-Z]?$/.test(query)) {
       return 'high';
     }
-    
+
     // High priority for common categories
     const commonCategories = ['JCL', 'VSAM', 'DB2', 'CICS', 'Batch'];
     if (commonCategories.some(cat => query.toLowerCase().includes(cat.toLowerCase()))) {
       return 'high';
     }
-    
+
     return 'normal';
   }
 
   /**
    * Calculate facets for filtered search
    */
-  private async calculateFacets(query: string, options?: Partial<SearchOptions>): Promise<{
+  private async calculateFacets(
+    query: string,
+    options?: Partial<SearchOptions>
+  ): Promise<{
     categories: Array<{ name: string; count: number }>;
     tags: Array<{ name: string; count: number }>;
     severities: Array<{ name: string; count: number }>;
   }> {
-    const baseWhere = query ? 
-      'WHERE (e.title LIKE ? OR e.problem LIKE ? OR e.solution LIKE ?) AND e.archived = FALSE' :
-      'WHERE e.archived = FALSE';
-    
+    const baseWhere = query
+      ? 'WHERE (e.title LIKE ? OR e.problem LIKE ? OR e.solution LIKE ?) AND e.archived = FALSE'
+      : 'WHERE e.archived = FALSE';
+
     const params = query ? [`%${query}%`, `%${query}%`, `%${query}%`] : [];
 
     const [categories, tags, severities] = await Promise.all([
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         SELECT e.category as name, COUNT(*) as count
         FROM kb_entries e
         ${baseWhere}
         GROUP BY e.category
         ORDER BY count DESC
         LIMIT 10
-      `).all(...params),
-      
-      this.db.prepare(`
+      `
+        )
+        .all(...params),
+
+      this.db
+        .prepare(
+          `
         SELECT t.tag as name, COUNT(*) as count
         FROM kb_entries e
         JOIN kb_tags t ON e.id = t.entry_id
@@ -1625,15 +1718,21 @@ export class KnowledgeDB {
         GROUP BY t.tag
         ORDER BY count DESC
         LIMIT 15
-      `).all(...params),
-      
-      this.db.prepare(`
+      `
+        )
+        .all(...params),
+
+      this.db
+        .prepare(
+          `
         SELECT COALESCE(e.severity, 'medium') as name, COUNT(*) as count
         FROM kb_entries e
         ${baseWhere}
         GROUP BY COALESCE(e.severity, 'medium')
         ORDER BY count DESC
-      `).all(...params)
+      `
+        )
+        .all(...params),
     ]);
 
     return { categories, tags, severities };
@@ -1650,18 +1749,18 @@ export class KnowledgeDB {
     if (query.startsWith('tag:')) {
       return `tags:${query.substring(4)}`;
     }
-    
+
     // Clean and prepare query
     let ftsQuery = query.trim().replace(/['"]/g, '');
     const terms = ftsQuery.split(/\s+/).filter(term => term.length > 1);
-    
+
     if (terms.length === 0) return ftsQuery;
-    
+
     // Use phrase search for multi-word queries
     if (terms.length > 1) {
       return `"${terms.join(' ')}"`;
     }
-    
+
     // Single term with prefix matching
     return `${terms[0]}*`;
   }
@@ -1684,10 +1783,12 @@ export class KnowledgeDB {
     const stats = {
       entries: this.getEntryCount(),
       dbSize: this.formatBytes(this.getDiskUsage()),
-      version: this.migrationManager.getCurrentVersion()
+      version: this.migrationManager.getCurrentVersion(),
     };
-    
-    console.log(`📊 Database ready: ${stats.entries} entries, ${stats.dbSize}, schema v${stats.version}`);
+
+    console.log(
+      `📊 Database ready: ${stats.entries} entries, ${stats.dbSize}, schema v${stats.version}`
+    );
   }
 
   private formatBytes(bytes: number): string {
@@ -1710,7 +1811,7 @@ export async function createKnowledgeDB(
   }
 ): Promise<KnowledgeDB> {
   const db = new KnowledgeDB(dbPath, options);
-  
+
   // Wait for initialization to complete
   await new Promise(resolve => {
     const checkInit = () => {
@@ -1722,6 +1823,6 @@ export async function createKnowledgeDB(
     };
     checkInit();
   });
-  
+
   return db;
 }

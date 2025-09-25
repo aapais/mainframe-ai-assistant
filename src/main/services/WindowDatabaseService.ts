@@ -1,19 +1,19 @@
 /**
  * Window Database Service - Enhanced Database Support for Window Management
- * 
+ *
  * Extends the main DatabaseService to provide specialized window state management
  * functionality with proper error handling and recovery mechanisms
  */
 
 import { DatabaseService } from './DatabaseService';
 import { ServiceContext, ServiceHealth } from './ServiceManager';
-import { 
-  WindowState, 
-  WindowInstance, 
-  WindowWorkspace, 
+import {
+  WindowState,
+  WindowInstance,
+  WindowWorkspace,
   WindowHealth,
   WindowEventData,
-  WindowIPCMessage 
+  WindowIPCMessage,
 } from '../windows/types/WindowTypes';
 
 interface WindowDatabaseStats {
@@ -44,41 +44,41 @@ export class WindowDatabaseService extends DatabaseService {
 
   async initialize(context: ServiceContext): Promise<void> {
     await super.initialize(context);
-    
+
     // Run window management schema migration
     await this.runWindowMigrations();
-    
+
     // Initialize cache
     await this.refreshWindowStateCache();
-    
+
     context.logger.info('Window Database Service initialized');
   }
 
   async healthCheck(): Promise<ServiceHealth> {
     const baseHealth = await super.healthCheck();
-    
+
     try {
       // Additional window-specific health checks
       const stats = await this.getWindowStats();
       const recentErrors = await this.getRecentWindowErrors();
-      
+
       const healthy = baseHealth.healthy && recentErrors.length < 10;
-      
+
       return {
         ...baseHealth,
         healthy,
         details: {
           ...baseHealth.details,
           windowStats: stats,
-          recentErrors: recentErrors.length
-        }
+          recentErrors: recentErrors.length,
+        },
       };
     } catch (error) {
       return {
         healthy: false,
         error: `Window health check failed: ${error.message}`,
         lastCheck: new Date(),
-        responseTime: 0
+        responseTime: 0,
       };
     }
   }
@@ -87,10 +87,10 @@ export class WindowDatabaseService extends DatabaseService {
 
   async saveWindowState(windowState: WindowState): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       const db = await this.getDatabase();
-      
+
       await db.run(
         `INSERT OR REPLACE INTO window_states (
           id, window_type, bounds_x, bounds_y, bounds_width, bounds_height,
@@ -112,13 +112,13 @@ export class WindowDatabaseService extends DatabaseService {
           windowState.zIndex || null,
           windowState.workspace || null,
           JSON.stringify(windowState.customData || {}),
-          new Date().toISOString()
+          new Date().toISOString(),
         ]
       );
 
       // Update cache
       this.windowStateCache.set(windowState.id, windowState);
-      
+
       this.context.metrics.histogram('window.database.save_state', Date.now() - startTime);
       this.context.logger.debug(`Saved window state: ${windowState.id}`);
     } catch (error) {
@@ -130,7 +130,7 @@ export class WindowDatabaseService extends DatabaseService {
 
   async loadWindowState(windowId: string): Promise<WindowState | null> {
     const startTime = Date.now();
-    
+
     try {
       // Check cache first
       if (this.isWindowCacheValid() && this.windowStateCache.has(windowId)) {
@@ -139,11 +139,8 @@ export class WindowDatabaseService extends DatabaseService {
       }
 
       const db = await this.getDatabase();
-      
-      const row = await db.get(
-        `SELECT * FROM window_states WHERE id = ?`,
-        [windowId]
-      );
+
+      const row = await db.get(`SELECT * FROM window_states WHERE id = ?`, [windowId]);
 
       if (!row) {
         this.context.metrics.increment('window.database.state_not_found');
@@ -157,7 +154,7 @@ export class WindowDatabaseService extends DatabaseService {
           x: row.bounds_x,
           y: row.bounds_y,
           width: row.bounds_width,
-          height: row.bounds_height
+          height: row.bounds_height,
         },
         maximized: Boolean(row.maximized),
         minimized: Boolean(row.minimized),
@@ -167,12 +164,12 @@ export class WindowDatabaseService extends DatabaseService {
         zIndex: row.z_index,
         workspace: row.workspace_id,
         customData: row.custom_data ? JSON.parse(row.custom_data) : {},
-        lastSaved: new Date(row.last_saved)
+        lastSaved: new Date(row.last_saved),
       };
 
       // Cache the result
       this.windowStateCache.set(windowId, windowState);
-      
+
       this.context.metrics.histogram('window.database.load_state', Date.now() - startTime);
       return windowState;
     } catch (error) {
@@ -185,12 +182,12 @@ export class WindowDatabaseService extends DatabaseService {
   async deleteWindowState(windowId: string): Promise<void> {
     try {
       const db = await this.getDatabase();
-      
+
       await db.run(`DELETE FROM window_states WHERE id = ?`, [windowId]);
-      
+
       // Remove from cache
       this.windowStateCache.delete(windowId);
-      
+
       this.context.logger.debug(`Deleted window state: ${windowId}`);
     } catch (error) {
       this.context.logger.error(`Failed to delete window state: ${windowId}`, error);
@@ -201,7 +198,7 @@ export class WindowDatabaseService extends DatabaseService {
   async getAllWindowStates(): Promise<WindowState[]> {
     try {
       const db = await this.getDatabase();
-      
+
       const rows = await db.all(`
         SELECT * FROM window_states 
         ORDER BY last_saved DESC
@@ -214,7 +211,7 @@ export class WindowDatabaseService extends DatabaseService {
           x: row.bounds_x,
           y: row.bounds_y,
           width: row.bounds_width,
-          height: row.bounds_height
+          height: row.bounds_height,
         },
         maximized: Boolean(row.maximized),
         minimized: Boolean(row.minimized),
@@ -224,7 +221,7 @@ export class WindowDatabaseService extends DatabaseService {
         zIndex: row.z_index,
         workspace: row.workspace_id,
         customData: row.custom_data ? JSON.parse(row.custom_data) : {},
-        lastSaved: new Date(row.last_saved)
+        lastSaved: new Date(row.last_saved),
       }));
     } catch (error) {
       this.context.logger.error('Failed to load all window states', error);
@@ -237,10 +234,10 @@ export class WindowDatabaseService extends DatabaseService {
   async saveWorkspace(workspace: WindowWorkspace): Promise<void> {
     try {
       const db = await this.getDatabase();
-      
+
       // Start transaction
       await db.run('BEGIN TRANSACTION');
-      
+
       try {
         // Save workspace
         await db.run(
@@ -255,7 +252,7 @@ export class WindowDatabaseService extends DatabaseService {
             workspace.layout.type,
             JSON.stringify(workspace.layout),
             workspace.active ? 1 : 0,
-            workspace.lastUsed ? workspace.lastUsed.toISOString() : null
+            workspace.lastUsed ? workspace.lastUsed.toISOString() : null,
           ]
         );
 
@@ -282,13 +279,13 @@ export class WindowDatabaseService extends DatabaseService {
               windowConfig.width || null,
               windowConfig.height || null,
               i,
-              JSON.stringify(windowConfig)
+              JSON.stringify(windowConfig),
             ]
           );
         }
 
         await db.run('COMMIT');
-        
+
         this.context.logger.info(`Saved workspace: ${workspace.name}`);
       } catch (error) {
         await db.run('ROLLBACK');
@@ -303,11 +300,8 @@ export class WindowDatabaseService extends DatabaseService {
   async loadWorkspace(workspaceId: string): Promise<WindowWorkspace | null> {
     try {
       const db = await this.getDatabase();
-      
-      const workspaceRow = await db.get(
-        `SELECT * FROM workspaces WHERE id = ?`,
-        [workspaceId]
-      );
+
+      const workspaceRow = await db.get(`SELECT * FROM workspaces WHERE id = ?`, [workspaceId]);
 
       if (!workspaceRow) {
         return null;
@@ -323,11 +317,13 @@ export class WindowDatabaseService extends DatabaseService {
         name: workspaceRow.name,
         description: workspaceRow.description,
         mvpLevel: workspaceRow.mvp_level,
-        layout: workspaceRow.layout_config ? JSON.parse(workspaceRow.layout_config) : { type: 'grid' },
+        layout: workspaceRow.layout_config
+          ? JSON.parse(workspaceRow.layout_config)
+          : { type: 'grid' },
         active: Boolean(workspaceRow.active),
         created: new Date(workspaceRow.created_at),
         lastUsed: workspaceRow.last_used ? new Date(workspaceRow.last_used) : undefined,
-        windows: windowRows.map(row => JSON.parse(row.config_data))
+        windows: windowRows.map(row => JSON.parse(row.config_data)),
       };
 
       return workspace;
@@ -340,7 +336,7 @@ export class WindowDatabaseService extends DatabaseService {
   async getAllWorkspaces(): Promise<WindowWorkspace[]> {
     try {
       const db = await this.getDatabase();
-      
+
       const rows = await db.all(`
         SELECT w.*, COUNT(ww.id) as window_count
         FROM workspaces w
@@ -350,7 +346,7 @@ export class WindowDatabaseService extends DatabaseService {
       `);
 
       const workspaces = [];
-      
+
       for (const row of rows) {
         const workspace = await this.loadWorkspace(row.id);
         if (workspace) {
@@ -370,7 +366,7 @@ export class WindowDatabaseService extends DatabaseService {
   async updateWindowHealth(windowId: string, health: WindowHealth): Promise<void> {
     try {
       const db = await this.getDatabase();
-      
+
       await db.run(
         `INSERT OR REPLACE INTO window_health (
           window_id, responsive, memory_usage, cpu_usage, error_count, 
@@ -382,19 +378,20 @@ export class WindowDatabaseService extends DatabaseService {
           health.memoryUsage || null,
           health.cpuUsage || null,
           health.errors.length,
-          health.warnings.length
+          health.warnings.length,
         ]
       );
 
       // Store recent errors and warnings in event log
       if (health.errors.length > 0) {
-        for (const error of health.errors.slice(-5)) { // Keep last 5 errors
+        for (const error of health.errors.slice(-5)) {
+          // Keep last 5 errors
           await this.logWindowEvent({
             windowId,
             windowType: 'unknown',
             event: 'unresponsive',
             timestamp: new Date(),
-            data: { error }
+            data: { error },
           });
         }
       }
@@ -407,25 +404,25 @@ export class WindowDatabaseService extends DatabaseService {
   async getWindowHealth(windowId: string): Promise<WindowHealth | null> {
     try {
       const db = await this.getDatabase();
-      
-      const row = await db.get(
-        `SELECT * FROM window_health WHERE window_id = ?`,
-        [windowId]
-      );
+
+      const row = await db.get(`SELECT * FROM window_health WHERE window_id = ?`, [windowId]);
 
       if (!row) {
         return null;
       }
 
       // Get recent errors from event log
-      const errorEvents = await db.all(`
+      const errorEvents = await db.all(
+        `
         SELECT event_data FROM window_events 
         WHERE window_id = ? AND event_type = 'unresponsive' 
         ORDER BY timestamp DESC LIMIT 10
-      `, [windowId]);
+      `,
+        [windowId]
+      );
 
       const errors = errorEvents
-        .map(e => e.event_data ? JSON.parse(e.event_data).error : 'Unknown error')
+        .map(e => (e.event_data ? JSON.parse(e.event_data).error : 'Unknown error'))
         .filter(Boolean);
 
       return {
@@ -434,7 +431,7 @@ export class WindowDatabaseService extends DatabaseService {
         cpuUsage: row.cpu_usage,
         lastHealthCheck: new Date(row.last_health_check),
         errors: errors,
-        warnings: [] // Could be implemented similarly
+        warnings: [], // Could be implemented similarly
       };
     } catch (error) {
       this.context.logger.error(`Failed to get window health: ${windowId}`, error);
@@ -447,7 +444,7 @@ export class WindowDatabaseService extends DatabaseService {
   async logWindowEvent(eventData: WindowEventData): Promise<void> {
     try {
       const db = await this.getDatabase();
-      
+
       await db.run(
         `INSERT INTO window_events (window_id, window_type, event_type, event_data, timestamp)
          VALUES (?, ?, ?, ?, ?)`,
@@ -456,7 +453,7 @@ export class WindowDatabaseService extends DatabaseService {
           eventData.windowType,
           eventData.event,
           JSON.stringify(eventData.data || {}),
-          eventData.timestamp.toISOString()
+          eventData.timestamp.toISOString(),
         ]
       );
     } catch (error) {
@@ -468,7 +465,7 @@ export class WindowDatabaseService extends DatabaseService {
   async logIPCMessage(message: WindowIPCMessage): Promise<void> {
     try {
       const db = await this.getDatabase();
-      
+
       await db.run(
         `INSERT INTO ipc_messages (
           id, source_window_id, target_window_id, channel, message_data, 
@@ -484,7 +481,7 @@ export class WindowDatabaseService extends DatabaseService {
           message.requiresResponse ? 1 : 0,
           message.responseTimeout || null,
           'sent',
-          message.timestamp.toISOString()
+          message.timestamp.toISOString(),
         ]
       );
     } catch (error) {
@@ -497,22 +494,20 @@ export class WindowDatabaseService extends DatabaseService {
   async getWindowStats(): Promise<WindowDatabaseStats> {
     try {
       const db = await this.getDatabase();
-      
-      const [
-        totalWindows,
-        activeWindows,
-        workspaces,
-        healthyWindows,
-        recentEvents,
-        ipcMessages
-      ] = await Promise.all([
-        db.get(`SELECT COUNT(*) as count FROM window_states`),
-        db.get(`SELECT COUNT(*) as count FROM window_states WHERE visible = 1`),
-        db.get(`SELECT COUNT(*) as count FROM workspaces`),
-        db.get(`SELECT COUNT(*) as count FROM window_health WHERE responsive = 1`),
-        db.get(`SELECT COUNT(*) as count FROM window_events WHERE timestamp > datetime('now', '-24 hours')`),
-        db.get(`SELECT COUNT(*) as count FROM ipc_messages WHERE created_at > datetime('now', '-24 hours')`)
-      ]);
+
+      const [totalWindows, activeWindows, workspaces, healthyWindows, recentEvents, ipcMessages] =
+        await Promise.all([
+          db.get(`SELECT COUNT(*) as count FROM window_states`),
+          db.get(`SELECT COUNT(*) as count FROM window_states WHERE visible = 1`),
+          db.get(`SELECT COUNT(*) as count FROM workspaces`),
+          db.get(`SELECT COUNT(*) as count FROM window_health WHERE responsive = 1`),
+          db.get(
+            `SELECT COUNT(*) as count FROM window_events WHERE timestamp > datetime('now', '-24 hours')`
+          ),
+          db.get(
+            `SELECT COUNT(*) as count FROM ipc_messages WHERE created_at > datetime('now', '-24 hours')`
+          ),
+        ]);
 
       return {
         totalWindows: totalWindows?.count || 0,
@@ -520,7 +515,7 @@ export class WindowDatabaseService extends DatabaseService {
         workspaces: workspaces?.count || 0,
         healthyWindows: healthyWindows?.count || 0,
         recentEvents: recentEvents?.count || 0,
-        ipcMessages: ipcMessages?.count || 0
+        ipcMessages: ipcMessages?.count || 0,
       };
     } catch (error) {
       this.context.logger.error('Failed to get window stats', error);
@@ -531,7 +526,7 @@ export class WindowDatabaseService extends DatabaseService {
   async getRecentWindowErrors(): Promise<string[]> {
     try {
       const db = await this.getDatabase();
-      
+
       const rows = await db.all(`
         SELECT event_data FROM window_events 
         WHERE event_type = 'unresponsive' 
@@ -561,7 +556,7 @@ export class WindowDatabaseService extends DatabaseService {
   async cleanupOldData(): Promise<void> {
     try {
       const db = await this.getDatabase();
-      
+
       // Clean up old events (keep last 30 days)
       await db.run(`
         DELETE FROM window_events 
@@ -597,14 +592,17 @@ export class WindowDatabaseService extends DatabaseService {
     try {
       const fs = require('fs').promises;
       const path = require('path');
-      
-      const migrationPath = path.join(__dirname, '../../database/migrations/mvp-upgrades/001_window_management_schema.sql');
-      
+
+      const migrationPath = path.join(
+        __dirname,
+        '../../database/migrations/mvp-upgrades/001_window_management_schema.sql'
+      );
+
       try {
         const migrationSQL = await fs.readFile(migrationPath, 'utf8');
         const db = await this.getDatabase();
         await db.exec(migrationSQL);
-        
+
         this.context.logger.info('Window management schema migration completed');
       } catch (error) {
         if (error.code === 'ENOENT') {
@@ -623,11 +621,11 @@ export class WindowDatabaseService extends DatabaseService {
     try {
       const states = await this.getAllWindowStates();
       this.windowStateCache.clear();
-      
+
       for (const state of states) {
         this.windowStateCache.set(state.id, state);
       }
-      
+
       this.lastCacheUpdate = Date.now();
       this.context.logger.debug(`Refreshed window state cache with ${states.length} entries`);
     } catch (error) {

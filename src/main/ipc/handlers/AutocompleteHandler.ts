@@ -9,12 +9,12 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import {
   AutocompleteSuggestion,
   SearchContext,
-  SuggestionSource
+  SuggestionSource,
 } from '../../../database/schemas/HierarchicalCategories.schema';
 import { AutocompleteService } from '../../../services/AutocompleteService';
 import { CategoryService } from '../../../services/CategoryService';
@@ -136,7 +136,9 @@ export class AutocompleteHandler {
   /**
    * Get autocomplete suggestions
    */
-  handleAutocomplete: IPCHandlerFunction<'autocomplete:suggestions'> = async (request: AutocompleteRequest) => {
+  handleAutocomplete: IPCHandlerFunction<'autocomplete:suggestions'> = async (
+    request: AutocompleteRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -165,38 +167,35 @@ export class AutocompleteHandler {
       const sanitizedQuery = HandlerUtils.sanitizeString(query, 100);
 
       // Check cache first for frequent queries
-      const cacheKey = HandlerUtils.generateCacheKey('autocomplete', sanitizedQuery, context, options);
+      const cacheKey = HandlerUtils.generateCacheKey(
+        'autocomplete',
+        sanitizedQuery,
+        context,
+        options
+      );
       const cached = await this.cacheManager.get<AutocompleteSuggestion[]>(cacheKey);
 
       if (cached) {
-        return HandlerUtils.createSuccessResponse(
-          request.requestId,
-          startTime,
-          cached,
-          {
-            query_processing_time: Date.now() - startTime,
-            sources_used: ['cache'] as SuggestionSource[],
-            total_candidates: cached.length,
-            learning_applied: false,
-            cached: true
-          }
-        ) as AutocompleteResponse;
+        return HandlerUtils.createSuccessResponse(request.requestId, startTime, cached, {
+          query_processing_time: Date.now() - startTime,
+          sources_used: ['cache'] as SuggestionSource[],
+          total_candidates: cached.length,
+          learning_applied: false,
+          cached: true,
+        }) as AutocompleteResponse;
       }
 
       const processingStart = Date.now();
 
       // Get suggestions from service
-      const suggestions = await this.autocompleteService.getSuggestions(
-        sanitizedQuery,
-        {
-          maxSuggestions: options.max_suggestions || 10,
-          minConfidence: options.min_confidence || 0.1,
-          sources: options.sources,
-          includeLearning: options.include_learning !== false,
-          fuzzyMatching: options.fuzzy_matching !== false,
-          context: context || {}
-        }
-      );
+      const suggestions = await this.autocompleteService.getSuggestions(sanitizedQuery, {
+        maxSuggestions: options.max_suggestions || 10,
+        minConfidence: options.min_confidence || 0.1,
+        sources: options.sources,
+        includeLearning: options.include_learning !== false,
+        fuzzyMatching: options.fuzzy_matching !== false,
+        context: context || {},
+      });
 
       const processingTime = Date.now() - processingStart;
 
@@ -210,22 +209,16 @@ export class AutocompleteHandler {
         await this.cacheManager.set(cacheKey, suggestions, {
           ttl: 180000, // 3 minutes
           layer: 'memory',
-          tags: ['autocomplete', `query:${sanitizedQuery.substring(0, 10)}`]
+          tags: ['autocomplete', `query:${sanitizedQuery.substring(0, 10)}`],
         });
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        suggestions,
-        {
-          query_processing_time: processingTime,
-          sources_used: sourcesUsed,
-          total_candidates: totalCandidates,
-          learning_applied: learningApplied
-        }
-      ) as AutocompleteResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, suggestions, {
+        query_processing_time: processingTime,
+        sources_used: sourcesUsed,
+        total_candidates: totalCandidates,
+        learning_applied: learningApplied,
+      }) as AutocompleteResponse;
     } catch (error) {
       console.error('Autocomplete error:', error);
       return HandlerUtils.createErrorResponse(
@@ -240,7 +233,9 @@ export class AutocompleteHandler {
   /**
    * Unified search across all sources
    */
-  handleSearch: IPCHandlerFunction<'autocomplete:search'> = async (request: AutocompleteSearchRequest) => {
+  handleSearch: IPCHandlerFunction<'autocomplete:search'> = async (
+    request: AutocompleteSearchRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -270,21 +265,21 @@ export class AutocompleteHandler {
 
       // Check cache for unified searches
       let cacheHit = false;
-      const cacheKey = HandlerUtils.generateCacheKey('search', search_type, sanitizedQuery, options);
+      const cacheKey = HandlerUtils.generateCacheKey(
+        'search',
+        search_type,
+        sanitizedQuery,
+        options
+      );
 
       if (search_type === 'unified' && sanitizedQuery.length >= 2) {
         const cached = await this.cacheManager.get<any>(cacheKey);
         if (cached) {
-          return HandlerUtils.createSuccessResponse(
-            request.requestId,
-            startTime,
-            cached,
-            {
-              total_results: this.countSearchResults(cached),
-              search_time: Date.now() - startTime,
-              cache_hit: true
-            }
-          ) as AutocompleteSearchResponse;
+          return HandlerUtils.createSuccessResponse(request.requestId, startTime, cached, {
+            total_results: this.countSearchResults(cached),
+            search_time: Date.now() - startTime,
+            cache_hit: true,
+          }) as AutocompleteSearchResponse;
         }
       }
 
@@ -319,21 +314,15 @@ export class AutocompleteHandler {
         await this.cacheManager.set(cacheKey, results, {
           ttl: 300000, // 5 minutes
           layer: 'memory',
-          tags: ['search', 'unified', `query:${sanitizedQuery.substring(0, 10)}`]
+          tags: ['search', 'unified', `query:${sanitizedQuery.substring(0, 10)}`],
         });
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        results,
-        {
-          total_results: this.countSearchResults(results),
-          search_time: searchTime,
-          cache_hit: cacheHit
-        }
-      ) as AutocompleteSearchResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, results, {
+        total_results: this.countSearchResults(results),
+        search_time: searchTime,
+        cache_hit: cacheHit,
+      }) as AutocompleteSearchResponse;
     } catch (error) {
       console.error('Autocomplete search error:', error);
       return HandlerUtils.createErrorResponse(
@@ -348,7 +337,9 @@ export class AutocompleteHandler {
   /**
    * Learn from user selections
    */
-  handleLearn: IPCHandlerFunction<'autocomplete:learn'> = async (request: AutocompleteLearnRequest) => {
+  handleLearn: IPCHandlerFunction<'autocomplete:learn'> = async (
+    request: AutocompleteLearnRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -374,18 +365,12 @@ export class AutocompleteHandler {
         outcome
       );
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          learning_recorded: true,
-          query: sanitizedQuery,
-          suggestion_type: selected_suggestion.type,
-          helpful: outcome?.was_helpful
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        learning_recorded: true,
+        query: sanitizedQuery,
+        suggestion_type: selected_suggestion.type,
+        helpful: outcome?.was_helpful,
+      });
     } catch (error) {
       console.error('Autocomplete learning error:', error);
       return HandlerUtils.createErrorResponse(
@@ -400,7 +385,9 @@ export class AutocompleteHandler {
   /**
    * Manage autocomplete cache
    */
-  handleCacheManagement: IPCHandlerFunction<'autocomplete:cache'> = async (request: AutocompleteCacheRequest) => {
+  handleCacheManagement: IPCHandlerFunction<'autocomplete:cache'> = async (
+    request: AutocompleteCacheRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -426,15 +413,10 @@ export class AutocompleteHandler {
           );
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        {
-          action_performed: action,
-          ...result
-        }
-      ) as AutocompleteCacheResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, {
+        action_performed: action,
+        ...result,
+      }) as AutocompleteCacheResponse;
     } catch (error) {
       console.error('Cache management error:', error);
       return HandlerUtils.createErrorResponse(
@@ -449,7 +431,9 @@ export class AutocompleteHandler {
   /**
    * Get autocomplete analytics
    */
-  handleAnalytics: IPCHandlerFunction<'autocomplete:analytics'> = async (request: AutocompleteAnalyticsRequest) => {
+  handleAnalytics: IPCHandlerFunction<'autocomplete:analytics'> = async (
+    request: AutocompleteAnalyticsRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -457,21 +441,15 @@ export class AutocompleteHandler {
 
       const analytics = await this.autocompleteService.getAnalytics(timeframe, options);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        analytics,
-        {
-          timeframe,
-          generatedAt: new Date().toISOString(),
-          includeMetrics: {
-            learning: options.include_learning_metrics || false,
-            performance: options.include_performance_metrics || false,
-            popular: options.include_popular_queries || false
-          }
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, analytics, {
+        timeframe,
+        generatedAt: new Date().toISOString(),
+        includeMetrics: {
+          learning: options.include_learning_metrics || false,
+          performance: options.include_performance_metrics || false,
+          popular: options.include_popular_queries || false,
+        },
+      });
     } catch (error) {
       console.error('Autocomplete analytics error:', error);
       return HandlerUtils.createErrorResponse(
@@ -489,12 +467,12 @@ export class AutocompleteHandler {
     const [suggestions, categories, tags, entries, history] = await Promise.all([
       this.autocompleteService.getSuggestions(query, {
         maxSuggestions: options?.limit || 5,
-        context: context || {}
+        context: context || {},
       }),
       this.performCategorySearch(query, { limit: 3 }),
       this.performTagSearch(query, { limit: 5 }),
       this.performEntrySearch(query, { limit: 5 }),
-      this.performHistorySearch(query, { limit: 3 })
+      this.performHistorySearch(query, { limit: 3 }),
     ]);
 
     return {
@@ -502,7 +480,7 @@ export class AutocompleteHandler {
       categories: categories.categories || [],
       tags: tags.tags || [],
       entries: entries.entries || [],
-      history: history.history || []
+      history: history.history || [],
     };
   }
 
@@ -554,7 +532,7 @@ export class AutocompleteHandler {
       try {
         await this.autocompleteService.getSuggestions(query, {
           maxSuggestions: 10,
-          context: {}
+          context: {},
         });
         processedCount++;
       } catch (error) {
@@ -566,7 +544,7 @@ export class AutocompleteHandler {
 
     return {
       entries_processed: processedCount,
-      rebuild_time: warmTime
+      rebuild_time: warmTime,
     };
   }
 
@@ -583,18 +561,18 @@ export class AutocompleteHandler {
     }
 
     return {
-      cache_size: clearedCount
+      cache_size: clearedCount,
     };
   }
 
   private async getCacheStats(): Promise<any> {
     const size = await this.cacheManager.size();
-    const hitRate = await this.cacheManager.getHitRate?.() || 0;
+    const hitRate = (await this.cacheManager.getHitRate?.()) || 0;
 
     return {
       cache_size: size,
       hit_rate: hitRate,
-      memory_usage: process.memoryUsage().heapUsed
+      memory_usage: process.memoryUsage().heapUsed,
     };
   }
 }
@@ -604,10 +582,10 @@ export const autocompleteHandlerConfigs = {
   'autocomplete:suggestions': {
     ...HandlerConfigs.SEARCH_OPERATIONS,
     cacheTTL: 180000, // 3 minutes for suggestions
-    rateLimitConfig: { requests: 100, windowMs: 60000 } // Higher limit for autocomplete
+    rateLimitConfig: { requests: 100, windowMs: 60000 }, // Higher limit for autocomplete
   },
   'autocomplete:search': HandlerConfigs.SEARCH_OPERATIONS,
   'autocomplete:learn': HandlerConfigs.WRITE_OPERATIONS,
   'autocomplete:cache': HandlerConfigs.SYSTEM_OPERATIONS,
-  'autocomplete:analytics': HandlerConfigs.SYSTEM_OPERATIONS
+  'autocomplete:analytics': HandlerConfigs.SYSTEM_OPERATIONS,
 } as const;

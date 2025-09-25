@@ -28,7 +28,6 @@ export interface MainframeKnowledgeEntry {
 }
 
 export class KnowledgeBaseMigrationService {
-
   /**
    * COMPREHENSIVE MAINFRAME KNOWLEDGE ENTRIES
    * These are the 12 core mainframe problems converted to resolved incidents
@@ -78,7 +77,7 @@ Error typically occurs during array processing or when accessing uninitialized p
         created_at: new Date('2023-03-15T08:30:00'),
         resolved_at: new Date('2023-03-15T10:30:00'),
         resolver: 'senior.developer@accenture.com',
-        reporter: 'production.support@accenture.com'
+        reporter: 'production.support@accenture.com',
       },
 
       // 2. VSAM ERRORS
@@ -130,7 +129,7 @@ Occurs during batch processing when trying to add records that already exist in 
         created_at: new Date('2023-04-02T14:15:00'),
         resolved_at: new Date('2023-04-02T15:45:00'),
         resolver: 'vsam.specialist@accenture.com',
-        reporter: 'batch.operations@accenture.com'
+        reporter: 'batch.operations@accenture.com',
       },
 
       // 3. DB2 ERRORS
@@ -181,7 +180,7 @@ Multiple transactions accessing the same tables causing lock contention, particu
         created_at: new Date('2023-05-18T09:45:00'),
         resolved_at: new Date('2023-05-18T12:45:00'),
         resolver: 'db2.expert@accenture.com',
-        reporter: 'application.team@accenture.com'
+        reporter: 'application.team@accenture.com',
       },
 
       // 4. BATCH PROCESSING
@@ -233,7 +232,7 @@ Monthly processing window being exceeded, causing downstream job delays and impa
         created_at: new Date('2023-06-30T02:15:00'),
         resolved_at: new Date('2023-06-30T03:00:00'),
         resolver: 'batch.scheduler@accenture.com',
-        reporter: 'operations.center@accenture.com'
+        reporter: 'operations.center@accenture.com',
       },
 
       // 5. FUNCTIONAL ISSUES
@@ -292,7 +291,7 @@ Business users reporting inability to process customer updates, impacting daily 
         created_at: new Date('2023-07-12T10:20:00'),
         resolved_at: new Date('2023-07-12T12:35:00'),
         resolver: 'business.analyst@accenture.com',
-        reporter: 'customer.service@accenture.com'
+        reporter: 'customer.service@accenture.com',
       },
 
       // 6. CICS ERRORS
@@ -354,7 +353,7 @@ Online customer update transactions failing intermittently, causing user frustra
         created_at: new Date('2023-08-05T16:30:00'),
         resolved_at: new Date('2023-08-05T18:05:00'),
         resolver: 'cics.specialist@accenture.com',
-        reporter: 'online.support@accenture.com'
+        reporter: 'online.support@accenture.com',
       },
 
       // 7. IMS ERRORS
@@ -415,7 +414,7 @@ Payroll processing unable to retrieve employee detail segments, causing incomple
         created_at: new Date('2023-08-22T11:45:00'),
         resolved_at: new Date('2023-08-22T13:45:00'),
         resolver: 'ims.dba@accenture.com',
-        reporter: 'payroll.team@accenture.com'
+        reporter: 'payroll.team@accenture.com',
       },
 
       // 8. SECURITY ISSUES
@@ -472,7 +471,7 @@ Critical production access denied, preventing normal business operations and cau
         created_at: new Date('2023-09-15T08:00:00'),
         resolved_at: new Date('2023-09-15T08:30:00'),
         resolver: 'security.admin@accenture.com',
-        reporter: 'help.desk@accenture.com'
+        reporter: 'help.desk@accenture.com',
       },
 
       // 9. NETWORK ISSUES
@@ -535,7 +534,7 @@ Remote applications unable to establish sessions, causing transaction processing
         created_at: new Date('2023-10-08T14:20:00'),
         resolved_at: new Date('2023-10-08T15:35:00'),
         resolver: 'network.engineer@accenture.com',
-        reporter: 'network.operations@accenture.com'
+        reporter: 'network.operations@accenture.com',
       },
 
       // 10. HARDWARE ISSUES
@@ -593,7 +592,7 @@ Storage I/O errors causing application failures and potential data corruption ri
         created_at: new Date('2023-11-02T03:15:00'),
         resolved_at: new Date('2023-11-02T07:15:00'),
         resolver: 'hardware.support@accenture.com',
-        reporter: 'system.monitor@accenture.com'
+        reporter: 'system.monitor@accenture.com',
       },
 
       // 11. SOFTWARE ISSUES
@@ -652,7 +651,7 @@ System stability issues affecting multiple applications and user sessions.`,
         created_at: new Date('2023-11-18T21:45:00'),
         resolved_at: new Date('2023-11-19T00:45:00'),
         resolver: 'system.programmer@accenture.com',
-        reporter: 'master.console@accenture.com'
+        reporter: 'master.console@accenture.com',
       },
 
       // 12. OTHER ISSUES
@@ -718,8 +717,8 @@ User response times unacceptable, causing business productivity issues and user 
         created_at: new Date('2023-12-05T13:30:00'),
         resolved_at: new Date('2023-12-05T17:00:00'),
         resolver: 'performance.analyst@accenture.com',
-        reporter: 'capacity.planning@accenture.com'
-      }
+        reporter: 'capacity.planning@accenture.com',
+      },
     ];
   }
 
@@ -760,7 +759,7 @@ User response times unacceptable, causing business productivity issues and user 
       // Timestamps
       sla_deadline: undefined,
       last_status_change: knowledge.resolved_at,
-      affected_systems: undefined
+      affected_systems: undefined,
     };
   }
 
@@ -768,9 +767,7 @@ User response times unacceptable, causing business productivity issues and user 
    * Get all knowledge entries as incident format
    */
   static getAllKnowledgeAsIncidents(): IncidentKBEntry[] {
-    return this.getMainframeKnowledgeEntries().map(entry =>
-      this.convertToIncidentKBEntry(entry)
-    );
+    return this.getMainframeKnowledgeEntries().map(entry => this.convertToIncidentKBEntry(entry));
   }
 
   /**
@@ -792,20 +789,23 @@ User response times unacceptable, causing business productivity issues and user 
         categories: [...new Set(knowledgeEntries.map(e => e.category))],
         priorities: [...new Set(knowledgeEntries.map(e => e.priority))],
         totalUsageCount: knowledgeEntries.reduce((sum, e) => sum + e.usage_count, 0),
-        averageSuccessRate: knowledgeEntries.reduce((sum, e) =>
-          sum + (e.success_count / Math.max(e.usage_count, 1)), 0) / knowledgeEntries.length
+        averageSuccessRate:
+          knowledgeEntries.reduce(
+            (sum, e) => sum + e.success_count / Math.max(e.usage_count, 1),
+            0
+          ) / knowledgeEntries.length,
       });
 
       return {
         success: true,
         message: `Successfully populated knowledge base with ${knowledgeEntries.length} mainframe knowledge entries`,
-        entriesAdded: knowledgeEntries.length
+        entriesAdded: knowledgeEntries.length,
       };
     } catch (error) {
       return {
         success: false,
         message: `Failed to populate knowledge base: ${error}`,
-        entriesAdded: 0
+        entriesAdded: 0,
       };
     }
   }
@@ -819,23 +819,30 @@ User response times unacceptable, causing business productivity issues and user 
     return {
       totalEntries: entries.length,
       categories: [...new Set(entries.map(e => e.category))],
-      priorityDistribution: entries.reduce((acc, entry) => {
-        acc[entry.priority] = (acc[entry.priority] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
+      priorityDistribution: entries.reduce(
+        (acc, entry) => {
+          acc[entry.priority] = (acc[entry.priority] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
       totalUsage: entries.reduce((sum, e) => sum + e.usage_count, 0),
-      averageSuccessRate: entries.reduce((sum, e) =>
-        sum + (e.success_count / Math.max(e.usage_count, 1)), 0) / entries.length,
+      averageSuccessRate:
+        entries.reduce((sum, e) => sum + e.success_count / Math.max(e.usage_count, 1), 0) /
+        entries.length,
       mostUsedEntry: entries.reduce((max, entry) =>
         entry.usage_count > max.usage_count ? entry : max
       ),
       newestEntry: entries.reduce((newest, entry) =>
         entry.created_at > newest.created_at ? entry : newest
       ),
-      businessImpactDistribution: entries.reduce((acc, entry) => {
-        acc[entry.business_impact!] = (acc[entry.business_impact!] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>)
+      businessImpactDistribution: entries.reduce(
+        (acc, entry) => {
+          acc[entry.business_impact!] = (acc[entry.business_impact!] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
     };
   }
 }

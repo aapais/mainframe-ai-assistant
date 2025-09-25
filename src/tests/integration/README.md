@@ -1,13 +1,16 @@
 # Integration Test Suite
 
-Comprehensive integration tests for the Mainframe AI Assistant categorization and tagging system.
+Comprehensive integration tests for the Mainframe AI Assistant categorization
+and tagging system.
 
 ## Overview
 
-This test suite provides end-to-end validation of the complete categorization and tagging system, including:
+This test suite provides end-to-end validation of the complete categorization
+and tagging system, including:
 
 - **System Integration**: Cross-component workflows and data flow
-- **Performance Benchmarking**: Autocomplete, virtual scrolling, and bulk operations
+- **Performance Benchmarking**: Autocomplete, virtual scrolling, and bulk
+  operations
 - **Accessibility Compliance**: WCAG 2.1 AA validation
 - **Error Handling**: Network failures, database errors, and recovery scenarios
 - **Memory Management**: Leak detection and resource cleanup
@@ -82,6 +85,7 @@ Tests complete workflows across all major components:
 - **Bulk Operations**: Multi-select operations with rollback support
 
 **Key Test Scenarios**:
+
 - Complete entry creation with categories and tags
 - Category-tag relationship validation
 - Bulk tag operations with conflict resolution
@@ -101,6 +105,7 @@ Validates performance across different scenarios:
 - **Concurrent Operations**: Multi-user simulation
 
 **Performance Thresholds**:
+
 - Tag autocomplete: < 200ms average
 - Category tree render: < 150ms
 - Bulk operations: < 2s for 500 entries
@@ -121,6 +126,7 @@ Ensures WCAG 2.1 AA compliance across all components:
 - **Responsive Design**: Accessibility across viewport sizes
 
 **Compliance Areas**:
+
 - Zero axe-core violations
 - Complete keyboard navigation
 - Screen reader announcements
@@ -136,14 +142,17 @@ The test suite includes sophisticated mock data generators:
 
 ```typescript
 // Realistic KB entries with category relationships
-const entries = createRealisticKBEntry('VSAM', ['file-access', 'troubleshooting']);
+const entries = createRealisticKBEntry('VSAM', [
+  'file-access',
+  'troubleshooting',
+]);
 
 // Large datasets for performance testing
 const largeDataset = createLargeDataset({
   entryCount: 1000,
   tagCount: 500,
   categoryCount: 50,
-  maxTagsPerEntry: 8
+  maxTagsPerEntry: 8,
 });
 
 // Category hierarchies with proper relationships
@@ -179,18 +188,22 @@ const result = await stressTest.run({
 ```typescript
 // Benchmark operations
 const benchmark = new Benchmark();
-const result = await benchmark.run('operation-name', async () => {
-  // Your operation here
-}, {
-  iterations: 20,
-  memoryProfiling: true
-});
+const result = await benchmark.run(
+  'operation-name',
+  async () => {
+    // Your operation here
+  },
+  {
+    iterations: 20,
+    memoryProfiling: true,
+  }
+);
 
 // Performance validation
 const validator = new PerformanceValidator();
 const validation = validator.validateBenchmark(result, {
   maxDuration: 200,
-  maxMemoryLeak: 5 * 1024 * 1024
+  maxMemoryLeak: 5 * 1024 * 1024,
 });
 ```
 
@@ -236,7 +249,7 @@ await waitFor(() => {
 ```typescript
 // Test API failure handling
 const mockFailingService = {
-  searchTags: jest.fn().mockRejectedValue(new Error('API Error'))
+  searchTags: jest.fn().mockRejectedValue(new Error('API Error')),
 };
 
 // Should gracefully degrade
@@ -247,7 +260,9 @@ expect(screen.getByText(/suggestions unavailable/i)).toBeInTheDocument();
 
 ```typescript
 // Test database recovery
-const mockOnExecute = jest.fn().mockRejectedValue(new Error('Database connection failed'));
+const mockOnExecute = jest
+  .fn()
+  .mockRejectedValue(new Error('Database connection failed'));
 
 // Should show error and retry option
 await waitFor(() => {
@@ -298,8 +313,10 @@ The test suite generates comprehensive reports in the `test-reports/` directory:
 
 1. **Automated + Manual**: Use axe-core plus keyboard/screen reader testing
 2. **Real User Scenarios**: Test actual workflows with accessibility tools
-3. **Multiple Contexts**: Test across different browsers and assistive technologies
-4. **Performance Impact**: Ensure accessibility features don't degrade performance
+3. **Multiple Contexts**: Test across different browsers and assistive
+   technologies
+4. **Performance Impact**: Ensure accessibility features don't degrade
+   performance
 5. **Documentation**: Document accessibility features and testing approaches
 
 ## Troubleshooting
@@ -307,18 +324,21 @@ The test suite generates comprehensive reports in the `test-reports/` directory:
 ### Common Issues
 
 **Test Timeouts**:
+
 ```bash
 # Increase timeout for slow operations
 npm run test:integration -- --testTimeout=600000
 ```
 
 **Memory Issues**:
+
 ```bash
 # Enable garbage collection and increase memory
 node --expose-gc --max-old-space-size=4096 ./node_modules/.bin/jest --config=jest.config.integration.js
 ```
 
 **Accessibility Violations**:
+
 ```bash
 # Run with detailed axe output
 npm run test:integration -- --verbose

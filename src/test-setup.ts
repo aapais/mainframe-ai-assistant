@@ -72,10 +72,10 @@ const originalConsoleError = console.error;
 console.log = (...args: any[]) => {
   const message = args.join(' ');
   if (
-    message.includes('📊') || 
-    message.includes('⏱️') || 
-    message.includes('🚀') || 
-    message.includes('💾') || 
+    message.includes('📊') ||
+    message.includes('⏱️') ||
+    message.includes('🚀') ||
+    message.includes('💾') ||
     message.includes('🏗️') ||
     message.includes('🔍') ||
     message.includes('📈') ||
@@ -141,7 +141,10 @@ Object.defineProperty(navigator, 'clipboard', {
 global.File = class MockFile {
   constructor(parts: any[], name: string, options: any = {}) {
     this.name = name;
-    this.size = parts.reduce((acc, part) => acc + (typeof part === 'string' ? part.length : part.size || 0), 0);
+    this.size = parts.reduce(
+      (acc, part) => acc + (typeof part === 'string' ? part.length : part.size || 0),
+      0
+    );
     this.type = options.type || '';
     this.lastModified = options.lastModified || Date.now();
   }
@@ -255,13 +258,13 @@ HTMLElement.prototype.focus = jest.fn();
 beforeEach(() => {
   mockTime = 0;
   jest.clearAllMocks();
-  
+
   // Reset storage mocks
   localStorageMock.getItem.mockReturnValue(null);
   localStorageMock.setItem.mockClear();
   localStorageMock.removeItem.mockClear();
   localStorageMock.clear.mockClear();
-  
+
   sessionStorageMock.getItem.mockReturnValue(null);
   sessionStorageMock.setItem.mockClear();
   sessionStorageMock.removeItem.mockClear();
@@ -272,7 +275,7 @@ beforeEach(() => {
 afterEach(() => {
   // Clean up any hanging promises or timeouts
   jest.clearAllTimers();
-  
+
   // Clean up any event listeners
   document.removeEventListener = jest.fn();
 });
@@ -305,11 +308,13 @@ export const testUtils = {
   // Create mock form data
   createMockFormData: (overrides = {}) => ({
     title: 'Test KB Entry Title',
-    problem: 'This is a test problem description that is long enough to pass validation requirements and provides sufficient detail for testing purposes.',
-    solution: 'This is a test solution with step-by-step instructions:\n1. First step to resolve the issue\n2. Second step with additional details\n3. Third step to complete the resolution',
+    problem:
+      'This is a test problem description that is long enough to pass validation requirements and provides sufficient detail for testing purposes.',
+    solution:
+      'This is a test solution with step-by-step instructions:\n1. First step to resolve the issue\n2. Second step with additional details\n3. Third step to complete the resolution',
     category: 'VSAM',
     tags: ['test', 'mock', 'kb-entry'],
-    ...overrides
+    ...overrides,
   }),
 
   // Create mock services with default implementations
@@ -321,20 +326,20 @@ export const testUtils = {
       getCategories: jest.fn().mockResolvedValue(['VSAM', 'JCL', 'DB2', 'Batch', 'Functional']),
       getTags: jest.fn().mockResolvedValue([]),
       checkPermissions: jest.fn().mockResolvedValue({ canEdit: true, canSave: true }),
-      ...overrides.kbService
+      ...overrides.kbService,
     },
     validationService: {
       validateEntry: jest.fn().mockResolvedValue({ isValid: true, errors: [] }),
       validateCrossFields: jest.fn().mockResolvedValue({ isValid: true, warnings: {} }),
       analyzeContentQuality: jest.fn().mockResolvedValue({ score: 85, suggestions: [] }),
       validateTitleUniqueness: jest.fn().mockResolvedValue({ isValid: true, isUnique: true }),
-      ...overrides.validationService
+      ...overrides.validationService,
     },
     completionService: {
       getSuggestions: jest.fn().mockResolvedValue([]),
       getTemplates: jest.fn().mockResolvedValue([]),
       analyzeSimilarEntries: jest.fn().mockResolvedValue([]),
-      ...overrides.completionService
+      ...overrides.completionService,
     },
     notificationService: {
       showSuccess: jest.fn(),
@@ -342,8 +347,8 @@ export const testUtils = {
       showWarning: jest.fn(),
       showInfo: jest.fn(),
       clear: jest.fn(),
-      ...overrides.notificationService
-    }
+      ...overrides.notificationService,
+    },
   }),
 
   // Wait for async operations with timeout
@@ -354,7 +359,7 @@ export const testUtils = {
     const userEvent = require('@testing-library/user-event');
     return userEvent.setup({
       advanceTimers: jest.advanceTimersByTime,
-      delay: null // No delays in tests for speed
+      delay: null, // No delays in tests for speed
     });
   },
 
@@ -369,8 +374,8 @@ export const testUtils = {
         'aria-required-attr': { enabled: true },
         'aria-valid-attr': { enabled: true },
         'label-title-only': { enabled: true },
-        'form-field-multiple-labels': { enabled: true }
-      }
+        'form-field-multiple-labels': { enabled: true },
+      },
     });
     expect(results).toHaveNoViolations();
     return results;
@@ -417,7 +422,7 @@ export const testUtils = {
   simulateValidationError: (service: any, field: string, message: string) => {
     service.validateEntry.mockResolvedValueOnce({
       isValid: false,
-      errors: [{ field, message }]
+      errors: [{ field, message }],
     });
   },
 
@@ -435,9 +440,7 @@ export const testUtils = {
 
   // Mock localStorage data
   mockLocalStorage: (key: string, data: any) => {
-    localStorageMock.getItem.mockImplementation((k) =>
-      k === key ? JSON.stringify(data) : null
-    );
+    localStorageMock.getItem.mockImplementation(k => (k === key ? JSON.stringify(data) : null));
   },
 
   // Create mock validation errors
@@ -445,7 +448,7 @@ export const testUtils = {
     return Object.entries(fieldErrors).map(([field, message]) => ({
       field,
       message,
-      type: 'validation'
+      type: 'validation',
     }));
   },
 
@@ -456,7 +459,7 @@ export const testUtils = {
     const end = performance.now();
     return {
       result,
-      duration: end - start
+      duration: end - start,
     };
   },
 
@@ -473,7 +476,7 @@ export const testUtils = {
     const invalidInputs = container.querySelectorAll('[aria-invalid="true"]');
     expect(errorMessages.length).toBeGreaterThan(0);
     expect(invalidInputs.length).toBeGreaterThan(0);
-  }
+  },
 };
 
 // Make test utils available globally for convenience

@@ -17,7 +17,7 @@ import {
   UpdateUnifiedEntry,
   UnifiedEntryWithAccessors,
   EntryType,
-  UnifiedStatistics
+  UnifiedStatistics,
 } from './UnifiedService';
 
 // Export unified service as default
@@ -31,7 +31,7 @@ export type {
   UpdateUnifiedEntry,
   UnifiedEntryWithAccessors,
   EntryType,
-  UnifiedStatistics
+  UnifiedStatistics,
 };
 
 // ===========================
@@ -193,16 +193,9 @@ export interface ServiceHealthStatus {
  * Check health of all services
  */
 export const checkServiceHealth = async (): Promise<ServiceHealthStatus[]> => {
-  const services = [
-    'unified',
-    'knowledgeBase',
-    'incident',
-    'ai',
-    'search',
-    'hybridSearch'
-  ];
+  const services = ['unified', 'knowledgeBase', 'incident', 'ai', 'search', 'hybridSearch'];
 
-  const healthChecks = services.map(async (serviceName) => {
+  const healthChecks = services.map(async serviceName => {
     const startTime = Date.now();
     try {
       const service = ServiceFactory.getService(serviceName);
@@ -216,7 +209,7 @@ export const checkServiceHealth = async (): Promise<ServiceHealthStatus[]> => {
         serviceName,
         status: 'healthy' as const,
         responseTime: Date.now() - startTime,
-        lastCheck: new Date()
+        lastCheck: new Date(),
       };
     } catch (error) {
       return {
@@ -224,7 +217,7 @@ export const checkServiceHealth = async (): Promise<ServiceHealthStatus[]> => {
         status: 'unhealthy' as const,
         error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime,
-        lastCheck: new Date()
+        lastCheck: new Date(),
       };
     }
   });
@@ -248,7 +241,9 @@ export const migrateFromKBService = (component: any) => {
  * Migration helper for components using the old incident service
  */
 export const migrateFromIncidentService = (component: any) => {
-  console.warn('Component is using deprecated incident service. Consider migrating to unified service.');
+  console.warn(
+    'Component is using deprecated incident service. Consider migrating to unified service.'
+  );
   return incidentService;
 };
 
@@ -259,14 +254,18 @@ export const migrateFromIncidentService = (component: any) => {
 /**
  * Type guard to check if an entry is a knowledge base entry
  */
-export const isKnowledgeBaseEntry = (entry: UnifiedEntry): entry is UnifiedEntry & { entry_type: 'knowledge_base' } => {
+export const isKnowledgeBaseEntry = (
+  entry: UnifiedEntry
+): entry is UnifiedEntry & { entry_type: 'knowledge_base' } => {
   return entry.entry_type === 'knowledge_base';
 };
 
 /**
  * Type guard to check if an entry is an incident entry
  */
-export const isIncidentEntry = (entry: UnifiedEntry): entry is UnifiedEntry & { entry_type: 'incident' } => {
+export const isIncidentEntry = (
+  entry: UnifiedEntry
+): entry is UnifiedEntry & { entry_type: 'incident' } => {
   return entry.entry_type === 'incident';
 };
 
@@ -278,10 +277,24 @@ export const toKBEntry = (entry: UnifiedEntry): any => {
     throw new Error('Entry is not a knowledge base entry');
   }
 
-  const { entry_type, status, priority, assigned_to, escalation_level,
-         resolution_time, sla_deadline, last_status_change, affected_systems,
-         business_impact, customer_impact, reporter, resolver, incident_number,
-         external_ticket_id, ...kbEntry } = entry;
+  const {
+    entry_type,
+    status,
+    priority,
+    assigned_to,
+    escalation_level,
+    resolution_time,
+    sla_deadline,
+    last_status_change,
+    affected_systems,
+    business_impact,
+    customer_impact,
+    reporter,
+    resolver,
+    incident_number,
+    external_ticket_id,
+    ...kbEntry
+  } = entry;
 
   return kbEntry;
 };

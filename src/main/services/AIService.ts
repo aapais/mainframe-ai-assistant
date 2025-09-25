@@ -4,7 +4,13 @@
  */
 
 import { GeminiService } from '../../services/GeminiService';
-import { Service, ServiceContext, ServiceHealth, ServiceStatus, FallbackService } from './ServiceManager';
+import {
+  Service,
+  ServiceContext,
+  ServiceHealth,
+  ServiceStatus,
+  FallbackService,
+} from './ServiceManager';
 
 export class AIService implements Service {
   public readonly name = 'AIService';
@@ -17,18 +23,19 @@ export class AIService implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
   private startTime?: Date;
 
   async initialize(context: ServiceContext): Promise<void> {
     context.logger.info('Initializing AI Service...');
     this.startTime = new Date();
-    
+
     try {
       // Try to get API key from environment or config
-      const geminiApiKey = process.env.GEMINI_API_KEY || await this.getGeminiApiKeyFromConfig(context);
-      
+      const geminiApiKey =
+        process.env.GEMINI_API_KEY || (await this.getGeminiApiKeyFromConfig(context));
+
       if (!geminiApiKey) {
         context.logger.warn('Gemini API key not found - AI features will be disabled');
         this.status = {
@@ -36,7 +43,7 @@ export class AIService implements Service {
           startTime: this.startTime,
           restartCount: 0,
           uptime: 0,
-          metadata: { reason: 'api_key_missing' }
+          metadata: { reason: 'api_key_missing' },
         };
         return;
       }
@@ -44,7 +51,7 @@ export class AIService implements Service {
       this.geminiService = new GeminiService({
         apiKey: geminiApiKey,
         model: 'gemini-pro',
-        temperature: 0.3
+        temperature: 0.3,
       });
 
       // Test the service with a simple request
@@ -54,7 +61,7 @@ export class AIService implements Service {
         status: 'running',
         startTime: this.startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('AI Service initialized successfully');
@@ -64,12 +71,12 @@ export class AIService implements Service {
         status: 'error',
         lastError: error,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
-      
+
       context.logger.error('AI Service initialization failed', error);
       context.metrics.increment('service.ai.initialization_failed');
-      
+
       // Since this is not a critical service, we don't throw
       context.logger.info('AI Service will run in degraded mode without AI features');
       this.status.status = 'degraded';
@@ -80,7 +87,7 @@ export class AIService implements Service {
     this.geminiService = null;
     this.status = {
       ...this.status,
-      status: 'stopped'
+      status: 'stopped',
     };
   }
 
@@ -93,7 +100,7 @@ export class AIService implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.geminiService) {
         return {
@@ -101,22 +108,22 @@ export class AIService implements Service {
           error: 'Gemini service not available',
           details: { mode: 'degraded' },
           lastCheck: new Date(),
-          responseTime: Date.now() - startTime
+          responseTime: Date.now() - startTime,
         };
       }
 
       // Test with a simple request
       await this.testConnection();
-      
+
       return {
         healthy: true,
         details: {
           mode: 'full_ai',
           model: 'gemini-pro',
-          features: ['semantic_search', 'error_explanation', 'code_analysis']
+          features: ['semantic_search', 'error_explanation', 'code_analysis'],
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
@@ -124,7 +131,7 @@ export class AIService implements Service {
         error: error.message,
         details: { mode: 'degraded' },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
@@ -191,7 +198,7 @@ export class FallbackAIService implements FallbackService {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
 
   async initialize(context: ServiceContext): Promise<void> {
@@ -201,7 +208,7 @@ export class FallbackAIService implements FallbackService {
       startTime: new Date(),
       restartCount: 0,
       uptime: 0,
-      metadata: { mode: 'fallback', active: false }
+      metadata: { mode: 'fallback', active: false },
     };
   }
 
@@ -209,7 +216,7 @@ export class FallbackAIService implements FallbackService {
     this.isActivated = false;
     this.status = {
       ...this.status,
-      status: 'stopped'
+      status: 'stopped',
     };
   }
 
@@ -223,9 +230,9 @@ export class FallbackAIService implements FallbackService {
       details: {
         mode: 'fallback',
         active: this.isActivated,
-        features: ['basic_search', 'static_explanations']
+        features: ['basic_search', 'static_explanations'],
       },
-      lastCheck: new Date()
+      lastCheck: new Date(),
     };
   }
 
@@ -248,26 +255,26 @@ export class FallbackAIService implements FallbackService {
     // Basic fuzzy matching fallback
     const queryLower = query.toLowerCase();
     const keywords = queryLower.split(/\s+/).filter(k => k.length > 2);
-    
+
     const scored = entries.map(entry => {
       const text = `${entry.title} ${entry.problem} ${entry.solution}`.toLowerCase();
       let score = 0;
-      
+
       // Exact phrase match
       if (text.includes(queryLower)) {
         score += 50;
       }
-      
+
       // Keyword matches
       keywords.forEach(keyword => {
         if (text.includes(keyword)) {
           score += 10;
         }
       });
-      
+
       return { entry, score, matchType: 'fuzzy' as const };
     });
-    
+
     return scored
       .filter(r => r.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -277,14 +284,16 @@ export class FallbackAIService implements FallbackService {
   async explainError(errorCode: string): Promise<string> {
     // Static error explanations
     const explanations: Record<string, string> = {
-      'S0C7': 'Data exception - Invalid numeric data detected. Check for uninitialized fields or non-numeric data in numeric variables.',
-      'S0C4': 'Protection exception - Invalid memory access. Check array bounds and pointer usage.',
-      'U0778': 'IMS database not available. Check database status and ensure it is started.',
-      'IEF212I': 'Dataset not found. Verify dataset name and ensure it exists and is cataloged.',
-      'VSAM STATUS 35': 'VSAM file not found. Check dataset name, catalog entry, and permissions.'
+      S0C7: 'Data exception - Invalid numeric data detected. Check for uninitialized fields or non-numeric data in numeric variables.',
+      S0C4: 'Protection exception - Invalid memory access. Check array bounds and pointer usage.',
+      U0778: 'IMS database not available. Check database status and ensure it is started.',
+      IEF212I: 'Dataset not found. Verify dataset name and ensure it exists and is cataloged.',
+      'VSAM STATUS 35': 'VSAM file not found. Check dataset name, catalog entry, and permissions.',
     };
 
-    return explanations[errorCode.toUpperCase()] || 
-           `Error code ${errorCode}: Please check system documentation for details. AI service is not available for detailed analysis.`;
+    return (
+      explanations[errorCode.toUpperCase()] ||
+      `Error code ${errorCode}: Please check system documentation for details. AI service is not available for detailed analysis.`
+    );
   }
 }

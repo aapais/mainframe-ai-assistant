@@ -149,7 +149,10 @@ export interface UseSmartSearchReturn<T = any> {
 
   // Search functions
   search: (query: string | SearchQuery, options?: SearchOptions) => Promise<SearchResult<T>[]>;
-  searchWithStrategy: (strategy: 'local' | 'ai' | 'hybrid', query: string) => Promise<SearchResult<T>[]>;
+  searchWithStrategy: (
+    strategy: 'local' | 'ai' | 'hybrid',
+    query: string
+  ) => Promise<SearchResult<T>[]>;
   getSuggestions: (partialQuery: string) => Promise<SearchSuggestion[]>;
   autoComplete: (text: string, field?: string) => Promise<string[]>;
 
@@ -236,8 +239,8 @@ const DEFAULT_OPTIONS: Required<UseSmartSearchOptions> = {
     maxResults: 50,
     includeScore: true,
     highlightMatches: true,
-    contextWindow: 100
-  }
+    contextWindow: 100,
+  },
 };
 
 const DEFAULT_QUERY: SearchQuery = {
@@ -245,7 +248,7 @@ const DEFAULT_QUERY: SearchQuery = {
   filters: [],
   sort: { field: 'relevance', direction: 'desc' },
   facets: [],
-  options: DEFAULT_OPTIONS.defaultSearchOptions
+  options: DEFAULT_OPTIONS.defaultSearchOptions,
 };
 
 // ========================
@@ -271,13 +274,15 @@ export const useSmartSearch = <T = any>(
   const [totalResults, setTotalResults] = useState(0);
 
   // Refs for internal tracking
-  const searchCache = useRef<Map<string, { results: SearchResult<T>[]; timestamp: number }>>(new Map());
+  const searchCache = useRef<Map<string, { results: SearchResult<T>[]; timestamp: number }>>(
+    new Map()
+  );
   const searchId = useRef(0);
   const performanceMetrics = useRef({
     totalSearches: 0,
     failedSearches: 0,
     totalSearchTime: 0,
-    cacheHits: 0
+    cacheHits: 0,
   });
 
   // Debounced search for suggestions
@@ -300,188 +305,212 @@ export const useSmartSearch = <T = any>(
   );
 
   // Internal suggestion generator
-  const getSuggestionsInternal = useCallback(async (partialQuery: string): Promise<SearchSuggestion[]> => {
-    const suggestions: SearchSuggestion[] = [];
+  const getSuggestionsInternal = useCallback(
+    async (partialQuery: string): Promise<SearchSuggestion[]> => {
+      const suggestions: SearchSuggestion[] = [];
 
-    // Query completion from history
-    if (config.enableHistory) {
-      const historySuggestions = history
-        .filter(h => h.query.text.toLowerCase().includes(partialQuery.toLowerCase()))
-        .slice(0, 3)
-        .map(h => ({
-          text: h.query.text,
-          type: 'query' as const,
-          score: h.resultsCount > 0 ? 0.8 : 0.5,
-          metadata: { from: 'history', resultsCount: h.resultsCount }
-        }));
+      // Query completion from history
+      if (config.enableHistory) {
+        const historySuggestions = history
+          .filter(h => h.query.text.toLowerCase().includes(partialQuery.toLowerCase()))
+          .slice(0, 3)
+          .map(h => ({
+            text: h.query.text,
+            type: 'query' as const,
+            score: h.resultsCount > 0 ? 0.8 : 0.5,
+            metadata: { from: 'history', resultsCount: h.resultsCount },
+          }));
 
-      suggestions.push(...historySuggestions);
-    }
-
-    // Auto-complete from recent searches
-    const recentQueries = history
-      .slice(0, 20)
-      .map(h => h.query.text)
-      .filter(q => q.toLowerCase().startsWith(partialQuery.toLowerCase()))
-      .slice(0, 3)
-      .map(text => ({
-        text,
-        type: 'completion' as const,
-        score: 0.9,
-        metadata: { from: 'autocomplete' }
-      }));
-
-    suggestions.push(...recentQueries);
-
-    // Filter suggestions from saved searches
-    if (config.enableSavedSearches) {
-      const savedSuggestions = savedSearches
-        .filter(s => s.name.toLowerCase().includes(partialQuery.toLowerCase()) ||
-                     s.query.text.toLowerCase().includes(partialQuery.toLowerCase()))
-        .slice(0, 2)
-        .map(s => ({
-          text: s.name,
-          type: 'query' as const,
-          score: 0.7,
-          metadata: { from: 'saved', id: s.id }
-        }));
-
-      suggestions.push(...savedSuggestions);
-    }
-
-    // Remove duplicates and sort by score
-    const uniqueSuggestions = suggestions.filter((suggestion, index, array) =>
-      index === array.findIndex(s => s.text === suggestion.text)
-    );
-
-    return uniqueSuggestions.sort((a, b) => b.score - a.score);
-  }, [history, savedSearches, config.enableHistory, config.enableSavedSearches]);
-
-  // Main search function
-  const search = useCallback(async (
-    queryInput: string | SearchQuery,
-    options?: SearchOptions
-  ): Promise<SearchResult<T>[]> => {
-    const currentSearchId = ++searchId.current;
-    setIsSearching(true);
-    setError(null);
-
-    const startTime = performance.now();
-
-    try {
-      // Prepare search query
-      const searchQuery: SearchQuery = typeof queryInput === 'string'
-        ? { ...query, text: queryInput, options: { ...query.options, ...options } }
-        : queryInput;
-
-      setQuery(searchQuery);
-
-      // Check cache first
-      const cacheKey = JSON.stringify(searchQuery);
-      if (config.cacheResults && searchCache.current.has(cacheKey)) {
-        const cached = searchCache.current.get(cacheKey)!;
-        const cacheAge = Date.now() - cached.timestamp;
-
-        if (cacheAge < 300000) { // 5 minutes
-          performanceMetrics.current.cacheHits++;
-          setResults(cached.results);
-          setTotalResults(cached.results.length);
-          const endTime = performance.now();
-          setSearchTime(endTime - startTime);
-          return cached.results;
-        }
+        suggestions.push(...historySuggestions);
       }
 
-      // Execute search
-      const searchResults = await searchFunction(searchQuery);
+      // Auto-complete from recent searches
+      const recentQueries = history
+        .slice(0, 20)
+        .map(h => h.query.text)
+        .filter(q => q.toLowerCase().startsWith(partialQuery.toLowerCase()))
+        .slice(0, 3)
+        .map(text => ({
+          text,
+          type: 'completion' as const,
+          score: 0.9,
+          metadata: { from: 'autocomplete' },
+        }));
 
-      // Check if this is still the current search
-      if (currentSearchId !== searchId.current) {
+      suggestions.push(...recentQueries);
+
+      // Filter suggestions from saved searches
+      if (config.enableSavedSearches) {
+        const savedSuggestions = savedSearches
+          .filter(
+            s =>
+              s.name.toLowerCase().includes(partialQuery.toLowerCase()) ||
+              s.query.text.toLowerCase().includes(partialQuery.toLowerCase())
+          )
+          .slice(0, 2)
+          .map(s => ({
+            text: s.name,
+            type: 'query' as const,
+            score: 0.7,
+            metadata: { from: 'saved', id: s.id },
+          }));
+
+        suggestions.push(...savedSuggestions);
+      }
+
+      // Remove duplicates and sort by score
+      const uniqueSuggestions = suggestions.filter(
+        (suggestion, index, array) => index === array.findIndex(s => s.text === suggestion.text)
+      );
+
+      return uniqueSuggestions.sort((a, b) => b.score - a.score);
+    },
+    [history, savedSearches, config.enableHistory, config.enableSavedSearches]
+  );
+
+  // Main search function
+  const search = useCallback(
+    async (
+      queryInput: string | SearchQuery,
+      options?: SearchOptions
+    ): Promise<SearchResult<T>[]> => {
+      const currentSearchId = ++searchId.current;
+      setIsSearching(true);
+      setError(null);
+
+      const startTime = performance.now();
+
+      try {
+        // Prepare search query
+        const searchQuery: SearchQuery =
+          typeof queryInput === 'string'
+            ? { ...query, text: queryInput, options: { ...query.options, ...options } }
+            : queryInput;
+
+        setQuery(searchQuery);
+
+        // Check cache first
+        const cacheKey = JSON.stringify(searchQuery);
+        if (config.cacheResults && searchCache.current.has(cacheKey)) {
+          const cached = searchCache.current.get(cacheKey)!;
+          const cacheAge = Date.now() - cached.timestamp;
+
+          if (cacheAge < 300000) {
+            // 5 minutes
+            performanceMetrics.current.cacheHits++;
+            setResults(cached.results);
+            setTotalResults(cached.results.length);
+            const endTime = performance.now();
+            setSearchTime(endTime - startTime);
+            return cached.results;
+          }
+        }
+
+        // Execute search
+        const searchResults = await searchFunction(searchQuery);
+
+        // Check if this is still the current search
+        if (currentSearchId !== searchId.current) {
+          return [];
+        }
+
+        // Update results
+        setResults(searchResults);
+        setTotalResults(searchResults.length);
+
+        // Cache results
+        if (config.cacheResults) {
+          if (searchCache.current.size >= config.cacheSize) {
+            // Remove oldest entry
+            const oldestKey = Array.from(searchCache.current.keys())[0];
+            searchCache.current.delete(oldestKey);
+          }
+
+          searchCache.current.set(cacheKey, {
+            results: searchResults,
+            timestamp: Date.now(),
+          });
+        }
+
+        // Update facets if enabled
+        if (config.enableFaceting) {
+          updateFacetsFromResults(searchResults);
+        }
+
+        // Add to history
+        if (config.enableHistory && searchQuery.text.trim()) {
+          addToHistory(searchQuery, searchResults, performance.now() - startTime);
+        }
+
+        // Update performance metrics
+        performanceMetrics.current.totalSearches++;
+        performanceMetrics.current.totalSearchTime += performance.now() - startTime;
+
+        const endTime = performance.now();
+        setSearchTime(endTime - startTime);
+
+        return searchResults;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Search failed';
+        setError(errorMessage);
+        performanceMetrics.current.failedSearches++;
+        return [];
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [
+      query,
+      config.cacheResults,
+      config.cacheSize,
+      config.enableFaceting,
+      config.enableHistory,
+      searchFunction,
+    ]
+  );
+
+  // Strategy-specific search
+  const searchWithStrategy = useCallback(
+    async (strategy: 'local' | 'ai' | 'hybrid', queryText: string): Promise<SearchResult<T>[]> => {
+      const searchOptions: SearchOptions = {
+        ...config.defaultSearchOptions,
+        enableFuzzy: strategy === 'local' || strategy === 'hybrid',
+        enableSemantic: strategy === 'ai' || strategy === 'hybrid',
+        enableAI: strategy === 'ai' || strategy === 'hybrid',
+      };
+
+      return await search(queryText, searchOptions);
+    },
+    [search, config.defaultSearchOptions]
+  );
+
+  // Get suggestions
+  const getSuggestions = useCallback(
+    async (partialQuery: string): Promise<SearchSuggestion[]> => {
+      debouncedGetSuggestions(partialQuery);
+      return suggestions;
+    },
+    [debouncedGetSuggestions, suggestions]
+  );
+
+  // Auto-complete
+  const autoComplete = useCallback(
+    async (text: string, field?: string): Promise<string[]> => {
+      if (!config.enableAutoComplete || text.length < 2) {
         return [];
       }
 
-      // Update results
-      setResults(searchResults);
-      setTotalResults(searchResults.length);
+      // Simple auto-complete from search history
+      const completions = history
+        .map(h => (field ? h.query.filters.find(f => f.field === field)?.value : h.query.text))
+        .filter((value): value is string => typeof value === 'string')
+        .filter(value => value.toLowerCase().startsWith(text.toLowerCase()))
+        .slice(0, 10);
 
-      // Cache results
-      if (config.cacheResults) {
-        if (searchCache.current.size >= config.cacheSize) {
-          // Remove oldest entry
-          const oldestKey = Array.from(searchCache.current.keys())[0];
-          searchCache.current.delete(oldestKey);
-        }
-
-        searchCache.current.set(cacheKey, {
-          results: searchResults,
-          timestamp: Date.now()
-        });
-      }
-
-      // Update facets if enabled
-      if (config.enableFaceting) {
-        updateFacetsFromResults(searchResults);
-      }
-
-      // Add to history
-      if (config.enableHistory && searchQuery.text.trim()) {
-        addToHistory(searchQuery, searchResults, performance.now() - startTime);
-      }
-
-      // Update performance metrics
-      performanceMetrics.current.totalSearches++;
-      performanceMetrics.current.totalSearchTime += performance.now() - startTime;
-
-      const endTime = performance.now();
-      setSearchTime(endTime - startTime);
-
-      return searchResults;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Search failed';
-      setError(errorMessage);
-      performanceMetrics.current.failedSearches++;
-      return [];
-    } finally {
-      setIsSearching(false);
-    }
-  }, [query, config.cacheResults, config.cacheSize, config.enableFaceting, config.enableHistory, searchFunction]);
-
-  // Strategy-specific search
-  const searchWithStrategy = useCallback(async (
-    strategy: 'local' | 'ai' | 'hybrid',
-    queryText: string
-  ): Promise<SearchResult<T>[]> => {
-    const searchOptions: SearchOptions = {
-      ...config.defaultSearchOptions,
-      enableFuzzy: strategy === 'local' || strategy === 'hybrid',
-      enableSemantic: strategy === 'ai' || strategy === 'hybrid',
-      enableAI: strategy === 'ai' || strategy === 'hybrid'
-    };
-
-    return await search(queryText, searchOptions);
-  }, [search, config.defaultSearchOptions]);
-
-  // Get suggestions
-  const getSuggestions = useCallback(async (partialQuery: string): Promise<SearchSuggestion[]> => {
-    debouncedGetSuggestions(partialQuery);
-    return suggestions;
-  }, [debouncedGetSuggestions, suggestions]);
-
-  // Auto-complete
-  const autoComplete = useCallback(async (text: string, field?: string): Promise<string[]> => {
-    if (!config.enableAutoComplete || text.length < 2) {
-      return [];
-    }
-
-    // Simple auto-complete from search history
-    const completions = history
-      .map(h => field ? h.query.filters.find(f => f.field === field)?.value : h.query.text)
-      .filter((value): value is string => typeof value === 'string')
-      .filter(value => value.toLowerCase().startsWith(text.toLowerCase()))
-      .slice(0, 10);
-
-    return Array.from(new Set(completions));
-  }, [config.enableAutoComplete, history]);
+      return Array.from(new Set(completions));
+    },
+    [config.enableAutoComplete, history]
+  );
 
   // Query management
   const updateQuery = useCallback((updates: Partial<SearchQuery>) => {
@@ -499,40 +528,43 @@ export const useSmartSearch = <T = any>(
   const addFilter = useCallback((filter: SearchFilter) => {
     setQuery(prev => ({
       ...prev,
-      filters: [...prev.filters, filter]
+      filters: [...prev.filters, filter],
     }));
   }, []);
 
   const removeFilter = useCallback((index: number) => {
     setQuery(prev => ({
       ...prev,
-      filters: prev.filters.filter((_, i) => i !== index)
+      filters: prev.filters.filter((_, i) => i !== index),
     }));
   }, []);
 
   const updateFilter = useCallback((index: number, filter: SearchFilter) => {
     setQuery(prev => ({
       ...prev,
-      filters: prev.filters.map((f, i) => i === index ? filter : f)
+      filters: prev.filters.map((f, i) => (i === index ? filter : f)),
     }));
   }, []);
 
   // History management
-  const addToHistory = useCallback((searchQuery: SearchQuery, searchResults: SearchResult<T>[], executionTime: number) => {
-    const historyItem: SearchHistory = {
-      id: `search_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      query: searchQuery,
-      timestamp: new Date(),
-      resultsCount: searchResults.length,
-      executionTime,
-      selectedResults: []
-    };
+  const addToHistory = useCallback(
+    (searchQuery: SearchQuery, searchResults: SearchResult<T>[], executionTime: number) => {
+      const historyItem: SearchHistory = {
+        id: `search_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        query: searchQuery,
+        timestamp: new Date(),
+        resultsCount: searchResults.length,
+        executionTime,
+        selectedResults: [],
+      };
 
-    setHistory(prev => {
-      const updated = [historyItem, ...prev];
-      return updated.slice(0, config.maxHistoryItems);
-    });
-  }, [config.maxHistoryItems]);
+      setHistory(prev => {
+        const updated = [historyItem, ...prev];
+        return updated.slice(0, config.maxHistoryItems);
+      });
+    },
+    [config.maxHistoryItems]
+  );
 
   const clearHistory = useCallback(() => {
     setHistory([]);
@@ -542,143 +574,161 @@ export const useSmartSearch = <T = any>(
     setHistory(prev => prev.filter(item => item.id !== id));
   }, []);
 
-  const rerunHistoryItem = useCallback(async (id: string) => {
-    const historyItem = history.find(item => item.id === id);
-    if (historyItem) {
-      await search(historyItem.query);
-    }
-  }, [history, search]);
+  const rerunHistoryItem = useCallback(
+    async (id: string) => {
+      const historyItem = history.find(item => item.id === id);
+      if (historyItem) {
+        await search(historyItem.query);
+      }
+    },
+    [history, search]
+  );
 
   // Saved searches
-  const saveSearch = useCallback(async (
-    name: string,
-    description?: string,
-    enableAlert?: boolean
-  ): Promise<SavedSearch> => {
-    const savedSearch: SavedSearch = {
-      id: `saved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name,
-      description,
-      query: { ...query },
-      created_at: new Date(),
-      updated_at: new Date(),
-      usage_count: 0,
-      is_alert: enableAlert,
-      alert_frequency: enableAlert ? 'daily' : undefined
-    };
+  const saveSearch = useCallback(
+    async (name: string, description?: string, enableAlert?: boolean): Promise<SavedSearch> => {
+      const savedSearch: SavedSearch = {
+        id: `saved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name,
+        description,
+        query: { ...query },
+        created_at: new Date(),
+        updated_at: new Date(),
+        usage_count: 0,
+        is_alert: enableAlert,
+        alert_frequency: enableAlert ? 'daily' : undefined,
+      };
 
-    setSavedSearches(prev => [...prev, savedSearch]);
-    return savedSearch;
-  }, [query]);
+      setSavedSearches(prev => [...prev, savedSearch]);
+      return savedSearch;
+    },
+    [query]
+  );
 
   const deleteSavedSearch = useCallback((id: string) => {
     setSavedSearches(prev => prev.filter(search => search.id !== id));
   }, []);
 
-  const runSavedSearch = useCallback(async (id: string) => {
-    const savedSearch = savedSearches.find(search => search.id === id);
-    if (savedSearch) {
-      // Update usage count
-      setSavedSearches(prev => prev.map(search =>
-        search.id === id
-          ? { ...search, usage_count: search.usage_count + 1, updated_at: new Date() }
-          : search
-      ));
+  const runSavedSearch = useCallback(
+    async (id: string) => {
+      const savedSearch = savedSearches.find(search => search.id === id);
+      if (savedSearch) {
+        // Update usage count
+        setSavedSearches(prev =>
+          prev.map(search =>
+            search.id === id
+              ? { ...search, usage_count: search.usage_count + 1, updated_at: new Date() }
+              : search
+          )
+        );
 
-      await search(savedSearch.query);
-    }
-  }, [savedSearches, search]);
+        await search(savedSearch.query);
+      }
+    },
+    [savedSearches, search]
+  );
 
   const updateSavedSearch = useCallback((id: string, updates: Partial<SavedSearch>) => {
-    setSavedSearches(prev => prev.map(search =>
-      search.id === id
-        ? { ...search, ...updates, updated_at: new Date() }
-        : search
-    ));
+    setSavedSearches(prev =>
+      prev.map(search =>
+        search.id === id ? { ...search, ...updates, updated_at: new Date() } : search
+      )
+    );
   }, []);
 
   // Faceting
-  const updateFacetsFromResults = useCallback((searchResults: SearchResult<T>[]) => {
-    if (!config.enableFaceting || searchResults.length === 0) {
-      setFacets([]);
-      return;
-    }
+  const updateFacetsFromResults = useCallback(
+    (searchResults: SearchResult<T>[]) => {
+      if (!config.enableFaceting || searchResults.length === 0) {
+        setFacets([]);
+        return;
+      }
 
-    const facetData: Record<string, Map<any, number>> = {};
+      const facetData: Record<string, Map<any, number>> = {};
 
-    // Extract facet data from results
-    searchResults.forEach(result => {
-      if (result.item && typeof result.item === 'object') {
-        Object.entries(result.item as Record<string, any>).forEach(([field, value]) => {
-          if (value != null) {
-            if (!facetData[field]) {
-              facetData[field] = new Map();
+      // Extract facet data from results
+      searchResults.forEach(result => {
+        if (result.item && typeof result.item === 'object') {
+          Object.entries(result.item as Record<string, any>).forEach(([field, value]) => {
+            if (value != null) {
+              if (!facetData[field]) {
+                facetData[field] = new Map();
+              }
+              facetData[field].set(value, (facetData[field].get(value) || 0) + 1);
             }
-            facetData[field].set(value, (facetData[field].get(value) || 0) + 1);
-          }
-        });
+          });
+        }
+      });
+
+      // Convert to facet format
+      const newFacets: SearchFacet[] = Object.entries(facetData)
+        .filter(([_, values]) => values.size > 1) // Only show fields with multiple values
+        .map(([field, valueMap]) => ({
+          field,
+          values: Array.from(valueMap.entries())
+            .map(([value, count]) => ({
+              value,
+              count,
+              selected: query.filters.some(f => f.field === field && f.value === value),
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 20), // Limit facet values
+          type: inferFacetType(field, Array.from(valueMap.keys())[0]),
+        }));
+
+      setFacets(newFacets);
+    },
+    [config.enableFaceting, query.filters]
+  );
+
+  const updateFacet = useCallback(
+    (field: string, value: any, selected: boolean) => {
+      if (selected) {
+        addFilter({ field, operator: 'equals', value });
+      } else {
+        const filterIndex = query.filters.findIndex(f => f.field === field && f.value === value);
+        if (filterIndex >= 0) {
+          removeFilter(filterIndex);
+        }
       }
-    });
 
-    // Convert to facet format
-    const newFacets: SearchFacet[] = Object.entries(facetData)
-      .filter(([_, values]) => values.size > 1) // Only show fields with multiple values
-      .map(([field, valueMap]) => ({
-        field,
-        values: Array.from(valueMap.entries())
-          .map(([value, count]) => ({
-            value,
-            count,
-            selected: query.filters.some(f => f.field === field && f.value === value)
-          }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 20), // Limit facet values
-        type: inferFacetType(field, Array.from(valueMap.keys())[0])
-      }));
-
-    setFacets(newFacets);
-  }, [config.enableFaceting, query.filters]);
-
-  const updateFacet = useCallback((field: string, value: any, selected: boolean) => {
-    if (selected) {
-      addFilter({ field, operator: 'equals', value });
-    } else {
-      const filterIndex = query.filters.findIndex(f => f.field === field && f.value === value);
-      if (filterIndex >= 0) {
-        removeFilter(filterIndex);
-      }
-    }
-
-    // Update facet state
-    setFacets(prev => prev.map(facet =>
-      facet.field === field
-        ? {
-            ...facet,
-            values: facet.values.map(v =>
-              v.value === value ? { ...v, selected } : v
-            )
-          }
-        : facet
-    ));
-  }, [query.filters, addFilter, removeFilter]);
+      // Update facet state
+      setFacets(prev =>
+        prev.map(facet =>
+          facet.field === field
+            ? {
+                ...facet,
+                values: facet.values.map(v => (v.value === value ? { ...v, selected } : v)),
+              }
+            : facet
+        )
+      );
+    },
+    [query.filters, addFilter, removeFilter]
+  );
 
   const clearFacets = useCallback(() => {
-    setFacets(prev => prev.map(facet => ({
-      ...facet,
-      values: facet.values.map(v => ({ ...v, selected: false }))
-    })));
+    setFacets(prev =>
+      prev.map(facet => ({
+        ...facet,
+        values: facet.values.map(v => ({ ...v, selected: false })),
+      }))
+    );
 
     // Remove all facet filters
     setQuery(prev => ({
       ...prev,
-      filters: prev.filters.filter(f => !facets.some(facet => facet.field === f.field))
+      filters: prev.filters.filter(f => !facets.some(facet => facet.field === f.field)),
     }));
   }, [facets]);
 
-  const getFacetOptions = useCallback((field: string): Array<{ value: any; count: number }> => {
-    const facet = facets.find(f => f.field === field);
-    return facet ? facet.values.map(v => ({ value: v.value, count: v.count })) : [];
-  }, [facets]);
+  const getFacetOptions = useCallback(
+    (field: string): Array<{ value: any; count: number }> => {
+      const facet = facets.find(f => f.field === field);
+      return facet ? facet.values.map(v => ({ value: v.value, count: v.count })) : [];
+    },
+    [facets]
+  );
 
   // Advanced features
   const explainResult = useCallback(async (result: SearchResult<T>): Promise<string> => {
@@ -704,55 +754,62 @@ export const useSmartSearch = <T = any>(
     return explanation.join('\n');
   }, []);
 
-  const findSimilar = useCallback(async (item: T): Promise<SearchResult<T>[]> => {
-    // Simple similarity search based on item properties
-    if (!item || typeof item !== 'object') {
-      return [];
-    }
+  const findSimilar = useCallback(
+    async (item: T): Promise<SearchResult<T>[]> => {
+      // Simple similarity search based on item properties
+      if (!item || typeof item !== 'object') {
+        return [];
+      }
 
-    const itemProperties = Object.entries(item as Record<string, any>);
-    const similarityQuery: SearchQuery = {
-      text: '',
-      filters: itemProperties
-        .filter(([_, value]) => typeof value === 'string' && value.length > 0)
-        .slice(0, 3) // Use top 3 properties
-        .map(([field, value]) => ({
-          field,
-          operator: 'contains' as const,
-          value
-        })),
-      options: { ...config.defaultSearchOptions, maxResults: 10 }
-    };
+      const itemProperties = Object.entries(item as Record<string, any>);
+      const similarityQuery: SearchQuery = {
+        text: '',
+        filters: itemProperties
+          .filter(([_, value]) => typeof value === 'string' && value.length > 0)
+          .slice(0, 3) // Use top 3 properties
+          .map(([field, value]) => ({
+            field,
+            operator: 'contains' as const,
+            value,
+          })),
+        options: { ...config.defaultSearchOptions, maxResults: 10 },
+      };
 
-    return await search(similarityQuery);
-  }, [search, config.defaultSearchOptions]);
+      return await search(similarityQuery);
+    },
+    [search, config.defaultSearchOptions]
+  );
 
-  const exportResults = useCallback((format: 'json' | 'csv'): string => {
-    if (format === 'json') {
-      return JSON.stringify(results, null, 2);
-    }
+  const exportResults = useCallback(
+    (format: 'json' | 'csv'): string => {
+      if (format === 'json') {
+        return JSON.stringify(results, null, 2);
+      }
 
-    // CSV export
-    if (results.length === 0) return '';
+      // CSV export
+      if (results.length === 0) return '';
 
-    const headers = ['score', 'matchType', 'relevance'];
-    const itemKeys = results.length > 0 && results[0].item && typeof results[0].item === 'object'
-      ? Object.keys(results[0].item as Record<string, any>)
-      : [];
+      const headers = ['score', 'matchType', 'relevance'];
+      const itemKeys =
+        results.length > 0 && results[0].item && typeof results[0].item === 'object'
+          ? Object.keys(results[0].item as Record<string, any>)
+          : [];
 
-    const csvHeaders = [...headers, ...itemKeys].join(',');
-    const csvRows = results.map(result => {
-      const baseValues = [result.score, result.matchType, result.relevance];
-      const itemValues = itemKeys.map(key =>
-        result.item && typeof result.item === 'object'
-          ? JSON.stringify((result.item as Record<string, any>)[key] || '')
-          : ''
-      );
-      return [...baseValues, ...itemValues].join(',');
-    });
+      const csvHeaders = [...headers, ...itemKeys].join(',');
+      const csvRows = results.map(result => {
+        const baseValues = [result.score, result.matchType, result.relevance];
+        const itemValues = itemKeys.map(key =>
+          result.item && typeof result.item === 'object'
+            ? JSON.stringify((result.item as Record<string, any>)[key] || '')
+            : ''
+        );
+        return [...baseValues, ...itemValues].join(',');
+      });
 
-    return [csvHeaders, ...csvRows].join('\n');
-  }, [results]);
+      return [csvHeaders, ...csvRows].join('\n');
+    },
+    [results]
+  );
 
   const getSearchAnalytics = useCallback((): SearchAnalytics => {
     const searchTerms: Record<string, number> = {};
@@ -794,8 +851,8 @@ export const useSmartSearch = <T = any>(
       user_engagement: {
         click_through_rate: 0.75, // Mock data
         result_selection_rate: 0.65,
-        query_refinement_rate: 0.25
-      }
+        query_refinement_rate: 0.25,
+      },
     };
   }, [history]);
 
@@ -804,12 +861,13 @@ export const useSmartSearch = <T = any>(
 
     return {
       last_search_time: searchTime,
-      avg_search_time: metrics.totalSearches > 0 ? metrics.totalSearchTime / metrics.totalSearches : 0,
+      avg_search_time:
+        metrics.totalSearches > 0 ? metrics.totalSearchTime / metrics.totalSearches : 0,
       cache_hit_rate: metrics.totalSearches > 0 ? metrics.cacheHits / metrics.totalSearches : 0,
       total_searches: metrics.totalSearches,
       failed_searches: metrics.failedSearches,
       slow_searches: 0, // Would implement slow search tracking
-      index_size: searchCache.current.size
+      index_size: searchCache.current.size,
     };
   }, [searchTime]);
 
@@ -817,12 +875,15 @@ export const useSmartSearch = <T = any>(
     const optimized = { ...inputQuery };
 
     // Remove redundant filters
-    optimized.filters = inputQuery.filters.filter((filter, index, array) =>
-      index === array.findIndex(f =>
-        f.field === filter.field &&
-        f.operator === filter.operator &&
-        JSON.stringify(f.value) === JSON.stringify(filter.value)
-      )
+    optimized.filters = inputQuery.filters.filter(
+      (filter, index, array) =>
+        index ===
+        array.findIndex(
+          f =>
+            f.field === filter.field &&
+            f.operator === filter.operator &&
+            JSON.stringify(f.value) === JSON.stringify(filter.value)
+        )
     );
 
     // Optimize text query
@@ -888,7 +949,7 @@ export const useSmartSearch = <T = any>(
     exportResults,
     getSearchAnalytics,
     getPerformanceMetrics,
-    optimizeQuery
+    optimizeQuery,
   };
 };
 

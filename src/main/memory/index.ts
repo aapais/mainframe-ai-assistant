@@ -14,7 +14,7 @@ export type {
   MemoryThresholds,
   MemoryConfig,
   MemoryReport,
-  MemoryLeak
+  MemoryLeak,
 } from './MemoryManager';
 
 export type {
@@ -22,15 +22,10 @@ export type {
   PoolConfig,
   Connection,
   PoolMetrics,
-  PoolHealth
+  PoolHealth,
 } from './ConnectionPool';
 
-export type {
-  CacheEntry,
-  CacheConfig,
-  CacheMetrics,
-  CacheHealth
-} from './CacheManager';
+export type { CacheEntry, CacheConfig, CacheMetrics, CacheHealth } from './CacheManager';
 
 // Default instances and factory functions
 import { MemoryManager } from './MemoryManager';
@@ -39,11 +34,15 @@ import { CacheManager } from './CacheManager';
 
 let memoryManagerInstance: MemoryManager | null = null;
 
-export function createMemoryManager(config?: Partial<import('./MemoryManager').MemoryConfig>): MemoryManager {
+export function createMemoryManager(
+  config?: Partial<import('./MemoryManager').MemoryConfig>
+): MemoryManager {
   return new MemoryManager(config);
 }
 
-export function getMemoryManager(config?: Partial<import('./MemoryManager').MemoryConfig>): MemoryManager {
+export function getMemoryManager(
+  config?: Partial<import('./MemoryManager').MemoryConfig>
+): MemoryManager {
   if (!memoryManagerInstance) {
     memoryManagerInstance = createMemoryManager(config);
   }
@@ -54,10 +53,14 @@ export function resetMemoryManager(): void {
   memoryManagerInstance = null;
 }
 
-export function createConnectionPool(config?: Partial<import('./ConnectionPool').PoolConfig>): ConnectionPool {
+export function createConnectionPool(
+  config?: Partial<import('./ConnectionPool').PoolConfig>
+): ConnectionPool {
   return new ConnectionPool(config);
 }
 
-export function createCacheManager(config?: Partial<import('./CacheManager').CacheConfig>): CacheManager {
+export function createCacheManager(
+  config?: Partial<import('./CacheManager').CacheConfig>
+): CacheManager {
   return new CacheManager(config);
 }

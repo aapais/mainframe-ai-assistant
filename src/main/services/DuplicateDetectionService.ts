@@ -150,8 +150,8 @@ export class DuplicateDetectionService extends EventEmitter {
     title: 0.35,
     problem: 0.25,
     solution: 0.25,
-    category: 0.10,
-    tags: 0.05
+    category: 0.1,
+    tags: 0.05,
   };
 
   // Similarity thresholds for different confidence levels
@@ -159,7 +159,7 @@ export class DuplicateDetectionService extends EventEmitter {
     exact: 1.0,
     high: 0.8,
     medium: 0.6,
-    low: 0.4
+    low: 0.4,
   };
 
   // Performance optimization settings
@@ -184,7 +184,9 @@ export class DuplicateDetectionService extends EventEmitter {
    * @param options - Detection configuration options
    * @returns Promise resolving to detection results
    */
-  async scanForDuplicates(options: DuplicateDetectionOptions = {}): Promise<DuplicateDetectionResult> {
+  async scanForDuplicates(
+    options: DuplicateDetectionOptions = {}
+  ): Promise<DuplicateDetectionResult> {
     const scanId = uuidv4();
     const startTime = Date.now();
 
@@ -195,7 +197,7 @@ export class DuplicateDetectionService extends EventEmitter {
       excludeArchived = true,
       batchSize = this.BATCH_SIZE,
       categories,
-      skipConfirmed = true
+      skipConfirmed = true,
     } = options;
 
     // Get all entries to scan
@@ -210,7 +212,7 @@ export class DuplicateDetectionService extends EventEmitter {
       exactMatches: 0,
       highSimilarity: 0,
       mediumSimilarity: 0,
-      lowSimilarity: 0
+      lowSimilarity: 0,
     };
 
     // Process entries in batches for better performance
@@ -246,7 +248,7 @@ export class DuplicateDetectionService extends EventEmitter {
       processingTime: Date.now() - startTime,
       algorithm,
       matches,
-      statistics
+      statistics,
     };
 
     // Store scan results
@@ -275,7 +277,7 @@ export class DuplicateDetectionService extends EventEmitter {
     const {
       algorithm = 'hybrid',
       similarityThreshold = 0.7,
-      fieldsToCompare = ['title', 'problem', 'solution']
+      fieldsToCompare = ['title', 'problem', 'solution'],
     } = options;
 
     const allEntries = this.getEntriesToScan(true);
@@ -292,12 +294,7 @@ export class DuplicateDetectionService extends EventEmitter {
       );
 
       if (similarity.overall >= similarityThreshold) {
-        const match = this.createDuplicateMatch(
-          entry,
-          candidate,
-          similarity,
-          algorithm
-        );
+        const match = this.createDuplicateMatch(entry, candidate, similarity, algorithm);
 
         matches.push(match);
       }
@@ -376,9 +373,8 @@ export class DuplicateDetectionService extends EventEmitter {
           primaryEntryId: primary.id!,
           duplicateEntryId: secondary.id!,
           mergedEntryId: primary.id!,
-          conflicts
+          conflicts,
         };
-
       } catch (error) {
         conflicts.push(`Merge failed: ${error.message}`);
         return {
@@ -386,7 +382,7 @@ export class DuplicateDetectionService extends EventEmitter {
           primaryEntryId: '',
           duplicateEntryId: '',
           mergedEntryId: '',
-          conflicts
+          conflicts,
         };
       }
     });
@@ -401,11 +397,7 @@ export class DuplicateDetectionService extends EventEmitter {
    * @param userId - User marking as false positive
    * @param reason - Optional reason for false positive
    */
-  async markAsFalsePositive(
-    duplicateId: string,
-    userId: string,
-    reason?: string
-  ): Promise<void> {
+  async markAsFalsePositive(duplicateId: string, userId: string, reason?: string): Promise<void> {
     const duplicate = await this.getDuplicateMatch(duplicateId);
     if (!duplicate) {
       throw new Error(`Duplicate match not found: ${duplicateId}`);
@@ -415,19 +407,23 @@ export class DuplicateDetectionService extends EventEmitter {
     this.updateDuplicateStatus(duplicateId, 'dismissed', userId);
 
     // Log for learning algorithm improvement
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO false_positives (
         id, duplicate_id, algorithm, similarity_score, user_id, reason, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      uuidv4(),
-      duplicateId,
-      duplicate.algorithm,
-      duplicate.similarityScore,
-      userId,
-      reason || null,
-      new Date().toISOString()
-    );
+    `
+      )
+      .run(
+        uuidv4(),
+        duplicateId,
+        duplicate.algorithm,
+        duplicate.similarityScore,
+        userId,
+        reason || null,
+        new Date().toISOString()
+      );
 
     // Adjust algorithm thresholds based on false positive pattern
     this.learnFromFalsePositive(duplicate);
@@ -436,7 +432,7 @@ export class DuplicateDetectionService extends EventEmitter {
       duplicateId,
       algorithm: duplicate.algorithm,
       similarityScore: duplicate.similarityScore,
-      reason
+      reason,
     });
   }
 
@@ -460,50 +456,67 @@ export class DuplicateDetectionService extends EventEmitter {
       cacheHitRate: number;
     };
   } {
-    const whereClause = timeRange
-      ? 'WHERE detected_at BETWEEN ? AND ?'
-      : '';
+    const whereClause = timeRange ? 'WHERE detected_at BETWEEN ? AND ?' : '';
 
-    const params = timeRange
-      ? [timeRange.start.toISOString(), timeRange.end.toISOString()]
-      : [];
+    const params = timeRange ? [timeRange.start.toISOString(), timeRange.end.toISOString()] : [];
 
     // Get basic duplicate statistics
-    const totalDuplicates = this.db.prepare(`
+    const totalDuplicates = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM duplicate_matches ${whereClause}
-    `).get(...params) as { count: number };
+    `
+      )
+      .get(...params) as { count: number };
 
-    const duplicatesByAlgorithm = this.db.prepare(`
+    const duplicatesByAlgorithm = this.db
+      .prepare(
+        `
       SELECT algorithm, COUNT(*) as count
       FROM duplicate_matches ${whereClause}
       GROUP BY algorithm
-    `).all(...params);
+    `
+      )
+      .all(...params);
 
-    const duplicatesByStatus = this.db.prepare(`
+    const duplicatesByStatus = this.db
+      .prepare(
+        `
       SELECT status, COUNT(*) as count
       FROM duplicate_matches ${whereClause}
       GROUP BY status
-    `).all(...params);
+    `
+      )
+      .all(...params);
 
-    const avgSimilarity = this.db.prepare(`
+    const avgSimilarity = this.db
+      .prepare(
+        `
       SELECT AVG(similarity_score) as avg_score
       FROM duplicate_matches ${whereClause}
-    `).get(...params) as { avg_score: number };
+    `
+      )
+      .get(...params) as { avg_score: number };
 
     // Calculate false positive rate
-    const falsePositives = this.db.prepare(`
+    const falsePositives = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM false_positives fp
       JOIN duplicate_matches dm ON fp.duplicate_id = dm.id
       ${timeRange ? 'WHERE fp.timestamp BETWEEN ? AND ?' : ''}
-    `).get(...params) as { count: number };
+    `
+      )
+      .get(...params) as { count: number };
 
-    const falsePositiveRate = totalDuplicates.count > 0
-      ? (falsePositives.count / totalDuplicates.count) * 100
-      : 0;
+    const falsePositiveRate =
+      totalDuplicates.count > 0 ? (falsePositives.count / totalDuplicates.count) * 100 : 0;
 
     // Get top categories with duplicates
-    const topCategories = this.db.prepare(`
+    const topCategories = this.db
+      .prepare(
+        `
       SELECT
         COALESCE(e1.category, e2.category) as category,
         COUNT(*) as count
@@ -514,14 +527,16 @@ export class DuplicateDetectionService extends EventEmitter {
       GROUP BY category
       ORDER BY count DESC
       LIMIT 10
-    `).all(...params);
+    `
+      )
+      .all(...params);
 
     // Build result objects
     const algorithmCounts: Record<DuplicateAlgorithm, number> = {
       exact_match: 0,
       fuzzy_text: 0,
       semantic_similarity: 0,
-      hybrid: 0
+      hybrid: 0,
     };
 
     duplicatesByAlgorithm.forEach((item: any) => {
@@ -542,13 +557,13 @@ export class DuplicateDetectionService extends EventEmitter {
       mergeSuccessRate: this.calculateMergeSuccessRate(statusCounts),
       topDuplicateCategories: topCategories.map((cat: any) => ({
         category: cat.category,
-        count: cat.count
+        count: cat.count,
       })),
       performanceMetrics: {
         avgDetectionTime: 0, // TODO: Track detection times
         avgMergeTime: 0, // TODO: Track merge times
-        cacheHitRate: this.calculateCacheHitRate()
-      }
+        cacheHitRate: this.calculateCacheHitRate(),
+      },
     };
   }
 
@@ -650,7 +665,9 @@ export class DuplicateDetectionService extends EventEmitter {
       params.push(...categories);
     }
 
-    const entries = this.db.prepare(`
+    const entries = this.db
+      .prepare(
+        `
       SELECT
         e.*,
         GROUP_CONCAT(t.tag, ', ') as tags
@@ -659,13 +676,17 @@ export class DuplicateDetectionService extends EventEmitter {
       WHERE ${whereClause}
       GROUP BY e.id
       ORDER BY e.created_at DESC
-    `).all(...params);
+    `
+      )
+      .all(...params);
 
     return entries.map(this.mapRowToKBEntry);
   }
 
   private getEntryById(entryId: string): KBEntry | null {
-    const row = this.db.prepare(`
+    const row = this.db
+      .prepare(
+        `
       SELECT
         e.*,
         GROUP_CONCAT(t.tag, ', ') as tags
@@ -673,7 +694,9 @@ export class DuplicateDetectionService extends EventEmitter {
       LEFT JOIN kb_tags t ON e.id = t.entry_id
       WHERE e.id = ?
       GROUP BY e.id
-    `).get(entryId);
+    `
+      )
+      .get(entryId);
 
     return row ? this.mapRowToKBEntry(row) : null;
   }
@@ -694,7 +717,7 @@ export class DuplicateDetectionService extends EventEmitter {
       success_count: row.success_count,
       failure_count: row.failure_count,
       last_used: row.last_used ? new Date(row.last_used) : undefined,
-      archived: row.archived
+      archived: row.archived,
     };
   }
 
@@ -718,7 +741,7 @@ export class DuplicateDetectionService extends EventEmitter {
         const candidate = allEntries[j];
 
         // Skip if already confirmed as non-duplicate
-        if (skipConfirmed && await this.isConfirmedNonDuplicate(entry.id!, candidate.id!)) {
+        if (skipConfirmed && (await this.isConfirmedNonDuplicate(entry.id!, candidate.id!))) {
           continue;
         }
 
@@ -816,7 +839,7 @@ export class DuplicateDetectionService extends EventEmitter {
     const jaccardSim = this.calculateJaccardSimilarity(str1, str2);
 
     // Weighted combination
-    return (levenshteinSim * 0.5 + ngramSim * 0.3 + jaccardSim * 0.2);
+    return levenshteinSim * 0.5 + ngramSim * 0.3 + jaccardSim * 0.2;
   }
 
   private async calculateSemanticSimilarity(value1: any, value2: any): Promise<number> {
@@ -855,7 +878,7 @@ export class DuplicateDetectionService extends EventEmitter {
     const distance = this.levenshteinDistance(str1, str2);
     const maxLength = Math.max(str1.length, str2.length);
 
-    return maxLength === 0 ? 1.0 : 1 - (distance / maxLength);
+    return maxLength === 0 ? 1.0 : 1 - distance / maxLength;
   }
 
   private calculateNgramSimilarity(str1: string, str2: string): number {
@@ -885,10 +908,10 @@ export class DuplicateDetectionService extends EventEmitter {
 
     // Simple synonym mapping for mainframe terms
     const synonyms: Record<string, string[]> = {
-      'error': ['issue', 'problem', 'failure'],
-      'job': ['batch', 'program', 'routine'],
-      'file': ['dataset', 'data', 'record'],
-      'abend': ['abort', 'fail', 'terminate']
+      error: ['issue', 'problem', 'failure'],
+      job: ['batch', 'program', 'routine'],
+      file: ['dataset', 'data', 'record'],
+      abend: ['abort', 'fail', 'terminate'],
     };
 
     let matches = 0;
@@ -927,8 +950,8 @@ export class DuplicateDetectionService extends EventEmitter {
         } else {
           matrix[i][j] = Math.min(
             matrix[i - 1][j - 1] + 1, // substitution
-            matrix[i][j - 1] + 1,     // insertion
-            matrix[i - 1][j] + 1      // deletion
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1 // deletion
           );
         }
       }
@@ -951,7 +974,8 @@ export class DuplicateDetectionService extends EventEmitter {
       ngrams.add(normalized.substr(i, n));
     }
 
-    if (this.ngramCache.size < 1000) { // Limit cache size
+    if (this.ngramCache.size < 1000) {
+      // Limit cache size
       this.ngramCache.set(cacheKey, ngrams);
     }
 
@@ -963,7 +987,9 @@ export class DuplicateDetectionService extends EventEmitter {
       return value.join(' ').toLowerCase();
     }
 
-    return String(value || '').toLowerCase().trim();
+    return String(value || '')
+      .toLowerCase()
+      .trim();
   }
 
   private createDuplicateMatch(
@@ -973,13 +999,12 @@ export class DuplicateDetectionService extends EventEmitter {
     algorithm: DuplicateAlgorithm
   ): DuplicateMatch {
     const matchId = uuidv4();
-    const matchedFields = Object.entries(similarity.fieldSimilarities)
-      .map(([field, sim]) => ({
-        field: field as keyof KBEntry,
-        similarity: sim,
-        entry1Value: entry1[field as keyof KBEntry],
-        entry2Value: entry2[field as keyof KBEntry]
-      }));
+    const matchedFields = Object.entries(similarity.fieldSimilarities).map(([field, sim]) => ({
+      field: field as keyof KBEntry,
+      similarity: sim,
+      entry1Value: entry1[field as keyof KBEntry],
+      entry2Value: entry2[field as keyof KBEntry],
+    }));
 
     const confidence = Math.round(similarity.overall * 100);
 
@@ -992,7 +1017,7 @@ export class DuplicateDetectionService extends EventEmitter {
       matchedFields,
       confidence,
       detectedAt: new Date(),
-      status: 'pending'
+      status: 'pending',
     };
 
     // Store in database
@@ -1002,22 +1027,26 @@ export class DuplicateDetectionService extends EventEmitter {
   }
 
   private storeDuplicateMatch(match: DuplicateMatch): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO duplicate_matches (
         id, entry1_id, entry2_id, similarity_score, algorithm,
         matched_fields, confidence, detected_at, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      match.id,
-      match.entry1.id,
-      match.entry2.id,
-      match.similarityScore,
-      match.algorithm,
-      JSON.stringify(match.matchedFields),
-      match.confidence,
-      match.detectedAt.toISOString(),
-      match.status
-    );
+    `
+      )
+      .run(
+        match.id,
+        match.entry1.id,
+        match.entry2.id,
+        match.similarityScore,
+        match.algorithm,
+        JSON.stringify(match.matchedFields),
+        match.confidence,
+        match.detectedAt.toISOString(),
+        match.status
+      );
   }
 
   private async generateMergeSuggestion(duplicate: DuplicateMatch): Promise<MergeSuggestion> {
@@ -1041,7 +1070,7 @@ export class DuplicateDetectionService extends EventEmitter {
           primaryValue,
           duplicateValue: secondaryValue,
           suggestedResolution: resolution.action,
-          reasoning: resolution.reasoning
+          reasoning: resolution.reasoning,
         });
 
         // Apply suggested resolution
@@ -1054,7 +1083,8 @@ export class DuplicateDetectionService extends EventEmitter {
     });
 
     // Calculate automation confidence
-    const automatedResolution = conflictFields.length === 0 ||
+    const automatedResolution =
+      conflictFields.length === 0 ||
       conflictFields.every(field => field.suggestedResolution !== 'manual');
 
     const confidenceScore = this.calculateMergeConfidence(duplicate, conflictFields);
@@ -1066,7 +1096,7 @@ export class DuplicateDetectionService extends EventEmitter {
       mergedEntry,
       conflictFields,
       automatedResolution,
-      confidenceScore
+      confidenceScore,
     };
   }
 
@@ -1096,7 +1126,10 @@ export class DuplicateDetectionService extends EventEmitter {
     score += Math.max(0, 30 - daysSinceCreation) * 0.1;
 
     // Content quality (length and structure)
-    score += Math.min(10, (entry.title.length + entry.problem.length + entry.solution.length) / 100);
+    score += Math.min(
+      10,
+      (entry.title.length + entry.problem.length + entry.solution.length) / 100
+    );
 
     return score;
   }
@@ -1124,12 +1157,12 @@ export class DuplicateDetectionService extends EventEmitter {
         if (duplicateValue.length > primaryValue.length * 1.5) {
           return {
             action: 'use_duplicate',
-            reasoning: 'Duplicate has more descriptive title'
+            reasoning: 'Duplicate has more descriptive title',
           };
         }
         return {
           action: 'use_primary',
-          reasoning: 'Primary title is adequate'
+          reasoning: 'Primary title is adequate',
         };
 
       case 'tags':
@@ -1138,7 +1171,7 @@ export class DuplicateDetectionService extends EventEmitter {
         return {
           action: 'combine',
           reasoning: 'Merge all unique tags',
-          combinedValue: combinedTags
+          combinedValue: combinedTags,
         };
 
       case 'problem':
@@ -1147,18 +1180,18 @@ export class DuplicateDetectionService extends EventEmitter {
         if (duplicateValue.length > primaryValue.length * 1.2) {
           return {
             action: 'use_duplicate',
-            reasoning: 'Duplicate has more detailed information'
+            reasoning: 'Duplicate has more detailed information',
           };
         }
         return {
           action: 'use_primary',
-          reasoning: 'Primary has adequate detail'
+          reasoning: 'Primary has adequate detail',
         };
 
       default:
         return {
           action: 'use_primary',
-          reasoning: 'Default to primary value'
+          reasoning: 'Default to primary value',
         };
     }
   }
@@ -1186,7 +1219,7 @@ export class DuplicateDetectionService extends EventEmitter {
       currentEntry: 'Starting scan...',
       duplicatesFound: 0,
       estimatedTimeRemaining: 0,
-      percentage: 0
+      percentage: 0,
     });
   }
 
@@ -1204,7 +1237,7 @@ export class DuplicateDetectionService extends EventEmitter {
       processedEntries,
       currentEntry,
       percentage,
-      estimatedTimeRemaining
+      estimatedTimeRemaining,
     };
 
     this.activeScans.set(scanId, updatedProgress);
@@ -1220,7 +1253,7 @@ export class DuplicateDetectionService extends EventEmitter {
         currentEntry: 'Scan complete',
         duplicatesFound,
         percentage: 100,
-        estimatedTimeRemaining: 0
+        estimatedTimeRemaining: 0,
       });
     }
 
@@ -1240,37 +1273,49 @@ export class DuplicateDetectionService extends EventEmitter {
   }
 
   private storeScanResults(result: DuplicateDetectionResult): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO duplicate_scans (
         id, algorithm, entries_scanned, duplicates_found,
         processing_time, scan_date, options
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      result.scanId,
-      result.algorithm,
-      result.totalEntriesScanned,
-      result.duplicatesFound,
-      result.processingTime,
-      new Date().toISOString(),
-      JSON.stringify({}) // Options would be stored here
-    );
+    `
+      )
+      .run(
+        result.scanId,
+        result.algorithm,
+        result.totalEntriesScanned,
+        result.duplicatesFound,
+        result.processingTime,
+        new Date().toISOString(),
+        JSON.stringify({}) // Options would be stored here
+      );
   }
 
   private async isConfirmedNonDuplicate(entry1Id: string, entry2Id: string): Promise<boolean> {
-    const confirmed = this.db.prepare(`
+    const confirmed = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM duplicate_matches
       WHERE ((entry1_id = ? AND entry2_id = ?) OR (entry1_id = ? AND entry2_id = ?))
         AND status = 'dismissed'
-    `).get(entry1Id, entry2Id, entry2Id, entry1Id) as { count: number };
+    `
+      )
+      .get(entry1Id, entry2Id, entry2Id, entry1Id) as { count: number };
 
     return confirmed.count > 0;
   }
 
   private async getDuplicateMatch(duplicateId: string): Promise<DuplicateMatch | null> {
-    const row = this.db.prepare(`
+    const row = this.db
+      .prepare(
+        `
       SELECT * FROM duplicate_matches WHERE id = ?
-    `).get(duplicateId);
+    `
+      )
+      .get(duplicateId);
 
     if (!row) return null;
 
@@ -1288,20 +1333,20 @@ export class DuplicateDetectionService extends EventEmitter {
       matchedFields: JSON.parse(row.matched_fields),
       confidence: row.confidence,
       detectedAt: new Date(row.detected_at),
-      status: row.status
+      status: row.status,
     };
   }
 
-  private updateDuplicateStatus(
-    duplicateId: string,
-    status: string,
-    userId: string
-  ): void {
-    this.db.prepare(`
+  private updateDuplicateStatus(duplicateId: string, status: string, userId: string): void {
+    this.db
+      .prepare(
+        `
       UPDATE duplicate_matches
       SET status = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
       WHERE id = ?
-    `).run(status, userId, duplicateId);
+    `
+      )
+      .run(status, userId, duplicateId);
   }
 
   private updateEntryWithMergedData(
@@ -1324,11 +1369,15 @@ export class DuplicateDetectionService extends EventEmitter {
         setFields.push('updated_at = CURRENT_TIMESTAMP');
         values.push(entryId);
 
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           UPDATE kb_entries
           SET ${setFields.join(', ')}
           WHERE id = ?
-        `).run(...values);
+        `
+          )
+          .run(...values);
       }
 
       // Update tags if provided
@@ -1349,14 +1398,18 @@ export class DuplicateDetectionService extends EventEmitter {
 
   private transferUsageStats(primaryId: string, duplicateId: string): void {
     // Transfer usage statistics from duplicate to primary
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE kb_entries
       SET
         usage_count = usage_count + (SELECT usage_count FROM kb_entries WHERE id = ?),
         success_count = success_count + (SELECT success_count FROM kb_entries WHERE id = ?),
         failure_count = failure_count + (SELECT failure_count FROM kb_entries WHERE id = ?)
       WHERE id = ?
-    `).run(duplicateId, duplicateId, duplicateId, primaryId);
+    `
+      )
+      .run(duplicateId, duplicateId, duplicateId, primaryId);
   }
 
   private archiveEntry(entryId: string): void {
@@ -1370,40 +1423,50 @@ export class DuplicateDetectionService extends EventEmitter {
     userId: string,
     conflicts: string[]
   ): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO merge_operations (
         id, duplicate_id, primary_entry_id, duplicate_entry_id,
         merged_by, merge_timestamp, conflicts
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      uuidv4(),
-      duplicateId,
-      primaryId,
-      duplicateEntryId,
-      userId,
-      new Date().toISOString(),
-      JSON.stringify(conflicts)
-    );
+    `
+      )
+      .run(
+        uuidv4(),
+        duplicateId,
+        primaryId,
+        duplicateEntryId,
+        userId,
+        new Date().toISOString(),
+        JSON.stringify(conflicts)
+      );
   }
 
   private learnFromFalsePositive(duplicate: DuplicateMatch): void {
     // Simple learning mechanism - in practice, this would be more sophisticated
     // Adjust algorithm sensitivity based on false positive patterns
 
-    const falsePositiveCount = this.db.prepare(`
+    const falsePositiveCount = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM false_positives
       WHERE algorithm = ? AND similarity_score BETWEEN ? AND ?
-    `).get(
-      duplicate.algorithm,
-      duplicate.similarityScore - 0.1,
-      duplicate.similarityScore + 0.1
-    ) as { count: number };
+    `
+      )
+      .get(
+        duplicate.algorithm,
+        duplicate.similarityScore - 0.1,
+        duplicate.similarityScore + 0.1
+      ) as { count: number };
 
     // If we have multiple false positives in this similarity range,
     // we might want to adjust thresholds (implementation would depend on specific requirements)
     if (falsePositiveCount.count > 5) {
-      console.warn(`High false positive rate detected for ${duplicate.algorithm} around ${duplicate.similarityScore}`);
+      console.warn(
+        `High false positive rate detected for ${duplicate.algorithm} around ${duplicate.similarityScore}`
+      );
     }
   }
 
@@ -1424,25 +1487,32 @@ export class DuplicateDetectionService extends EventEmitter {
 
   private setupCleanupSchedule(): void {
     // Clean up old scan data and cache every 6 hours
-    setInterval(() => {
-      // Clean old scan data (keep last 30 days)
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 30);
+    setInterval(
+      () => {
+        // Clean old scan data (keep last 30 days)
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
 
-      this.db.prepare(`
+        this.db
+          .prepare(
+            `
         DELETE FROM duplicate_scans
         WHERE scan_date < ?
-      `).run(cutoffDate.toISOString());
+      `
+          )
+          .run(cutoffDate.toISOString());
 
-      // Clean semantic cache if it gets too large
-      if (this.semanticCache.size > this.SEMANTIC_CACHE_SIZE) {
-        this.semanticCache.clear();
-      }
+        // Clean semantic cache if it gets too large
+        if (this.semanticCache.size > this.SEMANTIC_CACHE_SIZE) {
+          this.semanticCache.clear();
+        }
 
-      // Clean n-gram cache
-      if (this.ngramCache.size > 1000) {
-        this.ngramCache.clear();
-      }
-    }, 6 * 60 * 60 * 1000); // 6 hours
+        // Clean n-gram cache
+        if (this.ngramCache.size > 1000) {
+          this.ngramCache.clear();
+        }
+      },
+      6 * 60 * 60 * 1000
+    ); // 6 hours
   }
 }

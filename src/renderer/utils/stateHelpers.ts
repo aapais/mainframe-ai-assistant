@@ -1,6 +1,6 @@
 /**
  * State Management Utilities and Helpers
- * 
+ *
  * This module provides utility functions for state management including:
  * - State update utilities for performance optimization
  * - Cache management functions with TTL and LRU eviction
@@ -8,7 +8,7 @@
  * - Performance monitoring helpers
  * - State normalization and transformation utilities
  * - Memory optimization functions
- * 
+ *
  * @author State Management Architect
  * @version 1.0.0
  */
@@ -65,12 +65,7 @@ export interface PerformanceMetrics {
 }
 
 export interface StateHelpers<T> {
-  withRecentOperation: (
-    state: T, 
-    type: string, 
-    entryId: string, 
-    success: boolean
-  ) => T;
+  withRecentOperation: (state: T, type: string, entryId: string, success: boolean) => T;
   removePendingOperation: (operationId: string) => Set<string>;
   updateMetrics: (state: T, metric: string, value: number) => T;
 }
@@ -86,7 +81,7 @@ export interface StateHelpers<T> {
  */
 export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
   const { maxSize, ttl, onEvict, onHit, onMiss } = options;
-  
+
   const cache = new Map<string, CacheItem<T>>();
   const stats = {
     hitCount: 0,
@@ -94,7 +89,7 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
     evictionCount: 0,
     totalOperations: 0,
   };
-  
+
   /**
    * Checks if an item is expired based on TTL
    */
@@ -102,7 +97,7 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
     const itemTtl = customTtl || ttl;
     return Date.now() - item.timestamp > itemTtl;
   };
-  
+
   /**
    * Evicts expired items from cache
    */
@@ -115,23 +110,23 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
       }
     }
   };
-  
+
   /**
    * Evicts least recently used items when cache is full
    */
   const evictLRU = (): void => {
     if (cache.size < maxSize) return;
-    
+
     let oldestKey = '';
     let oldestTime = Date.now();
-    
+
     for (const [key, item] of cache.entries()) {
       if (item.lastAccessed < oldestTime) {
         oldestTime = item.lastAccessed;
         oldestKey = key;
       }
     }
-    
+
     if (oldestKey) {
       const evictedItem = cache.get(oldestKey);
       cache.delete(oldestKey);
@@ -139,7 +134,7 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
       onEvict?.(oldestKey, evictedItem?.value);
     }
   };
-  
+
   /**
    * Updates access statistics for an item
    */
@@ -147,24 +142,25 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
     item.accessCount++;
     item.lastAccessed = Date.now();
   };
-  
+
   return {
     get: (key: string): T | null => {
       stats.totalOperations++;
-      
+
       // Clean up expired items periodically
-      if (Math.random() < 0.1) { // 10% chance
+      if (Math.random() < 0.1) {
+        // 10% chance
         evictExpired();
       }
-      
+
       const item = cache.get(key);
-      
+
       if (!item) {
         stats.missCount++;
         onMiss?.(key);
         return null;
       }
-      
+
       if (isExpired(item)) {
         cache.delete(key);
         stats.missCount++;
@@ -173,19 +169,19 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
         onMiss?.(key);
         return null;
       }
-      
+
       updateAccess(key, item);
       stats.hitCount++;
       onHit?.(key);
       return item.value;
     },
-    
+
     set: (key: string, value: T, customTtl?: number): void => {
       stats.totalOperations++;
-      
+
       // Evict LRU items if cache is full
       evictLRU();
-      
+
       const now = Date.now();
       const item: CacheItem<T> = {
         value,
@@ -193,15 +189,15 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
         accessCount: 0,
         lastAccessed: now,
       };
-      
+
       cache.set(key, item);
     },
-    
+
     has: (key: string): boolean => {
       const item = cache.get(key);
       return item ? !isExpired(item) : false;
     },
-    
+
     delete: (key: string): boolean => {
       const existed = cache.has(key);
       if (existed) {
@@ -211,7 +207,7 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
       }
       return existed;
     },
-    
+
     clear: (): void => {
       for (const [key, item] of cache.entries()) {
         onEvict?.(key, item.value);
@@ -219,21 +215,21 @@ export function createCacheManager<T>(options: CacheOptions): CacheManager<T> {
       cache.clear();
       stats.evictionCount += cache.size;
     },
-    
+
     size: (): number => cache.size,
-    
+
     keys: (): string[] => Array.from(cache.keys()),
-    
+
     values: (): T[] => {
       evictExpired();
       return Array.from(cache.values()).map(item => item.value);
     },
-    
+
     entries: (): Array<[string, T]> => {
       evictExpired();
       return Array.from(cache.entries()).map(([key, item]) => [key, item.value]);
     },
-    
+
     stats: (): CacheStats => {
       const totalRequests = stats.hitCount + stats.missCount;
       return {
@@ -261,7 +257,7 @@ export function debounce<T extends (...args: any[]) => any>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
@@ -279,12 +275,12 @@ export function throttle<T extends (...args: any[]) => any>(
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean;
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      setTimeout(() => (inThrottle = false), limit);
     }
   };
 }
@@ -307,9 +303,9 @@ export function createPerformanceMonitor(name: string) {
     maxTime: 0,
     lastOperation: 0,
   };
-  
+
   const startTime = (): number => performance.now();
-  
+
   const endTime = (start: number): void => {
     const duration = performance.now() - start;
     metrics.operationCount++;
@@ -318,15 +314,16 @@ export function createPerformanceMonitor(name: string) {
     metrics.minTime = Math.min(metrics.minTime, duration);
     metrics.maxTime = Math.max(metrics.maxTime, duration);
     metrics.lastOperation = Date.now();
-    
+
     // Log slow operations
-    if (duration > 1000) { // 1 second
+    if (duration > 1000) {
+      // 1 second
       console.warn(`Slow operation detected in ${name}: ${duration.toFixed(2)}ms`);
     }
   };
-  
+
   const getMetrics = (): PerformanceMetrics => ({ ...metrics });
-  
+
   const reset = (): void => {
     metrics.operationCount = 0;
     metrics.totalTime = 0;
@@ -335,7 +332,7 @@ export function createPerformanceMonitor(name: string) {
     metrics.maxTime = 0;
     metrics.lastOperation = 0;
   };
-  
+
   return {
     startTime,
     endTime,
@@ -355,12 +352,12 @@ export function withPerformanceMonitoring<T extends (...args: any[]) => any>(
   name: string
 ): T & { getMetrics: () => PerformanceMetrics } {
   const monitor = createPerformanceMonitor(name);
-  
+
   const wrappedFunc = ((...args: Parameters<T>) => {
     const start = monitor.startTime();
     try {
       const result = func(...args);
-      
+
       // Handle both sync and async functions
       if (result instanceof Promise) {
         return result.finally(() => monitor.endTime(start));
@@ -373,9 +370,9 @@ export function withPerformanceMonitoring<T extends (...args: any[]) => any>(
       throw error;
     }
   }) as T & { getMetrics: () => PerformanceMetrics };
-  
+
   wrappedFunc.getMetrics = monitor.getMetrics;
-  
+
   return wrappedFunc;
 }
 
@@ -390,16 +387,11 @@ export function withPerformanceMonitoring<T extends (...args: any[]) => any>(
  */
 export function createStateHelpers<T extends any>(state: T): StateHelpers<T> {
   return {
-    withRecentOperation: (
-      currentState: T,
-      type: string,
-      entryId: string,
-      success: boolean
-    ): T => {
+    withRecentOperation: (currentState: T, type: string, entryId: string, success: boolean): T => {
       // This is a generic implementation - specific contexts should override
       return currentState;
     },
-    
+
     removePendingOperation: (operationId: string): Set<string> => {
       if ('pendingOperations' in state && state.pendingOperations instanceof Set) {
         const newSet = new Set(state.pendingOperations);
@@ -408,7 +400,7 @@ export function createStateHelpers<T extends any>(state: T): StateHelpers<T> {
       }
       return new Set();
     },
-    
+
     updateMetrics: (currentState: T, metric: string, value: number): T => {
       // Generic metrics update - can be customized per context
       return currentState;
@@ -453,7 +445,7 @@ export function denormalizeMap<T>(map: Map<string, T>): T[] {
  */
 export function createLimitedSet<T>(maxSize: number): Set<T> {
   const set = new Set<T>();
-  
+
   return new Proxy(set, {
     get(target, prop) {
       if (prop === 'add') {
@@ -467,7 +459,7 @@ export function createLimitedSet<T>(maxSize: number): Set<T> {
         };
       }
       return target[prop as keyof Set<T>];
-    }
+    },
   });
 }
 
@@ -480,15 +472,15 @@ export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
-  
+
   if (obj instanceof Date) {
     return new Date(obj.getTime()) as T;
   }
-  
+
   if (obj instanceof Array) {
     return obj.map(item => deepClone(item)) as T;
   }
-  
+
   if (obj instanceof Map) {
     const clonedMap = new Map();
     obj.forEach((value, key) => {
@@ -496,7 +488,7 @@ export function deepClone<T>(obj: T): T {
     });
     return clonedMap as T;
   }
-  
+
   if (obj instanceof Set) {
     const clonedSet = new Set();
     obj.forEach(value => {
@@ -504,7 +496,7 @@ export function deepClone<T>(obj: T): T {
     });
     return clonedSet as T;
   }
-  
+
   if (typeof obj === 'object') {
     const clonedObj: any = {};
     Object.keys(obj).forEach(key => {
@@ -512,7 +504,7 @@ export function deepClone<T>(obj: T): T {
     });
     return clonedObj;
   }
-  
+
   return obj;
 }
 
@@ -533,13 +525,13 @@ export async function processBatches<T, R>(
   processor: (batch: T[]) => Promise<R[]>
 ): Promise<R[]> {
   const results: R[] = [];
-  
+
   for (let i = 0; i < array.length; i += batchSize) {
     const batch = array.slice(i, i + batchSize);
     const batchResults = await processor(batch);
     results.push(...batchResults);
   }
-  
+
   return results;
 }
 
@@ -557,22 +549,22 @@ export function createRetryMechanism<T extends (...args: any[]) => Promise<any>>
 ): T {
   return (async (...args: Parameters<T>) => {
     let lastError: Error;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await func(...args);
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt === maxRetries) {
           throw lastError;
         }
-        
+
         const delay = baseDelay * Math.pow(2, attempt);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-    
+
     throw lastError!;
   }) as T;
 }
@@ -590,15 +582,15 @@ export function memoizeWithTTL<T extends (...args: any[]) => any>(
   ttl: number = 5 * 60 * 1000 // 5 minutes
 ): T {
   const cache = createCacheManager<ReturnType<T>>({ maxSize: 100, ttl });
-  
+
   return ((...args: Parameters<T>) => {
     const key = keyGenerator(...args);
     const cached = cache.get(key);
-    
+
     if (cached !== null) {
       return cached;
     }
-    
+
     const result = func(...args);
     cache.set(key, result);
     return result;

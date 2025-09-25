@@ -43,7 +43,18 @@ export interface JoinConfig {
  */
 export interface WhereCondition {
   field: string;
-  operator: '=' | '!=' | '>' | '<' | '>=' | '<=' | 'LIKE' | 'IN' | 'NOT IN' | 'IS NULL' | 'IS NOT NULL';
+  operator:
+    | '='
+    | '!='
+    | '>'
+    | '<'
+    | '>='
+    | '<='
+    | 'LIKE'
+    | 'IN'
+    | 'NOT IN'
+    | 'IS NULL'
+    | 'IS NOT NULL';
   value?: any;
   values?: any[];
 }
@@ -66,14 +77,14 @@ export interface GroupByConfig {
 
 /**
  * Type-safe SQL Query Builder
- * 
+ *
  * Provides a fluent interface for building SQL queries with automatic
  * parameter binding, SQL injection protection, and performance optimization.
- * 
+ *
  * @example
  * ```typescript
  * const qb = new QueryBuilder(db);
- * 
+ *
  * // Simple select
  * const results = await qb
  *   .select(['id', 'title', 'category'])
@@ -82,7 +93,7 @@ export interface GroupByConfig {
  *   .orderBy('created_at', 'DESC')
  *   .limit(10)
  *   .execute();
- * 
+ *
  * // Complex query with joins
  * const joined = await qb
  *   .select(['e.title', 't.tag'])
@@ -90,7 +101,7 @@ export interface GroupByConfig {
  *   .join('INNER', 'kb_tags', 't', 'e.id = t.entry_id')
  *   .where('e.usage_count', '>', 5)
  *   .execute();
- * 
+ *
  * // Insert with validation
  * const insertResult = await qb
  *   .insert('kb_entries')
@@ -156,7 +167,7 @@ export class QueryBuilder {
       type,
       table: InputSanitizer.sanitizeSqlIdentifier(table),
       alias: InputSanitizer.sanitizeSqlIdentifier(alias),
-      on: condition // Note: condition should be pre-validated
+      on: condition, // Note: condition should be pre-validated
     });
     return this;
   }
@@ -329,7 +340,7 @@ export class QueryBuilder {
           data: cached,
           executionTime: Date.now() - startTime,
           fromCache: true,
-          queryHash
+          queryHash,
         };
       }
     }
@@ -343,7 +354,7 @@ export class QueryBuilder {
     try {
       // Prepare statement
       const stmt = this.db.prepare(queryInfo.sql);
-      
+
       let result: any;
       let affectedRows: number | undefined;
 
@@ -352,14 +363,14 @@ export class QueryBuilder {
         case 'SELECT':
           result = stmt.all(...queryInfo.params) as T;
           break;
-          
+
         case 'INSERT':
         case 'UPDATE':
         case 'DELETE':
           const info = stmt.run(...queryInfo.params);
           result = {
             lastInsertRowid: info.lastInsertRowid,
-            changes: info.changes
+            changes: info.changes,
           };
           affectedRows = info.changes;
           break;
@@ -377,9 +388,8 @@ export class QueryBuilder {
         executionTime,
         fromCache: false,
         queryHash,
-        affectedRows
+        affectedRows,
       };
-
     } catch (error) {
       console.error('Query execution failed:', error);
       console.error('SQL:', queryInfo.sql);
@@ -395,7 +405,7 @@ export class QueryBuilder {
     if (this.queryType !== 'SELECT') {
       throw new Error('first() can only be used with SELECT queries');
     }
-    
+
     this.limit(1);
     const result = await this.execute<T[]>(options);
     return result.data.length > 0 ? result.data[0] : null;
@@ -408,10 +418,10 @@ export class QueryBuilder {
     if (this.queryType !== 'SELECT') {
       throw new Error('count() can only be used with SELECT queries');
     }
-    
+
     // Modify query to use COUNT
     this.selectFields = [`COUNT(${field}) as count`];
-    
+
     const result = await this.execute<Array<{ count: number }>>();
     return result.data[0].count;
   }
@@ -429,7 +439,7 @@ export class QueryBuilder {
    */
   private buildQuery(): { sql: string; params: any[] } {
     this.parameters = [];
-    
+
     switch (this.queryType) {
       case 'SELECT':
         return this.buildSelectQuery();
@@ -449,16 +459,16 @@ export class QueryBuilder {
    */
   private buildSelectQuery(): { sql: string; params: any[] } {
     let sql = 'SELECT ';
-    
+
     // SELECT fields
     sql += this.selectFields.join(', ');
-    
+
     // FROM clause
     sql += ` FROM ${this.fromTable}`;
     if (this.tableAlias) {
       sql += ` AS ${this.tableAlias}`;
     }
-    
+
     // JOIN clauses
     for (const join of this.joins) {
       sql += ` ${join.type} JOIN ${join.table}`;
@@ -467,7 +477,7 @@ export class QueryBuilder {
       }
       sql += ` ON ${join.on}`;
     }
-    
+
     // WHERE clauses
     if (this.whereConditions.length > 0) {
       sql += ' WHERE ';
@@ -476,7 +486,7 @@ export class QueryBuilder {
       });
       sql += whereClauses.join(' AND ');
     }
-    
+
     // GROUP BY clause
     if (this.groupByConfig) {
       sql += ` GROUP BY ${this.groupByConfig.fields.join(', ')}`;
@@ -484,7 +494,7 @@ export class QueryBuilder {
         sql += ` HAVING ${this.groupByConfig.having}`;
       }
     }
-    
+
     // ORDER BY clause
     if (this.orderByConfigs.length > 0) {
       sql += ' ORDER BY ';
@@ -493,17 +503,17 @@ export class QueryBuilder {
       });
       sql += orderClauses.join(', ');
     }
-    
+
     // LIMIT clause
     if (this.limitValue !== undefined) {
       sql += ` LIMIT ${this.limitValue}`;
     }
-    
+
     // OFFSET clause
     if (this.offsetValue !== undefined) {
       sql += ` OFFSET ${this.offsetValue}`;
     }
-    
+
     return { sql, params: this.parameters };
   }
 
@@ -514,9 +524,9 @@ export class QueryBuilder {
     const fields = Object.keys(this.insertData);
     const placeholders = fields.map(() => '?');
     this.parameters = Object.values(this.insertData);
-    
+
     const sql = `INSERT INTO ${this.insertTable} (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
-    
+
     return { sql, params: this.parameters };
   }
 
@@ -526,11 +536,11 @@ export class QueryBuilder {
   private buildUpdateQuery(): { sql: string; params: any[] } {
     const fields = Object.keys(this.updateData);
     const setClauses = fields.map(field => `${field} = ?`);
-    
+
     this.parameters = Object.values(this.updateData);
-    
+
     let sql = `UPDATE ${this.updateTable} SET ${setClauses.join(', ')}`;
-    
+
     // WHERE clauses
     if (this.whereConditions.length > 0) {
       sql += ' WHERE ';
@@ -539,7 +549,7 @@ export class QueryBuilder {
       });
       sql += whereClauses.join(' AND ');
     }
-    
+
     return { sql, params: this.parameters };
   }
 
@@ -548,7 +558,7 @@ export class QueryBuilder {
    */
   private buildDeleteQuery(): { sql: string; params: any[] } {
     let sql = `DELETE FROM ${this.fromTable}`;
-    
+
     // WHERE clauses
     if (this.whereConditions.length > 0) {
       sql += ' WHERE ';
@@ -557,7 +567,7 @@ export class QueryBuilder {
       });
       sql += whereClauses.join(' AND ');
     }
-    
+
     return { sql, params: this.parameters };
   }
 
@@ -568,13 +578,13 @@ export class QueryBuilder {
     if (condition.operator === 'IS NULL' || condition.operator === 'IS NOT NULL') {
       return `${condition.field} ${condition.operator}`;
     }
-    
+
     if (condition.operator === 'IN' || condition.operator === 'NOT IN') {
       const placeholders = condition.values!.map(() => '?');
       this.parameters.push(...condition.values!);
       return `${condition.field} ${condition.operator} (${placeholders.join(', ')})`;
     }
-    
+
     this.parameters.push(condition.value);
     return `${condition.field} ${condition.operator} ?`;
   }
@@ -592,15 +602,15 @@ export class QueryBuilder {
    */
   private getFromCache(hash: string): any | null {
     const cached = this.queryCache.get(hash);
-    
+
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       return cached.data;
     }
-    
+
     if (cached) {
       this.queryCache.delete(hash);
     }
-    
+
     return null;
   }
 
@@ -613,10 +623,10 @@ export class QueryBuilder {
       const oldestKey = this.queryCache.keys().next().value;
       this.queryCache.delete(oldestKey);
     }
-    
+
     this.queryCache.set(hash, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -664,7 +674,7 @@ export class QueryBuilder {
 
 /**
  * Prepared Statement Manager
- * 
+ *
  * Manages prepared statements for frequently executed queries
  * to improve performance.
  */
@@ -735,7 +745,7 @@ export class PreparedStatementManager {
   getStats(): Array<{ key: string; usage: number }> {
     return Array.from(this.usage.entries()).map(([key, usage]) => ({
       key,
-      usage
+      usage,
     }));
   }
 

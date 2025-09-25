@@ -111,7 +111,7 @@ export class SearchMetricsCollector extends EventEmitter {
   } = {
     searches: [],
     autocomplete: [],
-    errors: []
+    errors: [],
   };
 
   // Prepared statements for performance
@@ -140,7 +140,6 @@ export class SearchMetricsCollector extends EventEmitter {
       this.startMetricsCollection();
 
       console.log('Search metrics collector initialized');
-
     } catch (error) {
       console.error('SearchMetricsCollector initialization error:', error);
       throw error;
@@ -155,19 +154,23 @@ export class SearchMetricsCollector extends EventEmitter {
       this.metricsBuffer.searches.push(metric);
 
       // Record in performance log immediately for real-time monitoring
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_performance_log (
           request_id, operation, timestamp, duration, status,
           result_count, query_length, user_id
         ) VALUES (?, 'search', ?, ?, 'success', ?, ?, ?)
-      `).run(
-        metric.requestId,
-        Date.now(),
-        metric.responseTime,
-        metric.resultCount,
-        metric.query.length,
-        metric.userId || null
-      );
+      `
+        )
+        .run(
+          metric.requestId,
+          Date.now(),
+          metric.responseTime,
+          metric.resultCount,
+          metric.query.length,
+          metric.userId || null
+        );
 
       // Emit real-time event
       this.emit('search-recorded', metric);
@@ -179,7 +182,6 @@ export class SearchMetricsCollector extends EventEmitter {
 
       // Check for performance alerts
       this.checkPerformanceAlerts(metric);
-
     } catch (error) {
       console.error('Record search metric error:', error);
       this.emit('error', error);
@@ -194,26 +196,29 @@ export class SearchMetricsCollector extends EventEmitter {
       this.metricsBuffer.autocomplete.push(metric);
 
       // Record in performance log
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_performance_log (
           request_id, operation, timestamp, duration, status,
           result_count, query_length, user_id
         ) VALUES (?, 'autocomplete', ?, ?, 'success', ?, ?, ?)
-      `).run(
-        metric.requestId,
-        Date.now(),
-        metric.responseTime,
-        metric.resultCount,
-        metric.query.length,
-        metric.userId || null
-      );
+      `
+        )
+        .run(
+          metric.requestId,
+          Date.now(),
+          metric.responseTime,
+          metric.resultCount,
+          metric.query.length,
+          metric.userId || null
+        );
 
       this.emit('autocomplete-recorded', metric);
 
       if (this.metricsBuffer.autocomplete.length >= this.BUFFER_SIZE) {
         await this.flushMetrics();
       }
-
     } catch (error) {
       console.error('Record autocomplete metric error:', error);
     }
@@ -227,32 +232,35 @@ export class SearchMetricsCollector extends EventEmitter {
       this.metricsBuffer.errors.push(metric);
 
       // Record in performance log immediately
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO search_performance_log (
           request_id, operation, timestamp, duration, status,
           error_message, user_id
         ) VALUES (?, ?, ?, ?, 'error', ?, ?)
-      `).run(
-        metric.requestId,
-        metric.operation,
-        Date.now(),
-        metric.responseTime,
-        metric.error,
-        metric.userId || null
-      );
+      `
+        )
+        .run(
+          metric.requestId,
+          metric.operation,
+          Date.now(),
+          metric.responseTime,
+          metric.error,
+          metric.userId || null
+        );
 
       this.emit('error-recorded', metric);
       this.emit('alert', {
         type: 'error',
         severity: 'medium',
         message: `${metric.operation} error: ${metric.error}`,
-        requestId: metric.requestId
+        requestId: metric.requestId,
       });
 
       if (this.metricsBuffer.errors.length >= this.BUFFER_SIZE) {
         await this.flushMetrics();
       }
-
     } catch (error) {
       console.error('Record error metric error:', error);
     }
@@ -269,20 +277,13 @@ export class SearchMetricsCollector extends EventEmitter {
       // Ensure any pending metrics are flushed
       await this.flushMetrics();
 
-      const [
-        overview,
-        performance,
-        usage,
-        cacheMetrics,
-        errorMetrics,
-        trends
-      ] = await Promise.all([
+      const [overview, performance, usage, cacheMetrics, errorMetrics, trends] = await Promise.all([
         this.getOverviewMetrics(cutoffTime, query.userId),
         this.getPerformanceMetrics(cutoffTime, query.userId),
         this.getUsageMetrics(cutoffTime, query.userId),
         this.getCacheMetrics(cutoffTime),
         this.getErrorMetrics(cutoffTime, query.userId),
-        this.getTrendMetrics(cutoffTime, query.granularity, query.userId)
+        this.getTrendMetrics(cutoffTime, query.granularity, query.userId),
       ]);
 
       return {
@@ -291,9 +292,8 @@ export class SearchMetricsCollector extends EventEmitter {
         usage,
         cache: cacheMetrics,
         errors: errorMetrics,
-        trends
+        trends,
       };
-
     } catch (error) {
       console.error('Get metrics error:', error);
       throw error;
@@ -314,7 +314,9 @@ export class SearchMetricsCollector extends EventEmitter {
     try {
       const lastMinute = Date.now() - 60000;
 
-      const realtimeStats = this.db.prepare(`
+      const realtimeStats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as requests,
           AVG(duration) as avgDuration,
@@ -322,13 +324,14 @@ export class SearchMetricsCollector extends EventEmitter {
           COUNT(DISTINCT user_id) as activeUsers
         FROM search_performance_log
         WHERE timestamp > ?
-      `).get(lastMinute) as any;
+      `
+        )
+        .get(lastMinute) as any;
 
       const currentRPS = (realtimeStats.requests || 0) / 60;
       const avgResponseTime = realtimeStats.avgDuration || 0;
-      const errorRate = realtimeStats.requests > 0
-        ? (realtimeStats.errors || 0) / realtimeStats.requests
-        : 0;
+      const errorRate =
+        realtimeStats.requests > 0 ? (realtimeStats.errors || 0) / realtimeStats.requests : 0;
 
       // Simple cache hit rate calculation (would be enhanced with actual cache metrics)
       const cacheHitRate = 0.8; // Placeholder - would come from cache service
@@ -341,9 +344,8 @@ export class SearchMetricsCollector extends EventEmitter {
         errorRate,
         cacheHitRate,
         activeUsers: realtimeStats.activeUsers || 0,
-        systemHealth
+        systemHealth,
       };
-
     } catch (error) {
       console.error('Get dashboard data error:', error);
       return {
@@ -352,7 +354,7 @@ export class SearchMetricsCollector extends EventEmitter {
         errorRate: 0,
         cacheHitRate: 0,
         activeUsers: 0,
-        systemHealth: 'critical'
+        systemHealth: 'critical',
       };
     }
   }
@@ -377,16 +379,21 @@ export class SearchMetricsCollector extends EventEmitter {
    */
   async cleanup(): Promise<{ removedRecords: number }> {
     try {
-      const cutoffTime = Date.now() - (this.RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      const cutoffTime = Date.now() - this.RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         DELETE FROM search_performance_log WHERE timestamp < ?
-      `).run(cutoffTime);
+      `
+        )
+        .run(cutoffTime);
 
-      console.log(`Metrics cleanup: removed ${result.changes} records older than ${this.RETENTION_DAYS} days`);
+      console.log(
+        `Metrics cleanup: removed ${result.changes} records older than ${this.RETENTION_DAYS} days`
+      );
 
       return { removedRecords: result.changes };
-
     } catch (error) {
       console.error('Metrics cleanup error:', error);
       throw error;
@@ -410,7 +417,6 @@ export class SearchMetricsCollector extends EventEmitter {
 
       this.db.close();
       this.emit('closed');
-
     } catch (error) {
       console.error('Close metrics collector error:', error);
     }
@@ -434,20 +440,28 @@ export class SearchMetricsCollector extends EventEmitter {
     }, this.FLUSH_INTERVAL_MS);
 
     // Aggregate metrics for materialized views
-    this.aggregationInterval = setInterval(() => {
-      this.aggregateMetrics().catch(console.error);
-    }, 5 * 60 * 1000); // Every 5 minutes
+    this.aggregationInterval = setInterval(
+      () => {
+        this.aggregateMetrics().catch(console.error);
+      },
+      5 * 60 * 1000
+    ); // Every 5 minutes
 
     // Cleanup old data daily
-    setInterval(() => {
-      this.cleanup().catch(console.error);
-    }, 24 * 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanup().catch(console.error);
+      },
+      24 * 60 * 60 * 1000
+    );
   }
 
   private async flushMetrics(): Promise<void> {
-    if (this.metricsBuffer.searches.length === 0 &&
-        this.metricsBuffer.autocomplete.length === 0 &&
-        this.metricsBuffer.errors.length === 0) {
+    if (
+      this.metricsBuffer.searches.length === 0 &&
+      this.metricsBuffer.autocomplete.length === 0 &&
+      this.metricsBuffer.errors.length === 0
+    ) {
       return;
     }
 
@@ -455,22 +469,26 @@ export class SearchMetricsCollector extends EventEmitter {
       const transaction = this.db.transaction(() => {
         // Flush search metrics
         this.metricsBuffer.searches.forEach(metric => {
-          this.db.prepare(`
+          this.db
+            .prepare(
+              `
             INSERT INTO search_history (
               query, user_id, session_id, response_time, result_count,
               category, used_ai, successful, request_id
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            metric.query,
-            metric.userId || null,
-            metric.sessionId || null,
-            metric.responseTime,
-            metric.resultCount,
-            metric.category || null,
-            metric.useAI ? 1 : 0,
-            metric.resultCount > 0 ? 1 : 0,
-            metric.requestId
-          );
+          `
+            )
+            .run(
+              metric.query,
+              metric.userId || null,
+              metric.sessionId || null,
+              metric.responseTime,
+              metric.resultCount,
+              metric.category || null,
+              metric.useAI ? 1 : 0,
+              metric.resultCount > 0 ? 1 : 0,
+              metric.requestId
+            );
         });
 
         // Clear buffers
@@ -481,7 +499,6 @@ export class SearchMetricsCollector extends EventEmitter {
 
       transaction();
       this.emit('metrics-flushed');
-
     } catch (error) {
       console.error('Flush metrics error:', error);
       this.emit('error', error);
@@ -493,7 +510,6 @@ export class SearchMetricsCollector extends EventEmitter {
       // This would implement time-window aggregation for performance
       // For now, we rely on the schema triggers and materialized views
       this.schema.refreshMaterializedViews();
-
     } catch (error) {
       console.error('Aggregate metrics error:', error);
     }
@@ -501,12 +517,13 @@ export class SearchMetricsCollector extends EventEmitter {
 
   private checkPerformanceAlerts(metric: SearchMetric): void {
     // Response time alert
-    if (metric.responseTime > 2000) { // 2 seconds
+    if (metric.responseTime > 2000) {
+      // 2 seconds
       this.emit('alert', {
         type: 'performance',
         severity: metric.responseTime > 5000 ? 'critical' : 'high',
         message: `Slow search detected: ${metric.responseTime}ms for query "${metric.query}"`,
-        requestId: metric.requestId
+        requestId: metric.requestId,
       });
     }
 
@@ -516,7 +533,7 @@ export class SearchMetricsCollector extends EventEmitter {
         type: 'usage',
         severity: 'low',
         message: `No results for query: "${metric.query}"`,
-        requestId: metric.requestId
+        requestId: metric.requestId,
       });
     }
   }
@@ -527,7 +544,7 @@ export class SearchMetricsCollector extends EventEmitter {
       '6h': 6 * 60 * 60 * 1000,
       '1d': 24 * 60 * 60 * 1000,
       '7d': 7 * 24 * 60 * 60 * 1000,
-      '30d': 30 * 24 * 60 * 60 * 1000
+      '30d': 30 * 24 * 60 * 60 * 1000,
     };
 
     return timeframes[timeframe] || timeframes['1d'];
@@ -560,7 +577,9 @@ export class SearchMetricsCollector extends EventEmitter {
       FROM search_performance_log
       WHERE timestamp > ?${userId ? ' AND user_id = ?' : ''}
     `;
-    const errorResult = this.db.prepare(errorQuery).get(...(userId ? [cutoffTime, userId] : [cutoffTime])) as any;
+    const errorResult = this.db
+      .prepare(errorQuery)
+      .get(...(userId ? [cutoffTime, userId] : [cutoffTime])) as any;
 
     return {
       totalSearches: result.totalSearches || 0,
@@ -568,7 +587,8 @@ export class SearchMetricsCollector extends EventEmitter {
       successRate: result.successRate || 0,
       cacheHitRate: 0.8, // Placeholder - would come from cache metrics
       aiUsageRate: result.aiUsageRate || 0,
-      errorRate: errorResult.totalRequests > 0 ? (errorResult.errors || 0) / errorResult.totalRequests : 0
+      errorRate:
+        errorResult.totalRequests > 0 ? (errorResult.errors || 0) / errorResult.totalRequests : 0,
     };
   }
 
@@ -595,7 +615,7 @@ export class SearchMetricsCollector extends EventEmitter {
         p95ResponseTime: 0,
         p99ResponseTime: 0,
         slowestQueries: [],
-        fastestQueries: []
+        fastestQueries: [],
       };
     }
 
@@ -605,16 +625,22 @@ export class SearchMetricsCollector extends EventEmitter {
     const p99 = this.percentile(times, 0.99);
 
     // Get slowest and fastest queries
-    const slowestQueries = this.db.prepare(`
+    const slowestQueries = this.db
+      .prepare(
+        `
       SELECT query, AVG(response_time) as avgTime, COUNT(*) as count
       FROM search_history
       WHERE timestamp > ?${userId ? ' AND user_id = ?' : ''}
       GROUP BY query
       ORDER BY avgTime DESC
       LIMIT 5
-    `).all(...(userId ? [cutoffTime, userId] : [cutoffTime])) as any[];
+    `
+      )
+      .all(...(userId ? [cutoffTime, userId] : [cutoffTime])) as any[];
 
-    const fastestQueries = this.db.prepare(`
+    const fastestQueries = this.db
+      .prepare(
+        `
       SELECT query, AVG(response_time) as avgTime, COUNT(*) as count
       FROM search_history
       WHERE timestamp > ?${userId ? ' AND user_id = ?' : ''}
@@ -622,14 +648,16 @@ export class SearchMetricsCollector extends EventEmitter {
       HAVING count >= 5
       ORDER BY avgTime ASC
       LIMIT 5
-    `).all(...(userId ? [cutoffTime, userId] : [cutoffTime])) as any[];
+    `
+      )
+      .all(...(userId ? [cutoffTime, userId] : [cutoffTime])) as any[];
 
     return {
       p50ResponseTime: p50,
       p95ResponseTime: p95,
       p99ResponseTime: p99,
       slowestQueries,
-      fastestQueries
+      fastestQueries,
     };
   }
 
@@ -639,7 +667,9 @@ export class SearchMetricsCollector extends EventEmitter {
     const params = userId ? [...baseParams, userId] : baseParams;
 
     // Top queries
-    const topQueries = this.db.prepare(`
+    const topQueries = this.db
+      .prepare(
+        `
       SELECT
         query,
         COUNT(*) as count,
@@ -649,15 +679,21 @@ export class SearchMetricsCollector extends EventEmitter {
       GROUP BY query
       ORDER BY count DESC
       LIMIT 10
-    `).all(...params) as any[];
+    `
+      )
+      .all(...params) as any[];
 
     // Category breakdown
-    const categories = this.db.prepare(`
+    const categories = this.db
+      .prepare(
+        `
       SELECT category, COUNT(*) as count
       FROM search_history
       WHERE timestamp > ? AND category IS NOT NULL${userFilter}
       GROUP BY category
-    `).all(...params) as any[];
+    `
+      )
+      .all(...params) as any[];
 
     const categoryBreakdown: Record<string, number> = {};
     categories.forEach(cat => {
@@ -665,7 +701,11 @@ export class SearchMetricsCollector extends EventEmitter {
     });
 
     // User activity (skip if filtering by user)
-    const userActivity = userId ? [] : this.db.prepare(`
+    const userActivity = userId
+      ? []
+      : (this.db
+          .prepare(
+            `
       SELECT
         user_id,
         COUNT(*) as searches,
@@ -675,10 +715,14 @@ export class SearchMetricsCollector extends EventEmitter {
       GROUP BY user_id
       ORDER BY searches DESC
       LIMIT 10
-    `).all(cutoffTime) as any[];
+    `
+          )
+          .all(cutoffTime) as any[]);
 
     // Hourly pattern
-    const hourlyPattern = this.db.prepare(`
+    const hourlyPattern = this.db
+      .prepare(
+        `
       SELECT
         CAST(strftime('%H', datetime(timestamp/1000, 'unixepoch')) AS INTEGER) as hour,
         COUNT(*) as count,
@@ -687,13 +731,15 @@ export class SearchMetricsCollector extends EventEmitter {
       WHERE timestamp > ?${userFilter}
       GROUP BY hour
       ORDER BY hour
-    `).all(...params) as any[];
+    `
+      )
+      .all(...params) as any[];
 
     return {
       topQueries,
       categoryBreakdown,
       userActivity,
-      hourlyPattern
+      hourlyPattern,
     };
   }
 
@@ -703,11 +749,11 @@ export class SearchMetricsCollector extends EventEmitter {
       hitRate: 0.8,
       missRate: 0.2,
       layerBreakdown: {
-        'L0': { hits: 100, misses: 20 },
-        'L1': { hits: 80, misses: 40 },
-        'L2': { hits: 40, misses: 60 }
+        L0: { hits: 100, misses: 20 },
+        L1: { hits: 80, misses: 40 },
+        L2: { hits: 40, misses: 60 },
       },
-      memoryUsage: 67108864 // 64MB placeholder
+      memoryUsage: 67108864, // 64MB placeholder
     };
   }
 
@@ -715,7 +761,9 @@ export class SearchMetricsCollector extends EventEmitter {
     const userFilter = userId ? ' AND user_id = ?' : '';
     const params = userId ? [cutoffTime, userId] : [cutoffTime];
 
-    const errorStats = this.db.prepare(`
+    const errorStats = this.db
+      .prepare(
+        `
       SELECT
         COUNT(*) as totalErrors,
         operation,
@@ -725,12 +773,18 @@ export class SearchMetricsCollector extends EventEmitter {
       WHERE timestamp > ? AND status = 'error'${userFilter}
       GROUP BY operation, error_message
       ORDER BY count DESC
-    `).all(...params) as any[];
+    `
+      )
+      .all(...params) as any[];
 
-    const totalRequests = this.db.prepare(`
+    const totalRequests = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as total FROM search_performance_log
       WHERE timestamp > ?${userFilter}
-    `).get(...params) as { total: number };
+    `
+      )
+      .get(...params) as { total: number };
 
     const errorsByType: Record<string, number> = {};
     const recentErrors: any[] = [];
@@ -741,24 +795,32 @@ export class SearchMetricsCollector extends EventEmitter {
         timestamp: cutoffTime, // Simplified
         operation: error.operation,
         error: error.error_message,
-        count: error.count
+        count: error.count,
       });
     });
 
     return {
       totalErrors: errorStats.reduce((sum, e) => sum + e.count, 0),
       errorsByType,
-      errorRate: totalRequests.total > 0 ? errorStats.reduce((sum, e) => sum + e.count, 0) / totalRequests.total : 0,
-      recentErrors: recentErrors.slice(0, 10)
+      errorRate:
+        totalRequests.total > 0
+          ? errorStats.reduce((sum, e) => sum + e.count, 0) / totalRequests.total
+          : 0,
+      recentErrors: recentErrors.slice(0, 10),
     };
   }
 
-  private async getTrendMetrics(cutoffTime: number, granularity: string, userId?: string): Promise<any> {
+  private async getTrendMetrics(
+    cutoffTime: number,
+    granularity: string,
+    userId?: string
+  ): Promise<any> {
     const granularityMap: Record<string, string> = {
       '5m': "strftime('%Y-%m-%d %H:%M', datetime(timestamp/1000, 'unixepoch', 'start of hour', '+' || (strftime('%M', datetime(timestamp/1000, 'unixepoch')) / 5) * 5 || ' minutes'))",
-      '15m': "strftime('%Y-%m-%d %H:%M', datetime(timestamp/1000, 'unixepoch', 'start of hour', '+' || (strftime('%M', datetime(timestamp/1000, 'unixepoch')) / 15) * 15 || ' minutes'))",
+      '15m':
+        "strftime('%Y-%m-%d %H:%M', datetime(timestamp/1000, 'unixepoch', 'start of hour', '+' || (strftime('%M', datetime(timestamp/1000, 'unixepoch')) / 15) * 15 || ' minutes'))",
       '1h': "strftime('%Y-%m-%d %H:00', datetime(timestamp/1000, 'unixepoch', 'start of hour'))",
-      '1d': "strftime('%Y-%m-%d', datetime(timestamp/1000, 'unixepoch', 'start of day'))"
+      '1d': "strftime('%Y-%m-%d', datetime(timestamp/1000, 'unixepoch', 'start of day'))",
     };
 
     const timeGrouping = granularityMap[granularity] || granularityMap['1h'];
@@ -766,7 +828,9 @@ export class SearchMetricsCollector extends EventEmitter {
     const params = userId ? [cutoffTime, userId] : [cutoffTime];
 
     // Search volume trend
-    const searchVolume = this.db.prepare(`
+    const searchVolume = this.db
+      .prepare(
+        `
       SELECT
         strftime('%s', ${timeGrouping}) * 1000 as timestamp,
         COUNT(*) as count
@@ -774,10 +838,14 @@ export class SearchMetricsCollector extends EventEmitter {
       WHERE timestamp > ?${userFilter}
       GROUP BY ${timeGrouping}
       ORDER BY timestamp
-    `).all(...params) as any[];
+    `
+      )
+      .all(...params) as any[];
 
     // Response time trend
-    const responseTime = this.db.prepare(`
+    const responseTime = this.db
+      .prepare(
+        `
       SELECT
         strftime('%s', ${timeGrouping}) * 1000 as timestamp,
         AVG(response_time) as avgTime,
@@ -786,12 +854,14 @@ export class SearchMetricsCollector extends EventEmitter {
       WHERE timestamp > ?${userFilter}
       GROUP BY ${timeGrouping}
       ORDER BY timestamp
-    `).all(...params) as any[];
+    `
+      )
+      .all(...params) as any[];
 
     // Cache performance (placeholder)
     const cachePerformance = searchVolume.map(point => ({
       timestamp: point.timestamp,
-      hitRate: 0.8 + Math.random() * 0.1 // Realistic variation
+      hitRate: 0.8 + Math.random() * 0.1, // Realistic variation
     }));
 
     return {
@@ -799,13 +869,17 @@ export class SearchMetricsCollector extends EventEmitter {
       responseTime: responseTime.map(point => ({
         timestamp: point.timestamp,
         avgTime: point.avgTime,
-        p95Time: point.maxTime * 0.95 // Approximation
+        p95Time: point.maxTime * 0.95, // Approximation
       })),
-      cachePerformance
+      cachePerformance,
     };
   }
 
-  private calculateSystemHealth(rps: number, avgTime: number, errorRate: number): 'healthy' | 'warning' | 'critical' {
+  private calculateSystemHealth(
+    rps: number,
+    avgTime: number,
+    errorRate: number
+  ): 'healthy' | 'warning' | 'critical' {
     if (errorRate > 0.05 || avgTime > 2000) {
       return 'critical';
     }

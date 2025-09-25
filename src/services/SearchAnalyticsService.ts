@@ -156,7 +156,7 @@ export class SearchAnalyticsService extends EventEmitter {
       retentionPeriod: 30 * 24 * 60 * 60 * 1000, // 30 days
       anonymizeData: false,
       enableExport: true,
-      ...config
+      ...config,
     };
 
     this.systemMetrics = this.initializeSystemMetrics();
@@ -184,7 +184,7 @@ export class SearchAnalyticsService extends EventEmitter {
       query: this.anonymizeQuery(query),
       resultCount: results.length,
       options: this.sanitizeOptions(options),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Track performance metrics
@@ -197,7 +197,7 @@ export class SearchAnalyticsService extends EventEmitter {
       this.updateUserBehavior('search', {
         query,
         resultCount: results.length,
-        searchTime: performanceMetrics.searchTime
+        searchTime: performanceMetrics.searchTime,
       });
     }
 
@@ -208,7 +208,7 @@ export class SearchAnalyticsService extends EventEmitter {
       zeroResultRate: results.length === 0 ? 1 : 0,
       clickPosition: -1, // Will be updated on click
       dwellTime: 0, // Will be updated later
-      refinementNeeded: false // Will be updated if user refines
+      refinementNeeded: false, // Will be updated if user refines
     });
   }
 
@@ -228,44 +228,39 @@ export class SearchAnalyticsService extends EventEmitter {
       position,
       score: result.score,
       query: this.anonymizeQuery(query),
-      dwellTime: dwellTime || 0
+      dwellTime: dwellTime || 0,
     });
 
     // Update click-through rate
     this.updateUserBehavior('click', {
       position,
-      dwellTime: dwellTime || 0
+      dwellTime: dwellTime || 0,
     });
 
     // Update search quality metrics
     this.updateSearchQuality(query, {
       clickPosition: position,
-      dwellTime: dwellTime || 0
+      dwellTime: dwellTime || 0,
     });
   }
 
   /**
    * Track result rating/feedback
    */
-  trackResultRating(
-    result: SearchResult,
-    rating: number,
-    query: string,
-    feedback?: string
-  ): void {
+  trackResultRating(result: SearchResult, rating: number, query: string, feedback?: string): void {
     if (!this.config.enableTracking) return;
 
     this.trackEvent('result_rated', {
       resultId: result.entry.id,
       rating,
       query: this.anonymizeQuery(query),
-      feedback: feedback ? this.sanitizeFeedback(feedback) : undefined
+      feedback: feedback ? this.sanitizeFeedback(feedback) : undefined,
     });
 
     // Update search quality metrics
     this.updateSearchQuality(query, {
       userSatisfaction: rating,
-      expertRating: rating
+      expertRating: rating,
     });
   }
 
@@ -282,41 +277,37 @@ export class SearchAnalyticsService extends EventEmitter {
     this.trackEvent('search_refined', {
       originalQuery: this.anonymizeQuery(originalQuery),
       refinedQuery: this.anonymizeQuery(refinedQuery),
-      refinementType
+      refinementType,
     });
 
     // Update refinement rate
     this.updateUserBehavior('refine', {
       originalQuery,
       refinedQuery,
-      refinementType
+      refinementType,
     });
 
     // Mark original search as needing refinement
     this.updateSearchQuality(originalQuery, {
-      refinementNeeded: true
+      refinementNeeded: true,
     });
   }
 
   /**
    * Track export operations
    */
-  trackExport(
-    format: string,
-    resultCount: number,
-    query?: string
-  ): void {
+  trackExport(format: string, resultCount: number, query?: string): void {
     if (!this.config.enableTracking) return;
 
     this.trackEvent('export_performed', {
       format,
       resultCount,
-      query: query ? this.anonymizeQuery(query) : undefined
+      query: query ? this.anonymizeQuery(query) : undefined,
     });
 
     this.updateUserBehavior('export', {
       format,
-      resultCount
+      resultCount,
     });
   }
 
@@ -338,7 +329,7 @@ export class SearchAnalyticsService extends EventEmitter {
       errorStack: error.stack,
       operation: context.operation,
       query: context.query ? this.anonymizeQuery(context.query) : undefined,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Update system error metrics
@@ -362,7 +353,7 @@ export class SearchAnalyticsService extends EventEmitter {
       p50: this.percentile(latencies, 50),
       p95: this.percentile(latencies, 95),
       p99: this.percentile(latencies, 99),
-      average: latencies.reduce((sum, val) => sum + val, 0) / latencies.length || 0
+      average: latencies.reduce((sum, val) => sum + val, 0) / latencies.length || 0,
     };
 
     const now = Date.now();
@@ -374,14 +365,14 @@ export class SearchAnalyticsService extends EventEmitter {
     const throughput = {
       requestsPerSecond: recentMetrics.filter(m => m.timestamp > oneSecondAgo).length,
       requestsPerMinute: recentMetrics.filter(m => m.timestamp > oneMinuteAgo).length,
-      requestsPerHour: recentMetrics.length
+      requestsPerHour: recentMetrics.length,
     };
 
     const cacheHits = metrics.filter(m => m.cacheHit).length;
     const cachePerformance = {
       hitRate: metrics.length > 0 ? cacheHits / metrics.length : 0,
       missRate: metrics.length > 0 ? (metrics.length - cacheHits) / metrics.length : 0,
-      evictionRate: 0 // Would need cache eviction data
+      evictionRate: 0, // Would need cache eviction data
     };
 
     return { searchLatency, throughput, cachePerformance };
@@ -437,14 +428,14 @@ export class SearchAnalyticsService extends EventEmitter {
         totalSearches: events.filter(e => e.type === 'search_performed').length,
         totalClicks: events.filter(e => e.type === 'result_clicked').length,
         totalErrors: events.filter(e => e.type === 'error_occurred').length,
-        uniqueUsers: new Set(events.map(e => e.userId).filter(Boolean)).size
+        uniqueUsers: new Set(events.map(e => e.userId).filter(Boolean)).size,
       },
       performance,
       userBehavior: this.aggregateUserBehavior(userBehavior),
       searchQuality: this.aggregateSearchQuality(searchQuality),
       systemHealth,
       topQueries: this.getTopQueries(events),
-      errorAnalysis: this.analyzeErrors(events)
+      errorAnalysis: this.analyzeErrors(events),
     };
 
     if (format === 'csv') {
@@ -480,7 +471,7 @@ export class SearchAnalyticsService extends EventEmitter {
     switch (format) {
       case 'json':
         return new Blob([JSON.stringify(data, null, 2)], {
-          type: 'application/json'
+          type: 'application/json',
         });
 
       case 'csv':
@@ -490,7 +481,7 @@ export class SearchAnalyticsService extends EventEmitter {
         // This would require a library like xlsx
         // For now, return JSON
         return new Blob([JSON.stringify(data, null, 2)], {
-          type: 'application/json'
+          type: 'application/json',
         });
 
       default:
@@ -513,8 +504,8 @@ export class SearchAnalyticsService extends EventEmitter {
       metadata: {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
-        version: '1.0.0' // Would come from app version
-      }
+        version: '1.0.0', // Would come from app version
+      },
     };
 
     this.eventBuffer.push(event);
@@ -528,7 +519,7 @@ export class SearchAnalyticsService extends EventEmitter {
   private trackPerformanceMetric(metrics: SearchPerformanceMetrics): void {
     this.performanceBuffer.push({
       ...metrics,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     } as any);
 
     // Keep buffer size manageable
@@ -558,7 +549,7 @@ export class SearchAnalyticsService extends EventEmitter {
         exportCount: 0,
         averageSessionDuration: 0,
         popularQueries: [],
-        preferredCategories: []
+        preferredCategories: [],
       };
       this.userSessions.set(userId, metrics);
     }
@@ -566,19 +557,18 @@ export class SearchAnalyticsService extends EventEmitter {
     switch (action) {
       case 'search':
         metrics.searchCount++;
-        metrics.averageSearchTime =
-          (metrics.averageSearchTime + data.searchTime) / 2;
+        metrics.averageSearchTime = (metrics.averageSearchTime + data.searchTime) / 2;
         this.updatePopularQueries(metrics, data.query);
         break;
 
       case 'click':
         // Update CTR calculation
-        const totalClicks = (metrics.clickThroughRate * metrics.searchCount) + 1;
+        const totalClicks = metrics.clickThroughRate * metrics.searchCount + 1;
         metrics.clickThroughRate = totalClicks / metrics.searchCount;
         break;
 
       case 'refine':
-        const totalRefinements = (metrics.refinementRate * metrics.searchCount) + 1;
+        const totalRefinements = metrics.refinementRate * metrics.searchCount + 1;
         metrics.refinementRate = totalRefinements / metrics.searchCount;
         break;
 
@@ -648,15 +638,14 @@ export class SearchAnalyticsService extends EventEmitter {
     this.systemMetrics.resourceUsage = {
       memoryUsage: (performance as any).memory?.usedJSHeapSize || 0,
       cpuUsage: Math.random() * 100, // Simulated
-      indexSize: this.performanceBuffer.length * 1000 // Estimated
+      indexSize: this.performanceBuffer.length * 1000, // Estimated
     };
   }
 
   private checkAlerts(): void {
     for (const rule of this.alertRules) {
       // Check cooldown period
-      if (rule.lastTriggered &&
-          Date.now() - rule.lastTriggered < rule.cooldownPeriod) {
+      if (rule.lastTriggered && Date.now() - rule.lastTriggered < rule.cooldownPeriod) {
         continue;
       }
 
@@ -667,7 +656,7 @@ export class SearchAnalyticsService extends EventEmitter {
           name: rule.name,
           severity: rule.severity,
           timestamp: Date.now(),
-          metrics: this.systemMetrics
+          metrics: this.systemMetrics,
         });
       }
     }
@@ -678,27 +667,27 @@ export class SearchAnalyticsService extends EventEmitter {
     this.addAlertRule({
       id: 'high-error-rate',
       name: 'High Error Rate',
-      condition: (metrics) => metrics.errorRate.percentage > 5,
+      condition: metrics => metrics.errorRate.percentage > 5,
       severity: 'high',
-      cooldownPeriod: 5 * 60 * 1000 // 5 minutes
+      cooldownPeriod: 5 * 60 * 1000, // 5 minutes
     });
 
     // High latency alert
     this.addAlertRule({
       id: 'high-latency',
       name: 'High Search Latency',
-      condition: (metrics) => metrics.searchLatency.p95 > 2000, // 2 seconds
+      condition: metrics => metrics.searchLatency.p95 > 2000, // 2 seconds
       severity: 'medium',
-      cooldownPeriod: 5 * 60 * 1000
+      cooldownPeriod: 5 * 60 * 1000,
     });
 
     // Low cache hit rate alert
     this.addAlertRule({
       id: 'low-cache-hit-rate',
       name: 'Low Cache Hit Rate',
-      condition: (metrics) => metrics.cachePerformance.hitRate < 0.5,
+      condition: metrics => metrics.cachePerformance.hitRate < 0.5,
       severity: 'medium',
-      cooldownPeriod: 10 * 60 * 1000 // 10 minutes
+      cooldownPeriod: 10 * 60 * 1000, // 10 minutes
     });
   }
 
@@ -708,7 +697,7 @@ export class SearchAnalyticsService extends EventEmitter {
       throughput: { requestsPerSecond: 0, requestsPerMinute: 0, requestsPerHour: 0 },
       errorRate: { total: 0, percentage: 0, byType: {} },
       cachePerformance: { hitRate: 0, missRate: 0, evictionRate: 0 },
-      resourceUsage: { memoryUsage: 0, cpuUsage: 0, indexSize: 0 }
+      resourceUsage: { memoryUsage: 0, cpuUsage: 0, indexSize: 0 },
     };
   }
 
@@ -721,7 +710,7 @@ export class SearchAnalyticsService extends EventEmitter {
         p50: this.percentile(latencies, 50),
         p95: this.percentile(latencies, 95),
         p99: this.percentile(latencies, 99),
-        average: latencies.reduce((sum, val) => sum + val, 0) / latencies.length
+        average: latencies.reduce((sum, val) => sum + val, 0) / latencies.length,
       };
     }
 
@@ -763,8 +752,7 @@ export class SearchAnalyticsService extends EventEmitter {
 
   private sanitizeFeedback(feedback: string): string {
     // Remove potentially sensitive information
-    return feedback.replace(/\b\w+@\w+\.\w+\b/g, '[email]')
-                  .replace(/\b\d{4}\b/g, '[year]');
+    return feedback.replace(/\b\w+@\w+\.\w+\b/g, '[email]').replace(/\b\d{4}\b/g, '[year]');
   }
 
   private calculateRelevanceScore(results: SearchResult[]): number {
@@ -787,9 +775,7 @@ export class SearchAnalyticsService extends EventEmitter {
   ): any[] {
     if (!timeRange) return metrics;
 
-    return metrics.filter(m =>
-      m.timestamp >= timeRange.from && m.timestamp <= timeRange.to
-    );
+    return metrics.filter(m => m.timestamp >= timeRange.from && m.timestamp <= timeRange.to);
   }
 
   private updatePopularQueries(metrics: UserBehaviorMetrics, query: string): void {
@@ -801,9 +787,7 @@ export class SearchAnalyticsService extends EventEmitter {
     }
 
     // Keep top 10
-    metrics.popularQueries = metrics.popularQueries
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+    metrics.popularQueries = metrics.popularQueries.sort((a, b) => b.count - a.count).slice(0, 10);
   }
 
   private aggregateUserBehavior(behaviors: UserBehaviorMetrics[]): any {
@@ -813,25 +797,27 @@ export class SearchAnalyticsService extends EventEmitter {
       totalUsers: behaviors.length,
       averageSearches: behaviors.reduce((sum, b) => sum + b.searchCount, 0) / behaviors.length,
       averageCTR: behaviors.reduce((sum, b) => sum + b.clickThroughRate, 0) / behaviors.length,
-      averageRefinementRate: behaviors.reduce((sum, b) => sum + b.refinementRate, 0) / behaviors.length,
-      topQueries: this.mergePopularQueries(behaviors.map(b => b.popularQueries))
+      averageRefinementRate:
+        behaviors.reduce((sum, b) => sum + b.refinementRate, 0) / behaviors.length,
+      topQueries: this.mergePopularQueries(behaviors.map(b => b.popularQueries)),
     };
   }
 
   private aggregateSearchQuality(qualities: SearchQualityMetrics[]): any {
     if (qualities.length === 0) return {};
 
-    const avgRelevance = qualities.reduce((sum, q) => sum + q.resultRelevance, 0) / qualities.length;
+    const avgRelevance =
+      qualities.reduce((sum, q) => sum + q.resultRelevance, 0) / qualities.length;
     const zeroResultRate = qualities.filter(q => q.zeroResultRate > 0).length / qualities.length;
-    const avgClickPosition = qualities
-      .filter(q => q.clickPosition > 0)
-      .reduce((sum, q) => sum + q.clickPosition, 0) / qualities.length;
+    const avgClickPosition =
+      qualities.filter(q => q.clickPosition > 0).reduce((sum, q) => sum + q.clickPosition, 0) /
+      qualities.length;
 
     return {
       averageRelevance: avgRelevance,
       zeroResultRate,
       averageClickPosition: avgClickPosition || 0,
-      refinementRate: qualities.filter(q => q.refinementNeeded).length / qualities.length
+      refinementRate: qualities.filter(q => q.refinementNeeded).length / qualities.length,
     };
   }
 
@@ -866,12 +852,14 @@ export class SearchAnalyticsService extends EventEmitter {
       recentErrors: errors.slice(-10).map(e => ({
         timestamp: e.timestamp,
         operation: e.data.operation,
-        message: e.data.errorMessage
-      }))
+        message: e.data.errorMessage,
+      })),
     };
   }
 
-  private mergePopularQueries(queryArrays: Array<{ query: string; count: number }[]>): Array<{ query: string; count: number }> {
+  private mergePopularQueries(
+    queryArrays: Array<{ query: string; count: number }[]>
+  ): Array<{ query: string; count: number }> {
     const merged = new Map<string, number>();
 
     queryArrays.forEach(queries => {

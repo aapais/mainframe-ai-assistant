@@ -39,7 +39,9 @@ export class FileParsingService {
       }
     } catch (error) {
       console.error('Error parsing file:', error);
-      throw new Error(`Erro ao processar arquivo ${file.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new Error(
+        `Erro ao processar arquivo ${file.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
     }
   }
 
@@ -61,13 +63,15 @@ export class FileParsingService {
         if (line.includes('|')) {
           const parts = line.split('|').map(p => p.trim());
           if (parts.length >= 3) {
-            incidents.push(this.createIncidentFromParts({
-              title: parts[0],
-              problem: parts[1],
-              solution: parts[2] || parts[1], // Use problem as solution if not provided
-              category: parts[3] || 'General',
-              priority: this.validatePriority(parts[4]) || 'P3'
-            }));
+            incidents.push(
+              this.createIncidentFromParts({
+                title: parts[0],
+                problem: parts[1],
+                solution: parts[2] || parts[1], // Use problem as solution if not provided
+                category: parts[3] || 'General',
+                priority: this.validatePriority(parts[4]) || 'P3',
+              })
+            );
             continue;
           }
         }
@@ -108,8 +112,18 @@ export class FileParsingService {
 
     // Find column indices
     const titleIndex = this.findColumnIndex(headers, ['title', 'titulo', 'incidente', 'incident']);
-    const problemIndex = this.findColumnIndex(headers, ['problem', 'problema', 'description', 'descricao']);
-    const solutionIndex = this.findColumnIndex(headers, ['solution', 'solucao', 'resolution', 'resolucao']);
+    const problemIndex = this.findColumnIndex(headers, [
+      'problem',
+      'problema',
+      'description',
+      'descricao',
+    ]);
+    const solutionIndex = this.findColumnIndex(headers, [
+      'solution',
+      'solucao',
+      'resolution',
+      'resolucao',
+    ]);
     const categoryIndex = this.findColumnIndex(headers, ['category', 'categoria', 'type', 'tipo']);
     const priorityIndex = this.findColumnIndex(headers, ['priority', 'prioridade', 'pri']);
 
@@ -121,13 +135,19 @@ export class FileParsingService {
         const values = this.parseCsvLine(line);
 
         if (titleIndex >= 0 && values[titleIndex]) {
-          incidents.push(this.createIncidentFromParts({
-            title: values[titleIndex] || `Incident from ${file.name} line ${i + 1}`,
-            problem: values[problemIndex] || values[titleIndex] || 'No problem description',
-            solution: values[solutionIndex] || values[problemIndex] || values[titleIndex] || 'Solution to be determined',
-            category: values[categoryIndex] || 'General',
-            priority: this.validatePriority(values[priorityIndex]) || 'P3'
-          }));
+          incidents.push(
+            this.createIncidentFromParts({
+              title: values[titleIndex] || `Incident from ${file.name} line ${i + 1}`,
+              problem: values[problemIndex] || values[titleIndex] || 'No problem description',
+              solution:
+                values[solutionIndex] ||
+                values[problemIndex] ||
+                values[titleIndex] ||
+                'Solution to be determined',
+              category: values[categoryIndex] || 'General',
+              priority: this.validatePriority(values[priorityIndex]) || 'P3',
+            })
+          );
         }
       } catch (error) {
         console.warn(`Error parsing CSV line ${i + 1}: ${error}`);
@@ -150,12 +170,14 @@ export class FileParsingService {
     console.log('PDF parsing - mock implementation for', file.name);
 
     // Create a placeholder incident for PDF
-    return [this.createIncidentFromContent(
-      `PDF Import: ${file.name}`,
-      `Incident imported from PDF file: ${file.name}. ` +
-      `File size: ${(file.size / 1024).toFixed(1)}KB. ` +
-      `Please review and update the content with actual incident details.`
-    )];
+    return [
+      this.createIncidentFromContent(
+        `PDF Import: ${file.name}`,
+        `Incident imported from PDF file: ${file.name}. ` +
+          `File size: ${(file.size / 1024).toFixed(1)}KB. ` +
+          `Please review and update the content with actual incident details.`
+      ),
+    ];
   }
 
   /**
@@ -167,12 +189,14 @@ export class FileParsingService {
     console.log('Word document parsing - mock implementation for', file.name);
 
     // Create a placeholder incident for Word document
-    return [this.createIncidentFromContent(
-      `Word Import: ${file.name}`,
-      `Incident imported from Word document: ${file.name}. ` +
-      `File size: ${(file.size / 1024).toFixed(1)}KB. ` +
-      `Please review and update the content with actual incident details.`
-    )];
+    return [
+      this.createIncidentFromContent(
+        `Word Import: ${file.name}`,
+        `Incident imported from Word document: ${file.name}. ` +
+          `File size: ${(file.size / 1024).toFixed(1)}KB. ` +
+          `Please review and update the content with actual incident details.`
+      ),
+    ];
   }
 
   /**
@@ -184,13 +208,15 @@ export class FileParsingService {
     console.log('Excel parsing - mock implementation for', file.name);
 
     // Create a placeholder incident for Excel
-    return [this.createIncidentFromContent(
-      `Excel Import: ${file.name}`,
-      `Incident imported from Excel file: ${file.name}. ` +
-      `File size: ${(file.size / 1024).toFixed(1)}KB. ` +
-      `Please review and update the content with actual incident details. ` +
-      `Expected format: Title | Problem | Solution | Category | Priority in columns.`
-    )];
+    return [
+      this.createIncidentFromContent(
+        `Excel Import: ${file.name}`,
+        `Incident imported from Excel file: ${file.name}. ` +
+          `File size: ${(file.size / 1024).toFixed(1)}KB. ` +
+          `Please review and update the content with actual incident details. ` +
+          `Expected format: Title | Problem | Solution | Category | Priority in columns.`
+      ),
+    ];
   }
 
   /**
@@ -208,7 +234,11 @@ export class FileParsingService {
       const lowerLine = line.toLowerCase().trim();
       if (lowerLine.startsWith('problem:') || lowerLine.startsWith('problema:')) {
         problem = line.substring(line.indexOf(':') + 1).trim();
-      } else if (lowerLine.startsWith('solution:') || lowerLine.startsWith('solução:') || lowerLine.startsWith('solucao:')) {
+      } else if (
+        lowerLine.startsWith('solution:') ||
+        lowerLine.startsWith('solução:') ||
+        lowerLine.startsWith('solucao:')
+      ) {
         solution = line.substring(line.indexOf(':') + 1).trim();
       } else if (lowerLine.startsWith('category:') || lowerLine.startsWith('categoria:')) {
         category = line.substring(line.indexOf(':') + 1).trim();
@@ -223,7 +253,7 @@ export class FileParsingService {
         problem: problem || title,
         solution: solution || problem || title,
         category,
-        priority
+        priority,
       });
     }
 
@@ -325,7 +355,7 @@ export class FileParsingService {
       business_impact: this.determinBusinessImpact(parts.priority as 'P1' | 'P2' | 'P3' | 'P4'),
       customer_impact: false,
       incident_number: incidentNumber,
-      reporter: 'bulk_import'
+      reporter: 'bulk_import',
     };
   }
 
@@ -356,7 +386,7 @@ export class FileParsingService {
       business_impact: 'medium',
       customer_impact: false,
       incident_number: incidentNumber,
-      reporter: 'bulk_import'
+      reporter: 'bulk_import',
     };
   }
 
@@ -374,9 +404,23 @@ export class FileParsingService {
     // Extract potential tags from title and problem
     const content = `${title} ${problem}`.toLowerCase();
     const commonTerms = [
-      'jcl', 'db2', 'vsam', 'cobol', 'cics', 'ims', 'mainframe',
-      'sql', 'database', 'connection', 'performance', 'error',
-      'timeout', 'memory', 'cpu', 'disk', 'network'
+      'jcl',
+      'db2',
+      'vsam',
+      'cobol',
+      'cics',
+      'ims',
+      'mainframe',
+      'sql',
+      'database',
+      'connection',
+      'performance',
+      'error',
+      'timeout',
+      'memory',
+      'cpu',
+      'disk',
+      'network',
     ];
 
     commonTerms.forEach(term => {
@@ -391,13 +435,20 @@ export class FileParsingService {
   /**
    * Determine business impact from priority
    */
-  private determinBusinessImpact(priority: 'P1' | 'P2' | 'P3' | 'P4'): 'low' | 'medium' | 'high' | 'critical' {
+  private determinBusinessImpact(
+    priority: 'P1' | 'P2' | 'P3' | 'P4'
+  ): 'low' | 'medium' | 'high' | 'critical' {
     switch (priority) {
-      case 'P1': return 'critical';
-      case 'P2': return 'high';
-      case 'P3': return 'medium';
-      case 'P4': return 'low';
-      default: return 'medium';
+      case 'P1':
+        return 'critical';
+      case 'P2':
+        return 'high';
+      case 'P3':
+        return 'medium';
+      case 'P4':
+        return 'low';
+      default:
+        return 'medium';
     }
   }
 }

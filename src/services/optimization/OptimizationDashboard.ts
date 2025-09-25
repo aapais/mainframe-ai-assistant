@@ -4,7 +4,11 @@
  */
 
 import { EventEmitter } from 'events';
-import { OptimizationEngine, OptimizationRecommendation, OptimizationMetrics } from './OptimizationEngine';
+import {
+  OptimizationEngine,
+  OptimizationRecommendation,
+  OptimizationMetrics,
+} from './OptimizationEngine';
 
 export interface DashboardWidget {
   id: string;
@@ -99,8 +103,7 @@ export class OptimizationDashboard extends EventEmitter {
    * Get current dashboard configuration
    */
   getDashboardConfig(): any {
-    const widgets = Array.from(this.widgets.values())
-      .sort((a, b) => a.priority - b.priority);
+    const widgets = Array.from(this.widgets.values()).sort((a, b) => a.priority - b.priority);
 
     const activeAlerts = Array.from(this.alerts.values())
       .filter(alert => !alert.acknowledged)
@@ -115,7 +118,7 @@ export class OptimizationDashboard extends EventEmitter {
       alerts: activeAlerts,
       insights: recentInsights,
       lastUpdated: Date.now(),
-      summary: this.getDashboardSummary()
+      summary: this.getDashboardSummary(),
     };
   }
 
@@ -134,7 +137,7 @@ export class OptimizationDashboard extends EventEmitter {
       averageROI: dashboardData.summary.averageROI,
       systemHealth: this.calculateSystemHealth(),
       optimizationVelocity: this.calculateOptimizationVelocity(),
-      costSavings: this.calculateCostSavings()
+      costSavings: this.calculateCostSavings(),
     };
   }
 
@@ -151,7 +154,7 @@ export class OptimizationDashboard extends EventEmitter {
       data: widget.data || {},
       refreshInterval: widget.refreshInterval || 60,
       lastUpdated: Date.now(),
-      configuration: widget.configuration || {}
+      configuration: widget.configuration || {},
     };
 
     this.widgets.set(fullWidget.id, fullWidget);
@@ -190,7 +193,7 @@ export class OptimizationDashboard extends EventEmitter {
       category: alert.category || 'general',
       acknowledged: false,
       autoResolve: alert.autoResolve || false,
-      metadata: alert.metadata || {}
+      metadata: alert.metadata || {},
     };
 
     this.alerts.set(fullAlert.id, fullAlert);
@@ -240,8 +243,9 @@ export class OptimizationDashboard extends EventEmitter {
 
     // Trend analysis insight
     if (dashboardData.metrics.trends) {
-      const degradingTrends = Object.entries(dashboardData.metrics.trends)
-        .filter(([, trend]: [string, any]) => trend.direction === 'degrading');
+      const degradingTrends = Object.entries(dashboardData.metrics.trends).filter(
+        ([, trend]: [string, any]) => trend.direction === 'degrading'
+      );
 
       if (degradingTrends.length > 0) {
         insights.push({
@@ -257,7 +261,7 @@ export class OptimizationDashboard extends EventEmitter {
           actionable: true,
           relatedRecommendations: recommendations
             .filter(r => degradingTrends.some(([category]) => r.category === category))
-            .map(r => r.id)
+            .map(r => r.id),
         });
       }
     }
@@ -276,7 +280,7 @@ export class OptimizationDashboard extends EventEmitter {
         category: 'optimization',
         data: { recommendations: highROIRecommendations },
         actionable: true,
-        relatedRecommendations: highROIRecommendations.map(r => r.id)
+        relatedRecommendations: highROIRecommendations.map(r => r.id),
       });
     }
 
@@ -296,7 +300,7 @@ export class OptimizationDashboard extends EventEmitter {
         actionable: true,
         relatedRecommendations: recommendations
           .filter(r => r.category === categoryPatterns.dominantCategory)
-          .map(r => r.id)
+          .map(r => r.id),
       });
     }
 
@@ -314,7 +318,7 @@ export class OptimizationDashboard extends EventEmitter {
         category: 'prediction',
         data: { prediction: performancePrediction },
         actionable: performancePrediction.actionable,
-        relatedRecommendations: []
+        relatedRecommendations: [],
       });
     }
 
@@ -344,7 +348,7 @@ export class OptimizationDashboard extends EventEmitter {
         successfulOptimizations: completedOptimizations.length,
         averageImprovement: this.calculateAverageImprovement(completedOptimizations),
         totalROI: this.calculateTotalROI(completedOptimizations),
-        costSavings: this.calculateCostSavings()
+        costSavings: this.calculateCostSavings(),
       },
       categoryBreakdown: this.generateCategoryBreakdown(recommendations),
       trendAnalysis: this.generateTrendAnalysis(),
@@ -353,7 +357,7 @@ export class OptimizationDashboard extends EventEmitter {
         .sort((a, b) => b.roi - a.roi)
         .slice(0, 5),
       insights: Array.from(this.insights.values()).slice(0, 10),
-      futureProjections: this.generateFutureProjections()
+      futureProjections: this.generateFutureProjections(),
     };
 
     this.reports.set(report.id, report);
@@ -397,12 +401,12 @@ export class OptimizationDashboard extends EventEmitter {
    * Setup event handlers for optimization engine
    */
   private setupEngineEventHandlers(): void {
-    this.optimizationEngine.on('analysis-completed', (data) => {
+    this.optimizationEngine.on('analysis-completed', data => {
       this.updatePerformanceMetrics(data);
       this.generateRealtimeInsights(data);
     });
 
-    this.optimizationEngine.on('critical-issues-detected', (issues) => {
+    this.optimizationEngine.on('critical-issues-detected', issues => {
       issues.forEach((issue: OptimizationRecommendation) => {
         this.createAlert({
           severity: 'critical',
@@ -410,23 +414,23 @@ export class OptimizationDashboard extends EventEmitter {
           message: issue.description,
           category: issue.category,
           autoResolve: false,
-          metadata: { recommendationId: issue.id }
+          metadata: { recommendationId: issue.id },
         });
       });
     });
 
-    this.optimizationEngine.on('recommendation-applied', (data) => {
+    this.optimizationEngine.on('recommendation-applied', data => {
       this.createAlert({
         severity: 'info',
         title: 'Optimization Applied',
         message: `Successfully applied: ${data.recommendation.title}`,
         category: 'optimization',
         autoResolve: true,
-        metadata: { recommendationId: data.recommendation.id }
+        metadata: { recommendationId: data.recommendation.id },
       });
     });
 
-    this.optimizationEngine.on('optimization-results-measured', (recommendation) => {
+    this.optimizationEngine.on('optimization-results-measured', recommendation => {
       if (recommendation.results?.success) {
         const improvement = recommendation.results.actualImprovement;
         this.createAlert({
@@ -435,7 +439,7 @@ export class OptimizationDashboard extends EventEmitter {
           message: `${recommendation.title} achieved ${improvement.toFixed(1)}% improvement`,
           category: 'success',
           autoResolve: true,
-          metadata: { recommendationId: recommendation.id, improvement }
+          metadata: { recommendationId: recommendation.id, improvement },
         });
       }
     });
@@ -453,7 +457,7 @@ export class OptimizationDashboard extends EventEmitter {
       size: 'large',
       priority: 1,
       refreshInterval: 30,
-      data: this.getDashboardSummary()
+      data: this.getDashboardSummary(),
     });
 
     // Recommendations widget
@@ -465,11 +469,12 @@ export class OptimizationDashboard extends EventEmitter {
       priority: 2,
       refreshInterval: 60,
       data: {
-        recommendations: this.optimizationEngine.getRecommendations()
+        recommendations: this.optimizationEngine
+          .getRecommendations()
           .filter(r => r.status === 'pending')
           .sort((a, b) => b.priority - a.priority)
-          .slice(0, 5)
-      }
+          .slice(0, 5),
+      },
     });
 
     // System health widget
@@ -482,8 +487,8 @@ export class OptimizationDashboard extends EventEmitter {
       refreshInterval: 45,
       data: {
         health: this.calculateSystemHealth(),
-        components: ['search', 'database', 'cache', 'network', 'cpu', 'memory']
-      }
+        components: ['search', 'database', 'cache', 'network', 'cpu', 'memory'],
+      },
     });
 
     // ROI tracking widget
@@ -495,9 +500,11 @@ export class OptimizationDashboard extends EventEmitter {
       priority: 4,
       refreshInterval: 300, // 5 minutes
       data: {
-        roi: this.calculateTotalROI(this.optimizationEngine.getRecommendations().filter(r => r.status === 'completed')),
-        trend: 'improving'
-      }
+        roi: this.calculateTotalROI(
+          this.optimizationEngine.getRecommendations().filter(r => r.status === 'completed')
+        ),
+        trend: 'improving',
+      },
     });
 
     // Optimization velocity widget
@@ -510,8 +517,8 @@ export class OptimizationDashboard extends EventEmitter {
       refreshInterval: 180, // 3 minutes
       data: {
         velocity: this.calculateOptimizationVelocity(),
-        target: 10 // Target optimizations per week
-      }
+        target: 10, // Target optimizations per week
+      },
     });
 
     // Alerts widget
@@ -523,8 +530,8 @@ export class OptimizationDashboard extends EventEmitter {
       priority: 6,
       refreshInterval: 15,
       data: {
-        alerts: this.getAlerts(false).slice(0, 5)
-      }
+        alerts: this.getAlerts(false).slice(0, 5),
+      },
     });
   }
 
@@ -562,37 +569,40 @@ export class OptimizationDashboard extends EventEmitter {
 
       case 'recommendations':
         newData = {
-          recommendations: this.optimizationEngine.getRecommendations()
+          recommendations: this.optimizationEngine
+            .getRecommendations()
             .filter(r => r.status === 'pending')
             .sort((a, b) => b.priority - a.priority)
-            .slice(0, 5)
+            .slice(0, 5),
         };
         break;
 
       case 'system-health':
         newData = {
           health: this.calculateSystemHealth(),
-          components: ['search', 'database', 'cache', 'network', 'cpu', 'memory']
+          components: ['search', 'database', 'cache', 'network', 'cpu', 'memory'],
         };
         break;
 
       case 'roi-tracking':
         newData = {
-          roi: this.calculateTotalROI(this.optimizationEngine.getRecommendations().filter(r => r.status === 'completed')),
-          trend: 'improving'
+          roi: this.calculateTotalROI(
+            this.optimizationEngine.getRecommendations().filter(r => r.status === 'completed')
+          ),
+          trend: 'improving',
         };
         break;
 
       case 'optimization-velocity':
         newData = {
           velocity: this.calculateOptimizationVelocity(),
-          target: 10
+          target: 10,
         };
         break;
 
       case 'active-alerts':
         newData = {
-          alerts: this.getAlerts(false).slice(0, 5)
+          alerts: this.getAlerts(false).slice(0, 5),
         };
         break;
 
@@ -625,8 +635,9 @@ export class OptimizationDashboard extends EventEmitter {
    * Calculate optimization velocity (optimizations per week)
    */
   private calculateOptimizationVelocity(): number {
-    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-    const recentOptimizations = this.optimizationEngine.getRecommendations()
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recentOptimizations = this.optimizationEngine
+      .getRecommendations()
       .filter(r => r.status === 'completed' && (r.appliedAt || 0) >= oneWeekAgo);
 
     return recentOptimizations.length;
@@ -636,7 +647,8 @@ export class OptimizationDashboard extends EventEmitter {
    * Calculate cost savings
    */
   private calculateCostSavings(): number {
-    const completedOptimizations = this.optimizationEngine.getRecommendations()
+    const completedOptimizations = this.optimizationEngine
+      .getRecommendations()
       .filter(r => r.status === 'completed' && r.results?.success);
 
     // Simplified cost savings calculation
@@ -672,7 +684,9 @@ export class OptimizationDashboard extends EventEmitter {
   /**
    * Generate category breakdown
    */
-  private generateCategoryBreakdown(recommendations: OptimizationRecommendation[]): Record<string, any> {
+  private generateCategoryBreakdown(
+    recommendations: OptimizationRecommendation[]
+  ): Record<string, any> {
     const breakdown: Record<string, any> = {};
 
     recommendations.forEach(rec => {
@@ -681,7 +695,7 @@ export class OptimizationDashboard extends EventEmitter {
           count: 0,
           completed: 0,
           avgROI: 0,
-          totalROI: 0
+          totalROI: 0,
         };
       }
 
@@ -714,7 +728,7 @@ export class OptimizationDashboard extends EventEmitter {
       overall: Object.keys(trends).length > 0 ? 'stable' : 'unknown',
       categories: trends,
       improvementVelocity: this.calculateOptimizationVelocity(),
-      projectedImpact: this.projectFutureImpact()
+      projectedImpact: this.projectFutureImpact(),
     };
   }
 
@@ -723,7 +737,8 @@ export class OptimizationDashboard extends EventEmitter {
    */
   private generateFutureProjections(): any {
     const currentVelocity = this.calculateOptimizationVelocity();
-    const pendingRecommendations = this.optimizationEngine.getRecommendations()
+    const pendingRecommendations = this.optimizationEngine
+      .getRecommendations()
       .filter(r => r.status === 'pending');
 
     const projectedCompletionWeeks = pendingRecommendations.length / Math.max(1, currentVelocity);
@@ -733,7 +748,7 @@ export class OptimizationDashboard extends EventEmitter {
       timeToComplete: `${Math.ceil(projectedCompletionWeeks)} weeks`,
       projectedROI: projectedROI / pendingRecommendations.length,
       potentialSavings: projectedROI * 50, // Simplified calculation
-      riskFactors: this.identifyRiskFactors()
+      riskFactors: this.identifyRiskFactors(),
     };
   }
 
@@ -755,7 +770,7 @@ export class OptimizationDashboard extends EventEmitter {
       categoryCounts,
       dominantCategory: dominantEntry ? dominantEntry[0] : null,
       concentration: dominantEntry ? dominantEntry[1] / total : 0,
-      diversity: entries.length / total
+      diversity: entries.length / total,
     };
   }
 
@@ -765,7 +780,8 @@ export class OptimizationDashboard extends EventEmitter {
   private predictPerformanceTrend(): any {
     const healthScore = this.calculateSystemHealth();
     const velocity = this.calculateOptimizationVelocity();
-    const pendingCritical = this.optimizationEngine.getRecommendations()
+    const pendingCritical = this.optimizationEngine
+      .getRecommendations()
       .filter(r => r.impact === 'critical' && r.status === 'pending').length;
 
     let confidence = 70;
@@ -797,7 +813,7 @@ export class OptimizationDashboard extends EventEmitter {
       actionable,
       healthScore,
       velocity,
-      criticalIssues: pendingCritical
+      criticalIssues: pendingCritical,
     };
   }
 
@@ -805,13 +821,14 @@ export class OptimizationDashboard extends EventEmitter {
    * Project future impact
    */
   private projectFutureImpact(): number {
-    const pendingRecommendations = this.optimizationEngine.getRecommendations()
+    const pendingRecommendations = this.optimizationEngine
+      .getRecommendations()
       .filter(r => r.status === 'pending');
 
     const totalPotentialImprovement = pendingRecommendations.reduce((sum, rec) => {
       // Estimate improvement based on ROI and impact
       const impactMultiplier = { critical: 3, high: 2, medium: 1, low: 0.5 };
-      return sum + (rec.roi * (impactMultiplier[rec.impact as keyof typeof impactMultiplier] || 1));
+      return sum + rec.roi * (impactMultiplier[rec.impact as keyof typeof impactMultiplier] || 1);
     }, 0);
 
     return totalPotentialImprovement / Math.max(1, pendingRecommendations.length);
@@ -873,7 +890,9 @@ export class OptimizationDashboard extends EventEmitter {
   private generateRealtimeInsights(data: any): void {
     // Generate insights based on new analysis data
     if (data.recommendations && data.recommendations.length > 0) {
-      const criticalRecs = data.recommendations.filter((r: OptimizationRecommendation) => r.impact === 'critical');
+      const criticalRecs = data.recommendations.filter(
+        (r: OptimizationRecommendation) => r.impact === 'critical'
+      );
 
       if (criticalRecs.length > 0) {
         this.insights.set(`realtime-critical-${Date.now()}`, {
@@ -887,7 +906,7 @@ export class OptimizationDashboard extends EventEmitter {
           category: 'urgent',
           data: { recommendations: criticalRecs },
           actionable: true,
-          relatedRecommendations: criticalRecs.map((r: OptimizationRecommendation) => r.id)
+          relatedRecommendations: criticalRecs.map((r: OptimizationRecommendation) => r.id),
         });
       }
     }
@@ -898,26 +917,35 @@ export class OptimizationDashboard extends EventEmitter {
    */
   private startDashboardMonitoring(): void {
     // Generate insights every 10 minutes
-    setInterval(async () => {
-      await this.generateInsights();
-    }, 10 * 60 * 1000);
+    setInterval(
+      async () => {
+        await this.generateInsights();
+      },
+      10 * 60 * 1000
+    );
 
     // Clean up old insights every hour
-    setInterval(() => {
-      this.cleanupOldInsights();
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupOldInsights();
+      },
+      60 * 60 * 1000
+    );
 
     // Clean up old alerts every 24 hours
-    setInterval(() => {
-      this.cleanupOldAlerts();
-    }, 24 * 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupOldAlerts();
+      },
+      24 * 60 * 60 * 1000
+    );
   }
 
   /**
    * Cleanup old insights
    */
   private cleanupOldInsights(): void {
-    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
     for (const [id, insight] of this.insights) {
       if (insight.timestamp < oneWeekAgo) {
@@ -930,7 +958,7 @@ export class OptimizationDashboard extends EventEmitter {
    * Cleanup old alerts
    */
   private cleanupOldAlerts(): void {
-    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
     for (const [id, alert] of this.alerts) {
       if (alert.acknowledged && alert.timestamp < oneDayAgo) {

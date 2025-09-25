@@ -1,7 +1,7 @@
 /**
  * Base Storage Plugin
  * Abstract base class for all storage service plugins
- * 
+ *
  * This class provides the foundation for MVP-specific functionality extensions,
  * implementing the Plugin pattern for modular feature additions.
  */
@@ -181,7 +181,7 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
     return {
       ...this.metadata,
       status: this.status,
-      error_count: this.errorCount
+      error_count: this.errorCount,
     };
   }
 
@@ -208,14 +208,15 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
 
       // Update success metrics
       const processingTime = Date.now() - startTime;
-      this.metadata.total_processing_time = (this.metadata.total_processing_time || 0) + processingTime;
+      this.metadata.total_processing_time =
+        (this.metadata.total_processing_time || 0) + processingTime;
       this.metadata.last_operation_at = new Date();
 
       this.emit('data-processed', {
         plugin: this.getName(),
         processing_time: processingTime,
         success: true,
-        data_size: this.getDataSize(data)
+        data_size: this.getDataSize(data),
       });
 
       return result;
@@ -225,7 +226,7 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
         plugin: this.getName(),
         processing_time: Date.now() - startTime,
         success: false,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -246,19 +247,20 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
         operations_count: this.metadata.operations_count || 0,
         last_operation: this.metadata.last_operation_at,
         config_valid: this.isConfigurationValid(),
-        dependencies_satisfied: await this.checkDependencies()
+        dependencies_satisfied: await this.checkDependencies(),
       };
 
-      const healthy = this.status === 'active' && 
-                     this.errorCount < this.maxErrors &&
-                     details.config_valid &&
-                     details.dependencies_satisfied;
+      const healthy =
+        this.status === 'active' &&
+        this.errorCount < this.maxErrors &&
+        details.config_valid &&
+        details.dependencies_satisfied;
 
       return { healthy, details };
     } catch (error) {
       return {
         healthy: false,
-        details: { error: error.message }
+        details: { error: error.message },
       };
     }
   }
@@ -267,9 +269,10 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
    * Get performance metrics
    */
   getMetrics(): any {
-    const avgProcessingTime = this.metadata.operations_count > 0
-      ? (this.metadata.total_processing_time || 0) / this.metadata.operations_count
-      : 0;
+    const avgProcessingTime =
+      this.metadata.operations_count > 0
+        ? (this.metadata.total_processing_time || 0) / this.metadata.operations_count
+        : 0;
 
     return {
       plugin_name: this.getName(),
@@ -277,15 +280,14 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
       status: this.status,
       operations_count: this.metadata.operations_count || 0,
       error_count: this.errorCount,
-      error_rate: this.metadata.operations_count > 0 
-        ? this.errorCount / this.metadata.operations_count 
-        : 0,
+      error_rate:
+        this.metadata.operations_count > 0 ? this.errorCount / this.metadata.operations_count : 0,
       average_processing_time: avgProcessingTime,
       total_processing_time: this.metadata.total_processing_time || 0,
-      uptime: this.metadata.initialized_at 
+      uptime: this.metadata.initialized_at
         ? Date.now() - this.metadata.initialized_at.getTime()
         : 0,
-      last_operation_at: this.metadata.last_operation_at
+      last_operation_at: this.metadata.last_operation_at,
     };
   }
 
@@ -302,9 +304,10 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
       ...defaults,
       ...userConfig,
       // Merge nested objects
-      ...(defaults.options && userConfig.options && {
-        options: { ...defaults.options, ...userConfig.options }
-      })
+      ...(defaults.options &&
+        userConfig.options && {
+          options: { ...defaults.options, ...userConfig.options },
+        }),
     };
   }
 
@@ -320,7 +323,7 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
       dependencies: this.getDependencies(),
       operations_count: 0,
       total_processing_time: 0,
-      error_count: 0
+      error_count: 0,
     };
   }
 
@@ -355,7 +358,7 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
    */
   protected async validateDependencies(): Promise<void> {
     const dependencies = this.getDependencies();
-    
+
     for (const dependency of dependencies) {
       const satisfied = await this.checkDependency(dependency);
       if (!satisfied) {
@@ -385,15 +388,15 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
     if (dependency === 'full-text-search') {
       return typeof this.adapter.searchEntries === 'function';
     }
-    
+
     if (dependency === 'transactions') {
       return typeof this.adapter.beginTransaction === 'function';
     }
-    
+
     if (dependency === 'raw-sql') {
       return typeof this.adapter.executeSQL === 'function';
     }
-    
+
     return true;
   }
 
@@ -402,12 +405,12 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
    */
   protected handleError(error: Error): void {
     this.errorCount++;
-    
+
     this.emit('error', {
       plugin: this.getName(),
       error: error.message,
       error_count: this.errorCount,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     // Auto-disable plugin if too many errors
@@ -427,11 +430,11 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
     if (typeof data === 'string') {
       return data.length;
     }
-    
+
     if (typeof data === 'object') {
       return JSON.stringify(data).length;
     }
-    
+
     return 0;
   }
 
@@ -466,7 +469,7 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
    */
   protected log(level: 'info' | 'warn' | 'error', message: string, data?: any): void {
     const logMessage = `[${this.getName()}] ${message}`;
-    
+
     switch (level) {
       case 'info':
         console.log(logMessage, data || '');
@@ -484,7 +487,7 @@ export abstract class BaseStoragePlugin extends EventEmitter implements IStorage
       level,
       message,
       data,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 }

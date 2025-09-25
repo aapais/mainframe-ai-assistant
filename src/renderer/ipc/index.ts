@@ -21,5 +21,5 @@ export type {
   DatabaseMetrics,
   ElectronAPI,
   AppError,
-  AppErrorType
+  AppErrorType,
 } from '../../types';

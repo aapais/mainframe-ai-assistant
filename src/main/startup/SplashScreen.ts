@@ -27,7 +27,7 @@ export class SplashScreen {
     fadeOutDuration: 500,
     showProgress: true,
     showLogo: true,
-    backgroundColor: '#1e293b' // Dark slate background
+    backgroundColor: '#1e293b', // Dark slate background
   };
 
   constructor(options?: Partial<SplashScreenOptions>) {
@@ -44,7 +44,7 @@ export class SplashScreen {
 
     try {
       this.showStartTime = Date.now();
-      
+
       // Get primary display
       const primaryDisplay = screen.getPrimaryDisplay();
       const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
@@ -70,8 +70,8 @@ export class SplashScreen {
           nodeIntegration: true,
           contextIsolation: false,
           enableRemoteModule: false,
-          webSecurity: false
-        }
+          webSecurity: false,
+        },
       });
 
       // Load splash screen HTML
@@ -83,7 +83,6 @@ export class SplashScreen {
       this.isVisible = true;
 
       console.log('💫 Splash screen shown');
-
     } catch (error) {
       console.error('Failed to show splash screen:', error);
       // Don't fail startup if splash screen fails
@@ -126,7 +125,9 @@ export class SplashScreen {
           statusText.textContent = '${status.replace(/'/g, "\\'")}';
         }
         
-        ${progress !== undefined ? `
+        ${
+          progress !== undefined
+            ? `
           const progressBar = document.getElementById('progress-bar');
           const progressText = document.getElementById('progress-text');
           
@@ -136,7 +137,9 @@ export class SplashScreen {
           if (progressText) {
             progressText.textContent = '${Math.floor(progress)}%';
           }
-        ` : ''}
+        `
+            : ''
+        }
       `);
     } catch (error) {
       // Ignore errors - splash screen is not critical
@@ -193,7 +196,6 @@ export class SplashScreen {
       this.isVisible = false;
 
       console.log('💫 Splash screen hidden');
-
     } catch (error) {
       console.error('Error hiding splash screen:', error);
       // Force close if animation fails
@@ -365,14 +367,18 @@ export class SplashScreen {
           <div class="spinner"></div>
           <div class="status-text" id="status-text">Initializing application...</div>
           
-          ${this.options.showProgress ? `
+          ${
+            this.options.showProgress
+              ? `
             <div class="progress-container" id="progress-container">
               <div class="progress-background">
                 <div class="progress-bar" id="progress-bar"></div>
               </div>
               <div class="progress-text" id="progress-text">0%</div>
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
         
         <script>

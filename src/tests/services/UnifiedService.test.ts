@@ -15,18 +15,18 @@ import {
   getIncidentService,
   isKnowledgeBaseEntry,
   isIncidentEntry,
-  ServiceFactory
+  ServiceFactory,
 } from '../../renderer/services';
 
 // Mock IPC renderer
 const mockIpcRenderer = {
-  invoke: jest.fn()
+  invoke: jest.fn(),
 };
 
 // Mock window.api
 (global as any).window = {
   api: mockIpcRenderer,
-  electronAPI: mockIpcRenderer
+  electronAPI: mockIpcRenderer,
 };
 
 describe('UnifiedService', () => {
@@ -68,7 +68,7 @@ describe('UnifiedService', () => {
       success_count: 0,
       failure_count: 0,
       version: 1,
-      entry_type: 'knowledge_base'
+      entry_type: 'knowledge_base',
     };
 
     const mockIncidentEntry: UnifiedEntry = {
@@ -89,14 +89,14 @@ describe('UnifiedService', () => {
       status: 'aberto',
       priority: 'P1',
       assigned_to: 'admin',
-      reporter: 'user1'
+      reporter: 'user1',
     };
 
     test('should create KB entry through unified service', async () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
         data: mockKBEntry,
-        metadata: { executionTime: 100, operationId: 'op-1' }
+        metadata: { executionTime: 100, operationId: 'op-1' },
       });
 
       const createData: CreateUnifiedEntry = {
@@ -104,7 +104,7 @@ describe('UnifiedService', () => {
         problem: 'Test problem',
         solution: 'Test solution',
         category: 'JCL',
-        entry_type: 'knowledge_base'
+        entry_type: 'knowledge_base',
       };
 
       const result = await unifiedService.createEntry(createData);
@@ -119,7 +119,7 @@ describe('UnifiedService', () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
         data: mockIncidentEntry,
-        metadata: { executionTime: 150, operationId: 'op-2' }
+        metadata: { executionTime: 150, operationId: 'op-2' },
       });
 
       const createData: CreateUnifiedEntry = {
@@ -130,7 +130,7 @@ describe('UnifiedService', () => {
         entry_type: 'incident',
         status: 'aberto',
         priority: 'P1',
-        reporter: 'user1'
+        reporter: 'user1',
       };
 
       const result = await unifiedService.createEntry(createData);
@@ -144,7 +144,7 @@ describe('UnifiedService', () => {
     test('should get entry by ID', async () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
-        data: mockKBEntry
+        data: mockKBEntry,
       });
 
       const result = await unifiedService.getEntry('test-kb-1');
@@ -159,18 +159,18 @@ describe('UnifiedService', () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
         data: updatedEntry,
-        metadata: { executionTime: 120, operationId: 'op-3' }
+        metadata: { executionTime: 120, operationId: 'op-3' },
       });
 
       const updateData: UpdateUnifiedEntry = {
-        title: 'Updated Title'
+        title: 'Updated Title',
       };
 
       const result = await unifiedService.updateEntry('test-kb-1', updateData);
 
       expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('unified:update-entry', {
         id: 'test-kb-1',
-        data: updateData
+        data: updateData,
       });
       expect(result.title).toBe('Updated Title');
     });
@@ -178,12 +178,14 @@ describe('UnifiedService', () => {
     test('should delete entry', async () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
-        metadata: { executionTime: 80, operationId: 'op-4' }
+        metadata: { executionTime: 80, operationId: 'op-4' },
       });
 
       await unifiedService.deleteEntry('test-kb-1');
 
-      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('unified:delete-entry', { id: 'test-kb-1' });
+      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('unified:delete-entry', {
+        id: 'test-kb-1',
+      });
     });
 
     test('should search entries with type filtering', async () => {
@@ -191,21 +193,21 @@ describe('UnifiedService', () => {
         success: true,
         data: {
           entries: [mockKBEntry],
-          total: 1
-        }
+          total: 1,
+        },
       });
 
       const result = await unifiedService.searchEntries('test query', {
         entry_type: 'knowledge_base',
-        limit: 10
+        limit: 10,
       });
 
       expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('unified:search-entries', {
         query: 'test query',
         options: {
           entry_type: 'knowledge_base',
-          limit: 10
-        }
+          limit: 10,
+        },
       });
       expect(result.entries).toHaveLength(1);
       expect(result.entries[0].isKBEntry()).toBe(true);
@@ -228,12 +230,12 @@ describe('UnifiedService', () => {
         success_count: 0,
         failure_count: 0,
         version: 1,
-        entry_type: 'knowledge_base'
+        entry_type: 'knowledge_base',
       };
 
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
-        data: mockEntry
+        data: mockEntry,
       });
 
       const result = await unifiedService.getEntry('test-1');
@@ -261,12 +263,12 @@ describe('UnifiedService', () => {
         version: 1,
         entry_type: 'incident',
         status: 'aberto',
-        priority: 'P1'
+        priority: 'P1',
       };
 
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
-        data: mockEntry
+        data: mockEntry,
       });
 
       const result = await unifiedService.getEntry('test-2');
@@ -292,12 +294,12 @@ describe('UnifiedService', () => {
         success_count: 0,
         failure_count: 0,
         version: 1,
-        entry_type: 'knowledge_base'
+        entry_type: 'knowledge_base',
       };
 
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: true,
-        data: mockEntry
+        data: mockEntry,
       });
 
       const result = await unifiedService.getEntry('test-3');
@@ -324,30 +326,30 @@ describe('UnifiedService', () => {
           success_count: 0,
           failure_count: 0,
           version: 1,
-          entry_type: 'knowledge_base'
+          entry_type: 'knowledge_base',
         },
-        metadata: { executionTime: 100, operationId: 'op-1' }
+        metadata: { executionTime: 100, operationId: 'op-1' },
       });
 
       const createData = {
         title: 'Test KB Entry',
         problem: 'Test problem',
         solution: 'Test solution',
-        category: 'JCL' as const
+        category: 'JCL' as const,
       };
 
       const result = await knowledgeBaseService.createEntry(createData);
 
       expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('unified:create-entry', {
         ...createData,
-        entry_type: 'knowledge_base'
+        entry_type: 'knowledge_base',
       });
       expect(result.title).toBe('Test KB Entry');
     });
 
     test('should maintain incident service compatibility', async () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
-        id: 'test-incident-1'
+        id: 'test-incident-1',
       });
 
       const result = await incidentService.createIncident(
@@ -355,7 +357,7 @@ describe('UnifiedService', () => {
           title: 'Test Incident',
           problem: 'System error',
           solution: 'Restart service',
-          category: 'System'
+          category: 'System',
         },
         'P1',
         'admin',
@@ -371,7 +373,7 @@ describe('UnifiedService', () => {
         status: 'aberto',
         priority: 'P1',
         assigned_to: 'admin',
-        reporter: 'user1'
+        reporter: 'user1',
       });
       expect(result).toBe('test-incident-1');
     });
@@ -392,7 +394,7 @@ describe('UnifiedService', () => {
       success_count: 0,
       failure_count: 0,
       version: 1,
-      entry_type: 'knowledge_base'
+      entry_type: 'knowledge_base',
     };
 
     const incidentEntry: UnifiedEntry = {
@@ -400,7 +402,7 @@ describe('UnifiedService', () => {
       id: 'incident-1',
       entry_type: 'incident',
       status: 'aberto',
-      priority: 'P1'
+      priority: 'P1',
     };
 
     test('should correctly identify KB entries', () => {
@@ -447,7 +449,7 @@ describe('UnifiedService', () => {
       const createdAt = new Date('2024-01-01T10:00:00Z');
       const deadline = unifiedService.calculateSLADeadline('P1', createdAt);
 
-      const expectedDeadline = new Date(createdAt.getTime() + (60 * 60 * 1000)); // P1 = 1 hour
+      const expectedDeadline = new Date(createdAt.getTime() + 60 * 60 * 1000); // P1 = 1 hour
       expect(deadline).toEqual(expectedDeadline);
     });
 
@@ -477,7 +479,7 @@ describe('UnifiedService', () => {
     test('should handle unsuccessful IPC responses', async () => {
       mockIpcRenderer.invoke.mockResolvedValueOnce({
         success: false,
-        error: { message: 'Entry not found' }
+        error: { message: 'Entry not found' },
       });
 
       await expect(unifiedService.getEntry('not-found')).rejects.toThrow('Entry not found');

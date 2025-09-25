@@ -31,7 +31,7 @@ export class PerformanceTimer {
     const startTime = performance.now();
     this.metrics.set(label, {
       startTime,
-      memory: this.getMemoryUsage()
+      memory: this.getMemoryUsage(),
     });
 
     if (typeof performance.mark === 'function') {
@@ -53,7 +53,7 @@ export class PerformanceTimer {
       ...metric,
       endTime,
       duration,
-      memory: this.getMemoryUsage()
+      memory: this.getMemoryUsage(),
     };
 
     this.metrics.set(label, updatedMetric);
@@ -83,7 +83,7 @@ export class PerformanceTimer {
       const memory = (performance as any).memory;
       return {
         used: memory.usedJSHeapSize,
-        total: memory.totalJSHeapSize
+        total: memory.totalJSHeapSize,
       };
     }
     return { used: 0, total: 0 };
@@ -188,7 +188,7 @@ class RAFScheduler {
   private queues = {
     high: [] as RAFCallback[],
     normal: [] as RAFCallback[],
-    low: [] as RAFCallback[]
+    low: [] as RAFCallback[],
   };
   private isRunning = false;
   private frameId: number | null = null;
@@ -231,7 +231,7 @@ class RAFScheduler {
     for (const priority of queues) {
       const queue = this.queues[priority];
 
-      while (queue.length > 0 && (performance.now() - startTime) < frameTimeout) {
+      while (queue.length > 0 && performance.now() - startTime < frameTimeout) {
         const callback = queue.shift();
         if (callback) {
           try {
@@ -243,7 +243,7 @@ class RAFScheduler {
       }
 
       // If we're running out of time, stop and schedule next frame
-      if ((performance.now() - startTime) >= frameTimeout) {
+      if (performance.now() - startTime >= frameTimeout) {
         break;
       }
     }
@@ -270,7 +270,7 @@ class RAFScheduler {
     this.isRunning = false;
 
     // Clear all queues
-    Object.values(this.queues).forEach(queue => queue.length = 0);
+    Object.values(this.queues).forEach(queue => (queue.length = 0));
   }
 }
 
@@ -323,7 +323,7 @@ export function throttle<T extends (...args: any[]) => any>(
   let inThrottle: boolean;
   let lastResult: ReturnType<T>;
 
-  return function(this: any, ...args: Parameters<T>) {
+  return function (this: any, ...args: Parameters<T>) {
     if (!inThrottle) {
       lastResult = func.apply(this, args);
       inThrottle = true;
@@ -338,7 +338,7 @@ export function rafThrottle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let frameId: number | null = null;
 
-  return function(this: any, ...args: Parameters<T>) {
+  return function (this: any, ...args: Parameters<T>) {
     if (frameId) return;
 
     frameId = requestAnimationFrame(() => {
@@ -435,7 +435,8 @@ export function useRenderPerformance(componentName: string) {
     const endTime = performance.now();
     const duration = endTime - startTime.current;
 
-    if (duration > 16) { // Log slow renders (>16ms)
+    if (duration > 16) {
+      // Log slow renders (>16ms)
       console.warn(
         `Slow render detected in ${componentName}: ${duration.toFixed(2)}ms (render #${renderCount.current})`
       );
@@ -444,17 +445,14 @@ export function useRenderPerformance(componentName: string) {
 
   return {
     renderCount: renderCount.current,
-    getDuration: () => performance.now() - startTime.current
+    getDuration: () => performance.now() - startTime.current,
   };
 }
 
 /**
  * Hook for expensive computations
  */
-export function useExpensiveComputation<T>(
-  factory: () => T,
-  deps: React.DependencyList
-): T {
+export function useExpensiveComputation<T>(factory: () => T, deps: React.DependencyList): T {
   return useMemo(() => {
     const label = `expensive-computation-${Math.random().toString(36).substr(2, 9)}`;
     performanceTimer.start(label);
@@ -530,7 +528,7 @@ export function reportWebVitals(metric: any): void {
       event_category: 'Web Vitals',
       event_label: metric.id,
       value: Math.round(metric.value),
-      non_interaction: true
+      non_interaction: true,
     });
   }
 }

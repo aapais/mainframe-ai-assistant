@@ -88,10 +88,10 @@ export interface DatabaseHealth {
 
 /**
  * Comprehensive Database Manager
- * 
+ *
  * Provides high-level database operations with connection pooling,
  * transaction management, monitoring, and automatic recovery.
- * 
+ *
  * @example
  * ```typescript
  * const dbManager = new DatabaseManager({
@@ -100,12 +100,12 @@ export interface DatabaseHealth {
  *   maxConnections: 10,
  *   backup: { enabled: true, intervalHours: 6 }
  * });
- * 
+ *
  * await dbManager.initialize();
- * 
+ *
  * // Execute query with automatic retry and caching
  * const result = await dbManager.query('SELECT * FROM kb_entries WHERE category = ?', ['VSAM']);
- * 
+ *
  * // Execute in transaction with retry logic
  * await dbManager.transaction(async (db) => {
  *   await db.prepare('INSERT INTO kb_entries (...) VALUES (...)').run(data);
@@ -127,7 +127,7 @@ export class DatabaseManager extends EventEmitter {
 
   constructor(config: DatabaseConfig) {
     super();
-    
+
     this.config = {
       path: config.path,
       enableWAL: config.enableWAL ?? true,
@@ -140,13 +140,13 @@ export class DatabaseManager extends EventEmitter {
         enabled: config.backup?.enabled ?? true,
         intervalHours: config.backup?.intervalHours ?? 6,
         retentionDays: config.backup?.retentionDays ?? 30,
-        path: config.backup?.path ?? path.join(path.dirname(config.path), 'backups')
+        path: config.backup?.path ?? path.join(path.dirname(config.path), 'backups'),
       },
       queryCache: {
         enabled: config.queryCache?.enabled ?? true,
         maxSize: config.queryCache?.maxSize ?? 1000,
-        ttlMs: config.queryCache?.ttlMs ?? 300000 // 5 minutes
-      }
+        ttlMs: config.queryCache?.ttlMs ?? 300000, // 5 minutes
+      },
     };
 
     this.setupErrorHandling();
@@ -175,18 +175,18 @@ export class DatabaseManager extends EventEmitter {
       this.connectionPool = new ConnectionPool(this.config.path, {
         maxConnections: this.config.maxConnections,
         timeout: this.config.timeout,
-        enableWAL: this.config.enableWAL
+        enableWAL: this.config.enableWAL,
       });
 
       this.migrationManager = new MigrationManager(
-        this.db, 
+        this.db,
         path.join(path.dirname(this.config.path), 'migrations')
       );
 
       this.backupManager = new BackupManager(this.config.path, {
         backupPath: this.config.backup.path,
         retentionDays: this.config.backup.retentionDays,
-        intervalHours: this.config.backup.intervalHours
+        intervalHours: this.config.backup.intervalHours,
       });
 
       if (this.config.enableMonitoring) {
@@ -199,7 +199,7 @@ export class DatabaseManager extends EventEmitter {
           defaultTTL: this.config.queryCache.ttlMs,
           maxMemoryMB: 50,
           persistToDisk: true,
-          compressionEnabled: true
+          compressionEnabled: true,
         });
       }
 
@@ -216,7 +216,6 @@ export class DatabaseManager extends EventEmitter {
       this.emit('initialized');
 
       console.log('✅ DatabaseManager initialized successfully');
-
     } catch (error) {
       console.error('❌ Failed to initialize DatabaseManager:', error);
       await this.cleanup();
@@ -228,9 +227,9 @@ export class DatabaseManager extends EventEmitter {
    * Execute a query with automatic retry and caching
    */
   async query<T = any>(
-    sql: string, 
+    sql: string,
     params: any[] = [],
-    options: { 
+    options: {
       useCache?: boolean;
       cacheKey?: string;
       maxRetries?: number;
@@ -255,7 +254,7 @@ export class DatabaseManager extends EventEmitter {
           return {
             data: cached,
             executionTime: Date.now() - startTime,
-            fromCache: true
+            fromCache: true,
           };
         }
       } catch (error) {
@@ -268,11 +267,11 @@ export class DatabaseManager extends EventEmitter {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const connection = await this.connectionPool.acquire();
-        
+
         try {
           const stmt = connection.prepare(sql);
           const result = stmt.all(params) as T;
-          
+
           // Cache result for SELECT queries
           if (useCache && this.queryCache && sql.trim().toUpperCase().startsWith('SELECT')) {
             await this.queryCache.set(cacheKey, result);
@@ -284,32 +283,30 @@ export class DatabaseManager extends EventEmitter {
           }
 
           const executionTime = Date.now() - startTime;
-          
+
           return {
             data: result,
             executionTime,
             fromCache: false,
-            affectedRows: stmt.reader ? undefined : (result as any)?.changes
+            affectedRows: stmt.reader ? undefined : (result as any)?.changes,
           };
-
         } finally {
           this.connectionPool.release(connection);
         }
-
       } catch (error) {
         lastError = error;
-        
+
         if (error.code === 'SQLITE_BUSY' && attempt < maxRetries) {
           // Wait before retry
           const delay = Math.min(100 * Math.pow(2, attempt - 1), 1000);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
-        
+
         // Log error
         console.error(`Query failed (attempt ${attempt}/${maxRetries}):`, error);
         this.emit('query-error', { sql, params, error, attempt });
-        
+
         if (attempt === maxRetries) break;
       }
     }
@@ -333,14 +330,14 @@ export class DatabaseManager extends EventEmitter {
       isolation = 'deferred',
       maxRetries = 3,
       retryDelayMs = 100,
-      timeoutMs = 30000
+      timeoutMs = 30000,
     } = options;
 
     let lastError: Error;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       const connection = await this.connectionPool.acquire();
-      
+
       try {
         // Setup timeout
         const timeoutPromise = new Promise<never>((_, reject) => {
@@ -349,28 +346,27 @@ export class DatabaseManager extends EventEmitter {
 
         // Execute transaction
         const transactionPromise = this.executeTransaction(connection, callback, isolation);
-        
+
         const result = await Promise.race([transactionPromise, timeoutPromise]);
-        
+
         this.emit('transaction-success', { attempt, isolation });
         return result;
-
       } catch (error) {
         lastError = error;
-        
-        if ((error.code === 'SQLITE_BUSY' || error.message === 'Transaction timeout') 
-            && attempt < maxRetries) {
-          
+
+        if (
+          (error.code === 'SQLITE_BUSY' || error.message === 'Transaction timeout') &&
+          attempt < maxRetries
+        ) {
           const delay = retryDelayMs * Math.pow(2, attempt - 1);
           await new Promise(resolve => setTimeout(resolve, delay));
-          
+
           this.emit('transaction-retry', { attempt, error: error.message });
           continue;
         }
-        
+
         this.emit('transaction-error', { attempt, error });
         break;
-        
       } finally {
         this.connectionPool.release(connection);
       }
@@ -390,37 +386,40 @@ export class DatabaseManager extends EventEmitter {
         size: 0,
         connections: { active: 0, idle: 0, total: 0 },
         performance: { avgQueryTime: 0, cacheHitRate: 0, queueLength: 0 },
-        issues: ['Database not initialized']
+        issues: ['Database not initialized'],
       };
     }
 
     const issues: string[] = [];
-    
+
     try {
       // Basic connectivity
-      const versionResult = this.db.prepare('SELECT sqlite_version() as version').get() as { version: string };
-      
+      const versionResult = this.db.prepare('SELECT sqlite_version() as version').get() as {
+        version: string;
+      };
+
       // Database size
       const stats = fs.statSync(this.config.path);
-      
+
       // Connection pool status
       const poolStats = this.connectionPool.getStats();
-      
+
       // Performance metrics
-      const perfStats = this.performanceMonitor ? 
-        await this.performanceMonitor.getMetrics() : 
-        { avgQueryTime: 0, cacheHitRate: 0, queueLength: 0 };
-      
+      const perfStats = this.performanceMonitor
+        ? await this.performanceMonitor.getMetrics()
+        : { avgQueryTime: 0, cacheHitRate: 0, queueLength: 0 };
+
       // Check for issues
       if (poolStats.active > poolStats.total * 0.9) {
         issues.push('High connection pool utilization');
       }
-      
+
       if (perfStats.avgQueryTime > 1000) {
         issues.push('Slow query performance');
       }
-      
-      if (stats.size > 100 * 1024 * 1024) { // 100MB
+
+      if (stats.size > 100 * 1024 * 1024) {
+        // 100MB
         issues.push('Large database size');
       }
 
@@ -430,7 +429,7 @@ export class DatabaseManager extends EventEmitter {
         const backups = await this.backupManager.listBackups();
         if (backups.length > 0) {
           lastBackup = backups[0].created;
-          
+
           const hoursSinceBackup = (Date.now() - lastBackup.getTime()) / (1000 * 60 * 60);
           if (hoursSinceBackup > this.config.backup.intervalHours * 2) {
             issues.push('Backup is overdue');
@@ -447,17 +446,16 @@ export class DatabaseManager extends EventEmitter {
         connections: {
           active: poolStats.active,
           idle: poolStats.idle,
-          total: poolStats.total
+          total: poolStats.total,
         },
         performance: {
           avgQueryTime: perfStats.avgQueryTime,
           cacheHitRate: perfStats.cacheHitRate,
-          queueLength: perfStats.queueLength
+          queueLength: perfStats.queueLength,
         },
         lastBackup,
-        issues
+        issues,
       };
-
     } catch (error) {
       return {
         connected: false,
@@ -465,7 +463,7 @@ export class DatabaseManager extends EventEmitter {
         size: 0,
         connections: { active: 0, idle: 0, total: 0 },
         performance: { avgQueryTime: 0, cacheHitRate: 0, queueLength: 0 },
-        issues: [`Health check failed: ${error.message}`]
+        issues: [`Health check failed: ${error.message}`],
       };
     }
   }
@@ -483,18 +481,17 @@ export class DatabaseManager extends EventEmitter {
    */
   async restore(backupPath: string): Promise<void> {
     this.ensureInitialized();
-    
+
     // Close current connections
     await this.connectionPool.drain();
     this.db.close();
-    
+
     try {
       await this.backupManager.restore(backupPath);
-      
+
       // Reinitialize
       this.db = new Database(this.config.path);
       this.configureDatabase();
-      
     } catch (error) {
       throw new Error(`Restore failed: ${error.message}`);
     }
@@ -505,21 +502,20 @@ export class DatabaseManager extends EventEmitter {
    */
   async optimize(): Promise<void> {
     this.ensureInitialized();
-    
+
     const startTime = Date.now();
-    
+
     try {
       // VACUUM to reclaim space and defragment
       await this.query('VACUUM');
-      
+
       // ANALYZE to update query planner statistics
       await this.query('ANALYZE');
-      
+
       const duration = Date.now() - startTime;
-      
+
       console.log(`✅ Database optimized in ${duration}ms`);
       this.emit('optimized', { duration });
-      
     } catch (error) {
       console.error('❌ Database optimization failed:', error);
       throw error;
@@ -533,42 +529,41 @@ export class DatabaseManager extends EventEmitter {
     if (this.shutdownInProgress) {
       return;
     }
-    
+
     this.shutdownInProgress = true;
-    
+
     try {
       console.log('🔄 Shutting down DatabaseManager...');
-      
+
       // Stop health monitoring
       if (this.healthCheckInterval) {
         clearInterval(this.healthCheckInterval);
       }
-      
+
       // Stop background tasks
       if (this.backupManager) {
         await this.backupManager.stop();
       }
-      
+
       // Drain connection pool
       if (this.connectionPool) {
         await this.connectionPool.drain();
       }
-      
+
       // Close main connection
       if (this.db) {
         this.db.close();
       }
-      
+
       // Clear cache
       if (this.queryCache) {
         this.queryCache.clear();
       }
-      
+
       this.isInitialized = false;
       this.emit('shutdown');
-      
+
       console.log('✅ DatabaseManager shut down successfully');
-      
     } catch (error) {
       console.error('❌ Error during shutdown:', error);
       throw error;
@@ -582,20 +577,20 @@ export class DatabaseManager extends EventEmitter {
     if (this.config.enableWAL) {
       this.db.pragma('journal_mode = WAL');
     }
-    
+
     // Enable foreign key constraints
     if (this.config.enableForeignKeys) {
       this.db.pragma('foreign_keys = ON');
     }
-    
+
     // Set cache size (in pages, negative means KB)
     this.db.pragma(`cache_size = -${this.config.cacheSize * 1024}`);
-    
+
     // Optimize for better performance
     this.db.pragma('synchronous = NORMAL');
     this.db.pragma('temp_store = MEMORY');
     this.db.pragma('mmap_size = 268435456'); // 256MB
-    
+
     // Set busy timeout
     this.db.pragma(`busy_timeout = ${this.config.timeout}`);
   }
@@ -603,7 +598,7 @@ export class DatabaseManager extends EventEmitter {
   private async runMigrations(): Promise<void> {
     try {
       const results = await this.migrationManager.migrate();
-      
+
       for (const result of results) {
         if (result.success) {
           console.log(`✅ Migration ${result.version} applied in ${result.duration}ms`);
@@ -612,7 +607,6 @@ export class DatabaseManager extends EventEmitter {
           throw new Error(`Migration failed: ${result.error}`);
         }
       }
-      
     } catch (error) {
       throw new Error(`Migration process failed: ${error.message}`);
     }
@@ -629,11 +623,10 @@ export class DatabaseManager extends EventEmitter {
     this.healthCheckInterval = setInterval(async () => {
       try {
         const health = await this.getHealth();
-        
+
         if (health.issues.length > 0) {
           this.emit('health-warning', health);
         }
-        
       } catch (error) {
         this.emit('health-error', error);
       }
@@ -645,16 +638,15 @@ export class DatabaseManager extends EventEmitter {
     callback: (db: Database.Database) => Promise<T> | T,
     isolation: string
   ): Promise<T> {
-    
     const transaction = connection.transaction((db: Database.Database) => {
       return callback(db);
     });
-    
+
     // Set transaction mode
     if (isolation !== 'deferred') {
       connection.prepare(`BEGIN ${isolation.toUpperCase()}`).run();
     }
-    
+
     return transaction(connection);
   }
 
@@ -665,10 +657,10 @@ export class DatabaseManager extends EventEmitter {
 
   private setupErrorHandling(): void {
     // Handle uncaught errors
-    this.on('error', (error) => {
+    this.on('error', error => {
       console.error('DatabaseManager error:', error);
     });
-    
+
     // Handle process signals for graceful shutdown
     process.on('SIGINT', () => this.shutdown());
     process.on('SIGTERM', () => this.shutdown());
@@ -679,11 +671,10 @@ export class DatabaseManager extends EventEmitter {
       if (this.db && this.db.open) {
         this.db.close();
       }
-      
+
       if (this.connectionPool) {
         await this.connectionPool.drain();
       }
-      
     } catch (error) {
       console.error('Error during cleanup:', error);
     }

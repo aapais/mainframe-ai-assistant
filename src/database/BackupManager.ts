@@ -37,7 +37,7 @@ export class BackupManager {
   private compressionEnabled: boolean;
 
   constructor(
-    db: Database.Database, 
+    db: Database.Database,
     backupDir: string = './backups',
     maxBackups: number = 30,
     compressionEnabled: boolean = true
@@ -52,12 +52,14 @@ export class BackupManager {
   /**
    * Create a backup of the current database
    */
-  async createBackup(type: 'manual' | 'auto' | 'migration' | 'export' = 'manual'): Promise<BackupMetadata> {
+  async createBackup(
+    type: 'manual' | 'auto' | 'migration' | 'export' = 'manual'
+  ): Promise<BackupMetadata> {
     const backupId = this.generateBackupId();
     const timestamp = new Date();
     const filename = `kb_backup_${backupId}_${timestamp.toISOString().replace(/[:.]/g, '-')}.db`;
     const backupPath = path.join(this.backupDir, filename);
-    
+
     console.log(`🔄 Creating ${type} backup: ${filename}`);
 
     try {
@@ -73,7 +75,7 @@ export class BackupManager {
         entryCount: 0,
         version: await this.getDatabaseVersion(),
         compressed: this.compressionEnabled,
-        status: 'in_progress'
+        status: 'in_progress',
       };
 
       // Log backup start
@@ -85,24 +87,24 @@ export class BackupManager {
 
       // Create database backup
       const tempBackupPath = backupPath + '.tmp';
-      
+
       // Use SQLite backup API for consistency
       await this.createSQLiteBackup(tempBackupPath);
-      
+
       // Get original size
       const originalSize = fs.statSync(tempBackupPath).size;
       metadata.originalSize = originalSize;
 
       let finalPath = tempBackupPath;
-      
+
       // Compress if enabled
       if (this.compressionEnabled) {
         const compressedPath = backupPath + '.gz';
         await this.compressFile(tempBackupPath, compressedPath);
-        
+
         // Remove uncompressed temp file
         fs.unlinkSync(tempBackupPath);
-        
+
         finalPath = compressedPath;
         metadata.filePath = compressedPath;
         metadata.compressedSize = fs.statSync(compressedPath).size;
@@ -119,22 +121,27 @@ export class BackupManager {
       metadata.status = 'completed';
       this.logBackupCompletion(metadata);
 
-      console.log(`✅ Backup completed: ${this.formatBytes(metadata.compressedSize)} (${this.compressionEnabled ? 'compressed' : 'uncompressed'})`);
+      console.log(
+        `✅ Backup completed: ${this.formatBytes(metadata.compressedSize)} (${this.compressionEnabled ? 'compressed' : 'uncompressed'})`
+      );
 
       // Cleanup old backups
       await this.cleanupOldBackups();
 
       return metadata;
-
     } catch (error) {
       console.error(`❌ Backup failed:`, error);
-      
+
       // Log failure
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         UPDATE backup_log 
         SET status = 'failed' 
         WHERE backup_path = ?
-      `).run(backupPath);
+      `
+        )
+        .run(backupPath);
 
       throw error;
     }
@@ -153,7 +160,7 @@ export class BackupManager {
     }
 
     let backupPath: string;
-    
+
     if (options.backupPath) {
       backupPath = options.backupPath;
     } else if (options.backupId) {
@@ -199,7 +206,6 @@ export class BackupManager {
       await this.verifyRestoredDatabase();
 
       console.log('✅ Database restore completed successfully');
-
     } catch (error) {
       console.error('❌ Database restore failed:', error);
       throw error;
@@ -210,7 +216,9 @@ export class BackupManager {
    * List available backups
    */
   listBackups(): BackupMetadata[] {
-    const backups = this.db.prepare(`
+    const backups = this.db
+      .prepare(
+        `
       SELECT 
         backup_path as filePath,
         backup_type as type,
@@ -222,7 +230,9 @@ export class BackupManager {
       FROM backup_log
       WHERE status = 'completed'
       ORDER BY created_at DESC
-    `).all() as Array<{
+    `
+      )
+      .all() as Array<{
       filePath: string;
       type: string;
       compressedSize: number;
@@ -243,7 +253,7 @@ export class BackupManager {
       entryCount: backup.entryCount,
       version: '1.0', // Default version
       compressed: backup.filePath.endsWith('.gz'),
-      status: backup.status as any
+      status: backup.status as any,
     }));
   }
 
@@ -258,9 +268,11 @@ export class BackupManager {
         metadata: {
           exportDate: new Date().toISOString(),
           version: await this.getDatabaseVersion(),
-          entryCount: this.getEntryCount()
+          entryCount: this.getEntryCount(),
         },
-        entries: this.db.prepare(`
+        entries: this.db
+          .prepare(
+            `
           SELECT 
             e.*,
             GROUP_CONCAT(t.tag) as tags
@@ -269,29 +281,38 @@ export class BackupManager {
           WHERE e.archived = FALSE
           GROUP BY e.id
           ORDER BY e.created_at
-        `).all(),
-        categories: this.db.prepare(`
+        `
+          )
+          .all(),
+        categories: this.db
+          .prepare(
+            `
           SELECT category, COUNT(*) as count
           FROM kb_entries
           WHERE archived = FALSE
           GROUP BY category
-        `).all(),
-        systemConfig: this.db.prepare(`
+        `
+          )
+          .all(),
+        systemConfig: this.db
+          .prepare(
+            `
           SELECT key, value, type, description
           FROM system_config
-        `).all()
+        `
+          )
+          .all(),
       };
 
       // Process entries to parse tags
       exportData.entries = exportData.entries.map((entry: any) => ({
         ...entry,
-        tags: entry.tags ? entry.tags.split(',') : []
+        tags: entry.tags ? entry.tags.split(',') : [],
       }));
 
       fs.writeFileSync(outputPath, JSON.stringify(exportData, null, 2));
-      
-      console.log(`✅ Export completed: ${this.formatBytes(fs.statSync(outputPath).size)}`);
 
+      console.log(`✅ Export completed: ${this.formatBytes(fs.statSync(outputPath).size)}`);
     } catch (error) {
       console.error('❌ JSON export failed:', error);
       throw error;
@@ -310,7 +331,7 @@ export class BackupManager {
 
     try {
       const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-      
+
       if (!jsonData.entries || !Array.isArray(jsonData.entries)) {
         throw new Error('Invalid JSON format: missing entries array');
       }
@@ -327,7 +348,9 @@ export class BackupManager {
           try {
             // Check if entry exists (in merge mode)
             if (mergeMode) {
-              const existing = this.db.prepare('SELECT id FROM kb_entries WHERE id = ?').get(entry.id);
+              const existing = this.db
+                .prepare('SELECT id FROM kb_entries WHERE id = ?')
+                .get(entry.id);
               if (existing) {
                 skipped++;
                 continue;
@@ -335,33 +358,38 @@ export class BackupManager {
             }
 
             // Insert entry
-            this.db.prepare(`
+            this.db
+              .prepare(
+                `
               INSERT OR REPLACE INTO kb_entries 
               (id, title, problem, solution, category, created_at, created_by, usage_count, success_count, failure_count)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(
-              entry.id,
-              entry.title,
-              entry.problem,
-              entry.solution,
-              entry.category,
-              entry.created_at,
-              entry.created_by || 'import',
-              entry.usage_count || 0,
-              entry.success_count || 0,
-              entry.failure_count || 0
-            );
+            `
+              )
+              .run(
+                entry.id,
+                entry.title,
+                entry.problem,
+                entry.solution,
+                entry.category,
+                entry.created_at,
+                entry.created_by || 'import',
+                entry.usage_count || 0,
+                entry.success_count || 0,
+                entry.failure_count || 0
+              );
 
             // Insert tags
             if (entry.tags && entry.tags.length > 0) {
-              const tagStmt = this.db.prepare('INSERT OR IGNORE INTO kb_tags (entry_id, tag) VALUES (?, ?)');
+              const tagStmt = this.db.prepare(
+                'INSERT OR IGNORE INTO kb_tags (entry_id, tag) VALUES (?, ?)'
+              );
               entry.tags.forEach((tag: string) => {
                 tagStmt.run(entry.id, tag);
               });
             }
 
             imported++;
-
           } catch (error) {
             console.error(`Failed to import entry ${entry.id}:`, error);
           }
@@ -371,7 +399,6 @@ export class BackupManager {
       transaction();
 
       console.log(`✅ Import completed: ${imported} imported, ${skipped} skipped`);
-
     } catch (error) {
       console.error('❌ JSON import failed:', error);
       throw error;
@@ -383,9 +410,9 @@ export class BackupManager {
    */
   scheduleAutoBackups(intervalHours: number = 24): void {
     console.log(`⏰ Scheduling automatic backups every ${intervalHours} hours`);
-    
+
     const intervalMs = intervalHours * 60 * 60 * 1000;
-    
+
     setInterval(async () => {
       try {
         console.log('🔄 Running scheduled backup...');
@@ -416,7 +443,9 @@ export class BackupManager {
     averageSize: number;
     backupsByType: Record<string, number>;
   } {
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT 
         COUNT(*) as totalBackups,
         SUM(file_size) as totalSize,
@@ -425,14 +454,20 @@ export class BackupManager {
         AVG(file_size) as averageSize
       FROM backup_log
       WHERE status = 'completed'
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
-    const typeStats = this.db.prepare(`
+    const typeStats = this.db
+      .prepare(
+        `
       SELECT backup_type, COUNT(*) as count
       FROM backup_log
       WHERE status = 'completed'
       GROUP BY backup_type
-    `).all() as Array<{ backup_type: string; count: number }>;
+    `
+      )
+      .all() as Array<{ backup_type: string; count: number }>;
 
     const backupsByType: Record<string, number> = {};
     typeStats.forEach(stat => {
@@ -445,7 +480,7 @@ export class BackupManager {
       oldestBackup: stats.oldestBackup ? new Date(stats.oldestBackup) : null,
       newestBackup: stats.newestBackup ? new Date(stats.newestBackup) : null,
       averageSize: stats.averageSize || 0,
-      backupsByType
+      backupsByType,
     };
   }
 
@@ -463,7 +498,9 @@ export class BackupManager {
 
   private async getDatabaseVersion(): Promise<string> {
     try {
-      const result = this.db.prepare('SELECT MAX(version) as version FROM schema_versions').get() as { version: number };
+      const result = this.db
+        .prepare('SELECT MAX(version) as version FROM schema_versions')
+        .get() as { version: number };
       return result.version?.toString() || '1';
     } catch (error) {
       return '1';
@@ -471,7 +508,9 @@ export class BackupManager {
   }
 
   private getEntryCount(): number {
-    const result = this.db.prepare('SELECT COUNT(*) as count FROM kb_entries WHERE archived = FALSE').get() as { count: number };
+    const result = this.db
+      .prepare('SELECT COUNT(*) as count FROM kb_entries WHERE archived = FALSE')
+      .get() as { count: number };
     return result.count;
   }
 
@@ -506,7 +545,7 @@ export class BackupManager {
     return new Promise((resolve, reject) => {
       const hash = crypto.createHash('sha256');
       const stream = fs.createReadStream(filePath);
-      
+
       stream.on('data', data => hash.update(data));
       stream.on('end', () => resolve(hash.digest('hex')));
       stream.on('error', reject);
@@ -514,38 +553,50 @@ export class BackupManager {
   }
 
   private logBackupStart(metadata: BackupMetadata): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO backup_log (backup_path, backup_type, entries_count, created_at, status)
       VALUES (?, ?, ?, ?, 'in_progress')
-    `).run(metadata.filePath, metadata.type, metadata.entryCount, metadata.timestamp.toISOString());
+    `
+      )
+      .run(metadata.filePath, metadata.type, metadata.entryCount, metadata.timestamp.toISOString());
   }
 
   private logBackupCompletion(metadata: BackupMetadata): void {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE backup_log 
       SET file_size = ?, checksum = ?, status = 'completed'
       WHERE backup_path = ?
-    `).run(metadata.compressedSize, metadata.checksum, metadata.filePath);
+    `
+      )
+      .run(metadata.compressedSize, metadata.checksum, metadata.filePath);
   }
 
   private async cleanupOldBackups(): Promise<void> {
-    const backups = this.db.prepare(`
+    const backups = this.db
+      .prepare(
+        `
       SELECT backup_path, created_at
       FROM backup_log
       WHERE status = 'completed'
       ORDER BY created_at DESC
-    `).all() as Array<{ backup_path: string; created_at: string }>;
+    `
+      )
+      .all() as Array<{ backup_path: string; created_at: string }>;
 
     if (backups.length <= this.maxBackups) return;
 
     const toDelete = backups.slice(this.maxBackups);
-    
+
     for (const backup of toDelete) {
       try {
         if (fs.existsSync(backup.backup_path)) {
           fs.unlinkSync(backup.backup_path);
         }
-        
+
         this.db.prepare('DELETE FROM backup_log WHERE backup_path = ?').run(backup.backup_path);
         console.log(`🗑️ Cleaned up old backup: ${path.basename(backup.backup_path)}`);
       } catch (error) {
@@ -555,7 +606,9 @@ export class BackupManager {
   }
 
   private async getBackupPath(backupId: string): Promise<string> {
-    const result = this.db.prepare('SELECT backup_path FROM backup_log WHERE backup_path LIKE ?').get(`%${backupId}%`) as { backup_path: string };
+    const result = this.db
+      .prepare('SELECT backup_path FROM backup_log WHERE backup_path LIKE ?')
+      .get(`%${backupId}%`) as { backup_path: string };
     if (!result) {
       throw new Error(`Backup not found: ${backupId}`);
     }
@@ -563,14 +616,18 @@ export class BackupManager {
   }
 
   private async getLatestBackupPath(): Promise<string> {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT backup_path 
       FROM backup_log 
       WHERE status = 'completed'
       ORDER BY created_at DESC 
       LIMIT 1
-    `).get() as { backup_path: string };
-    
+    `
+      )
+      .get() as { backup_path: string };
+
     if (!result) {
       throw new Error('No backups found');
     }
@@ -578,14 +635,18 @@ export class BackupManager {
   }
 
   private async findBackupByTime(pointInTime: Date): Promise<string> {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT backup_path 
       FROM backup_log 
       WHERE status = 'completed' AND created_at <= ?
       ORDER BY created_at DESC 
       LIMIT 1
-    `).get(pointInTime.toISOString()) as { backup_path: string };
-    
+    `
+      )
+      .get(pointInTime.toISOString()) as { backup_path: string };
+
     if (!result) {
       throw new Error(`No backup found before ${pointInTime.toISOString()}`);
     }
@@ -604,8 +665,10 @@ export class BackupManager {
 
   private async verifyBackupIntegrity(backupPath: string): Promise<void> {
     // Get expected checksum from log
-    const logEntry = this.db.prepare('SELECT checksum FROM backup_log WHERE backup_path = ?').get(backupPath) as { checksum: string };
-    
+    const logEntry = this.db
+      .prepare('SELECT checksum FROM backup_log WHERE backup_path = ?')
+      .get(backupPath) as { checksum: string };
+
     if (logEntry) {
       const actualChecksum = await this.calculateFileChecksum(backupPath);
       if (actualChecksum !== logEntry.checksum) {
@@ -615,12 +678,12 @@ export class BackupManager {
 
     // Test SQLite file integrity (if uncompressed or after decompression)
     const testFile = await this.prepareRestoreFile(backupPath);
-    
+
     try {
       const testDb = new Database(testFile, { readonly: true });
       const result = testDb.pragma('integrity_check', { simple: true });
       testDb.close();
-      
+
       if (result !== 'ok') {
         throw new Error(`Backup integrity check failed: ${result}`);
       }
@@ -639,11 +702,15 @@ export class BackupManager {
     }
 
     // Verify essential tables exist
-    const tables = this.db.prepare(`
+    const tables = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'table' AND name IN ('kb_entries', 'kb_tags', 'kb_fts')
-    `).all();
-    
+    `
+      )
+      .all();
+
     if (tables.length < 3) {
       throw new Error('Restored database is missing essential tables');
     }

@@ -10,14 +10,17 @@ export interface AggregatedMetrics {
   timestamp: number;
   period: string;
   totalMetrics: number;
-  categories: Record<string, {
-    count: number;
-    averageValue: number;
-    minValue: number;
-    maxValue: number;
-    trend: 'improving' | 'stable' | 'degrading';
-    variance: number;
-  }>;
+  categories: Record<
+    string,
+    {
+      count: number;
+      averageValue: number;
+      minValue: number;
+      maxValue: number;
+      trend: 'improving' | 'stable' | 'degrading';
+      variance: number;
+    }
+  >;
   systemOverview: {
     healthScore: number;
     performanceIndex: number;
@@ -77,7 +80,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       enableRealTimeAlerts: true,
       categories: ['performance', 'search', 'cache', 'database', 'memory'],
       customThresholds: {},
-      ...config
+      ...config,
     };
 
     this.setupEngineEventHandlers();
@@ -107,7 +110,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
   recordMetric(metric: OptimizationMetrics): void {
     this.rawMetrics.push({
       ...metric,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep only metrics within retention period
@@ -124,7 +127,9 @@ export class OptimizationMetricsAggregator extends EventEmitter {
   /**
    * Perform metrics aggregation
    */
-  async performAggregation(type: 'scheduled' | 'triggered' | 'manual' = 'scheduled'): Promise<AggregatedMetrics> {
+  async performAggregation(
+    type: 'scheduled' | 'triggered' | 'manual' = 'scheduled'
+  ): Promise<AggregatedMetrics> {
     const timestamp = Date.now();
     const period = this.getCurrentPeriod();
 
@@ -143,7 +148,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       metrics: this.getRecentMetrics(this.config.aggregationInterval * 60 * 1000),
       aggregated,
       insights: this.generateMetricsInsights(aggregated),
-      alerts: this.checkMetricsAlerts(aggregated)
+      alerts: this.checkMetricsAlerts(aggregated),
     };
 
     this.snapshots.set(snapshot.id, snapshot);
@@ -152,7 +157,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     this.emit('aggregation-completed', {
       aggregated,
       snapshot,
-      type
+      type,
     });
 
     if (snapshot.alerts.length > 0) {
@@ -183,9 +188,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
    * Get metrics for time range
    */
   getMetricsForTimeRange(startTime: number, endTime: number): OptimizationMetrics[] {
-    return this.rawMetrics.filter(m =>
-      m.timestamp >= startTime && m.timestamp <= endTime
-    );
+    return this.rawMetrics.filter(m => m.timestamp >= startTime && m.timestamp <= endTime);
   }
 
   /**
@@ -211,7 +214,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       change,
       confidence: this.calculateTrendConfidence(hourlyData),
       dataPoints: hourlyData.size,
-      category: category || 'all'
+      category: category || 'all',
     };
   }
 
@@ -251,7 +254,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
         categories: {},
         trends: {},
         anomalies: [],
-        insights: ['No data available for the selected period']
+        insights: ['No data available for the selected period'],
       };
     }
 
@@ -270,7 +273,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       trends,
       anomalies,
       insights,
-      generatedAt: Date.now()
+      generatedAt: Date.now(),
     };
   }
 
@@ -278,7 +281,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
    * Setup event handlers for optimization engine
    */
   private setupEngineEventHandlers(): void {
-    this.optimizationEngine.on('analysis-completed', (data) => {
+    this.optimizationEngine.on('analysis-completed', data => {
       // Extract metrics from analysis data
       if (data.metrics) {
         Object.values(data.metrics).forEach((categoryMetrics: any) => {
@@ -289,7 +292,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       }
     });
 
-    this.optimizationEngine.on('recommendation-applied', (data) => {
+    this.optimizationEngine.on('recommendation-applied', data => {
       // Record optimization application as a metric
       this.recordMetric({
         timestamp: Date.now(),
@@ -298,11 +301,11 @@ export class OptimizationMetricsAggregator extends EventEmitter {
         value: 1,
         unit: 'count',
         trend: 'improving',
-        severity: 'low'
+        severity: 'low',
       });
     });
 
-    this.optimizationEngine.on('optimization-results-measured', (recommendation) => {
+    this.optimizationEngine.on('optimization-results-measured', recommendation => {
       if (recommendation.results?.success) {
         // Record successful optimization as improvement metric
         this.recordMetric({
@@ -312,7 +315,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
           value: recommendation.results.actualImprovement,
           unit: 'percent',
           trend: 'improving',
-          severity: 'low'
+          severity: 'low',
         });
       }
     });
@@ -325,7 +328,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     this.anomalyDetector = {
       threshold: this.config.anomalyThreshold,
       enabled: true,
-      history: new Map<string, number[]>()
+      history: new Map<string, number[]>(),
     };
   }
 
@@ -337,9 +340,12 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       clearInterval(this.aggregationInterval);
     }
 
-    this.aggregationInterval = setInterval(async () => {
-      await this.performAggregation('scheduled');
-    }, this.config.aggregationInterval * 60 * 1000);
+    this.aggregationInterval = setInterval(
+      async () => {
+        await this.performAggregation('scheduled');
+      },
+      this.config.aggregationInterval * 60 * 1000
+    );
   }
 
   /**
@@ -353,7 +359,9 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     const systemOverview = this.calculateSystemOverview(periodMetrics);
     const trends = this.calculateTrends(periodMetrics);
     const anomalies = this.detectAnomalies(periodMetrics);
-    const predictions = this.config.enablePredictions ? this.generatePredictions(periodMetrics) : null;
+    const predictions = this.config.enablePredictions
+      ? this.generatePredictions(periodMetrics)
+      : null;
 
     return {
       timestamp: Date.now(),
@@ -363,7 +371,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       systemOverview,
       trends,
       anomalies,
-      predictions: predictions || { shortTerm: null, longTerm: null }
+      predictions: predictions || { shortTerm: null, longTerm: null },
     };
   }
 
@@ -383,7 +391,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
           minValue: 0,
           maxValue: 0,
           trend: 'stable',
-          variance: 0
+          variance: 0,
         };
         return;
       }
@@ -399,7 +407,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
         minValue: Math.min(...values),
         maxValue: Math.max(...values),
         trend: this.determineCategoryTrend(categoryMetrics),
-        variance
+        variance,
       };
     });
 
@@ -415,7 +423,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
         healthScore: 100,
         performanceIndex: 100,
         efficiencyRating: 100,
-        stabilityScore: 100
+        stabilityScore: 100,
       };
     }
 
@@ -424,20 +432,20 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       low: metrics.filter(m => m.severity === 'low').length,
       medium: metrics.filter(m => m.severity === 'medium').length,
       high: metrics.filter(m => m.severity === 'high').length,
-      critical: metrics.filter(m => m.severity === 'critical').length
+      critical: metrics.filter(m => m.severity === 'critical').length,
     };
 
-    const healthScore = Math.max(0, 100 -
-      (severityCounts.medium * 5) -
-      (severityCounts.high * 15) -
-      (severityCounts.critical * 30)
+    const healthScore = Math.max(
+      0,
+      100 - severityCounts.medium * 5 - severityCounts.high * 15 - severityCounts.critical * 30
     );
 
     // Calculate performance index based on trends
     const improvingCount = metrics.filter(m => m.trend === 'improving').length;
     const degradingCount = metrics.filter(m => m.trend === 'degrading').length;
-    const performanceIndex = Math.max(0, 100 +
-      ((improvingCount - degradingCount) / metrics.length) * 50
+    const performanceIndex = Math.max(
+      0,
+      100 + ((improvingCount - degradingCount) / metrics.length) * 50
     );
 
     // Calculate efficiency rating based on value distributions
@@ -448,13 +456,13 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     // Calculate stability score based on variance
     const values = metrics.map(m => m.value);
     const variance = this.calculateVariance(values);
-    const stabilityScore = Math.max(0, 100 - (variance * 10));
+    const stabilityScore = Math.max(0, 100 - variance * 10);
 
     return {
       healthScore: Math.round(healthScore),
       performanceIndex: Math.round(performanceIndex),
       efficiencyRating: Math.round(efficiencyRating),
-      stabilityScore: Math.round(stabilityScore)
+      stabilityScore: Math.round(stabilityScore),
     };
   }
 
@@ -469,7 +477,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     return {
       hourly: this.convertMapToRecord(hourly),
       daily: this.convertMapToRecord(daily),
-      weekly: this.convertMapToRecord(weekly)
+      weekly: this.convertMapToRecord(weekly),
     };
   }
 
@@ -508,12 +516,12 @@ export class OptimizationMetricsAggregator extends EventEmitter {
             metric: metric.metric,
             value: metric.value,
             expectedRange: {
-              min: mean - (stdDev * this.config.anomalyThreshold),
-              max: mean + (stdDev * this.config.anomalyThreshold)
+              min: mean - stdDev * this.config.anomalyThreshold,
+              max: mean + stdDev * this.config.anomalyThreshold,
             },
             severity: zScore > 3 ? 'high' : 'medium',
             zScore,
-            description: `${key} value ${metric.value} is ${zScore.toFixed(1)} standard deviations from mean`
+            description: `${key} value ${metric.value} is ${zScore.toFixed(1)} standard deviations from mean`,
           });
         }
       });
@@ -540,19 +548,19 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       timeHorizon: '1 hour',
       predictedValue: trend.slope * (Date.now() + 3600000) + trend.intercept,
       confidence: Math.min(90, trend.correlation * 100),
-      trend: trend.slope > 0 ? 'increasing' : trend.slope < 0 ? 'decreasing' : 'stable'
+      trend: trend.slope > 0 ? 'increasing' : trend.slope < 0 ? 'decreasing' : 'stable',
     };
 
     const longTermPrediction = {
       timeHorizon: '24 hours',
       predictedValue: trend.slope * (Date.now() + 86400000) + trend.intercept,
       confidence: Math.min(70, trend.correlation * 80),
-      trend: trend.slope > 0 ? 'increasing' : trend.slope < 0 ? 'decreasing' : 'stable'
+      trend: trend.slope > 0 ? 'increasing' : trend.slope < 0 ? 'decreasing' : 'stable',
     };
 
     return {
       shortTerm: shortTermPrediction,
-      longTerm: longTermPrediction
+      longTerm: longTermPrediction,
     };
   }
 
@@ -576,11 +584,11 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       const [year, month, day, hour] = parts.map(Number);
       return new Date(year, month - 1, day, hour).getTime();
     }
-    return Date.now() - (24 * 60 * 60 * 1000); // Default to 24 hours ago
+    return Date.now() - 24 * 60 * 60 * 1000; // Default to 24 hours ago
   }
 
   private cleanupOldMetrics(): void {
-    const cutoff = Date.now() - (this.config.retentionPeriod * 24 * 60 * 60 * 1000);
+    const cutoff = Date.now() - this.config.retentionPeriod * 24 * 60 * 60 * 1000;
     this.rawMetrics = this.rawMetrics.filter(m => m.timestamp >= cutoff);
   }
 
@@ -607,7 +615,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
         this.emit('real-time-anomaly', {
           metric,
           zScore,
-          severity: zScore > 3 ? 'high' : 'medium'
+          severity: zScore > 3 ? 'high' : 'medium',
         });
       }
     }
@@ -618,7 +626,9 @@ export class OptimizationMetricsAggregator extends EventEmitter {
 
     // System health insight
     if (aggregated.systemOverview.healthScore < 70) {
-      insights.push(`System health score is ${aggregated.systemOverview.healthScore}% - consider immediate optimization`);
+      insights.push(
+        `System health score is ${aggregated.systemOverview.healthScore}% - consider immediate optimization`
+      );
     }
 
     // Performance trends
@@ -646,7 +656,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       alerts.push({
         type: 'health_critical',
         severity: 'critical',
-        message: `System health critically low: ${aggregated.systemOverview.healthScore}%`
+        message: `System health critically low: ${aggregated.systemOverview.healthScore}%`,
       });
     }
 
@@ -655,7 +665,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       alerts.push({
         type: 'performance_warning',
         severity: 'warning',
-        message: `Performance index below threshold: ${aggregated.systemOverview.performanceIndex}%`
+        message: `Performance index below threshold: ${aggregated.systemOverview.performanceIndex}%`,
       });
     }
 
@@ -667,7 +677,7 @@ export class OptimizationMetricsAggregator extends EventEmitter {
       '1h': 60 * 60 * 1000,
       '24h': 24 * 60 * 60 * 1000,
       '7d': 7 * 24 * 60 * 60 * 1000,
-      '30d': 30 * 24 * 60 * 60 * 1000
+      '30d': 30 * 24 * 60 * 60 * 1000,
     };
 
     return timeWindows[period] || timeWindows['24h'];
@@ -676,14 +686,15 @@ export class OptimizationMetricsAggregator extends EventEmitter {
   private generateMetricsSummary(metrics: OptimizationMetrics[]): any {
     return {
       totalMetrics: metrics.length,
-      timeSpan: metrics.length > 0 ? metrics[metrics.length - 1].timestamp - metrics[0].timestamp : 0,
+      timeSpan:
+        metrics.length > 0 ? metrics[metrics.length - 1].timestamp - metrics[0].timestamp : 0,
       categories: [...new Set(metrics.map(m => m.category))],
       severityDistribution: {
         low: metrics.filter(m => m.severity === 'low').length,
         medium: metrics.filter(m => m.severity === 'medium').length,
         high: metrics.filter(m => m.severity === 'high').length,
-        critical: metrics.filter(m => m.severity === 'critical').length
-      }
+        critical: metrics.filter(m => m.severity === 'critical').length,
+      },
     };
   }
 
@@ -695,7 +706,11 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     return this.calculateTrends(metrics);
   }
 
-  private generateAdvancedInsights(metrics: OptimizationMetrics[], trends: any, anomalies: any[]): string[] {
+  private generateAdvancedInsights(
+    metrics: OptimizationMetrics[],
+    trends: any,
+    anomalies: any[]
+  ): string[] {
     const insights: string[] = [];
 
     // Add trend-based insights
@@ -720,7 +735,9 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     return squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
   }
 
-  private determineCategoryTrend(metrics: OptimizationMetrics[]): 'improving' | 'stable' | 'degrading' {
+  private determineCategoryTrend(
+    metrics: OptimizationMetrics[]
+  ): 'improving' | 'stable' | 'degrading' {
     if (metrics.length < 3) return 'stable';
 
     const recent = metrics.slice(-Math.floor(metrics.length / 3));
@@ -781,7 +798,9 @@ export class OptimizationMetricsAggregator extends EventEmitter {
     metrics.forEach(metric => {
       const date = new Date(metric.timestamp);
       const year = date.getFullYear();
-      const week = Math.ceil(((date.getTime() - new Date(year, 0, 1).getTime()) / 86400000 + 1) / 7);
+      const week = Math.ceil(
+        ((date.getTime() - new Date(year, 0, 1).getTime()) / 86400000 + 1) / 7
+      );
       const weekKey = `${year}-W${week}`;
 
       if (!weeklyData.has(weekKey)) {

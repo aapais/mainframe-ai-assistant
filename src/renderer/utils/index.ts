@@ -113,7 +113,7 @@ export const performanceUtils = {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   },
 
   // Format time to human readable
@@ -169,13 +169,17 @@ export const performanceUtils = {
     cacheHitRate: number;
     bundleSize: number;
   }): Array<{ metric: string; priority: 'high' | 'medium' | 'low'; impact: string }> => {
-    const priorities: Array<{ metric: string; priority: 'high' | 'medium' | 'low'; impact: string }> = [];
+    const priorities: Array<{
+      metric: string;
+      priority: 'high' | 'medium' | 'low';
+      impact: string;
+    }> = [];
 
     if (metrics.memoryUsage > PERFORMANCE_CONFIG.MAX_MEMORY_USAGE) {
       priorities.push({
         metric: 'Memory Usage',
         priority: 'high',
-        impact: 'Critical - may cause app crashes'
+        impact: 'Critical - may cause app crashes',
       });
     }
 
@@ -183,7 +187,7 @@ export const performanceUtils = {
       priorities.push({
         metric: 'Search Performance',
         priority: 'high',
-        impact: 'High - poor user experience'
+        impact: 'High - poor user experience',
       });
     }
 
@@ -191,7 +195,7 @@ export const performanceUtils = {
       priorities.push({
         metric: 'Frame Rate',
         priority: 'high',
-        impact: 'High - UI feels sluggish'
+        impact: 'High - UI feels sluggish',
       });
     }
 
@@ -199,7 +203,7 @@ export const performanceUtils = {
       priorities.push({
         metric: 'Render Performance',
         priority: 'medium',
-        impact: 'Medium - affects responsiveness'
+        impact: 'Medium - affects responsiveness',
       });
     }
 
@@ -207,7 +211,7 @@ export const performanceUtils = {
       priorities.push({
         metric: 'Bundle Size',
         priority: 'medium',
-        impact: 'Medium - slower initial load'
+        impact: 'Medium - slower initial load',
       });
     }
 
@@ -215,7 +219,7 @@ export const performanceUtils = {
       priorities.push({
         metric: 'Cache Performance',
         priority: 'low',
-        impact: 'Low - missed optimization opportunity'
+        impact: 'Low - missed optimization opportunity',
       });
     }
 
@@ -232,7 +236,7 @@ export const performanceUtils = {
     issues: string[];
     recommendations: string[];
   }> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // This would perform a comprehensive health check
       // For now, return a mock result
       setTimeout(() => {
@@ -243,12 +247,12 @@ export const performanceUtils = {
           recommendations: [
             'Performance is excellent!',
             'Consider implementing progressive web app features',
-            'Monitor performance over time for degradation'
-          ]
+            'Monitor performance over time for degradation',
+          ],
         });
       }, 1000);
     });
-  }
+  },
 };
 
 // Export default configuration

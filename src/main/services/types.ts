@@ -16,7 +16,7 @@ export interface Service {
   readonly priority: number; // Lower numbers = higher priority
   readonly critical: boolean; // If true, service failure causes app shutdown
   readonly healthCheck?: () => Promise<ServiceHealth>;
-  
+
   initialize(context: ServiceContext): Promise<void>;
   shutdown(): Promise<void>;
   getStatus(): ServiceStatus;
@@ -101,7 +101,7 @@ export interface ServiceManagerEvents {
   'service:failed': (serviceName: string, error: Error) => void;
   'service:restarted': (serviceName: string, attempt: number) => void;
   'service:shutdown': (serviceName: string) => void;
-  
+
   // System events
   'initialization:started': () => void;
   'initialization:completed': (duration: number, services: string[]) => void;
@@ -110,7 +110,7 @@ export interface ServiceManagerEvents {
   'shutdown:completed': (duration: number) => void;
   'health:degraded': (unhealthyServices: string[]) => void;
   'health:recovered': (recoveredServices: string[]) => void;
-  
+
   // Error events
   'error:critical': (serviceName: string, error: Error) => void;
   'error:recoverable': (serviceName: string, error: Error) => void;
@@ -185,7 +185,7 @@ export interface ServiceProxy<T extends Service> {
   readonly service: T;
   readonly isHealthy: boolean;
   readonly lastHealthCheck: Date | null;
-  
+
   call<R>(method: keyof T, ...args: any[]): Promise<R>;
   getHealth(): Promise<ServiceHealth>;
   restart(): Promise<void>;
@@ -211,7 +211,7 @@ export const DEFAULT_SERVICE_MANAGER_CONFIG: ServiceManagerConfig = {
       enabled: true,
       path: './logs/service-manager.log',
       maxSize: 10 * 1024 * 1024, // 10MB
-      maxFiles: 5
-    }
-  }
+      maxFiles: 5,
+    },
+  },
 };

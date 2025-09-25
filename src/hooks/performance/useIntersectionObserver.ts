@@ -123,12 +123,11 @@ const createPolyfillObserver = (
       // Basic visibility check fallback
       const checkVisibility = () => {
         const rect = target.getBoundingClientRect();
-        const isVisible = (
+        const isVisible =
           rect.top < window.innerHeight &&
           rect.bottom > 0 &&
           rect.left < window.innerWidth &&
-          rect.right > 0
-        );
+          rect.right > 0;
 
         if (isVisible) {
           const entry = {
@@ -146,10 +145,10 @@ const createPolyfillObserver = (
               height: window.innerHeight,
               x: 0,
               y: 0,
-              toJSON: () => ({})
+              toJSON: () => ({}),
             } as DOMRectReadOnly,
             time: performance.now(),
-            toJSON: () => ({})
+            toJSON: () => ({}),
           } as IntersectionObserverEntry;
 
           callback([entry], this);
@@ -167,7 +166,7 @@ const createPolyfillObserver = (
     disconnect: () => {
       // Cleanup would be more complex in real polyfill
     },
-    isPolyfill
+    isPolyfill,
   };
 };
 
@@ -223,7 +222,7 @@ export const useIntersectionObserver = (
     debounceDelay = 100,
     enablePerformanceMonitoring = false,
     triggerOnce = false,
-    disabled = false
+    disabled = false,
   } = options;
 
   // State for intersection entries
@@ -233,7 +232,7 @@ export const useIntersectionObserver = (
   const performanceMetrics = useRef({
     totalIntersections: 0,
     totalProcessingTime: 0,
-    peakProcessingTime: 0
+    peakProcessingTime: 0,
   });
 
   // Refs for observer and tracked elements
@@ -242,70 +241,76 @@ export const useIntersectionObserver = (
   const triggeredElements = useRef<Set<Element>>(new Set());
 
   // Observer options for memoization
-  const observerOptions = useMemo(() => ({
-    root,
-    rootMargin,
-    threshold
-  }), [root, rootMargin, threshold]);
+  const observerOptions = useMemo(
+    () => ({
+      root,
+      rootMargin,
+      threshold,
+    }),
+    [root, rootMargin, threshold]
+  );
 
   // Create intersection observer callback
-  const handleIntersection = useCallback((observerEntries: IntersectionObserverEntry[]) => {
-    const startTime = enablePerformanceMonitoring ? performance.now() : 0;
+  const handleIntersection = useCallback(
+    (observerEntries: IntersectionObserverEntry[]) => {
+      const startTime = enablePerformanceMonitoring ? performance.now() : 0;
 
-    const newEntries: IntersectionEntry[] = observerEntries.map(entry => ({
-      element: entry.target,
-      isIntersecting: entry.isIntersecting,
-      intersectionRatio: entry.intersectionRatio,
-      intersectionRect: entry.intersectionRect,
-      boundingClientRect: entry.boundingClientRect,
-      rootBounds: entry.rootBounds,
-      time: entry.time
-    }));
+      const newEntries: IntersectionEntry[] = observerEntries.map(entry => ({
+        element: entry.target,
+        isIntersecting: entry.isIntersecting,
+        intersectionRatio: entry.intersectionRatio,
+        intersectionRect: entry.intersectionRect,
+        boundingClientRect: entry.boundingClientRect,
+        rootBounds: entry.rootBounds,
+        time: entry.time,
+      }));
 
-    // Handle triggerOnce logic
-    if (triggerOnce) {
-      observerEntries.forEach(entry => {
-        if (entry.isIntersecting && !triggeredElements.current.has(entry.target)) {
-          triggeredElements.current.add(entry.target);
-        } else if (!entry.isIntersecting && triggeredElements.current.has(entry.target)) {
-          // Remove from observation if already triggered
-          observerRef.current?.unobserve(entry.target);
-          elementsRef.current.delete(entry.target);
-        }
-      });
-    }
-
-    // Update entries state
-    setEntries(prev => {
-      const elementMap = new Map(prev.map(e => [e.element, e]));
-
-      // Update with new entries
-      newEntries.forEach(entry => {
-        elementMap.set(entry.element, entry);
-      });
-
-      // Remove entries for elements no longer being observed
-      const currentElements = new Set(elementsRef.current);
-      for (const [element] of elementMap) {
-        if (!currentElements.has(element)) {
-          elementMap.delete(element);
-        }
+      // Handle triggerOnce logic
+      if (triggerOnce) {
+        observerEntries.forEach(entry => {
+          if (entry.isIntersecting && !triggeredElements.current.has(entry.target)) {
+            triggeredElements.current.add(entry.target);
+          } else if (!entry.isIntersecting && triggeredElements.current.has(entry.target)) {
+            // Remove from observation if already triggered
+            observerRef.current?.unobserve(entry.target);
+            elementsRef.current.delete(entry.target);
+          }
+        });
       }
 
-      return Array.from(elementMap.values());
-    });
+      // Update entries state
+      setEntries(prev => {
+        const elementMap = new Map(prev.map(e => [e.element, e]));
 
-    // Performance tracking
-    if (enablePerformanceMonitoring) {
-      const processingTime = performance.now() - startTime;
-      performanceMetrics.current.totalIntersections++;
-      performanceMetrics.current.totalProcessingTime += processingTime;
-      performanceMetrics.current.peakProcessingTime = Math.max(
-        performanceMetrics.current.peakProcessingTime,
-        processingTime
-      );
-    }
-  }, [triggerOnce, enablePerformanceMonitoring]);
+        // Update with new entries
+        newEntries.forEach(entry => {
+          elementMap.set(entry.element, entry);
+        });
+
+        // Remove entries for elements no longer being observed
+        const currentElements = new Set(elementsRef.current);
+        for (const [element] of elementMap) {
+          if (!currentElements.has(element)) {
+            elementMap.delete(element);
+          }
+        }
+
+        return Array.from(elementMap.values());
+      });
+
+      // Performance tracking
+      if (enablePerformanceMonitoring) {
+        const processingTime = performance.now() - startTime;
+        performanceMetrics.current.totalIntersections++;
+        performanceMetrics.current.totalProcessingTime += processingTime;
+        performanceMetrics.current.peakProcessingTime = Math.max(
+          performanceMetrics.current.peakProcessingTime,
+          processingTime
+        );
+      }
+    },
+    [triggerOnce, enablePerformanceMonitoring]
+  );
 
   // Debounced intersection handler for performance
   const debouncedHandleIntersection = useMemo(
@@ -319,10 +324,7 @@ export const useIntersectionObserver = (
 
     // Create observer instance
     if (isIntersectionObserverSupported()) {
-      observerRef.current = new IntersectionObserver(
-        debouncedHandleIntersection,
-        observerOptions
-      );
+      observerRef.current = new IntersectionObserver(debouncedHandleIntersection, observerOptions);
     } else {
       // Fallback for older browsers
       console.warn('IntersectionObserver not supported, using polyfill');
@@ -344,14 +346,17 @@ export const useIntersectionObserver = (
   }, [debouncedHandleIntersection, observerOptions, disabled]);
 
   // Observe function
-  const observe = useCallback((element: Element | null) => {
-    if (!element || disabled || !observerRef.current) return;
+  const observe = useCallback(
+    (element: Element | null) => {
+      if (!element || disabled || !observerRef.current) return;
 
-    if (!elementsRef.current.has(element)) {
-      elementsRef.current.add(element);
-      observerRef.current.observe(element);
-    }
-  }, [disabled]);
+      if (!elementsRef.current.has(element)) {
+        elementsRef.current.add(element);
+        observerRef.current.observe(element);
+      }
+    },
+    [disabled]
+  );
 
   // Unobserve function
   const unobserve = useCallback((element: Element) => {
@@ -376,18 +381,21 @@ export const useIntersectionObserver = (
   }, []);
 
   // Ref callback for single element observation
-  const ref = useCallback((element: Element | null) => {
-    // Unobserve previous element
-    if (elementsRef.current.size === 1) {
-      const prevElement = Array.from(elementsRef.current)[0];
-      unobserve(prevElement);
-    }
+  const ref = useCallback(
+    (element: Element | null) => {
+      // Unobserve previous element
+      if (elementsRef.current.size === 1) {
+        const prevElement = Array.from(elementsRef.current)[0];
+        unobserve(prevElement);
+      }
 
-    // Observe new element
-    if (element) {
-      observe(element);
-    }
-  }, [observe, unobserve]);
+      // Observe new element
+      if (element) {
+        observe(element);
+      }
+    },
+    [observe, unobserve]
+  );
 
   // Calculate if any element is intersecting
   const isIntersecting = useMemo(() => {
@@ -398,12 +406,13 @@ export const useIntersectionObserver = (
   const performanceMetricsCalculated = useMemo(() => {
     if (!enablePerformanceMonitoring) return undefined;
 
-    const { totalIntersections, totalProcessingTime, peakProcessingTime } = performanceMetrics.current;
+    const { totalIntersections, totalProcessingTime, peakProcessingTime } =
+      performanceMetrics.current;
 
     return {
       totalIntersections,
       averageProcessingTime: totalIntersections > 0 ? totalProcessingTime / totalIntersections : 0,
-      peakProcessingTime
+      peakProcessingTime,
     };
   }, [enablePerformanceMonitoring, entries.length]);
 
@@ -414,7 +423,7 @@ export const useIntersectionObserver = (
     observe,
     unobserve,
     disconnect,
-    performanceMetrics: performanceMetricsCalculated
+    performanceMetrics: performanceMetricsCalculated,
   };
 };
 

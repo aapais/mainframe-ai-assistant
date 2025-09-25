@@ -89,10 +89,7 @@ export class DataTransformer {
   /**
    * Transform data for export
    */
-  async transform(
-    entries: KBEntry[],
-    options: TransformOptions = {}
-  ): Promise<any[]> {
+  async transform(entries: KBEntry[], options: TransformOptions = {}): Promise<any[]> {
     try {
       const context: TransformContext = {
         targetSystem: options.targetSystem,
@@ -100,8 +97,8 @@ export class DataTransformer {
         metadata: {
           transformationType: 'export',
           timestamp: new Date().toISOString(),
-          options
-        }
+          options,
+        },
       };
 
       let transformedData = entries.map(entry => ({ ...entry }));
@@ -149,13 +146,12 @@ export class DataTransformer {
           _original: entries[index],
           _transformMeta: {
             transformedAt: new Date().toISOString(),
-            transformContext: context
-          }
+            transformContext: context,
+          },
         }));
       }
 
       return transformedData;
-
     } catch (error) {
       throw new Error(`Data transformation failed: ${error.message}`);
     }
@@ -175,8 +171,8 @@ export class DataTransformer {
         metadata: {
           transformationType: 'import',
           timestamp: new Date().toISOString(),
-          options
-        }
+          options,
+        },
       };
 
       let transformedData = data.map(item => ({ ...item }));
@@ -225,7 +221,6 @@ export class DataTransformer {
       }
 
       return kbEntries;
-
     } catch (error) {
       throw new Error(`Import transformation failed: ${error.message}`);
     }
@@ -280,7 +275,6 @@ export class DataTransformer {
       }
 
       return transformedData;
-
     } catch (error) {
       throw new Error(`Pipeline transformation failed: ${error.message}`);
     }
@@ -297,13 +291,12 @@ export class DataTransformer {
     try {
       // Determine transformation type
       const isImportTransform = 'sourceSystem' in options;
-      
+
       if (isImportTransform) {
         return await this.transformForImport(batch, options as ImportTransformOptions);
       } else {
         return await this.transform(batch as KBEntry[], options as TransformOptions);
       }
-
     } catch (error) {
       throw new Error(`Batch transformation failed at batch ${batchIndex}: ${error.message}`);
     }
@@ -315,9 +308,9 @@ export class DataTransformer {
   createPipeline(pipeline: Omit<TransformationPipeline, 'id'>): string {
     const pipelineWithId: TransformationPipeline = {
       ...pipeline,
-      id: uuidv4()
+      id: uuidv4(),
     };
-    
+
     this.pipelines.set(pipelineWithId.id, pipelineWithId);
     return pipelineWithId.id;
   }
@@ -333,7 +326,7 @@ export class DataTransformer {
     return Array.from(this.pipelines.values()).map(pipeline => ({
       id: pipeline.id,
       name: pipeline.name,
-      description: pipeline.description
+      description: pipeline.description,
     }));
   }
 
@@ -354,7 +347,7 @@ export class DataTransformer {
     try {
       // Sample transformation test
       const sample = sampleData.slice(0, Math.min(5, sampleData.length));
-      
+
       if ('sourceSystem' in options) {
         this.transformForImport(sample, options as ImportTransformOptions);
       } else {
@@ -365,17 +358,15 @@ export class DataTransformer {
       if (options.fieldMappings) {
         const sourceFields = new Set(Object.keys(sampleData[0] || {}));
         const mappedFields = new Set(Object.keys(options.fieldMappings));
-        
-        const unmappedFields = Array.from(sourceFields).filter(
-          field => !mappedFields.has(field)
-        );
-        
+
+        const unmappedFields = Array.from(sourceFields).filter(field => !mappedFields.has(field));
+
         if (unmappedFields.length > 0) {
           issues.push({
             level: 'warning',
             field: 'field_mapping',
             message: `Unmapped fields will be lost: ${unmappedFields.join(', ')}`,
-            suggestion: 'Consider adding mappings for these fields'
+            suggestion: 'Consider adding mappings for these fields',
           });
         }
       }
@@ -383,20 +374,19 @@ export class DataTransformer {
       return {
         compatible: issues.filter(i => i.level === 'error').length === 0,
         issues,
-        suggestions
+        suggestions,
       };
-
     } catch (error) {
       issues.push({
         level: 'error',
         field: 'compatibility',
-        message: `Transformation compatibility check failed: ${error.message}`
+        message: `Transformation compatibility check failed: ${error.message}`,
       });
 
       return {
         compatible: false,
         issues,
-        suggestions: ['Review transformation options and sample data format']
+        suggestions: ['Review transformation options and sample data format'],
       };
     }
   }
@@ -414,14 +404,14 @@ export class DataTransformer {
           problem: entry.problem,
           solution: entry.solution,
           category: entry.category,
-          tags: entry.tags
+          tags: entry.tags,
         }));
 
       case 'compact':
         return data.map(entry => ({
           ...entry,
           problem: this.truncateText(entry.problem, 200),
-          solution: this.truncateText(entry.solution, 300)
+          solution: this.truncateText(entry.solution, 300),
         }));
 
       case 'full':
@@ -433,7 +423,7 @@ export class DataTransformer {
   private applyFieldMappings(data: any[], mappings: Record<string, string>): any[] {
     return data.map(item => {
       const transformed: any = {};
-      
+
       // Apply direct mappings
       Object.entries(mappings).forEach(([sourceField, targetField]) => {
         if (item.hasOwnProperty(sourceField)) {
@@ -565,21 +555,18 @@ export class DataTransformer {
     });
   }
 
-  private async applyLegacyCompatibility(
-    data: any[],
-    context: TransformContext
-  ): Promise<any[]> {
+  private async applyLegacyCompatibility(data: any[], context: TransformContext): Promise<any[]> {
     return data.map(item => {
       const transformed = { ...item };
 
       // Convert legacy field names
       const legacyMappings = {
-        'desc': 'description',
-        'prob': 'problem',
-        'sol': 'solution',
-        'cat': 'category',
-        'created': 'created_at',
-        'modified': 'updated_at'
+        desc: 'description',
+        prob: 'problem',
+        sol: 'solution',
+        cat: 'category',
+        created: 'created_at',
+        modified: 'updated_at',
       };
 
       Object.entries(legacyMappings).forEach(([legacy, modern]) => {
@@ -609,7 +596,7 @@ export class DataTransformer {
     context: TransformContext
   ): Promise<any[]> {
     const systemConfig = this.getSystemImportConfig(sourceSystem);
-    
+
     return data.map(item => {
       const transformed: any = {};
 
@@ -651,7 +638,7 @@ export class DataTransformer {
         solution: this.ensureString(item.solution || item.resolution || item.fix || ''),
         category: this.normalizeCategory(item.category || item.type || 'Other'),
         tags: this.normalizeTags(item.tags || item.keywords || []),
-        created_by: this.ensureString(item.created_by || item.author || 'imported')
+        created_by: this.ensureString(item.created_by || item.author || 'imported'),
       };
 
       return kbEntry;
@@ -702,11 +689,11 @@ export class DataTransformer {
         if (targetField === 'category' && typeof value === 'string') {
           // Map categories to ServiceNow values
           const categoryMap = {
-            'JCL': 'software',
-            'VSAM': 'database',
-            'DB2': 'database',
-            'Batch': 'software',
-            'Functional': 'business'
+            JCL: 'software',
+            VSAM: 'database',
+            DB2: 'database',
+            Batch: 'software',
+            Functional: 'business',
           };
           return categoryMap[value] || 'software';
         }
@@ -731,11 +718,11 @@ export class DataTransformer {
 
   private normalizeCategory(category: any): string {
     const categoryMap = {
-      'jcl': 'JCL',
-      'vsam': 'VSAM', 
-      'db2': 'DB2',
-      'batch': 'Batch',
-      'functional': 'Functional'
+      jcl: 'JCL',
+      vsam: 'VSAM',
+      db2: 'DB2',
+      batch: 'Batch',
+      functional: 'Functional',
     };
 
     const normalized = String(category).toLowerCase();
@@ -746,9 +733,12 @@ export class DataTransformer {
     if (Array.isArray(tags)) {
       return tags.map(tag => String(tag).trim()).filter(Boolean);
     }
-    
+
     if (typeof tags === 'string') {
-      return tags.split(/[,;|]/).map(tag => tag.trim()).filter(Boolean);
+      return tags
+        .split(/[,;|]/)
+        .map(tag => tag.trim())
+        .filter(Boolean);
     }
 
     return [];
@@ -765,22 +755,22 @@ export class DataTransformer {
     const configs = {
       servicenow: {
         fieldMappings: {
-          'short_description': 'title',
-          'description': 'problem',
-          'resolution_notes': 'solution',
-          'category': 'category'
+          short_description: 'title',
+          description: 'problem',
+          resolution_notes: 'solution',
+          category: 'category',
         },
-        transformations: []
+        transformations: [],
       },
       jira: {
         fieldMappings: {
-          'summary': 'title',
-          'description': 'problem',
-          'resolution': 'solution',
-          'issuetype': 'category'
+          summary: 'title',
+          description: 'problem',
+          resolution: 'solution',
+          issuetype: 'category',
         },
-        transformations: []
-      }
+        transformations: [],
+      },
     };
 
     return configs[system] || { fieldMappings: {}, transformations: [] };
@@ -789,22 +779,22 @@ export class DataTransformer {
   private initializeSystemMappings(): void {
     // ServiceNow mappings
     this.systemMappings.set('servicenow', {
-      'title': 'short_description',
-      'problem': 'description',
-      'solution': 'resolution_notes',
-      'category': 'category',
-      'created_at': 'sys_created_on',
-      'updated_at': 'sys_updated_on'
+      title: 'short_description',
+      problem: 'description',
+      solution: 'resolution_notes',
+      category: 'category',
+      created_at: 'sys_created_on',
+      updated_at: 'sys_updated_on',
     });
 
     // Jira mappings
     this.systemMappings.set('jira', {
-      'title': 'summary',
-      'problem': 'description',
-      'solution': 'resolution',
-      'category': 'issuetype',
-      'created_at': 'created',
-      'updated_at': 'updated'
+      title: 'summary',
+      problem: 'description',
+      solution: 'resolution',
+      category: 'issuetype',
+      created_at: 'created',
+      updated_at: 'updated',
     });
   }
 
@@ -818,8 +808,8 @@ export class DataTransformer {
         sourceField: 'version',
         targetField: '',
         transformType: 'custom',
-        transformFunction: () => undefined
-      }
+        transformFunction: () => undefined,
+      },
     ]);
   }
 
@@ -833,15 +823,15 @@ export class DataTransformer {
         (data, context) => {
           console.log(`Processing ${data.length} records for export`);
           return data;
-        }
+        },
       ],
       postProcessors: [
         (data, context) => {
           console.log(`Export transformation completed for ${data.length} records`);
           return data;
-        }
+        },
       ],
-      validations: []
+      validations: [],
     });
 
     // Basic import pipeline
@@ -853,13 +843,13 @@ export class DataTransformer {
         (data, context) => {
           console.log(`Processing ${data.length} records for import`);
           return data;
-        }
+        },
       ],
       postProcessors: [
         (data, context) => {
           console.log(`Import transformation completed for ${data.length} records`);
           return data;
-        }
+        },
       ],
       validations: [
         (data, context) => {
@@ -870,13 +860,13 @@ export class DataTransformer {
                 level: 'error',
                 field: 'required_fields',
                 message: 'Missing required fields (title, problem, solution)',
-                recordIndex: index
+                recordIndex: index,
               });
             }
           });
           return issues;
-        }
-      ]
+        },
+      ],
     });
   }
 }

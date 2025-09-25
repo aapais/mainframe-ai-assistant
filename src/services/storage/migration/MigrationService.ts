@@ -33,7 +33,14 @@ export interface MigrationExecutionOptions {
 
 export interface MigrationProgress {
   id: string;
-  status: 'planning' | 'preparing' | 'running' | 'validating' | 'completed' | 'failed' | 'rolled_back';
+  status:
+    | 'planning'
+    | 'preparing'
+    | 'running'
+    | 'validating'
+    | 'completed'
+    | 'failed'
+    | 'rolled_back';
   currentStep: number;
   totalSteps: number;
   currentMigration?: number;
@@ -80,7 +87,7 @@ export class MigrationService extends EventEmitter {
     this.dataTransformer = new DataTransformer(db);
     this.rollbackManager = new RollbackManager(db);
     this.validationService = new ValidationService(db);
-    
+
     this.initializeMVPConfigurations();
     this.setupProgressTracking();
   }
@@ -112,7 +119,7 @@ export class MigrationService extends EventEmitter {
   }> {
     const currentVersion = this.migrationManager.getCurrentVersion();
     const currentMVP = this.schemaEvolution.detectCurrentMVP(currentVersion);
-    
+
     const migrations = await this.planner.getMigrationsForMVPUpgrade(currentMVP, targetMVP);
     const riskAssessment = await this.assessMVPUpgradeRisk(migrations, currentMVP, targetMVP);
     const dataImpact = await this.analyzeDataImpact(migrations);
@@ -126,7 +133,7 @@ export class MigrationService extends EventEmitter {
       estimatedDuration: this.calculateTotalDuration(migrations),
       riskAssessment,
       dataImpact,
-      downtime: downtimeAnalysis
+      downtime: downtimeAnalysis,
     };
   }
 
@@ -138,15 +145,15 @@ export class MigrationService extends EventEmitter {
     options: MigrationExecutionOptions = {}
   ): Promise<MigrationResult[]> {
     const migrationId = this.generateMigrationId();
-    
+
     try {
       // Initialize progress tracking
       this.initializeProgress(migrationId, targetMVP);
-      
+
       // Phase 1: Planning and Validation
       this.updateProgress('planning');
       const plan = await this.planner.createComprehensiveMigrationPlan(targetMVP);
-      
+
       if (options.dryRun) {
         return await this.executeDryRun(plan, options);
       }
@@ -168,7 +175,6 @@ export class MigrationService extends EventEmitter {
       await this.finalizeSuccessfulMigration(plan, results);
 
       return results;
-
     } catch (error) {
       this.updateProgress('failed');
       await this.handleMigrationFailure(error, options);
@@ -188,7 +194,7 @@ export class MigrationService extends EventEmitter {
     } = {}
   ): Promise<MigrationResult[]> {
     const rollbackPlan = await this.rollbackManager.createRollbackPlan(targetVersion);
-    
+
     if (options.createBackup) {
       await this.createPreRollbackBackup();
     }
@@ -229,16 +235,16 @@ export class MigrationService extends EventEmitter {
     // Update runtime metrics
     this.currentProgress.elapsedTime = Date.now() - this.currentProgress.startTime.getTime();
     this.currentProgress.performance.memoryUsage = process.memoryUsage().heapUsed;
-    
+
     if (this.currentProgress.currentStep > 0) {
-      this.currentProgress.performance.avgStepTime = 
+      this.currentProgress.performance.avgStepTime =
         this.currentProgress.elapsedTime / this.currentProgress.currentStep;
-      
+
       if (this.currentProgress.totalSteps > this.currentProgress.currentStep) {
         const remainingSteps = this.currentProgress.totalSteps - this.currentProgress.currentStep;
-        this.currentProgress.remainingTime = 
+        this.currentProgress.remainingTime =
           remainingSteps * this.currentProgress.performance.avgStepTime;
-        
+
         this.currentProgress.estimatedCompletion = new Date(
           Date.now() + this.currentProgress.remainingTime
         );
@@ -253,7 +259,7 @@ export class MigrationService extends EventEmitter {
    */
   async resumeFromCheckpoint(checkpointPath: string): Promise<MigrationResult[]> {
     const checkpoint = await this.loadCheckpoint(checkpointPath);
-    
+
     if (!checkpoint) {
       throw new Error('Invalid or missing checkpoint file');
     }
@@ -276,7 +282,7 @@ export class MigrationService extends EventEmitter {
       currentVersion: this.migrationManager.getCurrentVersion(),
       currentMVP: this.schemaEvolution.detectCurrentMVP(),
       progress: this.currentProgress,
-      databaseState: await this.captureDatabaseState()
+      databaseState: await this.captureDatabaseState(),
     };
 
     fs.writeFileSync(checkpointPath, JSON.stringify(checkpointData, null, 2));
@@ -295,7 +301,7 @@ export class MigrationService extends EventEmitter {
       riskLevel: 'low',
       dataTransformations: ['add_incident_tables', 'create_pattern_indexes'],
       rollbackStrategy: 'drop_new_tables',
-      validationChecks: ['table_existence', 'index_creation', 'data_consistency']
+      validationChecks: ['table_existence', 'index_creation', 'data_consistency'],
     });
 
     // MVP2 to MVP3: Add code analysis integration
@@ -307,7 +313,7 @@ export class MigrationService extends EventEmitter {
       riskLevel: 'medium',
       dataTransformations: ['add_code_tables', 'link_kb_code', 'create_code_indexes'],
       rollbackStrategy: 'preserve_core_data',
-      validationChecks: ['table_structure', 'foreign_keys', 'linking_integrity']
+      validationChecks: ['table_structure', 'foreign_keys', 'linking_integrity'],
     });
 
     // MVP3 to MVP4: Add IDZ integration and templates
@@ -319,7 +325,7 @@ export class MigrationService extends EventEmitter {
       riskLevel: 'high',
       dataTransformations: ['add_project_tables', 'template_system', 'workspace_management'],
       rollbackStrategy: 'full_backup_restore',
-      validationChecks: ['complex_relationships', 'template_integrity', 'project_structure']
+      validationChecks: ['complex_relationships', 'template_integrity', 'project_structure'],
     });
 
     // MVP4 to MVP5: Add enterprise AI and auto-resolution
@@ -331,7 +337,7 @@ export class MigrationService extends EventEmitter {
       riskLevel: 'critical',
       dataTransformations: ['ml_models', 'auto_resolution', 'enterprise_features'],
       rollbackStrategy: 'staged_rollback_with_data_preservation',
-      validationChecks: ['ml_model_integrity', 'auto_resolution_safety', 'enterprise_compliance']
+      validationChecks: ['ml_model_integrity', 'auto_resolution_safety', 'enterprise_compliance'],
     });
   }
 
@@ -358,14 +364,14 @@ export class MigrationService extends EventEmitter {
       performance: {
         avgStepTime: 0,
         memoryUsage: 0,
-        diskUsage: 0
-      }
+        diskUsage: 0,
+      },
     };
 
     this.emit('migrationStarted', {
       migrationId,
       targetMVP,
-      progress: this.currentProgress
+      progress: this.currentProgress,
     });
   }
 
@@ -402,12 +408,12 @@ export class MigrationService extends EventEmitter {
     options: MigrationExecutionOptions
   ): Promise<MigrationResult[]> {
     const results: MigrationResult[] = [];
-    
+
     this.currentProgress!.totalSteps = plan.migrations.length;
 
     for (let i = 0; i < plan.migrations.length; i++) {
       const migration = plan.migrations[i];
-      
+
       // Create checkpoint if enabled
       if (options.createCheckpoints) {
         await this.createCheckpoint(this.currentProgress!.id);
@@ -434,7 +440,7 @@ export class MigrationService extends EventEmitter {
       this.emit('migrationStepCompleted', {
         step: i + 1,
         migration: migration.version,
-        result
+        result,
       });
     }
 
@@ -448,7 +454,7 @@ export class MigrationService extends EventEmitter {
   ): Promise<void> {
     if (options.validateIntegrity !== false) {
       const validation = await this.validateMigrationIntegrity();
-      
+
       if (!validation.schemaConsistency || !validation.dataIntegrity) {
         throw new Error('Post-migration validation failed');
       }
@@ -463,31 +469,30 @@ export class MigrationService extends EventEmitter {
     options: MigrationExecutionOptions
   ): Promise<MigrationResult[]> {
     const results: MigrationResult[] = [];
-    
+
     this.emit('dryRunStarted', { plan });
 
     for (const migration of plan.migrations) {
       const startTime = Date.now();
-      
+
       try {
         // Validate SQL syntax and dependencies
         await this.validationService.validateMigrationSql(migration);
-        
+
         // Simulate data transformation
         await this.dataTransformer.simulateTransformation(migration);
-        
+
         results.push({
           success: true,
           version: migration.version,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
-
       } catch (error) {
         results.push({
           success: false,
           version: migration.version,
           error: error.message,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
       }
     }
@@ -501,34 +506,35 @@ export class MigrationService extends EventEmitter {
     maxRetries: number
   ): Promise<MigrationResult> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         // Execute migration with data transformation
         const result = await this.dataTransformer.executeMigrationWithTransformation(migration);
-        
+
         if (result.success) {
           return result;
         }
         lastError = new Error(result.error);
-        
       } catch (error) {
         lastError = error;
-        
+
         if (attempt < maxRetries) {
           this.emit('migrationRetry', {
             migration: migration.version,
             attempt,
-            error: error.message
+            error: error.message,
           });
-          
+
           // Exponential backoff
           await this.sleep(Math.pow(2, attempt) * 1000);
         }
       }
     }
-    
-    throw lastError || new Error(`Migration ${migration.version} failed after ${maxRetries} attempts`);
+
+    throw (
+      lastError || new Error(`Migration ${migration.version} failed after ${maxRetries} attempts`)
+    );
   }
 
   private async handleMigrationFailure(
@@ -539,7 +545,7 @@ export class MigrationService extends EventEmitter {
       this.currentProgress.errors.push({
         timestamp: new Date(),
         type: 'error',
-        message: error.message
+        message: error.message,
       });
     }
 
@@ -559,10 +565,7 @@ export class MigrationService extends EventEmitter {
   }
 
   private generateCheckpointPath(migrationId: string): string {
-    return path.join(
-      path.dirname(this.db.name),
-      `checkpoint_${migrationId}.json`
-    );
+    return path.join(path.dirname(this.db.name), `checkpoint_${migrationId}.json`);
   }
 
   private async createPreMigrationBackup(plan: any): Promise<string> {
@@ -571,20 +574,17 @@ export class MigrationService extends EventEmitter {
       path.dirname(this.db.name),
       `backup_pre_mvp_migration_${plan.targetMVP}_${timestamp}.db`
     );
-    
+
     this.db.backup(backupPath);
-    
+
     this.emit('backupCreated', { backupPath, type: 'pre-migration' });
     return backupPath;
   }
 
   private async createPreRollbackBackup(): Promise<string> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.join(
-      path.dirname(this.db.name),
-      `backup_pre_rollback_${timestamp}.db`
-    );
-    
+    const backupPath = path.join(path.dirname(this.db.name), `backup_pre_rollback_${timestamp}.db`);
+
     this.db.backup(backupPath);
     return backupPath;
   }
@@ -607,11 +607,11 @@ export class MigrationService extends EventEmitter {
   ): Promise<any> {
     const configKey = `${fromMVP}->${toMVP}`;
     const config = this.mvpConfigurations.get(configKey);
-    
+
     return {
       level: config?.riskLevel || 'medium',
       factors: await this.identifyRiskFactors(migrations),
-      recommendations: await this.generateRiskRecommendations(migrations, config)
+      recommendations: await this.generateRiskRecommendations(migrations, config),
     };
   }
 
@@ -620,7 +620,7 @@ export class MigrationService extends EventEmitter {
     return {
       tablesAffected: [],
       estimatedDataLoss: 0,
-      backupRequired: true
+      backupRequired: true,
     };
   }
 
@@ -629,7 +629,7 @@ export class MigrationService extends EventEmitter {
     return {
       required: false,
       estimatedMinutes: 0,
-      strategy: 'zero-downtime'
+      strategy: 'zero-downtime',
     };
   }
 
@@ -643,7 +643,10 @@ export class MigrationService extends EventEmitter {
     return [];
   }
 
-  private async generateRiskRecommendations(migrations: Migration[], config?: MVPMigrationConfig): Promise<string[]> {
+  private async generateRiskRecommendations(
+    migrations: Migration[],
+    config?: MVPMigrationConfig
+  ): Promise<string[]> {
     // Implementation for risk recommendations
     return [];
   }

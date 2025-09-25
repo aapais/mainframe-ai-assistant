@@ -94,7 +94,6 @@ export class DatabaseCache extends EventEmitter {
       }
 
       return JSON.parse(value) as T;
-
     } catch (error) {
       console.error('DatabaseCache get error:', error);
       this.emit('error', error);
@@ -126,7 +125,7 @@ export class DatabaseCache extends EventEmitter {
       }
 
       const now = Date.now();
-      const expiresAt = ttl > 0 ? now + (ttl * 1000) : 0; // 0 means no expiration
+      const expiresAt = ttl > 0 ? now + ttl * 1000 : 0; // 0 means no expiration
 
       this.setStmt.run({
         key,
@@ -136,7 +135,7 @@ export class DatabaseCache extends EventEmitter {
         expires_at: expiresAt,
         access_count: 1,
         last_accessed: now,
-        size: Buffer.byteLength(finalValue, 'utf8')
+        size: Buffer.byteLength(finalValue, 'utf8'),
       });
 
       // Trigger cleanup if we're approaching the limit
@@ -144,7 +143,6 @@ export class DatabaseCache extends EventEmitter {
       if (count > this.config.maxItems * 0.9) {
         setImmediate(() => this.performCleanup());
       }
-
     } catch (error) {
       console.error('DatabaseCache set error:', error);
       this.emit('error', error);
@@ -204,7 +202,9 @@ export class DatabaseCache extends EventEmitter {
     newestEntry: number;
   } {
     try {
-      const stats = this.db.prepare(`
+      const stats = this.db
+        .prepare(
+          `
         SELECT
           COUNT(*) as totalEntries,
           SUM(size) as totalSize,
@@ -213,14 +213,16 @@ export class DatabaseCache extends EventEmitter {
           MAX(created_at) as newestEntry
         FROM cache_entries
         WHERE expires_at = 0 OR expires_at > ?
-      `).get(Date.now()) as any;
+      `
+        )
+        .get(Date.now()) as any;
 
       return {
         totalEntries: stats.totalEntries || 0,
         totalSize: stats.totalSize || 0,
         avgAccessCount: stats.avgAccessCount || 0,
         oldestEntry: stats.oldestEntry || 0,
-        newestEntry: stats.newestEntry || 0
+        newestEntry: stats.newestEntry || 0,
       };
     } catch (error) {
       console.error('DatabaseCache getStats error:', error);
@@ -229,7 +231,7 @@ export class DatabaseCache extends EventEmitter {
         totalSize: 0,
         avgAccessCount: 0,
         oldestEntry: 0,
-        newestEntry: 0
+        newestEntry: 0,
       };
     }
   }
@@ -242,10 +244,14 @@ export class DatabaseCache extends EventEmitter {
       const beforeStats = this.getStats();
 
       // Remove expired entries first
-      const expiredResult = this.db.prepare(`
+      const expiredResult = this.db
+        .prepare(
+          `
         DELETE FROM cache_entries
         WHERE expires_at > 0 AND expires_at < ?
-      `).run(Date.now());
+      `
+        )
+        .run(Date.now());
 
       // If still over limit, remove LRU entries
       let lruResult = { changes: 0 };
@@ -253,14 +259,18 @@ export class DatabaseCache extends EventEmitter {
 
       if (currentCount > this.config.maxItems) {
         const excessCount = currentCount - this.config.maxItems;
-        lruResult = this.db.prepare(`
+        lruResult = this.db
+          .prepare(
+            `
           DELETE FROM cache_entries
           WHERE key IN (
             SELECT key FROM cache_entries
             ORDER BY access_count ASC, last_accessed ASC
             LIMIT ?
           )
-        `).run(excessCount);
+        `
+          )
+          .run(excessCount);
       }
 
       const afterStats = this.getStats();
@@ -271,11 +281,10 @@ export class DatabaseCache extends EventEmitter {
         removed: totalRemoved,
         freedBytes,
         expired: expiredResult.changes,
-        lru: lruResult.changes
+        lru: lruResult.changes,
       });
 
       return { removed: totalRemoved, freedBytes };
-
     } catch (error) {
       console.error('DatabaseCache cleanup error:', error);
       this.emit('error', error);
@@ -362,11 +371,15 @@ export class DatabaseCache extends EventEmitter {
       WHERE key = ? AND (expires_at = 0 OR expires_at > ?)
     `);
 
-    this.touchStmt = this.db.prepare(`
+    this.touchStmt = this.db
+      .prepare(
+        `
       UPDATE cache_entries
       SET access_count = access_count + 1, last_accessed = ?
       WHERE key = ?
-    `).bind(undefined, Date.now());
+    `
+      )
+      .bind(undefined, Date.now());
 
     this.cleanupStmt = this.db.prepare(`
       DELETE FROM cache_entries
@@ -390,12 +403,14 @@ export class DatabaseCache extends EventEmitter {
 
     this.cleanupInterval = setInterval(() => {
       this.performCleanup()
-        .then((result) => {
+        .then(result => {
           if (result.removed > 0) {
-            console.log(`Cache cleanup: removed ${result.removed} entries, freed ${result.freedBytes} bytes`);
+            console.log(
+              `Cache cleanup: removed ${result.removed} entries, freed ${result.freedBytes} bytes`
+            );
           }
         })
-        .catch((error) => {
+        .catch(error => {
           console.error('Background cleanup error:', error);
         });
     }, intervalMs);

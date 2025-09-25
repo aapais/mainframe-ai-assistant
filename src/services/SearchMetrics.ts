@@ -99,18 +99,13 @@ export class SearchMetrics extends EventEmitter {
   /**
    * Record a performance metric
    */
-  recordMetric(
-    operation: string,
-    duration: number,
-    success: boolean = true,
-    metadata?: any
-  ): void {
+  recordMetric(operation: string, duration: number, success: boolean = true, metadata?: any): void {
     const metric: PerformanceMetric = {
       timestamp: Date.now(),
       operation,
       duration,
       success,
-      metadata
+      metadata,
     };
 
     // Add to buffer for batch processing
@@ -160,7 +155,7 @@ export class SearchMetrics extends EventEmitter {
         totalHits: 0,
         totalMisses: 0,
         memoryUsage,
-        evictionCount: 0
+        evictionCount: 0,
       });
     }
 
@@ -171,7 +166,9 @@ export class SearchMetrics extends EventEmitter {
   /**
    * Get comprehensive search analytics
    */
-  async getSearchAnalytics(timeRange: '1h' | '24h' | '7d' | '30d' = '24h'): Promise<SearchAnalytics> {
+  async getSearchAnalytics(
+    timeRange: '1h' | '24h' | '7d' | '30d' = '24h'
+  ): Promise<SearchAnalytics> {
     const cutoffTime = this.getCutoffTime(timeRange);
     const searchMetrics = this.getMetricsInTimeRange('search', cutoffTime);
 
@@ -198,7 +195,7 @@ export class SearchMetrics extends EventEmitter {
       successRate: successfulSearches.length / searchMetrics.length,
       cacheHitRate: this.calculateOverallCacheHitRate(),
       popularQueries,
-      performanceTrends
+      performanceTrends,
     };
   }
 
@@ -223,8 +220,8 @@ export class SearchMetrics extends EventEmitter {
     // Calculate average response time from last 5 minutes
     const last5Minutes = now - 300000;
     const recent5MinSearches = this.getMetricsInTimeRange('search', last5Minutes);
-    const avgResponseTime = recent5MinSearches.length > 0 ?
-      this.average(recent5MinSearches.map(m => m.duration)) : 0;
+    const avgResponseTime =
+      recent5MinSearches.length > 0 ? this.average(recent5MinSearches.map(m => m.duration)) : 0;
 
     // Get current cache hit rate
     const cacheHitRate = this.calculateOverallCacheHitRate();
@@ -235,7 +232,11 @@ export class SearchMetrics extends EventEmitter {
       .sort((a, b) => this.getSeverityWeight(b.severity) - this.getSeverityWeight(a.severity));
 
     // Determine system health
-    const systemHealth = this.assessSystemHealth(avgResponseTime, cacheHitRate, activeAlerts.length);
+    const systemHealth = this.assessSystemHealth(
+      avgResponseTime,
+      cacheHitRate,
+      activeAlerts.length
+    );
 
     // Identify bottlenecks
     const bottlenecks = this.identifyPerformanceBottlenecks();
@@ -246,7 +247,7 @@ export class SearchMetrics extends EventEmitter {
       cacheHitRate: Math.round(cacheHitRate * 100) / 100,
       activeAlerts,
       systemHealth,
-      bottlenecks
+      bottlenecks,
     };
   }
 
@@ -254,8 +255,7 @@ export class SearchMetrics extends EventEmitter {
    * Get cache layer metrics
    */
   getCacheLayerMetrics(): CacheMetrics[] {
-    return Array.from(this.cacheMetrics.values())
-      .sort((a, b) => a.level - b.level);
+    return Array.from(this.cacheMetrics.values()).sort((a, b) => a.level - b.level);
   }
 
   /**
@@ -273,7 +273,7 @@ export class SearchMetrics extends EventEmitter {
       threshold,
       severity,
       enabled: true,
-      triggerCount: 0
+      triggerCount: 0,
     });
   }
 
@@ -298,7 +298,7 @@ export class SearchMetrics extends EventEmitter {
           priority: 'high' as const,
           recommendation: `Improve ${cache.layer} hit rate (currently ${Math.round(cache.hitRate * 100)}%)`,
           impact: 'Reduced response times and database load',
-          effort: 'medium' as const
+          effort: 'medium' as const,
         });
       }
 
@@ -308,7 +308,7 @@ export class SearchMetrics extends EventEmitter {
           priority: 'medium' as const,
           recommendation: `Optimize ${cache.layer} access time (currently ${Math.round(cache.averageAccessTime)}ms)`,
           impact: 'Faster cache retrieval',
-          effort: 'low' as const
+          effort: 'low' as const,
         });
       }
     });
@@ -323,7 +323,7 @@ export class SearchMetrics extends EventEmitter {
           priority: 'high' as const,
           recommendation: 'Optimize slow queries (avg response time > 500ms)',
           impact: 'Significantly faster search responses',
-          effort: 'medium' as const
+          effort: 'medium' as const,
         });
       }
     }
@@ -336,7 +336,7 @@ export class SearchMetrics extends EventEmitter {
         priority: 'high' as const,
         recommendation: 'Address system performance issues',
         impact: 'Improved overall system stability',
-        effort: 'high' as const
+        effort: 'high' as const,
       });
     }
 
@@ -357,7 +357,7 @@ export class SearchMetrics extends EventEmitter {
     const allMetrics: PerformanceMetric[] = [];
 
     // Collect all metrics from memory
-    this.metrics.forEach((metrics) => {
+    this.metrics.forEach(metrics => {
       metrics.forEach(metric => {
         if (metric.timestamp >= cutoffTime) {
           allMetrics.push(metric);
@@ -368,11 +368,15 @@ export class SearchMetrics extends EventEmitter {
     // Collect from database if available
     if (this.database) {
       try {
-        const dbMetrics = this.database.prepare(`
+        const dbMetrics = this.database
+          .prepare(
+            `
           SELECT * FROM search_metrics
           WHERE timestamp >= ?
           ORDER BY timestamp DESC
-        `).all(cutoffTime);
+        `
+          )
+          .all(cutoffTime);
         allMetrics.push(...dbMetrics);
       } catch (error) {
         // Ignore database errors
@@ -380,20 +384,27 @@ export class SearchMetrics extends EventEmitter {
     }
 
     if (format === 'json') {
-      return JSON.stringify({
-        timeRange,
-        exportTime: new Date().toISOString(),
-        totalMetrics: allMetrics.length,
-        metrics: allMetrics,
-        cacheMetrics: Object.fromEntries(this.cacheMetrics),
-        activeAlerts: Object.fromEntries(this.activeAlerts)
-      }, null, 2);
+      return JSON.stringify(
+        {
+          timeRange,
+          exportTime: new Date().toISOString(),
+          totalMetrics: allMetrics.length,
+          metrics: allMetrics,
+          cacheMetrics: Object.fromEntries(this.cacheMetrics),
+          activeAlerts: Object.fromEntries(this.activeAlerts),
+        },
+        null,
+        2
+      );
     } else {
       // CSV format
       const headers = 'timestamp,operation,duration,success,metadata\n';
-      const rows = allMetrics.map(m =>
-        `${m.timestamp},${m.operation},${m.duration},${m.success},${JSON.stringify(m.metadata || {})}`
-      ).join('\n');
+      const rows = allMetrics
+        .map(
+          m =>
+            `${m.timestamp},${m.operation},${m.duration},${m.success},${JSON.stringify(m.metadata || {})}`
+        )
+        .join('\n');
       return headers + rows;
     }
   }
@@ -438,7 +449,6 @@ export class SearchMetrics extends EventEmitter {
           CREATE INDEX IF NOT EXISTS idx_metrics_operation
           ON search_metrics(operation)
         `);
-
       } catch (error) {
         console.error('Failed to initialize metrics database:', error);
       }
@@ -535,7 +545,7 @@ export class SearchMetrics extends EventEmitter {
       if (!rule.enabled) return;
 
       // Check cooldown period
-      if (rule.lastTriggered && (now - rule.lastTriggered) < this.alertCooldownPeriod) {
+      if (rule.lastTriggered && now - rule.lastTriggered < this.alertCooldownPeriod) {
         return;
       }
 
@@ -578,7 +588,7 @@ export class SearchMetrics extends EventEmitter {
     this.alertRules.forEach(rule => {
       if (!rule.enabled) return;
 
-      if (rule.lastTriggered && (now - rule.lastTriggered) < this.alertCooldownPeriod) {
+      if (rule.lastTriggered && now - rule.lastTriggered < this.alertCooldownPeriod) {
         return;
       }
 
@@ -617,7 +627,7 @@ export class SearchMetrics extends EventEmitter {
       timestamp: Date.now(),
       metadata,
       acknowledged: false,
-      resolved: false
+      resolved: false,
     };
 
     this.activeAlerts.set(alertId, alert);
@@ -627,17 +637,14 @@ export class SearchMetrics extends EventEmitter {
     // Store in database if available
     if (this.database) {
       try {
-        this.database.prepare(`
+        this.database
+          .prepare(
+            `
           INSERT INTO performance_alerts (id, rule_name, severity, message, timestamp, metadata)
           VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
-          alertId,
-          rule.name,
-          rule.severity,
-          message,
-          Date.now(),
-          JSON.stringify(metadata)
-        );
+        `
+          )
+          .run(alertId, rule.name, rule.severity, message, Date.now(), JSON.stringify(metadata));
       } catch (error) {
         console.error('Failed to store alert in database:', error);
       }
@@ -655,11 +662,16 @@ export class SearchMetrics extends EventEmitter {
   private getCutoffTime(timeRange: '1h' | '24h' | '7d' | '30d'): number {
     const now = Date.now();
     switch (timeRange) {
-      case '1h': return now - 3600000;
-      case '24h': return now - 86400000;
-      case '7d': return now - 604800000;
-      case '30d': return now - 2592000000;
-      default: return now - 86400000;
+      case '1h':
+        return now - 3600000;
+      case '24h':
+        return now - 86400000;
+      case '7d':
+        return now - 604800000;
+      case '30d':
+        return now - 2592000000;
+      default:
+        return now - 86400000;
     }
   }
 
@@ -672,7 +684,10 @@ export class SearchMetrics extends EventEmitter {
     if (cacheMetrics.length === 0) return 0;
 
     const totalHits = cacheMetrics.reduce((sum, cache) => sum + cache.totalHits, 0);
-    const totalRequests = cacheMetrics.reduce((sum, cache) => sum + cache.totalHits + cache.totalMisses, 0);
+    const totalRequests = cacheMetrics.reduce(
+      (sum, cache) => sum + cache.totalHits + cache.totalMisses,
+      0
+    );
 
     return totalRequests > 0 ? totalHits / totalRequests : 0;
   }
@@ -683,8 +698,9 @@ export class SearchMetrics extends EventEmitter {
     alertCount: number
   ): 'excellent' | 'good' | 'warning' | 'critical' {
     if (alertCount > 0) {
-      const hasHighSeverity = Array.from(this.activeAlerts.values())
-        .some(alert => alert.severity === 'high' || alert.severity === 'critical');
+      const hasHighSeverity = Array.from(this.activeAlerts.values()).some(
+        alert => alert.severity === 'high' || alert.severity === 'critical'
+      );
       if (hasHighSeverity) return 'critical';
       return 'warning';
     }
@@ -733,7 +749,9 @@ export class SearchMetrics extends EventEmitter {
     if (!this.database) return [];
 
     try {
-      const results = this.database.prepare(`
+      const results = this.database
+        .prepare(
+          `
         SELECT
           metadata ->> '$.query' as query,
           COUNT(*) as count,
@@ -747,25 +765,31 @@ export class SearchMetrics extends EventEmitter {
         HAVING query IS NOT NULL
         ORDER BY count DESC
         LIMIT 10
-      `).all(cutoffTime);
+      `
+        )
+        .all(cutoffTime);
 
       return results.map((row: any) => ({
         query: row.query,
         count: row.count,
         avgResponseTime: Math.round(row.avgResponseTime),
-        successRate: Math.round(row.successRate) / 100
+        successRate: Math.round(row.successRate) / 100,
       }));
     } catch (error) {
       return [];
     }
   }
 
-  private async getPerformanceTrends(timeRange: string): Promise<SearchAnalytics['performanceTrends']> {
+  private async getPerformanceTrends(
+    timeRange: string
+  ): Promise<SearchAnalytics['performanceTrends']> {
     if (!this.database) return [];
 
     try {
       const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 1;
-      const results = this.database.prepare(`
+      const results = this.database
+        .prepare(
+          `
         SELECT
           date(timestamp / 1000, 'unixepoch') as date,
           AVG(duration) as avgResponseTime,
@@ -776,13 +800,15 @@ export class SearchMetrics extends EventEmitter {
         GROUP BY date(timestamp / 1000, 'unixepoch')
         ORDER BY date DESC
         LIMIT ?
-      `).all(Date.now() - (days * 86400000), days);
+      `
+        )
+        .all(Date.now() - days * 86400000, days);
 
       return results.map((row: any) => ({
         date: row.date,
         avgResponseTime: Math.round(row.avgResponseTime),
         totalSearches: row.totalSearches,
-        cacheHitRate: Math.round(row.cacheHitRate * 100) / 100
+        cacheHitRate: Math.round(row.cacheHitRate * 100) / 100,
       }));
     } catch (error) {
       return [];
@@ -798,7 +824,7 @@ export class SearchMetrics extends EventEmitter {
       successRate: 0,
       cacheHitRate: 0,
       popularQueries: [],
-      performanceTrends: []
+      performanceTrends: [],
     };
   }
 
@@ -816,14 +842,18 @@ export class SearchMetrics extends EventEmitter {
     // Clean database metrics
     if (this.database) {
       try {
-        this.database.prepare(`
+        this.database
+          .prepare(
+            `
           DELETE FROM search_metrics
           WHERE timestamp < ? AND id NOT IN (
             SELECT id FROM search_metrics
             ORDER BY timestamp DESC
             LIMIT 10000
           )
-        `).run(Date.now() - 604800000); // Keep last 7 days minimum
+        `
+          )
+          .run(Date.now() - 604800000); // Keep last 7 days minimum
       } catch (error) {
         console.error('Failed to cleanup old metrics:', error);
       }
@@ -848,17 +878,21 @@ export class SearchMetrics extends EventEmitter {
     const autoResolveAge = 1800000; // 30 minutes
 
     this.activeAlerts.forEach((alert, id) => {
-      if (!alert.resolved && (now - alert.timestamp) > autoResolveAge) {
+      if (!alert.resolved && now - alert.timestamp > autoResolveAge) {
         alert.resolved = true;
 
         // Update in database
         if (this.database) {
           try {
-            this.database.prepare(`
+            this.database
+              .prepare(
+                `
               UPDATE performance_alerts
               SET resolved = TRUE
               WHERE id = ?
-            `).run(id);
+            `
+              )
+              .run(id);
           } catch (error) {
             // Ignore database errors
           }

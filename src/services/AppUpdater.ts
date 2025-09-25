@@ -37,7 +37,7 @@ export class AppUpdater extends EventEmitter {
     // Configure auto-updater
     autoUpdater.autoDownload = false; // We'll control when to download
     autoUpdater.autoInstallOnAppQuit = true;
-    
+
     // Set update server URL (configure this for your distribution)
     // autoUpdater.setFeedURL({
     //   provider: 'github',
@@ -57,59 +57,59 @@ export class AppUpdater extends EventEmitter {
       this.emit('checking-for-update');
     });
 
-    autoUpdater.on('update-available', (info) => {
+    autoUpdater.on('update-available', info => {
       console.log('📦 Update available:', info.version);
       this.updateCheckInProgress = false;
       this.emit('update-available', {
         version: info.version,
         releaseNotes: info.releaseNotes,
         releaseDate: info.releaseDate,
-        updateSize: info.files?.[0]?.size
+        updateSize: info.files?.[0]?.size,
       } as UpdateInfo);
-      
+
       if (!this.silentMode) {
         this.showUpdateAvailableDialog(info);
       }
     });
 
-    autoUpdater.on('update-not-available', (info) => {
+    autoUpdater.on('update-not-available', info => {
       console.log('✅ Application is up to date:', info.version);
       this.updateCheckInProgress = false;
       this.emit('update-not-available', info);
-      
+
       if (!this.silentMode) {
         this.showNoUpdateDialog();
       }
     });
 
-    autoUpdater.on('error', (error) => {
+    autoUpdater.on('error', error => {
       console.error('❌ Auto-updater error:', error);
       this.updateCheckInProgress = false;
       this.updateDownloadInProgress = false;
       this.emit('error', error);
-      
+
       if (!this.silentMode) {
         this.showUpdateErrorDialog(error);
       }
     });
 
-    autoUpdater.on('download-progress', (progress) => {
+    autoUpdater.on('download-progress', progress => {
       const progressInfo: UpdateProgress = {
         bytesPerSecond: progress.bytesPerSecond,
         percent: Math.round(progress.percent * 100) / 100,
         transferred: progress.transferred,
-        total: progress.total
+        total: progress.total,
       };
-      
+
       console.log(`⬇️ Download progress: ${progressInfo.percent}%`);
       this.emit('download-progress', progressInfo);
     });
 
-    autoUpdater.on('update-downloaded', (info) => {
+    autoUpdater.on('update-downloaded', info => {
       console.log('✅ Update downloaded, ready to install:', info.version);
       this.updateDownloadInProgress = false;
       this.emit('update-downloaded', info);
-      
+
       this.showUpdateReadyDialog(info);
     });
   }
@@ -180,10 +180,10 @@ export class AppUpdater extends EventEmitter {
       detail: `Current version: ${this.getCurrentVersion()}\nNew version: ${info.version}\n\nWould you like to download and install it?`,
       buttons: ['Download Now', 'Download Later', 'View Release Notes', 'Skip This Version'],
       defaultId: 0,
-      cancelId: 1
+      cancelId: 1,
     };
 
-    dialog.showMessageBox(options).then((response) => {
+    dialog.showMessageBox(options).then(response => {
       switch (response.response) {
         case 0: // Download Now
           this.downloadUpdate();
@@ -212,7 +212,7 @@ export class AppUpdater extends EventEmitter {
       title: 'No Updates Available',
       message: 'You are running the latest version!',
       detail: `Current version: ${this.getCurrentVersion()}`,
-      buttons: ['OK']
+      buttons: ['OK'],
     });
   }
 
@@ -225,7 +225,7 @@ export class AppUpdater extends EventEmitter {
       title: 'Update Error',
       message: 'Failed to check for updates',
       detail: `Error: ${error.message}\n\nPlease check your internet connection and try again.`,
-      buttons: ['OK']
+      buttons: ['OK'],
     });
   }
 
@@ -240,10 +240,10 @@ export class AppUpdater extends EventEmitter {
       detail: `Version ${info.version} is ready to install.\n\nThe application will restart to complete the update.`,
       buttons: ['Restart Now', 'Restart Later'],
       defaultId: 0,
-      cancelId: 1
+      cancelId: 1,
     };
 
-    dialog.showMessageBox(options).then((response) => {
+    dialog.showMessageBox(options).then(response => {
       if (response.response === 0) {
         this.quitAndInstall();
       }
@@ -257,21 +257,25 @@ export class AppUpdater extends EventEmitter {
     if (info.releaseNotes) {
       // For now, show in a simple dialog
       // In a full implementation, you might want to open a proper window
-      dialog.showMessageBox({
-        type: 'info',
-        title: `Release Notes - Version ${info.version}`,
-        message: 'What\'s New',
-        detail: info.releaseNotes,
-        buttons: ['Close', 'Download Update'],
-        defaultId: 0
-      }).then((response) => {
-        if (response.response === 1) {
-          this.downloadUpdate();
-        }
-      });
+      dialog
+        .showMessageBox({
+          type: 'info',
+          title: `Release Notes - Version ${info.version}`,
+          message: "What's New",
+          detail: info.releaseNotes,
+          buttons: ['Close', 'Download Update'],
+          defaultId: 0,
+        })
+        .then(response => {
+          if (response.response === 1) {
+            this.downloadUpdate();
+          }
+        });
     } else {
       // Open release page in browser
-      shell.openExternal(`https://github.com/your-org/mainframe-kb-assistant/releases/tag/v${info.version}`);
+      shell.openExternal(
+        `https://github.com/your-org/mainframe-kb-assistant/releases/tag/v${info.version}`
+      );
     }
   }
 
@@ -309,12 +313,12 @@ export class AppUpdater extends EventEmitter {
       autoUpdater.setFeedURL({
         provider: 'github',
         owner: config.owner,
-        repo: config.repo
+        repo: config.repo,
       });
     } else if (config.provider === 'generic' && config.url) {
       autoUpdater.setFeedURL({
         provider: 'generic',
-        url: config.url
+        url: config.url,
       });
     }
   }
@@ -329,9 +333,12 @@ export class AppUpdater extends EventEmitter {
     }, 30000); // 30 seconds after startup
 
     // Schedule periodic checks
-    setInterval(() => {
-      this.checkForUpdates(true);
-    }, intervalHours * 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.checkForUpdates(true);
+      },
+      intervalHours * 60 * 60 * 1000
+    );
   }
 
   /**

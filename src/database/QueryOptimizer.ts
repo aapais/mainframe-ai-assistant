@@ -30,9 +30,11 @@ export class QueryOptimizer {
 
   private initializePreparedStatements(): void {
     // Core search queries - optimized for <1s performance
-    
+
     // 1. Full-text search with ranking
-    this.preparedQueries.set('searchFTS', this.db.prepare(`
+    this.preparedQueries.set(
+      'searchFTS',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -64,10 +66,13 @@ export class QueryOptimizer {
           ELSE relevance_score
         END DESC
       LIMIT ? OFFSET ?
-    `));
+    `)
+    );
 
     // 2. Category-based search
-    this.preparedQueries.set('searchByCategory', this.db.prepare(`
+    this.preparedQueries.set(
+      'searchByCategory',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -90,10 +95,13 @@ export class QueryOptimizer {
       GROUP BY e.id
       ORDER BY e.usage_count DESC, e.success_count DESC
       LIMIT ? OFFSET ?
-    `));
+    `)
+    );
 
     // 3. Tag-based search
-    this.preparedQueries.set('searchByTags', this.db.prepare(`
+    this.preparedQueries.set(
+      'searchByTags',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -117,10 +125,13 @@ export class QueryOptimizer {
       HAVING tag_matches > 0
       ORDER BY tag_matches DESC, e.usage_count DESC
       LIMIT ? OFFSET ?
-    `));
+    `)
+    );
 
     // 4. Similar entries by content
-    this.preparedQueries.set('findSimilar', this.db.prepare(`
+    this.preparedQueries.set(
+      'findSimilar',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -139,10 +150,13 @@ export class QueryOptimizer {
       GROUP BY e.id
       ORDER BY similarity_score DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // 5. Popular entries
-    this.preparedQueries.set('getPopular', this.db.prepare(`
+    this.preparedQueries.set(
+      'getPopular',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -162,10 +176,13 @@ export class QueryOptimizer {
       GROUP BY e.id
       ORDER BY e.usage_count DESC, success_rate DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // 6. Recent entries
-    this.preparedQueries.set('getRecent', this.db.prepare(`
+    this.preparedQueries.set(
+      'getRecent',
+      this.db.prepare(`
       SELECT 
         e.id,
         e.title,
@@ -179,10 +196,13 @@ export class QueryOptimizer {
       GROUP BY e.id
       ORDER BY e.created_at DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // 7. Entry by ID (optimized for single lookups)
-    this.preparedQueries.set('getById', this.db.prepare(`
+    this.preparedQueries.set(
+      'getById',
+      this.db.prepare(`
       SELECT 
         e.*,
         GROUP_CONCAT(t.tag, ', ') as tags,
@@ -193,10 +213,13 @@ export class QueryOptimizer {
       LEFT JOIN kb_tags t ON e.id = t.entry_id
       WHERE e.id = ?
       GROUP BY e.id
-    `));
+    `)
+    );
 
     // 8. Analytics queries
-    this.preparedQueries.set('getSearchStats', this.db.prepare(`
+    this.preparedQueries.set(
+      'getSearchStats',
+      this.db.prepare(`
       SELECT 
         query,
         COUNT(*) as frequency,
@@ -208,10 +231,13 @@ export class QueryOptimizer {
       HAVING frequency > 1
       ORDER BY frequency DESC
       LIMIT ?
-    `));
+    `)
+    );
 
     // 9. Category statistics
-    this.preparedQueries.set('getCategoryStats', this.db.prepare(`
+    this.preparedQueries.set(
+      'getCategoryStats',
+      this.db.prepare(`
       SELECT 
         category,
         COUNT(*) as total_entries,
@@ -224,10 +250,13 @@ export class QueryOptimizer {
       WHERE archived = FALSE
       GROUP BY category
       ORDER BY total_usage DESC
-    `));
+    `)
+    );
 
     // 10. Usage trends
-    this.preparedQueries.set('getUsageTrends', this.db.prepare(`
+    this.preparedQueries.set(
+      'getUsageTrends',
+      this.db.prepare(`
       SELECT 
         date(timestamp) as usage_date,
         COUNT(*) as total_actions,
@@ -238,7 +267,8 @@ export class QueryOptimizer {
       WHERE timestamp > datetime('now', '-30 days')
       GROUP BY date(timestamp)
       ORDER BY usage_date DESC
-    `));
+    `)
+    );
   }
 
   /**
@@ -253,7 +283,7 @@ export class QueryOptimizer {
     const startTime = Date.now();
     const limit = options.limit || 10;
     const offset = options.offset || 0;
-    
+
     let results: any[] = [];
     let strategy = '';
 
@@ -262,7 +292,7 @@ export class QueryOptimizer {
       if (options.query && !options.category && (!options.tags || options.tags.length === 0)) {
         const ftsQuery = this.prepareFTSQuery(options.query);
         const stmt = this.preparedQueries.get('searchFTS')!;
-        
+
         results = stmt.all(
           ftsQuery,
           options.includeArchived || false,
@@ -274,7 +304,7 @@ export class QueryOptimizer {
         );
         strategy = 'fts';
       }
-      
+
       // Strategy 2: Category-specific search
       else if (options.category && options.query) {
         const stmt = this.preparedQueries.get('searchByCategory')!;
@@ -288,33 +318,28 @@ export class QueryOptimizer {
         );
         strategy = 'category';
       }
-      
+
       // Strategy 3: Tag-based search
       else if (options.tags && options.tags.length > 0) {
         const stmt = this.preparedQueries.get('searchByTags')!;
         const tags = options.tags.slice(0, 10); // Limit to 10 tags
         const params = [
-          ...tags.concat(Array(10 - tags.length).fill(null)),  // Tag filter params
-          ...tags.concat(Array(10 - tags.length).fill(null)),  // Tag matching params
+          ...tags.concat(Array(10 - tags.length).fill(null)), // Tag filter params
+          ...tags.concat(Array(10 - tags.length).fill(null)), // Tag matching params
           limit,
-          offset
+          offset,
         ];
         results = stmt.all(...params);
         strategy = 'tags';
       }
-      
+
       // Strategy 4: Category only
       else if (options.category) {
         const stmt = this.preparedQueries.get('searchByCategory')!;
-        results = stmt.all(
-          options.category,
-          null, null, null,
-          limit,
-          offset
-        );
+        results = stmt.all(options.category, null, null, null, limit, offset);
         strategy = 'category_only';
       }
-      
+
       // Strategy 5: Popular entries (fallback)
       else {
         const stmt = this.preparedQueries.get('getPopular')!;
@@ -324,9 +349,9 @@ export class QueryOptimizer {
 
       // Get total count for pagination
       const totalCount = this.getTotalCount(options);
-      
+
       const executionTime = Date.now() - startTime;
-      
+
       // Log slow queries
       if (executionTime > 500) {
         console.warn(`Slow query (${executionTime}ms): ${strategy}`, options);
@@ -336,21 +361,20 @@ export class QueryOptimizer {
         results,
         totalCount,
         executionTime,
-        strategy
+        strategy,
       };
-
     } catch (error) {
       console.error('Search error:', error);
-      
+
       // Fallback to simple query
       const stmt = this.preparedQueries.get('getPopular')!;
       results = stmt.all(limit);
-      
+
       return {
         results,
         totalCount: results.length,
         executionTime: Date.now() - startTime,
-        strategy: 'fallback'
+        strategy: 'fallback',
       };
     }
   }
@@ -393,14 +417,14 @@ export class QueryOptimizer {
    */
   analyzeQuery(sql: string): QueryStats {
     const startTime = Date.now();
-    
+
     // Get query plan
     const plan = this.db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all();
-    
+
     // Execute query to get timing
     const stmt = this.db.prepare(sql);
     const result = stmt.all();
-    
+
     const executionTime = Date.now() - startTime;
 
     return {
@@ -408,7 +432,7 @@ export class QueryOptimizer {
       executionTimeMs: executionTime,
       rowsExamined: this.extractRowsExamined(plan),
       rowsReturned: result.length,
-      planSteps: plan.map((step: any) => step.detail)
+      planSteps: plan.map((step: any) => step.detail),
     };
   }
 
@@ -417,13 +441,13 @@ export class QueryOptimizer {
    */
   optimize(): void {
     const startTime = Date.now();
-    
+
     console.log('🔧 Starting database optimization...');
-    
+
     // Update statistics
     this.db.exec('ANALYZE');
     console.log('✅ Updated table statistics');
-    
+
     // Rebuild FTS index if needed
     try {
       this.db.exec('INSERT INTO kb_fts(kb_fts) VALUES("rebuild")');
@@ -431,10 +455,10 @@ export class QueryOptimizer {
     } catch (error) {
       console.log('ℹ️ FTS index rebuild not needed');
     }
-    
+
     // Check for index usage
     this.checkIndexUsage();
-    
+
     const duration = Date.now() - startTime;
     console.log(`✅ Database optimization completed in ${duration}ms`);
   }
@@ -445,32 +469,32 @@ export class QueryOptimizer {
   private prepareFTSQuery(query: string): string {
     // Clean query
     let ftsQuery = query.trim();
-    
+
     // Handle category prefixes
     if (ftsQuery.startsWith('category:')) {
       const category = ftsQuery.substring(9);
       return `category:${category}`;
     }
-    
+
     // Handle tag prefixes
     if (ftsQuery.startsWith('tag:')) {
       const tag = ftsQuery.substring(4);
       return `tags:${tag}`;
     }
-    
+
     // Escape special FTS characters
     ftsQuery = ftsQuery.replace(/['"]/g, '');
-    
+
     // Add wildcards for partial matches
     const terms = ftsQuery.split(/\s+/).filter(term => term.length > 2);
-    
+
     if (terms.length === 0) return ftsQuery;
-    
+
     // Use phrase search for multi-word queries
     if (terms.length > 1) {
       return `"${terms.join(' ')}"`;
     }
-    
+
     // Single term with wildcard
     return `${terms[0]}*`;
   }
@@ -482,7 +506,7 @@ export class QueryOptimizer {
     try {
       let countQuery = '';
       let params: any[] = [];
-      
+
       if (options.query && !options.category) {
         countQuery = `
           SELECT COUNT(DISTINCT e.id) as total
@@ -501,7 +525,7 @@ export class QueryOptimizer {
         `;
         params = options.category ? [options.category] : [];
       }
-      
+
       const result = this.db.prepare(countQuery).get(...params) as { total: number };
       return result.total;
     } catch (error) {
@@ -522,18 +546,22 @@ export class QueryOptimizer {
    * Check index usage and suggest improvements
    */
   private checkIndexUsage(): void {
-    const indexes = this.db.prepare(`
+    const indexes = this.db
+      .prepare(
+        `
       SELECT name, sql FROM sqlite_master 
       WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
-    `).all();
-    
+    `
+      )
+      .all();
+
     console.log(`ℹ️ Found ${indexes.length} custom indexes`);
-    
+
     // Check for unused indexes (simplified)
-    const unusedIndexes = indexes.filter((idx: any) => 
-      !idx.name.includes('pk') && !idx.name.includes('fk')
+    const unusedIndexes = indexes.filter(
+      (idx: any) => !idx.name.includes('pk') && !idx.name.includes('fk')
     );
-    
+
     if (unusedIndexes.length > 0) {
       console.log(`⚠️ Consider reviewing ${unusedIndexes.length} potentially unused indexes`);
     }
@@ -548,20 +576,24 @@ export class QueryOptimizer {
     totalSearches: number;
     cacheHitRate: number;
   } {
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT 
         AVG(search_time_ms) as avg_time,
         COUNT(CASE WHEN search_time_ms > 1000 THEN 1 END) as slow_queries,
         COUNT(*) as total_searches
       FROM search_history
       WHERE timestamp > datetime('now', '-24 hours')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     return {
       avgSearchTime: stats.avg_time || 0,
       slowQueries: stats.slow_queries || 0,
       totalSearches: stats.total_searches || 0,
-      cacheHitRate: 0.95 // Placeholder - would need more sophisticated tracking
+      cacheHitRate: 0.95, // Placeholder - would need more sophisticated tracking
     };
   }
 }

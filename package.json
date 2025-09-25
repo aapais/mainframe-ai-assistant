@@ -4,40 +4,32 @@
   "description": "Accenture Mainframe AI Assistant - Desktop Application",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "electron": "electron .",
-    "electron:dev": "NODE_ENV=development electron .",
+    "start": "python3 -m http.server 8080",
+    "start:postgres": "node src/backend/postgresql-only-server.js",
+    "start:auth": "node windows-auth-postgres.js",
     "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux",
-    "dist": "electron-builder --publish=never",
-    "start:backend": "python3 scripts/real-db-server.py",
-    "start:backend:enhanced": "node src/backend/enhanced-server.js",
-    "start:frontend": "python3 scripts/integrated-server.py",
     "clean": "rm -rf dist",
-    "test": "node scripts/test-validation.js",
-    "migrate:test": "node scripts/migration/sqlite-to-postgres.js test",
-    "migrate:run": "node scripts/migration/sqlite-to-postgres.js migrate",
     "docker:postgres": "docker compose up -d postgres",
     "docker:down": "docker compose down"
   },
   "devDependencies": {
-    "electron": "^27.3.11",
-    "electron-builder": "^24.13.3"
+    "electron": "38.1.2",
+    "electron-builder": "26.0.12"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "axios": "^1.12.2",
-    "better-sqlite3": "^12.4.1",
+    "@google/generative-ai": "0.24.1",
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "multer": "^1.4.5-lts.2",
-    "openai": "^4.104.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "2.0.2",
+    "openai": "5.23.0",
     "pg": "^8.16.3",
-    "redis": "^4.7.0",
-    "uuid": "^9.0.1"
+    "tslib": "^2.8.1",
+    "uuid": "13.0.0"
   },
   "build": {
     "appId": "com.accenture.mainframe.assistant",
@@ -70,11 +62,6 @@
   },
   "author": "Accenture",
   "license": "MIT",
-  "directories": {
-    "doc": "docs",
-    "example": "examples",
-    "test": "tests"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/aapais/mainframe-ai-assistant.git"

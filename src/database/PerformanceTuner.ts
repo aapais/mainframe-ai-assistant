@@ -29,28 +29,28 @@ export class PerformanceTuner {
     // Detect system capabilities
     const totalRAM = this.estimateAvailableRAM();
     const isLocal = this.isLocalDatabase();
-    
+
     return {
       // Cache size: Use 25% of available RAM, min 64MB, max 512MB
       cacheSize: Math.min(512 * 1024, Math.max(64 * 1024, Math.floor(totalRAM * 0.25))),
-      
+
       // Memory mapping: 256MB for local files, good for read performance
       mmapSize: isLocal ? 256 * 1024 * 1024 : 0,
-      
+
       // WAL mode for better concurrency and crash recovery
       journalMode: 'WAL',
-      
+
       // NORMAL synchronous for good balance of performance/safety
       synchronous: 'NORMAL',
-      
+
       // Memory temp store for better performance
       tempStore: 'MEMORY',
-      
+
       // Normal locking for desktop app (single user)
       lockingMode: 'NORMAL',
-      
+
       // Incremental auto-vacuum to prevent file bloat
-      autoVacuum: 'INCREMENTAL'
+      autoVacuum: 'INCREMENTAL',
     };
   }
 
@@ -59,7 +59,7 @@ export class PerformanceTuner {
    */
   private applyConfiguration(): void {
     console.log('🔧 Applying SQLite performance configuration...');
-    
+
     try {
       // Core performance settings
       this.db.pragma(`cache_size = -${this.config.cacheSize}`);
@@ -69,20 +69,19 @@ export class PerformanceTuner {
       this.db.pragma(`temp_store = ${this.config.tempStore}`);
       this.db.pragma(`locking_mode = ${this.config.lockingMode}`);
       this.db.pragma(`auto_vacuum = ${this.config.autoVacuum}`);
-      
+
       // Additional optimizations
       this.db.pragma('optimize');
       this.db.pragma('foreign_keys = ON');
       this.db.pragma('recursive_triggers = ON');
       this.db.pragma('trusted_schema = OFF'); // Security
-      
+
       // Query optimizer settings
       this.db.pragma('query_only = OFF');
       this.db.pragma('defer_foreign_keys = OFF');
-      
+
       console.log('✅ Performance configuration applied successfully');
       this.logConfiguration();
-      
     } catch (error) {
       console.error('❌ Failed to apply performance configuration:', error);
     }
@@ -98,9 +97,9 @@ export class PerformanceTuner {
       synchronous: this.db.pragma('synchronous', { simple: true }),
       temp_store: this.db.pragma('temp_store', { simple: true }),
       mmap_size: this.db.pragma('mmap_size', { simple: true }),
-      auto_vacuum: this.db.pragma('auto_vacuum', { simple: true })
+      auto_vacuum: this.db.pragma('auto_vacuum', { simple: true }),
     };
-    
+
     console.log('📊 Current SQLite configuration:', currentConfig);
   }
 
@@ -115,28 +114,32 @@ export class PerformanceTuner {
   } {
     const startTime = Date.now();
     const operations: string[] = [];
-    
+
     console.log('🚀 Starting comprehensive database optimization...');
-    
+
     // Get initial size
     const sizeBefore = this.getDatabaseSize();
-    
+
     // 1. Update table statistics
     console.log('📊 Updating table statistics...');
     this.db.exec('ANALYZE');
     operations.push('ANALYZE tables');
-    
+
     // 2. Optimize query planner
     console.log('🔍 Optimizing query planner...');
     this.db.pragma('optimize');
     operations.push('Query planner optimization');
-    
+
     // 3. Rebuild FTS index if needed
     console.log('🔍 Checking FTS index...');
     try {
-      const ftsInfo = this.db.prepare("SELECT count(*) as count FROM kb_fts").get() as { count: number };
-      const entriesCount = this.db.prepare("SELECT count(*) as count FROM kb_entries").get() as { count: number };
-      
+      const ftsInfo = this.db.prepare('SELECT count(*) as count FROM kb_fts').get() as {
+        count: number;
+      };
+      const entriesCount = this.db.prepare('SELECT count(*) as count FROM kb_entries').get() as {
+        count: number;
+      };
+
       if (Math.abs(ftsInfo.count - entriesCount.count) > 0) {
         console.log('🔧 Rebuilding FTS index...');
         this.db.exec("INSERT INTO kb_fts(kb_fts) VALUES('rebuild')");
@@ -145,7 +148,7 @@ export class PerformanceTuner {
     } catch (error) {
       console.log('ℹ️ FTS index check skipped');
     }
-    
+
     // 4. Incremental vacuum
     console.log('🧹 Running incremental vacuum...');
     try {
@@ -154,14 +157,14 @@ export class PerformanceTuner {
     } catch (error) {
       console.log('ℹ️ Incremental vacuum not needed');
     }
-    
+
     // 5. WAL checkpoint
     if (this.config.journalMode === 'WAL') {
       console.log('📝 WAL checkpoint...');
       const result = this.db.pragma('wal_checkpoint(TRUNCATE)');
       operations.push(`WAL checkpoint: ${JSON.stringify(result)}`);
     }
-    
+
     // 6. Integrity check (quick)
     console.log('🔍 Quick integrity check...');
     const integrityResult = this.db.pragma('quick_check', { simple: true });
@@ -171,18 +174,18 @@ export class PerformanceTuner {
       console.warn('⚠️ Integrity check found issues:', integrityResult);
       operations.push(`Integrity check: ${integrityResult}`);
     }
-    
+
     const sizeAfter = this.getDatabaseSize();
     const duration = Date.now() - startTime;
-    
+
     console.log(`✅ Optimization completed in ${duration}ms`);
     console.log(`📊 Size: ${this.formatBytes(sizeBefore)} → ${this.formatBytes(sizeAfter)}`);
-    
+
     return {
       sizeBefore,
       sizeAfter,
       duration,
-      operations
+      operations,
     };
   }
 
@@ -202,7 +205,7 @@ export class PerformanceTuner {
     const pageCount = this.db.pragma('page_count', { simple: true });
     const pageSize = this.db.pragma('page_size', { simple: true });
     const freePages = this.db.pragma('freelist_count', { simple: true });
-    
+
     let walSize;
     if (this.config.journalMode === 'WAL') {
       try {
@@ -214,18 +217,22 @@ export class PerformanceTuner {
         // WAL file might not exist
       }
     }
-    
+
     // Check index usage
-    const indexes = this.db.prepare(`
+    const indexes = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'index' AND name NOT LIKE 'sqlite_%'
-    `).all() as Array<{ name: string }>;
-    
+    `
+      )
+      .all() as Array<{ name: string }>;
+
     const indexUsage = indexes.map(idx => ({
       name: idx.name,
-      used: this.checkIndexUsage(idx.name)
+      used: this.checkIndexUsage(idx.name),
     }));
-    
+
     return {
       cacheHitRatio: cacheHit,
       pageCount,
@@ -233,7 +240,7 @@ export class PerformanceTuner {
       databaseSize: pageCount * pageSize,
       walSize,
       freePages,
-      indexUsage
+      indexUsage,
     };
   }
 
@@ -242,31 +249,40 @@ export class PerformanceTuner {
    */
   scheduleMaintenace(): void {
     // Auto-optimize every 24 hours
-    setInterval(() => {
-      console.log('🔄 Running scheduled database optimization...');
-      this.optimize();
-    }, 24 * 60 * 60 * 1000);
-    
+    setInterval(
+      () => {
+        console.log('🔄 Running scheduled database optimization...');
+        this.optimize();
+      },
+      24 * 60 * 60 * 1000
+    );
+
     // WAL checkpoint every hour
     if (this.config.journalMode === 'WAL') {
-      setInterval(() => {
-        try {
-          this.db.pragma('wal_checkpoint(PASSIVE)');
-        } catch (error) {
-          console.error('WAL checkpoint error:', error);
-        }
-      }, 60 * 60 * 1000);
+      setInterval(
+        () => {
+          try {
+            this.db.pragma('wal_checkpoint(PASSIVE)');
+          } catch (error) {
+            console.error('WAL checkpoint error:', error);
+          }
+        },
+        60 * 60 * 1000
+      );
     }
-    
+
     // Incremental vacuum every 6 hours
-    setInterval(() => {
-      try {
-        this.db.pragma('incremental_vacuum(100)'); // Vacuum up to 100 pages
-      } catch (error) {
-        // Not critical if it fails
-      }
-    }, 6 * 60 * 60 * 1000);
-    
+    setInterval(
+      () => {
+        try {
+          this.db.pragma('incremental_vacuum(100)'); // Vacuum up to 100 pages
+        } catch (error) {
+          // Not critical if it fails
+        }
+      },
+      6 * 60 * 60 * 1000
+    );
+
     console.log('⏰ Automatic maintenance scheduled');
   }
 
@@ -281,14 +297,14 @@ export class PerformanceTuner {
     ftsSearchTime: number;
   }> {
     console.log('🏃 Running performance benchmark...');
-    
+
     const testData = {
       id: 'benchmark-test',
       title: 'Benchmark Test Entry',
       problem: 'This is a test problem for benchmarking database performance',
       solution: 'This is a test solution with various keywords for search testing',
       category: 'Other',
-      tags: ['benchmark', 'test', 'performance']
+      tags: ['benchmark', 'test', 'performance'],
     };
 
     // Benchmark INSERT
@@ -297,7 +313,13 @@ export class PerformanceTuner {
       INSERT OR REPLACE INTO kb_entries (id, title, problem, solution, category)
       VALUES (?, ?, ?, ?, ?)
     `);
-    insertStmt.run(testData.id, testData.title, testData.problem, testData.solution, testData.category);
+    insertStmt.run(
+      testData.id,
+      testData.title,
+      testData.problem,
+      testData.solution,
+      testData.category
+    );
     const insertTime = Date.now() - insertStart;
 
     // Benchmark SELECT
@@ -308,7 +330,9 @@ export class PerformanceTuner {
 
     // Benchmark UPDATE
     const updateStart = Date.now();
-    const updateStmt = this.db.prepare('UPDATE kb_entries SET usage_count = usage_count + 1 WHERE id = ?');
+    const updateStmt = this.db.prepare(
+      'UPDATE kb_entries SET usage_count = usage_count + 1 WHERE id = ?'
+    );
     updateStmt.run(testData.id);
     const updateTime = Date.now() - updateStart;
 
@@ -333,7 +357,7 @@ export class PerformanceTuner {
       searchTime,
       updateTime,
       deleteTime,
-      ftsSearchTime
+      ftsSearchTime,
     };
 
     console.log('📊 Benchmark results (ms):', results);
@@ -384,14 +408,16 @@ export class PerformanceTuner {
   private checkIndexUsage(indexName: string): boolean {
     try {
       // This is a simplified check - in production, use query plan analysis
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         EXPLAIN QUERY PLAN 
         SELECT * FROM kb_entries WHERE rowid = 1
-      `).all();
-      
-      return result.some((row: any) => 
-        row.detail && row.detail.includes(indexName)
-      );
+      `
+        )
+        .all();
+
+      return result.some((row: any) => row.detail && row.detail.includes(indexName));
     } catch (error) {
       return false;
     }
@@ -403,28 +429,32 @@ export class PerformanceTuner {
   getRecommendations(): string[] {
     const recommendations: string[] = [];
     const metrics = this.getPerformanceMetrics();
-    
+
     // Cache hit ratio
     if (metrics.cacheHitRatio < 0.9) {
-      recommendations.push(`Low cache hit ratio (${metrics.cacheHitRatio.toFixed(2)}). Consider increasing cache_size.`);
+      recommendations.push(
+        `Low cache hit ratio (${metrics.cacheHitRatio.toFixed(2)}). Consider increasing cache_size.`
+      );
     }
-    
+
     // Free pages
     if (metrics.freePages > metrics.pageCount * 0.1) {
       recommendations.push(`High free page count (${metrics.freePages}). Consider running VACUUM.`);
     }
-    
+
     // WAL size
     if (metrics.walSize && metrics.walSize > metrics.databaseSize * 0.1) {
-      recommendations.push(`Large WAL file (${this.formatBytes(metrics.walSize)}). Consider checkpoint.`);
+      recommendations.push(
+        `Large WAL file (${this.formatBytes(metrics.walSize)}). Consider checkpoint.`
+      );
     }
-    
+
     // Unused indexes
     const unusedIndexes = metrics.indexUsage.filter(idx => !idx.used);
     if (unusedIndexes.length > 0) {
       recommendations.push(`Found ${unusedIndexes.length} potentially unused indexes.`);
     }
-    
+
     return recommendations;
   }
 }

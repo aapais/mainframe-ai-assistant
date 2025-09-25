@@ -37,7 +37,7 @@ export const BulkOperationSchema = z.object({
     'archive_entries',
     'merge_entries',
     'duplicate_entries',
-    'export_entries'
+    'export_entries',
   ]),
   status: z.enum(['pending', 'in_progress', 'completed', 'failed', 'cancelled']),
   target_entry_ids: z.array(z.string().uuid()),
@@ -52,12 +52,14 @@ export const BulkOperationSchema = z.object({
     failed: z.number().int().min(0),
     current_item: z.string().optional(),
   }),
-  errors: z.array(z.object({
-    entry_id: z.string().uuid(),
-    error_message: z.string(),
-    error_code: z.string().optional(),
-    timestamp: z.date(),
-  })),
+  errors: z.array(
+    z.object({
+      entry_id: z.string().uuid(),
+      error_message: z.string(),
+      error_code: z.string().optional(),
+      timestamp: z.date(),
+    })
+  ),
   rollback_data: z.record(z.any()).optional(),
   can_rollback: z.boolean().default(false),
 });
@@ -68,11 +70,13 @@ export const BulkTagOperationSchema = z.object({
   operation_type: z.enum(['add', 'remove', 'replace']),
   tags: z.array(z.string()),
   entry_ids: z.array(z.string().uuid()),
-  validation_options: z.object({
-    validate_tags: z.boolean().default(true),
-    create_missing_tags: z.boolean().default(true),
-    skip_duplicates: z.boolean().default(true),
-  }).optional(),
+  validation_options: z
+    .object({
+      validate_tags: z.boolean().default(true),
+      create_missing_tags: z.boolean().default(true),
+      skip_duplicates: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 export type BulkTagOperation = z.infer<typeof BulkTagOperationSchema>;
@@ -81,10 +85,12 @@ export const BulkCategoryOperationSchema = z.object({
   new_category_id: z.string().uuid(),
   entry_ids: z.array(z.string().uuid()),
   preserve_subcategories: z.boolean().default(false),
-  validation_options: z.object({
-    validate_category: z.boolean().default(true),
-    allow_system_categories: z.boolean().default(true),
-  }).optional(),
+  validation_options: z
+    .object({
+      validate_category: z.boolean().default(true),
+      allow_system_categories: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 export type BulkCategoryOperation = z.infer<typeof BulkCategoryOperationSchema>;
@@ -93,11 +99,13 @@ export const BulkUpdateOperationSchema = z.object({
   updates: z.record(z.any()), // Field updates to apply
   entry_ids: z.array(z.string().uuid()),
   update_mode: z.enum(['merge', 'replace']).default('merge'),
-  validation_options: z.object({
-    validate_schema: z.boolean().default(true),
-    skip_invalid: z.boolean().default(true),
-    preserve_metadata: z.boolean().default(true),
-  }).optional(),
+  validation_options: z
+    .object({
+      validate_schema: z.boolean().default(true),
+      skip_invalid: z.boolean().default(true),
+      preserve_metadata: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 export type BulkUpdateOperation = z.infer<typeof BulkUpdateOperationSchema>;
@@ -134,7 +142,7 @@ export class BulkOperationsService extends EventEmitter {
       enableAuditLogging: true,
       maxHistoryEntries: 100,
       progressUpdateInterval: 1000, // milliseconds
-      ...options
+      ...options,
     };
 
     // Start operation processor
@@ -151,7 +159,7 @@ export class BulkOperationsService extends EventEmitter {
   async addTagsToEntries(operation: BulkTagOperation): Promise<string> {
     const bulkOp = await this.createBulkOperation('add_tags', operation.entry_ids, {
       tags: operation.tags,
-      validation_options: operation.validation_options
+      validation_options: operation.validation_options,
     });
 
     this.queueOperation(bulkOp.id);
@@ -164,7 +172,7 @@ export class BulkOperationsService extends EventEmitter {
   async removeTagsFromEntries(operation: BulkTagOperation): Promise<string> {
     const bulkOp = await this.createBulkOperation('remove_tags', operation.entry_ids, {
       tags: operation.tags,
-      validation_options: operation.validation_options
+      validation_options: operation.validation_options,
     });
 
     this.queueOperation(bulkOp.id);
@@ -177,7 +185,7 @@ export class BulkOperationsService extends EventEmitter {
   async replaceTagsOnEntries(operation: BulkTagOperation): Promise<string> {
     const bulkOp = await this.createBulkOperation('replace_tags', operation.entry_ids, {
       tags: operation.tags,
-      validation_options: operation.validation_options
+      validation_options: operation.validation_options,
     });
 
     this.queueOperation(bulkOp.id);
@@ -195,7 +203,7 @@ export class BulkOperationsService extends EventEmitter {
     const bulkOp = await this.createBulkOperation('change_category', operation.entry_ids, {
       new_category_id: operation.new_category_id,
       preserve_subcategories: operation.preserve_subcategories,
-      validation_options: operation.validation_options
+      validation_options: operation.validation_options,
     });
 
     this.queueOperation(bulkOp.id);
@@ -213,7 +221,7 @@ export class BulkOperationsService extends EventEmitter {
     const bulkOp = await this.createBulkOperation('update_entries', operation.entry_ids, {
       updates: operation.updates,
       update_mode: operation.update_mode,
-      validation_options: operation.validation_options
+      validation_options: operation.validation_options,
     });
 
     this.queueOperation(bulkOp.id);
@@ -223,13 +231,16 @@ export class BulkOperationsService extends EventEmitter {
   /**
    * Delete multiple entries
    */
-  async deleteEntries(entryIds: string[], options: {
-    createBackup?: boolean;
-    forceDelete?: boolean;
-  } = {}): Promise<string> {
+  async deleteEntries(
+    entryIds: string[],
+    options: {
+      createBackup?: boolean;
+      forceDelete?: boolean;
+    } = {}
+  ): Promise<string> {
     const bulkOp = await this.createBulkOperation('delete_entries', entryIds, {
       create_backup: options.createBackup ?? true,
-      force_delete: options.forceDelete ?? false
+      force_delete: options.forceDelete ?? false,
     });
 
     this.queueOperation(bulkOp.id);
@@ -249,13 +260,16 @@ export class BulkOperationsService extends EventEmitter {
   /**
    * Duplicate multiple entries
    */
-  async duplicateEntries(entryIds: string[], options: {
-    namePrefix?: string;
-    preserveMetadata?: boolean;
-  } = {}): Promise<string> {
+  async duplicateEntries(
+    entryIds: string[],
+    options: {
+      namePrefix?: string;
+      preserveMetadata?: boolean;
+    } = {}
+  ): Promise<string> {
     const bulkOp = await this.createBulkOperation('duplicate_entries', entryIds, {
       name_prefix: options.namePrefix ?? 'Copy of ',
-      preserve_metadata: options.preserveMetadata ?? false
+      preserve_metadata: options.preserveMetadata ?? false,
     });
 
     this.queueOperation(bulkOp.id);
@@ -265,11 +279,14 @@ export class BulkOperationsService extends EventEmitter {
   /**
    * Export multiple entries
    */
-  async exportEntries(entryIds: string[], format: 'json' | 'csv' | 'xml' = 'json'): Promise<string> {
+  async exportEntries(
+    entryIds: string[],
+    format: 'json' | 'csv' | 'xml' = 'json'
+  ): Promise<string> {
     const bulkOp = await this.createBulkOperation('export_entries', entryIds, {
       format,
       export_path: this.generateExportPath(format),
-      include_metadata: true
+      include_metadata: true,
     });
 
     this.queueOperation(bulkOp.id);
@@ -439,7 +456,7 @@ export class BulkOperationsService extends EventEmitter {
       operation.errors.push({
         entry_id: 'N/A',
         error_message: error.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       this.emit('operationFailed', operation, error);
@@ -488,9 +505,9 @@ export class BulkOperationsService extends EventEmitter {
 
           // Add tags (avoiding duplicates if configured)
           const existingTags = entry.tags || [];
-          const newTags = validation_options?.skip_duplicates ?
-            validTags.filter(tag => !existingTags.includes(tag)) :
-            validTags;
+          const newTags = validation_options?.skip_duplicates
+            ? validTags.filter(tag => !existingTags.includes(tag))
+            : validTags;
 
           const updatedTags = [...existingTags, ...newTags];
 
@@ -499,13 +516,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -550,13 +566,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -601,13 +616,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -654,13 +668,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -713,7 +726,6 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           if (!validation_options?.skip_invalid) {
             throw error;
@@ -723,7 +735,7 @@ export class BulkOperationsService extends EventEmitter {
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -764,13 +776,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -810,13 +821,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -869,13 +879,12 @@ export class BulkOperationsService extends EventEmitter {
 
           operation.progress.completed++;
           this.emit('operationProgress', operation);
-
         } catch (error) {
           operation.progress.failed++;
           operation.errors.push({
             entry_id: entryId,
             error_message: error.message,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
 
@@ -905,25 +914,26 @@ export class BulkOperationsService extends EventEmitter {
           throw new Error('Entry not found');
         }
 
-        const exportEntry = include_metadata ? entry : {
-          title: entry.title,
-          problem: entry.problem,
-          solution: entry.solution,
-          category: entry.category,
-          tags: entry.tags
-        };
+        const exportEntry = include_metadata
+          ? entry
+          : {
+              title: entry.title,
+              problem: entry.problem,
+              solution: entry.solution,
+              category: entry.category,
+              tags: entry.tags,
+            };
 
         exportData.push(exportEntry);
 
         operation.progress.completed++;
         this.emit('operationProgress', operation);
-
       } catch (error) {
         operation.progress.failed++;
         operation.errors.push({
           entry_id: entryId,
           error_message: error.message,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     }

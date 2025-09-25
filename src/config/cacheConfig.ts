@@ -88,7 +88,7 @@ export interface CacheSystemConfig {
   l0Cache: CacheLayerConfig; // Instant cache
   l1Cache: CacheLayerConfig; // Hot cache
   l2Cache: CacheLayerConfig; // Warm cache
-  l3Redis: RedisConfig;      // Distributed cache
+  l3Redis: RedisConfig; // Distributed cache
   l4Persistent: CacheLayerConfig; // Disk cache
 
   // Advanced features
@@ -129,7 +129,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'LRU',
         cleanupInterval: 30 * 1000, // 30 seconds
         compressionEnabled: false,
-        compressionThreshold: 10240 // 10KB
+        compressionThreshold: 10240, // 10KB
       },
 
       l1Cache: {
@@ -141,7 +141,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'ADAPTIVE',
         cleanupInterval: 60 * 1000, // 1 minute
         compressionEnabled: false,
-        compressionThreshold: 5120 // 5KB
+        compressionThreshold: 5120, // 5KB
       },
 
       l2Cache: {
@@ -153,7 +153,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'LRU',
         cleanupInterval: 2 * 60 * 1000, // 2 minutes
         compressionEnabled: true,
-        compressionThreshold: 1024 // 1KB
+        compressionThreshold: 1024, // 1KB
       },
 
       l3Redis: {
@@ -166,7 +166,7 @@ export class CacheConfigFactory {
         retryDelayMs: 1000,
         enableCluster: false,
         enableReadReplicas: false,
-        connectionPoolSize: 5
+        connectionPoolSize: 5,
       },
 
       l4Persistent: {
@@ -178,7 +178,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'LRU',
         cleanupInterval: 5 * 60 * 1000, // 5 minutes
         compressionEnabled: true,
-        compressionThreshold: 512 // 512 bytes
+        compressionThreshold: 512, // 512 bytes
       },
 
       predictiveCache: {
@@ -192,7 +192,7 @@ export class CacheConfigFactory {
         enableContextualPredictions: true,
         enableTemporalPredictions: false,
         maxPatternHistory: 1000,
-        predictionBatchSize: 5
+        predictionBatchSize: 5,
       },
 
       incrementalLoading: {
@@ -204,7 +204,7 @@ export class CacheConfigFactory {
         loadTimeout: 10000, // 10 seconds
         retryAttempts: 2,
         retryDelay: 500,
-        throughputThreshold: 0.7
+        throughputThreshold: 0.7,
       },
 
       monitoring: {
@@ -215,10 +215,10 @@ export class CacheConfigFactory {
           hitRateBelow: 0.7,
           errorRateAbove: 0.05,
           latencyAbove: 1000,
-          memoryUsageAbove: 0.9
+          memoryUsageAbove: 0.9,
         },
         enableMetricsExport: false,
-        metricsExportInterval: 5 * 60 * 1000 // 5 minutes
+        metricsExportInterval: 5 * 60 * 1000, // 5 minutes
       },
 
       security: {
@@ -227,7 +227,7 @@ export class CacheConfigFactory {
         enableAccessControl: false,
         maxKeyLength: 250,
         maxValueSize: 10 * 1024 * 1024, // 10MB
-        enableAuditLog: false
+        enableAuditLog: false,
       },
 
       enableMultiLayer: true,
@@ -236,7 +236,7 @@ export class CacheConfigFactory {
       enableWarmup: true,
       maxTotalMemoryMB: 200,
       memoryPressureThreshold: 0.8,
-      globalTTLMultiplier: 1.0
+      globalTTLMultiplier: 1.0,
     };
   }
 
@@ -257,7 +257,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'ADAPTIVE',
         cleanupInterval: 60 * 1000, // 1 minute
         compressionEnabled: true,
-        compressionThreshold: 5120 // 5KB
+        compressionThreshold: 5120, // 5KB
       },
 
       l1Cache: {
@@ -269,7 +269,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'ARC',
         cleanupInterval: 2 * 60 * 1000, // 2 minutes
         compressionEnabled: true,
-        compressionThreshold: 2048 // 2KB
+        compressionThreshold: 2048, // 2KB
       },
 
       l2Cache: {
@@ -281,7 +281,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'ARC',
         cleanupInterval: 5 * 60 * 1000, // 5 minutes
         compressionEnabled: true,
-        compressionThreshold: 1024 // 1KB
+        compressionThreshold: 1024, // 1KB
       },
 
       l3Redis: {
@@ -297,14 +297,14 @@ export class CacheConfigFactory {
         clusterNodes: [
           { host: 'redis-node-1', port: 6379 },
           { host: 'redis-node-2', port: 6379 },
-          { host: 'redis-node-3', port: 6379 }
+          { host: 'redis-node-3', port: 6379 },
         ],
         enableReadReplicas: true,
         readReplicaNodes: [
           { host: 'redis-replica-1', port: 6379 },
-          { host: 'redis-replica-2', port: 6379 }
+          { host: 'redis-replica-2', port: 6379 },
         ],
-        connectionPoolSize: 20
+        connectionPoolSize: 20,
       },
 
       l4Persistent: {
@@ -316,7 +316,7 @@ export class CacheConfigFactory {
         evictionPolicy: 'LRU',
         cleanupInterval: 15 * 60 * 1000, // 15 minutes
         compressionEnabled: true,
-        compressionThreshold: 256 // 256 bytes
+        compressionThreshold: 256, // 256 bytes
       },
 
       predictiveCache: {
@@ -330,7 +330,7 @@ export class CacheConfigFactory {
         enableContextualPredictions: true,
         enableTemporalPredictions: true,
         maxPatternHistory: 50000,
-        predictionBatchSize: 20
+        predictionBatchSize: 20,
       },
 
       incrementalLoading: {
@@ -342,7 +342,7 @@ export class CacheConfigFactory {
         loadTimeout: 30000, // 30 seconds
         retryAttempts: 3,
         retryDelay: 1000,
-        throughputThreshold: 0.8
+        throughputThreshold: 0.8,
       },
 
       monitoring: {
@@ -353,10 +353,10 @@ export class CacheConfigFactory {
           hitRateBelow: 0.85,
           errorRateAbove: 0.01,
           latencyAbove: 200,
-          memoryUsageAbove: 0.85
+          memoryUsageAbove: 0.85,
         },
         enableMetricsExport: true,
-        metricsExportInterval: 60 * 1000 // 1 minute
+        metricsExportInterval: 60 * 1000, // 1 minute
       },
 
       security: {
@@ -365,7 +365,7 @@ export class CacheConfigFactory {
         enableAccessControl: true,
         maxKeyLength: 250,
         maxValueSize: 50 * 1024 * 1024, // 50MB
-        enableAuditLog: true
+        enableAuditLog: true,
       },
 
       enableMultiLayer: true,
@@ -374,7 +374,7 @@ export class CacheConfigFactory {
       enableWarmup: true,
       maxTotalMemoryMB: 2000,
       memoryPressureThreshold: 0.8,
-      globalTTLMultiplier: 1.0
+      globalTTLMultiplier: 1.0,
     };
   }
 
@@ -392,19 +392,19 @@ export class CacheConfigFactory {
       l0Cache: {
         ...prodConfig.l0Cache,
         maxSize: 50,
-        maxMemoryMB: 25
+        maxMemoryMB: 25,
       },
 
       l1Cache: {
         ...prodConfig.l1Cache,
         maxSize: 500,
-        maxMemoryMB: 100
+        maxMemoryMB: 100,
       },
 
       l2Cache: {
         ...prodConfig.l2Cache,
         maxSize: 2000,
-        maxMemoryMB: 200
+        maxMemoryMB: 200,
       },
 
       l3Redis: {
@@ -414,14 +414,14 @@ export class CacheConfigFactory {
         keyPrefix: 'cache:staging:',
         enableCluster: false,
         enableReadReplicas: false,
-        connectionPoolSize: 10
+        connectionPoolSize: 10,
       },
 
       predictiveCache: {
         ...prodConfig.predictiveCache,
         maxPredictions: 50,
         enableMLPredictions: true,
-        maxPatternHistory: 10000
+        maxPatternHistory: 10000,
       },
 
       monitoring: {
@@ -430,18 +430,18 @@ export class CacheConfigFactory {
         alertThresholds: {
           ...prodConfig.monitoring.alertThresholds,
           hitRateBelow: 0.8,
-          latencyAbove: 500
-        }
+          latencyAbove: 500,
+        },
       },
 
       security: {
         ...prodConfig.security,
         enableEncryption: false,
         enableAccessControl: false,
-        enableAuditLog: false
+        enableAuditLog: false,
       },
 
-      maxTotalMemoryMB: 500
+      maxTotalMemoryMB: 500,
     };
   }
 
@@ -460,7 +460,7 @@ export class CacheConfigFactory {
         maxSize: 200,
         maxMemoryMB: 100,
         defaultTTL: 10 * 60 * 1000, // 10 minutes
-        evictionPolicy: 'ARC'
+        evictionPolicy: 'ARC',
       },
 
       l1Cache: {
@@ -468,7 +468,7 @@ export class CacheConfigFactory {
         maxSize: 2000,
         maxMemoryMB: 500,
         defaultTTL: 30 * 60 * 1000, // 30 minutes
-        evictionPolicy: 'ARC'
+        evictionPolicy: 'ARC',
       },
 
       l2Cache: {
@@ -476,7 +476,7 @@ export class CacheConfigFactory {
         maxSize: 10000,
         maxMemoryMB: 1000,
         defaultTTL: 2 * 60 * 60 * 1000, // 2 hours
-        evictionPolicy: 'ARC'
+        evictionPolicy: 'ARC',
       },
 
       predictiveCache: {
@@ -486,14 +486,14 @@ export class CacheConfigFactory {
         predictionHorizon: 60, // 1 hour
         modelUpdateInterval: 30, // 30 minutes
         maxPatternHistory: 100000,
-        predictionBatchSize: 50
+        predictionBatchSize: 50,
       },
 
       incrementalLoading: {
         ...prodConfig.incrementalLoading,
         defaultChunkSize: 200,
         maxParallelLoads: 10,
-        enableAdaptiveChunking: true
+        enableAdaptiveChunking: true,
       },
 
       monitoring: {
@@ -503,12 +503,12 @@ export class CacheConfigFactory {
           hitRateBelow: 0.9,
           errorRateAbove: 0.005,
           latencyAbove: 100,
-          memoryUsageAbove: 0.8
-        }
+          memoryUsageAbove: 0.8,
+        },
       },
 
       maxTotalMemoryMB: 4000,
-      memoryPressureThreshold: 0.7
+      memoryPressureThreshold: 0.7,
     };
   }
 
@@ -527,7 +527,7 @@ export class CacheConfigFactory {
         maxSize: 10,
         maxMemoryMB: 5,
         compressionEnabled: true,
-        compressionThreshold: 512
+        compressionThreshold: 512,
       },
 
       l1Cache: {
@@ -535,7 +535,7 @@ export class CacheConfigFactory {
         maxSize: 50,
         maxMemoryMB: 10,
         compressionEnabled: true,
-        compressionThreshold: 256
+        compressionThreshold: 256,
       },
 
       l2Cache: {
@@ -543,34 +543,34 @@ export class CacheConfigFactory {
         maxSize: 100,
         maxMemoryMB: 15,
         compressionEnabled: true,
-        compressionThreshold: 128
+        compressionThreshold: 128,
       },
 
       l3Redis: {
         ...devConfig.l3Redis,
-        enabled: false
+        enabled: false,
       },
 
       l4Persistent: {
         ...devConfig.l4Persistent,
         maxSize: 500,
-        maxMemoryMB: 20
+        maxMemoryMB: 20,
       },
 
       predictiveCache: {
         ...devConfig.predictiveCache,
-        enabled: false
+        enabled: false,
       },
 
       incrementalLoading: {
         ...devConfig.incrementalLoading,
         defaultChunkSize: 20,
         maxParallelLoads: 1,
-        enableAdaptiveChunking: false
+        enableAdaptiveChunking: false,
       },
 
       maxTotalMemoryMB: 50,
-      memoryPressureThreshold: 0.9
+      memoryPressureThreshold: 0.9,
     };
   }
 
@@ -612,7 +612,9 @@ export class CacheConfigFactory {
       config.l4Persistent.maxMemoryMB;
 
     if (totalMemory > config.maxTotalMemoryMB) {
-      errors.push(`Total layer memory (${totalMemory}MB) exceeds max total memory (${config.maxTotalMemoryMB}MB)`);
+      errors.push(
+        `Total layer memory (${totalMemory}MB) exceeds max total memory (${config.maxTotalMemoryMB}MB)`
+      );
     }
 
     // Validate TTL hierarchy
@@ -638,7 +640,10 @@ export class CacheConfigFactory {
       errors.push('Memory pressure threshold must be between 0 and 1');
     }
 
-    if (config.monitoring.alertThresholds.hitRateBelow <= 0 || config.monitoring.alertThresholds.hitRateBelow > 1) {
+    if (
+      config.monitoring.alertThresholds.hitRateBelow <= 0 ||
+      config.monitoring.alertThresholds.hitRateBelow > 1
+    ) {
       errors.push('Hit rate threshold must be between 0 and 1');
     }
 
@@ -655,7 +660,7 @@ export class CacheConfigFactory {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -677,7 +682,7 @@ export class CacheConfigFactory {
       predictiveCache: { ...baseConfig.predictiveCache, ...overrides.predictiveCache },
       incrementalLoading: { ...baseConfig.incrementalLoading, ...overrides.incrementalLoading },
       monitoring: { ...baseConfig.monitoring, ...overrides.monitoring },
-      security: { ...baseConfig.security, ...overrides.security }
+      security: { ...baseConfig.security, ...overrides.security },
     };
   }
 }

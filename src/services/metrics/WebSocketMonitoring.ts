@@ -50,7 +50,7 @@ export class WebSocketMonitoring {
       this.wss = new WebSocketServer({
         server: this.server,
         path: '/monitoring',
-        clientTracking: true
+        clientTracking: true,
       });
 
       // Set up WebSocket event handlers
@@ -67,7 +67,6 @@ export class WebSocketMonitoring {
         console.log(`WebSocket monitoring server started on port ${this.port}`);
         console.log(`WebSocket endpoint: ws://localhost:${this.port}/monitoring`);
       });
-
     } catch (error) {
       console.error('Failed to initialize WebSocket server:', error);
       throw error;
@@ -90,8 +89,8 @@ export class WebSocketMonitoring {
         metadata: {
           userAgent: request.headers['user-agent'],
           ip: request.socket.remoteAddress,
-          connectedAt: Date.now()
-        }
+          connectedAt: Date.now(),
+        },
       };
 
       this.clients.set(clientId, client);
@@ -103,17 +102,17 @@ export class WebSocketMonitoring {
         data: {
           message: 'Connected to monitoring WebSocket',
           clientId,
-          serverTime: Date.now()
+          serverTime: Date.now(),
         },
         timestamp: Date.now(),
-        id: this.generateMessageId()
+        id: this.generateMessageId(),
       });
 
       // Set up client event handlers
       this.setupClientHandlers(client);
     });
 
-    this.wss.on('error', (error) => {
+    this.wss.on('error', error => {
       console.error('WebSocket server error:', error);
     });
   }
@@ -124,7 +123,7 @@ export class WebSocketMonitoring {
   private setupClientHandlers(client: WebSocketClient): void {
     const { ws, id } = client;
 
-    ws.on('message', (data) => {
+    ws.on('message', data => {
       try {
         const message = JSON.parse(data.toString());
         this.handleClientMessage(client, message);
@@ -143,7 +142,7 @@ export class WebSocketMonitoring {
       this.clients.delete(id);
     });
 
-    ws.on('error', (error) => {
+    ws.on('error', error => {
       console.error(`WebSocket client error (${id}):`, error);
       this.clients.delete(id);
     });
@@ -166,7 +165,7 @@ export class WebSocketMonitoring {
           type: 'heartbeat',
           data: { pong: true, serverTime: Date.now() },
           timestamp: Date.now(),
-          id: this.generateMessageId()
+          id: this.generateMessageId(),
         });
         break;
 
@@ -201,10 +200,10 @@ export class WebSocketMonitoring {
       type: 'subscription',
       data: {
         status: 'updated',
-        subscriptions: Array.from(client.subscriptions)
+        subscriptions: Array.from(client.subscriptions),
       },
       timestamp: Date.now(),
-      id: this.generateMessageId()
+      id: this.generateMessageId(),
     });
   }
 
@@ -220,7 +219,7 @@ export class WebSocketMonitoring {
    * Subscribe to metrics updates
    */
   private subscribeToMetrics(): void {
-    this.metricsSubscription = metricsCollector.subscribe((metrics) => {
+    this.metricsSubscription = metricsCollector.subscribe(metrics => {
       this.broadcastMetrics(metrics);
     });
   }
@@ -233,7 +232,7 @@ export class WebSocketMonitoring {
       type: 'metrics',
       data: metrics,
       timestamp: Date.now(),
-      id: this.generateMessageId()
+      id: this.generateMessageId(),
     };
 
     this.broadcastToSubscribers('metrics', message);
@@ -244,10 +243,12 @@ export class WebSocketMonitoring {
         type: 'alert',
         data: {
           violations: metrics.sla.violations,
-          severity: metrics.sla.violations.some((v: any) => v.severity === 'critical') ? 'critical' : 'warning'
+          severity: metrics.sla.violations.some((v: any) => v.severity === 'critical')
+            ? 'critical'
+            : 'warning',
         },
         timestamp: Date.now(),
-        id: this.generateMessageId()
+        id: this.generateMessageId(),
       };
 
       this.broadcastToSubscribers('alerts', alertMessage);
@@ -258,8 +259,9 @@ export class WebSocketMonitoring {
    * Broadcast message to clients subscribed to a specific channel
    */
   private broadcastToSubscribers(channel: string, message: MonitoringMessage): void {
-    const subscribedClients = Array.from(this.clients.values())
-      .filter(client => client.subscriptions.has(channel));
+    const subscribedClients = Array.from(this.clients.values()).filter(client =>
+      client.subscriptions.has(channel)
+    );
 
     subscribedClients.forEach(client => {
       this.sendMessage(client.id, message);
@@ -291,7 +293,7 @@ export class WebSocketMonitoring {
       type: 'error',
       data: { message: errorMessage },
       timestamp: Date.now(),
-      id: this.generateMessageId()
+      id: this.generateMessageId(),
     });
   }
 
@@ -304,7 +306,7 @@ export class WebSocketMonitoring {
       type: 'metrics',
       data: metrics,
       timestamp: Date.now(),
-      id: this.generateMessageId()
+      id: this.generateMessageId(),
     });
   }
 
@@ -317,8 +319,9 @@ export class WebSocketMonitoring {
       const staleTimeout = 30000; // 30 seconds
 
       // Find stale connections
-      const staleClients = Array.from(this.clients.entries())
-        .filter(([_, client]) => now - client.lastPing > staleTimeout);
+      const staleClients = Array.from(this.clients.entries()).filter(
+        ([_, client]) => now - client.lastPing > staleTimeout
+      );
 
       // Remove stale connections
       staleClients.forEach(([clientId, client]) => {
@@ -333,7 +336,6 @@ export class WebSocketMonitoring {
           client.ws.ping();
         }
       });
-
     }, 15000); // Check every 15 seconds
   }
 
@@ -354,8 +356,8 @@ export class WebSocketMonitoring {
       lastPing: client.lastPing,
       metadata: {
         userAgent: client.metadata.userAgent,
-        ip: client.metadata.ip
-      }
+        ip: client.metadata.ip,
+      },
     }));
   }
 
@@ -367,7 +369,7 @@ export class WebSocketMonitoring {
       type: type as any,
       data,
       timestamp: Date.now(),
-      id: this.generateMessageId()
+      id: this.generateMessageId(),
     };
 
     this.clients.forEach(client => {
@@ -410,7 +412,7 @@ export class WebSocketMonitoring {
       connectedClients: this.clients.size,
       totalMessages: 0, // Would need to track this
       uptime: process.uptime(),
-      subscriptions
+      subscriptions,
     };
   }
 

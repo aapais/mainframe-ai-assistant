@@ -6,7 +6,10 @@
  */
 
 import { IpcMainInvokeEvent } from 'electron';
-import { differentialStateManager, StateChange } from '../../../shared/utils/DifferentialStateManager';
+import {
+  differentialStateManager,
+  StateChange,
+} from '../../../shared/utils/DifferentialStateManager';
 import { IPCManager } from '../IPCManager';
 import { AppError } from '../../../core/errors/AppError';
 
@@ -34,11 +37,14 @@ export interface DifferentialStateResponse<T = any> {
 export class DifferentialStateHandler {
   private ipcManager: IPCManager;
   private stateStorage = new Map<string, any>(); // Server-side state storage
-  private compressionStats = new Map<string, {
-    totalUpdates: number;
-    totalSavings: number;
-    averageRatio: number;
-  }>();
+  private compressionStats = new Map<
+    string,
+    {
+      totalUpdates: number;
+      totalSavings: number;
+      averageRatio: number;
+    }
+  >();
 
   constructor(ipcManager: IPCManager) {
     this.ipcManager = ipcManager;
@@ -56,12 +62,12 @@ export class DifferentialStateHandler {
         batchable: true,
         batchSize: 5,
         batchDelay: 50,
-        validation: (args) => {
+        validation: args => {
           if (!args[0] || typeof args[0] !== 'string') {
             return 'State key is required and must be a string';
           }
           return true;
-        }
+        },
       }
     );
 
@@ -73,7 +79,7 @@ export class DifferentialStateHandler {
         batchable: true,
         batchSize: 3,
         batchDelay: 100,
-        validation: (args) => {
+        validation: args => {
           if (!args[0] || typeof args[0] !== 'string') {
             return 'State key is required and must be a string';
           }
@@ -81,7 +87,7 @@ export class DifferentialStateHandler {
             return 'State data is required';
           }
           return true;
-        }
+        },
       }
     );
 
@@ -92,7 +98,7 @@ export class DifferentialStateHandler {
       {
         cacheable: true,
         cacheTTL: 10000, // 10 seconds
-        validation: (args) => {
+        validation: args => {
           if (!args[0] || typeof args[0] !== 'string') {
             return 'State key is required and must be a string';
           }
@@ -100,7 +106,7 @@ export class DifferentialStateHandler {
             return 'Version number is required';
           }
           return true;
-        }
+        },
       }
     );
 
@@ -109,12 +115,12 @@ export class DifferentialStateHandler {
       'state:subscribe',
       this.handleSubscribe.bind(this),
       {
-        validation: (args) => {
+        validation: args => {
           if (!args[0] || typeof args[0] !== 'string') {
             return 'State key is required and must be a string';
           }
           return true;
-        }
+        },
       }
     );
 
@@ -123,12 +129,12 @@ export class DifferentialStateHandler {
       'state:unsubscribe',
       this.handleUnsubscribe.bind(this),
       {
-        validation: (args) => {
+        validation: args => {
           if (!args[0] || typeof args[0] !== 'string') {
             return 'Subscription ID is required and must be a string';
           }
           return true;
-        }
+        },
       }
     );
 
@@ -138,7 +144,7 @@ export class DifferentialStateHandler {
       this.handleGetMetrics.bind(this),
       {
         cacheable: true,
-        cacheTTL: 5000 // 5 seconds
+        cacheTTL: 5000, // 5 seconds
       }
     );
 
@@ -147,29 +153,28 @@ export class DifferentialStateHandler {
       'state:clear',
       this.handleClearState.bind(this),
       {
-        validation: (args) => {
+        validation: args => {
           if (!args[0] || typeof args[0] !== 'string') {
             return 'State key is required and must be a string';
           }
           return true;
-        }
+        },
       }
     );
 
     // Batch state operations
-    this.ipcManager.registerHandler<[Array<{ operation: 'get' | 'update'; stateKey: string; data?: any }>], Array<DifferentialStateResponse>>(
-      'state:batch',
-      this.handleBatchOperations.bind(this),
-      {
-        batchable: false, // Already a batch operation
-        validation: (args) => {
-          if (!Array.isArray(args[0])) {
-            return 'Operations must be an array';
-          }
-          return true;
+    this.ipcManager.registerHandler<
+      [Array<{ operation: 'get' | 'update'; stateKey: string; data?: any }>],
+      Array<DifferentialStateResponse>
+    >('state:batch', this.handleBatchOperations.bind(this), {
+      batchable: false, // Already a batch operation
+      validation: args => {
+        if (!Array.isArray(args[0])) {
+          return 'Operations must be an array';
         }
-      }
-    );
+        return true;
+      },
+    });
 
     console.log('✅ Differential state handlers registered');
   }
@@ -189,7 +194,7 @@ export class DifferentialStateHandler {
           type: 'full',
           version: 1,
           data: {},
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       }
 
@@ -201,7 +206,11 @@ export class DifferentialStateHandler {
         );
 
         if (differential) {
-          this.updateCompressionStats(stateKey, differential.compressionRatio, differential.metadata.estimatedSavings);
+          this.updateCompressionStats(
+            stateKey,
+            differential.compressionRatio,
+            differential.metadata.estimatedSavings
+          );
 
           return {
             type: 'differential',
@@ -209,7 +218,7 @@ export class DifferentialStateHandler {
             stateChange: differential,
             timestamp: Date.now(),
             compressionRatio: differential.compressionRatio,
-            estimatedSavings: differential.metadata.estimatedSavings
+            estimatedSavings: differential.metadata.estimatedSavings,
           };
         }
       }
@@ -220,15 +229,13 @@ export class DifferentialStateHandler {
         type: 'full',
         version: currentState?.version || 1,
         data: serverState,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-
     } catch (error) {
-      throw new AppError(
-        'STATE_GET_ERROR',
-        `Failed to get state for key: ${stateKey}`,
-        { originalError: error, stateKey }
-      );
+      throw new AppError('STATE_GET_ERROR', `Failed to get state for key: ${stateKey}`, {
+        originalError: error,
+        stateKey,
+      });
     }
   }
 
@@ -245,11 +252,15 @@ export class DifferentialStateHandler {
       // Calculate differential update
       const stateChange = await differentialStateManager.setState(stateKey, newData, {
         enableCompression: true,
-        maxHistoryVersions: 10
+        maxHistoryVersions: 10,
       });
 
       if (stateChange) {
-        this.updateCompressionStats(stateKey, stateChange.compressionRatio, stateChange.metadata.estimatedSavings);
+        this.updateCompressionStats(
+          stateKey,
+          stateChange.compressionRatio,
+          stateChange.metadata.estimatedSavings
+        );
 
         // Broadcast to all subscribed clients
         this.broadcastStateChange(stateKey, stateChange);
@@ -260,7 +271,7 @@ export class DifferentialStateHandler {
           stateChange,
           timestamp: Date.now(),
           compressionRatio: stateChange.compressionRatio,
-          estimatedSavings: stateChange.metadata.estimatedSavings
+          estimatedSavings: stateChange.metadata.estimatedSavings,
         };
       } else {
         // No changes detected
@@ -269,16 +280,14 @@ export class DifferentialStateHandler {
           type: 'full',
           version: currentState?.version || 1,
           data: newData,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       }
-
     } catch (error) {
-      throw new AppError(
-        'STATE_UPDATE_ERROR',
-        `Failed to update state for key: ${stateKey}`,
-        { originalError: error, stateKey }
-      );
+      throw new AppError('STATE_UPDATE_ERROR', `Failed to update state for key: ${stateKey}`, {
+        originalError: error,
+        stateKey,
+      });
     }
   }
 
@@ -297,7 +306,11 @@ export class DifferentialStateHandler {
         return null;
       }
 
-      this.updateCompressionStats(stateKey, differential.compressionRatio, differential.metadata.estimatedSavings);
+      this.updateCompressionStats(
+        stateKey,
+        differential.compressionRatio,
+        differential.metadata.estimatedSavings
+      );
 
       return {
         type: 'differential',
@@ -305,9 +318,8 @@ export class DifferentialStateHandler {
         stateChange: differential,
         timestamp: Date.now(),
         compressionRatio: differential.compressionRatio,
-        estimatedSavings: differential.metadata.estimatedSavings
+        estimatedSavings: differential.metadata.estimatedSavings,
       };
-
     } catch (error) {
       throw new AppError(
         'DIFFERENTIAL_GET_ERROR',
@@ -317,38 +329,33 @@ export class DifferentialStateHandler {
     }
   }
 
-  private async handleSubscribe(
-    event: IpcMainInvokeEvent,
-    stateKey: string
-  ): Promise<string> {
+  private async handleSubscribe(event: IpcMainInvokeEvent, stateKey: string): Promise<string> {
     try {
       const subscriptionId = differentialStateManager.subscribe(
         stateKey,
-        (stateChange) => {
+        stateChange => {
           // Send change notification to client
           event.sender.send('state:change', {
             subscriptionId,
             stateKey,
             stateChange,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         },
         {
           immediate: true,
           throttleMs: 100,
           maxDiffSize: 50 * 1024, // 50KB
-          fallbackToFull: true
+          fallbackToFull: true,
         }
       );
 
       return subscriptionId;
-
     } catch (error) {
-      throw new AppError(
-        'STATE_SUBSCRIBE_ERROR',
-        `Failed to subscribe to state: ${stateKey}`,
-        { originalError: error, stateKey }
-      );
+      throw new AppError('STATE_SUBSCRIBE_ERROR', `Failed to subscribe to state: ${stateKey}`, {
+        originalError: error,
+        stateKey,
+      });
     }
   }
 
@@ -371,7 +378,7 @@ export class DifferentialStateHandler {
       const compressionMetrics = Array.from(this.compressionStats.entries()).map(
         ([stateKey, stats]) => ({
           stateKey,
-          ...stats
+          ...stats,
         })
       );
 
@@ -379,22 +386,16 @@ export class DifferentialStateHandler {
         global: globalMetrics,
         compression: compressionMetrics,
         serverStates: Array.from(this.stateStorage.keys()).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-
     } catch (error) {
-      throw new AppError(
-        'METRICS_GET_ERROR',
-        'Failed to get differential state metrics',
-        { originalError: error }
-      );
+      throw new AppError('METRICS_GET_ERROR', 'Failed to get differential state metrics', {
+        originalError: error,
+      });
     }
   }
 
-  private async handleClearState(
-    event: IpcMainInvokeEvent,
-    stateKey: string
-  ): Promise<boolean> {
+  private async handleClearState(event: IpcMainInvokeEvent, stateKey: string): Promise<boolean> {
     try {
       this.stateStorage.delete(stateKey);
       differentialStateManager.clearState(stateKey);
@@ -437,7 +438,7 @@ export class DifferentialStateHandler {
           data: null,
           timestamp: Date.now(),
           // @ts-ignore - adding error to response for batch context
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -451,16 +452,22 @@ export class DifferentialStateHandler {
     await differentialStateManager.setState(stateKey, initialData);
   }
 
-  private updateCompressionStats(stateKey: string, compressionRatio: number, savings: number): void {
+  private updateCompressionStats(
+    stateKey: string,
+    compressionRatio: number,
+    savings: number
+  ): void {
     const existing = this.compressionStats.get(stateKey) || {
       totalUpdates: 0,
       totalSavings: 0,
-      averageRatio: 0
+      averageRatio: 0,
     };
 
     existing.totalUpdates++;
     existing.totalSavings += savings;
-    existing.averageRatio = ((existing.averageRatio * (existing.totalUpdates - 1)) + compressionRatio) / existing.totalUpdates;
+    existing.averageRatio =
+      (existing.averageRatio * (existing.totalUpdates - 1) + compressionRatio) /
+      existing.totalUpdates;
 
     this.compressionStats.set(stateKey, existing);
   }
@@ -471,7 +478,7 @@ export class DifferentialStateHandler {
     this.ipcManager.emit('state:broadcast', {
       stateKey,
       stateChange,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -485,7 +492,7 @@ export class DifferentialStateHandler {
       { key: 'kb-entries', data: [] },
       { key: 'user-preferences', data: {} },
       { key: 'system-health', data: { status: 'unknown' } },
-      { key: 'performance-metrics', data: {} }
+      { key: 'performance-metrics', data: {} },
     ];
 
     for (const state of commonStates) {

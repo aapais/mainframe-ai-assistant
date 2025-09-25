@@ -1,22 +1,22 @@
 /**
  * IPC Handler Registry
- * 
+ *
  * Central registry for managing IPC handlers with performance monitoring,
  * error handling, and security validation.
  */
 
 import { EventEmitter } from 'events';
 import type { IpcMainInvokeEvent } from 'electron';
-import { 
-  IPCChannel, 
-  IPCHandlerFunction, 
+import {
+  IPCChannel,
+  IPCHandlerFunction,
   IPCHandlerConfig,
   BaseIPCRequest,
   BaseIPCResponse,
   IPCError,
   IPCErrorCode,
   PerformanceMetrics,
-  ChannelMetrics
+  ChannelMetrics,
 } from '../../types/ipc';
 import { IPCSecurityManager } from './security/IPCSecurityManager';
 import { AppError } from '../../backend/core/errors/AppError';
@@ -78,16 +78,16 @@ export class IPCHandlerRegistry extends EventEmitter {
         allowedRoles: [],
         rateLimitConfig: {
           requests: 100,
-          windowMs: 60000 // 1 minute
+          windowMs: 60000, // 1 minute
         },
         validateInput: true,
         sanitizeInput: true,
         trackMetrics: true,
         logRequests: false,
         alertOnErrors: false,
-        ...config
+        ...config,
       },
-      metrics: this.initializeChannelMetrics()
+      metrics: this.initializeChannelMetrics(),
     };
 
     this.handlers.set(channel, registration);
@@ -127,13 +127,13 @@ export class IPCHandlerRegistry extends EventEmitter {
   ): Promise<BaseIPCResponse> {
     const executionId = this.generateExecutionId();
     const startTime = Date.now();
-    
+
     const executionContext: ExecutionContext = {
       requestId: executionId,
       channel,
       startTime,
       userId: context?.userId,
-      sessionId: context?.sessionId
+      sessionId: context?.sessionId,
     };
 
     this.activeRequests.set(executionId, executionContext);
@@ -158,7 +158,12 @@ export class IPCHandlerRegistry extends EventEmitter {
       );
 
       if (!securityResult.valid) {
-        this.updateMetrics(channel, startTime, false, securityResult.error?.code || IPCErrorCode.VALIDATION_FAILED);
+        this.updateMetrics(
+          channel,
+          startTime,
+          false,
+          securityResult.error?.code || IPCErrorCode.VALIDATION_FAILED
+        );
         return this.createErrorResponse(
           executionId,
           startTime,
@@ -180,7 +185,7 @@ export class IPCHandlerRegistry extends EventEmitter {
           requestId: executionId,
           timestamp: new Date().toISOString(),
           userId: context?.userId,
-          sanitized: !!securityResult.sanitizedArgs
+          sanitized: !!securityResult.sanitizedArgs,
         });
       }
 
@@ -200,7 +205,7 @@ export class IPCHandlerRegistry extends EventEmitter {
         channel,
         requestId: executionId,
         success: true,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       // Add metadata to response
@@ -215,14 +220,13 @@ export class IPCHandlerRegistry extends EventEmitter {
           streamed: false,
           performanceMetrics: {
             totalTime: Date.now() - startTime,
-            validationTime: securityResult.sanitizedArgs ? 10 : 0 // Estimate
+            validationTime: securityResult.sanitizedArgs ? 10 : 0, // Estimate
           },
-          ...response.metadata
-        }
+          ...response.metadata,
+        },
       };
 
       return enhancedResponse;
-
     } catch (error) {
       // Update metrics for failed execution
       this.updateMetrics(channel, startTime, false, 'EXECUTION_ERROR');
@@ -230,40 +234,35 @@ export class IPCHandlerRegistry extends EventEmitter {
       // Handle different error types
       const errorCode = this.getErrorCode(error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       // Emit error event
       this.emit('request:complete', {
         channel,
         requestId: executionId,
         success: false,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
       this.emit('error', {
         error: {
           code: errorCode,
           message: errorMessage,
-          details: error
+          details: error,
         },
         channel,
-        requestId: executionId
+        requestId: executionId,
       });
 
       // Log error
       console.error(`❌ IPC Handler Error [${channel}]:`, {
         requestId: executionId,
         error: errorMessage,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
 
-      return this.createErrorResponse(
-        executionId,
-        startTime,
-        errorCode,
-        errorMessage,
-        { originalError: error instanceof Error ? error.stack : error }
-      );
-
+      return this.createErrorResponse(executionId, startTime, errorCode, errorMessage, {
+        originalError: error instanceof Error ? error.stack : error,
+      });
     } finally {
       this.activeRequests.delete(executionId);
     }
@@ -299,7 +298,7 @@ export class IPCHandlerRegistry extends EventEmitter {
   } {
     const now = Date.now();
     const windowMs = 60000; // 1 minute
-    
+
     // Calculate metrics across all channels
     let totalRequests = 0;
     let totalErrors = 0;
@@ -310,7 +309,7 @@ export class IPCHandlerRegistry extends EventEmitter {
       totalRequests += metrics.totalRequests;
       totalErrors += metrics.errorCount;
       totalExecutionTime += metrics.totalExecutionTime;
-      
+
       // Count recent requests (last minute)
       if (now - metrics.lastRequestTime < windowMs) {
         recentRequests += metrics.throughputPerSecond;
@@ -322,7 +321,7 @@ export class IPCHandlerRegistry extends EventEmitter {
       totalHandlers: this.handlers.size,
       averageResponseTime: totalRequests > 0 ? totalExecutionTime / totalRequests : 0,
       errorRate: totalRequests > 0 ? totalErrors / totalRequests : 0,
-      throughputPerSecond: recentRequests
+      throughputPerSecond: recentRequests,
     };
   }
 
@@ -343,27 +342,33 @@ export class IPCHandlerRegistry extends EventEmitter {
       channels.push({
         channel,
         healthScore,
-        ...metrics
+        ...metrics,
       });
 
       // Generate recommendations
       if (healthScore < 70) {
         recommendations.push(`Channel ${channel} has poor performance (health: ${healthScore}%)`);
       }
-      
+
       if (metrics.errorRate > 0.1) {
-        recommendations.push(`Channel ${channel} has high error rate: ${(metrics.errorRate * 100).toFixed(1)}%`);
+        recommendations.push(
+          `Channel ${channel} has high error rate: ${(metrics.errorRate * 100).toFixed(1)}%`
+        );
       }
-      
+
       if (metrics.p95ExecutionTime > 5000) {
-        recommendations.push(`Channel ${channel} has slow response times (P95: ${metrics.p95ExecutionTime}ms)`);
+        recommendations.push(
+          `Channel ${channel} has slow response times (P95: ${metrics.p95ExecutionTime}ms)`
+        );
       }
     });
 
     // System-level recommendations
     const systemMetrics = this.getRealTimeMetrics();
     if (systemMetrics.errorRate > 0.05) {
-      recommendations.push(`System-wide error rate is high: ${(systemMetrics.errorRate * 100).toFixed(1)}%`);
+      recommendations.push(
+        `System-wide error rate is high: ${(systemMetrics.errorRate * 100).toFixed(1)}%`
+      );
     }
 
     if (systemMetrics.activeRequests > 100) {
@@ -374,7 +379,7 @@ export class IPCHandlerRegistry extends EventEmitter {
       timestamp: Date.now(),
       channels: channels.sort((a, b) => b.healthScore - a.healthScore),
       systemMetrics,
-      recommendations
+      recommendations,
     };
   }
 
@@ -388,7 +393,7 @@ export class IPCHandlerRegistry extends EventEmitter {
     const shutdownTimeout = 5000; // 5 seconds
     const startTime = Date.now();
 
-    while (this.activeRequests.size > 0 && (Date.now() - startTime) < shutdownTimeout) {
+    while (this.activeRequests.size > 0 && Date.now() - startTime < shutdownTimeout) {
       console.log(`⏳ Waiting for ${this.activeRequests.size} active requests to complete...`);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -416,48 +421,48 @@ export class IPCHandlerRegistry extends EventEmitter {
       handler(request),
       new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Handler execution timeout')), timeoutMs);
-      })
+      }),
     ]);
   }
 
   private getTimeoutForChannel(channel: string): number {
     const registration = this.handlers.get(channel);
-    
+
     // Channel-specific timeouts
     if (channel.startsWith('kb:search:ai')) return 10000; // 10s for AI
     if (channel.startsWith('system:')) return 5000; // 5s for system operations
     if (channel.startsWith('patterns:')) return 15000; // 15s for pattern detection
-    
+
     return registration?.config.rateLimitConfig?.windowMs || 30000; // Default 30s
   }
 
   private updateMetrics(
-    channel: string, 
-    startTime: number, 
-    success: boolean, 
+    channel: string,
+    startTime: number,
+    success: boolean,
     errorCode?: string
   ): void {
     const metrics = this.executionMetrics.get(channel);
     if (!metrics) return;
 
     const executionTime = Date.now() - startTime;
-    
+
     metrics.totalRequests++;
     metrics.totalExecutionTime += executionTime;
     metrics.averageExecutionTime = metrics.totalExecutionTime / metrics.totalRequests;
     metrics.lastRequestTime = Date.now();
-    
+
     if (success) {
       metrics.successCount++;
     } else {
       metrics.errorCount++;
     }
-    
+
     metrics.errorRate = metrics.errorCount / metrics.totalRequests;
-    
+
     // Update percentiles (simplified)
     this.updateExecutionTimePercentiles(metrics, executionTime);
-    
+
     // Update throughput (requests per second)
     metrics.throughputPerSecond = this.calculateThroughput(metrics);
   }
@@ -473,22 +478,25 @@ export class IPCHandlerRegistry extends EventEmitter {
   private calculateThroughput(metrics: ChannelMetrics): number {
     const windowMs = 60000; // 1 minute
     const now = Date.now();
-    
+
     if (now - metrics.lastRequestTime > windowMs) {
       return 0;
     }
-    
+
     // Simplified throughput calculation
     // In production, you'd maintain a sliding window
-    return metrics.totalRequests / ((now - (metrics.lastRequestTime - metrics.totalExecutionTime)) / 1000);
+    return (
+      metrics.totalRequests /
+      ((now - (metrics.lastRequestTime - metrics.totalExecutionTime)) / 1000)
+    );
   }
 
   private calculateChannelHealthScore(metrics: ChannelMetrics): number {
     let score = 100;
-    
+
     // Penalize high error rates
     score -= metrics.errorRate * 50;
-    
+
     // Penalize slow response times
     if (metrics.averageExecutionTime > 1000) {
       score -= 20;
@@ -496,7 +504,7 @@ export class IPCHandlerRegistry extends EventEmitter {
     if (metrics.averageExecutionTime > 5000) {
       score -= 30;
     }
-    
+
     // Penalize very high or very low usage
     if (metrics.throughputPerSecond > 100) {
       score -= 10; // High load
@@ -504,7 +512,7 @@ export class IPCHandlerRegistry extends EventEmitter {
     if (metrics.totalRequests < 10) {
       score -= 5; // Low usage might indicate issues
     }
-    
+
     return Math.max(0, Math.min(100, score));
   }
 
@@ -525,8 +533,8 @@ export class IPCHandlerRegistry extends EventEmitter {
         message,
         details,
         severity: this.getErrorSeverity(code),
-        retryable: this.isRetryableError(code)
-      }
+        retryable: this.isRetryableError(code),
+      },
     };
   }
 
@@ -534,15 +542,15 @@ export class IPCHandlerRegistry extends EventEmitter {
     if (error instanceof AppError) {
       return error.code as IPCErrorCode;
     }
-    
+
     if (error?.code) {
       return error.code as IPCErrorCode;
     }
-    
+
     if (error?.message?.includes('timeout')) {
       return IPCErrorCode.TIMEOUT;
     }
-    
+
     return IPCErrorCode.HANDLER_ERROR;
   }
 
@@ -550,21 +558,21 @@ export class IPCHandlerRegistry extends EventEmitter {
     const criticalErrors = [
       IPCErrorCode.DATABASE_ERROR,
       IPCErrorCode.UNHANDLED_REJECTION,
-      IPCErrorCode.MEMORY_ERROR
+      IPCErrorCode.MEMORY_ERROR,
     ];
-    
+
     const highErrors = [
       IPCErrorCode.HANDLER_ERROR,
       IPCErrorCode.EXTERNAL_SERVICE_ERROR,
-      IPCErrorCode.NETWORK_ERROR
+      IPCErrorCode.NETWORK_ERROR,
     ];
-    
+
     const mediumErrors = [
       IPCErrorCode.VALIDATION_FAILED,
       IPCErrorCode.TIMEOUT,
-      IPCErrorCode.CACHE_ERROR
+      IPCErrorCode.CACHE_ERROR,
     ];
-    
+
     if (criticalErrors.includes(code)) return 'critical';
     if (highErrors.includes(code)) return 'high';
     if (mediumErrors.includes(code)) return 'medium';
@@ -576,9 +584,9 @@ export class IPCHandlerRegistry extends EventEmitter {
       IPCErrorCode.TIMEOUT,
       IPCErrorCode.NETWORK_ERROR,
       IPCErrorCode.EXTERNAL_SERVICE_ERROR,
-      IPCErrorCode.DATABASE_ERROR
+      IPCErrorCode.DATABASE_ERROR,
     ];
-    
+
     return retryableErrors.includes(code);
   }
 
@@ -594,7 +602,7 @@ export class IPCHandlerRegistry extends EventEmitter {
       p95ExecutionTime: 0,
       p99ExecutionTime: 0,
       throughputPerSecond: 0,
-      lastRequestTime: 0
+      lastRequestTime: 0,
     };
   }
 
@@ -606,9 +614,9 @@ export class IPCHandlerRegistry extends EventEmitter {
       'kb:entry:get',
       'kb:entry:create',
       'system:metrics:get',
-      'system:health:check'
+      'system:health:check',
     ];
-    
+
     commonChannels.forEach(channel => {
       this.executionMetrics.set(channel, this.initializeChannelMetrics());
     });
@@ -619,7 +627,7 @@ export class IPCHandlerRegistry extends EventEmitter {
     setInterval(() => {
       this.emit('metrics:updated', {
         timestamp: Date.now(),
-        metrics: this.getRealTimeMetrics()
+        metrics: this.getRealTimeMetrics(),
       });
     }, 30000);
   }

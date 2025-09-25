@@ -3,14 +3,14 @@
  * Tests all monitoring components and integration
  */
 
-import { 
-  MonitoredSearchService, 
+import {
+  MonitoredSearchService,
   SearchPerformanceMonitor,
   MonitoringOrchestrator,
   AlertingEngine,
   SearchLogger,
   PerformanceProfiler,
-  DEV_MONITORING_CONFIG 
+  DEV_MONITORING_CONFIG,
 } from './index';
 
 describe('Search Performance Monitoring', () => {
@@ -32,7 +32,7 @@ describe('Search Performance Monitoring', () => {
     performanceMonitor.recordSearch('slow query', 1500, 1, false, 'fallback', []);
 
     const metrics = await performanceMonitor.getCurrentMetrics();
-    
+
     expect(metrics.totalQueries).toBe(3);
     expect(metrics.avgResponseTime).toBeGreaterThan(0);
     expect(metrics.slaViolations).toBe(1); // The 1500ms query
@@ -41,7 +41,7 @@ describe('Search Performance Monitoring', () => {
 
   test('should detect SLA violations', () => {
     const violations: any[] = [];
-    performanceMonitor.on('sla_violation', (violation) => {
+    performanceMonitor.on('sla_violation', violation => {
       violations.push(violation);
     });
 
@@ -61,7 +61,7 @@ describe('Search Performance Monitoring', () => {
     });
 
     const metrics = await performanceMonitor.getCurrentMetrics();
-    
+
     expect(metrics.p50ResponseTime).toBe(500); // Median
     expect(metrics.p95ResponseTime).toBe(950); // 95th percentile
     expect(metrics.p99ResponseTime).toBe(990); // 99th percentile
@@ -77,7 +77,7 @@ describe('Alerting Engine', () => {
 
   test('should trigger alerts when rules are violated', () => {
     const triggeredAlerts: any[] = [];
-    alertingEngine.on('alert_triggered', (alert) => {
+    alertingEngine.on('alert_triggered', alert => {
       triggeredAlerts.push(alert);
     });
 
@@ -89,7 +89,7 @@ describe('Alerting Engine', () => {
       threshold: 1000,
       severity: 'warning',
       channels: ['console'],
-      description: 'Test rule'
+      description: 'Test rule',
     });
 
     // Test the rule
@@ -102,7 +102,7 @@ describe('Alerting Engine', () => {
 
   test('should handle different operators', () => {
     const triggeredAlerts: any[] = [];
-    alertingEngine.on('alert_triggered', (alert) => {
+    alertingEngine.on('alert_triggered', alert => {
       triggeredAlerts.push(alert);
     });
 
@@ -113,7 +113,7 @@ describe('Alerting Engine', () => {
       operator: '>',
       threshold: 100,
       severity: 'info',
-      channels: ['console']
+      channels: ['console'],
     });
 
     alertingEngine.addRule({
@@ -122,7 +122,7 @@ describe('Alerting Engine', () => {
       operator: '<',
       threshold: 80,
       severity: 'warning',
-      channels: ['console']
+      channels: ['console'],
     });
 
     // Test the rules
@@ -162,7 +162,7 @@ describe('Performance Profiler', () => {
 
   test('should detect bottlenecks', async () => {
     const bottlenecks: any[] = [];
-    profiler.on('bottleneck_detected', (bottleneck) => {
+    profiler.on('bottleneck_detected', bottleneck => {
       bottlenecks.push(bottleneck);
     });
 
@@ -186,7 +186,7 @@ describe('Search Logger', () => {
 
   test('should log search operations', () => {
     const logs: any[] = [];
-    logger.addDestination('memory', (entry) => logs.push(entry));
+    logger.addDestination('memory', entry => logs.push(entry));
 
     logger.logSearch({
       traceId: 'test_trace',
@@ -194,7 +194,7 @@ describe('Search Logger', () => {
       duration: 250,
       resultCount: 5,
       cacheHit: true,
-      strategy: 'fuzzy'
+      strategy: 'fuzzy',
     });
 
     expect(logs).toHaveLength(1);
@@ -206,7 +206,7 @@ describe('Search Logger', () => {
   test('should filter logs by level', () => {
     const logs: any[] = [];
     logger.setLevel('warn');
-    logger.addDestination('memory', (entry) => logs.push(entry));
+    logger.addDestination('memory', entry => logs.push(entry));
 
     logger.debug('Debug message');
     logger.info('Info message');
@@ -225,7 +225,7 @@ describe('Monitoring Orchestrator', () => {
   beforeEach(() => {
     orchestrator = new MonitoringOrchestrator({
       ...DEV_MONITORING_CONFIG,
-      database: { path: ':memory:' }
+      database: { path: ':memory:' },
     });
   });
 
@@ -249,7 +249,7 @@ describe('Monitoring Orchestrator', () => {
     await orchestrator.start();
 
     orchestrator.recordSearch('test query', 250, 5, true, 'fuzzy');
-    
+
     const metrics = await orchestrator.getCurrentMetrics();
     expect(metrics.totalQueries).toBe(1);
     expect(metrics.avgResponseTime).toBe(250);
@@ -262,7 +262,7 @@ describe('Monitored Search Service Integration', () => {
   beforeEach(async () => {
     const config = {
       ...DEV_MONITORING_CONFIG,
-      database: { path: ':memory:' }
+      database: { path: ':memory:' },
     };
     searchService = new MonitoredSearchService(':memory:', config);
     await searchService.initialize();
@@ -321,7 +321,7 @@ describe('Performance Benchmarks', () => {
   beforeEach(async () => {
     const config = {
       ...DEV_MONITORING_CONFIG,
-      database: { path: ':memory:' }
+      database: { path: ':memory:' },
     };
     searchService = new MonitoredSearchService(':memory:', config);
     await searchService.initialize();
@@ -333,7 +333,7 @@ describe('Performance Benchmarks', () => {
 
   test('should run benchmarks successfully', async () => {
     const results = await searchService.runBenchmarks();
-    
+
     expect(results).toBeTruthy();
     expect(results.queries).toBeDefined();
     expect(results.results).toBeDefined();
@@ -344,7 +344,7 @@ describe('Performance Benchmarks', () => {
   test('should meet SLA requirements during benchmarks', async () => {
     const results = await searchService.runBenchmarks();
     const metrics = results.metrics;
-    
+
     // Check SLA compliance
     expect(metrics.slaCompliance).toBeGreaterThan(90); // Should be > 90%
     expect(metrics.avgResponseTime).toBeLessThan(1000); // Should be < 1000ms on average

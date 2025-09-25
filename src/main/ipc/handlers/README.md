@@ -1,10 +1,14 @@
 # Categorization and Tagging API Handlers
 
-This directory contains comprehensive IPC handlers for the flexible categorization and tagging system. The implementation provides RESTful-style API endpoints through Electron's IPC system with full transaction support, real-time updates, and intelligent autocomplete capabilities.
+This directory contains comprehensive IPC handlers for the flexible
+categorization and tagging system. The implementation provides RESTful-style API
+endpoints through Electron's IPC system with full transaction support, real-time
+updates, and intelligent autocomplete capabilities.
 
 ## Overview
 
-The categorization and tagging system consists of several interconnected handlers:
+The categorization and tagging system consists of several interconnected
+handlers:
 
 - **CategoryHandler**: Hierarchical category management
 - **TagHandler**: Tag CRUD operations and associations
@@ -53,6 +57,7 @@ The categorization and tagging system consists of several interconnected handler
 ### Category Management
 
 #### Create Category
+
 ```typescript
 // IPC Channel: 'category:create'
 interface CategoryCreateRequest {
@@ -74,20 +79,21 @@ interface CategoryCreateRequest {
 const response = await ipcRenderer.invoke('category:create', {
   requestId: uuid(),
   category: {
-    name: "COBOL Programs",
-    description: "COBOL-related knowledge entries",
-    parent_id: "mainframe-technologies",
-    color: "#3B82F6",
-    icon: "code"
+    name: 'COBOL Programs',
+    description: 'COBOL-related knowledge entries',
+    parent_id: 'mainframe-technologies',
+    color: '#3B82F6',
+    icon: 'code',
   },
   options: {
     validateParent: true,
-    checkDuplicates: true
-  }
+    checkDuplicates: true,
+  },
 });
 ```
 
 #### Get Category Hierarchy
+
 ```typescript
 // IPC Channel: 'category:hierarchy'
 interface CategoryHierarchyRequest {
@@ -106,195 +112,204 @@ const hierarchy = await ipcRenderer.invoke('category:hierarchy', {
   options: {
     maxDepth: 5,
     includeAnalytics: true,
-    includeInactive: false
-  }
+    includeInactive: false,
+  },
 });
 ```
 
 #### Move Category
+
 ```typescript
 // IPC Channel: 'category:move'
 const moveResponse = await ipcRenderer.invoke('category:move', {
   requestId: uuid(),
-  id: "category-id",
-  new_parent_id: "new-parent-id",
+  id: 'category-id',
+  new_parent_id: 'new-parent-id',
   position: 2,
   options: {
     validateMove: true,
-    preserveOrder: false
-  }
+    preserveOrder: false,
+  },
 });
 ```
 
 ### Tag Management
 
 #### Create Tag
+
 ```typescript
 // IPC Channel: 'tag:create'
 const tagResponse = await ipcRenderer.invoke('tag:create', {
   requestId: uuid(),
   tag: {
-    name: "performance-issue",
-    description: "Performance-related problems and solutions",
-    color: "#F59E0B",
-    category: "troubleshooting"
+    name: 'performance-issue',
+    description: 'Performance-related problems and solutions',
+    color: '#F59E0B',
+    category: 'troubleshooting',
   },
   options: {
     checkDuplicates: true,
-    autoComplete: true
-  }
+    autoComplete: true,
+  },
 });
 ```
 
 #### Associate Tag with KB Entry
+
 ```typescript
 // IPC Channel: 'tag:associate'
 const associationResponse = await ipcRenderer.invoke('tag:associate', {
   requestId: uuid(),
-  tag_id: "performance-issue-tag-id",
-  entry_id: "kb-entry-id",
+  tag_id: 'performance-issue-tag-id',
+  entry_id: 'kb-entry-id',
   relevance_score: 0.9,
   confidence_level: 0.8,
   metadata: {
     auto_generated: false,
-    source: "user"
-  }
+    source: 'user',
+  },
 });
 ```
 
 #### Get Tag Suggestions
+
 ```typescript
 // IPC Channel: 'tag:suggestions'
 const suggestions = await ipcRenderer.invoke('tag:suggestions', {
   requestId: uuid(),
   entry_content: {
-    title: "COBOL S0C7 Data Exception",
-    problem: "Program abends with S0C7 during arithmetic operation",
-    solution: "Check numeric field initialization and data validation",
-    category: "Batch"
+    title: 'COBOL S0C7 Data Exception',
+    problem: 'Program abends with S0C7 during arithmetic operation',
+    solution: 'Check numeric field initialization and data validation',
+    category: 'Batch',
   },
   options: {
     limit: 10,
     confidence_threshold: 0.6,
-    include_auto_generated: true
-  }
+    include_auto_generated: true,
+  },
 });
 ```
 
 ### Autocomplete and Search
 
 #### Get Autocomplete Suggestions
+
 ```typescript
 // IPC Channel: 'autocomplete:suggestions'
 const autocomplete = await ipcRenderer.invoke('autocomplete:suggestions', {
   requestId: uuid(),
-  query: "vsam",
+  query: 'vsam',
   context: {
-    current_category: "VSAM",
-    user_id: "user-123",
-    session_id: "session-456"
+    current_category: 'VSAM',
+    user_id: 'user-123',
+    session_id: 'session-456',
   },
   options: {
     max_suggestions: 10,
     min_confidence: 0.1,
     sources: ['categories', 'tags', 'entries', 'history'],
     include_learning: true,
-    fuzzy_matching: true
-  }
+    fuzzy_matching: true,
+  },
 });
 ```
 
 #### Unified Search
+
 ```typescript
 // IPC Channel: 'autocomplete:search'
 const searchResults = await ipcRenderer.invoke('autocomplete:search', {
   requestId: uuid(),
-  query: "database connection",
-  search_type: "unified",
+  query: 'database connection',
+  search_type: 'unified',
   context: {
-    current_category: "DB2"
+    current_category: 'DB2',
   },
   options: {
     limit: 20,
     include_analytics: true,
-    boost_popular: true
-  }
+    boost_popular: true,
+  },
 });
 ```
 
 #### Learn from User Selection
+
 ```typescript
 // IPC Channel: 'autocomplete:learn'
 const learning = await ipcRenderer.invoke('autocomplete:learn', {
   requestId: uuid(),
-  query: "vsam status 35",
+  query: 'vsam status 35',
   selected_suggestion: {
-    text: "VSAM Status 35 - File Not Found",
-    type: "entry",
+    text: 'VSAM Status 35 - File Not Found',
+    type: 'entry',
     confidence: 0.95,
-    source: "entries"
+    source: 'entries',
   },
   context: {
-    current_category: "VSAM"
+    current_category: 'VSAM',
   },
   outcome: {
     was_helpful: true,
     result_found: true,
-    time_to_result: 1500 // milliseconds
-  }
+    time_to_result: 1500, // milliseconds
+  },
 });
 ```
 
 ### Bulk Operations
 
 #### Execute Bulk Operations
+
 ```typescript
 // IPC Channel: 'bulk:execute'
 const bulkResult = await ipcRenderer.invoke('bulk:execute', {
   requestId: uuid(),
   operations: [
     {
-      id: "op-1",
-      type: "category_create",
+      id: 'op-1',
+      type: 'category_create',
       data: {
-        name: "System Utilities",
-        description: "System utility programs",
-        parent_id: "mainframe-systems"
-      }
+        name: 'System Utilities',
+        description: 'System utility programs',
+        parent_id: 'mainframe-systems',
+      },
     },
     {
-      id: "op-2",
-      type: "tag_create",
+      id: 'op-2',
+      type: 'tag_create',
       data: {
-        name: "utility",
-        description: "Utility programs and scripts"
+        name: 'utility',
+        description: 'Utility programs and scripts',
       },
-      dependencies: ["op-1"] // Wait for category creation
+      dependencies: ['op-1'], // Wait for category creation
     },
     {
-      id: "op-3",
-      type: "kb_entry_create",
+      id: 'op-3',
+      type: 'kb_entry_create',
       data: {
-        title: "Using IEBGENER for File Copy",
-        problem: "Need to copy datasets efficiently",
-        solution: "Use IEBGENER utility with appropriate JCL",
-        category_id: "op-1", // Reference to created category
-        tags: ["op-2"] // Reference to created tag
+        title: 'Using IEBGENER for File Copy',
+        problem: 'Need to copy datasets efficiently',
+        solution: 'Use IEBGENER utility with appropriate JCL',
+        category_id: 'op-1', // Reference to created category
+        tags: ['op-2'], // Reference to created tag
       },
-      dependencies: ["op-1", "op-2"]
-    }
+      dependencies: ['op-1', 'op-2'],
+    },
   ],
   options: {
     transaction: true,
     stop_on_error: true,
     validate_dependencies: true,
     validate_all_first: true,
-    parallel_execution: false
-  }
+    parallel_execution: false,
+  },
 });
 ```
 
 #### Validate Bulk Operations
+
 ```typescript
 // IPC Channel: 'bulk:validate'
 const validation = await ipcRenderer.invoke('bulk:validate', {
@@ -303,14 +318,15 @@ const validation = await ipcRenderer.invoke('bulk:validate', {
   options: {
     check_dependencies: true,
     check_permissions: true,
-    dry_run: true
-  }
+    dry_run: true,
+  },
 });
 ```
 
 ### Real-time Updates
 
 #### Subscribe to Real-time Events
+
 ```typescript
 // IPC Channel: 'realtime:subscribe'
 const subscription = await ipcRenderer.invoke('realtime:subscribe', {
@@ -320,22 +336,22 @@ const subscription = await ipcRenderer.invoke('realtime:subscribe', {
       'category_created',
       'category_updated',
       'tag_created',
-      'kb_entry_updated'
+      'kb_entry_updated',
     ],
     filters: {
-      categories: ["mainframe-systems", "vsam"],
-      exclude_own_events: true
+      categories: ['mainframe-systems', 'vsam'],
+      exclude_own_events: true,
     },
     options: {
       batch_events: false,
       include_historical: true,
-      historical_limit: 20
-    }
-  }
+      historical_limit: 20,
+    },
+  },
 });
 
 // Listen for real-time events
-realtimeHandler.on('subscription_event', (data) => {
+realtimeHandler.on('subscription_event', data => {
   const { subscription_id, event } = data;
   console.log('Real-time event received:', event.type, event.data);
 
@@ -355,6 +371,7 @@ realtimeHandler.on('subscription_event', (data) => {
 ```
 
 #### Broadcast Custom Events
+
 ```typescript
 // IPC Channel: 'realtime:broadcast'
 const broadcast = await ipcRenderer.invoke('realtime:broadcast', {
@@ -363,20 +380,20 @@ const broadcast = await ipcRenderer.invoke('realtime:broadcast', {
     type: 'search_performed',
     source: 'user-search',
     data: {
-      query: "VSAM issues",
+      query: 'VSAM issues',
       results_count: 15,
-      user_id: "user-123"
+      user_id: 'user-123',
     },
     metadata: {
-      user_id: "user-123",
-      session_id: "session-456",
-      change_summary: "User performed search for VSAM issues"
-    }
+      user_id: 'user-123',
+      session_id: 'session-456',
+      change_summary: 'User performed search for VSAM issues',
+    },
   },
   options: {
     persist: true,
-    exclude_subscribers: [] // Broadcast to all
-  }
+    exclude_subscribers: [], // Broadcast to all
+  },
 });
 ```
 
@@ -401,6 +418,7 @@ interface IPCErrorResponse {
 ```
 
 Common error codes:
+
 - `VALIDATION_FAILED`: Input validation errors
 - `ENTRY_NOT_FOUND`: Resource not found
 - `DUPLICATE_ENTRY`: Duplicate resource creation
@@ -410,18 +428,21 @@ Common error codes:
 ## Performance Features
 
 ### Caching
+
 - **Multi-layer caching**: Memory + disk caching with intelligent invalidation
 - **Cache tags**: Granular cache invalidation by entity type
 - **TTL management**: Automatic cache expiration
 - **Hit rate optimization**: Popular queries cached longer
 
 ### Rate Limiting
+
 - **Per-operation limits**: Different limits for read/write operations
 - **Burst protection**: Prevents system overload
 - **User-based limits**: Per-user rate limiting
 - **Graceful degradation**: Fallback mechanisms when limits exceeded
 
 ### Transaction Support
+
 - **ACID compliance**: Full transaction support for bulk operations
 - **Rollback capability**: Automatic rollback on failure
 - **Dependency management**: Topological sorting for dependent operations
@@ -444,7 +465,7 @@ const categorizationSystem = setupCategorizationHandlers(
 categorizationSystem.emitCategoryEvent('created', {
   id: 'new-category-id',
   name: 'New Category',
-  parent_id: 'parent-id'
+  parent_id: 'parent-id',
 });
 ```
 
@@ -457,7 +478,7 @@ export class CategoryClient {
     const response = await window.electronAPI.invoke('category:create', {
       requestId: uuidv4(),
       category: categoryData,
-      options: { validateParent: true, checkDuplicates: true }
+      options: { validateParent: true, checkDuplicates: true },
     });
 
     if (!response.success) {
@@ -471,7 +492,7 @@ export class CategoryClient {
     const response = await window.electronAPI.invoke('category:hierarchy', {
       requestId: uuidv4(),
       parent_id: parentId,
-      options: { includeAnalytics: true }
+      options: { includeAnalytics: true },
     });
 
     return response.data;
@@ -491,8 +512,8 @@ describe('CategoryHandler', () => {
       requestId: 'test-request',
       category: {
         name: 'Test Category',
-        description: 'Test description'
-      }
+        description: 'Test description',
+      },
     };
 
     const response = await categoryHandler.handleCategoryCreate(request);
@@ -503,7 +524,7 @@ describe('CategoryHandler', () => {
   test('should validate category input', async () => {
     const request = {
       requestId: 'test-request',
-      category: { name: '' } // Invalid empty name
+      category: { name: '' }, // Invalid empty name
     };
 
     const response = await categoryHandler.handleCategoryCreate(request);
@@ -528,7 +549,7 @@ Use the analytics endpoints to monitor system health:
 // Get system status
 const status = await ipcRenderer.invoke('realtime:status', {
   requestId: uuid(),
-  include_stats: true
+  include_stats: true,
 });
 
 // Get autocomplete analytics
@@ -538,9 +559,11 @@ const analytics = await ipcRenderer.invoke('autocomplete:analytics', {
   options: {
     include_learning_metrics: true,
     include_performance_metrics: true,
-    include_popular_queries: true
-  }
+    include_popular_queries: true,
+  },
 });
 ```
 
-This comprehensive API provides all the functionality needed for a flexible, high-performance categorization and tagging system with real-time updates and intelligent suggestions.
+This comprehensive API provides all the functionality needed for a flexible,
+high-performance categorization and tagging system with real-time updates and
+intelligent suggestions.

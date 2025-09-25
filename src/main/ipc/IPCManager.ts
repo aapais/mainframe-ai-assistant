@@ -85,7 +85,7 @@ export class IPCManager extends EventEmitter {
       averageResponseTime: 0,
       cacheHitRate: 0,
       batchedRequests: 0,
-      streamedRequests: 0
+      streamedRequests: 0,
     };
 
     this.initialize();
@@ -95,10 +95,13 @@ export class IPCManager extends EventEmitter {
     // Set up global error handler for unhandled promise rejections in IPC
     process.on('unhandledRejection', (reason, promise) => {
       console.error('Unhandled IPC promise rejection:', reason);
-      this.emit('error', new AppError('IPC_UNHANDLED_REJECTION', 'Unhandled promise rejection in IPC', {
-        reason: reason,
-        promise: promise
-      }));
+      this.emit(
+        'error',
+        new AppError('IPC_UNHANDLED_REJECTION', 'Unhandled promise rejection in IPC', {
+          reason: reason,
+          promise: promise,
+        })
+      );
     });
   }
 
@@ -112,7 +115,10 @@ export class IPCManager extends EventEmitter {
   ): void {
     // Validate handler function
     if (typeof handler !== 'function') {
-      throw new AppError('IPC_INVALID_HANDLER', `Handler for channel ${channel} must be a function`);
+      throw new AppError(
+        'IPC_INVALID_HANDLER',
+        `Handler for channel ${channel} must be a function`
+      );
     }
 
     // Store handler configuration
@@ -126,8 +132,8 @@ export class IPCManager extends EventEmitter {
         streamChunkSize: 1000,
         cacheable: false,
         cacheTTL: 300000, // 5 minutes default
-        ...config
-      }
+        ...config,
+      },
     });
 
     // Register with Electron's IPC system
@@ -136,7 +142,7 @@ export class IPCManager extends EventEmitter {
     console.log(`✅ Registered IPC handler: ${channel}`, {
       batchable: config.batchable,
       streamable: config.streamable,
-      cacheable: config.cacheable
+      cacheable: config.cacheable,
     });
   }
 
@@ -150,7 +156,10 @@ export class IPCManager extends EventEmitter {
       const handlerInfo = this.handlers.get(channel);
 
       if (!handlerInfo) {
-        throw new AppError('IPC_HANDLER_NOT_FOUND', `No handler registered for channel: ${channel}`);
+        throw new AppError(
+          'IPC_HANDLER_NOT_FOUND',
+          `No handler registered for channel: ${channel}`
+        );
       }
 
       try {
@@ -158,15 +167,22 @@ export class IPCManager extends EventEmitter {
         this.metrics.totalRequests++;
 
         // Rate limiting check
-        if (handlerInfo.config.rateLimit && !this.checkRateLimit(channel, handlerInfo.config.rateLimit)) {
-          throw new AppError('IPC_RATE_LIMIT_EXCEEDED', `Rate limit exceeded for channel: ${channel}`);
+        if (
+          handlerInfo.config.rateLimit &&
+          !this.checkRateLimit(channel, handlerInfo.config.rateLimit)
+        ) {
+          throw new AppError(
+            'IPC_RATE_LIMIT_EXCEEDED',
+            `Rate limit exceeded for channel: ${channel}`
+          );
         }
 
         // Validation
         if (handlerInfo.config.validation) {
           const validationResult = handlerInfo.config.validation(args);
           if (validationResult !== true) {
-            throw new AppError('IPC_VALIDATION_FAILED', 
+            throw new AppError(
+              'IPC_VALIDATION_FAILED',
               typeof validationResult === 'string' ? validationResult : 'Request validation failed'
             );
           }
@@ -191,12 +207,16 @@ export class IPCManager extends EventEmitter {
           if (handlerInfo.config.batchable) {
             // Handle batchable requests
             this.metrics.batchedRequests++;
-            result = await this.requestBatcher.addRequest({
-              id: requestId,
-              channel,
-              data: args,
-              timestamp: startTime
-            }, handlerInfo.handler, event);
+            result = await this.requestBatcher.addRequest(
+              {
+                id: requestId,
+                channel,
+                data: args,
+                timestamp: startTime,
+              },
+              handlerInfo.handler,
+              event
+            );
           } else if (handlerInfo.config.streamable) {
             // Handle streamable requests
             this.metrics.streamedRequests++;
@@ -232,17 +252,20 @@ export class IPCManager extends EventEmitter {
             cached: fromCache,
             streamed: handlerInfo.config.streamable,
             batched: handlerInfo.config.batchable,
-            executionTime
-          }
+            executionTime,
+          },
         } as IPCResponse;
-
       } catch (error) {
         this.metrics.totalErrors++;
-        const appError = error instanceof AppError ? error : 
-          new AppError('IPC_HANDLER_ERROR', `Error in IPC handler ${channel}`, { originalError: error });
-        
+        const appError =
+          error instanceof AppError
+            ? error
+            : new AppError('IPC_HANDLER_ERROR', `Error in IPC handler ${channel}`, {
+                originalError: error,
+              });
+
         console.error(`❌ IPC Error in ${channel}:`, appError);
-        
+
         // Emit error event for monitoring
         this.emit('error', appError);
 
@@ -251,11 +274,11 @@ export class IPCManager extends EventEmitter {
           error: {
             code: appError.code,
             message: appError.message,
-            details: appError.details
+            details: appError.details,
           },
           metadata: {
-            executionTime: Date.now() - startTime
-          }
+            executionTime: Date.now() - startTime,
+          },
         } as IPCResponse;
       }
     };
@@ -300,7 +323,7 @@ export class IPCManager extends EventEmitter {
       averageResponseTime: 0,
       cacheHitRate: 0,
       batchedRequests: 0,
-      streamedRequests: 0
+      streamedRequests: 0,
     };
   }
 
@@ -310,7 +333,7 @@ export class IPCManager extends EventEmitter {
   getHandlersInfo(): Array<{ channel: string; config: IPCHandlerConfig }> {
     return Array.from(this.handlers.entries()).map(([channel, info]) => ({
       channel,
-      config: info.config
+      config: info.config,
     }));
   }
 
@@ -345,7 +368,7 @@ export class IPCManager extends EventEmitter {
       // Reset or initialize rate limiter
       this.rateLimiters.set(key, {
         requests: 1,
-        resetTime: now + config.window
+        resetTime: now + config.window,
       });
       return true;
     }

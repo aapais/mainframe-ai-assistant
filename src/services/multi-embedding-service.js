@@ -13,7 +13,7 @@ class MultiEmbeddingService {
       gemini: config.gemini,
       azure: config.azure,
       provider: config.provider || 'openai', // default provider
-      model: config.model || 'ada-002'
+      model: config.model || 'ada-002',
     };
 
     this.cache = new Map();
@@ -43,7 +43,7 @@ class MultiEmbeddingService {
         defaultQuery: { 'api-version': this.config.azure.apiVersion || '2023-12-01-preview' },
         defaultHeaders: {
           'api-key': this.config.azure.apiKey,
-        }
+        },
       });
       console.log('✅ Azure OpenAI embeddings initialized');
     }
@@ -57,14 +57,14 @@ class MultiEmbeddingService {
       openai: {
         'ada-002': { dimensions: 1536, maxTokens: 8191, name: 'text-embedding-ada-002' },
         '3-small': { dimensions: 1536, maxTokens: 8191, name: 'text-embedding-3-small' },
-        '3-large': { dimensions: 3072, maxTokens: 8191, name: 'text-embedding-3-large' }
+        '3-large': { dimensions: 3072, maxTokens: 8191, name: 'text-embedding-3-large' },
       },
       gemini: {
-        'embedding-001': { dimensions: 768, maxTokens: 2048, name: 'models/embedding-001' }
+        'embedding-001': { dimensions: 768, maxTokens: 2048, name: 'models/embedding-001' },
       },
       azure: {
-        'ada-002': { dimensions: 1536, maxTokens: 8191, name: 'text-embedding-ada-002' }
-      }
+        'ada-002': { dimensions: 1536, maxTokens: 8191, name: 'text-embedding-ada-002' },
+      },
     };
 
     return modelSpecs[provider]?.[model] || { dimensions: 1536, maxTokens: 8191, name: 'unknown' };
@@ -124,7 +124,7 @@ class MultiEmbeddingService {
           timestamp: Date.now(),
           provider,
           model,
-          dimensions: embedding.length
+          dimensions: embedding.length,
         });
 
         console.log(`✅ Generated ${provider} embedding (${embedding.length}D)`);
@@ -216,7 +216,9 @@ class MultiEmbeddingService {
 
     for (let i = 0; i < texts.length; i += batchSize) {
       const batch = texts.slice(i, i + batchSize);
-      console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(texts.length/batchSize)}`);
+      console.log(
+        `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(texts.length / batchSize)}`
+      );
 
       const batchPromises = batch.map(text => this.generateEmbedding(text, options));
       const batchResults = await Promise.all(batchPromises);
@@ -265,7 +267,7 @@ class MultiEmbeddingService {
     return {
       size: this.cache.size,
       providers: [...new Set(Array.from(this.cache.values()).map(v => v.provider))],
-      totalDimensions: Array.from(this.cache.values()).reduce((sum, v) => sum + v.dimensions, 0)
+      totalDimensions: Array.from(this.cache.values()).reduce((sum, v) => sum + v.dimensions, 0),
     };
   }
 

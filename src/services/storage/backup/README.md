@@ -2,7 +2,10 @@
 
 ## Overview
 
-The backup service provides enterprise-grade backup, restore, scheduling, and validation capabilities for the Mainframe AI Assistant. It implements multiple backup strategies, supports various destinations, and includes comprehensive monitoring and recovery features.
+The backup service provides enterprise-grade backup, restore, scheduling, and
+validation capabilities for the Mainframe AI Assistant. It implements multiple
+backup strategies, supports various destinations, and includes comprehensive
+monitoring and recovery features.
 
 ## Architecture
 
@@ -20,6 +23,7 @@ src/services/storage/backup/
 ## Key Features
 
 ### 1. Backup Service (`BackupService.ts`)
+
 - **Multiple Destinations**: Support for local, network, and cloud storage
 - **Parallel Operations**: Concurrent backups to multiple destinations
 - **Progress Tracking**: Real-time progress reporting with detailed metrics
@@ -28,27 +32,35 @@ src/services/storage/backup/
 - **Health Monitoring**: Comprehensive health checks and alerting
 
 ### 2. Backup Strategies (`BackupStrategy.ts`)
+
 - **Full Backup**: Complete database backup (baseline)
 - **Incremental Backup**: Changes since last backup (minimal storage)
 - **Differential Backup**: Changes since last full backup (balanced approach)
-- **Smart Strategy Selection**: Automatic strategy recommendation based on data characteristics
+- **Smart Strategy Selection**: Automatic strategy recommendation based on data
+  characteristics
 
 ### 3. Backup Scheduler (`BackupScheduler.ts`)
+
 - **Cron Expressions**: Full cron syntax support with validation
 - **Retry Logic**: Exponential backoff with configurable retry policies
-- **Conditional Execution**: Blackout periods, maintenance windows, system load checks
+- **Conditional Execution**: Blackout periods, maintenance windows, system load
+  checks
 - **Notifications**: Multi-channel notifications (email, webhook, logs)
 - **Performance Monitoring**: Schedule performance tracking and optimization
 
 ### 4. Restore Service (`RestoreService.ts`)
-- **Point-in-Time Recovery**: Restore to any point in time with backup chain reconstruction
+
+- **Point-in-Time Recovery**: Restore to any point in time with backup chain
+  reconstruction
 - **Validation**: Comprehensive post-restore validation
 - **Strategy Handling**: Automatic handling of different backup types
 - **Progress Tracking**: Real-time restore progress monitoring
 - **Error Recovery**: Rollback capabilities and partial restore cleanup
 
 ### 5. Backup Validator (`BackupValidator.ts`)
-- **Multi-Level Validation**: Checksum, integrity, schema, and performance validation
+
+- **Multi-Level Validation**: Checksum, integrity, schema, and performance
+  validation
 - **Rule-Based System**: Extensible validation rules with severity levels
 - **Detailed Reporting**: Comprehensive validation reports with recommendations
 - **Performance Monitoring**: Validation performance tracking
@@ -78,8 +90,8 @@ await backupService.addDestination({
     maxBackupCount: 200,
     compressionLevel: 9,
     encryptionEnabled: true,
-    encryptionKey: 'my-encryption-key'
-  }
+    encryptionKey: 'my-encryption-key',
+  },
 });
 ```
 
@@ -93,7 +105,7 @@ await backupService.scheduleBackup(
     strategy: BackupConfigurations.NIGHTLY_FULL.strategy,
     description: 'Automated nightly full backup',
     validateAfterBackup: true,
-    notifyOnCompletion: true
+    notifyOnCompletion: true,
   }
 );
 
@@ -103,18 +115,18 @@ await backupService.scheduleBackup(
   {
     strategy: 'incremental',
     description: 'Business hours incremental backup',
-    priority: 'normal'
+    priority: 'normal',
   },
   {
     conditions: {
       maxConcurrentBackups: 1,
-      systemLoadThreshold: 80
+      systemLoadThreshold: 80,
     },
     notifications: {
       onFailure: true,
       channels: ['webhook'],
-      webhookUrl: 'https://my-webhook.com/backup-alerts'
-    }
+      webhookUrl: 'https://my-webhook.com/backup-alerts',
+    },
   }
 );
 ```
@@ -132,8 +144,8 @@ const backupJobId = await backupService.createBackup({
   tags: ['migration', 'manual'],
   metadata: {
     reason: 'System migration preparation',
-    requestedBy: 'admin@company.com'
-  }
+    requestedBy: 'admin@company.com',
+  },
 });
 
 // Monitor backup progress
@@ -142,7 +154,7 @@ const monitorBackup = async (jobId: string) => {
   console.log(`Status: ${job.status}`);
   console.log(`Progress: ${job.progress.percentage}%`);
   console.log(`Phase: ${job.progress.phase}`);
-  
+
   if (job.status === 'running') {
     setTimeout(() => monitorBackup(jobId), 5000);
   } else {
@@ -180,10 +192,10 @@ const restoreJobId = await restoreService.restore({
   overwriteExisting: true,
   restoreOptions: {
     selectiveTables: ['kb_entries', 'patterns'],
-    progressCallback: (progress) => {
+    progressCallback: progress => {
       console.log(`Restore progress: ${progress.percentage}%`);
-    }
-  }
+    },
+  },
 });
 
 // Monitor restore progress
@@ -204,9 +216,9 @@ const validationResult = await validator.validate(
   'expected-checksum-hash',
   {
     expectedSize: 50 * 1024 * 1024, // 50MB
-    progressCallback: (progress) => {
+    progressCallback: progress => {
       console.log(`Validation: ${progress.percentage}% - ${progress.phase}`);
-    }
+    },
   }
 );
 
@@ -333,14 +345,15 @@ for (const schedule of schedules) {
 
 ## Error Handling
 
-The backup service includes comprehensive error handling with specific error types:
+The backup service includes comprehensive error handling with specific error
+types:
 
 ```typescript
-import { 
-  BackupServiceError, 
-  BackupValidationError, 
-  RestoreError, 
-  ScheduleError 
+import {
+  BackupServiceError,
+  BackupValidationError,
+  RestoreError,
+  ScheduleError,
 } from './backup';
 
 try {
@@ -359,6 +372,7 @@ try {
 ## Best Practices
 
 ### 1. Backup Strategy Selection
+
 - Use **full backups** for:
   - Small databases (< 100MB)
   - Weekly/monthly archives
@@ -375,24 +389,28 @@ try {
   - Most common scenarios
 
 ### 2. Destination Management
+
 - Configure multiple destinations for redundancy
 - Use different storage types (local + cloud)
 - Set appropriate priority levels
 - Monitor destination health regularly
 
 ### 3. Scheduling
+
 - Avoid peak business hours for large backups
 - Use incremental backups during business hours
 - Configure maintenance windows appropriately
 - Set up proper retry policies
 
 ### 4. Validation
+
 - Always validate critical backups
 - Use quick validation for frequent checks
 - Configure appropriate validation rules
 - Monitor validation performance
 
 ### 5. Monitoring
+
 - Set up health check monitoring
 - Configure appropriate alert thresholds
 - Monitor backup success rates
@@ -411,22 +429,20 @@ await storageService.initialize(config);
 // Backup operations are available through storage service
 const backupResult = await storageService.backup({
   strategy: 'full',
-  description: 'Scheduled backup'
+  description: 'Scheduled backup',
 });
 
 // Restore operations
-const restoreResult = await storageService.restore(
-  'backup-file-path.db',
-  {
-    includeValidation: true,
-    overwriteExisting: true
-  }
-);
+const restoreResult = await storageService.restore('backup-file-path.db', {
+  includeValidation: true,
+  overwriteExisting: true,
+});
 ```
 
 ## Performance Considerations
 
 ### Optimization Tips
+
 1. **Compression**: Use appropriate compression levels (6-9 for production)
 2. **Concurrency**: Limit concurrent backups based on system resources
 3. **Scheduling**: Distribute backup times to avoid resource conflicts
@@ -434,6 +450,7 @@ const restoreResult = await storageService.restore(
 5. **Cleanup**: Regular cleanup of expired backups and temp files
 
 ### Resource Requirements
+
 - **Memory**: ~100MB base + 10% of backup size during compression
 - **CPU**: Moderate during compression, low during transfer
 - **Disk**: 2x backup size temporary space for validation
@@ -469,11 +486,13 @@ Enable debug logging for troubleshooting:
 
 ```typescript
 const backupService = BackupServiceFactory.createDefault(adapter);
-backupService.on('backup:progress', (job) => {
-  console.log(`DEBUG: ${job.id} - ${job.progress.phase} ${job.progress.percentage}%`);
+backupService.on('backup:progress', job => {
+  console.log(
+    `DEBUG: ${job.id} - ${job.progress.phase} ${job.progress.percentage}%`
+  );
 });
 
-backupService.on('backup:failed', (job) => {
+backupService.on('backup:failed', job => {
   console.error(`DEBUG: Backup failed - ${job.error}`);
 });
 ```

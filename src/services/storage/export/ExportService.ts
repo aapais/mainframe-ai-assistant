@@ -21,7 +21,7 @@ import {
   ExportMetadata,
   ProgressCallback,
   KBEntry,
-  IKnowledgeBaseService
+  IKnowledgeBaseService,
 } from '../../../types/services';
 
 export interface ExportJob {
@@ -59,7 +59,7 @@ export class ExportService extends EventEmitter implements IExportService {
       maxConcurrentJobs: 3,
       defaultBatchSize: 1000,
       enableCompression: true,
-      retainJobHistory: true
+      retainJobHistory: true,
     }
   ) {
     super();
@@ -67,7 +67,7 @@ export class ExportService extends EventEmitter implements IExportService {
     this.dataTransformer = new DataTransformer();
     this.batchProcessor = new BatchProcessor({
       batchSize: this.options.defaultBatchSize,
-      enableProgress: true
+      enableProgress: true,
     });
   }
 
@@ -82,43 +82,42 @@ export class ExportService extends EventEmitter implements IExportService {
   ): Promise<ExportResult> {
     const jobId = uuidv4();
     const job = this.createJob(jobId, format, outputPath, options);
-    
+
     this.jobs.set(jobId, job);
-    
+
     try {
       this.emit('job:started', job);
-      
+
       // Fetch data with filters
       const entries = await this.fetchFilteredEntries(options);
-      
+
       // Transform data if needed
       const transformedData = await this.transformData(entries, options);
-      
+
       // Convert to target format
       const result = await this.performExport(
         format,
         transformedData,
         outputPath,
         options,
-        (progress) => {
+        progress => {
           job.progress = progress;
           this.emit('job:progress', job);
           progressCallback?.(progress);
         }
       );
-      
+
       job.status = 'completed';
       job.endTime = new Date();
       job.result = result;
-      
+
       this.emit('job:completed', job);
       return result;
-      
     } catch (error) {
       job.status = 'failed';
       job.endTime = new Date();
       job.error = error as Error;
-      
+
       this.emit('job:failed', job);
       throw error;
     }
@@ -148,7 +147,7 @@ export class ExportService extends EventEmitter implements IExportService {
           const batch = await this.kbService.list({
             offset,
             limit: batchSize,
-            ...options.filters
+            ...options.filters,
           });
 
           if (batch.data.length === 0) {
@@ -158,23 +157,20 @@ export class ExportService extends EventEmitter implements IExportService {
           }
 
           // Transform and convert batch
-          const transformedBatch = options.transform 
+          const transformedBatch = options.transform
             ? batch.data.map(options.transform)
             : batch.data;
 
-          const convertedData = await this.formatConverter.convert(
-            transformedBatch,
-            format,
-            { streaming: true }
-          );
+          const convertedData = await this.formatConverter.convert(transformedBatch, format, {
+            streaming: true,
+          });
 
           this.push(convertedData);
           offset += batchSize;
-          
         } catch (error) {
           this.emit('error', error);
         }
-      }
+      },
     });
   }
 
@@ -196,13 +192,9 @@ export class ExportService extends EventEmitter implements IExportService {
     const jobBatches = this.chunkArray(jobs, this.options.maxConcurrentJobs);
 
     for (const batch of jobBatches) {
-      const batchPromises = batch.map(async (job) => {
+      const batchPromises = batch.map(async job => {
         try {
-          const result = await this.export(
-            job.format,
-            job.outputPath,
-            job.options
-          );
+          const result = await this.export(job.format, job.outputPath, job.options);
           completedJobs++;
           progressCallback?.(completedJobs, jobs.length);
           return result;
@@ -214,8 +206,8 @@ export class ExportService extends EventEmitter implements IExportService {
       });
 
       const batchResults = await Promise.allSettled(batchPromises);
-      
-      batchResults.forEach((result) => {
+
+      batchResults.forEach(result => {
         if (result.status === 'fulfilled') {
           results.push(result.value);
         } else {
@@ -229,7 +221,7 @@ export class ExportService extends EventEmitter implements IExportService {
             exportedCount: 0,
             metadata: {} as ExportMetadata,
             processingTime: 0,
-            error: result.reason.message
+            error: result.reason.message,
           });
         }
       });
@@ -248,7 +240,7 @@ export class ExportService extends EventEmitter implements IExportService {
   ): Promise<ExportResult> {
     // Get system-specific configuration
     const systemConfig = this.getSystemConfig(targetSystem);
-    
+
     // Apply system-specific transformations
     const enhancedOptions: ExportOptions = {
       ...options,
@@ -256,23 +248,19 @@ export class ExportService extends EventEmitter implements IExportService {
       includeSystemMetadata: true,
       transform: {
         ...options.transform,
-        ...systemConfig.fieldMappings
-      }
+        ...systemConfig.fieldMappings,
+      },
     };
 
     // Add system-specific headers/metadata
     if (systemConfig.requiresHeaders) {
       enhancedOptions.customHeaders = {
         ...options.customHeaders,
-        ...systemConfig.headers
+        ...systemConfig.headers,
       };
     }
 
-    return this.export(
-      systemConfig.preferredFormat,
-      outputPath,
-      enhancedOptions
-    );
+    return this.export(systemConfig.preferredFormat, outputPath, enhancedOptions);
   }
 
   /**
@@ -284,19 +272,15 @@ export class ExportService extends EventEmitter implements IExportService {
     options: ExportOptions = {}
   ): Promise<ExportResult> {
     const compatibilityOptions = this.getCompatibilityOptions(targetVersion);
-    
+
     const enhancedOptions: ExportOptions = {
       ...options,
       ...compatibilityOptions,
       includeVersionInfo: true,
-      targetVersion
+      targetVersion,
     };
 
-    return this.export(
-      options.format || 'json',
-      outputPath,
-      enhancedOptions
-    );
+    return this.export(options.format || 'json', outputPath, enhancedOptions);
   }
 
   /**
@@ -317,7 +301,7 @@ export class ExportService extends EventEmitter implements IExportService {
 
     job.status = 'cancelled';
     job.endTime = new Date();
-    
+
     this.emit('job:cancelled', job);
     return true;
   }
@@ -332,7 +316,10 @@ export class ExportService extends EventEmitter implements IExportService {
   /**
    * Validate export options
    */
-  validateOptions(format: ExportFormat, options: ExportOptions): {
+  validateOptions(
+    format: ExportFormat,
+    options: ExportOptions
+  ): {
     valid: boolean;
     errors: string[];
     warnings: string[];
@@ -361,7 +348,7 @@ export class ExportService extends EventEmitter implements IExportService {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -389,14 +376,14 @@ export class ExportService extends EventEmitter implements IExportService {
         source_system: 'Mainframe KB Assistant',
         target_format: format,
         export_options: options,
-        compatibility_version: options.targetVersion || 'latest'
-      }
+        compatibility_version: options.targetVersion || 'latest',
+      },
     };
   }
 
   private async fetchFilteredEntries(options: ExportOptions): Promise<KBEntry[]> {
     const listOptions: any = {
-      limit: options.limit || 10000
+      limit: options.limit || 10000,
     };
 
     // Apply filters
@@ -433,7 +420,7 @@ export class ExportService extends EventEmitter implements IExportService {
       includeHistory: options.includeHistory,
       customTransform: options.transform,
       targetSystem: options.targetSystem,
-      version: options.targetVersion
+      version: options.targetVersion,
     });
   }
 
@@ -445,7 +432,7 @@ export class ExportService extends EventEmitter implements IExportService {
     progressCallback: ProgressCallback
   ): Promise<ExportResult> {
     const startTime = Date.now();
-    
+
     try {
       // Convert data to target format
       const convertedData = await this.formatConverter.convert(data, format, {
@@ -453,7 +440,7 @@ export class ExportService extends EventEmitter implements IExportService {
         compression: options.compression,
         encoding: options.encoding,
         customHeaders: options.customHeaders,
-        onProgress: progressCallback
+        onProgress: progressCallback,
       });
 
       // Ensure output directory exists
@@ -468,10 +455,10 @@ export class ExportService extends EventEmitter implements IExportService {
       }
 
       const processingTime = Date.now() - startTime;
-      
+
       // Generate file stats
       const stats = await fs.stat(outputPath);
-      
+
       return {
         success: true,
         jobId: uuidv4(),
@@ -490,11 +477,10 @@ export class ExportService extends EventEmitter implements IExportService {
           total_entries: data.length,
           file_size: stats.size,
           encoding: options.encoding || 'utf8',
-          compression: options.compression || 'none'
+          compression: options.compression || 'none',
         },
-        processingTime
+        processingTime,
       };
-      
     } catch (error) {
       return {
         success: false,
@@ -504,7 +490,7 @@ export class ExportService extends EventEmitter implements IExportService {
         exportedCount: 0,
         metadata: {} as ExportMetadata,
         processingTime: Date.now() - startTime,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -516,45 +502,45 @@ export class ExportService extends EventEmitter implements IExportService {
         requiresHeaders: true,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json',
         },
         fieldMappings: {
-          'title': 'short_description',
-          'problem': 'description',
-          'solution': 'resolution_notes',
-          'category': 'category'
-        }
+          title: 'short_description',
+          problem: 'description',
+          solution: 'resolution_notes',
+          category: 'category',
+        },
       },
       jira: {
         preferredFormat: 'json' as ExportFormat,
         requiresHeaders: true,
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         fieldMappings: {
-          'title': 'summary',
-          'problem': 'description',
-          'solution': 'resolution',
-          'category': 'issuetype'
-        }
+          title: 'summary',
+          problem: 'description',
+          solution: 'resolution',
+          category: 'issuetype',
+        },
       },
       confluence: {
         preferredFormat: 'xml' as ExportFormat,
         requiresHeaders: false,
         fieldMappings: {
-          'solution': 'body'
-        }
+          solution: 'body',
+        },
       },
       sharepoint: {
         preferredFormat: 'csv' as ExportFormat,
         requiresHeaders: false,
-        fieldMappings: {}
+        fieldMappings: {},
       },
       generic: {
         preferredFormat: 'json' as ExportFormat,
         requiresHeaders: false,
-        fieldMappings: {}
-      }
+        fieldMappings: {},
+      },
     };
 
     return configs[system] || configs.generic;
@@ -565,18 +551,18 @@ export class ExportService extends EventEmitter implements IExportService {
       '1.0': {
         format: 'json' as ExportFormat,
         includeMetrics: false,
-        includeHistory: false
+        includeHistory: false,
       },
       '1.1': {
         format: 'json' as ExportFormat,
         includeMetrics: true,
-        includeHistory: false
+        includeHistory: false,
       },
       '2.0': {
         format: 'json' as ExportFormat,
         includeMetrics: true,
-        includeHistory: true
-      }
+        includeHistory: true,
+      },
     };
 
     return versionConfigs[version] || versionConfigs['2.0'];

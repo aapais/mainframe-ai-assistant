@@ -84,7 +84,7 @@ export class CacheKeyGenerator {
       filters: options.filters || [],
       quickFilters: options.quickFilters || [],
       searchQuery: options.searchQuery || '',
-      includeArchived: options.includeArchived || false
+      includeArchived: options.includeArchived || false,
     };
 
     // Create deterministic key
@@ -112,7 +112,7 @@ export class CacheKeyGenerator {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
@@ -131,7 +131,7 @@ export class CacheService extends EventEmitter {
     hits: 0,
     misses: 0,
     evictions: 0,
-    totalSize: 0
+    totalSize: 0,
   };
 
   constructor(db: Database, config: Partial<CacheConfig> = {}) {
@@ -149,7 +149,7 @@ export class CacheService extends EventEmitter {
       preloadStrategies: ['popular', 'recent'],
       performanceMonitoring: true,
       hitRateThreshold: 0.7,
-      ...config
+      ...config,
     };
 
     this.initializeDbCache();
@@ -163,11 +163,15 @@ export class CacheService extends EventEmitter {
   /**
    * Get item from cache with multi-level lookup
    */
-  async get<T>(key: string, fallback?: () => Promise<T>, options?: {
-    ttl?: number;
-    tags?: string[];
-    priority?: CachePriority;
-  }): Promise<T | null> {
+  async get<T>(
+    key: string,
+    fallback?: () => Promise<T>,
+    options?: {
+      ttl?: number;
+      tags?: string[];
+      priority?: CachePriority;
+    }
+  ): Promise<T | null> {
     const startTime = performance.now();
 
     // Level 1: Memory cache
@@ -324,7 +328,9 @@ export class CacheService extends EventEmitter {
     if (!this.config.preloadStrategies.includes('popular')) return;
 
     // Get popular searches from usage metrics
-    const popularQueries = this.db.prepare(`
+    const popularQueries = this.db
+      .prepare(
+        `
       SELECT search_query, filter_context, COUNT(*) as usage_count
       FROM usage_metrics
       WHERE search_query IS NOT NULL
@@ -332,7 +338,9 @@ export class CacheService extends EventEmitter {
       GROUP BY search_query, filter_context
       ORDER BY usage_count DESC
       LIMIT 20
-    `).all();
+    `
+      )
+      .all();
 
     // Preload these searches
     for (const query of popularQueries) {
@@ -365,10 +373,10 @@ export class CacheService extends EventEmitter {
       memoryCache: memoryStats,
       dbCache: dbStats,
       overall: {
-        hitRate: (this.stats.hits / (this.stats.hits + this.stats.misses)) || 0,
+        hitRate: this.stats.hits / (this.stats.hits + this.stats.misses) || 0,
         averageResponseTime: 0, // Would be calculated from performance data
-        cacheEfficiency: this.calculateCacheEfficiency()
-      }
+        cacheEfficiency: this.calculateCacheEfficiency(),
+      },
     };
   }
 
@@ -413,9 +421,12 @@ export class CacheService extends EventEmitter {
     }, 60 * 1000);
 
     // Preload strategies every 5 minutes
-    setInterval(() => {
-      this.runPreloadStrategies();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this.runPreloadStrategies();
+      },
+      5 * 60 * 1000
+    );
 
     // Performance monitoring every 30 seconds
     if (this.config.performanceMonitoring) {
@@ -441,15 +452,21 @@ export class CacheService extends EventEmitter {
 
   private async getFromDb<T>(key: string): Promise<T | null> {
     try {
-      const row = this.db.prepare(`
+      const row = this.db
+        .prepare(
+          `
         SELECT result_json, expires_at FROM query_cache
         WHERE cache_key = ? AND expires_at > datetime('now')
-      `).get(key);
+      `
+        )
+        .get(key);
 
       if (!row) return null;
 
       // Update hit count
-      this.db.prepare('UPDATE query_cache SET hit_count = hit_count + 1 WHERE cache_key = ?').run(key);
+      this.db
+        .prepare('UPDATE query_cache SET hit_count = hit_count + 1 WHERE cache_key = ?')
+        .run(key);
 
       return JSON.parse(row.result_json) as T;
     } catch (error) {
@@ -474,7 +491,7 @@ export class CacheService extends EventEmitter {
       hits: 0,
       size,
       tags: tags || [],
-      priority
+      priority,
     };
 
     // Check if we need to evict entries
@@ -498,11 +515,15 @@ export class CacheService extends EventEmitter {
       const resultJson = JSON.stringify(data);
       const sizeBytes = Buffer.byteLength(resultJson, 'utf8');
 
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT OR REPLACE INTO query_cache
         (cache_key, result_json, expires_at, size_bytes, hit_count)
         VALUES (?, ?, ?, ?, 0)
-      `).run(key, resultJson, expiresAt, sizeBytes);
+      `
+        )
+        .run(key, resultJson, expiresAt, sizeBytes);
     } catch (error) {
       console.warn('Database cache write error:', error);
     }
@@ -550,7 +571,9 @@ export class CacheService extends EventEmitter {
 
     // Database cache invalidation
     if (this.config.dbCacheEnabled) {
-      const result = this.db.prepare('DELETE FROM query_cache WHERE cache_key LIKE ?').run(`%${pattern}%`);
+      const result = this.db
+        .prepare('DELETE FROM query_cache WHERE cache_key LIKE ?')
+        .run(`%${pattern}%`);
       count += result.changes;
     }
 
@@ -658,7 +681,7 @@ export class CacheService extends EventEmitter {
       entries: entries.length,
       hitRate: this.stats.hits / (this.stats.hits + this.stats.misses) || 0,
       missRate: this.stats.misses / (this.stats.hits + this.stats.misses) || 0,
-      evictionRate: this.stats.evictions / Math.max(this.stats.hits + this.stats.misses, 1)
+      evictionRate: this.stats.evictions / Math.max(this.stats.hits + this.stats.misses, 1),
     };
   }
 
@@ -667,20 +690,24 @@ export class CacheService extends EventEmitter {
       return { size: 0, entries: 0, hitRate: 0, missRate: 0 };
     }
 
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(
+        `
       SELECT
         COUNT(*) as entries,
         SUM(size_bytes) as total_size,
         SUM(hit_count) as total_hits
       FROM query_cache
       WHERE expires_at > datetime('now')
-    `).get() as any;
+    `
+      )
+      .get() as any;
 
     return {
       size: stats.total_size || 0,
       entries: stats.entries || 0,
       hitRate: 0, // Would need more sophisticated tracking
-      missRate: 0
+      missRate: 0,
     };
   }
 
@@ -699,14 +726,14 @@ export class CacheService extends EventEmitter {
       this.emit('performance:warning', {
         type: 'low_hit_rate',
         hitRate: stats.overall.hitRate,
-        threshold: this.config.hitRateThreshold
+        threshold: this.config.hitRateThreshold,
       });
     }
 
     if (stats.memoryCache.size / this.config.memoryMaxSize > 0.9) {
       this.emit('performance:warning', {
         type: 'memory_pressure',
-        utilization: stats.memoryCache.size / this.config.memoryMaxSize
+        utilization: stats.memoryCache.size / this.config.memoryMaxSize,
       });
     }
   }

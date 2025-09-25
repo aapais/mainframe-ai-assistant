@@ -81,7 +81,6 @@ export class MigrationTestRunner extends EventEmitter {
     duration: number;
     results: TestResult[];
   }> {
-    
     if (this.isRunning) {
       throw new Error('Test run already in progress');
     }
@@ -98,7 +97,7 @@ export class MigrationTestRunner extends EventEmitter {
 
       this.emit('testPlanCreated', {
         suites: suitesToRun.length,
-        scenarios: scenariosToRun.length
+        scenarios: scenariosToRun.length,
       });
 
       // Run scenarios
@@ -112,7 +111,6 @@ export class MigrationTestRunner extends EventEmitter {
       if (config.generateReport) {
         await this.generateTestReport(config.reportPath);
       }
-
     } finally {
       await this.cleanup();
       this.isRunning = false;
@@ -133,10 +131,10 @@ export class MigrationTestRunner extends EventEmitter {
     this.tempDatabases.push(dbPath);
 
     const db = new Database(dbPath);
-    
+
     // Apply schema up to specified MVP version
     await this.applySchemaUpToVersion(db, mvpVersion);
-    
+
     // Populate with test data
     await this.populateTestData(db, mvpVersion);
 
@@ -160,7 +158,6 @@ export class MigrationTestRunner extends EventEmitter {
       discrepancies: number;
     };
   }> {
-    
     const errors: string[] = [];
     const warnings: string[] = [];
     let tablesChecked = 0;
@@ -175,22 +172,32 @@ export class MigrationTestRunner extends EventEmitter {
         tablesChecked++;
 
         // Check row counts
-        const sourceCount = sourceDb.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number };
-        const targetCount = targetDb.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number };
+        const sourceCount = sourceDb.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+          count: number;
+        };
+        const targetCount = targetDb.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+          count: number;
+        };
 
         if (sourceCount.count !== targetCount.count) {
-          errors.push(`Row count mismatch in table ${table}: source=${sourceCount.count}, target=${targetCount.count}`);
+          errors.push(
+            `Row count mismatch in table ${table}: source=${sourceCount.count}, target=${targetCount.count}`
+          );
           discrepancies++;
           continue;
         }
 
         // Sample-based data validation (for large tables)
         const sampleSize = Math.min(sourceCount.count, 1000);
-        const sourceRows = sourceDb.prepare(`
+        const sourceRows = sourceDb
+          .prepare(
+            `
           SELECT * FROM ${table} 
           ORDER BY RANDOM() 
           LIMIT ?
-        `).all(sampleSize);
+        `
+          )
+          .all(sampleSize);
 
         rowsCompared += sourceRows.length;
 
@@ -202,12 +209,18 @@ export class MigrationTestRunner extends EventEmitter {
             continue;
           }
 
-          const targetRow = targetDb.prepare(`
+          const targetRow = targetDb
+            .prepare(
+              `
             SELECT * FROM ${table} WHERE ${idColumn} = ?
-          `).get(sourceRow[idColumn]);
+          `
+            )
+            .get(sourceRow[idColumn]);
 
           if (!targetRow) {
-            errors.push(`Missing row in target table ${table} with ${idColumn}=${sourceRow[idColumn]}`);
+            errors.push(
+              `Missing row in target table ${table} with ${idColumn}=${sourceRow[idColumn]}`
+            );
             discrepancies++;
             continue;
           }
@@ -215,11 +228,12 @@ export class MigrationTestRunner extends EventEmitter {
           // Compare row data (excluding timestamps that might differ)
           const differences = this.compareRows(sourceRow, targetRow, ['created_at', 'updated_at']);
           if (differences.length > 0) {
-            errors.push(`Data mismatch in table ${table}, ${idColumn}=${sourceRow[idColumn]}: ${differences.join(', ')}`);
+            errors.push(
+              `Data mismatch in table ${table}, ${idColumn}=${sourceRow[idColumn]}: ${differences.join(', ')}`
+            );
             discrepancies++;
           }
         }
-
       } catch (error) {
         errors.push(`Error validating table ${table}: ${error.message}`);
       }
@@ -232,8 +246,8 @@ export class MigrationTestRunner extends EventEmitter {
       metrics: {
         tablesChecked,
         rowsCompared,
-        discrepancies
-      }
+        discrepancies,
+      },
     };
   }
 
@@ -257,10 +271,9 @@ export class MigrationTestRunner extends EventEmitter {
       after: number;
     };
   }> {
-    
     // Create benchmark database
     const db = await this.createTestDatabase('benchmark', fromVersion);
-    
+
     // Populate with specified record counts
     for (const [table, count] of Object.entries(recordCounts)) {
       await this.populateTableWithRecords(db, table, count);
@@ -277,13 +290,12 @@ export class MigrationTestRunner extends EventEmitter {
     }, 100);
 
     const startTime = Date.now();
-    
+
     try {
       // Execute migration
       const orchestrator = new MigrationOrchestrator(db);
       const plan = await orchestrator.createMigrationPlan(toVersion);
       await orchestrator.executeMigrationPlan(plan);
-      
     } finally {
       clearInterval(memoryMonitor);
     }
@@ -302,12 +314,12 @@ export class MigrationTestRunner extends EventEmitter {
       memoryUsage: {
         before: initialMemory,
         peak: peakMemory,
-        after: finalMemory
+        after: finalMemory,
       },
       diskSpace: {
         before: initialSize,
-        after: finalSize
-      }
+        after: finalSize,
+      },
     };
   }
 
@@ -330,11 +342,11 @@ export class MigrationTestRunner extends EventEmitter {
           execute: async (): Promise<TestResult> => {
             const startTime = Date.now();
             let db: Database.Database | null = null;
-            
+
             try {
               // Create MVP1 database with test data
               db = await this.createTestDatabase('mvp1_to_mvp2_basic', 1);
-              
+
               // Add some KB entries
               db.exec(`
                 INSERT INTO kb_entries (id, title, problem, solution, category) VALUES
@@ -351,14 +363,24 @@ export class MigrationTestRunner extends EventEmitter {
               // Validate results
               const allSuccessful = results.every(r => r.success);
               if (!allSuccessful) {
-                throw new Error('Some migrations failed: ' + results.filter(r => !r.success).map(r => r.error).join(', '));
+                throw new Error(
+                  'Some migrations failed: ' +
+                    results
+                      .filter(r => !r.success)
+                      .map(r => r.error)
+                      .join(', ')
+                );
               }
 
               // Check that new tables exist
-              const tables = db.prepare(`
+              const tables = db
+                .prepare(
+                  `
                 SELECT name FROM sqlite_master 
                 WHERE type = 'table' AND name IN ('incidents', 'detected_patterns', 'component_health')
-              `).all();
+              `
+                )
+                .all();
 
               if (tables.length !== 3) {
                 throw new Error(`Expected 3 new tables, found ${tables.length}`);
@@ -371,17 +393,16 @@ export class MigrationTestRunner extends EventEmitter {
                 message: 'Migration completed successfully',
                 metrics: {
                   migrations_applied: results.length,
-                  total_duration: results.reduce((sum, r) => sum + r.duration, 0)
-                }
+                  total_duration: results.reduce((sum, r) => sum + r.duration, 0),
+                },
               };
-
             } catch (error) {
               return {
                 scenario: 'mvp1_to_mvp2_basic',
                 success: false,
                 duration: Date.now() - startTime,
                 message: error.message,
-                errors: [error.message]
+                errors: [error.message],
               };
             } finally {
               if (db) {
@@ -394,7 +415,7 @@ export class MigrationTestRunner extends EventEmitter {
           },
           expectedOutcome: 'success',
           tags: ['mvp2', 'basic', 'upgrade'],
-          timeout: 30000
+          timeout: 30000,
         },
 
         {
@@ -405,26 +426,26 @@ export class MigrationTestRunner extends EventEmitter {
           execute: async (): Promise<TestResult> => {
             const startTime = Date.now();
             let db: Database.Database | null = null;
-            
+
             try {
               db = await this.createTestDatabase('mvp1_to_mvp2_rollback', 1);
-              
+
               // Force a migration failure by corrupting the database
               db.exec(`DROP TABLE IF EXISTS kb_entries`);
 
               const orchestrator = new MigrationOrchestrator(db);
-              
+
               try {
                 const plan = await orchestrator.createMigrationPlan(2);
                 await orchestrator.executeMigrationPlan(plan);
-                
+
                 // If we reach here, the migration should have failed
                 throw new Error('Migration should have failed but succeeded');
               } catch (migrationError) {
                 // This is expected - migration should fail
                 // Check that rollback was performed
                 const currentVersion = orchestrator['migrationManager'].getCurrentVersion();
-                
+
                 if (currentVersion !== 1) {
                   throw new Error(`Expected version 1 after rollback, got ${currentVersion}`);
                 }
@@ -436,18 +457,17 @@ export class MigrationTestRunner extends EventEmitter {
                   message: 'Rollback executed successfully after migration failure',
                   details: {
                     migration_error: migrationError.message,
-                    final_version: currentVersion
-                  }
+                    final_version: currentVersion,
+                  },
                 };
               }
-
             } catch (error) {
               return {
                 scenario: 'mvp1_to_mvp2_rollback',
                 success: false,
                 duration: Date.now() - startTime,
                 message: error.message,
-                errors: [error.message]
+                errors: [error.message],
               };
             } finally {
               if (db) {
@@ -458,9 +478,9 @@ export class MigrationTestRunner extends EventEmitter {
           cleanup: async () => {},
           expectedOutcome: 'success',
           tags: ['mvp2', 'rollback', 'error_handling'],
-          timeout: 30000
-        }
-      ]
+          timeout: 30000,
+        },
+      ],
     });
 
     // Performance Tests
@@ -476,21 +496,22 @@ export class MigrationTestRunner extends EventEmitter {
           setup: async () => {},
           execute: async (): Promise<TestResult> => {
             const startTime = Date.now();
-            
+
             try {
               // Benchmark with different record counts
               const benchmark = await this.benchmarkMigration(1, 2, {
                 kb_entries: 10000,
                 search_history: 50000,
-                usage_metrics: 100000
+                usage_metrics: 100000,
               });
 
               // Performance thresholds
               const maxMigrationTime = 60000; // 1 minute
               const minThroughput = 1000; // records per second
 
-              const success = benchmark.migrationTime <= maxMigrationTime && 
-                            benchmark.throughput >= minThroughput;
+              const success =
+                benchmark.migrationTime <= maxMigrationTime &&
+                benchmark.throughput >= minThroughput;
 
               return {
                 scenario: 'large_dataset_migration',
@@ -501,26 +522,26 @@ export class MigrationTestRunner extends EventEmitter {
                   migration_time_ms: benchmark.migrationTime,
                   throughput_rps: benchmark.throughput,
                   memory_peak_mb: benchmark.memoryUsage.peak / 1024 / 1024,
-                  disk_growth_mb: (benchmark.diskSpace.after - benchmark.diskSpace.before) / 1024 / 1024
-                }
+                  disk_growth_mb:
+                    (benchmark.diskSpace.after - benchmark.diskSpace.before) / 1024 / 1024,
+                },
               };
-
             } catch (error) {
               return {
                 scenario: 'large_dataset_migration',
                 success: false,
                 duration: Date.now() - startTime,
                 message: error.message,
-                errors: [error.message]
+                errors: [error.message],
               };
             }
           },
           cleanup: async () => {},
           expectedOutcome: 'success',
           tags: ['performance', 'stress', 'large_data'],
-          timeout: 120000
-        }
-      ]
+          timeout: 120000,
+        },
+      ],
     });
 
     // PostgreSQL Migration Tests
@@ -537,10 +558,10 @@ export class MigrationTestRunner extends EventEmitter {
           execute: async (): Promise<TestResult> => {
             const startTime = Date.now();
             let db: Database.Database | null = null;
-            
+
             try {
               db = await this.createTestDatabase('postgres_dry_run', 2);
-              
+
               const migrator = new PostgresMigrator({
                 sourceDb: db,
                 targetConfig: {
@@ -548,23 +569,24 @@ export class MigrationTestRunner extends EventEmitter {
                   port: 5432,
                   database: 'test_db',
                   username: 'test_user',
-                  password: 'test_pass'
+                  password: 'test_pass',
                 },
                 options: {
                   dryRun: true,
-                  validateData: false
-                }
+                  validateData: false,
+                },
               });
 
               // Analyze migration without executing
               const plan = await migrator.analyzeMigration();
-              
+
               // Generate schema
               const schema = await migrator.generatePostgresSchema();
-              
-              const success = plan.schemaMapping.length > 0 && 
-                            schema.length > 0 && 
-                            plan.compatibility.fullyCompatible.length > 0;
+
+              const success =
+                plan.schemaMapping.length > 0 &&
+                schema.length > 0 &&
+                plan.compatibility.fullyCompatible.length > 0;
 
               return {
                 scenario: 'postgres_migration_dry_run',
@@ -576,17 +598,16 @@ export class MigrationTestRunner extends EventEmitter {
                   fully_compatible: plan.compatibility.fullyCompatible.length,
                   requires_transformation: plan.compatibility.requiresTransformation.length,
                   estimated_duration_minutes: plan.estimatedDuration,
-                  estimated_size_mb: plan.estimatedSize
-                }
+                  estimated_size_mb: plan.estimatedSize,
+                },
               };
-
             } catch (error) {
               return {
                 scenario: 'postgres_migration_dry_run',
                 success: false,
                 duration: Date.now() - startTime,
                 message: error.message,
-                errors: [error.message]
+                errors: [error.message],
               };
             } finally {
               if (db) {
@@ -597,9 +618,9 @@ export class MigrationTestRunner extends EventEmitter {
           cleanup: async () => {},
           expectedOutcome: 'success',
           tags: ['postgres', 'analysis', 'dry_run'],
-          timeout: 30000
-        }
-      ]
+          timeout: 30000,
+        },
+      ],
     });
   }
 
@@ -614,7 +635,7 @@ export class MigrationTestRunner extends EventEmitter {
 
   private selectScenarios(suites: TestSuite[], config: TestRunConfig): TestScenario[] {
     let scenarios: TestScenario[] = [];
-    
+
     for (const suite of suites) {
       scenarios.push(...suite.scenarios);
     }
@@ -626,19 +647,16 @@ export class MigrationTestRunner extends EventEmitter {
 
     // Filter by tags
     if (config.tags && config.tags.length > 0) {
-      scenarios = scenarios.filter(s => 
-        config.tags!.some(tag => s.tags.includes(tag))
-      );
+      scenarios = scenarios.filter(s => config.tags!.some(tag => s.tags.includes(tag)));
     }
 
     return scenarios;
   }
 
   private async runScenariosSequential(
-    scenarios: TestScenario[], 
+    scenarios: TestScenario[],
     config: TestRunConfig
   ): Promise<void> {
-    
     for (const scenario of scenarios) {
       if (config.failFast && this.hasFailures()) {
         this.emit('testSkipped', { scenario: scenario.id, reason: 'fail_fast' });
@@ -650,21 +668,20 @@ export class MigrationTestRunner extends EventEmitter {
   }
 
   private async runScenariosParallel(
-    scenarios: TestScenario[], 
+    scenarios: TestScenario[],
     config: TestRunConfig
   ): Promise<void> {
-    
     const concurrency = config.maxConcurrency || 3;
     const promises: Promise<void>[] = [];
-    
+
     for (let i = 0; i < scenarios.length; i += concurrency) {
       const batch = scenarios.slice(i, i + concurrency);
       const batchPromises = batch.map(scenario => this.runScenario(scenario));
       promises.push(...batchPromises);
-      
+
       // Wait for current batch before starting next
       await Promise.all(batchPromises);
-      
+
       if (config.failFast && this.hasFailures()) {
         break;
       }
@@ -676,16 +693,16 @@ export class MigrationTestRunner extends EventEmitter {
 
     try {
       await scenario.setup();
-      
-      const timeoutPromise = scenario.timeout 
+
+      const timeoutPromise = scenario.timeout
         ? new Promise<TestResult>((_, reject) => {
             setTimeout(() => reject(new Error('Test timeout')), scenario.timeout);
           })
         : null;
 
       const testPromise = scenario.execute();
-      
-      const result = timeoutPromise 
+
+      const result = timeoutPromise
         ? await Promise.race([testPromise, timeoutPromise])
         : await testPromise;
 
@@ -693,14 +710,13 @@ export class MigrationTestRunner extends EventEmitter {
       this.emit('testCompleted', result);
 
       await scenario.cleanup();
-
     } catch (error) {
       const result: TestResult = {
         scenario: scenario.id,
         success: false,
         duration: 0,
         message: error.message,
-        errors: [error.message]
+        errors: [error.message],
       };
 
       this.testResults.push(result);
@@ -720,7 +736,6 @@ export class MigrationTestRunner extends EventEmitter {
     duration: number;
     results: TestResult[];
   } {
-    
     const passed = this.testResults.filter(r => r.success).length;
     const failed = this.testResults.filter(r => !r.success).length;
 
@@ -730,7 +745,7 @@ export class MigrationTestRunner extends EventEmitter {
       failed,
       skipped: 0,
       duration,
-      results: this.testResults
+      results: this.testResults,
     };
   }
 
@@ -738,12 +753,12 @@ export class MigrationTestRunner extends EventEmitter {
     const report = {
       generated: new Date().toISOString(),
       summary: this.calculateTestSummary(0),
-      results: this.testResults
+      results: this.testResults,
     };
 
     const outputPath = reportPath || path.join(__dirname, 'test-report.json');
     fs.writeFileSync(outputPath, JSON.stringify(report, null, 2));
-    
+
     this.emit('reportGenerated', { path: outputPath });
   }
 
@@ -773,7 +788,10 @@ export class MigrationTestRunner extends EventEmitter {
 
     // Apply migrations up to specified version
     for (let v = 2; v <= version; v++) {
-      const migrationPath = path.join(__dirname, `../migrations/mvp-upgrades/${v.toString().padStart(3, '0')}_*.sql`);
+      const migrationPath = path.join(
+        __dirname,
+        `../migrations/mvp-upgrades/${v.toString().padStart(3, '0')}_*.sql`
+      );
       // Implementation would load and apply migration
     }
   }
@@ -781,13 +799,13 @@ export class MigrationTestRunner extends EventEmitter {
   private async populateTestData(db: Database.Database, version: number): Promise<void> {
     // Populate with sample data appropriate for the version
     const sampleData = this.generateSampleData(version);
-    
+
     for (const [table, records] of Object.entries(sampleData)) {
       for (const record of records) {
         const columns = Object.keys(record).join(', ');
         const values = Object.values(record);
         const placeholders = values.map(() => '?').join(', ');
-        
+
         db.prepare(`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`).run(...values);
       }
     }
@@ -802,9 +820,9 @@ export class MigrationTestRunner extends EventEmitter {
           problem: 'Sample problem description',
           solution: 'Sample solution description',
           category: 'VSAM',
-          created_by: 'test'
-        }
-      ]
+          created_by: 'test',
+        },
+      ],
     };
 
     if (version >= 2) {
@@ -815,8 +833,8 @@ export class MigrationTestRunner extends EventEmitter {
           title: 'Sample Incident',
           description: 'Sample incident description',
           severity: 'medium',
-          created_at: new Date().toISOString()
-        }
+          created_at: new Date().toISOString(),
+        },
       ];
     }
 
@@ -824,17 +842,21 @@ export class MigrationTestRunner extends EventEmitter {
   }
 
   private getAllTables(db: Database.Database): string[] {
-    const tables = db.prepare(`
+    const tables = db
+      .prepare(
+        `
       SELECT name FROM sqlite_master 
       WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-    `).all() as Array<{ name: string }>;
+    `
+      )
+      .all() as Array<{ name: string }>;
 
     return tables.map(t => t.name);
   }
 
   private getIdColumn(table: string, db: Database.Database): string | null {
     const columns = db.prepare(`PRAGMA table_info(${table})`).all() as any[];
-    
+
     // Look for primary key column
     const pkColumn = columns.find(col => col.pk === 1);
     if (pkColumn) {
@@ -852,12 +874,12 @@ export class MigrationTestRunner extends EventEmitter {
 
   private compareRows(row1: any, row2: any, excludeColumns: string[] = []): string[] {
     const differences: string[] = [];
-    
+
     for (const [key, value1] of Object.entries(row1)) {
       if (excludeColumns.includes(key)) continue;
-      
+
       const value2 = row2[key];
-      
+
       if (value1 !== value2) {
         differences.push(`${key}: ${value1} !== ${value2}`);
       }
@@ -875,7 +897,11 @@ export class MigrationTestRunner extends EventEmitter {
     }
   }
 
-  private async populateTableWithRecords(db: Database.Database, table: string, count: number): Promise<void> {
+  private async populateTableWithRecords(
+    db: Database.Database,
+    table: string,
+    count: number
+  ): Promise<void> {
     // Generate test records for the specified table
     // Implementation would depend on table structure
     console.log(`Populating ${table} with ${count} records`);

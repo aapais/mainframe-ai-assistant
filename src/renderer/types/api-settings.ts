@@ -84,10 +84,16 @@ export interface APISettingsIPC {
     monthlyLimit?: number
   ) => Promise<APISettingsResponse<{ keyId: string }>>;
   'api-settings:delete-key': (keyId: string) => Promise<APISettingsResponse>;
-  'api-settings:update-key-status': (keyId: string, isActive: boolean) => Promise<APISettingsResponse>;
+  'api-settings:update-key-status': (
+    keyId: string,
+    isActive: boolean
+  ) => Promise<APISettingsResponse>;
 
   // Connection testing
-  'api-settings:test-connection': (providerId: string, apiKey: string) => Promise<ConnectionTestResult>;
+  'api-settings:test-connection': (
+    providerId: string,
+    apiKey: string
+  ) => Promise<ConnectionTestResult>;
   'api-settings:test-stored-key': (keyId: string) => Promise<ConnectionTestResult>;
 
   // Usage statistics
@@ -106,7 +112,10 @@ export interface APISettingsIPC {
 
   // Security operations
   'api-settings:clear-all-keys': () => Promise<APISettingsResponse>;
-  'api-settings:validate-key-format': (providerId: string, apiKey: string) => Promise<ValidationResult>;
+  'api-settings:validate-key-format': (
+    providerId: string,
+    apiKey: string
+  ) => Promise<ValidationResult>;
 
   // Session management
   'api-settings:get-session-keys': () => Promise<string[]>;
@@ -202,5 +211,5 @@ export default {
   APIKeyFormData,
   APISettingsFormData,
   APISettingsTab,
-  NotificationState
+  NotificationState,
 };

@@ -74,7 +74,7 @@ export class EnhancedSearchCache {
       defaultTTL: this.config.l0Cache.defaultTTL,
       evictionPolicy: this.config.l0Cache.evictionPolicy,
       enableStats: true,
-      cleanupInterval: this.config.l0Cache.cleanupInterval
+      cleanupInterval: this.config.l0Cache.cleanupInterval,
     });
 
     this.l1Cache = new LRUCache<SearchCacheEntry>({
@@ -83,7 +83,7 @@ export class EnhancedSearchCache {
       defaultTTL: this.config.l1Cache.defaultTTL,
       evictionPolicy: this.config.l1Cache.evictionPolicy,
       enableStats: true,
-      cleanupInterval: this.config.l1Cache.cleanupInterval
+      cleanupInterval: this.config.l1Cache.cleanupInterval,
     });
 
     this.l2Cache = new LRUCache<SearchCacheEntry>({
@@ -92,7 +92,7 @@ export class EnhancedSearchCache {
       defaultTTL: this.config.l2Cache.defaultTTL,
       evictionPolicy: this.config.l2Cache.evictionPolicy,
       enableStats: true,
-      cleanupInterval: this.config.l2Cache.cleanupInterval
+      cleanupInterval: this.config.l2Cache.cleanupInterval,
     });
 
     // Initialize Redis cache if enabled
@@ -107,7 +107,7 @@ export class EnhancedSearchCache {
         maxRetries: this.config.l3Redis.maxRetries,
         retryDelayMs: this.config.l3Redis.retryDelayMs,
         enableCompression: true,
-        compressionThreshold: 1024
+        compressionThreshold: 1024,
       });
     }
 
@@ -119,7 +119,7 @@ export class EnhancedSearchCache {
       predictionHorizon: this.config.predictiveCache.predictionHorizon,
       enablePatternLearning: this.config.predictiveCache.enablePatternLearning,
       enableContextualPredictions: this.config.predictiveCache.enableContextualPredictions,
-      enableTemporalPredictions: this.config.predictiveCache.enableTemporalPredictions
+      enableTemporalPredictions: this.config.predictiveCache.enableTemporalPredictions,
     });
 
     // Initialize incremental loader with simple cache implementation
@@ -133,13 +133,13 @@ export class EnhancedSearchCache {
             options: {},
             timestamp: Date.now(),
             computationTime: 0,
-            hitCount: 0
+            hitCount: 0,
           };
           this.l2Cache.set(key, entry, ttl);
         },
         delete: (key: string) => this.l2Cache.delete(key),
         clear: () => this.l2Cache.clear(),
-        size: this.l2Cache.getStats().size
+        size: this.l2Cache.getStats().size,
       },
       {
         defaultChunkSize: this.config.incrementalLoading.defaultChunkSize,
@@ -148,7 +148,7 @@ export class EnhancedSearchCache {
         enablePrioritization: this.config.incrementalLoading.enablePrioritization,
         loadTimeout: this.config.incrementalLoading.loadTimeout,
         retryAttempts: this.config.incrementalLoading.retryAttempts,
-        retryDelay: this.config.incrementalLoading.retryDelay
+        retryDelay: this.config.incrementalLoading.retryDelay,
       }
     );
 
@@ -223,7 +223,6 @@ export class EnhancedSearchCache {
       // Cache miss across all layers
       this.recordMiss(startTime);
       return null;
-
     } catch (error) {
       console.error('Search cache get error:', error);
       this.recordMiss(startTime);
@@ -249,7 +248,7 @@ export class EnhancedSearchCache {
       options,
       timestamp: Date.now(),
       computationTime,
-      hitCount: 0
+      hitCount: 0,
     };
 
     try {
@@ -283,12 +282,11 @@ export class EnhancedSearchCache {
             category: options.category,
             resultClicks: 0,
             sessionDuration: 0,
-            followupQueries: []
+            followupQueries: [],
           },
           userContext
         );
       }
-
     } catch (error) {
       console.error('Search cache set error:', error);
     }
@@ -312,7 +310,6 @@ export class EnhancedSearchCache {
       }
 
       return deleted;
-
     } catch (error) {
       console.error('Search cache delete error:', error);
       return false;
@@ -353,7 +350,6 @@ export class EnhancedSearchCache {
       }
 
       return deletedCount;
-
     } catch (error) {
       console.error('Search cache delete pattern error:', error);
       return 0;
@@ -376,7 +372,6 @@ export class EnhancedSearchCache {
       this.predictiveCache.reset();
 
       console.log('Search cache cleared');
-
     } catch (error) {
       console.error('Search cache clear error:', error);
     }
@@ -398,7 +393,6 @@ export class EnhancedSearchCache {
       }
 
       return false;
-
     } catch (error) {
       console.error('Search cache has error:', error);
       return false;
@@ -440,7 +434,6 @@ export class EnhancedSearchCache {
       }
 
       return updated;
-
     } catch (error) {
       console.error('Search cache expire error:', error);
       return false;
@@ -472,7 +465,6 @@ export class EnhancedSearchCache {
 
       const regex = new RegExp(pattern.replace(/\*/g, '.*'));
       return result.filter(key => regex.test(key));
-
     } catch (error) {
       console.error('Search cache keys error:', error);
       return [];
@@ -494,38 +486,41 @@ export class EnhancedSearchCache {
         hits: l0Stats.hitCount,
         misses: l0Stats.missCount,
         hitRate: l0Stats.hitRate,
-        size: l0Stats.size
+        size: l0Stats.size,
       },
       l1: {
         hits: l1Stats.hitCount,
         misses: l1Stats.missCount,
         hitRate: l1Stats.hitRate,
-        size: l1Stats.size
+        size: l1Stats.size,
       },
       l2: {
         hits: l2Stats.hitCount,
         misses: l2Stats.missCount,
         hitRate: l2Stats.hitRate,
-        size: l2Stats.size
+        size: l2Stats.size,
       },
       redis: {
         hits: redisStats?.hitCount || 0,
         misses: redisStats?.missCount || 0,
         hitRate: redisStats?.hitRate || 0,
-        connected: redisStats?.connectionStatus === 'connected'
+        connected: redisStats?.connectionStatus === 'connected',
       },
       predictive: {
         predictions: predictiveStats.totalPredictions,
         accuracy: predictiveStats.predictionAccuracy,
-        cacheSaves: predictiveStats.successfulPredictions
+        cacheSaves: predictiveStats.successfulPredictions,
       },
       overall: {
-        totalHits: l0Stats.hitCount + l1Stats.hitCount + l2Stats.hitCount + (redisStats?.hitCount || 0),
-        totalMisses: l0Stats.missCount + l1Stats.missCount + l2Stats.missCount + (redisStats?.missCount || 0),
+        totalHits:
+          l0Stats.hitCount + l1Stats.hitCount + l2Stats.hitCount + (redisStats?.hitCount || 0),
+        totalMisses:
+          l0Stats.missCount + l1Stats.missCount + l2Stats.missCount + (redisStats?.missCount || 0),
         overallHitRate: this.calculateOverallHitRate(),
-        averageResponseTime: (l0Stats.averageAccessTime + l1Stats.averageAccessTime + l2Stats.averageAccessTime) / 3,
-        memoryUsage: l0Stats.memoryUsage + l1Stats.memoryUsage + l2Stats.memoryUsage
-      }
+        averageResponseTime:
+          (l0Stats.averageAccessTime + l1Stats.averageAccessTime + l2Stats.averageAccessTime) / 3,
+        memoryUsage: l0Stats.memoryUsage + l1Stats.memoryUsage + l2Stats.memoryUsage,
+      },
     };
   }
 
@@ -533,9 +528,16 @@ export class EnhancedSearchCache {
    * Warm cache with popular/predicted queries
    */
   async warmCache(warmupData: WarmupData): Promise<void> {
-    const { popularQueries = [], recentSearches = [], predictedTerms = [], userContext } = warmupData;
+    const {
+      popularQueries = [],
+      recentSearches = [],
+      predictedTerms = [],
+      userContext,
+    } = warmupData;
 
-    console.log(`🔥 Warming search cache with ${popularQueries.length + recentSearches.length + predictedTerms.length} entries...`);
+    console.log(
+      `🔥 Warming search cache with ${popularQueries.length + recentSearches.length + predictedTerms.length} entries...`
+    );
 
     try {
       // Warm with popular queries (higher priority)
@@ -548,7 +550,7 @@ export class EnhancedSearchCache {
           options: {},
           timestamp: Date.now(),
           computationTime: 0,
-          hitCount: 1
+          hitCount: 1,
         };
         this.l2Cache.set(cacheKey + ':warm', entry, this.config.l2Cache.defaultTTL * 2);
       }
@@ -562,7 +564,7 @@ export class EnhancedSearchCache {
           options: {},
           timestamp: Date.now(),
           computationTime: 0,
-          hitCount: 1
+          hitCount: 1,
         };
         this.l2Cache.set(cacheKey + ':recent', entry, this.config.l2Cache.defaultTTL);
       }
@@ -579,7 +581,6 @@ export class EnhancedSearchCache {
       }
 
       console.log(`✅ Cache warming completed`);
-
     } catch (error) {
       console.error('Cache warming error:', error);
     }
@@ -622,7 +623,6 @@ export class EnhancedSearchCache {
       }
 
       console.log('Enhanced search cache closed');
-
     } catch (error) {
       console.error('Search cache close error:', error);
     }
@@ -642,7 +642,7 @@ export class EnhancedSearchCache {
       tags: options.tags,
       sortBy: options.sortBy,
       useAI: options.useAI,
-      threshold: options.threshold
+      threshold: options.threshold,
     };
     return btoa(JSON.stringify(relevant)).slice(0, 8);
   }
@@ -666,20 +666,22 @@ export class EnhancedSearchCache {
       useL1: resultSize < 51200 && isExpensive, // 50KB limit for L1
       useL2: true, // Always cache in L2
       useRedis: this.config.l3Redis.enabled && resultSize < 102400, // 100KB limit for Redis
-      redisTTL: isExpensive ? 1200 : 600 // 20 or 10 minutes
+      redisTTL: isExpensive ? 1200 : 600, // 20 or 10 minutes
     };
   }
 
   private promoteToL0(key: string, entry: SearchCacheEntry): void {
     const resultSize = JSON.stringify(entry.results).length;
-    if (resultSize < 10240) { // 10KB limit for L0
+    if (resultSize < 10240) {
+      // 10KB limit for L0
       this.l0Cache.set(key, entry, this.config.l0Cache.defaultTTL);
     }
   }
 
   private promoteToL1(key: string, entry: SearchCacheEntry): void {
     const resultSize = JSON.stringify(entry.results).length;
-    if (resultSize < 51200) { // 50KB limit for L1
+    if (resultSize < 51200) {
+      // 50KB limit for L1
       this.l1Cache.set(key, entry, this.config.l1Cache.defaultTTL);
     }
   }
@@ -723,18 +725,18 @@ export class EnhancedSearchCache {
         totalMisses: 0,
         overallHitRate: 0,
         averageResponseTime: 0,
-        memoryUsage: 0
-      }
+        memoryUsage: 0,
+      },
     };
   }
 
   private setupEventHandlers(): void {
     // Listen to predictive cache events
-    this.predictiveCache.on('prediction-success', (data) => {
+    this.predictiveCache.on('prediction-success', data => {
       console.log(`Predictive cache hit: ${data.key}`);
     });
 
-    this.predictiveCache.on('prediction-failure', (data) => {
+    this.predictiveCache.on('prediction-failure', data => {
       console.log(`Predictive cache miss: ${data.key}`);
     });
 
@@ -748,7 +750,7 @@ export class EnhancedSearchCache {
         console.log('Redis cache disconnected');
       });
 
-      this.redisCache.on('error', (error) => {
+      this.redisCache.on('error', error => {
         console.error('Redis cache error:', error);
       });
     }

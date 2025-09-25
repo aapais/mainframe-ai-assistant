@@ -24,9 +24,9 @@ if (typeof global.crypto === 'undefined') {
           const hash = crypto.createHash(algorithm.toLowerCase().replace('-', ''));
           hash.update(data);
           return hash.digest();
-        }
-      }
-    }
+        },
+      },
+    },
   });
 }
 
@@ -92,7 +92,7 @@ if (typeof global.performance.mark === 'undefined') {
         name,
         entryType: 'mark',
         startTime: time,
-        duration: 0
+        duration: 0,
       }));
     }
     if (type === 'measure') {
@@ -100,7 +100,7 @@ if (typeof global.performance.mark === 'undefined') {
         name,
         entryType: 'measure',
         startTime: 0,
-        duration
+        duration,
       }));
     }
     return [];
@@ -114,7 +114,7 @@ if (typeof global.MessageChannel === 'undefined') {
     port2: MessagePort;
 
     constructor() {
-      const { port1, port2 } = new (require('worker_threads')).MessageChannel();
+      const { port1, port2 } = new (require('worker_threads').MessageChannel)();
       this.port1 = port1;
       this.port2 = port2;
     }

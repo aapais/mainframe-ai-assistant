@@ -112,7 +112,7 @@ export class RedisCache extends EventEmitter {
       maxConnectionPoolSize: 10,
       enableCluster: false,
       enableReadReplicas: false,
-      ...config
+      ...config,
     };
 
     this.stats = {
@@ -125,7 +125,7 @@ export class RedisCache extends EventEmitter {
       memoryUsage: 0,
       keyCount: 0,
       averageLatency: 0,
-      compressionRatio: 1.0
+      compressionRatio: 1.0,
     };
 
     this.initializeClient();
@@ -162,7 +162,6 @@ export class RedisCache extends EventEmitter {
 
       this.recordHit(startTime);
       return entry.value;
-
     } catch (error) {
       this.handleError(error);
       this.recordMiss(startTime);
@@ -187,14 +186,11 @@ export class RedisCache extends EventEmitter {
 
       const effectiveTTL = ttl || this.config.defaultTTL;
 
-      await this.executeWithRetry(() =>
-        this.client!.setex(fullKey, effectiveTTL, serialized)
-      );
+      await this.executeWithRetry(() => this.client!.setex(fullKey, effectiveTTL, serialized));
 
       this.stats.setCount++;
       this.recordLatency(startTime);
       return true;
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -213,7 +209,6 @@ export class RedisCache extends EventEmitter {
       const fullKey = this.getFullKey(key);
       const result = await this.executeWithRetry(() => this.client!.del(fullKey));
       return result > 0;
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -238,7 +233,6 @@ export class RedisCache extends EventEmitter {
 
       const result = await this.executeWithRetry(() => this.client!.del(...keys));
       return result;
-
     } catch (error) {
       this.handleError(error);
       return 0;
@@ -257,7 +251,6 @@ export class RedisCache extends EventEmitter {
       const fullKey = this.getFullKey(key);
       const result = await this.executeWithRetry(() => this.client!.exists(fullKey));
       return result > 0;
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -276,7 +269,6 @@ export class RedisCache extends EventEmitter {
       const fullKey = this.getFullKey(key);
       const result = await this.executeWithRetry(() => this.client!.expire(fullKey, seconds));
       return result > 0;
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -326,7 +318,6 @@ export class RedisCache extends EventEmitter {
       }
 
       return values;
-
     } catch (error) {
       this.handleError(error);
       return keys.map(() => null);
@@ -356,7 +347,6 @@ export class RedisCache extends EventEmitter {
       await pipeline.exec();
       this.stats.setCount += items.length;
       return true;
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -378,7 +368,6 @@ export class RedisCache extends EventEmitter {
       if (keys.length > 0) {
         await this.executeWithRetry(() => this.client!.del(...keys));
       }
-
     } catch (error) {
       this.handleError(error);
     }
@@ -399,7 +388,6 @@ export class RedisCache extends EventEmitter {
       // Remove prefix from returned keys
       const prefixLength = this.config.keyPrefix.length;
       return fullKeys.map(key => key.substring(prefixLength));
-
     } catch (error) {
       this.handleError(error);
       return [];
@@ -423,7 +411,6 @@ export class RedisCache extends EventEmitter {
 
       const result = await this.client.ping();
       return result === 'PONG';
-
     } catch (error) {
       this.handleError(error);
       return false;
@@ -441,7 +428,6 @@ export class RedisCache extends EventEmitter {
       }
       this.stats.connectionStatus = 'disconnected';
       this.emit('disconnected');
-
     } catch (error) {
       console.error('Redis close error:', error);
     }
@@ -491,7 +477,6 @@ export class RedisCache extends EventEmitter {
       this.setupEventHandlers();
       this.stats.connectionStatus = 'connected';
       this.emit('connected');
-
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -601,7 +586,7 @@ export class RedisCache extends EventEmitter {
             }
 
             return results;
-          }
+          },
         };
 
         return pipeline;
@@ -609,7 +594,7 @@ export class RedisCache extends EventEmitter {
 
       multi(): RedisMulti {
         return this.pipeline() as RedisMulti;
-      }
+      },
     };
   }
 
@@ -658,15 +643,14 @@ export class RedisCache extends EventEmitter {
       timestamp: Date.now(),
       ttl: ttl || this.config.defaultTTL,
       compressed: false,
-      version: '1.0'
+      version: '1.0',
     };
   }
 
   private serializeEntry<T>(entry: RedisCacheEntry<T>): string {
     const serialized = JSON.stringify(entry);
 
-    if (this.config.enableCompression &&
-        serialized.length > this.config.compressionThreshold) {
+    if (this.config.enableCompression && serialized.length > this.config.compressionThreshold) {
       // In real implementation, would use compression library like zlib
       // const compressed = zlib.gzipSync(Buffer.from(serialized));
       // return compressed.toString('base64');
@@ -687,7 +671,7 @@ export class RedisCache extends EventEmitter {
   }
 
   private isExpired(entry: RedisCacheEntry<any>): boolean {
-    return Date.now() > entry.timestamp + (entry.ttl * 1000);
+    return Date.now() > entry.timestamp + entry.ttl * 1000;
   }
 
   private getFullKey(key: string): string {
@@ -737,7 +721,8 @@ export class RedisCache extends EventEmitter {
       this.latencyBuffer = this.latencyBuffer.slice(-1000);
     }
 
-    this.stats.averageLatency = this.latencyBuffer.reduce((sum, l) => sum + l, 0) / this.latencyBuffer.length;
+    this.stats.averageLatency =
+      this.latencyBuffer.reduce((sum, l) => sum + l, 0) / this.latencyBuffer.length;
   }
 
   private updateHitRate(): void {

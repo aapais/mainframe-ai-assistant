@@ -9,7 +9,7 @@ let mainWindow;
 if (isDev) {
   require('electron-reload')(__dirname, {
     electron: path.join(__dirname, '..', 'node_modules', '.bin', 'electron'),
-    hardResetMethod: 'exit'
+    hardResetMethod: 'exit',
   });
 }
 
@@ -30,13 +30,13 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'), // Secure communication
       webSecurity: true,
       allowRunningInsecureContent: false,
-      experimentalFeatures: false
+      experimentalFeatures: false,
     },
     // Professional window styling
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#A100FF', // Accenture purple
     vibrancy: 'under-window', // macOS only
-    visualEffectState: 'active' // macOS only
+    visualEffectState: 'active', // macOS only
   });
 
   // Load the app
@@ -125,7 +125,7 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-new-entry');
             }
-          }
+          },
         },
         {
           label: 'Import Data',
@@ -136,14 +136,14 @@ function createApplicationMenu() {
               filters: [
                 { name: 'JSON', extensions: ['json'] },
                 { name: 'CSV', extensions: ['csv'] },
-                { name: 'All Files', extensions: ['*'] }
-              ]
+                { name: 'All Files', extensions: ['*'] },
+              ],
             });
 
             if (!result.canceled && result.filePaths.length > 0) {
               mainWindow.webContents.send('menu-import-file', result.filePaths[0]);
             }
-          }
+          },
         },
         { type: 'separator' },
         {
@@ -151,9 +151,9 @@ function createApplicationMenu() {
           accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
           click: () => {
             app.quit();
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Edit',
@@ -164,8 +164,8 @@ function createApplicationMenu() {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        { role: 'selectall' }
-      ]
+        { role: 'selectall' },
+      ],
     },
     {
       label: 'View',
@@ -178,8 +178,8 @@ function createApplicationMenu() {
         { role: 'zoomIn' },
         { role: 'zoomOut' },
         { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
+        { role: 'togglefullscreen' },
+      ],
     },
     {
       label: 'Search',
@@ -191,7 +191,7 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-search');
             }
-          }
+          },
         },
         {
           label: 'Advanced Search',
@@ -200,9 +200,9 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-advanced-search');
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Tools',
@@ -213,22 +213,20 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-performance');
             }
-          }
+          },
         },
         {
           label: 'Database Backup',
           click: async () => {
             const result = await dialog.showSaveDialog(mainWindow, {
               defaultPath: `mainframe-backup-${new Date().toISOString().split('T')[0]}.json`,
-              filters: [
-                { name: 'JSON', extensions: ['json'] }
-              ]
+              filters: [{ name: 'JSON', extensions: ['json'] }],
             });
 
             if (!result.canceled) {
               mainWindow.webContents.send('menu-backup', result.filePath);
             }
-          }
+          },
         },
         { type: 'separator' },
         {
@@ -238,9 +236,9 @@ function createApplicationMenu() {
             if (mainWindow) {
               mainWindow.webContents.send('menu-settings');
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Help',
@@ -253,24 +251,24 @@ function createApplicationMenu() {
               title: 'About',
               message: 'Accenture Mainframe AI Assistant',
               detail: `Version: ${app.getVersion()}\nEnterprise Knowledge Management & AI-Powered Search\n\n© 2024 Accenture. All rights reserved.`,
-              buttons: ['OK']
+              buttons: ['OK'],
             });
-          }
+          },
         },
         {
           label: 'User Guide',
           click: () => {
             shell.openExternal('https://www.accenture.com/mainframe-ai-assistant/help');
-          }
+          },
         },
         {
           label: 'Report Issue',
           click: () => {
             shell.openExternal('https://www.accenture.com/mainframe-ai-assistant/support');
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   // macOS specific menu adjustments
@@ -286,8 +284,8 @@ function createApplicationMenu() {
         { role: 'hideothers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
-      ]
+        { role: 'quit' },
+      ],
     });
 
     // Edit menu
@@ -295,10 +293,7 @@ function createApplicationMenu() {
       { type: 'separator' },
       {
         label: 'Speech',
-        submenu: [
-          { role: 'startspeaking' },
-          { role: 'stopspeaking' }
-        ]
+        submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }],
       }
     );
 
@@ -310,8 +305,8 @@ function createApplicationMenu() {
         { role: 'minimize' },
         { role: 'zoom' },
         { type: 'separator' },
-        { role: 'front' }
-      ]
+        { role: 'front' },
+      ],
     });
   }
 

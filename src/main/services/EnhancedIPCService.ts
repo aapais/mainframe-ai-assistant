@@ -13,7 +13,7 @@ export class EnhancedIPCService extends Service {
   dependencies: ServiceDependency[] = [
     { name: 'DatabaseService', required: true },
     { name: 'AIService', required: true },
-    { name: 'MonitoringService', required: false }
+    { name: 'MonitoringService', required: false },
   ];
 
   private ipcIntegration?: IPCIntegration;
@@ -36,11 +36,7 @@ export class EnhancedIPCService extends Service {
       }
 
       // Initialize enhanced IPC system
-      this.ipcIntegration = initializeEnhancedIPC(
-        databaseService,
-        aiService,
-        monitoringService
-      );
+      this.ipcIntegration = initializeEnhancedIPC(databaseService, aiService, monitoringService);
 
       // Set up monitoring integration if available
       if (monitoringService && this.ipcIntegration) {
@@ -52,7 +48,6 @@ export class EnhancedIPCService extends Service {
 
       this.setStatus('running');
       console.log('✅ Enhanced IPC Service initialized successfully');
-
     } catch (error) {
       console.error('❌ Failed to initialize Enhanced IPC Service:', error);
       this.setStatus('failed', error as Error);
@@ -62,7 +57,7 @@ export class EnhancedIPCService extends Service {
 
   async shutdown(): Promise<void> {
     console.log('🛑 Shutting down Enhanced IPC Service...');
-    
+
     try {
       if (this.ipcIntegration) {
         await this.ipcIntegration.shutdown();
@@ -71,7 +66,6 @@ export class EnhancedIPCService extends Service {
 
       this.setStatus('stopped');
       console.log('✅ Enhanced IPC Service shutdown complete');
-
     } catch (error) {
       console.error('❌ Error during Enhanced IPC Service shutdown:', error);
       throw error;
@@ -103,7 +97,9 @@ export class EnhancedIPCService extends Service {
       }
 
       if (metrics.ipc.totalErrors / Math.max(metrics.ipc.totalRequests, 1) > 0.05) {
-        issues.push(`High error rate: ${((metrics.ipc.totalErrors / metrics.ipc.totalRequests) * 100).toFixed(2)}%`);
+        issues.push(
+          `High error rate: ${((metrics.ipc.totalErrors / metrics.ipc.totalRequests) * 100).toFixed(2)}%`
+        );
       }
 
       if (metrics.ipc.cacheHitRate < 50) {
@@ -117,30 +113,31 @@ export class EnhancedIPCService extends Service {
         channel: h.channel,
         batchable: h.config.batchable,
         streamable: h.config.streamable,
-        cacheable: h.config.cacheable
+        cacheable: h.config.cacheable,
       }));
 
       return {
         healthy: issues.length === 0,
         details,
-        issues
+        issues,
       };
-
     } catch (error) {
-      issues.push(`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      issues.push(
+        `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       return { healthy: false, details, issues };
     }
   }
 
   getMetrics(): ServiceMetrics {
     const baseMetrics = super.getMetrics();
-    
+
     if (!this.ipcIntegration) {
       return baseMetrics;
     }
 
     const performanceMetrics = this.ipcIntegration.getPerformanceMetrics();
-    
+
     return {
       ...baseMetrics,
       custom: {
@@ -151,24 +148,28 @@ export class EnhancedIPCService extends Service {
           averageResponseTime: performanceMetrics.ipc.averageResponseTime,
           cacheHitRate: performanceMetrics.ipc.cacheHitRate,
           batchedRequests: performanceMetrics.ipc.batchedRequests,
-          streamedRequests: performanceMetrics.ipc.streamedRequests
+          streamedRequests: performanceMetrics.ipc.streamedRequests,
         },
-        batching: performanceMetrics.batching ? {
-          totalBatches: performanceMetrics.batching.totalBatches,
-          totalRequests: performanceMetrics.batching.totalRequests,
-          averageBatchSize: performanceMetrics.batching.averageBatchSize,
-          averageProcessingTime: performanceMetrics.batching.averageProcessingTime,
-          failedBatches: performanceMetrics.batching.failedBatches
-        } : null,
-        streaming: performanceMetrics.streaming ? {
-          totalStreams: performanceMetrics.streaming.totalStreams,
-          totalChunks: performanceMetrics.streaming.totalChunks,
-          totalBytes: performanceMetrics.streaming.totalBytes,
-          averageChunkSize: performanceMetrics.streaming.averageChunkSize,
-          averageStreamTime: performanceMetrics.streaming.averageStreamTime,
-          failedStreams: performanceMetrics.streaming.failedStreams
-        } : null
-      }
+        batching: performanceMetrics.batching
+          ? {
+              totalBatches: performanceMetrics.batching.totalBatches,
+              totalRequests: performanceMetrics.batching.totalRequests,
+              averageBatchSize: performanceMetrics.batching.averageBatchSize,
+              averageProcessingTime: performanceMetrics.batching.averageProcessingTime,
+              failedBatches: performanceMetrics.batching.failedBatches,
+            }
+          : null,
+        streaming: performanceMetrics.streaming
+          ? {
+              totalStreams: performanceMetrics.streaming.totalStreams,
+              totalChunks: performanceMetrics.streaming.totalChunks,
+              totalBytes: performanceMetrics.streaming.totalBytes,
+              averageChunkSize: performanceMetrics.streaming.averageChunkSize,
+              averageStreamTime: performanceMetrics.streaming.averageStreamTime,
+              failedStreams: performanceMetrics.streaming.failedStreams,
+            }
+          : null,
+      },
     };
   }
 
@@ -214,28 +215,45 @@ export class EnhancedIPCService extends Service {
     const reportMetrics = () => {
       try {
         const metrics = this.ipcIntegration!.getPerformanceMetrics();
-        
+
         // Report to monitoring service
         monitoringService.recordMetric('ipc.requests.total', metrics.ipc.totalRequests);
         monitoringService.recordMetric('ipc.responses.total', metrics.ipc.totalResponses);
         monitoringService.recordMetric('ipc.errors.total', metrics.ipc.totalErrors);
-        monitoringService.recordMetric('ipc.response_time.average', metrics.ipc.averageResponseTime);
+        monitoringService.recordMetric(
+          'ipc.response_time.average',
+          metrics.ipc.averageResponseTime
+        );
         monitoringService.recordMetric('ipc.cache.hit_rate', metrics.ipc.cacheHitRate);
         monitoringService.recordMetric('ipc.batched.requests', metrics.ipc.batchedRequests);
         monitoringService.recordMetric('ipc.streamed.requests', metrics.ipc.streamedRequests);
 
         if (metrics.batching) {
-          monitoringService.recordMetric('ipc.batching.total_batches', metrics.batching.totalBatches);
-          monitoringService.recordMetric('ipc.batching.average_size', metrics.batching.averageBatchSize);
-          monitoringService.recordMetric('ipc.batching.average_time', metrics.batching.averageProcessingTime);
+          monitoringService.recordMetric(
+            'ipc.batching.total_batches',
+            metrics.batching.totalBatches
+          );
+          monitoringService.recordMetric(
+            'ipc.batching.average_size',
+            metrics.batching.averageBatchSize
+          );
+          monitoringService.recordMetric(
+            'ipc.batching.average_time',
+            metrics.batching.averageProcessingTime
+          );
         }
 
         if (metrics.streaming) {
-          monitoringService.recordMetric('ipc.streaming.total_streams', metrics.streaming.totalStreams);
-          monitoringService.recordMetric('ipc.streaming.total_chunks', metrics.streaming.totalChunks);
+          monitoringService.recordMetric(
+            'ipc.streaming.total_streams',
+            metrics.streaming.totalStreams
+          );
+          monitoringService.recordMetric(
+            'ipc.streaming.total_chunks',
+            metrics.streaming.totalChunks
+          );
           monitoringService.recordMetric('ipc.streaming.total_bytes', metrics.streaming.totalBytes);
         }
-
       } catch (error) {
         console.error('Error reporting IPC metrics to monitoring service:', error);
       }
@@ -243,7 +261,7 @@ export class EnhancedIPCService extends Service {
 
     // Report metrics every 30 seconds
     const metricsInterval = setInterval(reportMetrics, 30000);
-    
+
     // Clean up interval on shutdown
     this.on('shutdown', () => {
       clearInterval(metricsInterval);

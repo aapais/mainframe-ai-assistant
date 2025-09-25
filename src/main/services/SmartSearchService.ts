@@ -74,7 +74,8 @@ class SearchCache {
   private defaultTTL: number;
   private accessCounter = 0;
 
-  constructor(maxSize: number = 1000, defaultTTL: number = 300000) { // 5 minutes default TTL
+  constructor(maxSize: number = 1000, defaultTTL: number = 300000) {
+    // 5 minutes default TTL
     this.maxSize = maxSize;
     this.defaultTTL = defaultTTL;
 
@@ -114,7 +115,7 @@ class SearchCache {
       data,
       timestamp: now,
       ttl: entryTTL,
-      hits: 0
+      hits: 0,
     });
 
     this.accessOrder.set(key, ++this.accessCounter);
@@ -151,14 +152,15 @@ class SearchCache {
   } {
     const entries = Array.from(this.cache.values());
     const totalHits = entries.reduce((sum, entry) => sum + entry.hits, 0);
-    const oldestTimestamp = entries.length > 0 ? Math.min(...entries.map(e => e.timestamp)) : Date.now();
+    const oldestTimestamp =
+      entries.length > 0 ? Math.min(...entries.map(e => e.timestamp)) : Date.now();
 
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
       hitRate: entries.length > 0 ? totalHits / (entries.length * 10) : 0, // Estimated hit rate
       avgHits: entries.length > 0 ? totalHits / entries.length : 0,
-      oldestEntry: Date.now() - oldestTimestamp
+      oldestEntry: Date.now() - oldestTimestamp,
     };
   }
 
@@ -252,7 +254,7 @@ export class SmartSearchService extends EventEmitter {
     failedQueries: new Map<string, number>(),
     queryFrequency: new Map<string, number>(),
     strategyUsage: new Map<string, number>(),
-    responseTimeDistribution: { under50: 0, under100: 0, under500: 0, over500: 0 }
+    responseTimeDistribution: { under50: 0, under100: 0, under500: 0, over500: 0 },
   };
 
   // Search strategies with performance characteristics
@@ -262,36 +264,36 @@ export class SmartSearchService extends EventEmitter {
       priority: 10,
       estimatedTime: 20,
       accuracy: 1.0,
-      description: 'Direct string matching for error codes and specific terms'
+      description: 'Direct string matching for error codes and specific terms',
     },
     {
       name: 'fts_search',
       priority: 8,
       estimatedTime: 50,
       accuracy: 0.9,
-      description: 'Full-text search with BM25 ranking'
+      description: 'Full-text search with BM25 ranking',
     },
     {
       name: 'fuzzy_search',
       priority: 6,
       estimatedTime: 80,
       accuracy: 0.7,
-      description: 'Approximate matching for typos and partial terms'
+      description: 'Approximate matching for typos and partial terms',
     },
     {
       name: 'semantic_search',
       priority: 4,
       estimatedTime: 200,
       accuracy: 0.8,
-      description: 'AI-powered semantic similarity matching'
+      description: 'AI-powered semantic similarity matching',
     },
     {
       name: 'hybrid_search',
       priority: 2,
       estimatedTime: 150,
       accuracy: 0.95,
-      description: 'Combined strategy for comprehensive results'
-    }
+      description: 'Combined strategy for comprehensive results',
+    },
   ];
 
   // Performance thresholds
@@ -301,18 +303,18 @@ export class SmartSearchService extends EventEmitter {
   private readonly CACHE_TTL_FAST = 300000; // 5 minutes for fast queries
   private readonly CACHE_TTL_SLOW = 600000; // 10 minutes for slow queries
 
-  constructor(database: Database.Database, options?: {
-    cacheSize?: number;
-    defaultCacheTTL?: number;
-    enablePerformanceTracking?: boolean;
-  }) {
+  constructor(
+    database: Database.Database,
+    options?: {
+      cacheSize?: number;
+      defaultCacheTTL?: number;
+      enablePerformanceTracking?: boolean;
+    }
+  ) {
     super();
 
     this.db = database;
-    this.cache = new SearchCache(
-      options?.cacheSize || 1000,
-      options?.defaultCacheTTL || 300000
-    );
+    this.cache = new SearchCache(options?.cacheSize || 1000, options?.defaultCacheTTL || 300000);
 
     this.initializeSearchTables();
     this.setupPerformanceMonitoring();
@@ -327,13 +329,15 @@ export class SmartSearchService extends EventEmitter {
    */
   async search(
     query: string,
-    options: Partial<SearchOptions & {
-      maxResults?: number;
-      timeout?: number;
-      forceStrategy?: string;
-      enableCaching?: boolean;
-      includeAnalytics?: boolean;
-    }> = {}
+    options: Partial<
+      SearchOptions & {
+        maxResults?: number;
+        timeout?: number;
+        forceStrategy?: string;
+        enableCaching?: boolean;
+        includeAnalytics?: boolean;
+      }
+    > = {}
   ): Promise<{
     results: SearchResult[];
     metadata: {
@@ -353,7 +357,7 @@ export class SmartSearchService extends EventEmitter {
       maxResults = 10,
       timeout = 1000,
       enableCaching = true,
-      includeAnalytics = false
+      includeAnalytics = false,
     } = options;
 
     // Update search statistics
@@ -373,7 +377,7 @@ export class SmartSearchService extends EventEmitter {
             cacheHit: true,
             totalResults: cachedResult.results.length,
             query,
-            normalizedQuery
+            normalizedQuery,
           };
 
           this.emit('cache-hit', { query: normalizedQuery, executionTime: metadata.executionTime });
@@ -381,7 +385,7 @@ export class SmartSearchService extends EventEmitter {
 
           return {
             results: cachedResult.results.slice(0, maxResults),
-            metadata
+            metadata,
           };
         }
       }
@@ -389,7 +393,8 @@ export class SmartSearchService extends EventEmitter {
       this.searchStats.cacheMisses++;
 
       // Select optimal search strategy
-      const strategy = options.forceStrategy || await this.selectOptimalStrategy(normalizedQuery, options);
+      const strategy =
+        options.forceStrategy || (await this.selectOptimalStrategy(normalizedQuery, options));
 
       // Execute search with timeout protection
       const searchPromise = this.executeSearchStrategy(strategy, normalizedQuery, options);
@@ -406,9 +411,8 @@ export class SmartSearchService extends EventEmitter {
 
       // Cache results if caching is enabled and query was successful
       if (enableCaching && results.length > 0) {
-        const cacheTTL = executionTime > this.SLOW_QUERY_THRESHOLD ?
-          this.CACHE_TTL_SLOW :
-          this.CACHE_TTL_FAST;
+        const cacheTTL =
+          executionTime > this.SLOW_QUERY_THRESHOLD ? this.CACHE_TTL_SLOW : this.CACHE_TTL_FAST;
 
         this.cache.set(cacheKey, { results }, cacheTTL);
       }
@@ -419,7 +423,7 @@ export class SmartSearchService extends EventEmitter {
         cacheHit: false,
         totalResults: results.length,
         query,
-        normalizedQuery
+        normalizedQuery,
       };
 
       // Emit events for monitoring
@@ -432,9 +436,8 @@ export class SmartSearchService extends EventEmitter {
 
       return {
         results: results.slice(0, maxResults),
-        metadata
+        metadata,
       };
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
 
@@ -445,7 +448,7 @@ export class SmartSearchService extends EventEmitter {
       this.emit('error', {
         query: normalizedQuery,
         error: error.message,
-        executionTime
+        executionTime,
       });
 
       throw error;
@@ -472,7 +475,9 @@ export class SmartSearchService extends EventEmitter {
     const suggestions: SearchSuggestion[] = [];
 
     // Get query-based suggestions from search history
-    const queryHistory = this.db.prepare(`
+    const queryHistory = this.db
+      .prepare(
+        `
       SELECT
         query,
         COUNT(*) as frequency,
@@ -484,7 +489,9 @@ export class SmartSearchService extends EventEmitter {
       GROUP BY LOWER(query)
       ORDER BY frequency DESC, last_used DESC
       LIMIT ?
-    `).all(normalizedQuery, normalizedQuery, Math.ceil(limit * 0.4));
+    `
+      )
+      .all(normalizedQuery, normalizedQuery, Math.ceil(limit * 0.4));
 
     queryHistory.forEach((row: any) => {
       suggestions.push({
@@ -492,12 +499,14 @@ export class SmartSearchService extends EventEmitter {
         type: 'query',
         frequency: row.frequency,
         lastUsed: new Date(row.last_used),
-        score: row.frequency * 2
+        score: row.frequency * 2,
       });
     });
 
     // Get category suggestions
-    const categories = this.db.prepare(`
+    const categories = this.db
+      .prepare(
+        `
       SELECT
         category as suggestion,
         COUNT(*) as frequency
@@ -507,7 +516,9 @@ export class SmartSearchService extends EventEmitter {
       GROUP BY LOWER(category)
       ORDER BY frequency DESC
       LIMIT ?
-    `).all(normalizedQuery, Math.ceil(limit * 0.2));
+    `
+      )
+      .all(normalizedQuery, Math.ceil(limit * 0.2));
 
     categories.forEach((row: any) => {
       suggestions.push({
@@ -515,12 +526,14 @@ export class SmartSearchService extends EventEmitter {
         type: 'category',
         frequency: row.frequency,
         lastUsed: new Date(),
-        score: row.frequency * 1.5
+        score: row.frequency * 1.5,
       });
     });
 
     // Get tag suggestions
-    const tags = this.db.prepare(`
+    const tags = this.db
+      .prepare(
+        `
       SELECT
         tag as suggestion,
         COUNT(*) as frequency
@@ -529,7 +542,9 @@ export class SmartSearchService extends EventEmitter {
       GROUP BY LOWER(tag)
       ORDER BY frequency DESC
       LIMIT ?
-    `).all(normalizedQuery, Math.ceil(limit * 0.3));
+    `
+      )
+      .all(normalizedQuery, Math.ceil(limit * 0.3));
 
     tags.forEach((row: any) => {
       suggestions.push({
@@ -537,13 +552,15 @@ export class SmartSearchService extends EventEmitter {
         type: 'tag',
         frequency: row.frequency,
         lastUsed: new Date(),
-        score: row.frequency
+        score: row.frequency,
       });
     });
 
     // Get error code suggestions (based on common mainframe error patterns)
     if (/^[A-Z]*\d/.test(normalizedQuery)) {
-      const errorCodes = this.db.prepare(`
+      const errorCodes = this.db
+        .prepare(
+          `
         SELECT DISTINCT
           CASE
             WHEN title LIKE '%S0C%' THEN SUBSTR(title, INSTR(title, 'S0C'), 4)
@@ -556,7 +573,9 @@ export class SmartSearchService extends EventEmitter {
           AND LOWER(error_code) LIKE ? || '%'
           AND archived = FALSE
         LIMIT ?
-      `).all(normalizedQuery, Math.ceil(limit * 0.1));
+      `
+        )
+        .all(normalizedQuery, Math.ceil(limit * 0.1));
 
       errorCodes.forEach((row: any) => {
         if (row.error_code) {
@@ -565,7 +584,7 @@ export class SmartSearchService extends EventEmitter {
             type: 'error_code',
             frequency: 10, // Boost error codes
             lastUsed: new Date(),
-            score: 50 // High score for error codes
+            score: 50, // High score for error codes
           });
         }
       });
@@ -622,8 +641,8 @@ export class SmartSearchService extends EventEmitter {
         under50ms: this.searchStats.responseTimeDistribution.under50,
         under100ms: this.searchStats.responseTimeDistribution.under100,
         under500ms: this.searchStats.responseTimeDistribution.under500,
-        over500ms: this.searchStats.responseTimeDistribution.over500
-      }
+        over500ms: this.searchStats.responseTimeDistribution.over500,
+      },
     };
   }
 
@@ -643,22 +662,30 @@ export class SmartSearchService extends EventEmitter {
 
     return {
       queriesPerSecond: this.calculateQPS(),
-      averageLatency: sortedTimes.length > 0 ?
-        sortedTimes.reduce((sum, time) => sum + time, 0) / sortedTimes.length : 0,
+      averageLatency:
+        sortedTimes.length > 0
+          ? sortedTimes.reduce((sum, time) => sum + time, 0) / sortedTimes.length
+          : 0,
       p95Latency: sortedTimes[p95Index] || 0,
       p99Latency: sortedTimes[p99Index] || 0,
       cacheStats: {
-        hitRate: (this.searchStats.cacheHits / (this.searchStats.cacheHits + this.searchStats.cacheMisses)) * 100 || 0,
-        missRate: (this.searchStats.cacheMisses / (this.searchStats.cacheHits + this.searchStats.cacheMisses)) * 100 || 0,
+        hitRate:
+          (this.searchStats.cacheHits /
+            (this.searchStats.cacheHits + this.searchStats.cacheMisses)) *
+            100 || 0,
+        missRate:
+          (this.searchStats.cacheMisses /
+            (this.searchStats.cacheHits + this.searchStats.cacheMisses)) *
+            100 || 0,
         evictionRate: 0, // TODO: Track evictions
         size: cacheStats.size,
-        maxSize: cacheStats.maxSize
+        maxSize: cacheStats.maxSize,
       },
       memoryUsage: {
         cacheSize: this.estimateCacheMemoryUsage(),
         indexSize: 0, // TODO: Estimate index size
-        totalSize: this.estimateCacheMemoryUsage()
-      }
+        totalSize: this.estimateCacheMemoryUsage(),
+      },
     };
   }
 
@@ -675,7 +702,7 @@ export class SmartSearchService extends EventEmitter {
     const results = {
       cachePrewarmed: 0,
       slowQueriesOptimized: 0,
-      indexRecommendations: []
+      indexRecommendations: [],
     };
 
     // Prewarm cache with popular queries
@@ -684,7 +711,8 @@ export class SmartSearchService extends EventEmitter {
       .slice(0, 50); // Top 50 queries
 
     for (const [query, frequency] of popularQueries) {
-      if (frequency >= 5) { // Only prewarm queries used 5+ times
+      if (frequency >= 5) {
+        // Only prewarm queries used 5+ times
         try {
           await this.search(query, { maxResults: 10, enableCaching: true });
           results.cachePrewarmed++;
@@ -695,11 +723,10 @@ export class SmartSearchService extends EventEmitter {
     }
 
     // Analyze slow queries for optimization opportunities
-    const slowQueries = Array.from(this.performanceTracker.entries())
-      .filter(([_, times]) => {
-        const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
-        return avgTime > this.SLOW_QUERY_THRESHOLD;
-      });
+    const slowQueries = Array.from(this.performanceTracker.entries()).filter(([_, times]) => {
+      const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
+      return avgTime > this.SLOW_QUERY_THRESHOLD;
+    });
 
     results.slowQueriesOptimized = slowQueries.length;
 
@@ -726,7 +753,7 @@ export class SmartSearchService extends EventEmitter {
         failedQueries: new Map(),
         queryFrequency: new Map(),
         strategyUsage: new Map(),
-        responseTimeDistribution: { under50: 0, under100: 0, under500: 0, over500: 0 }
+        responseTimeDistribution: { under50: 0, under100: 0, under500: 0, over500: 0 },
       };
     }
   }
@@ -767,7 +794,7 @@ export class SmartSearchService extends EventEmitter {
       normalizedQuery,
       options.category || '',
       options.sortBy || '',
-      options.maxResults || 10
+      options.maxResults || 10,
     ];
     return keyParts.join(':');
   }
@@ -794,8 +821,9 @@ export class SmartSearchService extends EventEmitter {
     }
 
     // Check historical performance for this query pattern
-    const similarQueries = Array.from(this.performanceTracker.entries())
-      .filter(([q, _]) => this.calculateQuerySimilarity(q, query) > 0.8);
+    const similarQueries = Array.from(this.performanceTracker.entries()).filter(
+      ([q, _]) => this.calculateQuerySimilarity(q, query) > 0.8
+    );
 
     if (similarQueries.length > 0) {
       // Use strategy that performed best for similar queries
@@ -841,8 +869,13 @@ export class SmartSearchService extends EventEmitter {
     }
   }
 
-  private executeExactMatch(query: string, options: Partial<SearchOptions>): Promise<SearchResult[]> {
-    const results = this.db.prepare(`
+  private executeExactMatch(
+    query: string,
+    options: Partial<SearchOptions>
+  ): Promise<SearchResult[]> {
+    const results = this.db
+      .prepare(
+        `
       SELECT
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags
@@ -858,21 +891,28 @@ export class SmartSearchService extends EventEmitter {
       GROUP BY e.id
       ORDER BY e.usage_count DESC
       LIMIT ?
-    `).all(
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(
+        `%${query}%`,
+        `%${query}%`,
+        `%${query}%`,
+        ...(options.category ? [options.category] : []),
+        options.limit || 10
+      );
 
     return Promise.resolve(this.convertToSearchResults(results, 'exact'));
   }
 
-  private executeFTSSearch(query: string, options: Partial<SearchOptions>): Promise<SearchResult[]> {
+  private executeFTSSearch(
+    query: string,
+    options: Partial<SearchOptions>
+  ): Promise<SearchResult[]> {
     const ftsQuery = this.prepareFTSQuery(query);
 
-    const results = this.db.prepare(`
+    const results = this.db
+      .prepare(
+        `
       SELECT
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags,
@@ -886,24 +926,27 @@ export class SmartSearchService extends EventEmitter {
       GROUP BY e.id
       ORDER BY relevance_score DESC
       LIMIT ?
-    `).all(
-      ftsQuery,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(ftsQuery, ...(options.category ? [options.category] : []), options.limit || 10);
 
     return Promise.resolve(this.convertToSearchResults(results, 'fts'));
   }
 
-  private executeFuzzySearch(query: string, options: Partial<SearchOptions>): Promise<SearchResult[]> {
+  private executeFuzzySearch(
+    query: string,
+    options: Partial<SearchOptions>
+  ): Promise<SearchResult[]> {
     const terms = query.split(/\s+/).filter(term => term.length > 2);
-    const likeConditions = terms.map(() =>
-      '(e.title LIKE ? OR e.problem LIKE ? OR e.solution LIKE ?)'
-    ).join(' AND ');
+    const likeConditions = terms
+      .map(() => '(e.title LIKE ? OR e.problem LIKE ? OR e.solution LIKE ?)')
+      .join(' AND ');
 
     const params = terms.flatMap(term => [`%${term}%`, `%${term}%`, `%${term}%`]);
 
-    const results = this.db.prepare(`
+    const results = this.db
+      .prepare(
+        `
       SELECT
         e.*,
         GROUP_CONCAT(DISTINCT t.tag, ', ') as tags
@@ -915,21 +958,22 @@ export class SmartSearchService extends EventEmitter {
       GROUP BY e.id
       ORDER BY e.usage_count DESC
       LIMIT ?
-    `).all(
-      ...params,
-      ...(options.category ? [options.category] : []),
-      options.limit || 10
-    );
+    `
+      )
+      .all(...params, ...(options.category ? [options.category] : []), options.limit || 10);
 
     return Promise.resolve(this.convertToSearchResults(results, 'fuzzy'));
   }
 
-  private async executeHybridSearch(query: string, options: Partial<SearchOptions>): Promise<SearchResult[]> {
+  private async executeHybridSearch(
+    query: string,
+    options: Partial<SearchOptions>
+  ): Promise<SearchResult[]> {
     // Execute multiple strategies and merge results
     const [exactResults, ftsResults, fuzzyResults] = await Promise.all([
       this.executeExactMatch(query, { ...options, limit: 5 }),
       this.executeFTSSearch(query, { ...options, limit: 5 }),
-      this.executeFuzzySearch(query, { ...options, limit: 5 })
+      this.executeFuzzySearch(query, { ...options, limit: 5 }),
     ]);
 
     // Merge and deduplicate results
@@ -947,7 +991,7 @@ export class SmartSearchService extends EventEmitter {
           mergedResults.set(result.entry.id!, {
             ...result,
             score: result.score * strategyWeight,
-            matchType: 'hybrid'
+            matchType: 'hybrid',
           });
         }
       });
@@ -975,10 +1019,10 @@ export class SmartSearchService extends EventEmitter {
         updated_at: new Date(row.updated_at),
         created_by: row.created_by,
         last_used: row.last_used ? new Date(row.last_used) : undefined,
-        archived: row.archived
+        archived: row.archived,
       },
       score: row.relevance_score || Math.log(row.usage_count + 1) * 10,
-      matchType: matchType as any
+      matchType: matchType as any,
     }));
   }
 
@@ -1019,18 +1063,22 @@ export class SmartSearchService extends EventEmitter {
     this.performanceTracker.set(query, queryTimes);
 
     // Log to search history
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO search_history (
         query, normalized_query, timestamp, results_count, execution_time, strategy
       ) VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      query,
-      this.normalizeQuery(query),
-      new Date().toISOString(),
-      0, // Will be updated when results are available
-      executionTime,
-      strategy
-    );
+    `
+      )
+      .run(
+        query,
+        this.normalizeQuery(query),
+        new Date().toISOString(),
+        0, // Will be updated when results are available
+        executionTime,
+        strategy
+      );
   }
 
   private updateResponseTimeDistribution(executionTime: number): void {
@@ -1067,7 +1115,7 @@ export class SmartSearchService extends EventEmitter {
     return {
       isComplex: words.length > 3 || hasOperators,
       hasSpecialTerms,
-      wordCount: words.length
+      wordCount: words.length,
     };
   }
 
@@ -1075,11 +1123,15 @@ export class SmartSearchService extends EventEmitter {
     // Calculate queries per second over the last minute
     const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
 
-    const recentQueries = this.db.prepare(`
+    const recentQueries = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count
       FROM search_history
       WHERE timestamp > ?
-    `).get(oneMinuteAgo) as { count: number };
+    `
+      )
+      .get(oneMinuteAgo) as { count: number };
 
     return recentQueries.count / 60; // Convert to per-second
   }
@@ -1096,26 +1148,31 @@ export class SmartSearchService extends EventEmitter {
     const recommendations: string[] = [];
 
     // Analyze query patterns to suggest indexes
-    const categoryQueries = Array.from(this.searchStats.queryFrequency.keys())
-      .filter(query => query.includes('category:'));
+    const categoryQueries = Array.from(this.searchStats.queryFrequency.keys()).filter(query =>
+      query.includes('category:')
+    );
 
     if (categoryQueries.length > 10) {
-      recommendations.push('Consider optimizing category index for better category-filtered searches');
+      recommendations.push(
+        'Consider optimizing category index for better category-filtered searches'
+      );
     }
 
-    const tagQueries = Array.from(this.searchStats.queryFrequency.keys())
-      .filter(query => query.includes('tag:'));
+    const tagQueries = Array.from(this.searchStats.queryFrequency.keys()).filter(query =>
+      query.includes('tag:')
+    );
 
     if (tagQueries.length > 10) {
       recommendations.push('Consider adding composite index on kb_tags for better tag searches');
     }
 
     // Check for slow full-text searches
-    const slowFTSQueries = Array.from(this.performanceTracker.entries())
-      .filter(([query, times]) => {
+    const slowFTSQueries = Array.from(this.performanceTracker.entries()).filter(
+      ([query, times]) => {
         const avgTime = times.reduce((sum, time) => sum + time, 0) / times.length;
         return avgTime > 200 && !query.startsWith('category:') && !query.startsWith('tag:');
-      });
+      }
+    );
 
     if (slowFTSQueries.length > 5) {
       recommendations.push('Consider rebuilding FTS index to improve full-text search performance');
@@ -1126,16 +1183,19 @@ export class SmartSearchService extends EventEmitter {
 
   private setupPerformanceMonitoring(): void {
     // Clean up old performance data every hour
-    setInterval(() => {
-      // Keep only recent performance data
-      const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
+    setInterval(
+      () => {
+        // Keep only recent performance data
+        const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours
 
-      this.performanceTracker.forEach((times, query) => {
-        // Remove times older than 24 hours (simplified - in reality we'd need timestamps)
-        if (times.length > 1000) {
-          times.splice(0, times.length - 500); // Keep last 500 measurements
-        }
-      });
-    }, 60 * 60 * 1000); // Run every hour
+        this.performanceTracker.forEach((times, query) => {
+          // Remove times older than 24 hours (simplified - in reality we'd need timestamps)
+          if (times.length > 1000) {
+            times.splice(0, times.length - 500); // Keep last 500 measurements
+          }
+        });
+      },
+      60 * 60 * 1000
+    ); // Run every hour
   }
 }

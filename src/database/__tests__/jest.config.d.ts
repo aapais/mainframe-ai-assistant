@@ -8,12 +8,12 @@ export let collectCoverageFrom: string[];
 export let coverageDirectory: string;
 export let coverageReporters: string[];
 export namespace coverageThreshold {
-    namespace global {
-        let branches: number;
-        let functions: number;
-        let lines: number;
-        let statements: number;
-    }
+  namespace global {
+    let branches: number;
+    let functions: number;
+    let lines: number;
+    let statements: number;
+  }
 }
 export let maxWorkers: number;
 export let forceExit: boolean;

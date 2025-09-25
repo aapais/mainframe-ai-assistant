@@ -82,13 +82,21 @@ describe('VersionControlService', () => {
 
   describe('Initialization', () => {
     it('should initialize database schema', () => {
-      expect(mockDB.exec).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE IF NOT EXISTS entry_versions'));
-      expect(mockDB.exec).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE IF NOT EXISTS change_records'));
-      expect(mockDB.exec).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE IF NOT EXISTS version_branches'));
+      expect(mockDB.exec).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE TABLE IF NOT EXISTS entry_versions')
+      );
+      expect(mockDB.exec).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE TABLE IF NOT EXISTS change_records')
+      );
+      expect(mockDB.exec).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE TABLE IF NOT EXISTS version_branches')
+      );
     });
 
     it('should create necessary indexes', () => {
-      expect(mockDB.exec).toHaveBeenCalledWith(expect.stringContaining('CREATE INDEX IF NOT EXISTS idx_entry_versions'));
+      expect(mockDB.exec).toHaveBeenCalledWith(
+        expect.stringContaining('CREATE INDEX IF NOT EXISTS idx_entry_versions')
+      );
     });
 
     it('should enable foreign keys', () => {
@@ -154,7 +162,9 @@ describe('VersionControlService', () => {
 
       // Mock getting previous version
       service.getVersionSync = jest.fn().mockReturnValue(sampleEntry);
-      service.detectChangedFields = jest.fn().mockReturnValue(['title', 'problem', 'solution', 'tags']);
+      service.detectChangedFields = jest
+        .fn()
+        .mockReturnValue(['title', 'problem', 'solution', 'tags']);
 
       await service.createVersion(updatedEntry, 'user-1', 'Test User');
 
@@ -322,7 +332,8 @@ describe('VersionControlService', () => {
 
   describe('Version Comparison', () => {
     beforeEach(() => {
-      service.getVersion = jest.fn()
+      service.getVersion = jest
+        .fn()
         .mockResolvedValueOnce(sampleEntry)
         .mockResolvedValueOnce(updatedEntry);
     });
@@ -408,13 +419,10 @@ describe('VersionControlService', () => {
     });
 
     it('should handle overwrite merge strategy', async () => {
-      await service.rollbackToVersion(
-        'test-entry-1',
-        1,
-        'user-1',
-        'Test User',
-        { ...rollbackOptions, merge_strategy: 'overwrite' }
-      );
+      await service.rollbackToVersion('test-entry-1', 1, 'user-1', 'Test User', {
+        ...rollbackOptions,
+        merge_strategy: 'overwrite',
+      });
 
       expect(service.createVersion).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -430,13 +438,7 @@ describe('VersionControlService', () => {
     });
 
     it('should record rollback in change history', async () => {
-      await service.rollbackToVersion(
-        'test-entry-1',
-        1,
-        'user-1',
-        'Test User',
-        rollbackOptions
-      );
+      await service.rollbackToVersion('test-entry-1', 1, 'user-1', 'Test User', rollbackOptions);
 
       // Should insert rollback record
       expect(mockPreparedStatement.run).toHaveBeenCalledWith(
@@ -485,7 +487,11 @@ describe('VersionControlService', () => {
       const conflictingVersionA = { ...sampleEntry, title: 'Title A' };
       const conflictingVersionB = { ...sampleEntry, title: 'Title B' };
 
-      const result = await service.mergeVersions(baseEntry, conflictingVersionA, conflictingVersionB);
+      const result = await service.mergeVersions(
+        baseEntry,
+        conflictingVersionA,
+        conflictingVersionB
+      );
 
       expect(result.success).toBe(false);
       expect(result.conflicts).toHaveLength(1);
@@ -561,9 +567,9 @@ describe('VersionControlService', () => {
         throw new Error('Database error');
       });
 
-      await expect(
-        service.createVersion(sampleEntry, 'user-1', 'Test User')
-      ).rejects.toThrow('Database error');
+      await expect(service.createVersion(sampleEntry, 'user-1', 'Test User')).rejects.toThrow(
+        'Database error'
+      );
     });
 
     it('should handle transaction rollback', async () => {
@@ -571,9 +577,9 @@ describe('VersionControlService', () => {
         throw new Error('Transaction failed');
       });
 
-      await expect(
-        service.createVersion(sampleEntry, 'user-1', 'Test User')
-      ).rejects.toThrow('Transaction failed');
+      await expect(service.createVersion(sampleEntry, 'user-1', 'Test User')).rejects.toThrow(
+        'Transaction failed'
+      );
     });
 
     it('should handle corrupted version data', async () => {

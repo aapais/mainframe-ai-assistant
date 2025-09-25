@@ -8,7 +8,7 @@ import {
   AIOperationType,
   CostCalculationInput,
   CostCalculationResult,
-  AICostRate
+  AICostRate,
 } from '../renderer/types/ai';
 
 export interface TokenEstimate {
@@ -311,7 +311,13 @@ export class AICostCalculator {
     ranking: number;
   }> {
     const results = options.map(option => {
-      const estimate = this.getEstimate(query, option.provider, option.model, operationType, purpose);
+      const estimate = this.getEstimate(
+        query,
+        option.provider,
+        option.model,
+        operationType,
+        purpose
+      );
       return {
         ...option,
         estimatedCost: estimate.estimatedCost,
@@ -382,7 +388,11 @@ export class AICostCalculator {
   /**
    * Get all available provider/model combinations
    */
-  static getAvailableModels(): Array<{ provider: AIProvider; model: string; costRate: AICostRate }> {
+  static getAvailableModels(): Array<{
+    provider: AIProvider;
+    model: string;
+    costRate: AICostRate;
+  }> {
     return Object.entries(this.COST_RATES).map(([key, rate]) => {
       const [provider, model] = key.split('/');
       return {
@@ -456,13 +466,15 @@ export class BudgetEnforcement {
 
     if (projectedUsage > budgetLimit) {
       warningLevel = 'critical';
-      message = `Operation would exceed budget limit by ${AICostCalculator.calculateCost({
-        provider: 'openai',
-        model: 'gpt-3.5-turbo',
-        inputTokens: 0,
-        outputTokens: 0,
-        operationType: 'search',
-      }).totalCost}`;
+      message = `Operation would exceed budget limit by ${
+        AICostCalculator.calculateCost({
+          provider: 'openai',
+          model: 'gpt-3.5-turbo',
+          inputTokens: 0,
+          outputTokens: 0,
+          operationType: 'search',
+        }).totalCost
+      }`;
       return {
         allowed: false,
         projectedUsage,

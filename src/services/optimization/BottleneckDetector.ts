@@ -118,7 +118,7 @@ export class BottleneckDetector extends EventEmitter {
   recordMetric(metric: PerformanceMetric): void {
     this.metrics.push({
       ...metric,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Keep only last 100,000 metrics for memory efficiency
@@ -177,8 +177,9 @@ export class BottleneckDetector extends EventEmitter {
    */
   async getOptimizationRecommendations(metrics: any[]): Promise<OptimizationSuggestion[]> {
     const recommendations: OptimizationSuggestion[] = [];
-    const activeBottlenecks = Array.from(this.bottlenecks.values())
-      .filter(b => this.isRecentBottleneck(b));
+    const activeBottlenecks = Array.from(this.bottlenecks.values()).filter(b =>
+      this.isRecentBottleneck(b)
+    );
 
     for (const bottleneck of activeBottlenecks) {
       const suggestion = await this.generateOptimizationSuggestion(bottleneck);
@@ -204,7 +205,7 @@ export class BottleneckDetector extends EventEmitter {
       if (success) {
         this.emit('bottleneck-optimization-applied', {
           recommendation,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
 
         // Mark bottleneck as addressed
@@ -218,7 +219,6 @@ export class BottleneckDetector extends EventEmitter {
       }
 
       return false;
-
     } catch (error) {
       console.error('Error applying bottleneck optimization:', error);
       return false;
@@ -230,16 +230,15 @@ export class BottleneckDetector extends EventEmitter {
    */
   private initializeDetectionRules(): void {
     // CPU bottleneck detection
-    this.detectionRules.set('cpu_bottleneck', (metrics) => {
+    this.detectionRules.set('cpu_bottleneck', metrics => {
       const bottlenecks: Bottleneck[] = [];
       const cpuMetrics = metrics.filter(m => m.component === 'cpu');
 
-      const recentCpuUsage = cpuMetrics
-        .filter(m => m.metric === 'usage_percent')
-        .slice(-10); // Last 10 readings
+      const recentCpuUsage = cpuMetrics.filter(m => m.metric === 'usage_percent').slice(-10); // Last 10 readings
 
       if (recentCpuUsage.length >= 5) {
-        const avgCpuUsage = recentCpuUsage.reduce((sum, m) => sum + m.value, 0) / recentCpuUsage.length;
+        const avgCpuUsage =
+          recentCpuUsage.reduce((sum, m) => sum + m.value, 0) / recentCpuUsage.length;
 
         if (avgCpuUsage > 90) {
           bottlenecks.push({
@@ -254,18 +253,25 @@ export class BottleneckDetector extends EventEmitter {
               affectedComponents: ['search', 'database', 'api'],
               performanceDegradation: Math.min(50, (avgCpuUsage - 80) * 2),
               userExperienceImpact: avgCpuUsage > 95 ? 'severe' : 'significant',
-              businessImpact: avgCpuUsage > 95 ? 'critical' : 'high'
+              businessImpact: avgCpuUsage > 95 ? 'critical' : 'high',
             },
             rootCause: {
               primary: 'CPU resource exhaustion',
-              contributing: ['High concurrent requests', 'Inefficient algorithms', 'Memory pressure'],
-              confidence: 85
+              contributing: [
+                'High concurrent requests',
+                'Inefficient algorithms',
+                'Memory pressure',
+              ],
+              confidence: 85,
             },
             trend: {
               direction: this.analyzeTrend(recentCpuUsage),
               velocity: this.calculateVelocity(recentCpuUsage),
-              prediction: avgCpuUsage > 95 ? 'System may become unresponsive' : 'Performance will continue to degrade'
-            }
+              prediction:
+                avgCpuUsage > 95
+                  ? 'System may become unresponsive'
+                  : 'Performance will continue to degrade',
+            },
           });
         }
       }
@@ -274,16 +280,15 @@ export class BottleneckDetector extends EventEmitter {
     });
 
     // Memory bottleneck detection
-    this.detectionRules.set('memory_bottleneck', (metrics) => {
+    this.detectionRules.set('memory_bottleneck', metrics => {
       const bottlenecks: Bottleneck[] = [];
       const memoryMetrics = metrics.filter(m => m.component === 'memory');
 
-      const recentMemoryUsage = memoryMetrics
-        .filter(m => m.metric === 'usage_percent')
-        .slice(-10);
+      const recentMemoryUsage = memoryMetrics.filter(m => m.metric === 'usage_percent').slice(-10);
 
       if (recentMemoryUsage.length >= 5) {
-        const avgMemoryUsage = recentMemoryUsage.reduce((sum, m) => sum + m.value, 0) / recentMemoryUsage.length;
+        const avgMemoryUsage =
+          recentMemoryUsage.reduce((sum, m) => sum + m.value, 0) / recentMemoryUsage.length;
 
         if (avgMemoryUsage > 85) {
           bottlenecks.push({
@@ -297,19 +302,21 @@ export class BottleneckDetector extends EventEmitter {
             impactAnalysis: {
               affectedComponents: ['cache', 'search', 'database'],
               performanceDegradation: Math.min(60, (avgMemoryUsage - 70) * 2),
-              userExperienceImpact: avgMemoryUsage > 95 ? 'severe' : avgMemoryUsage > 90 ? 'significant' : 'moderate',
-              businessImpact: avgMemoryUsage > 95 ? 'critical' : 'medium'
+              userExperienceImpact:
+                avgMemoryUsage > 95 ? 'severe' : avgMemoryUsage > 90 ? 'significant' : 'moderate',
+              businessImpact: avgMemoryUsage > 95 ? 'critical' : 'medium',
             },
             rootCause: {
               primary: 'Memory resource exhaustion',
               contributing: ['Memory leaks', 'Large cache objects', 'Inefficient data structures'],
-              confidence: 80
+              confidence: 80,
             },
             trend: {
               direction: this.analyzeTrend(recentMemoryUsage),
               velocity: this.calculateVelocity(recentMemoryUsage),
-              prediction: avgMemoryUsage > 95 ? 'Out of memory errors imminent' : 'GC pressure will increase'
-            }
+              prediction:
+                avgMemoryUsage > 95 ? 'Out of memory errors imminent' : 'GC pressure will increase',
+            },
           });
         }
       }
@@ -318,19 +325,18 @@ export class BottleneckDetector extends EventEmitter {
     });
 
     // Database bottleneck detection
-    this.detectionRules.set('database_bottleneck', (metrics) => {
+    this.detectionRules.set('database_bottleneck', metrics => {
       const bottlenecks: Bottleneck[] = [];
       const dbMetrics = metrics.filter(m => m.component === 'database');
 
       // Check query response time
-      const queryTimes = dbMetrics
-        .filter(m => m.metric === 'query_response_time')
-        .slice(-20);
+      const queryTimes = dbMetrics.filter(m => m.metric === 'query_response_time').slice(-20);
 
       if (queryTimes.length >= 10) {
         const avgQueryTime = queryTimes.reduce((sum, m) => sum + m.value, 0) / queryTimes.length;
 
-        if (avgQueryTime > 1000) { // >1 second
+        if (avgQueryTime > 1000) {
+          // >1 second
           bottlenecks.push({
             id: `db-query-bottleneck-${Date.now()}`,
             timestamp: Date.now(),
@@ -342,30 +348,38 @@ export class BottleneckDetector extends EventEmitter {
             impactAnalysis: {
               affectedComponents: ['search', 'api', 'ui'],
               performanceDegradation: Math.min(80, avgQueryTime / 50),
-              userExperienceImpact: avgQueryTime > 5000 ? 'severe' : avgQueryTime > 3000 ? 'significant' : 'moderate',
-              businessImpact: avgQueryTime > 5000 ? 'critical' : 'medium'
+              userExperienceImpact:
+                avgQueryTime > 5000 ? 'severe' : avgQueryTime > 3000 ? 'significant' : 'moderate',
+              businessImpact: avgQueryTime > 5000 ? 'critical' : 'medium',
             },
             rootCause: {
               primary: 'Database performance issues',
-              contributing: ['Missing indexes', 'Lock contention', 'Large result sets', 'Poor query optimization'],
-              confidence: 90
+              contributing: [
+                'Missing indexes',
+                'Lock contention',
+                'Large result sets',
+                'Poor query optimization',
+              ],
+              confidence: 90,
             },
             trend: {
               direction: this.analyzeTrend(queryTimes),
               velocity: this.calculateVelocity(queryTimes),
-              prediction: avgQueryTime > 5000 ? 'Database may become unresponsive' : 'Query performance will degrade further'
-            }
+              prediction:
+                avgQueryTime > 5000
+                  ? 'Database may become unresponsive'
+                  : 'Query performance will degrade further',
+            },
           });
         }
       }
 
       // Check connection pool
-      const connectionMetrics = dbMetrics
-        .filter(m => m.metric === 'active_connections')
-        .slice(-10);
+      const connectionMetrics = dbMetrics.filter(m => m.metric === 'active_connections').slice(-10);
 
       if (connectionMetrics.length >= 5) {
-        const avgConnections = connectionMetrics.reduce((sum, m) => sum + m.value, 0) / connectionMetrics.length;
+        const avgConnections =
+          connectionMetrics.reduce((sum, m) => sum + m.value, 0) / connectionMetrics.length;
         const maxConnections = 100; // Assumed max
 
         if (avgConnections > maxConnections * 0.9) {
@@ -379,20 +393,21 @@ export class BottleneckDetector extends EventEmitter {
             metrics: connectionMetrics,
             impactAnalysis: {
               affectedComponents: ['api', 'background-jobs'],
-              performanceDegradation: ((avgConnections / maxConnections) - 0.5) * 100,
-              userExperienceImpact: avgConnections > maxConnections * 0.95 ? 'severe' : 'significant',
-              businessImpact: 'high'
+              performanceDegradation: (avgConnections / maxConnections - 0.5) * 100,
+              userExperienceImpact:
+                avgConnections > maxConnections * 0.95 ? 'severe' : 'significant',
+              businessImpact: 'high',
             },
             rootCause: {
               primary: 'Connection pool exhaustion',
               contributing: ['Long-running queries', 'Connection leaks', 'High concurrent load'],
-              confidence: 95
+              confidence: 95,
             },
             trend: {
               direction: this.analyzeTrend(connectionMetrics),
               velocity: this.calculateVelocity(connectionMetrics),
-              prediction: 'New connections will be rejected'
-            }
+              prediction: 'New connections will be rejected',
+            },
           });
         }
       }
@@ -401,18 +416,17 @@ export class BottleneckDetector extends EventEmitter {
     });
 
     // Search performance bottleneck detection
-    this.detectionRules.set('search_bottleneck', (metrics) => {
+    this.detectionRules.set('search_bottleneck', metrics => {
       const bottlenecks: Bottleneck[] = [];
       const searchMetrics = metrics.filter(m => m.component === 'search');
 
-      const searchTimes = searchMetrics
-        .filter(m => m.metric === 'search_response_time')
-        .slice(-15);
+      const searchTimes = searchMetrics.filter(m => m.metric === 'search_response_time').slice(-15);
 
       if (searchTimes.length >= 8) {
         const avgSearchTime = searchTimes.reduce((sum, m) => sum + m.value, 0) / searchTimes.length;
 
-        if (avgSearchTime > 2000) { // >2 seconds
+        if (avgSearchTime > 2000) {
+          // >2 seconds
           bottlenecks.push({
             id: `search-bottleneck-${Date.now()}`,
             timestamp: Date.now(),
@@ -424,19 +438,25 @@ export class BottleneckDetector extends EventEmitter {
             impactAnalysis: {
               affectedComponents: ['ui', 'api'],
               performanceDegradation: Math.min(70, avgSearchTime / 100),
-              userExperienceImpact: avgSearchTime > 5000 ? 'severe' : avgSearchTime > 3000 ? 'significant' : 'moderate',
-              businessImpact: avgSearchTime > 5000 ? 'high' : 'medium'
+              userExperienceImpact:
+                avgSearchTime > 5000 ? 'severe' : avgSearchTime > 3000 ? 'significant' : 'moderate',
+              businessImpact: avgSearchTime > 5000 ? 'high' : 'medium',
             },
             rootCause: {
               primary: 'Search algorithm inefficiency',
-              contributing: ['Large index size', 'Complex queries', 'Insufficient caching', 'Poor algorithm tuning'],
-              confidence: 85
+              contributing: [
+                'Large index size',
+                'Complex queries',
+                'Insufficient caching',
+                'Poor algorithm tuning',
+              ],
+              confidence: 85,
             },
             trend: {
               direction: this.analyzeTrend(searchTimes),
               velocity: this.calculateVelocity(searchTimes),
-              prediction: 'Search will become unusably slow'
-            }
+              prediction: 'Search will become unusably slow',
+            },
           });
         }
       }
@@ -445,18 +465,18 @@ export class BottleneckDetector extends EventEmitter {
     });
 
     // Cache efficiency bottleneck detection
-    this.detectionRules.set('cache_bottleneck', (metrics) => {
+    this.detectionRules.set('cache_bottleneck', metrics => {
       const bottlenecks: Bottleneck[] = [];
       const cacheMetrics = metrics.filter(m => m.component === 'cache');
 
-      const hitRatioMetrics = cacheMetrics
-        .filter(m => m.metric === 'hit_ratio')
-        .slice(-10);
+      const hitRatioMetrics = cacheMetrics.filter(m => m.metric === 'hit_ratio').slice(-10);
 
       if (hitRatioMetrics.length >= 5) {
-        const avgHitRatio = hitRatioMetrics.reduce((sum, m) => sum + m.value, 0) / hitRatioMetrics.length;
+        const avgHitRatio =
+          hitRatioMetrics.reduce((sum, m) => sum + m.value, 0) / hitRatioMetrics.length;
 
-        if (avgHitRatio < 0.7) { // <70% hit ratio
+        if (avgHitRatio < 0.7) {
+          // <70% hit ratio
           bottlenecks.push({
             id: `cache-bottleneck-${Date.now()}`,
             timestamp: Date.now(),
@@ -469,18 +489,23 @@ export class BottleneckDetector extends EventEmitter {
               affectedComponents: ['database', 'api', 'search'],
               performanceDegradation: (0.9 - avgHitRatio) * 100,
               userExperienceImpact: avgHitRatio < 0.5 ? 'significant' : 'moderate',
-              businessImpact: 'medium'
+              businessImpact: 'medium',
             },
             rootCause: {
               primary: 'Cache inefficiency',
-              contributing: ['Poor cache strategy', 'Short TTL values', 'High cache eviction', 'Inadequate cache size'],
-              confidence: 80
+              contributing: [
+                'Poor cache strategy',
+                'Short TTL values',
+                'High cache eviction',
+                'Inadequate cache size',
+              ],
+              confidence: 80,
             },
             trend: {
               direction: this.analyzeTrend(hitRatioMetrics),
               velocity: this.calculateVelocity(hitRatioMetrics),
-              prediction: 'Cache will become less effective'
-            }
+              prediction: 'Cache will become less effective',
+            },
           });
         }
       }
@@ -489,18 +514,18 @@ export class BottleneckDetector extends EventEmitter {
     });
 
     // Network bottleneck detection
-    this.detectionRules.set('network_bottleneck', (metrics) => {
+    this.detectionRules.set('network_bottleneck', metrics => {
       const bottlenecks: Bottleneck[] = [];
       const networkMetrics = metrics.filter(m => m.component === 'network');
 
-      const latencyMetrics = networkMetrics
-        .filter(m => m.metric === 'latency')
-        .slice(-10);
+      const latencyMetrics = networkMetrics.filter(m => m.metric === 'latency').slice(-10);
 
       if (latencyMetrics.length >= 5) {
-        const avgLatency = latencyMetrics.reduce((sum, m) => sum + m.value, 0) / latencyMetrics.length;
+        const avgLatency =
+          latencyMetrics.reduce((sum, m) => sum + m.value, 0) / latencyMetrics.length;
 
-        if (avgLatency > 500) { // >500ms latency
+        if (avgLatency > 500) {
+          // >500ms latency
           bottlenecks.push({
             id: `network-bottleneck-${Date.now()}`,
             timestamp: Date.now(),
@@ -513,18 +538,23 @@ export class BottleneckDetector extends EventEmitter {
               affectedComponents: ['api', 'database', 'cache'],
               performanceDegradation: Math.min(50, avgLatency / 20),
               userExperienceImpact: avgLatency > 1000 ? 'significant' : 'moderate',
-              businessImpact: 'medium'
+              businessImpact: 'medium',
             },
             rootCause: {
               primary: 'Network performance issues',
-              contributing: ['Bandwidth limitations', 'Network congestion', 'Geographic distance', 'Poor routing'],
-              confidence: 75
+              contributing: [
+                'Bandwidth limitations',
+                'Network congestion',
+                'Geographic distance',
+                'Poor routing',
+              ],
+              confidence: 75,
             },
             trend: {
               direction: this.analyzeTrend(latencyMetrics),
               velocity: this.calculateVelocity(latencyMetrics),
-              prediction: 'Network performance will continue to degrade'
-            }
+              prediction: 'Network performance will continue to degrade',
+            },
           });
         }
       }
@@ -539,33 +569,33 @@ export class BottleneckDetector extends EventEmitter {
   private initializeThresholds(): void {
     this.thresholds.set('cpu', {
       usage_percent: { warning: 70, critical: 90 },
-      load_average: { warning: 2.0, critical: 4.0 }
+      load_average: { warning: 2.0, critical: 4.0 },
     });
 
     this.thresholds.set('memory', {
       usage_percent: { warning: 80, critical: 95 },
-      available_mb: { warning: 1000, critical: 500 }
+      available_mb: { warning: 1000, critical: 500 },
     });
 
     this.thresholds.set('database', {
       query_response_time: { warning: 1000, critical: 3000 },
       active_connections: { warning: 80, critical: 95 },
-      lock_wait_time: { warning: 100, critical: 500 }
+      lock_wait_time: { warning: 100, critical: 500 },
     });
 
     this.thresholds.set('search', {
       search_response_time: { warning: 1000, critical: 3000 },
-      index_size: { warning: 1000000, critical: 5000000 }
+      index_size: { warning: 1000000, critical: 5000000 },
     });
 
     this.thresholds.set('cache', {
       hit_ratio: { warning: 0.8, critical: 0.6 },
-      memory_usage: { warning: 0.8, critical: 0.95 }
+      memory_usage: { warning: 0.8, critical: 0.95 },
     });
 
     this.thresholds.set('network', {
       latency: { warning: 200, critical: 500 },
-      packet_loss: { warning: 0.01, critical: 0.05 }
+      packet_loss: { warning: 0.01, critical: 0.05 },
     });
   }
 
@@ -584,12 +614,12 @@ export class BottleneckDetector extends EventEmitter {
         metrics: [],
         trends: {
           shortTerm: 'stable',
-          longTerm: 'stable'
+          longTerm: 'stable',
         },
         alerts: {
           warning: 0,
-          critical: 0
-        }
+          critical: 0,
+        },
       });
     });
   }
@@ -678,7 +708,8 @@ export class BottleneckDetector extends EventEmitter {
 
     // Determine trend direction (note: for some metrics, higher is worse)
     const isHigherWorse = ['usage_percent', 'response_time', 'latency'].some(bad =>
-      recentMetrics.some(m => m.metric.includes(bad)));
+      recentMetrics.some(m => m.metric.includes(bad))
+    );
 
     let trend: 'improving' | 'stable' | 'degrading' = 'stable';
     const changeThreshold = 0.1; // 10% change
@@ -713,7 +744,7 @@ export class BottleneckDetector extends EventEmitter {
         metric: metric.metric,
         value: metric.value,
         threshold: threshold.critical,
-        severity: 'critical'
+        severity: 'critical',
       });
     } else if (metric.value >= threshold.warning) {
       this.emit('performance-warning', {
@@ -721,7 +752,7 @@ export class BottleneckDetector extends EventEmitter {
         metric: metric.metric,
         value: metric.value,
         threshold: threshold.warning,
-        severity: 'warning'
+        severity: 'warning',
       });
     }
   }
@@ -729,7 +760,9 @@ export class BottleneckDetector extends EventEmitter {
   /**
    * Generate optimization suggestion for bottleneck
    */
-  private async generateOptimizationSuggestion(bottleneck: Bottleneck): Promise<OptimizationSuggestion | null> {
+  private async generateOptimizationSuggestion(
+    bottleneck: Bottleneck
+  ): Promise<OptimizationSuggestion | null> {
     const suggestions: Record<string, any> = {
       cpu: {
         title: 'CPU Optimization',
@@ -739,11 +772,11 @@ export class BottleneckDetector extends EventEmitter {
           'Optimize algorithms and data structures',
           'Implement horizontal scaling',
           'Add caching for expensive operations',
-          'Consider asynchronous processing'
+          'Consider asynchronous processing',
         ],
         estimatedEffort: 'high',
         estimatedTime: '2-4 weeks',
-        performanceImprovement: 30
+        performanceImprovement: 30,
       },
       memory: {
         title: 'Memory Optimization',
@@ -753,11 +786,11 @@ export class BottleneckDetector extends EventEmitter {
           'Optimize data structures',
           'Implement memory pooling',
           'Tune garbage collection',
-          'Add memory monitoring'
+          'Add memory monitoring',
         ],
         estimatedEffort: 'medium',
         estimatedTime: '1-2 weeks',
-        performanceImprovement: 25
+        performanceImprovement: 25,
       },
       database: {
         title: 'Database Optimization',
@@ -767,11 +800,11 @@ export class BottleneckDetector extends EventEmitter {
           'Add missing indexes',
           'Optimize query patterns',
           'Implement connection pooling',
-          'Consider read replicas'
+          'Consider read replicas',
         ],
         estimatedEffort: 'medium',
         estimatedTime: '1-3 weeks',
-        performanceImprovement: 40
+        performanceImprovement: 40,
       },
       search: {
         title: 'Search Optimization',
@@ -781,11 +814,11 @@ export class BottleneckDetector extends EventEmitter {
           'Optimize index structure',
           'Implement result caching',
           'Add search result pagination',
-          'Consider search clustering'
+          'Consider search clustering',
         ],
         estimatedEffort: 'medium',
         estimatedTime: '1-2 weeks',
-        performanceImprovement: 35
+        performanceImprovement: 35,
       },
       cache: {
         title: 'Cache Strategy Optimization',
@@ -795,11 +828,11 @@ export class BottleneckDetector extends EventEmitter {
           'Optimize cache strategy',
           'Tune TTL values',
           'Implement cache warming',
-          'Add cache monitoring'
+          'Add cache monitoring',
         ],
         estimatedEffort: 'low',
         estimatedTime: '3-7 days',
-        performanceImprovement: 20
+        performanceImprovement: 20,
       },
       network: {
         title: 'Network Optimization',
@@ -809,12 +842,12 @@ export class BottleneckDetector extends EventEmitter {
           'Implement CDN',
           'Optimize data transfer',
           'Add connection pooling',
-          'Consider geographic distribution'
+          'Consider geographic distribution',
         ],
         estimatedEffort: 'high',
         estimatedTime: '2-6 weeks',
-        performanceImprovement: 25
-      }
+        performanceImprovement: 25,
+      },
     };
 
     const suggestion = suggestions[bottleneck.type];
@@ -832,7 +865,10 @@ export class BottleneckDetector extends EventEmitter {
         estimatedEffort: suggestion.estimatedEffort,
         estimatedTime: suggestion.estimatedTime,
         prerequisites: [],
-        risks: ['Temporary performance impact during optimization', 'Potential regression if not tested properly']
+        risks: [
+          'Temporary performance impact during optimization',
+          'Potential regression if not tested properly',
+        ],
       },
       expectedResults: {
         performanceImprovement: suggestion.performanceImprovement,
@@ -840,11 +876,16 @@ export class BottleneckDetector extends EventEmitter {
         measurableOutcomes: [
           `${suggestion.performanceImprovement}% improvement in ${bottleneck.type} performance`,
           'Reduced user response times',
-          'Improved system stability'
-        ]
+          'Improved system stability',
+        ],
       },
       priority: this.calculateSuggestionPriority(bottleneck),
-      cost: suggestion.estimatedEffort === 'high' ? 'high' : suggestion.estimatedEffort === 'medium' ? 'medium' : 'low'
+      cost:
+        suggestion.estimatedEffort === 'high'
+          ? 'high'
+          : suggestion.estimatedEffort === 'medium'
+            ? 'medium'
+            : 'low',
     };
   }
 
@@ -909,11 +950,13 @@ export class BottleneckDetector extends EventEmitter {
   }
 
   private isRecentBottleneck(bottleneck: Bottleneck): boolean {
-    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
     return bottleneck.timestamp >= fiveMinutesAgo;
   }
 
-  private prioritizeRecommendations(recommendations: OptimizationSuggestion[]): OptimizationSuggestion[] {
+  private prioritizeRecommendations(
+    recommendations: OptimizationSuggestion[]
+  ): OptimizationSuggestion[] {
     return recommendations.sort((a, b) => {
       // Sort by priority (high to low), then by expected improvement (high to low)
       if (a.priority !== b.priority) {
@@ -923,7 +966,9 @@ export class BottleneckDetector extends EventEmitter {
     });
   }
 
-  private async simulateOptimizationApplication(recommendation: OptimizationSuggestion): Promise<boolean> {
+  private async simulateOptimizationApplication(
+    recommendation: OptimizationSuggestion
+  ): Promise<boolean> {
     // Simulate optimization application success/failure
     const successRate = 0.85; // 85% success rate
     return Math.random() < successRate;
@@ -940,20 +985,24 @@ export class BottleneckDetector extends EventEmitter {
       value: bottlenecks.length,
       unit: 'bottlenecks',
       trend: criticalCount > 0 ? 'degrading' : highCount > 2 ? 'degrading' : 'stable',
-      severity: criticalCount > 0 ? 'critical' : highCount > 0 ? 'high' : 'low'
+      severity: criticalCount > 0 ? 'critical' : highCount > 0 ? 'high' : 'low',
     };
   }
 
   private startContinuousMonitoring(): void {
     // Monitor component health every 5 minutes
-    setInterval(() => {
-      const unhealthyComponents = Array.from(this.componentHealth.values())
-        .filter(health => health.status === 'critical' || health.status === 'warning');
+    setInterval(
+      () => {
+        const unhealthyComponents = Array.from(this.componentHealth.values()).filter(
+          health => health.status === 'critical' || health.status === 'warning'
+        );
 
-      if (unhealthyComponents.length > 0) {
-        this.emit('component-health-alert', unhealthyComponents);
-      }
-    }, 5 * 60 * 1000);
+        if (unhealthyComponents.length > 0) {
+          this.emit('component-health-alert', unhealthyComponents);
+        }
+      },
+      5 * 60 * 1000
+    );
 
     // Emit monitoring status every minute
     setInterval(() => {
@@ -961,7 +1010,9 @@ export class BottleneckDetector extends EventEmitter {
         type: 'continuous-monitoring',
         timestamp: Date.now(),
         componentHealth: Array.from(this.componentHealth.values()),
-        activeBottlenecks: Array.from(this.bottlenecks.values()).filter(b => this.isRecentBottleneck(b))
+        activeBottlenecks: Array.from(this.bottlenecks.values()).filter(b =>
+          this.isRecentBottleneck(b)
+        ),
       });
     }, 60000);
   }

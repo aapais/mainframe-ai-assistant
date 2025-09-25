@@ -13,7 +13,7 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import {
   AIAuthorizationService,
@@ -21,7 +21,7 @@ import {
   AuthorizationResult,
   UserDecision,
   AuthorizationPreferences,
-  CostEstimate
+  CostEstimate,
 } from '../../services/AIAuthorizationService';
 import {
   AIOperationType,
@@ -29,7 +29,7 @@ import {
   AIAuthorizationRequest,
   AIAuthorizationResponse,
   AIDataContext,
-  DecisionScope
+  DecisionScope,
 } from '../../../types/authorization.types';
 import { HandlerUtils, HandlerConfigs } from './index';
 
@@ -89,14 +89,12 @@ interface AutoApprovalIPCResponse extends BaseIPCResponse {
  * Authorization Handler Implementation
  */
 export class AuthorizationHandler {
-  constructor(
-    private authorizationService: AIAuthorizationService
-  ) {}
+  constructor(private authorizationService: AIAuthorizationService) {}
 
   /**
    * Handle authorization request from renderer
    */
-  handleAuthorizationRequest: IPCHandlerFunction<'authorization:request'> = async (request) => {
+  handleAuthorizationRequest: IPCHandlerFunction<'authorization:request'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -122,7 +120,7 @@ export class AuthorizationHandler {
         'extract_keywords',
         'classify_content',
         'translate_text',
-        'improve_writing'
+        'improve_writing',
       ];
 
       if (!validOperationTypes.includes(operation.type)) {
@@ -139,23 +137,17 @@ export class AuthorizationHandler {
       const sanitizedQuery = HandlerUtils.sanitizeString(operation.query, 5000);
       const sanitizedOperation = {
         ...operation,
-        query: sanitizedQuery
+        query: sanitizedQuery,
       };
 
       // Request authorization
       const result = await this.authorizationService.requestAuthorization(sanitizedOperation);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        result,
-        {
-          operationType: operation.type,
-          autoApproved: result.autoApproved,
-          estimatedCost: result.estimates?.estimatedCostUSD
-        }
-      ) as AuthorizationResultIPCResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, result, {
+        operationType: operation.type,
+        autoApproved: result.autoApproved,
+        estimatedCost: result.estimates?.estimatedCostUSD,
+      }) as AuthorizationResultIPCResponse;
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -170,7 +162,7 @@ export class AuthorizationHandler {
   /**
    * Handle saving user authorization decision
    */
-  handleSaveDecision: IPCHandlerFunction<'authorization:save_decision'> = async (request) => {
+  handleSaveDecision: IPCHandlerFunction<'authorization:save_decision'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -193,7 +185,7 @@ export class AuthorizationHandler {
         'approve_always',
         'deny',
         'use_local_only',
-        'modify_query'
+        'modify_query',
       ];
 
       if (!validActions.includes(decision.action)) {
@@ -209,7 +201,7 @@ export class AuthorizationHandler {
       // Sanitize notes if provided
       const sanitizedDecision = {
         ...decision,
-        notes: decision.notes ? HandlerUtils.sanitizeString(decision.notes, 1000) : undefined
+        notes: decision.notes ? HandlerUtils.sanitizeString(decision.notes, 1000) : undefined,
       };
 
       // Save the decision
@@ -221,10 +213,9 @@ export class AuthorizationHandler {
         { saved: true },
         {
           action: decision.action,
-          remembered: decision.rememberDecision
+          remembered: decision.rememberDecision,
         }
       );
-
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -239,7 +230,7 @@ export class AuthorizationHandler {
   /**
    * Handle getting user authorization preferences
    */
-  handleGetPreferences: IPCHandlerFunction<'authorization:get_preferences'> = async (request) => {
+  handleGetPreferences: IPCHandlerFunction<'authorization:get_preferences'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -248,16 +239,10 @@ export class AuthorizationHandler {
       // Get user preferences
       const preferences = await this.authorizationService.getUserPreferences(userId);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        preferences,
-        {
-          userId: userId || 'default',
-          cached: true // Preferences are typically cached
-        }
-      ) as PreferencesIPCResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, preferences, {
+        userId: userId || 'default',
+        cached: true, // Preferences are typically cached
+      }) as PreferencesIPCResponse;
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -272,51 +257,51 @@ export class AuthorizationHandler {
   /**
    * Handle updating user authorization preferences
    */
-  handleUpdatePreferences: IPCHandlerFunction<'authorization:update_preferences'> = async (request) => {
-    const startTime = Date.now();
+  handleUpdatePreferences: IPCHandlerFunction<'authorization:update_preferences'> =
+    async request => {
+      const startTime = Date.now();
 
-    try {
-      const { preferences, userId } = request as UpdatePreferencesIPCRequest;
+      try {
+        const { preferences, userId } = request as UpdatePreferencesIPCRequest;
 
-      // Validate preferences data
-      if (!preferences || typeof preferences !== 'object') {
+        // Validate preferences data
+        if (!preferences || typeof preferences !== 'object') {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Invalid preferences data',
+            { preferences }
+          );
+        }
+
+        // Update preferences
+        await this.authorizationService.updatePreferences(preferences, userId);
+
+        return HandlerUtils.createSuccessResponse(
+          request.requestId,
+          startTime,
+          { updated: true },
+          {
+            userId: userId || 'default',
+            updatedFields: Object.keys(preferences),
+          }
+        );
+      } catch (error) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Invalid preferences data',
-          { preferences }
+          IPCErrorCode.UPDATE_FAILED,
+          'Failed to update authorization preferences',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
         );
       }
-
-      // Update preferences
-      await this.authorizationService.updatePreferences(preferences, userId);
-
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { updated: true },
-        {
-          userId: userId || 'default',
-          updatedFields: Object.keys(preferences)
-        }
-      );
-
-    } catch (error) {
-      return HandlerUtils.createErrorResponse(
-        request.requestId,
-        startTime,
-        IPCErrorCode.UPDATE_FAILED,
-        'Failed to update authorization preferences',
-        { error: error instanceof Error ? error.message : 'Unknown error' }
-      );
-    }
-  };
+    };
 
   /**
    * Handle cost estimation request
    */
-  handleEstimateCost: IPCHandlerFunction<'authorization:estimate_cost'> = async (request) => {
+  handleEstimateCost: IPCHandlerFunction<'authorization:estimate_cost'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -339,17 +324,11 @@ export class AuthorizationHandler {
       // Estimate cost
       const estimate = await this.authorizationService.estimateCost(sanitizedQuery, operationType);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        estimate,
-        {
-          operationType,
-          queryLength: sanitizedQuery.length,
-          cached: true // Estimates are typically cached
-        }
-      ) as CostEstimateIPCResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, estimate, {
+        operationType,
+        queryLength: sanitizedQuery.length,
+        cached: true, // Estimates are typically cached
+      }) as CostEstimateIPCResponse;
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -364,66 +343,67 @@ export class AuthorizationHandler {
   /**
    * Handle auto-approval check
    */
-  handleCheckAutoApproval: IPCHandlerFunction<'authorization:check_auto_approval'> = async (request) => {
-    const startTime = Date.now();
+  handleCheckAutoApproval: IPCHandlerFunction<'authorization:check_auto_approval'> =
+    async request => {
+      const startTime = Date.now();
 
-    try {
-      const { cost, operationType, dataContext, sessionId, userId } = request as CheckAutoApprovalIPCRequest;
+      try {
+        const { cost, operationType, dataContext, sessionId, userId } =
+          request as CheckAutoApprovalIPCRequest;
 
-      // Validate inputs
-      if (typeof cost !== 'number' || !operationType) {
+        // Validate inputs
+        if (typeof cost !== 'number' || !operationType) {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Missing or invalid cost or operation type',
+            { cost, operationType }
+          );
+        }
+
+        // Check auto-approval
+        const autoApproved = await this.authorizationService.checkAutoApproval(
+          cost,
+          operationType,
+          dataContext,
+          sessionId,
+          userId
+        );
+
+        let reason = '';
+        if (autoApproved) {
+          reason = 'Operation meets auto-approval criteria based on cost and data sensitivity';
+        } else {
+          reason = 'Operation requires explicit user authorization';
+        }
+
+        return HandlerUtils.createSuccessResponse(
+          request.requestId,
+          startTime,
+          { autoApproved, reason },
+          {
+            cost,
+            operationType,
+            hasDataContext: !!dataContext,
+            hasSession: !!sessionId,
+          }
+        ) as AutoApprovalIPCResponse;
+      } catch (error) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Missing or invalid cost or operation type',
-          { cost, operationType }
+          IPCErrorCode.AUTO_APPROVAL_CHECK_FAILED,
+          'Auto-approval check failed',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
         );
       }
-
-      // Check auto-approval
-      const autoApproved = await this.authorizationService.checkAutoApproval(
-        cost,
-        operationType,
-        dataContext,
-        sessionId,
-        userId
-      );
-
-      let reason = '';
-      if (autoApproved) {
-        reason = 'Operation meets auto-approval criteria based on cost and data sensitivity';
-      } else {
-        reason = 'Operation requires explicit user authorization';
-      }
-
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { autoApproved, reason },
-        {
-          cost,
-          operationType,
-          hasDataContext: !!dataContext,
-          hasSession: !!sessionId
-        }
-      ) as AutoApprovalIPCResponse;
-
-    } catch (error) {
-      return HandlerUtils.createErrorResponse(
-        request.requestId,
-        startTime,
-        IPCErrorCode.AUTO_APPROVAL_CHECK_FAILED,
-        'Auto-approval check failed',
-        { error: error instanceof Error ? error.message : 'Unknown error' }
-      );
-    }
-  };
+    };
 
   /**
    * Handle getting authorization statistics
    */
-  handleGetStats: IPCHandlerFunction<'authorization:get_stats'> = async (request) => {
+  handleGetStats: IPCHandlerFunction<'authorization:get_stats'> = async request => {
     const startTime = Date.now();
 
     try {
@@ -435,19 +415,13 @@ export class AuthorizationHandler {
         serviceHealth: health,
         cacheStats: health.cacheStats,
         uptime: health.uptime,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        stats,
-        {
-          source: 'authorization_service',
-          realtime: true
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, stats, {
+        source: 'authorization_service',
+        realtime: true,
+      });
     } catch (error) {
       return HandlerUtils.createErrorResponse(
         request.requestId,
@@ -462,45 +436,45 @@ export class AuthorizationHandler {
   /**
    * Handle clearing session approvals
    */
-  handleClearSessionApprovals: IPCHandlerFunction<'authorization:clear_session'> = async (request) => {
-    const startTime = Date.now();
+  handleClearSessionApprovals: IPCHandlerFunction<'authorization:clear_session'> =
+    async request => {
+      const startTime = Date.now();
 
-    try {
-      const { sessionId } = request as { sessionId?: string };
+      try {
+        const { sessionId } = request as { sessionId?: string };
 
-      if (!sessionId) {
+        if (!sessionId) {
+          return HandlerUtils.createErrorResponse(
+            request.requestId,
+            startTime,
+            IPCErrorCode.INVALID_REQUEST_DATA,
+            'Session ID is required',
+            { sessionId }
+          );
+        }
+
+        // Clear session approvals (implementation would depend on service method)
+        // For now, we'll just return success as this would be implemented in the service
+
+        return HandlerUtils.createSuccessResponse(
+          request.requestId,
+          startTime,
+          { cleared: true },
+          {
+            sessionId,
+            timestamp: Date.now(),
+          }
+        );
+      } catch (error) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
-          IPCErrorCode.INVALID_REQUEST_DATA,
-          'Session ID is required',
-          { sessionId }
+          IPCErrorCode.SESSION_CLEAR_FAILED,
+          'Failed to clear session approvals',
+          { error: error instanceof Error ? error.message : 'Unknown error' }
         );
       }
-
-      // Clear session approvals (implementation would depend on service method)
-      // For now, we'll just return success as this would be implemented in the service
-
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        { cleared: true },
-        {
-          sessionId,
-          timestamp: Date.now()
-        }
-      );
-
-    } catch (error) {
-      return HandlerUtils.createErrorResponse(
-        request.requestId,
-        startTime,
-        IPCErrorCode.SESSION_CLEAR_FAILED,
-        'Failed to clear session approvals',
-        { error: error instanceof Error ? error.message : 'Unknown error' }
-      );
-    }
-  };
+    };
 
   /**
    * Get handler configuration
@@ -516,8 +490,8 @@ export class AuthorizationHandler {
           validateInput: true,
           sanitizeInput: true,
           alertOnErrors: true,
-          requireAuth: false // May be called before auth
-        }
+          requireAuth: false, // May be called before auth
+        },
       },
       'authorization:save_decision': {
         handler: 'handleSaveDecision',
@@ -525,16 +499,16 @@ export class AuthorizationHandler {
           ...HandlerConfigs.WRITE_OPERATIONS,
           trackMetrics: true,
           validateInput: true,
-          sanitizeInput: true
-        }
+          sanitizeInput: true,
+        },
       },
       'authorization:get_preferences': {
         handler: 'handleGetPreferences',
         config: {
           ...HandlerConfigs.READ_HEAVY,
           cacheTTL: 300000, // 5 minutes
-          trackMetrics: true
-        }
+          trackMetrics: true,
+        },
       },
       'authorization:update_preferences': {
         handler: 'handleUpdatePreferences',
@@ -542,8 +516,8 @@ export class AuthorizationHandler {
           ...HandlerConfigs.WRITE_OPERATIONS,
           rateLimitConfig: { requests: 5, windowMs: 60000 }, // Restrict preference updates
           trackMetrics: true,
-          validateInput: true
-        }
+          validateInput: true,
+        },
       },
       'authorization:estimate_cost': {
         handler: 'handleEstimateCost',
@@ -551,8 +525,8 @@ export class AuthorizationHandler {
           ...HandlerConfigs.READ_HEAVY,
           cacheTTL: 600000, // 10 minutes - cost estimates change rarely
           rateLimitConfig: { requests: 30, windowMs: 60000 },
-          trackMetrics: true
-        }
+          trackMetrics: true,
+        },
       },
       'authorization:check_auto_approval': {
         handler: 'handleCheckAutoApproval',
@@ -560,25 +534,25 @@ export class AuthorizationHandler {
           ...HandlerConfigs.READ_HEAVY,
           cacheTTL: 60000, // 1 minute - approval logic can change
           rateLimitConfig: { requests: 50, windowMs: 60000 },
-          trackMetrics: true
-        }
+          trackMetrics: true,
+        },
       },
       'authorization:get_stats': {
         handler: 'handleGetStats',
         config: {
           ...HandlerConfigs.SYSTEM_OPERATIONS,
           cacheTTL: 30000, // 30 seconds
-          trackMetrics: false // Avoid recursion
-        }
+          trackMetrics: false, // Avoid recursion
+        },
       },
       'authorization:clear_session': {
         handler: 'handleClearSessionApprovals',
         config: {
           ...HandlerConfigs.WRITE_OPERATIONS,
           rateLimitConfig: { requests: 10, windowMs: 60000 },
-          trackMetrics: true
-        }
-      }
+          trackMetrics: true,
+        },
+      },
     };
   }
 }
@@ -586,7 +560,9 @@ export class AuthorizationHandler {
 /**
  * Factory function to create authorization handler
  */
-export function createAuthorizationHandler(authorizationService: AIAuthorizationService): AuthorizationHandler {
+export function createAuthorizationHandler(
+  authorizationService: AIAuthorizationService
+): AuthorizationHandler {
   return new AuthorizationHandler(authorizationService);
 }
 

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { CacheService } from '../../services/cache/CacheService';
-import { CacheMiddleware } from '../../backend/middleware/CacheMiddleware';
-import { CachedSearchService } from '../../services/search/CachedSearchService';
-import { CacheWarmer } from '../../services/cache/CacheWarmer';
-import { ServiceError } from '../../utils/errors';
+import { CacheService } from '@/services/cache/CacheService';
+import { CacheMiddleware } from '@/backend/middleware/CacheMiddleware';
+import { CachedSearchService } from '@/services/search/CachedSearchService';
+import { CacheWarmer } from '@/services/cache/CacheWarmer';
+import { ServiceError } from '@/utils/errors';
 
 interface CacheHealthCheck {
   status: 'healthy' | 'degraded' | 'critical';
@@ -56,13 +56,13 @@ class CacheController {
     try {
       const healthCheck = await this.performHealthCheck();
 
-      const statusCode = healthCheck.status === 'healthy' ? 200 :
-                        healthCheck.status === 'degraded' ? 206 : 503;
+      const statusCode =
+        healthCheck.status === 'healthy' ? 200 : healthCheck.status === 'degraded' ? 206 : 503;
 
       res.status(statusCode).json({
         success: true,
         data: healthCheck,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       this.handleError(res, error, 'Failed to get cache health');
@@ -92,15 +92,15 @@ class CacheController {
           cacheSizeDistribution: {
             searchCache: searchMetrics.storage.totalSize,
             httpCache: httpMetrics.storage.totalSize,
-            generalCache: cacheStats.memoryUsage || 0
-          }
-        }
+            generalCache: cacheStats.memoryUsage || 0,
+          },
+        },
       };
 
       res.json({
         success: true,
         data: metrics,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       this.handleError(res, error, 'Failed to get cache metrics');
@@ -128,28 +128,30 @@ class CacheController {
           searchCache: {
             status: searchHealth.status,
             hitRate: searchMetrics.hitRates.overall,
-            responseTime: searchMetrics.performance.avgResponseTime
+            responseTime: searchMetrics.performance.avgResponseTime,
           },
           httpCache: {
             status: httpMetrics.requests.total > 0 ? 'healthy' : 'idle',
-            hitRate: httpMetrics.requests.total > 0 ?
-               httpMetrics.requests.hits / httpMetrics.requests.total : 0,
-            entries: httpMetrics.storage.entries
+            hitRate:
+              httpMetrics.requests.total > 0
+                ? httpMetrics.requests.hits / httpMetrics.requests.total
+                : 0,
+            entries: httpMetrics.storage.entries,
           },
           cacheWarmer: {
             status: warmingStats.totalWarmed > 0 ? 'active' : 'idle',
             lastRun: new Date(),
-            successRate: warmingStats.successRate
-          }
+            successRate: warmingStats.successRate,
+          },
         },
         performance: {
           overallHitRate,
           avgResponseTime,
           memoryUsage: searchMetrics.storage.totalSize + httpMetrics.storage.totalSize,
-          throughput: searchMetrics.performance.throughput
+          throughput: searchMetrics.performance.throughput,
         },
         recommendations: searchHealth.recommendations,
-        issues: searchHealth.issues
+        issues: searchHealth.issues,
       };
 
       return health;
@@ -160,16 +162,16 @@ class CacheController {
         services: {
           searchCache: { status: 'error', hitRate: 0, responseTime: 0 },
           httpCache: { status: 'error', hitRate: 0, entries: 0 },
-          cacheWarmer: { status: 'error', lastRun: new Date(), successRate: 0 }
+          cacheWarmer: { status: 'error', lastRun: new Date(), successRate: 0 },
         },
         performance: {
           overallHitRate: 0,
           avgResponseTime: 0,
           memoryUsage: 0,
-          throughput: 0
+          throughput: 0,
         },
         recommendations: ['System health check failed - investigate immediately'],
-        issues: [`Health check failed: ${error.message}`]
+        issues: [`Health check failed: ${error.message}`],
       };
     }
   }
@@ -188,10 +190,10 @@ class CacheController {
 
     if (totalWeight === 0) return 0;
 
-    const weightedAvg = (
-      (searchMetrics.performance.avgResponseTime * searchWeight) +
-      (httpMetrics.performance.avgHitTime * httpWeight)
-    ) / totalWeight;
+    const weightedAvg =
+      (searchMetrics.performance.avgResponseTime * searchWeight +
+        httpMetrics.performance.avgHitTime * httpWeight) /
+      totalWeight;
 
     return weightedAvg;
   }
@@ -205,7 +207,7 @@ class CacheController {
       success: false,
       error: message,
       details: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }

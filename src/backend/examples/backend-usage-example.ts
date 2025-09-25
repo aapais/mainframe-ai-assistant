@@ -18,19 +18,19 @@ class MainframeApp {
       // Initialize search backend with custom configuration
       this.searchBackend = createSearchBackend({
         database: {
-          path: path.join(app.getPath('userData'), 'knowledge-base.db')
+          path: path.join(app.getPath('userData'), 'knowledge-base.db'),
         },
         search: {
           maxResults: 50,
           defaultTimeout: 3000,
           enableAI: true,
-          geminiApiKey: process.env.GEMINI_API_KEY
+          geminiApiKey: process.env.GEMINI_API_KEY,
         },
         performance: {
           enableMetrics: true,
           metricsRetentionDays: 30,
-          historyRetentionDays: 90
-        }
+          historyRetentionDays: 90,
+        },
       });
 
       // Initialize the backend services
@@ -41,7 +41,6 @@ class MainframeApp {
       console.log('Backend health:', health);
 
       console.log('✅ Search backend initialized successfully');
-
     } catch (error) {
       console.error('❌ Failed to initialize search backend:', error);
       app.quit();
@@ -55,8 +54,8 @@ class MainframeApp {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: path.join(__dirname, '../preload/preload.js')
-      }
+        preload: path.join(__dirname, '../preload/preload.js'),
+      },
     });
 
     // Load your renderer
@@ -77,7 +76,6 @@ class MainframeApp {
       if (this.mainWindow) {
         this.mainWindow.close();
       }
-
     } catch (error) {
       console.error('❌ Error during shutdown:', error);
     }
@@ -113,7 +111,7 @@ class MainframeApp {
           query: 'VSAM error',
           limit: 5,
           offset: 0,
-          useAI: false // Disable AI for this test
+          useAI: false, // Disable AI for this test
         });
 
         console.log('Search results:', searchResult.results.length);
@@ -123,7 +121,7 @@ class MainframeApp {
         const history = await services.historyService.getHistory({
           limit: 10,
           offset: 0,
-          timeframe: 24 // 24 hours
+          timeframe: 24, // 24 hours
         });
 
         console.log('Recent searches:', history.entries.length);
@@ -135,10 +133,13 @@ class MainframeApp {
 
         const suggestions = await services.autocompleteService.getAutocompleteSuggestions({
           query: 'JCL',
-          limit: 5
+          limit: 5,
         });
 
-        console.log('Suggestions for "JCL":', suggestions.map(s => s.text));
+        console.log(
+          'Suggestions for "JCL":',
+          suggestions.map(s => s.text)
+        );
       }
 
       // Cache statistics
@@ -146,9 +147,12 @@ class MainframeApp {
         console.log('\n💾 Cache statistics:');
         const cacheStats = services.cache.getStats();
         console.log('Overall hit rate:', (cacheStats.overall.overallHitRate * 100).toFixed(1), '%');
-        console.log('Memory usage:', (cacheStats.overall.memoryUsage / 1024 / 1024).toFixed(1), 'MB');
+        console.log(
+          'Memory usage:',
+          (cacheStats.overall.memoryUsage / 1024 / 1024).toFixed(1),
+          'MB'
+        );
       }
-
     } catch (error) {
       console.error('❌ Error demonstrating usage:', error);
     }
@@ -167,7 +171,6 @@ app.whenReady().then(async () => {
     setTimeout(() => {
       mainframeApp.demonstrateUsage().catch(console.error);
     }, 2000);
-
   } catch (error) {
     console.error('Application initialization failed:', error);
     app.quit();
@@ -189,7 +192,7 @@ app.on('activate', async () => {
 });
 
 // Graceful shutdown
-app.on('before-quit', async (event) => {
+app.on('before-quit', async event => {
   event.preventDefault();
   await mainframeApp.shutdown();
   app.exit(0);

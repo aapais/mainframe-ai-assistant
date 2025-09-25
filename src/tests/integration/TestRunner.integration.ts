@@ -75,7 +75,7 @@ const TEST_SUITES: TestSuite[] = [
     retries: 2,
     parallel: false,
     tags: ['integration', 'core', 'category', 'tag'],
-    requirements: ['database', 'ui-components', 'services']
+    requirements: ['database', 'ui-components', 'services'],
   },
   {
     name: 'performance-benchmarks',
@@ -85,7 +85,7 @@ const TEST_SUITES: TestSuite[] = [
     retries: 1,
     parallel: false,
     tags: ['performance', 'benchmarks', 'optimization'],
-    requirements: ['large-datasets', 'memory-profiling']
+    requirements: ['large-datasets', 'memory-profiling'],
   },
   {
     name: 'accessibility-compliance',
@@ -95,8 +95,8 @@ const TEST_SUITES: TestSuite[] = [
     retries: 2,
     parallel: true,
     tags: ['accessibility', 'wcag', 'a11y', 'compliance'],
-    requirements: ['axe-core', 'screen-reader-testing']
-  }
+    requirements: ['axe-core', 'screen-reader-testing'],
+  },
 ];
 
 // ===========================
@@ -122,7 +122,7 @@ export class IntegrationTestRunner {
     results: TestResult[];
   }> {
     console.log('🚀 Starting Comprehensive Integration Test Suite');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
 
     this.startTime = performance.now();
 
@@ -158,7 +158,7 @@ export class IntegrationTestRunner {
     return {
       success: summary.overallSuccess,
       summary,
-      results: this.results
+      results: this.results,
     };
   }
 
@@ -192,9 +192,8 @@ export class IntegrationTestRunner {
         coverage: jestResult.coveragePercentage,
         failures: this.parseFailures(jestResult.testResults),
         performance,
-        accessibility
+        accessibility,
       };
-
     } catch (error) {
       const duration = performance.now() - startTime;
 
@@ -204,24 +203,26 @@ export class IntegrationTestRunner {
         failed: 1,
         skipped: 0,
         duration,
-        failures: [{
-          test: 'Suite Setup',
-          error: error instanceof Error ? error.message : String(error),
-          category: 'integration',
-          severity: 'critical'
-        }],
+        failures: [
+          {
+            test: 'Suite Setup',
+            error: error instanceof Error ? error.message : String(error),
+            category: 'integration',
+            severity: 'critical',
+          },
+        ],
         performance: {
           averageResponseTime: 0,
           memoryUsage: 0,
           operationsPerSecond: 0,
-          slowestTests: []
+          slowestTests: [],
         },
         accessibility: {
           violations: 0,
           passes: 0,
           wcagLevel: 'A',
-          categories: {}
-        }
+          categories: {},
+        },
       };
     }
   }
@@ -257,13 +258,18 @@ export class IntegrationTestRunner {
   private async runJestSuite(suite: TestSuite): Promise<any> {
     return new Promise((resolve, reject) => {
       const jestArgs = [
-        '--testPathPattern', suite.files.join('|'),
-        '--testTimeout', suite.timeout.toString(),
-        '--maxWorkers', suite.parallel ? '4' : '1',
+        '--testPathPattern',
+        suite.files.join('|'),
+        '--testTimeout',
+        suite.timeout.toString(),
+        '--maxWorkers',
+        suite.parallel ? '4' : '1',
         '--coverage',
-        '--coverageDirectory', join(this.outputDir, 'coverage', suite.name),
+        '--coverageDirectory',
+        join(this.outputDir, 'coverage', suite.name),
         '--json',
-        '--outputFile', join(this.outputDir, 'raw', `${suite.name}.json`)
+        '--outputFile',
+        join(this.outputDir, 'raw', `${suite.name}.json`),
       ];
 
       if (suite.retries > 0) {
@@ -272,21 +278,21 @@ export class IntegrationTestRunner {
 
       const jestProcess = spawn('npx', ['jest', ...jestArgs], {
         stdio: 'pipe',
-        cwd: process.cwd()
+        cwd: process.cwd(),
       });
 
       let stdout = '';
       let stderr = '';
 
-      jestProcess.stdout?.on('data', (data) => {
+      jestProcess.stdout?.on('data', data => {
         stdout += data.toString();
       });
 
-      jestProcess.stderr?.on('data', (data) => {
+      jestProcess.stderr?.on('data', data => {
         stderr += data.toString();
       });
 
-      jestProcess.on('close', (code) => {
+      jestProcess.on('close', code => {
         try {
           const result = JSON.parse(stdout);
           resolve(result);
@@ -306,26 +312,36 @@ export class IntegrationTestRunner {
   /**
    * Collect performance metrics from test results
    */
-  private async collectPerformanceMetrics(suite: TestSuite, jestResult: any): Promise<PerformanceMetrics> {
+  private async collectPerformanceMetrics(
+    suite: TestSuite,
+    jestResult: any
+  ): Promise<PerformanceMetrics> {
     const testResults = jestResult.testResults || [];
-    const durations = testResults.map((result: any) => result.perfStats?.end - result.perfStats?.start || 0);
+    const durations = testResults.map(
+      (result: any) => result.perfStats?.end - result.perfStats?.start || 0
+    );
 
     return {
-      averageResponseTime: durations.reduce((sum: number, d: number) => sum + d, 0) / durations.length || 0,
+      averageResponseTime:
+        durations.reduce((sum: number, d: number) => sum + d, 0) / durations.length || 0,
       memoryUsage: this.getMemoryUsage(),
       operationsPerSecond: this.calculateOperationsPerSecond(testResults),
-      slowestTests: this.findSlowestTests(testResults, 5)
+      slowestTests: this.findSlowestTests(testResults, 5),
     };
   }
 
   /**
    * Collect accessibility results from test output
    */
-  private async collectAccessibilityResults(suite: TestSuite, jestResult: any): Promise<AccessibilityResults> {
+  private async collectAccessibilityResults(
+    suite: TestSuite,
+    jestResult: any
+  ): Promise<AccessibilityResults> {
     // Parse accessibility violations from test output
-    const accessibilityTests = jestResult.testResults
-      ?.filter((result: any) => result.testFilePath?.includes('Accessibility'))
-      || [];
+    const accessibilityTests =
+      jestResult.testResults?.filter((result: any) =>
+        result.testFilePath?.includes('Accessibility')
+      ) || [];
 
     let violations = 0;
     let passes = 0;
@@ -339,7 +355,9 @@ export class IntegrationTestRunner {
           } else if (assertion.status === 'failed') {
             violations++;
             // Categorize violation types
-            const category = this.categorizeAccessibilityViolation(assertion.failureMessages?.[0] || '');
+            const category = this.categorizeAccessibilityViolation(
+              assertion.failureMessages?.[0] || ''
+            );
             categories[category] = (categories[category] || 0) + 1;
           }
         }
@@ -350,7 +368,7 @@ export class IntegrationTestRunner {
       violations,
       passes,
       wcagLevel: violations === 0 ? 'AA' : violations < 5 ? 'A' : 'A',
-      categories
+      categories,
     };
   }
 
@@ -368,7 +386,7 @@ export class IntegrationTestRunner {
             error: assertion.failureMessages?.join('\n') || 'Unknown error',
             stack: assertion.stack,
             category: this.categorizeFailure(assertion.title, assertion.failureMessages?.[0] || ''),
-            severity: this.categorizeFailureSeverity(assertion.failureMessages?.[0] || '')
+            severity: this.categorizeFailureSeverity(assertion.failureMessages?.[0] || ''),
           });
         }
       });
@@ -386,18 +404,23 @@ export class IntegrationTestRunner {
     const totalFailed = this.results.reduce((sum, r) => sum + r.failed, 0);
     const totalSkipped = this.results.reduce((sum, r) => sum + r.skipped, 0);
 
-    const criticalFailures = this.results.flatMap(r => r.failures)
+    const criticalFailures = this.results
+      .flatMap(r => r.failures)
       .filter(f => f.severity === 'critical').length;
 
-    const averageCoverage = this.results
-      .filter(r => r.coverage !== undefined)
-      .reduce((sum, r) => sum + (r.coverage || 0), 0) / this.results.length;
+    const averageCoverage =
+      this.results
+        .filter(r => r.coverage !== undefined)
+        .reduce((sum, r) => sum + (r.coverage || 0), 0) / this.results.length;
 
-    const performanceIssues = this.results
-      .filter(r => r.performance.averageResponseTime > 1000).length;
+    const performanceIssues = this.results.filter(
+      r => r.performance.averageResponseTime > 1000
+    ).length;
 
-    const accessibilityIssues = this.results
-      .reduce((sum, r) => sum + r.accessibility.violations, 0);
+    const accessibilityIssues = this.results.reduce(
+      (sum, r) => sum + r.accessibility.violations,
+      0
+    );
 
     return {
       overallSuccess: totalFailed === 0 && criticalFailures === 0,
@@ -412,7 +435,7 @@ export class IntegrationTestRunner {
       criticalFailures,
       performanceIssues,
       accessibilityIssues,
-      recommendations: this.generateRecommendations()
+      recommendations: this.generateRecommendations(),
     };
   }
 
@@ -495,7 +518,9 @@ export class IntegrationTestRunner {
     </div>
 
     <h2>Suite Results</h2>
-    ${this.results.map(result => `
+    ${this.results
+      .map(
+        result => `
         <div class="suite">
             <h3>${result.suite}</h3>
             <p><strong>Duration:</strong> ${this.formatDuration(result.duration)}</p>
@@ -508,22 +533,32 @@ export class IntegrationTestRunner {
             <p><strong>Performance:</strong> ${result.performance.averageResponseTime.toFixed(2)}ms avg response</p>
             <p><strong>Accessibility:</strong> ${result.accessibility.violations} violations, ${result.accessibility.passes} passes</p>
         </div>
-    `).join('')}
+    `
+      )
+      .join('')}
 
-    ${summary.criticalFailures > 0 ? `
+    ${
+      summary.criticalFailures > 0
+        ? `
         <div class="failures">
             <h2>Critical Failures</h2>
-            ${this.results.flatMap(r => r.failures)
-                .filter(f => f.severity === 'critical')
-                .map(f => `
+            ${this.results
+              .flatMap(r => r.failures)
+              .filter(f => f.severity === 'critical')
+              .map(
+                f => `
                     <div class="failure">
                         <h4>${f.test}</h4>
                         <p><strong>Category:</strong> ${f.category}</p>
                         <pre>${f.error}</pre>
                     </div>
-                `).join('')}
+                `
+              )
+              .join('')}
         </div>
-    ` : ''}
+    `
+        : ''
+    }
 
     <div class="recommendations">
         <h2>Recommendations</h2>
@@ -549,14 +584,11 @@ export class IntegrationTestRunner {
       environment: {
         nodeVersion: process.version,
         platform: process.platform,
-        ci: !!process.env.CI
-      }
+        ci: !!process.env.CI,
+      },
     };
 
-    writeFileSync(
-      join(this.outputDir, 'integration-report.json'),
-      JSON.stringify(report, null, 2)
-    );
+    writeFileSync(join(this.outputDir, 'integration-report.json'), JSON.stringify(report, null, 2));
   }
 
   /**
@@ -565,17 +597,25 @@ export class IntegrationTestRunner {
   private async generateJUnitReport(summary: TestSummary): Promise<void> {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites tests="${summary.totalTests}" failures="${summary.totalFailed}" time="${(summary.totalDuration / 1000).toFixed(3)}">
-${this.results.map(result => `
+${this.results
+  .map(
+    result => `
   <testsuite name="${result.suite}" tests="${result.passed + result.failed + result.skipped}" failures="${result.failed}" time="${(result.duration / 1000).toFixed(3)}">
-    ${result.failures.map(failure => `
+    ${result.failures
+      .map(
+        failure => `
     <testcase name="${failure.test}" classname="${result.suite}">
       <failure message="${failure.error.split('\n')[0]}" type="${failure.category}">
         ${failure.error}
       </failure>
     </testcase>
-    `).join('')}
+    `
+      )
+      .join('')}
   </testsuite>
-`).join('')}
+`
+  )
+  .join('')}
 </testsuites>`;
 
     writeFileSync(join(this.outputDir, 'junit-report.xml'), xml);
@@ -590,7 +630,7 @@ ${this.results.map(result => `
       averageResponseTime: result.performance.averageResponseTime,
       memoryUsage: result.performance.memoryUsage,
       operationsPerSecond: result.performance.operationsPerSecond,
-      slowestTests: result.performance.slowestTests
+      slowestTests: result.performance.slowestTests,
     }));
 
     writeFileSync(
@@ -610,7 +650,7 @@ ${this.results.map(result => `
       violations: result.accessibility.violations,
       passes: result.accessibility.passes,
       wcagLevel: result.accessibility.wcagLevel,
-      categories: result.accessibility.categories
+      categories: result.accessibility.categories,
     }));
 
     writeFileSync(
@@ -644,7 +684,9 @@ ${this.results.map(result => `
     const duration = this.formatDuration(result.duration);
 
     console.log(`   ${status} in ${duration}`);
-    console.log(`   Tests: ${result.passed} passed, ${result.failed} failed, ${result.skipped} skipped`);
+    console.log(
+      `   Tests: ${result.passed} passed, ${result.failed} failed, ${result.skipped} skipped`
+    );
 
     if (result.failures.length > 0) {
       console.log(`   ⚠️  ${result.failures.length} failures detected`);
@@ -688,11 +730,14 @@ ${this.results.map(result => `
     return totalDuration > 0 ? (totalTests / totalDuration) * 1000 : 0;
   }
 
-  private findSlowestTests(testResults: any[], limit: number): Array<{ name: string; duration: number }> {
+  private findSlowestTests(
+    testResults: any[],
+    limit: number
+  ): Array<{ name: string; duration: number }> {
     return testResults
       .map(result => ({
         name: result.testFilePath?.split('/').pop() || 'Unknown',
-        duration: result.perfStats?.end - result.perfStats?.start || 0
+        duration: result.perfStats?.end - result.perfStats?.start || 0,
       }))
       .sort((a, b) => b.duration - a.duration)
       .slice(0, limit);
@@ -724,16 +769,22 @@ ${this.results.map(result => `
     const recommendations: string[] = [];
 
     const totalFailures = this.results.reduce((sum, r) => sum + r.failed, 0);
-    const avgCoverage = this.results.reduce((sum, r) => sum + (r.coverage || 0), 0) / this.results.length;
+    const avgCoverage =
+      this.results.reduce((sum, r) => sum + (r.coverage || 0), 0) / this.results.length;
     const performanceIssues = this.results.filter(r => r.performance.averageResponseTime > 1000);
-    const accessibilityViolations = this.results.reduce((sum, r) => sum + r.accessibility.violations, 0);
+    const accessibilityViolations = this.results.reduce(
+      (sum, r) => sum + r.accessibility.violations,
+      0
+    );
 
     if (totalFailures > 0) {
       recommendations.push(`Address ${totalFailures} test failures to improve system reliability`);
     }
 
     if (avgCoverage < 80) {
-      recommendations.push(`Increase test coverage from ${avgCoverage.toFixed(1)}% to at least 80%`);
+      recommendations.push(
+        `Increase test coverage from ${avgCoverage.toFixed(1)}% to at least 80%`
+      );
     }
 
     if (performanceIssues.length > 0) {
@@ -741,7 +792,9 @@ ${this.results.map(result => `
     }
 
     if (accessibilityViolations > 0) {
-      recommendations.push(`Fix ${accessibilityViolations} accessibility violations for WCAG compliance`);
+      recommendations.push(
+        `Fix ${accessibilityViolations} accessibility violations for WCAG compliance`
+      );
     }
 
     if (recommendations.length === 0) {
@@ -779,7 +832,8 @@ interface TestSummary {
 if (require.main === module) {
   const runner = new IntegrationTestRunner('./test-reports');
 
-  runner.runAllSuites()
+  runner
+    .runAllSuites()
     .then(({ success, summary }) => {
       console.log('\n🏁 Integration test run complete');
 

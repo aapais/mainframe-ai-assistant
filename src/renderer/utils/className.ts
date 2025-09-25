@@ -20,12 +20,12 @@ export function createResponsiveClass(
   xl?: string
 ) {
   const classes = [base];
-  
+
   if (sm) classes.push(`sm:${sm}`);
   if (md) classes.push(`md:${md}`);
   if (lg) classes.push(`lg:${lg}`);
   if (xl) classes.push(`xl:${xl}`);
-  
+
   return classes.join(' ');
 }
 
@@ -48,7 +48,7 @@ export function focusRing(variant?: 'default' | 'danger' | 'success') {
  */
 export function stateClasses(state?: 'default' | 'hover' | 'active' | 'disabled') {
   const classes = [];
-  
+
   switch (state) {
     case 'hover':
       classes.push('hover:opacity-90', 'hover:scale-[1.02]');
@@ -57,19 +57,26 @@ export function stateClasses(state?: 'default' | 'hover' | 'active' | 'disabled'
       classes.push('active:scale-[0.98]');
       break;
     case 'disabled':
-      classes.push('disabled:opacity-50', 'disabled:cursor-not-allowed', 'disabled:pointer-events-none');
+      classes.push(
+        'disabled:opacity-50',
+        'disabled:cursor-not-allowed',
+        'disabled:pointer-events-none'
+      );
       break;
   }
-  
+
   return classes.join(' ');
 }
 
 /**
  * Generate size-based padding/margin classes
  */
-export function sizeClasses(size: 'xs' | 'sm' | 'md' | 'lg' | 'xl', type: 'padding' | 'margin' = 'padding') {
+export function sizeClasses(
+  size: 'xs' | 'sm' | 'md' | 'lg' | 'xl',
+  type: 'padding' | 'margin' = 'padding'
+) {
   const prefix = type === 'padding' ? 'p' : 'm';
-  
+
   switch (size) {
     case 'xs':
       return `${prefix}-1`;
@@ -104,9 +111,9 @@ export function elevation(level: 0 | 1 | 2 | 3 | 4) {
     1: 'shadow-sm',
     2: 'shadow',
     3: 'shadow-md',
-    4: 'shadow-lg'
+    4: 'shadow-lg',
   };
-  
+
   return shadows[level];
 }
 
@@ -119,13 +126,13 @@ export function transition(
   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out'
 ) {
   const classes = ['transition'];
-  
+
   if (properties && properties.length > 0) {
     classes.push(`transition-[${properties.join(',')}]`);
   } else {
     classes.push('transition-all');
   }
-  
+
   switch (duration) {
     case 'fast':
       classes.push('duration-150');
@@ -136,7 +143,7 @@ export function transition(
     default:
       classes.push('duration-200');
   }
-  
+
   switch (easing) {
     case 'linear':
       classes.push('ease-linear');
@@ -153,7 +160,7 @@ export function transition(
     default:
       classes.push('ease-out');
   }
-  
+
   return classes.join(' ');
 }
 
@@ -161,8 +168,9 @@ export function transition(
  * Check if user prefers reduced motion
  */
 export function respectsReducedMotion() {
-  return typeof window !== 'undefined' && 
-         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return (
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 }
 
 /**

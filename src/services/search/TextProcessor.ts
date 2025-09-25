@@ -40,13 +40,13 @@ export class TextProcessor {
   private stopWords: Set<string>;
   private mainframeTerms: Set<string>;
   private errorCodePatterns: RegExp[];
-  
+
   // Performance counters
   private stats = {
     tokensProcessed: 0,
     cacheHits: 0,
     stemOperations: 0,
-    processingTime: 0
+    processingTime: 0,
   };
 
   constructor() {
@@ -59,12 +59,12 @@ export class TextProcessor {
    * Process text into tokens with full analysis
    */
   processText(
-    text: string, 
+    text: string,
     field: string = 'content',
     options: Partial<ProcessingOptions> = {}
   ): TokenInfo[] {
     const startTime = Date.now();
-    
+
     const opts: ProcessingOptions = {
       stemming: true,
       stopWords: true,
@@ -73,7 +73,7 @@ export class TextProcessor {
       preserveCase: false,
       numbers: true,
       mainframeTerms: true,
-      ...options
+      ...options,
     };
 
     if (!text || text.trim().length === 0) {
@@ -82,16 +82,16 @@ export class TextProcessor {
 
     // Pre-process text
     const preprocessed = this.preprocessText(text, opts);
-    
+
     // Tokenize
     const rawTokens = this.tokenize(preprocessed, opts);
-    
+
     // Process each token
     const tokens: TokenInfo[] = [];
-    
+
     for (let i = 0; i < rawTokens.length; i++) {
       const rawToken = rawTokens[i];
-      
+
       // Skip if too short/long
       if (rawToken.length < opts.minLength || rawToken.length > opts.maxLength) {
         continue;
@@ -108,10 +108,10 @@ export class TextProcessor {
 
       // Determine token type
       const tokenType = this.determineTokenType(normalized);
-      
+
       // Apply stemming if requested
       const stemmed = opts.stemming ? this.stem(normalized) : normalized;
-      
+
       // Calculate boost based on token type and field
       const boost = this.calculateTokenBoost(tokenType, field, normalized);
 
@@ -122,7 +122,7 @@ export class TextProcessor {
         stemmed,
         normalized,
         type: tokenType,
-        boost
+        boost,
       });
 
       this.stats.tokensProcessed++;
@@ -143,7 +143,7 @@ export class TextProcessor {
       maxLength: 50,
       preserveCase: false,
       numbers: true,
-      mainframeTerms: true
+      mainframeTerms: true,
     }).map(token => token.stemmed);
   }
 
@@ -179,7 +179,7 @@ export class TextProcessor {
     const systemPatterns = [
       /\b[A-Z]{3,8}\d{0,3}\b/g, // MVS, CICS, DB2, etc.
       /\b(COBOL|JCL|VSAM|IDCAMS|ISPF|TSO|RACF|SDSF)\b/gi,
-      /\b(IMS|DB2|CICS|MQ|DFSORT|SORT)\b/gi
+      /\b(IMS|DB2|CICS|MQ|DFSORT|SORT)\b/gi,
     ];
 
     for (const pattern of systemPatterns) {
@@ -192,7 +192,7 @@ export class TextProcessor {
     return {
       errorCodes: [...new Set(errorCodes)],
       mainframeTerms: [...new Set(mainframeTerms)],
-      systemNames: [...new Set(systemNames)]
+      systemNames: [...new Set(systemNames)],
     };
   }
 
@@ -201,7 +201,7 @@ export class TextProcessor {
    */
   stem(word: string): string {
     if (word.length <= 2) return word;
-    
+
     // Check cache first
     const cached = this.stemCache.get(word);
     if (cached !== undefined) {
@@ -210,9 +210,9 @@ export class TextProcessor {
     }
 
     this.stats.stemOperations++;
-    
+
     let stemmed = word.toLowerCase();
-    
+
     // Skip stemming for mainframe terms and error codes
     if (this.shouldSkipStemming(stemmed)) {
       this.stemCache.set(word, stemmed);
@@ -221,12 +221,13 @@ export class TextProcessor {
 
     // Apply Porter stemming rules
     stemmed = this.applyPorterRules(stemmed);
-    
+
     // Cache the result
-    if (this.stemCache.size < 10000) { // Limit cache size
+    if (this.stemCache.size < 10000) {
+      // Limit cache size
       this.stemCache.set(word, stemmed);
     }
-    
+
     return stemmed;
   }
 
@@ -237,9 +238,8 @@ export class TextProcessor {
     return {
       ...this.stats,
       cacheSize: this.stemCache.size,
-      cacheHitRate: this.stats.tokensProcessed > 0 
-        ? this.stats.cacheHits / this.stats.tokensProcessed 
-        : 0
+      cacheHitRate:
+        this.stats.tokensProcessed > 0 ? this.stats.cacheHits / this.stats.tokensProcessed : 0,
     };
   }
 
@@ -252,7 +252,7 @@ export class TextProcessor {
       tokensProcessed: 0,
       cacheHits: 0,
       stemOperations: 0,
-      processingTime: 0
+      processingTime: 0,
     };
   }
 
@@ -302,7 +302,7 @@ export class TextProcessor {
 
     // Remove surrounding punctuation but preserve internal structure
     normalized = normalized.replace(/^[^\w]+|[^\w]+$/g, '');
-    
+
     if (!normalized) return '';
 
     // Convert to lowercase unless preserving case
@@ -345,11 +345,7 @@ export class TextProcessor {
     return 'word';
   }
 
-  private calculateTokenBoost(
-    type: TokenType, 
-    field: string, 
-    token: string
-  ): number {
+  private calculateTokenBoost(type: TokenType, field: string, token: string): number {
     let boost = 1.0;
 
     // Boost by token type
@@ -385,13 +381,12 @@ export class TextProcessor {
   }
 
   private isErrorCode(token: string): boolean {
-    return this.errorCodePatterns.some(pattern => 
-      new RegExp(pattern, 'i').test(token)
-    );
+    return this.errorCodePatterns.some(pattern => new RegExp(pattern, 'i').test(token));
   }
 
   private isSystemName(token: string): boolean {
-    const systemNames = /^(MVS|OS|VSE|VM|USS|UNIX|LINUX|WINDOWS|COBOL|JCL|VSAM|IDCAMS|ISPF|TSO|RACF|SDSF|IMS|DB2|CICS|MQ|DFSORT|SORT)$/i;
+    const systemNames =
+      /^(MVS|OS|VSE|VM|USS|UNIX|LINUX|WINDOWS|COBOL|JCL|VSAM|IDCAMS|ISPF|TSO|RACF|SDSF|IMS|DB2|CICS|MQ|DFSORT|SORT)$/i;
     return systemNames.test(token);
   }
 
@@ -441,7 +436,7 @@ export class TextProcessor {
       ['tional', 'tion'],
       ['alism', 'al'],
       ['ation', 'ate'],
-      ['ator', 'ate']
+      ['ator', 'ate'],
     ];
 
     for (const [suffix, replacement] of step2Rules) {
@@ -459,25 +454,24 @@ export class TextProcessor {
     const vowels = 'aeiou';
     let m = 0;
     let currentIsVowel = false;
-    
+
     for (let i = 0; i < word.length; i++) {
-      const isVowel = vowels.includes(word[i]) || 
-        (word[i] === 'y' && i > 0 && !vowels.includes(word[i-1]));
-      
+      const isVowel =
+        vowels.includes(word[i]) || (word[i] === 'y' && i > 0 && !vowels.includes(word[i - 1]));
+
       if (!isVowel && currentIsVowel) {
         m++;
       }
       currentIsVowel = isVowel;
     }
-    
+
     return m;
   }
 
   private containsVowel(word: string): boolean {
     const vowels = 'aeiou';
     for (let i = 0; i < word.length; i++) {
-      if (vowels.includes(word[i]) || 
-          (word[i] === 'y' && i > 0 && !vowels.includes(word[i-1]))) {
+      if (vowels.includes(word[i]) || (word[i] === 'y' && i > 0 && !vowels.includes(word[i - 1]))) {
         return true;
       }
     }
@@ -487,11 +481,53 @@ export class TextProcessor {
   private initializeStopWords(): void {
     // Common English stop words + mainframe-specific exclusions
     const commonStopWords = [
-      'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
-      'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
-      'to', 'was', 'will', 'with', 'this', 'have', 'had', 'been', 'we',
-      'you', 'they', 'them', 'their', 'would', 'could', 'should', 'may',
-      'can', 'do', 'does', 'did', 'not', 'no', 'yes', 'but', 'or', 'so'
+      'a',
+      'an',
+      'and',
+      'are',
+      'as',
+      'at',
+      'be',
+      'by',
+      'for',
+      'from',
+      'has',
+      'he',
+      'in',
+      'is',
+      'it',
+      'its',
+      'of',
+      'on',
+      'that',
+      'the',
+      'to',
+      'was',
+      'will',
+      'with',
+      'this',
+      'have',
+      'had',
+      'been',
+      'we',
+      'you',
+      'they',
+      'them',
+      'their',
+      'would',
+      'could',
+      'should',
+      'may',
+      'can',
+      'do',
+      'does',
+      'did',
+      'not',
+      'no',
+      'yes',
+      'but',
+      'or',
+      'so',
     ];
 
     this.stopWords = new Set(commonStopWords);
@@ -500,14 +536,63 @@ export class TextProcessor {
   private initializeMainframeTerms(): void {
     // Important mainframe terms that should not be stemmed
     const terms = [
-      'abend', 'alloc', 'catalog', 'cobol', 'cond', 'dataset', 'disp',
-      'exec', 'ispf', 'jcl', 'job', 'parm', 'proc', 'racf', 'region',
-      'space', 'step', 'sysout', 'unit', 'vol', 'vsam', 'ims', 'db2',
-      'cics', 'tso', 'sdsf', 'idcams', 'sort', 'dfsort', 'copy', 'move',
-      'reorg', 'backup', 'restore', 'index', 'table', 'column', 'row',
-      'commit', 'rollback', 'bind', 'plan', 'package', 'program',
-      'copybook', 'macro', 'include', 'replace', 'delete', 'insert',
-      'update', 'select', 'create', 'drop', 'alter', 'grant', 'revoke'
+      'abend',
+      'alloc',
+      'catalog',
+      'cobol',
+      'cond',
+      'dataset',
+      'disp',
+      'exec',
+      'ispf',
+      'jcl',
+      'job',
+      'parm',
+      'proc',
+      'racf',
+      'region',
+      'space',
+      'step',
+      'sysout',
+      'unit',
+      'vol',
+      'vsam',
+      'ims',
+      'db2',
+      'cics',
+      'tso',
+      'sdsf',
+      'idcams',
+      'sort',
+      'dfsort',
+      'copy',
+      'move',
+      'reorg',
+      'backup',
+      'restore',
+      'index',
+      'table',
+      'column',
+      'row',
+      'commit',
+      'rollback',
+      'bind',
+      'plan',
+      'package',
+      'program',
+      'copybook',
+      'macro',
+      'include',
+      'replace',
+      'delete',
+      'insert',
+      'update',
+      'select',
+      'create',
+      'drop',
+      'alter',
+      'grant',
+      'revoke',
     ];
 
     this.mainframeTerms = new Set(terms);
@@ -516,24 +601,24 @@ export class TextProcessor {
   private initializeErrorPatterns(): void {
     // Common mainframe error code patterns
     this.errorCodePatterns = [
-      /\bS0C[0-9A-F]\b/i,           // System completion codes
-      /\bU\d{4}\b/i,                // User completion codes
-      /\bIEF\d{3}[A-Z]\b/i,         // JES error codes
-      /\bIEC\d{3}[A-Z]\b/i,         // I/O error codes
-      /\bIDC\d{4}[A-Z]\b/i,         // IDCAMS error codes
-      /\bISR\d{4}[A-Z]\b/i,         // ISPF error codes
-      /\bDFS\d{4}[A-Z]\b/i,         // DFSORT error codes
-      /\bWER\d{3}[A-Z]\b/i,         // DFSORT warning codes
-      /\bSQLCODE\s*-?\d+\b/i,       // DB2 SQL codes
-      /\bDSNT\d{3}[A-Z]\b/i,        // DB2 error codes
-      /\bCICS\d{4}[A-Z]\b/i,        // CICS error codes
-      /\bDFS\d{4}[A-Z]\b/i,         // IMS error codes
-      /\bCSQ\d{4}[A-Z]\b/i,         // MQ error codes
-      /\bTSOD\d{4}[A-Z]\b/i,        // TSO error codes
-      /\bISP\d{4}[A-Z]\b/i,         // ISPF error codes
-      /\bStatus\s*\d+\b/i,          // VSAM status codes
-      /\bRC\s*=\s*\d+\b/i,          // Return codes
-      /\bCC\s*=\s*\d+\b/i           // Condition codes
+      /\bS0C[0-9A-F]\b/i, // System completion codes
+      /\bU\d{4}\b/i, // User completion codes
+      /\bIEF\d{3}[A-Z]\b/i, // JES error codes
+      /\bIEC\d{3}[A-Z]\b/i, // I/O error codes
+      /\bIDC\d{4}[A-Z]\b/i, // IDCAMS error codes
+      /\bISR\d{4}[A-Z]\b/i, // ISPF error codes
+      /\bDFS\d{4}[A-Z]\b/i, // DFSORT error codes
+      /\bWER\d{3}[A-Z]\b/i, // DFSORT warning codes
+      /\bSQLCODE\s*-?\d+\b/i, // DB2 SQL codes
+      /\bDSNT\d{3}[A-Z]\b/i, // DB2 error codes
+      /\bCICS\d{4}[A-Z]\b/i, // CICS error codes
+      /\bDFS\d{4}[A-Z]\b/i, // IMS error codes
+      /\bCSQ\d{4}[A-Z]\b/i, // MQ error codes
+      /\bTSOD\d{4}[A-Z]\b/i, // TSO error codes
+      /\bISP\d{4}[A-Z]\b/i, // ISPF error codes
+      /\bStatus\s*\d+\b/i, // VSAM status codes
+      /\bRC\s*=\s*\d+\b/i, // Return codes
+      /\bCC\s*=\s*\d+\b/i, // Condition codes
     ];
   }
 }

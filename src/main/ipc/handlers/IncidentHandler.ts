@@ -12,7 +12,7 @@ import {
   BulkOperation,
   StatusTransition,
   IncidentComment,
-  IncidentMetrics
+  IncidentMetrics,
 } from '../../../types/incident';
 
 export class IncidentHandler {
@@ -184,7 +184,7 @@ export class IncidentHandler {
     });
 
     // Get SLA breaches
-    ipcMain.handle('incident:getSLABreaches', async (event) => {
+    ipcMain.handle('incident:getSLABreaches', async event => {
       try {
         return await this.getSLABreaches();
       } catch (error) {
@@ -282,11 +282,12 @@ export class IncidentHandler {
     params.push(pageSize, offset);
 
     const incidents = this.db.prepare(query).all(params);
-    
+
     // Get total count for pagination
-    const countQuery = query.replace(/SELECT \* FROM/, 'SELECT COUNT(*) as total FROM')
-                           .replace(/ORDER BY.*$/, '')
-                           .replace(/LIMIT.*$/, '');
+    const countQuery = query
+      .replace(/SELECT \* FROM/, 'SELECT COUNT(*) as total FROM')
+      .replace(/ORDER BY.*$/, '')
+      .replace(/LIMIT.*$/, '');
     const countParams = params.slice(0, -2); // Remove limit and offset
     const totalResult = this.db.prepare(countQuery).get(countParams) as any;
     const totalCount = totalResult.total;
@@ -297,14 +298,14 @@ export class IncidentHandler {
       page,
       page_size: pageSize,
       has_more: offset + pageSize < totalCount,
-      filters_applied: filters || {}
+      filters_applied: filters || {},
     };
   }
 
   private async getIncident(id: string): Promise<IncidentKBEntry> {
     const query = `SELECT * FROM incident_queue WHERE id = ?`;
     const incident = this.db.prepare(query).get(id);
-    
+
     if (!incident) {
       throw new Error(`Incident with id ${id} not found`);
     }
@@ -324,13 +325,10 @@ export class IncidentHandler {
           resolver = CASE WHEN ? = 'resolvido' THEN ? ELSE resolver END
       WHERE id = ?
     `;
-    
-    const result = this.db.prepare(updateQuery).run(
-      newStatus, 
-      newStatus, 
-      changedBy || 'system', 
-      incidentId
-    );
+
+    const result = this.db
+      .prepare(updateQuery)
+      .run(newStatus, newStatus, changedBy || 'system', incidentId);
 
     if (result.changes === 0) {
       throw new Error(`Incident with id ${incidentId} not found`);
@@ -347,10 +345,10 @@ export class IncidentHandler {
           ?, ?, ?
         )
       `;
-      
-      this.db.prepare(transitionQuery).run(
-        incidentId, incidentId, newStatus, changedBy || 'system', reason
-      );
+
+      this.db
+        .prepare(transitionQuery)
+        .run(incidentId, incidentId, newStatus, changedBy || 'system', reason);
     }
   }
 
@@ -366,7 +364,7 @@ export class IncidentHandler {
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     const result = this.db.prepare(query).run(assignedTo, incidentId);
 
     if (result.changes === 0) {
@@ -393,7 +391,7 @@ export class IncidentHandler {
       SET priority = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     const result = this.db.prepare(query).run(priority, incidentId);
 
     if (result.changes === 0) {
@@ -461,11 +459,17 @@ export class IncidentHandler {
         id, incident_id, author, content, is_internal, attachments
       ) VALUES (?, ?, ?, ?, ?, ?)
     `;
-    
-    this.db.prepare(query).run(
-      id, incidentId, author, content, isInternal ? 1 : 0,
-      attachments ? JSON.stringify(attachments) : null
-    );
+
+    this.db
+      .prepare(query)
+      .run(
+        id,
+        incidentId,
+        author,
+        content,
+        isInternal ? 1 : 0,
+        attachments ? JSON.stringify(attachments) : null
+      );
 
     return { id };
   }
@@ -476,13 +480,13 @@ export class IncidentHandler {
       WHERE incident_id = ? 
       ORDER BY timestamp DESC
     `;
-    
+
     const comments = this.db.prepare(query).all(incidentId);
     return comments.map(comment => ({
       ...comment,
       is_internal: Boolean(comment.is_internal),
       attachments: comment.attachments ? JSON.parse(comment.attachments) : undefined,
-      timestamp: new Date(comment.timestamp)
+      timestamp: new Date(comment.timestamp),
     }));
   }
 
@@ -492,12 +496,12 @@ export class IncidentHandler {
       WHERE incident_id = ? 
       ORDER BY timestamp DESC
     `;
-    
+
     const transitions = this.db.prepare(query).all(incidentId);
     return transitions.map(transition => ({
       ...transition,
       timestamp: new Date(transition.timestamp),
-      metadata: transition.metadata ? JSON.parse(transition.metadata) : undefined
+      metadata: transition.metadata ? JSON.parse(transition.metadata) : undefined,
     }));
   }
 
@@ -524,7 +528,7 @@ export class IncidentHandler {
         P1: metrics.p1_count || 0,
         P2: metrics.p2_count || 0,
         P3: metrics.p3_count || 0,
-        P4: metrics.p4_count || 0
+        P4: metrics.p4_count || 0,
       },
       status_distribution: {
         aberto: metrics.total_open || 0,
@@ -532,9 +536,9 @@ export class IncidentHandler {
         em_revisao: 0, // TODO: Add to view
         resolvido: metrics.total_resolved_today || 0,
         fechado: 0, // TODO: Add to view
-        reaberto: 0 // TODO: Add to view
+        reaberto: 0, // TODO: Add to view
       },
-      recent_incidents: recentIncidents.map(this.transformIncident)
+      recent_incidents: recentIncidents.map(this.transformIncident),
     };
   }
 
@@ -549,7 +553,7 @@ export class IncidentHandler {
       SET escalation_level = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     const result = this.db.prepare(query).run(escalationLevel, incidentId);
 
     if (result.changes === 0) {
@@ -573,7 +577,7 @@ export class IncidentHandler {
     // Calculate resolution time
     const incidentQuery = `SELECT created_at FROM kb_entries WHERE id = ?`;
     const incident = this.db.prepare(incidentQuery).get(incidentId) as any;
-    
+
     if (!incident) {
       throw new Error(`Incident with id ${incidentId} not found`);
     }
@@ -590,7 +594,7 @@ export class IncidentHandler {
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     this.db.prepare(updateQuery).run(resolvedBy, resolutionTime, incidentId);
 
     // Add resolution comment
@@ -602,7 +606,7 @@ export class IncidentHandler {
   private async createIncident(incidentData: any): Promise<{ id: string }> {
     const id = this.generateId();
     const incidentNumber = this.generateIncidentNumber();
-    
+
     const query = `
       INSERT INTO kb_entries (
         id, title, problem, solution, category, tags, 
@@ -611,27 +615,29 @@ export class IncidentHandler {
         sla_deadline, created_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     const slaDeadline = this.calculateSLADeadline(incidentData.priority);
-    
-    this.db.prepare(query).run(
-      id,
-      incidentData.title,
-      incidentData.problem,
-      incidentData.solution || '',
-      incidentData.category,
-      JSON.stringify(incidentData.tags || []),
-      incidentData.priority,
-      incidentData.status || 'aberto',
-      incidentData.assignedTo,
-      incidentData.reporter,
-      incidentNumber,
-      incidentData.business_impact || 'medium',
-      incidentData.customer_impact ? 1 : 0,
-      'none',
-      slaDeadline.toISOString(),
-      incidentData.created_by || 'system'
-    );
+
+    this.db
+      .prepare(query)
+      .run(
+        id,
+        incidentData.title,
+        incidentData.problem,
+        incidentData.solution || '',
+        incidentData.category,
+        JSON.stringify(incidentData.tags || []),
+        incidentData.priority,
+        incidentData.status || 'aberto',
+        incidentData.assignedTo,
+        incidentData.reporter,
+        incidentNumber,
+        incidentData.business_impact || 'medium',
+        incidentData.customer_impact ? 1 : 0,
+        'none',
+        slaDeadline.toISOString(),
+        incidentData.created_by || 'system'
+      );
 
     return { id };
   }
@@ -660,7 +666,7 @@ export class IncidentHandler {
         reported_by: 'reporter',
         incident_date: 'created_at',
         tags: 'tags',
-        resolution_notes: 'solution'
+        resolution_notes: 'solution',
       };
 
       // Process each change
@@ -710,18 +716,20 @@ export class IncidentHandler {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      this.db.prepare(auditQuery).run(
-        auditId,
-        incidentId,
-        JSON.stringify(auditInfo.changedFields),
-        auditInfo.changeReason,
-        auditInfo.changedBy,
-        JSON.stringify(auditInfo.previousValues),
-        JSON.stringify(auditInfo.newValues),
-        auditInfo.timestamp.toISOString(),
-        auditInfo.requiresApproval ? 1 : 0,
-        auditInfo.criticalChange ? 1 : 0
-      );
+      this.db
+        .prepare(auditQuery)
+        .run(
+          auditId,
+          incidentId,
+          JSON.stringify(auditInfo.changedFields),
+          auditInfo.changeReason,
+          auditInfo.changedBy,
+          JSON.stringify(auditInfo.previousValues),
+          JSON.stringify(auditInfo.newValues),
+          auditInfo.timestamp.toISOString(),
+          auditInfo.requiresApproval ? 1 : 0,
+          auditInfo.criticalChange ? 1 : 0
+        );
 
       // Add status transition record if status changed
       if (changes.status && auditInfo.previousValues.status !== changes.status) {
@@ -731,14 +739,16 @@ export class IncidentHandler {
           ) VALUES (?, ?, ?, ?, ?, ?)
         `;
 
-        this.db.prepare(transitionQuery).run(
-          incidentId,
-          auditInfo.previousValues.status,
-          changes.status,
-          auditInfo.changedBy,
-          auditInfo.changeReason,
-          auditInfo.timestamp.toISOString()
-        );
+        this.db
+          .prepare(transitionQuery)
+          .run(
+            incidentId,
+            auditInfo.previousValues.status,
+            changes.status,
+            auditInfo.changedBy,
+            auditInfo.changeReason,
+            auditInfo.timestamp.toISOString()
+          );
       }
 
       // Add system comment documenting the change
@@ -746,13 +756,20 @@ export class IncidentHandler {
         .map((field: string) => {
           const oldVal = auditInfo.previousValues[field];
           const newVal = auditInfo.newValues[field];
-          const fieldName = field === 'title' ? 'Título' :
-                           field === 'description' ? 'Descrição' :
-                           field === 'priority' ? 'Prioridade' :
-                           field === 'status' ? 'Status' :
-                           field === 'category' ? 'Categoria' :
-                           field === 'assigned_to' ? 'Responsável' :
-                           field;
+          const fieldName =
+            field === 'title'
+              ? 'Título'
+              : field === 'description'
+                ? 'Descrição'
+                : field === 'priority'
+                  ? 'Prioridade'
+                  : field === 'status'
+                    ? 'Status'
+                    : field === 'category'
+                      ? 'Categoria'
+                      : field === 'assigned_to'
+                        ? 'Responsável'
+                        : field;
 
           return `${fieldName}: "${oldVal}" → "${newVal}"`;
         })
@@ -804,7 +821,7 @@ export class IncidentHandler {
       SELECT * FROM incident_queue 
       WHERE (title LIKE ? OR problem LIKE ? OR incident_number LIKE ?)
     `;
-    
+
     const params = [`%${query}%`, `%${query}%`, `%${query}%`];
 
     // Apply additional filters (reuse logic from getIncidents)
@@ -827,7 +844,7 @@ export class IncidentHandler {
         AND status NOT IN ('resolvido', 'fechado')
       ORDER BY sla_deadline ASC
     `;
-    
+
     const results = this.db.prepare(query).all();
     return results.map(this.transformIncident);
   }
@@ -843,7 +860,7 @@ export class IncidentHandler {
       SET sla_deadline = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     const result = this.db.prepare(query).run(newDeadline, incidentId);
 
     if (result.changes === 0) {
@@ -851,12 +868,7 @@ export class IncidentHandler {
     }
 
     // Log SLA change
-    await this.addComment(
-      incidentId,
-      `SLA deadline updated: ${reason}`,
-      updatedBy,
-      true
-    );
+    await this.addComment(incidentId, `SLA deadline updated: ${reason}`, updatedBy, true);
   }
 
   private async getTrends(timeframe: string): Promise<any> {
@@ -865,7 +877,7 @@ export class IncidentHandler {
     return {
       resolution_time_trend: [],
       volume_trend: [],
-      sla_compliance_trend: []
+      sla_compliance_trend: [],
     };
   }
 
@@ -877,7 +889,7 @@ export class IncidentHandler {
       updated_at: new Date(row.updated_at),
       last_status_change: row.last_status_change ? new Date(row.last_status_change) : undefined,
       sla_deadline: row.sla_deadline ? new Date(row.sla_deadline) : undefined,
-      customer_impact: Boolean(row.customer_impact)
+      customer_impact: Boolean(row.customer_impact),
     };
   }
 
@@ -893,14 +905,14 @@ export class IncidentHandler {
 
   private calculateSLADeadline(priority: string): Date {
     const slaMinutes = {
-      'P1': 60,     // 1 hour
-      'P2': 240,    // 4 hours
-      'P3': 480,    // 8 hours
-      'P4': 1440    // 24 hours
+      P1: 60, // 1 hour
+      P2: 240, // 4 hours
+      P3: 480, // 8 hours
+      P4: 1440, // 24 hours
     };
 
     const minutes = slaMinutes[priority as keyof typeof slaMinutes] || 480;
-    return new Date(Date.now() + (minutes * 60 * 1000));
+    return new Date(Date.now() + minutes * 60 * 1000);
   }
 }
 

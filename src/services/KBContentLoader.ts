@@ -44,7 +44,7 @@ export class KBContentLoader {
             problem: entry.problem,
             solution: entry.solution,
             category: entry.category,
-            tags: entry.tags || []
+            tags: entry.tags || [],
           });
           loadedCount++;
           console.log(`✅ Loaded: ${entry.title}`);
@@ -54,7 +54,6 @@ export class KBContentLoader {
       }
 
       console.log(`🎉 Successfully loaded ${loadedCount}/${content.entries.length} KB entries`);
-
     } catch (error) {
       console.error('💥 Failed to load essential KB content:', error);
       // Fallback to minimal entries
@@ -67,26 +66,29 @@ export class KBContentLoader {
 
     const minimalEntries = [
       {
-        title: "VSAM Status 35 - File Not Found",
-        problem: "Job abends with VSAM status code 35",
-        solution: "1. Check if dataset exists\n2. Verify DD statement\n3. Check catalog\n4. Verify RACF access",
-        category: "VSAM",
-        tags: ["vsam", "status-35", "file-not-found"]
+        title: 'VSAM Status 35 - File Not Found',
+        problem: 'Job abends with VSAM status code 35',
+        solution:
+          '1. Check if dataset exists\n2. Verify DD statement\n3. Check catalog\n4. Verify RACF access',
+        category: 'VSAM',
+        tags: ['vsam', 'status-35', 'file-not-found'],
       },
       {
-        title: "S0C7 Data Exception",
-        problem: "Program abends with S0C7 data exception",
-        solution: "1. Check numeric fields\n2. Initialize variables\n3. Use NUMERIC test\n4. Check data format",
-        category: "COBOL",
-        tags: ["s0c7", "data-exception", "numeric"]
+        title: 'S0C7 Data Exception',
+        problem: 'Program abends with S0C7 data exception',
+        solution:
+          '1. Check numeric fields\n2. Initialize variables\n3. Use NUMERIC test\n4. Check data format',
+        category: 'COBOL',
+        tags: ['s0c7', 'data-exception', 'numeric'],
       },
       {
-        title: "JCL Dataset Not Found",
-        problem: "JCL fails with dataset not found error",
-        solution: "1. Check dataset name spelling\n2. Verify dataset exists\n3. Check DISP parameter\n4. Verify quotes",
-        category: "JCL",
-        tags: ["jcl", "dataset", "not-found"]
-      }
+        title: 'JCL Dataset Not Found',
+        problem: 'JCL fails with dataset not found error',
+        solution:
+          '1. Check dataset name spelling\n2. Verify dataset exists\n3. Check DISP parameter\n4. Verify quotes',
+        category: 'JCL',
+        tags: ['jcl', 'dataset', 'not-found'],
+      },
     ];
 
     for (const entry of minimalEntries) {

@@ -9,13 +9,13 @@ import {
   IPCHandlerFunction,
   BaseIPCRequest,
   BaseIPCResponse,
-  IPCErrorCode
+  IPCErrorCode,
 } from '../../../types/ipc';
 import {
   Tag,
   TagAssociation,
   BulkOperationResult,
-  AutocompleteSuggestion
+  AutocompleteSuggestion,
 } from '../../../database/schemas/HierarchicalCategories.schema';
 import { TagService } from '../../../services/TagService';
 import { TagRepository } from '../../../database/repositories/TagRepository';
@@ -196,22 +196,20 @@ export class TagHandler {
       if (options.checkDuplicates) {
         existingTag = await this.tagService.getByName(tag.name);
         if (existingTag) {
-          return HandlerUtils.createSuccessResponse(
-            request.requestId,
-            startTime,
-            existingTag.id,
-            {
-              isNew: false,
-              suggestions: []
-            }
-          ) as TagCreateResponse;
+          return HandlerUtils.createSuccessResponse(request.requestId, startTime, existingTag.id, {
+            isNew: false,
+            suggestions: [],
+          }) as TagCreateResponse;
         }
       }
 
       // Get auto-complete suggestions if requested
       let suggestions: string[] = [];
       if (options.autoComplete) {
-        const autocompleteSuggestions = await this.tagService.getAutocompleteSuggestions(tag.name, 5);
+        const autocompleteSuggestions = await this.tagService.getAutocompleteSuggestions(
+          tag.name,
+          5
+        );
         suggestions = autocompleteSuggestions.map(s => s.text);
       }
 
@@ -219,7 +217,9 @@ export class TagHandler {
       const tagData: Tag = {
         id: uuidv4(),
         name: HandlerUtils.sanitizeString(tag.name.toLowerCase(), 50),
-        description: tag.description ? HandlerUtils.sanitizeString(tag.description, 200) : undefined,
+        description: tag.description
+          ? HandlerUtils.sanitizeString(tag.description, 200)
+          : undefined,
         color: tag.color,
         category: tag.category,
         metadata: tag.metadata,
@@ -227,21 +227,15 @@ export class TagHandler {
         relevance_score: 1.0,
         created_at: new Date(),
         updated_at: new Date(),
-        is_active: true
+        is_active: true,
       };
 
       const createdId = await this.tagService.create(tagData);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        createdId,
-        {
-          isNew: true,
-          suggestions
-        }
-      ) as TagCreateResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, createdId, {
+        isNew: true,
+        suggestions,
+      }) as TagCreateResponse;
     } catch (error) {
       console.error('Tag creation error:', error);
       return HandlerUtils.createErrorResponse(
@@ -256,7 +250,9 @@ export class TagHandler {
   /**
    * Associate tag with KB entry
    */
-  handleTagAssociate: IPCHandlerFunction<'tag:associate'> = async (request: TagAssociateRequest) => {
+  handleTagAssociate: IPCHandlerFunction<'tag:associate'> = async (
+    request: TagAssociateRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -273,7 +269,12 @@ export class TagHandler {
       }
 
       // Validate scores
-      if (relevance_score < 0 || relevance_score > 1 || confidence_level < 0 || confidence_level > 1) {
+      if (
+        relevance_score < 0 ||
+        relevance_score > 1 ||
+        confidence_level < 0 ||
+        confidence_level > 1
+      ) {
         return HandlerUtils.createErrorResponse(
           request.requestId,
           startTime,
@@ -290,22 +291,16 @@ export class TagHandler {
         confidence_level,
         metadata,
         created_at: new Date(),
-        created_by: 'system'
+        created_by: 'system',
       };
 
       await this.tagService.associateWithEntry(tag_id, entry_id, association);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          association_created: true,
-          relevance_score,
-          confidence_level
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        association_created: true,
+        relevance_score,
+        confidence_level,
+      });
     } catch (error) {
       console.error('Tag association error:', error);
       return HandlerUtils.createErrorResponse(
@@ -331,17 +326,12 @@ export class TagHandler {
       const cached = await this.cacheManager.get<Tag[]>(cacheKey);
 
       if (cached) {
-        return HandlerUtils.createSuccessResponse(
-          request.requestId,
-          startTime,
-          cached,
-          {
-            totalResults: cached.length,
-            hasMore: false,
-            searchTime: Date.now() - startTime,
-            cached: true
-          }
-        ) as TagSearchResponse;
+        return HandlerUtils.createSuccessResponse(request.requestId, startTime, cached, {
+          totalResults: cached.length,
+          hasMore: false,
+          searchTime: Date.now() - startTime,
+          cached: true,
+        }) as TagSearchResponse;
       }
 
       // Perform search
@@ -352,7 +342,7 @@ export class TagHandler {
         limit: options.limit || 50,
         includeAnalytics: options.includeAnalytics,
         sortBy: options.sortBy || 'usage',
-        sortOrder: options.sortOrder || 'desc'
+        sortOrder: options.sortOrder || 'desc',
       });
 
       const searchTime = Date.now() - searchStartTime;
@@ -362,21 +352,15 @@ export class TagHandler {
         await this.cacheManager.set(cacheKey, tags, {
           ttl: 300000, // 5 minutes
           layer: 'memory',
-          tags: ['tag-search', category ? `category:${category}` : 'all-categories']
+          tags: ['tag-search', category ? `category:${category}` : 'all-categories'],
         });
       }
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        tags,
-        {
-          totalResults: tags.length,
-          hasMore: tags.length === (options.limit || 50),
-          searchTime
-        }
-      ) as TagSearchResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, tags, {
+        totalResults: tags.length,
+        hasMore: tags.length === (options.limit || 50),
+        searchTime,
+      }) as TagSearchResponse;
     } catch (error) {
       console.error('Tag search error:', error);
       return HandlerUtils.createErrorResponse(
@@ -391,7 +375,9 @@ export class TagHandler {
   /**
    * Get tag suggestions for content
    */
-  handleTagSuggestions: IPCHandlerFunction<'tag:suggestions'> = async (request: TagSuggestionsRequest) => {
+  handleTagSuggestions: IPCHandlerFunction<'tag:suggestions'> = async (
+    request: TagSuggestionsRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -408,7 +394,8 @@ export class TagHandler {
       }
 
       const processingStart = Date.now();
-      const contentLength = entry_content.title.length + entry_content.problem.length + entry_content.solution.length;
+      const contentLength =
+        entry_content.title.length + entry_content.problem.length + entry_content.solution.length;
 
       // Get suggestions from service
       const suggestions = await this.tagService.getSuggestionsForContent(
@@ -424,19 +411,13 @@ export class TagHandler {
         tag: suggestion.tag,
         confidence: suggestion.confidence,
         reason: suggestion.reason,
-        auto_generated: suggestion.source === 'auto_generated'
+        auto_generated: suggestion.source === 'auto_generated',
       }));
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        enrichedSuggestions,
-        {
-          processed_content_length: contentLength,
-          suggestion_time: processingTime
-        }
-      ) as TagSuggestionsResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, enrichedSuggestions, {
+        processed_content_length: contentLength,
+        suggestion_time: processingTime,
+      }) as TagSuggestionsResponse;
     } catch (error) {
       console.error('Tag suggestions error:', error);
       return HandlerUtils.createErrorResponse(
@@ -451,7 +432,9 @@ export class TagHandler {
   /**
    * Auto-complete tag names
    */
-  handleTagAutoComplete: IPCHandlerFunction<'tag:autocomplete'> = async (request: TagAutoCompleteRequest) => {
+  handleTagAutoComplete: IPCHandlerFunction<'tag:autocomplete'> = async (
+    request: TagAutoCompleteRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -486,22 +469,16 @@ export class TagHandler {
           category: context?.entry_category,
           existingTags: context?.existing_tags,
           includePopular: options.include_popular !== false,
-          fuzzyMatching: options.fuzzy_matching !== false
+          fuzzyMatching: options.fuzzy_matching !== false,
         }
       );
 
       const queryTime = Date.now() - queryStart;
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        suggestions,
-        {
-          query_processing_time: queryTime,
-          total_suggestions: suggestions.length
-        }
-      ) as TagAutoCompleteResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, suggestions, {
+        query_processing_time: queryTime,
+        total_suggestions: suggestions.length,
+      }) as TagAutoCompleteResponse;
     } catch (error) {
       console.error('Tag autocomplete error:', error);
       return HandlerUtils.createErrorResponse(
@@ -559,21 +536,15 @@ export class TagHandler {
       // Execute bulk operations
       const result = await this.tagService.bulkOperation(operations, {
         transaction: options.transaction !== false,
-        stopOnError: options.stopOnError || false
+        stopOnError: options.stopOnError || false,
       });
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        result,
-        {
-          totalOperations: operations.length,
-          successful: result.results.filter(r => r.success).length,
-          failed: result.results.filter(r => !r.success).length,
-          rollbackPerformed: !result.success && options.transaction !== false
-        }
-      ) as TagBulkResponse;
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, result, {
+        totalOperations: operations.length,
+        successful: result.results.filter(r => r.success).length,
+        failed: result.results.filter(r => !r.success).length,
+        rollbackPerformed: !result.success && options.transaction !== false,
+      }) as TagBulkResponse;
     } catch (error) {
       console.error('Tag bulk operation error:', error);
       return HandlerUtils.createErrorResponse(
@@ -588,7 +559,9 @@ export class TagHandler {
   /**
    * Get tag analytics
    */
-  handleTagAnalytics: IPCHandlerFunction<'tag:analytics'> = async (request: TagAnalyticsRequest) => {
+  handleTagAnalytics: IPCHandlerFunction<'tag:analytics'> = async (
+    request: TagAnalyticsRequest
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -606,18 +579,12 @@ export class TagHandler {
 
       const analytics = await this.tagService.getAnalytics(tag_id, timeframe, options);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        analytics,
-        {
-          timeframe,
-          includeUsageTrends: options.includeUsageTrends || false,
-          includeAssociations: options.includeAssociations || false,
-          generatedAt: new Date().toISOString()
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, analytics, {
+        timeframe,
+        includeUsageTrends: options.includeUsageTrends || false,
+        includeAssociations: options.includeAssociations || false,
+        generatedAt: new Date().toISOString(),
+      });
     } catch (error) {
       console.error('Tag analytics error:', error);
       return HandlerUtils.createErrorResponse(
@@ -632,7 +599,9 @@ export class TagHandler {
   /**
    * Update tag
    */
-  handleTagUpdate: IPCHandlerFunction<'tag:update'> = async (request: BaseIPCRequest & { id: string; updates: Partial<Tag> }) => {
+  handleTagUpdate: IPCHandlerFunction<'tag:update'> = async (
+    request: BaseIPCRequest & { id: string; updates: Partial<Tag> }
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -675,25 +644,25 @@ export class TagHandler {
       // Sanitize string updates
       const sanitizedUpdates = { ...updates };
       if (sanitizedUpdates.name) {
-        sanitizedUpdates.name = HandlerUtils.sanitizeString(sanitizedUpdates.name.toLowerCase(), 50);
+        sanitizedUpdates.name = HandlerUtils.sanitizeString(
+          sanitizedUpdates.name.toLowerCase(),
+          50
+        );
       }
       if (sanitizedUpdates.description) {
-        sanitizedUpdates.description = HandlerUtils.sanitizeString(sanitizedUpdates.description, 200);
+        sanitizedUpdates.description = HandlerUtils.sanitizeString(
+          sanitizedUpdates.description,
+          200
+        );
       }
 
       // Perform update
       await this.tagService.update(id, sanitizedUpdates);
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          updated: true,
-          affectedAssociations: await this.getAssociationCount(id)
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        updated: true,
+        affectedAssociations: await this.getAssociationCount(id),
+      });
     } catch (error) {
       console.error('Tag update error:', error);
       return HandlerUtils.createErrorResponse(
@@ -708,7 +677,9 @@ export class TagHandler {
   /**
    * Delete tag
    */
-  handleTagDelete: IPCHandlerFunction<'tag:delete'> = async (request: BaseIPCRequest & { id: string; options?: { removeAssociations?: boolean } }) => {
+  handleTagDelete: IPCHandlerFunction<'tag:delete'> = async (
+    request: BaseIPCRequest & { id: string; options?: { removeAssociations?: boolean } }
+  ) => {
     const startTime = Date.now();
 
     try {
@@ -740,19 +711,13 @@ export class TagHandler {
 
       // Delete tag
       await this.tagService.delete(id, {
-        removeAssociations: options.removeAssociations !== false
+        removeAssociations: options.removeAssociations !== false,
       });
 
-      return HandlerUtils.createSuccessResponse(
-        request.requestId,
-        startTime,
-        null,
-        {
-          associationsRemoved: associationCount,
-          removeAssociations: options.removeAssociations !== false
-        }
-      );
-
+      return HandlerUtils.createSuccessResponse(request.requestId, startTime, null, {
+        associationsRemoved: associationCount,
+        removeAssociations: options.removeAssociations !== false,
+      });
     } catch (error) {
       console.error('Tag delete error:', error);
       return HandlerUtils.createErrorResponse(
@@ -766,7 +731,10 @@ export class TagHandler {
 
   // Private helper methods
 
-  private validateTagInput(tag: { name: string; description?: string }): { valid: boolean; error?: string } {
+  private validateTagInput(tag: { name: string; description?: string }): {
+    valid: boolean;
+    error?: string;
+  } {
     if (!tag.name || tag.name.trim().length === 0) {
       return { valid: false, error: 'Tag name is required' };
     }
@@ -788,7 +756,10 @@ export class TagHandler {
   }
 
   private async validateBulkOperation(operation: any): Promise<{ valid: boolean; error?: string }> {
-    if (!operation.type || !['create', 'update', 'delete', 'associate', 'dissociate'].includes(operation.type)) {
+    if (
+      !operation.type ||
+      !['create', 'update', 'delete', 'associate', 'dissociate'].includes(operation.type)
+    ) {
       return { valid: false, error: 'Invalid operation type' };
     }
 
@@ -840,5 +811,5 @@ export const tagHandlerConfigs = {
   'tag:bulk': HandlerConfigs.CRITICAL_OPERATIONS,
   'tag:analytics': HandlerConfigs.SYSTEM_OPERATIONS,
   'tag:update': HandlerConfigs.WRITE_OPERATIONS,
-  'tag:delete': HandlerConfigs.CRITICAL_OPERATIONS
+  'tag:delete': HandlerConfigs.CRITICAL_OPERATIONS,
 } as const;

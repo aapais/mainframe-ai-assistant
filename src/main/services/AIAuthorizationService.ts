@@ -23,7 +23,7 @@ import {
   CostBreakdown,
   PerformanceMetrics,
   AuthorizationConfig,
-  DecisionScope
+  DecisionScope,
 } from '../../types/authorization.types';
 import { Service, ServiceContext, ServiceStatus } from './ServiceManager';
 import { DatabaseService } from './DatabaseService';
@@ -125,7 +125,7 @@ const GEMINI_PRICING = {
   'gemini-pro-vision': {
     input: 0.00025, // per 1K tokens
     output: 0.00075, // per 1K tokens
-  }
+  },
 } as const;
 
 /**
@@ -143,7 +143,7 @@ export class AIAuthorizationService implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
 
   // In-memory caches for performance
@@ -161,25 +161,25 @@ export class AIAuthorizationService implements Service {
       extract_keywords: 'auto_approve',
       classify_content: 'auto_approve',
       translate_text: 'ask_always',
-      improve_writing: 'ask_always'
+      improve_writing: 'ask_always',
     },
     costThresholds: {
       autoApprove: 0.01, // $0.01 USD
-      requireConfirmation: 0.10, // $0.10 USD
-      block: 1.00 // $1.00 USD
+      requireConfirmation: 0.1, // $0.10 USD
+      block: 1.0, // $1.00 USD
     },
     sensitivityPolicies: {
-      'public': 'auto_approve',
-      'internal': 'ask_always',
-      'confidential': 'ask_always',
-      'restricted': 'disabled'
+      public: 'auto_approve',
+      internal: 'ask_always',
+      confidential: 'ask_always',
+      restricted: 'disabled',
     },
     cacheSettings: {
       enableEstimateCache: true,
       estimateCacheTTL: 300000, // 5 minutes
       enableDecisionCache: true,
-      decisionCacheTTL: 3600000 // 1 hour
-    }
+      decisionCacheTTL: 3600000, // 1 hour
+    },
   };
 
   async initialize(context: ServiceContext): Promise<void> {
@@ -187,7 +187,9 @@ export class AIAuthorizationService implements Service {
 
     try {
       // Get database service dependency
-      this.databaseService = context.serviceManager.getService('DatabaseService') as DatabaseService;
+      this.databaseService = context.serviceManager.getService(
+        'DatabaseService'
+      ) as DatabaseService;
       if (!this.databaseService) {
         throw new Error('DatabaseService dependency not available');
       }
@@ -199,7 +201,7 @@ export class AIAuthorizationService implements Service {
           apiKey: geminiApiKey,
           model: 'gemini-pro',
           temperature: 0.1,
-          timeout: 10000
+          timeout: 10000,
         });
         context.logger.info('Gemini service initialized for cost estimation');
       } else {
@@ -216,7 +218,7 @@ export class AIAuthorizationService implements Service {
         status: 'running',
         startTime: new Date(),
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('AI Authorization Service initialized successfully');
@@ -226,7 +228,7 @@ export class AIAuthorizationService implements Service {
         status: 'error',
         error: error instanceof Error ? error.message : 'Unknown error',
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
       throw error;
     }
@@ -243,7 +245,7 @@ export class AIAuthorizationService implements Service {
     this.status = {
       status: 'stopped',
       restartCount: 0,
-      uptime: 0
+      uptime: 0,
     };
 
     context.logger.info('AI Authorization Service shut down successfully');
@@ -258,15 +260,14 @@ export class AIAuthorizationService implements Service {
       version: this.version,
       dependencies: {
         database: this.databaseService ? 'available' : 'unavailable',
-        gemini: this.geminiService ? 'available' : 'unavailable'
+        gemini: this.geminiService ? 'available' : 'unavailable',
       },
       cacheStats: {
         preferencesCache: this.preferencesCache.size,
         sessionApprovals: this.sessionApprovals.size,
-        estimateCache: this.estimateCache.size
+        estimateCache: this.estimateCache.size,
       },
-      uptime: this.status.startTime ?
-        Date.now() - this.status.startTime.getTime() : 0
+      uptime: this.status.startTime ? Date.now() - this.status.startTime.getTime() : 0,
     };
   }
 
@@ -330,10 +331,10 @@ export class AIAuthorizationService implements Service {
           confidence: estimates.confidence,
           costBreakdown: estimates.breakdown,
           performance: this.getDefaultPerformanceMetrics(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         autoApproved,
-        action
+        action,
       });
 
       return {
@@ -347,15 +348,18 @@ export class AIAuthorizationService implements Service {
           confidence: estimates.confidence,
           costBreakdown: estimates.breakdown,
           performance: this.getDefaultPerformanceMetrics(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         autoApproved,
-        reason: autoApproved ? 'Auto-approved based on cost and preferences' : 'Requires user confirmation'
+        reason: autoApproved
+          ? 'Auto-approved based on cost and preferences'
+          : 'Requires user confirmation',
       };
-
     } catch (error) {
       await this.logError(requestId, operation, error);
-      throw new Error(`Authorization request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Authorization request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -439,9 +443,10 @@ export class AIAuthorizationService implements Service {
       if (decision.rememberDecision && decision.decisionScope) {
         await this.updateUserPreferencesFromDecision(decision);
       }
-
     } catch (error) {
-      throw new Error(`Failed to save user decision: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to save user decision: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -481,7 +486,7 @@ export class AIAuthorizationService implements Service {
           sessionSettings: JSON.parse(row.session_settings),
           dataPrivacySettings: JSON.parse(row.data_privacy_settings),
           created_at: new Date(row.created_at),
-          updated_at: new Date(row.updated_at)
+          updated_at: new Date(row.updated_at),
         };
       } else {
         preferences = this.getDefaultPreferences();
@@ -502,13 +507,16 @@ export class AIAuthorizationService implements Service {
   /**
    * Update user preferences
    */
-  async updatePreferences(prefs: Partial<AuthorizationPreferences>, userId?: string): Promise<void> {
+  async updatePreferences(
+    prefs: Partial<AuthorizationPreferences>,
+    userId?: string
+  ): Promise<void> {
     try {
       const currentPrefs = await this.getUserPreferences(userId);
       const updatedPrefs: AuthorizationPreferences = {
         ...currentPrefs,
         ...prefs,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const db = this.databaseService?.getDatabase();
@@ -535,9 +543,10 @@ export class AIAuthorizationService implements Service {
       // Update cache
       const cacheKey = userId || 'default';
       this.preferencesCache.set(cacheKey, updatedPrefs);
-
     } catch (error) {
-      throw new Error(`Failed to update preferences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to update preferences: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -572,15 +581,15 @@ export class AIAuthorizationService implements Service {
         inputTokens: {
           count: inputTokens,
           costUSD: inputCost,
-          rate: pricing.input
+          rate: pricing.input,
         },
         outputTokens: {
           count: outputTokens,
           costUSD: outputCost,
-          rate: pricing.output
+          rate: pricing.output,
         },
         apiOverhead: 0.001, // Small overhead
-        serviceFees: 0
+        serviceFees: 0,
       };
 
       const estimate: CostEstimate = {
@@ -588,21 +597,22 @@ export class AIAuthorizationService implements Service {
         outputTokens,
         totalCostUSD: totalCost + breakdown.apiOverhead,
         breakdown,
-        confidence: this.geminiService ? 0.9 : 0.7 // Higher confidence with real service
+        confidence: this.geminiService ? 0.9 : 0.7, // Higher confidence with real service
       };
 
       // Cache the estimate
       if (this.config.cacheSettings.enableEstimateCache) {
         this.estimateCache.set(cacheKey, {
           estimate,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
       return estimate;
-
     } catch (error) {
-      throw new Error(`Cost estimation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Cost estimation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -705,10 +715,11 @@ export class AIAuthorizationService implements Service {
 
     const approval: SessionApproval = {
       operationType: decision.decisionScope.operationType || 'semantic_search',
-      costThreshold: decision.decisionScope.costRange?.maxCostUSD || this.config.costThresholds.autoApprove,
+      costThreshold:
+        decision.decisionScope.costRange?.maxCostUSD || this.config.costThresholds.autoApprove,
       dataTypes: [], // Could be extracted from decision scope
       expiresAt: decision.decisionScope.expiresAt || new Date(Date.now() + 3600000), // 1 hour default
-      userId: decision.userId
+      userId: decision.userId,
     };
 
     const existing = this.sessionApprovals.get(decision.sessionId) || [];
@@ -725,7 +736,7 @@ export class AIAuthorizationService implements Service {
       extract_keywords: 50,
       classify_content: 100,
       translate_text: 400,
-      improve_writing: 350
+      improve_writing: 350,
     };
     return estimates[operationType] || 200;
   }
@@ -736,15 +747,15 @@ export class AIAuthorizationService implements Service {
       costThresholds: { ...this.config.costThresholds },
       sessionSettings: {
         rememberApproveAlways: true,
-        sessionDuration: 60 // minutes
+        sessionDuration: 60, // minutes
       },
       dataPrivacySettings: {
         allowPII: false,
         allowConfidential: false,
-        requireExplicitConsent: true
+        requireExplicitConsent: true,
       },
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
   }
 
@@ -777,8 +788,12 @@ export class AIAuthorizationService implements Service {
 
     // Update operation permission if specified
     if (decision.decisionScope.operationType) {
-      const newPermission: PermissionLevel = decision.action === 'approve_always' ? 'auto_approve' :
-                                           decision.action === 'deny' ? 'disabled' : 'ask_always';
+      const newPermission: PermissionLevel =
+        decision.action === 'approve_always'
+          ? 'auto_approve'
+          : decision.action === 'deny'
+            ? 'disabled'
+            : 'ask_always';
 
       if (preferences.defaultPermissions[decision.decisionScope.operationType] !== newPermission) {
         preferences.defaultPermissions[decision.decisionScope.operationType] = newPermission;
@@ -851,44 +866,53 @@ export class AIAuthorizationService implements Service {
       responseTimePercentiles: {
         p50: 2000,
         p95: 5000,
-        p99: 8000
+        p99: 8000,
       },
       expectedQuality: 0.85,
       cacheHitProbability: 0.3,
       rateLimitStatus: {
         remaining: 1000,
-        resetTime: new Date(Date.now() + 3600000)
-      }
+        resetTime: new Date(Date.now() + 3600000),
+      },
     };
   }
 
   private startCleanupIntervals(): void {
     // Clean expired session approvals every 5 minutes
-    setInterval(() => {
-      const now = new Date();
-      for (const [sessionId, approvals] of this.sessionApprovals.entries()) {
-        const validApprovals = approvals.filter(approval => approval.expiresAt > now);
-        if (validApprovals.length === 0) {
-          this.sessionApprovals.delete(sessionId);
-        } else if (validApprovals.length < approvals.length) {
-          this.sessionApprovals.set(sessionId, validApprovals);
+    setInterval(
+      () => {
+        const now = new Date();
+        for (const [sessionId, approvals] of this.sessionApprovals.entries()) {
+          const validApprovals = approvals.filter(approval => approval.expiresAt > now);
+          if (validApprovals.length === 0) {
+            this.sessionApprovals.delete(sessionId);
+          } else if (validApprovals.length < approvals.length) {
+            this.sessionApprovals.set(sessionId, validApprovals);
+          }
         }
-      }
-    }, 5 * 60 * 1000);
+      },
+      5 * 60 * 1000
+    );
 
     // Clean estimate cache every 10 minutes
-    setInterval(() => {
-      const cutoff = Date.now() - this.config.cacheSettings.estimateCacheTTL;
-      for (const [key, cached] of this.estimateCache.entries()) {
-        if (cached.timestamp < cutoff) {
-          this.estimateCache.delete(key);
+    setInterval(
+      () => {
+        const cutoff = Date.now() - this.config.cacheSettings.estimateCacheTTL;
+        for (const [key, cached] of this.estimateCache.entries()) {
+          if (cached.timestamp < cutoff) {
+            this.estimateCache.delete(key);
+          }
         }
-      }
-    }, 10 * 60 * 1000);
+      },
+      10 * 60 * 1000
+    );
 
     // Clear preferences cache every hour to ensure fresh data
-    setInterval(() => {
-      this.preferencesCache.clear();
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.preferencesCache.clear();
+      },
+      60 * 60 * 1000
+    );
   }
 }

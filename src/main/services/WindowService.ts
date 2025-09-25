@@ -18,14 +18,14 @@ export class WindowService implements Service {
   private status: ServiceStatus = {
     status: 'stopped',
     restartCount: 0,
-    uptime: 0
+    uptime: 0,
   };
   private startTime?: Date;
 
   async initialize(context: ServiceContext): Promise<void> {
     context.logger.info('Initializing Window Service...');
     this.startTime = new Date();
-    
+
     try {
       await this.createMainWindow(context);
 
@@ -33,7 +33,7 @@ export class WindowService implements Service {
         status: 'running',
         startTime: this.startTime,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
 
       context.logger.info('Window Service initialized successfully');
@@ -43,9 +43,9 @@ export class WindowService implements Service {
         status: 'error',
         lastError: error,
         restartCount: 0,
-        uptime: 0
+        uptime: 0,
       };
-      
+
       context.logger.error('Window Service initialization failed', error);
       context.metrics.increment('service.window.initialization_failed');
       throw error;
@@ -60,7 +60,7 @@ export class WindowService implements Service {
 
     this.status = {
       ...this.status,
-      status: 'stopped'
+      status: 'stopped',
     };
   }
 
@@ -73,14 +73,14 @@ export class WindowService implements Service {
 
   async healthCheck(): Promise<ServiceHealth> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.mainWindow || this.mainWindow.isDestroyed()) {
         return {
           healthy: false,
           error: 'Main window not available or destroyed',
           lastCheck: new Date(),
-          responseTime: Date.now() - startTime
+          responseTime: Date.now() - startTime,
         };
       }
 
@@ -88,7 +88,7 @@ export class WindowService implements Service {
       const isVisible = this.mainWindow.isVisible();
       const isMinimized = this.mainWindow.isMinimized();
       const bounds = this.mainWindow.getBounds();
-      
+
       return {
         healthy: true,
         details: {
@@ -96,17 +96,17 @@ export class WindowService implements Service {
           minimized: isMinimized,
           bounds,
           title: this.mainWindow.getTitle(),
-          webContentsId: this.mainWindow.webContents.id
+          webContentsId: this.mainWindow.webContents.id,
         },
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     } catch (error) {
       return {
         healthy: false,
         error: error.message,
         lastCheck: new Date(),
-        responseTime: Date.now() - startTime
+        responseTime: Date.now() - startTime,
       };
     }
   }
@@ -152,15 +152,15 @@ export class WindowService implements Service {
         preload: join(__dirname, '../preload.js'),
         webSecurity: true,
         allowRunningInsecureContent: false,
-        experimentalFeatures: false
-      }
+        experimentalFeatures: false,
+      },
     });
 
     // Load the app
     if (context.isDevelopment) {
       const rendererPort = process.env.RENDERER_DEV_PORT || 3000;
       await this.mainWindow.loadURL(`http://localhost:${rendererPort}`);
-      
+
       // Open DevTools in development
       this.mainWindow.webContents.openDevTools();
     } else {
@@ -171,7 +171,7 @@ export class WindowService implements Service {
     this.mainWindow.once('ready-to-show', () => {
       if (this.mainWindow) {
         this.mainWindow.show();
-        
+
         // Focus on launch
         if (context.isDevelopment) {
           this.mainWindow.focus();
@@ -209,7 +209,7 @@ export class WindowService implements Service {
 
   private getAppIcon(): string {
     const isWindows = process.platform === 'win32';
-    
+
     if (isWindows) {
       return join(__dirname, '../../assets/icons/icon.ico');
     } else if (process.platform === 'darwin') {

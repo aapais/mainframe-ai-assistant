@@ -37,28 +37,39 @@ const CONFIG = {
     ai_cost_tracking: 120,
     operation_logs: 250,
     kb_relations: 40,
-    tags_per_entry: 4
+    tags_per_entry: 4,
   },
 
   // Cost simulation parameters
   costs: {
     min_operation: 0.001,
-    max_operation: 0.50,
-    avg_daily_budget: 2.50,
-    high_cost_threshold: 0.10
+    max_operation: 0.5,
+    avg_daily_budget: 2.5,
+    high_cost_threshold: 0.1,
   },
 
   // Time simulation (last 90 days)
   timeRange: {
     days: 90,
     peakHours: [9, 10, 11, 14, 15, 16], // Business hours
-    peakDays: [1, 2, 3, 4, 5] // Weekdays
-  }
+    peakDays: [1, 2, 3, 4, 5], // Weekdays
+  },
 };
 
 // Mainframe-specific data pools
 const MAINFRAME_DATA = {
-  categories: ['JCL', 'VSAM', 'DB2', 'Batch', 'Functional', 'CICS', 'IMS', 'Security', 'Network', 'Other'],
+  categories: [
+    'JCL',
+    'VSAM',
+    'DB2',
+    'Batch',
+    'Functional',
+    'CICS',
+    'IMS',
+    'Security',
+    'Network',
+    'Other',
+  ],
 
   subcategories: {
     JCL: ['Job Control', 'Data Definition', 'Procedure', 'Condition Code', 'Step Processing'],
@@ -66,7 +77,7 @@ const MAINFRAME_DATA = {
     DB2: ['SQL Errors', 'Binding', 'Locking', 'Performance', 'Utilities'],
     Batch: ['ABEND', 'Resource Issues', 'Scheduling', 'Data Processing', 'File Handling'],
     CICS: ['Transaction', 'Program', 'File Control', 'Terminal', 'System'],
-    IMS: ['Database', 'Message Processing', 'Control Block', 'Recovery', 'Performance']
+    IMS: ['Database', 'Message Processing', 'Control Block', 'Recovery', 'Performance'],
   },
 
   jclTypes: ['Job', 'Procedure', 'Include', 'Catalog Procedure', 'In-Stream Procedure'],
@@ -74,8 +85,21 @@ const MAINFRAME_DATA = {
   systemComponents: ['MVS', 'z/OS', 'ISPF', 'TSO', 'SDSF', 'RACF', 'CA-7', 'Control-M'],
 
   errorCodes: [
-    'S0C4', 'S0C7', 'S806', 'S822', 'S013', 'S217', 'S37', 'SB37', 'SD37',
-    'IEF450I', 'IEF472I', 'IEF285I', 'IGD17101I', 'IKJ56650I', 'ICH408I'
+    'S0C4',
+    'S0C7',
+    'S806',
+    'S822',
+    'S013',
+    'S217',
+    'S37',
+    'SB37',
+    'SD37',
+    'IEF450I',
+    'IEF472I',
+    'IEF285I',
+    'IGD17101I',
+    'IKJ56650I',
+    'ICH408I',
   ],
 
   searchQueries: {
@@ -99,7 +123,7 @@ const MAINFRAME_DATA = {
       'z/OS system error',
       'MVS storage management',
       'Dataset concatenation issue',
-      'Sort utility SYNCSORT error'
+      'Sort utility SYNCSORT error',
     ],
     technical: [
       'S0C4 protection exception',
@@ -121,16 +145,11 @@ const MAINFRAME_DATA = {
       'VTOC space allocation',
       'Catalog search order',
       'GDG generation limit',
-      'Volume mount timeout'
-    ]
+      'Volume mount timeout',
+    ],
   },
 
-  aiOperationTypes: [
-    'semantic_search',
-    'explain_error',
-    'analyze_entry',
-    'suggest_similar'
-  ],
+  aiOperationTypes: ['semantic_search', 'explain_error', 'analyze_entry', 'suggest_similar'],
 
   operationTypes: [
     'search',
@@ -142,15 +161,16 @@ const MAINFRAME_DATA = {
     'import_data',
     'backup_database',
     'ai_query',
-    'bulk_update'
-  ]
+    'bulk_update',
+  ],
 };
 
 // Sample KB entries with realistic mainframe problems and solutions
 const SAMPLE_KB_ENTRIES = [
   {
-    title: "S0C4 ABEND in COBOL Program During Array Processing",
-    problem: "Program terminates with S0C4 protection exception when processing large arrays. Error occurs in PERFORM loop accessing table elements beyond declared size.",
+    title: 'S0C4 ABEND in COBOL Program During Array Processing',
+    problem:
+      'Program terminates with S0C4 protection exception when processing large arrays. Error occurs in PERFORM loop accessing table elements beyond declared size.',
     solution: `1. Check OCCURS clause in data division for correct array size
 2. Verify subscript values in PERFORM loop don't exceed array bounds
 3. Add boundary checking: IF WS-INDEX <= WS-TABLE-SIZE THEN...
@@ -164,17 +184,18 @@ PERFORM VARYING WS-INDEX FROM 1 BY 1
       MOVE WS-DATA(WS-INDEX) TO WS-OUTPUT-REC
     END-IF
 END-PERFORM`,
-    category: "Functional",
-    subcategory: "ABEND",
-    severity: "high",
+    category: 'Functional',
+    subcategory: 'ABEND',
+    severity: 'high',
     jcl_type: null,
-    cobol_version: "Enterprise COBOL 6.3",
-    system_component: "MVS",
-    error_codes: ["S0C4"]
+    cobol_version: 'Enterprise COBOL 6.3',
+    system_component: 'MVS',
+    error_codes: ['S0C4'],
   },
   {
-    title: "JCL Job Fails with IEF450I Step Not Executed CC=FLUSH",
-    problem: "Batch job terminates early with IEF450I message. Subsequent job steps are flushed and not executed.",
+    title: 'JCL Job Fails with IEF450I Step Not Executed CC=FLUSH',
+    problem:
+      'Batch job terminates early with IEF450I message. Subsequent job steps are flushed and not executed.',
     solution: `1. Check previous step return codes - step failure causes flush
 2. Review COND parameter on JOB or EXEC statements
 3. Verify IF-THEN-ELSE logic in JCL is correct
@@ -185,16 +206,17 @@ JCL fix example:
 //STEP1 EXEC PGM=MYPROG
 //STEP2 EXEC PGM=NEXTPROG,COND=(4,LT)
 // Change to: COND=(8,LT) to allow execution with RC=4`,
-    category: "JCL",
-    subcategory: "Step Processing",
-    severity: "medium",
-    jcl_type: "Job",
-    system_component: "MVS",
-    error_codes: ["IEF450I"]
+    category: 'JCL',
+    subcategory: 'Step Processing',
+    severity: 'medium',
+    jcl_type: 'Job',
+    system_component: 'MVS',
+    error_codes: ['IEF450I'],
   },
   {
-    title: "DB2 SQLCODE -818 Plan/Package Timestamp Mismatch",
-    problem: "DB2 application fails with SQLCODE -818. Program was recompiled but DB2 package not rebound, causing timestamp mismatch.",
+    title: 'DB2 SQLCODE -818 Plan/Package Timestamp Mismatch',
+    problem:
+      'DB2 application fails with SQLCODE -818. Program was recompiled but DB2 package not rebound, causing timestamp mismatch.',
     solution: `1. Rebind the DB2 package after program recompilation
 2. Use REBIND PACKAGE command with current DBRM
 3. Verify DBRM library contains latest compiled version
@@ -205,15 +227,16 @@ Commands:
 REBIND PACKAGE(collection.package)
 REBIND PLAN(planname) VALIDATE(BIND)
 DSN SYSTEM(DB2T) REBIND PACKAGE(MYPACK) ISOLATION(CS)`,
-    category: "DB2",
-    subcategory: "Binding",
-    severity: "high",
-    system_component: "DB2",
-    error_codes: ["-818"]
+    category: 'DB2',
+    subcategory: 'Binding',
+    severity: 'high',
+    system_component: 'DB2',
+    error_codes: ['-818'],
   },
   {
-    title: "VSAM File Status 93 - Record Not Available",
-    problem: "COBOL program receives file status 93 when attempting to read VSAM KSDS file. Record exists but appears unavailable for processing.",
+    title: 'VSAM File Status 93 - Record Not Available',
+    problem:
+      'COBOL program receives file status 93 when attempting to read VSAM KSDS file. Record exists but appears unavailable for processing.',
     solution: `1. Check if record is locked by another process
 2. Verify VSAM cluster is properly opened for INPUT/OUTPUT
 3. Review READ statement - use READ...INTO vs READ...KEY
@@ -227,12 +250,12 @@ READ VSAM-FILE INTO WS-RECORD
   INVALID KEY
     DISPLAY 'RECORD NOT FOUND: ' WS-SEARCH-KEY
     SET FILE-STATUS-93 TO TRUE`,
-    category: "VSAM",
-    subcategory: "KSDS",
-    severity: "medium",
-    system_component: "MVS",
-    error_codes: ["93"]
-  }
+    category: 'VSAM',
+    subcategory: 'KSDS',
+    severity: 'medium',
+    system_component: 'MVS',
+    error_codes: ['93'],
+  },
 ];
 
 class TestDataGenerator {
@@ -242,7 +265,7 @@ class TestDataGenerator {
     this.stats = {
       created: 0,
       errors: 0,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
   }
 
@@ -271,10 +294,14 @@ class TestDataGenerator {
   async ensureSchema() {
     try {
       // Check if main tables exist
-      const tablesExist = this.db.prepare(`
+      const tablesExist = this.db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM sqlite_master
         WHERE type='table' AND name IN ('kb_entries', 'ai_cost_tracking')
-      `).get();
+      `
+        )
+        .get();
 
       if (tablesExist.count < 2) {
         console.log('📋 Database schema incomplete. Please run schema migration first.');
@@ -308,7 +335,7 @@ class TestDataGenerator {
       'kb_relations',
       'kb_tags',
       'dashboard_metrics',
-      'kb_entries'
+      'kb_entries',
     ];
 
     const transaction = this.db.transaction(() => {
@@ -355,10 +382,10 @@ class TestDataGenerator {
   // Generate realistic cost based on operation type
   generateOperationCost(operationType) {
     const baseCosts = {
-      'semantic_search': { min: 0.002, max: 0.015 },
-      'explain_error': { min: 0.008, max: 0.045 },
-      'analyze_entry': { min: 0.005, max: 0.025 },
-      'suggest_similar': { min: 0.003, max: 0.018 }
+      semantic_search: { min: 0.002, max: 0.015 },
+      explain_error: { min: 0.008, max: 0.045 },
+      analyze_entry: { min: 0.005, max: 0.025 },
+      suggest_similar: { min: 0.003, max: 0.018 },
     };
 
     const range = baseCosts[operationType] || { min: 0.001, max: 0.01 };
@@ -420,7 +447,8 @@ class TestDataGenerator {
       // Generate additional entries
       const remaining = CONFIG.volumes.kb_entries - SAMPLE_KB_ENTRIES.length;
       for (let i = 0; i < remaining; i++) {
-        const category = MAINFRAME_DATA.categories[Math.floor(Math.random() * MAINFRAME_DATA.categories.length)];
+        const category =
+          MAINFRAME_DATA.categories[Math.floor(Math.random() * MAINFRAME_DATA.categories.length)];
         const subcategories = MAINFRAME_DATA.subcategories[category] || ['General'];
         const subcategory = subcategories[Math.floor(Math.random() * subcategories.length)];
 
@@ -430,7 +458,8 @@ class TestDataGenerator {
         const successCount = Math.floor(usageCount * (0.5 + Math.random() * 0.4));
         const failureCount = usageCount - successCount;
 
-        const errorCode = MAINFRAME_DATA.errorCodes[Math.floor(Math.random() * MAINFRAME_DATA.errorCodes.length)];
+        const errorCode =
+          MAINFRAME_DATA.errorCodes[Math.floor(Math.random() * MAINFRAME_DATA.errorCodes.length)];
 
         insert.run(
           id,
@@ -440,9 +469,17 @@ class TestDataGenerator {
           category,
           subcategory,
           ['critical', 'high', 'medium', 'low'][Math.floor(Math.random() * 4)],
-          category === 'JCL' ? MAINFRAME_DATA.jclTypes[Math.floor(Math.random() * MAINFRAME_DATA.jclTypes.length)] : null,
-          ['Functional', 'COBOL'].includes(category) ? MAINFRAME_DATA.cobolVersions[Math.floor(Math.random() * MAINFRAME_DATA.cobolVersions.length)] : null,
-          MAINFRAME_DATA.systemComponents[Math.floor(Math.random() * MAINFRAME_DATA.systemComponents.length)],
+          category === 'JCL'
+            ? MAINFRAME_DATA.jclTypes[Math.floor(Math.random() * MAINFRAME_DATA.jclTypes.length)]
+            : null,
+          ['Functional', 'COBOL'].includes(category)
+            ? MAINFRAME_DATA.cobolVersions[
+                Math.floor(Math.random() * MAINFRAME_DATA.cobolVersions.length)
+              ]
+            : null,
+          MAINFRAME_DATA.systemComponents[
+            Math.floor(Math.random() * MAINFRAME_DATA.systemComponents.length)
+          ],
           JSON.stringify([errorCode]),
           createdAt,
           createdAt,
@@ -470,12 +507,12 @@ class TestDataGenerator {
     const insert = this.db.prepare('INSERT INTO kb_tags (entry_id, tag) VALUES (?, ?)');
 
     const commonTags = {
-      'JCL': ['batch', 'job-control', 'mvs', 'scheduling', 'abend'],
-      'VSAM': ['file-system', 'ksds', 'data-management', 'catalog', 'cluster'],
-      'DB2': ['database', 'sql', 'binding', 'performance', 'locking'],
-      'CICS': ['transaction', 'online', 'terminal', 'program', 'middleware'],
-      'Batch': ['background', 'processing', 'scheduling', 'automation', 'data'],
-      'Functional': ['business-logic', 'cobol', 'application', 'processing', 'error-handling']
+      JCL: ['batch', 'job-control', 'mvs', 'scheduling', 'abend'],
+      VSAM: ['file-system', 'ksds', 'data-management', 'catalog', 'cluster'],
+      DB2: ['database', 'sql', 'binding', 'performance', 'locking'],
+      CICS: ['transaction', 'online', 'terminal', 'program', 'middleware'],
+      Batch: ['background', 'processing', 'scheduling', 'automation', 'data'],
+      Functional: ['business-logic', 'cobol', 'application', 'processing', 'error-handling'],
     };
 
     const transaction = this.db.transaction(() => {
@@ -524,14 +561,16 @@ class TestDataGenerator {
         const sourceEntry = entries[i];
 
         // Find related entry (prefer same category)
-        const relatedEntries = entries.filter(e =>
-          e.id !== sourceEntry.id &&
-          (e.category === sourceEntry.category || Math.random() < 0.3)
+        const relatedEntries = entries.filter(
+          e =>
+            e.id !== sourceEntry.id && (e.category === sourceEntry.category || Math.random() < 0.3)
         );
 
         if (relatedEntries.length > 0) {
           const targetEntry = relatedEntries[Math.floor(Math.random() * relatedEntries.length)];
-          const relationType = ['related', 'duplicate', 'prerequisite'][Math.floor(Math.random() * 3)];
+          const relationType = ['related', 'duplicate', 'prerequisite'][
+            Math.floor(Math.random() * 3)
+          ];
           const strength = relationType === 'duplicate' ? 0.9 : 0.4 + Math.random() * 0.5;
 
           try {
@@ -562,20 +601,20 @@ class TestDataGenerator {
 
     const allQueries = [
       ...MAINFRAME_DATA.searchQueries.functional,
-      ...MAINFRAME_DATA.searchQueries.technical
+      ...MAINFRAME_DATA.searchQueries.technical,
     ];
 
     const transaction = this.db.transaction(() => {
       for (let i = 0; i < CONFIG.volumes.search_history; i++) {
         const query = allQueries[Math.floor(Math.random() * allQueries.length)];
-        const queryType = Math.random() < 0.7 ? 'text' :
-                         Math.random() < 0.8 ? 'category' : 'ai';
+        const queryType = Math.random() < 0.7 ? 'text' : Math.random() < 0.8 ? 'category' : 'ai';
         const resultsCount = Math.floor(Math.random() * 20) + 1;
-        const selectedEntry = Math.random() < 0.6 ?
-          entries[Math.floor(Math.random() * entries.length)] : null;
+        const selectedEntry =
+          Math.random() < 0.6 ? entries[Math.floor(Math.random() * entries.length)] : null;
         const searchTime = Math.floor(Math.random() * 2000) + 100;
         const timestamp = this.weightedTimestamp(60);
-        const userId = Math.random() < 0.8 ? 'default' : `user_${Math.floor(Math.random() * 5) + 1}`;
+        const userId =
+          Math.random() < 0.8 ? 'default' : `user_${Math.floor(Math.random() * 5) + 1}`;
         const sessionId = this.generateUUID();
 
         insert.run(
@@ -615,11 +654,12 @@ class TestDataGenerator {
         const entry = entries[Math.floor(Math.random() * entries.length)];
         const action = actions[Math.floor(Math.random() * actions.length)];
         const timestamp = this.weightedTimestamp(45);
-        const userId = Math.random() < 0.8 ? 'default' : `user_${Math.floor(Math.random() * 5) + 1}`;
+        const userId =
+          Math.random() < 0.8 ? 'default' : `user_${Math.floor(Math.random() * 5) + 1}`;
         const sessionId = this.generateUUID();
         const metadata = JSON.stringify({
           source: Math.random() < 0.7 ? 'ui' : 'api',
-          duration_ms: Math.floor(Math.random() * 30000) + 1000
+          duration_ms: Math.floor(Math.random() * 30000) + 1000,
         });
 
         insert.run(entry.id, action, timestamp, userId, sessionId, metadata);
@@ -633,7 +673,9 @@ class TestDataGenerator {
 
   // Generate AI authorization log
   generateAIAuthorizationLog() {
-    console.log(`🔐 Generating ${CONFIG.volumes.ai_authorization_log} AI authorization decisions...`);
+    console.log(
+      `🔐 Generating ${CONFIG.volumes.ai_authorization_log} AI authorization decisions...`
+    );
 
     const entries = this.db.prepare('SELECT id FROM kb_entries').all();
     const insert = this.db.prepare(`
@@ -647,14 +689,15 @@ class TestDataGenerator {
     const decisions = ['approved', 'denied', 'modified', 'use_local'];
     const queries = [
       ...MAINFRAME_DATA.searchQueries.functional,
-      ...MAINFRAME_DATA.searchQueries.technical
+      ...MAINFRAME_DATA.searchQueries.technical,
     ];
 
     const transaction = this.db.transaction(() => {
       for (let i = 0; i < CONFIG.volumes.ai_authorization_log; i++) {
-        const operationType = MAINFRAME_DATA.aiOperationTypes[
-          Math.floor(Math.random() * MAINFRAME_DATA.aiOperationTypes.length)
-        ];
+        const operationType =
+          MAINFRAME_DATA.aiOperationTypes[
+            Math.floor(Math.random() * MAINFRAME_DATA.aiOperationTypes.length)
+          ];
         const query = queries[Math.floor(Math.random() * queries.length)];
         const estimatedTokens = Math.floor(Math.random() * 2000) + 100;
         const estimatedCost = this.generateOperationCost(operationType);
@@ -670,15 +713,18 @@ class TestDataGenerator {
           decision = Math.random() < 0.3 ? 'approved' : 'denied';
         }
 
-        const decisionTime = decision === 'approved' ?
-          Math.floor(Math.random() * 2000) + 500 :
-          Math.floor(Math.random() * 10000) + 2000;
+        const decisionTime =
+          decision === 'approved'
+            ? Math.floor(Math.random() * 2000) + 500
+            : Math.floor(Math.random() * 10000) + 2000;
 
-        const modifiedQuery = decision === 'modified' ?
-          query.substring(0, Math.floor(query.length * 0.8)) + ' simplified' : null;
+        const modifiedQuery =
+          decision === 'modified'
+            ? query.substring(0, Math.floor(query.length * 0.8)) + ' simplified'
+            : null;
 
-        const contextEntry = Math.random() < 0.4 ?
-          entries[Math.floor(Math.random() * entries.length)] : null;
+        const contextEntry =
+          Math.random() < 0.4 ? entries[Math.floor(Math.random() * entries.length)] : null;
 
         insert.run(
           this.weightedTimestamp(30),
@@ -720,9 +766,10 @@ class TestDataGenerator {
 
     const transaction = this.db.transaction(() => {
       for (let i = 0; i < CONFIG.volumes.ai_cost_tracking; i++) {
-        const operationType = MAINFRAME_DATA.aiOperationTypes[
-          Math.floor(Math.random() * MAINFRAME_DATA.aiOperationTypes.length)
-        ];
+        const operationType =
+          MAINFRAME_DATA.aiOperationTypes[
+            Math.floor(Math.random() * MAINFRAME_DATA.aiOperationTypes.length)
+          ];
         const model = models[Math.floor(Math.random() * models.length)];
         const inputTokens = Math.floor(Math.random() * 1500) + 100;
         const outputTokens = Math.floor(Math.random() * 800) + 50;
@@ -731,8 +778,8 @@ class TestDataGenerator {
         const costInput = model.includes('embedding') ? 0.00001 : 0.00025;
         const costOutput = model.includes('embedding') ? 0.00001 : 0.00125;
 
-        const kbEntry = Math.random() < 0.6 ?
-          entries[Math.floor(Math.random() * entries.length)] : null;
+        const kbEntry =
+          Math.random() < 0.6 ? entries[Math.floor(Math.random() * entries.length)] : null;
 
         insert.run(
           this.weightedTimestamp(30),
@@ -779,9 +826,10 @@ class TestDataGenerator {
 
     const transaction = this.db.transaction(() => {
       for (let i = 0; i < CONFIG.volumes.operation_logs; i++) {
-        const operationType = MAINFRAME_DATA.operationTypes[
-          Math.floor(Math.random() * MAINFRAME_DATA.operationTypes.length)
-        ];
+        const operationType =
+          MAINFRAME_DATA.operationTypes[
+            Math.floor(Math.random() * MAINFRAME_DATA.operationTypes.length)
+          ];
 
         const isSearchOp = operationType === 'search';
         const aiUsed = isSearchOp && Math.random() < 0.3;
@@ -789,12 +837,12 @@ class TestDataGenerator {
         const success = Math.random() < 0.92;
         const cacheHit = isSearchOp && Math.random() < 0.15;
 
-        const responseTime = cacheHit ?
-          Math.floor(Math.random() * 100) + 10 :
-          Math.floor(Math.random() * 2000) + 100;
+        const responseTime = cacheHit
+          ? Math.floor(Math.random() * 100) + 10
+          : Math.floor(Math.random() * 2000) + 100;
 
-        const entry = Math.random() < 0.5 ?
-          entries[Math.floor(Math.random() * entries.length)] : null;
+        const entry =
+          Math.random() < 0.5 ? entries[Math.floor(Math.random() * entries.length)] : null;
 
         const resultCount = isSearchOp ? Math.floor(Math.random() * 50) + 1 : null;
         const qualityScore = success ? 0.6 + Math.random() * 0.4 : 0.1 + Math.random() * 0.3;
@@ -805,9 +853,11 @@ class TestDataGenerator {
           isSearchOp ? 'text_search' : null,
           Math.random() < 0.8 ? 'default' : `user_${Math.floor(Math.random() * 5) + 1}`,
           this.generateUUID(),
-          isSearchOp ? MAINFRAME_DATA.searchQueries.functional[
-            Math.floor(Math.random() * MAINFRAME_DATA.searchQueries.functional.length)
-          ] : null,
+          isSearchOp
+            ? MAINFRAME_DATA.searchQueries.functional[
+                Math.floor(Math.random() * MAINFRAME_DATA.searchQueries.functional.length)
+              ]
+            : null,
           JSON.stringify({ limit: 50, includeArchived: false }),
           sources[Math.floor(Math.random() * sources.length)],
           authRequired,
@@ -1060,9 +1110,10 @@ class TestDataGenerator {
       for (const userId of users) {
         for (const operationType of MAINFRAME_DATA.aiOperationTypes) {
           const authMode = authModes[Math.floor(Math.random() * authModes.length)];
-          const costLimit = authMode === 'auto_below_limit' ?
-            0.001 + Math.random() * 0.019 : // $0.001 - $0.02
-            0.01;
+          const costLimit =
+            authMode === 'auto_below_limit'
+              ? 0.001 + Math.random() * 0.019 // $0.001 - $0.02
+              : 0.01;
 
           insert.run(userId, operationType, authMode, costLimit);
           this.stats.created++;
@@ -1135,10 +1186,17 @@ class TestDataGenerator {
       try {
         // Get table counts
         const tables = [
-          'kb_entries', 'kb_tags', 'kb_relations', 'search_history',
-          'usage_metrics', 'ai_authorization_log', 'ai_cost_tracking',
-          'operation_logs', 'user_preferences', 'ai_cost_budgets',
-          'dashboard_metrics'
+          'kb_entries',
+          'kb_tags',
+          'kb_relations',
+          'search_history',
+          'usage_metrics',
+          'ai_authorization_log',
+          'ai_cost_tracking',
+          'operation_logs',
+          'user_preferences',
+          'ai_cost_budgets',
+          'dashboard_metrics',
         ];
 
         console.log('');
@@ -1154,14 +1212,18 @@ class TestDataGenerator {
 
         // Cost summary
         try {
-          const costSummary = this.db.prepare(`
+          const costSummary = this.db
+            .prepare(
+              `
             SELECT
               COUNT(*) as operations,
               ROUND(SUM(total_cost), 4) as total_cost,
               ROUND(AVG(total_cost), 6) as avg_cost,
               ROUND(MAX(total_cost), 4) as max_cost
             FROM ai_cost_tracking
-          `).get();
+          `
+            )
+            .get();
 
           console.log('');
           console.log('💰 Cost Summary:');
@@ -1172,7 +1234,6 @@ class TestDataGenerator {
         } catch (error) {
           console.log('💰 Cost summary not available');
         }
-
       } catch (error) {
         console.log(`⚠️  Could not retrieve table statistics: ${error.message}`);
       }

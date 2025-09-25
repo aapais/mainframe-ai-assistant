@@ -53,7 +53,10 @@ export interface AutocompleteOptions {
 export interface SuggestionSource {
   id: string;
   name: string;
-  getSuggestions: (query: string, options: AutocompleteOptions) => Promise<AutocompleteSuggestion[]>;
+  getSuggestions: (
+    query: string,
+    options: AutocompleteOptions
+  ) => Promise<AutocompleteSuggestion[]>;
   priority: number;
   enabled: boolean;
 }
@@ -74,7 +77,7 @@ const DEFAULT_OPTIONS: Required<AutocompleteOptions> = {
   caseSensitive: false,
   groupByType: true,
   showDescriptions: true,
-  keyboardNavigation: true
+  keyboardNavigation: true,
 };
 
 /**
@@ -117,7 +120,7 @@ function calculateFuzzyScore(query: string, text: string, caseSensitive: boolean
 
   // Penalize if not all query characters were matched
   if (queryIndex < normalizedQuery.length) {
-    score *= (queryIndex / normalizedQuery.length);
+    score *= queryIndex / normalizedQuery.length;
   }
 
   return Math.min(score, 0.5); // Cap fuzzy score at 0.5
@@ -145,14 +148,16 @@ function filterAndRankSuggestions(
       } else {
         // Exact matching
         const normalizedQuery = options.caseSensitive ? query : query.toLowerCase();
-        const normalizedText = options.caseSensitive ? suggestion.text : suggestion.text.toLowerCase();
+        const normalizedText = options.caseSensitive
+          ? suggestion.text
+          : suggestion.text.toLowerCase();
 
         if (!normalizedText.includes(normalizedQuery)) return null;
       }
 
       return {
         ...suggestion,
-        score
+        score,
       };
     })
     .filter((suggestion): suggestion is AutocompleteSuggestion => suggestion !== null)
@@ -167,7 +172,7 @@ function filterAndRankSuggestions(
         category: 4,
         tag: 3,
         static: 2,
-        template: 1
+        template: 1,
       };
 
       const aPriority = typePriority[a.type] || 0;
@@ -186,30 +191,30 @@ function filterAndRankSuggestions(
 function groupSuggestionsByType(
   suggestions: AutocompleteSuggestion[]
 ): Record<string, AutocompleteSuggestion[]> {
-  return suggestions.reduce((groups, suggestion) => {
-    const type = suggestion.type;
-    if (!groups[type]) {
-      groups[type] = [];
-    }
-    groups[type].push(suggestion);
-    return groups;
-  }, {} as Record<string, AutocompleteSuggestion[]>);
+  return suggestions.reduce(
+    (groups, suggestion) => {
+      const type = suggestion.type;
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(suggestion);
+      return groups;
+    },
+    {} as Record<string, AutocompleteSuggestion[]>
+  );
 }
 
 /**
  * Hook for autocomplete functionality
  */
-export function useAutocomplete(
-  sources: SuggestionSource[],
-  options: AutocompleteOptions = {}
-) {
+export function useAutocomplete(sources: SuggestionSource[], options: AutocompleteOptions = {}) {
   const config = { ...DEFAULT_OPTIONS, ...options };
   const [state, setState] = useState<AutocompleteState>({
     isOpen: false,
     suggestions: [],
     selectedIndex: -1,
     loading: false,
-    error: null
+    error: null,
   });
 
   const abortController = useRef<AbortController>();
@@ -219,68 +224,70 @@ export function useAutocomplete(
   const [debouncedQuery] = useDebounce(query, { delay: config.debounceMs });
 
   // Fetch suggestions from all sources
-  const fetchSuggestions = useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < config.minLength) {
-      setState(prev => ({
-        ...prev,
-        isOpen: false,
-        suggestions: [],
-        selectedIndex: -1,
-        loading: false
-      }));
-      return;
-    }
-
-    // Cancel previous request
-    if (abortController.current) {
-      abortController.current.abort();
-    }
-
-    // Create new abort controller
-    abortController.current = new AbortController();
-
-    setState(prev => ({ ...prev, loading: true, error: null }));
-
-    try {
-      // Fetch from all enabled sources in parallel
-      const enabledSources = sources.filter(source => source.enabled);
-      const suggestionPromises = enabledSources.map(async (source) => {
-        try {
-          return await source.getSuggestions(searchQuery, config);
-        } catch (error) {
-          console.warn(`Suggestion source ${source.id} failed:`, error);
-          return [];
-        }
-      });
-
-      const results = await Promise.all(suggestionPromises);
-      const allSuggestions = results.flat();
-
-      // Check if request was aborted
-      if (abortController.current?.signal.aborted) return;
-
-      // Filter and rank suggestions
-      const filteredSuggestions = filterAndRankSuggestions(allSuggestions, searchQuery, config);
-
-      setState(prev => ({
-        ...prev,
-        isOpen: filteredSuggestions.length > 0,
-        suggestions: filteredSuggestions,
-        selectedIndex: filteredSuggestions.length > 0 ? 0 : -1,
-        loading: false
-      }));
-
-    } catch (error) {
-      if (!abortController.current?.signal.aborted) {
-        const err = error instanceof Error ? error : new Error('Unknown error');
+  const fetchSuggestions = useCallback(
+    async (searchQuery: string) => {
+      if (searchQuery.length < config.minLength) {
         setState(prev => ({
           ...prev,
+          isOpen: false,
+          suggestions: [],
+          selectedIndex: -1,
           loading: false,
-          error: err
         }));
+        return;
       }
-    }
-  }, [sources, config]);
+
+      // Cancel previous request
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+
+      // Create new abort controller
+      abortController.current = new AbortController();
+
+      setState(prev => ({ ...prev, loading: true, error: null }));
+
+      try {
+        // Fetch from all enabled sources in parallel
+        const enabledSources = sources.filter(source => source.enabled);
+        const suggestionPromises = enabledSources.map(async source => {
+          try {
+            return await source.getSuggestions(searchQuery, config);
+          } catch (error) {
+            console.warn(`Suggestion source ${source.id} failed:`, error);
+            return [];
+          }
+        });
+
+        const results = await Promise.all(suggestionPromises);
+        const allSuggestions = results.flat();
+
+        // Check if request was aborted
+        if (abortController.current?.signal.aborted) return;
+
+        // Filter and rank suggestions
+        const filteredSuggestions = filterAndRankSuggestions(allSuggestions, searchQuery, config);
+
+        setState(prev => ({
+          ...prev,
+          isOpen: filteredSuggestions.length > 0,
+          suggestions: filteredSuggestions,
+          selectedIndex: filteredSuggestions.length > 0 ? 0 : -1,
+          loading: false,
+        }));
+      } catch (error) {
+        if (!abortController.current?.signal.aborted) {
+          const err = error instanceof Error ? error : new Error('Unknown error');
+          setState(prev => ({
+            ...prev,
+            loading: false,
+            error: err,
+          }));
+        }
+      }
+    },
+    [sources, config]
+  );
 
   // Fetch suggestions when debounced query changes
   useEffect(() => {
@@ -306,7 +313,7 @@ export function useAutocomplete(
     setState(prev => ({
       ...prev,
       isOpen: false,
-      selectedIndex: -1
+      selectedIndex: -1,
     }));
   }, []);
 
@@ -316,7 +323,7 @@ export function useAutocomplete(
       setState(prev => ({
         ...prev,
         isOpen: true,
-        selectedIndex: prev.selectedIndex === -1 ? 0 : prev.selectedIndex
+        selectedIndex: prev.selectedIndex === -1 ? 0 : prev.selectedIndex,
       }));
     }
   }, [state.suggestions.length]);
@@ -326,13 +333,12 @@ export function useAutocomplete(
     setState(prev => {
       if (!prev.isOpen || prev.suggestions.length === 0) return prev;
 
-      const nextIndex = prev.selectedIndex < prev.suggestions.length - 1
-        ? prev.selectedIndex + 1
-        : 0;
+      const nextIndex =
+        prev.selectedIndex < prev.suggestions.length - 1 ? prev.selectedIndex + 1 : 0;
 
       return {
         ...prev,
-        selectedIndex: nextIndex
+        selectedIndex: nextIndex,
       };
     });
   }, []);
@@ -342,13 +348,12 @@ export function useAutocomplete(
     setState(prev => {
       if (!prev.isOpen || prev.suggestions.length === 0) return prev;
 
-      const prevIndex = prev.selectedIndex > 0
-        ? prev.selectedIndex - 1
-        : prev.suggestions.length - 1;
+      const prevIndex =
+        prev.selectedIndex > 0 ? prev.selectedIndex - 1 : prev.suggestions.length - 1;
 
       return {
         ...prev,
-        selectedIndex: prevIndex
+        selectedIndex: prevIndex,
       };
     });
   }, []);
@@ -357,7 +362,7 @@ export function useAutocomplete(
   const selectByIndex = useCallback((index: number) => {
     setState(prev => ({
       ...prev,
-      selectedIndex: index
+      selectedIndex: index,
     }));
   }, []);
 
@@ -378,21 +383,24 @@ export function useAutocomplete(
   }, [state.suggestions, config.groupByType]);
 
   // Get suggestion display text with highlighting
-  const getHighlightedText = useCallback((text: string, searchQuery: string) => {
-    if (!searchQuery.trim()) return text;
+  const getHighlightedText = useCallback(
+    (text: string, searchQuery: string) => {
+      if (!searchQuery.trim()) return text;
 
-    const normalizedQuery = config.caseSensitive ? searchQuery : searchQuery.toLowerCase();
-    const normalizedText = config.caseSensitive ? text : text.toLowerCase();
+      const normalizedQuery = config.caseSensitive ? searchQuery : searchQuery.toLowerCase();
+      const normalizedText = config.caseSensitive ? text : text.toLowerCase();
 
-    const index = normalizedText.indexOf(normalizedQuery);
-    if (index === -1) return text;
+      const index = normalizedText.indexOf(normalizedQuery);
+      if (index === -1) return text;
 
-    return {
-      before: text.substring(0, index),
-      match: text.substring(index, index + searchQuery.length),
-      after: text.substring(index + searchQuery.length)
-    };
-  }, [config.caseSensitive]);
+      return {
+        before: text.substring(0, index),
+        match: text.substring(index, index + searchQuery.length),
+        after: text.substring(index + searchQuery.length),
+      };
+    },
+    [config.caseSensitive]
+  );
 
   return {
     // State
@@ -414,6 +422,6 @@ export function useAutocomplete(
     getHighlightedText,
 
     // Config
-    config
+    config,
   };
 }

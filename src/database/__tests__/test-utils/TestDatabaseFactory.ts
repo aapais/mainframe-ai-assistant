@@ -25,7 +25,7 @@ export class TestDatabaseFactory {
   static createTempDatabase(name?: string): Database.Database {
     const dbName = name || `test-${uuidv4()}.db`;
     const dbPath = path.join(__dirname, '..', 'temp', dbName);
-    
+
     this.createdDatabases.push(dbPath);
     return new Database(dbPath);
   }
@@ -33,7 +33,9 @@ export class TestDatabaseFactory {
   /**
    * Create a DatabaseManager instance with test configuration
    */
-  static async createTestDatabaseManager(config: Partial<DatabaseConfig> = {}): Promise<DatabaseManager> {
+  static async createTestDatabaseManager(
+    config: Partial<DatabaseConfig> = {}
+  ): Promise<DatabaseManager> {
     const testConfig: DatabaseConfig = {
       path: config.path || ':memory:',
       enableWAL: false, // Disable WAL for testing
@@ -46,19 +48,19 @@ export class TestDatabaseFactory {
         enabled: false,
         intervalHours: 24,
         retentionDays: 7,
-        path: path.join(__dirname, '..', 'backups')
+        path: path.join(__dirname, '..', 'backups'),
       },
       queryCache: {
         enabled: true,
         maxSize: 100,
-        ttlMs: 60000
+        ttlMs: 60000,
       },
-      ...config
+      ...config,
     };
 
     const manager = new DatabaseManager(testConfig);
     await manager.initialize();
-    
+
     this.createdManagers.push(manager);
     return manager;
   }
@@ -85,7 +87,7 @@ export class TestDatabaseFactory {
         created_at: new Date(),
         usage_count: 5,
         success_count: 4,
-        failure_count: 1
+        failure_count: 1,
       },
       {
         id: uuidv4(),
@@ -97,7 +99,7 @@ export class TestDatabaseFactory {
         created_at: new Date(),
         usage_count: 12,
         success_count: 10,
-        failure_count: 2
+        failure_count: 2,
       },
       {
         id: uuidv4(),
@@ -109,7 +111,7 @@ export class TestDatabaseFactory {
         created_at: new Date(),
         usage_count: 8,
         success_count: 7,
-        failure_count: 1
+        failure_count: 1,
       },
       {
         id: uuidv4(),
@@ -121,7 +123,7 @@ export class TestDatabaseFactory {
         created_at: new Date(),
         usage_count: 3,
         success_count: 2,
-        failure_count: 1
+        failure_count: 1,
       },
       {
         id: uuidv4(),
@@ -133,8 +135,8 @@ export class TestDatabaseFactory {
         created_at: new Date(),
         usage_count: 15,
         success_count: 14,
-        failure_count: 1
-      }
+        failure_count: 1,
+      },
     ];
   }
 
@@ -143,7 +145,7 @@ export class TestDatabaseFactory {
    */
   static async seedKnowledgeDB(kb: KnowledgeDB, entries?: KBEntry[]): Promise<void> {
     const testEntries = entries || this.createTestKBEntries();
-    
+
     for (const entry of testEntries) {
       await kb.addEntry(entry, 'test-user');
     }
@@ -160,7 +162,7 @@ export class TestDatabaseFactory {
       'Dataset allocation failure',
       'SQL query performance issue',
       'File processing error',
-      'Memory allocation problem'
+      'Memory allocation problem',
     ];
 
     for (let i = 0; i < size; i++) {
@@ -174,7 +176,7 @@ export class TestDatabaseFactory {
         created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
         usage_count: Math.floor(Math.random() * 100),
         success_count: Math.floor(Math.random() * 80),
-        failure_count: Math.floor(Math.random() * 20)
+        failure_count: Math.floor(Math.random() * 20),
       });
     }
 
@@ -191,7 +193,7 @@ export class TestDatabaseFactory {
       { title: 'A'.repeat(1000), problem: 'B'.repeat(10000) }, // Oversized fields
       { category: 'INVALID_CATEGORY' }, // Invalid category
       { created_at: 'invalid-date' }, // Invalid date
-      { usage_count: -1, success_count: -5 } // Invalid numbers
+      { usage_count: -1, success_count: -5 }, // Invalid numbers
     ];
   }
 
@@ -205,12 +207,14 @@ export class TestDatabaseFactory {
   /**
    * Measure execution time of a function
    */
-  static async measureExecutionTime<T>(fn: () => Promise<T> | T): Promise<{ result: T; time: number }> {
+  static async measureExecutionTime<T>(
+    fn: () => Promise<T> | T
+  ): Promise<{ result: T; time: number }> {
     const start = process.hrtime.bigint();
     const result = await fn();
     const end = process.hrtime.bigint();
     const time = Number(end - start) / 1000000; // Convert to milliseconds
-    
+
     return { result, time };
   }
 
@@ -236,12 +240,12 @@ export class TestDatabaseFactory {
 
     // Write random bytes to the middle of the file
     const buffer = Buffer.alloc(1024);
-    buffer.fill(0xFF);
-    
+    buffer.fill(0xff);
+
     const fd = fs.openSync(dbPath, 'r+');
     const stats = fs.fstatSync(fd);
     const position = Math.floor(stats.size / 2);
-    
+
     fs.writeSync(fd, buffer, 0, buffer.length, position);
     fs.closeSync(fd);
   }

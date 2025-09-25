@@ -142,7 +142,7 @@ export class ValidationService extends EventEmitter {
    */
   async performComprehensiveValidation(): Promise<ComprehensiveValidationReport> {
     const startTime = Date.now();
-    
+
     this.emit('validationStarted', { type: 'comprehensive' });
 
     const results = await Promise.all([
@@ -152,7 +152,7 @@ export class ValidationService extends EventEmitter {
       this.validateIndexIntegrity(),
       this.validateConstraints(),
       this.validatePerformance(),
-      this.validateMVPCompliance()
+      this.validateMVPCompliance(),
     ]);
 
     const [
@@ -162,7 +162,7 @@ export class ValidationService extends EventEmitter {
       indexIntegrity,
       constraintValidation,
       performanceValidation,
-      mvpCompliance
+      mvpCompliance,
     ] = results;
 
     const summary = this.generateValidationSummary(results);
@@ -175,16 +175,16 @@ export class ValidationService extends EventEmitter {
       constraintValidation,
       performanceValidation,
       mvpCompliance,
-      summary
+      summary,
     };
 
     const validationTime = Date.now() - startTime;
-    
+
     this.emit('validationCompleted', {
       type: 'comprehensive',
       duration: validationTime,
       overallHealth: summary.overallHealth,
-      criticalIssues: summary.criticalIssues
+      criticalIssues: summary.criticalIssues,
     });
 
     // Store validation result for history
@@ -203,16 +203,16 @@ export class ValidationService extends EventEmitter {
 
     // Validate migration sequence
     await this.validateMigrationSequence(plan.migrations, errors);
-    
+
     // Validate SQL syntax
     await this.validateMigrationsSQL(plan.migrations, errors);
-    
+
     // Check for dangerous operations
     await this.checkDangerousOperations(plan.migrations, warnings);
-    
+
     // Validate dependencies
     await this.validateMigrationDependencies(plan.migrations, errors);
-    
+
     // Check data impact
     await this.assessDataImpact(plan.migrations, warnings, recommendations);
 
@@ -228,9 +228,9 @@ export class ValidationService extends EventEmitter {
         tablesScanned: plan.migrations.length,
         rowsValidated: 0,
         indexUtilization: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -246,24 +246,23 @@ export class ValidationService extends EventEmitter {
       // Validate syntax by preparing statements
       this.validateSqlSyntax(migration.up, errors);
       this.validateSqlSyntax(migration.down, errors);
-      
+
       // Check for common issues
       this.checkCommonSqlIssues(migration.up, warnings);
       this.checkCommonSqlIssues(migration.down, warnings);
-      
+
       // Validate rollback completeness
       this.validateRollbackCompleteness(migration, warnings);
-      
+
       // Check for best practices
       this.validateBestPractices(migration, warnings, recommendations);
-
     } catch (error) {
       errors.push({
         type: 'syntax',
         severity: 'critical',
         code: 'SQL_SYNTAX_ERROR',
         message: error.message,
-        suggestion: 'Fix SQL syntax errors before proceeding'
+        suggestion: 'Fix SQL syntax errors before proceeding',
       });
     }
 
@@ -276,9 +275,9 @@ export class ValidationService extends EventEmitter {
         tablesScanned: 0,
         rowsValidated: 0,
         indexUtilization: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -299,7 +298,7 @@ export class ValidationService extends EventEmitter {
         severity: 'critical',
         code: 'DB_CONNECTION_ERROR',
         message: 'Database connection failed',
-        suggestion: 'Ensure database is accessible and not corrupted'
+        suggestion: 'Ensure database is accessible and not corrupted',
       });
     }
 
@@ -310,7 +309,7 @@ export class ValidationService extends EventEmitter {
         type: 'performance',
         message: 'Low disk space detected',
         impact: 'high',
-        suggestion: 'Free up disk space before migration'
+        suggestion: 'Free up disk space before migration',
       });
     }
 
@@ -321,7 +320,7 @@ export class ValidationService extends EventEmitter {
         type: 'compatibility',
         message: `${activeTransactions} active transactions detected`,
         impact: 'medium',
-        suggestion: 'Wait for transactions to complete or restart application'
+        suggestion: 'Wait for transactions to complete or restart application',
       });
     }
 
@@ -339,9 +338,9 @@ export class ValidationService extends EventEmitter {
         tablesScanned: 0,
         rowsValidated: 0,
         indexUtilization: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -354,9 +353,13 @@ export class ValidationService extends EventEmitter {
     const recommendations: string[] = [];
 
     // Verify migration was applied
-    const migrationExists = this.db.prepare(`
+    const migrationExists = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM schema_migrations WHERE version = ?
-    `).get(migration.version) as { count: number };
+    `
+      )
+      .get(migration.version) as { count: number };
 
     if (migrationExists.count === 0) {
       errors.push({
@@ -364,7 +367,7 @@ export class ValidationService extends EventEmitter {
         severity: 'critical',
         code: 'MIGRATION_NOT_RECORDED',
         message: `Migration ${migration.version} not found in schema_migrations`,
-        suggestion: 'Verify migration was applied correctly'
+        suggestion: 'Verify migration was applied correctly',
       });
     }
 
@@ -386,9 +389,9 @@ export class ValidationService extends EventEmitter {
         tablesScanned: 0,
         rowsValidated: 0,
         indexUtilization: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -408,7 +411,7 @@ export class ValidationService extends EventEmitter {
         severity: 'critical',
         code: 'ROLLBACK_VERSION_MISMATCH',
         message: `Expected version ${targetVersion}, found ${currentVersion}`,
-        suggestion: 'Rollback may have failed, investigate and retry'
+        suggestion: 'Rollback may have failed, investigate and retry',
       });
     }
 
@@ -429,9 +432,9 @@ export class ValidationService extends EventEmitter {
         tablesScanned: 0,
         rowsValidated: 0,
         indexUtilization: 0,
-        memoryUsage: 0
+        memoryUsage: 0,
       },
-      recommendations
+      recommendations,
     };
   }
 
@@ -442,7 +445,7 @@ export class ValidationService extends EventEmitter {
     try {
       // Split SQL into individual statements
       const statements = sql.split(';').filter(stmt => stmt.trim());
-      
+
       for (const statement of statements) {
         if (statement.trim()) {
           // Prepare statement to validate syntax
@@ -491,8 +494,8 @@ export class ValidationService extends EventEmitter {
       requiredFeatures: ['basic_search', 'categorization'],
       constraints: [
         'kb_entries.id should be primary key',
-        'kb_tags should have foreign key to kb_entries'
-      ]
+        'kb_tags should have foreign key to kb_entries',
+      ],
     });
 
     // MVP2 validation rules
@@ -500,10 +503,7 @@ export class ValidationService extends EventEmitter {
       requiredTables: ['incidents', 'patterns', 'alerts'],
       requiredIndexes: ['idx_timestamp', 'idx_component'],
       requiredFeatures: ['pattern_detection', 'incident_tracking'],
-      constraints: [
-        'incidents should have valid timestamps',
-        'patterns should link to incidents'
-      ]
+      constraints: ['incidents should have valid timestamps', 'patterns should link to incidents'],
     });
 
     // Continue for other MVPs...
@@ -511,13 +511,15 @@ export class ValidationService extends EventEmitter {
 
   private async validateSchemaConsistency(): Promise<SchemaValidationResult> {
     const issues: ValidationError[] = [];
-    
+
     // Check table structure
     const tables = this.getAllTables();
     const expectedTables = this.getExpectedTables();
-    
+
     const missingTables = expectedTables.filter(t => !tables.includes(t));
-    const unexpectedTables = tables.filter(t => !expectedTables.includes(t) && !t.startsWith('sqlite_'));
+    const unexpectedTables = tables.filter(
+      t => !expectedTables.includes(t) && !t.startsWith('sqlite_')
+    );
 
     missingTables.forEach(table => {
       issues.push({
@@ -525,7 +527,7 @@ export class ValidationService extends EventEmitter {
         severity: 'critical',
         code: 'MISSING_TABLE',
         message: `Required table ${table} is missing`,
-        suggestion: `Create table ${table} or run missing migrations`
+        suggestion: `Create table ${table} or run missing migrations`,
       });
     });
 
@@ -539,7 +541,7 @@ export class ValidationService extends EventEmitter {
       indexCount: await this.getTotalIndexCount(),
       missingTables,
       unexpectedTables,
-      structuralIssues
+      structuralIssues,
     };
   }
 
@@ -552,19 +554,19 @@ export class ValidationService extends EventEmitter {
     let nullConstraintViolations = 0;
 
     const tables = this.getAllTables();
-    
+
     for (const table of tables) {
       const tableRows = this.getTableRowCount(table);
       totalRows += tableRows;
-      
+
       // Check for duplicates
       const duplicates = await this.findDuplicateRows(table);
       duplicateRows += duplicates;
-      
+
       // Check for null constraint violations
       const nullViolations = await this.findNullConstraintViolations(table);
       nullConstraintViolations += nullViolations;
-      
+
       // Check for orphaned records
       const orphaned = await this.findOrphanedRecords(table);
       orphanedRecords += orphaned;
@@ -577,7 +579,7 @@ export class ValidationService extends EventEmitter {
       corruptedRows,
       duplicateRows,
       orphanedRecords,
-      nullConstraintViolations
+      nullConstraintViolations,
     };
   }
 
@@ -590,18 +592,18 @@ export class ValidationService extends EventEmitter {
 
     // Check foreign key constraints
     const foreignKeys = await this.getAllForeignKeys();
-    
+
     for (const fk of foreignKeys) {
       const violations = await this.checkForeignKeyViolations(fk);
       foreignKeyViolations += violations;
-      
+
       if (violations > 0) {
         issues.push({
           type: 'reference',
           severity: 'high',
           code: 'FOREIGN_KEY_VIOLATION',
           message: `Foreign key constraint violated in ${fk.table}.${fk.column}`,
-          suggestion: 'Fix referential integrity by updating or removing invalid references'
+          suggestion: 'Fix referential integrity by updating or removing invalid references',
         });
       }
     }
@@ -612,7 +614,7 @@ export class ValidationService extends EventEmitter {
       foreignKeyViolations,
       brokenReferences,
       circularReferences,
-      missingParentRecords
+      missingParentRecords,
     };
   }
 
@@ -636,7 +638,7 @@ export class ValidationService extends EventEmitter {
           severity: 'medium',
           code: 'CORRUPTED_INDEX',
           message: `Index ${index.name} appears to be corrupted`,
-          suggestion: 'Rebuild the index'
+          suggestion: 'Rebuild the index',
         });
       }
     }
@@ -648,7 +650,7 @@ export class ValidationService extends EventEmitter {
       corruptedIndexes,
       unusedIndexes,
       missingRecommendedIndexes,
-      duplicateIndexes
+      duplicateIndexes,
     };
   }
 
@@ -660,19 +662,19 @@ export class ValidationService extends EventEmitter {
 
     // SQLite doesn't have explicit constraint tables, but we can check common constraints
     const tables = this.getAllTables();
-    
+
     for (const table of tables) {
       // Check unique constraints
       const uniqueViolations = await this.checkUniqueConstraints(table);
       uniqueConstraintViolations += uniqueViolations;
-      
+
       if (uniqueViolations > 0) {
         issues.push({
           type: 'constraint',
           severity: 'high',
           code: 'UNIQUE_CONSTRAINT_VIOLATION',
           message: `Unique constraint violations found in table ${table}`,
-          suggestion: 'Remove duplicate records to fix unique constraint violations'
+          suggestion: 'Remove duplicate records to fix unique constraint violations',
         });
       }
     }
@@ -682,7 +684,7 @@ export class ValidationService extends EventEmitter {
       issues,
       constraintViolations,
       checkConstraintFailures,
-      uniqueConstraintViolations
+      uniqueConstraintViolations,
     };
   }
 
@@ -696,7 +698,9 @@ export class ValidationService extends EventEmitter {
     for (const table of largeTables) {
       const missingIndexes = await this.findMissingIndexes(table);
       if (missingIndexes.length > 0) {
-        recommendedOptimizations.push(`Add indexes to table ${table}: ${missingIndexes.join(', ')}`);
+        recommendedOptimizations.push(
+          `Add indexes to table ${table}: ${missingIndexes.join(', ')}`
+        );
       }
     }
 
@@ -704,13 +708,14 @@ export class ValidationService extends EventEmitter {
     const commonQueries = this.getCommonQueries();
     for (const query of commonQueries) {
       const performance = await this.measureQueryPerformance(query);
-      if (performance.time > 1000) { // > 1 second
+      if (performance.time > 1000) {
+        // > 1 second
         slowQueries.push(query);
         issues.push({
           type: 'performance',
           message: `Slow query detected: ${query.substring(0, 50)}...`,
           impact: 'medium',
-          suggestion: 'Optimize query or add appropriate indexes'
+          suggestion: 'Optimize query or add appropriate indexes',
         });
       }
     }
@@ -723,15 +728,15 @@ export class ValidationService extends EventEmitter {
       resourceUtilization: {
         cpu: 0, // Would be measured in real implementation
         memory: process.memoryUsage().heapUsed,
-        disk: 0 // Would be measured in real implementation
-      }
+        disk: 0, // Would be measured in real implementation
+      },
     };
   }
 
   private async validateMVPCompliance(): Promise<MVPComplianceResult> {
     const currentMVP = this.detectCurrentMVP();
     const rules = this.mvpValidationRules.get(currentMVP);
-    
+
     if (!rules) {
       return {
         compliant: false,
@@ -739,7 +744,7 @@ export class ValidationService extends EventEmitter {
         expectedFeatures: [],
         missingFeatures: ['MVP validation rules not defined'],
         deprecatedFeatures: [],
-        migrationRequired: true
+        migrationRequired: true,
       };
     }
 
@@ -768,7 +773,7 @@ export class ValidationService extends EventEmitter {
       expectedFeatures: rules.requiredFeatures,
       missingFeatures,
       deprecatedFeatures: [],
-      migrationRequired: missingFeatures.length > 0
+      migrationRequired: missingFeatures.length > 0,
     };
   }
 
@@ -804,42 +809,50 @@ export class ValidationService extends EventEmitter {
       warnings,
       recommendationsCount,
       migrationSafety,
-      estimatedFixTime: criticalIssues * 30 + warnings * 5 // minutes
+      estimatedFixTime: criticalIssues * 30 + warnings * 5, // minutes
     };
   }
 
   private storeValidationResult(type: string, result: any, duration: number): void {
     const summary = result.summary || this.generateValidationSummary([result]);
-    
-    const validationId = this.db.prepare(`
+
+    const validationId = this.db
+      .prepare(
+        `
       INSERT INTO validation_history (
         validation_type, result, duration_ms, overall_health, critical_issues, warnings
       ) VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      type,
-      JSON.stringify(result),
-      duration,
-      summary.overallHealth,
-      summary.criticalIssues,
-      summary.warnings
-    ).lastInsertRowid;
+    `
+      )
+      .run(
+        type,
+        JSON.stringify(result),
+        duration,
+        summary.overallHealth,
+        summary.criticalIssues,
+        summary.warnings
+      ).lastInsertRowid;
 
     // Store individual errors
     if (result.errors) {
       for (const error of result.errors) {
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           INSERT INTO validation_errors (
             validation_id, error_type, severity, code, message, location, suggestion
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          validationId,
-          error.type,
-          error.severity,
-          error.code,
-          error.message,
-          error.location || null,
-          error.suggestion
-        );
+        `
+          )
+          .run(
+            validationId,
+            error.type,
+            error.severity,
+            error.code,
+            error.message,
+            error.location || null,
+            error.suggestion
+          );
       }
     }
   }
@@ -847,9 +860,13 @@ export class ValidationService extends EventEmitter {
   // Helper methods with placeholder implementations
   private getCurrentVersion(): number {
     try {
-      const result = this.db.prepare(`
+      const result = this.db
+        .prepare(
+          `
         SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations
-      `).get() as { version: number };
+      `
+        )
+        .get() as { version: number };
       return result.version;
     } catch {
       return 0;
@@ -862,15 +879,21 @@ export class ValidationService extends EventEmitter {
   }
 
   private getAllTables(): string[] {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'
-    `).all() as { name: string }[];
+    `
+      )
+      .all() as { name: string }[];
     return result.map(r => r.name);
   }
 
   private getTableRowCount(tableName: string): number {
     try {
-      const result = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as { count: number };
+      const result = this.db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as {
+        count: number;
+      };
       return result.count;
     } catch {
       return 0;
@@ -878,42 +901,124 @@ export class ValidationService extends EventEmitter {
   }
 
   // Additional placeholder implementations for complex validation methods
-  private getExpectedTables(): string[] { return ['kb_entries', 'kb_tags']; }
-  private async getTotalColumnCount(): Promise<number> { return 0; }
-  private async getTotalIndexCount(): Promise<number> { return 0; }
-  private async checkTableStructures(tables: string[]): Promise<string[]> { return []; }
-  private async findDuplicateRows(table: string): Promise<number> { return 0; }
-  private async findNullConstraintViolations(table: string): Promise<number> { return 0; }
-  private async findOrphanedRecords(table: string): Promise<number> { return 0; }
-  private async getAllForeignKeys(): Promise<any[]> { return []; }
-  private async checkForeignKeyViolations(fk: any): Promise<number> { return 0; }
-  private async getAllIndexes(): Promise<any[]> { return []; }
+  private getExpectedTables(): string[] {
+    return ['kb_entries', 'kb_tags'];
+  }
+  private async getTotalColumnCount(): Promise<number> {
+    return 0;
+  }
+  private async getTotalIndexCount(): Promise<number> {
+    return 0;
+  }
+  private async checkTableStructures(tables: string[]): Promise<string[]> {
+    return [];
+  }
+  private async findDuplicateRows(table: string): Promise<number> {
+    return 0;
+  }
+  private async findNullConstraintViolations(table: string): Promise<number> {
+    return 0;
+  }
+  private async findOrphanedRecords(table: string): Promise<number> {
+    return 0;
+  }
+  private async getAllForeignKeys(): Promise<any[]> {
+    return [];
+  }
+  private async checkForeignKeyViolations(fk: any): Promise<number> {
+    return 0;
+  }
+  private async getAllIndexes(): Promise<any[]> {
+    return [];
+  }
   private async testIndexUsage(index: any): Promise<void> {}
-  private async checkUniqueConstraints(table: string): Promise<number> { return 0; }
-  private async findLargeTables(): Promise<string[]> { return []; }
-  private async findMissingIndexes(table: string): Promise<string[]> { return []; }
-  private getCommonQueries(): string[] { return []; }
-  private async measureQueryPerformance(query: string): Promise<{ time: number }> { return { time: 0 }; }
+  private async checkUniqueConstraints(table: string): Promise<number> {
+    return 0;
+  }
+  private async findLargeTables(): Promise<string[]> {
+    return [];
+  }
+  private async findMissingIndexes(table: string): Promise<string[]> {
+    return [];
+  }
+  private getCommonQueries(): string[] {
+    return [];
+  }
+  private async measureQueryPerformance(query: string): Promise<{ time: number }> {
+    return { time: 0 };
+  }
 
   // Additional validation method implementations
-  private async validateMigrationSequence(migrations: Migration[], errors: ValidationError[]): Promise<void> {}
-  private async validateMigrationsSQL(migrations: Migration[], errors: ValidationError[]): Promise<void> {}
-  private async checkDangerousOperations(migrations: Migration[], warnings: ValidationWarning[]): Promise<void> {}
-  private async validateMigrationDependencies(migrations: Migration[], errors: ValidationError[]): Promise<void> {}
-  private async assessDataImpact(migrations: Migration[], warnings: ValidationWarning[], recommendations: string[]): Promise<void> {}
-  private async assessPerformanceImpact(migrations: Migration[], warnings: ValidationWarning[], recommendations: string[]): Promise<void> {}
+  private async validateMigrationSequence(
+    migrations: Migration[],
+    errors: ValidationError[]
+  ): Promise<void> {}
+  private async validateMigrationsSQL(
+    migrations: Migration[],
+    errors: ValidationError[]
+  ): Promise<void> {}
+  private async checkDangerousOperations(
+    migrations: Migration[],
+    warnings: ValidationWarning[]
+  ): Promise<void> {}
+  private async validateMigrationDependencies(
+    migrations: Migration[],
+    errors: ValidationError[]
+  ): Promise<void> {}
+  private async assessDataImpact(
+    migrations: Migration[],
+    warnings: ValidationWarning[],
+    recommendations: string[]
+  ): Promise<void> {}
+  private async assessPerformanceImpact(
+    migrations: Migration[],
+    warnings: ValidationWarning[],
+    recommendations: string[]
+  ): Promise<void> {}
   private validateSqlSyntax(sql: string, errors: ValidationError[]): void {}
   private checkCommonSqlIssues(sql: string, warnings: ValidationWarning[]): void {}
   private validateRollbackCompleteness(migration: Migration, warnings: ValidationWarning[]): void {}
-  private validateBestPractices(migration: Migration, warnings: ValidationWarning[], recommendations: string[]): void {}
-  private async checkDiskSpace(): Promise<{ available: number; required: number }> { return { available: 1000, required: 100 }; }
-  private async checkActiveTransactions(): Promise<number> { return 0; }
-  private async validateCurrentSchema(): Promise<{ errors: ValidationError[]; warnings: ValidationWarning[] }> { return { errors: [], warnings: [] }; }
-  private async validateExpectedChanges(migration: Migration, errors: ValidationError[], warnings: ValidationWarning[]): Promise<void> {}
-  private async validateDataConsistencyAfterMigration(migration: Migration, errors: ValidationError[], warnings: ValidationWarning[]): Promise<void> {}
-  private async validatePerformanceAfterMigration(migration: Migration, warnings: ValidationWarning[], recommendations: string[]): Promise<void> {}
-  private async validateSchemaAtVersion(version: number): Promise<{ errors: ValidationError[]; warnings: ValidationWarning[] }> { return { errors: [], warnings: [] }; }
-  private async validateNoUnexpectedDataLoss(version: number, warnings: ValidationWarning[]): Promise<void> {}
+  private validateBestPractices(
+    migration: Migration,
+    warnings: ValidationWarning[],
+    recommendations: string[]
+  ): void {}
+  private async checkDiskSpace(): Promise<{ available: number; required: number }> {
+    return { available: 1000, required: 100 };
+  }
+  private async checkActiveTransactions(): Promise<number> {
+    return 0;
+  }
+  private async validateCurrentSchema(): Promise<{
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+  }> {
+    return { errors: [], warnings: [] };
+  }
+  private async validateExpectedChanges(
+    migration: Migration,
+    errors: ValidationError[],
+    warnings: ValidationWarning[]
+  ): Promise<void> {}
+  private async validateDataConsistencyAfterMigration(
+    migration: Migration,
+    errors: ValidationError[],
+    warnings: ValidationWarning[]
+  ): Promise<void> {}
+  private async validatePerformanceAfterMigration(
+    migration: Migration,
+    warnings: ValidationWarning[],
+    recommendations: string[]
+  ): Promise<void> {}
+  private async validateSchemaAtVersion(
+    version: number
+  ): Promise<{ errors: ValidationError[]; warnings: ValidationWarning[] }> {
+    return { errors: [], warnings: [] };
+  }
+  private async validateNoUnexpectedDataLoss(
+    version: number,
+    warnings: ValidationWarning[]
+  ): Promise<void> {}
 }
 
 // Supporting interfaces

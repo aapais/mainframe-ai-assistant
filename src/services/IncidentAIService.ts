@@ -77,8 +77,10 @@ export class IncidentAIService {
    */
   async analyzeIncident(incident: KBEntry): Promise<IncidentAnalysisResult> {
     try {
-      const analysisPrompt = INCIDENT_AI_PROMPTS.ANALYSIS_TEMPLATE
-        .replace('{{title}}', incident.title)
+      const analysisPrompt = INCIDENT_AI_PROMPTS.ANALYSIS_TEMPLATE.replace(
+        '{{title}}',
+        incident.title
+      )
         .replace('{{problem}}', incident.problem)
         .replace('{{category}}', incident.category || 'Other')
         .replace('{{existingSolution}}', incident.solution || 'Não há solução documentada');
@@ -89,13 +91,13 @@ export class IncidentAIService {
       // Get related incidents with semantic search
       const relatedIncidents = await this.findRelatedIncidents(incident, {
         maxResults: 5,
-        minSimilarity: 0.6
+        minSimilarity: 0.6,
       });
 
       // Generate solution suggestions
       const suggestedSolutions = await this.suggestSolution({
         incident,
-        urgency: this.mapSeverityToUrgency(incident.severity || 'medium')
+        urgency: this.mapSeverityToUrgency(incident.severity || 'medium'),
       });
 
       // Expand semantic context
@@ -107,7 +109,7 @@ export class IncidentAIService {
         analysis,
         relatedIncidents,
         suggestedSolutions,
-        expandedContext
+        expandedContext,
       };
     } catch (error) {
       console.error('Error analyzing incident:', error);
@@ -127,15 +129,17 @@ export class IncidentAIService {
         maxResults = 10,
         minSimilarity = 0.5,
         categoryFilter = [],
-        includeResolved = true
+        includeResolved = true,
       } = options;
 
       // Create semantic search query
       const searchQuery = `${incident.title} ${incident.problem}`;
 
       // Use existing GeminiService but with incident-specific prompts
-      const prompt = INCIDENT_AI_PROMPTS.SIMILARITY_SEARCH_TEMPLATE
-        .replace('{{searchQuery}}', searchQuery)
+      const prompt = INCIDENT_AI_PROMPTS.SIMILARITY_SEARCH_TEMPLATE.replace(
+        '{{searchQuery}}',
+        searchQuery
+      )
         .replace('{{currentCategory}}', incident.category || '')
         .replace('{{maxResults}}', maxResults.toString());
 
@@ -163,18 +167,27 @@ export class IncidentAIService {
   /**
    * Generate AI-powered solution suggestions
    */
-  async suggestSolution(context: SolutionSuggestionContext): Promise<Array<{
-    description: string;
-    confidence: number;
-    steps: string[];
-    estimatedTime: string;
-    riskLevel: 'baixo' | 'medio' | 'alto';
-  }>> {
+  async suggestSolution(context: SolutionSuggestionContext): Promise<
+    Array<{
+      description: string;
+      confidence: number;
+      steps: string[];
+      estimatedTime: string;
+      riskLevel: 'baixo' | 'medio' | 'alto';
+    }>
+  > {
     try {
-      const { incident, previousAttempts = [], context: additionalContext = '', urgency = 'media' } = context;
+      const {
+        incident,
+        previousAttempts = [],
+        context: additionalContext = '',
+        urgency = 'media',
+      } = context;
 
-      const prompt = INCIDENT_AI_PROMPTS.SOLUTION_SUGGESTION_TEMPLATE
-        .replace('{{title}}', incident.title)
+      const prompt = INCIDENT_AI_PROMPTS.SOLUTION_SUGGESTION_TEMPLATE.replace(
+        '{{title}}',
+        incident.title
+      )
         .replace('{{problem}}', incident.problem)
         .replace('{{category}}', incident.category || 'Other')
         .replace('{{previousAttempts}}', previousAttempts.join('\n- '))
@@ -198,8 +211,7 @@ export class IncidentAIService {
     relatedConcepts: string[];
   }> {
     try {
-      const prompt = INCIDENT_AI_PROMPTS.CONTEXT_EXPANSION_TEMPLATE
-        .replace('{{text}}', text);
+      const prompt = INCIDENT_AI_PROMPTS.CONTEXT_EXPANSION_TEMPLATE.replace('{{text}}', text);
 
       const response = await this.generateContent(prompt);
       return this.parseContextExpansion(response);
@@ -208,7 +220,7 @@ export class IncidentAIService {
       return {
         semanticTerms: [],
         synonyms: [],
-        relatedConcepts: []
+        relatedConcepts: [],
       };
     }
   }
@@ -241,7 +253,7 @@ export class IncidentAIService {
           confidence: parsed.confidence || 0.5,
           keywords: parsed.keywords || [],
           estimatedResolutionTime: parsed.estimatedResolutionTime || 'Não estimado',
-          businessImpact: parsed.businessImpact || 'Impacto não determinado'
+          businessImpact: parsed.businessImpact || 'Impacto não determinado',
         };
       }
 
@@ -253,7 +265,7 @@ export class IncidentAIService {
         confidence: 0.5,
         keywords: [],
         estimatedResolutionTime: 'Não estimado',
-        businessImpact: 'Análise AI não disponível'
+        businessImpact: 'Análise AI não disponível',
       };
     }
   }
@@ -265,7 +277,10 @@ export class IncidentAIService {
   }> {
     try {
       const text = this.extractTextResponse(response);
-      const lines = text.trim().split('\n').filter(line => line.trim());
+      const lines = text
+        .trim()
+        .split('\n')
+        .filter(line => line.trim());
 
       const results: Array<{ entry: KBEntry; similarity: number; reasoning: string }> = [];
 
@@ -283,7 +298,7 @@ export class IncidentAIService {
             results.push({
               entry,
               similarity,
-              reasoning: reasoning.trim()
+              reasoning: reasoning.trim(),
             });
           }
         }
@@ -314,7 +329,7 @@ export class IncidentAIService {
           confidence: solution.confidence || 0.5,
           steps: solution.steps || [],
           estimatedTime: solution.estimatedTime || 'Não estimado',
-          riskLevel: solution.riskLevel || 'medio'
+          riskLevel: solution.riskLevel || 'medio',
         }));
       }
 
@@ -338,7 +353,7 @@ export class IncidentAIService {
         return {
           semanticTerms: parsed.semanticTerms || [],
           synonyms: parsed.synonyms || [],
-          relatedConcepts: parsed.relatedConcepts || []
+          relatedConcepts: parsed.relatedConcepts || [],
         };
       }
 
@@ -347,7 +362,7 @@ export class IncidentAIService {
       return {
         semanticTerms: [],
         synonyms: [],
-        relatedConcepts: []
+        relatedConcepts: [],
       };
     }
   }
@@ -361,10 +376,10 @@ export class IncidentAIService {
 
   private mapSeverityToUrgency(severity: string): 'baixa' | 'media' | 'alta' | 'critica' {
     const mapping: Record<string, 'baixa' | 'media' | 'alta' | 'critica'> = {
-      'low': 'baixa',
-      'medium': 'media',
-      'high': 'alta',
-      'critical': 'critica'
+      low: 'baixa',
+      medium: 'media',
+      high: 'alta',
+      critical: 'critica',
     };
     return mapping[severity] || 'media';
   }
@@ -377,15 +392,15 @@ export class IncidentAIService {
         confidence: 0.3,
         keywords: [],
         estimatedResolutionTime: 'Análise AI não disponível',
-        businessImpact: 'Impacto não determinado - serviço AI indisponível'
+        businessImpact: 'Impacto não determinado - serviço AI indisponível',
       },
       relatedIncidents: [],
       suggestedSolutions: this.getFallbackSolutions(incident),
       expandedContext: {
         semanticTerms: [],
         synonyms: [],
-        relatedConcepts: []
-      }
+        relatedConcepts: [],
+      },
     };
   }
 
@@ -403,10 +418,10 @@ export class IncidentAIService {
         steps: [
           'Identificar o componente ou sistema envolvido',
           'Consultar manuais técnicos específicos',
-          'Verificar procedimentos padrão de troubleshooting'
+          'Verificar procedimentos padrão de troubleshooting',
         ],
         estimatedTime: '30-60 minutos',
-        riskLevel: 'baixo'
+        riskLevel: 'baixo',
       },
       {
         description: 'Contactar suporte especializado',
@@ -414,11 +429,11 @@ export class IncidentAIService {
         steps: [
           'Coletar informações detalhadas do erro',
           'Documentar passos já executados',
-          'Abrir chamado com equipe especializada'
+          'Abrir chamado com equipe especializada',
         ],
         estimatedTime: '2-4 horas',
-        riskLevel: 'baixo'
-      }
+        riskLevel: 'baixo',
+      },
     ];
   }
 }

@@ -16,7 +16,7 @@ import {
   SEARCH_BATCH_CONFIG,
   BatchError,
   BatchStats,
-  BatchContext
+  BatchContext,
 } from '../../shared/types/BatchTypes';
 // Temporary fix for import issues - define StateChange locally
 interface StateChange {
@@ -33,7 +33,7 @@ interface StateChange {
 const differentialStateManager = {
   setState: () => Promise.resolve(null),
   getState: () => null,
-  subscribe: () => 'mock-subscription'
+  subscribe: () => 'mock-subscription',
 };
 
 interface PendingRequest {
@@ -61,7 +61,7 @@ export class BatchedIPCManager {
     averageExecutionTime: 0,
     cacheHitRate: 0,
     errorRate: 0,
-    timesSaved: 0
+    timesSaved: 0,
   };
 
   private isEnabled = true;
@@ -126,7 +126,7 @@ export class BatchedIPCManager {
       priority: options.priority || 'medium',
       timeout: options.timeout || 5000,
       cacheable: this.isMethodCacheable(method, config),
-      category: batchKey
+      category: batchKey,
     };
 
     // Return promise that will be resolved when batch executes
@@ -141,7 +141,7 @@ export class BatchedIPCManager {
           }
         },
         reject,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
   }
@@ -160,11 +160,19 @@ export class BatchedIPCManager {
   }> {
     const batchPromises = {
       metrics: this.executeRequest('system:get-metrics', [], { batchKey: 'dashboard-load' }),
-      performanceMetrics: this.executeRequest('system:get-performance-metrics', [], { batchKey: 'dashboard-load' }),
-      healthStatus: this.executeRequest('system:get-health-status', [], { batchKey: 'dashboard-load' }),
+      performanceMetrics: this.executeRequest('system:get-performance-metrics', [], {
+        batchKey: 'dashboard-load',
+      }),
+      healthStatus: this.executeRequest('system:get-health-status', [], {
+        batchKey: 'dashboard-load',
+      }),
       kbStats: this.executeRequest('kb:get-stats', [], { batchKey: 'dashboard-load' }),
-      recentQueries: this.executeRequest('search:get-recent-queries', [10], { batchKey: 'dashboard-load' }),
-      storageInfo: this.executeRequest('system:get-storage-info', [], { batchKey: 'dashboard-load' })
+      recentQueries: this.executeRequest('search:get-recent-queries', [10], {
+        batchKey: 'dashboard-load',
+      }),
+      storageInfo: this.executeRequest('system:get-storage-info', [], {
+        batchKey: 'dashboard-load',
+      }),
     };
 
     try {
@@ -174,7 +182,7 @@ export class BatchedIPCManager {
         batchPromises.healthStatus.catch(e => ({ error: e.message })),
         batchPromises.kbStats.catch(e => ({ error: e.message })),
         batchPromises.recentQueries.catch(e => ({ error: e.message })),
-        batchPromises.storageInfo.catch(e => ({ error: e.message }))
+        batchPromises.storageInfo.catch(e => ({ error: e.message })),
       ]);
 
       return {
@@ -183,7 +191,7 @@ export class BatchedIPCManager {
         healthStatus: results[2].status === 'fulfilled' ? results[2].value : undefined,
         kbStats: results[3].status === 'fulfilled' ? results[3].value : undefined,
         recentQueries: results[4].status === 'fulfilled' ? results[4].value : undefined,
-        storageInfo: results[5].status === 'fulfilled' ? results[5].value : undefined
+        storageInfo: results[5].status === 'fulfilled' ? results[5].value : undefined,
       };
     } catch (error) {
       console.error('[BatchedIPC] Dashboard batch execution failed:', error);
@@ -200,7 +208,7 @@ export class BatchedIPCManager {
       batch = {
         requests: [],
         config,
-        startTime: Date.now()
+        startTime: Date.now(),
       };
       this.pendingBatches.set(batchKey, batch);
     }
@@ -215,8 +223,7 @@ export class BatchedIPCManager {
 
     // Check if we should execute immediately
     const shouldExecuteNow =
-      batch.requests.length >= config.maxBatchSize ||
-      pendingRequest.request.priority === 'high';
+      batch.requests.length >= config.maxBatchSize || pendingRequest.request.priority === 'high';
 
     if (shouldExecuteNow) {
       this.executeBatch(batchKey);
@@ -247,7 +254,9 @@ export class BatchedIPCManager {
 
     try {
       if (this.debugMode) {
-        console.log(`[BatchedIPC] Executing batch ${batchKey} with ${batch.requests.length} requests`);
+        console.log(
+          `[BatchedIPC] Executing batch ${batchKey} with ${batch.requests.length} requests`
+        );
       }
 
       // Create batch payload
@@ -258,8 +267,8 @@ export class BatchedIPCManager {
         priority: this.determineBatchPriority(batch.requests),
         metadata: {
           source: batchKey,
-          version: '1.0'
-        }
+          version: '1.0',
+        },
       };
 
       // Execute batch via IPC
@@ -270,13 +279,16 @@ export class BatchedIPCManager {
 
       // Update stats
       this.updateStats(batch, Date.now() - startTime, response);
-
     } catch (error) {
       console.error(`[BatchedIPC] Batch execution failed for ${batchKey}:`, error);
 
       // Reject all pending requests
       batch.requests.forEach(pending => {
-        pending.reject(new Error(`Batch execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+        pending.reject(
+          new Error(
+            `Batch execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
+        );
       });
     }
   }
@@ -307,8 +319,8 @@ export class BatchedIPCManager {
           metadata: {
             executionTime: Date.now() - startTime,
             fromBatch: true,
-            cached: false
-          }
+            cached: false,
+          },
         });
       } catch (error) {
         errors++;
@@ -317,8 +329,8 @@ export class BatchedIPCManager {
           success: false,
           error: {
             code: 'EXECUTION_ERROR',
-            message: error instanceof Error ? error.message : 'Unknown error'
-          }
+            message: error instanceof Error ? error.message : 'Unknown error',
+          },
         });
       }
     }
@@ -331,8 +343,8 @@ export class BatchedIPCManager {
         totalExecutionTime: Date.now() - payload.timestamp,
         cacheHits,
         errors,
-        processed: responses.length
-      }
+        processed: responses.length,
+      },
     };
   }
 
@@ -383,11 +395,16 @@ export class BatchedIPCManager {
     this.stats.totalRequests += batch.requests.length;
     this.stats.averageBatchSize = this.stats.totalRequests / this.stats.totalBatches;
     this.stats.averageExecutionTime =
-      (this.stats.averageExecutionTime * (this.stats.totalBatches - 1) + executionTime) / this.stats.totalBatches;
+      (this.stats.averageExecutionTime * (this.stats.totalBatches - 1) + executionTime) /
+      this.stats.totalBatches;
     this.stats.cacheHitRate =
-      (this.stats.cacheHitRate * (this.stats.totalBatches - 1) + response.metadata.cacheHits / batch.requests.length) / this.stats.totalBatches;
+      (this.stats.cacheHitRate * (this.stats.totalBatches - 1) +
+        response.metadata.cacheHits / batch.requests.length) /
+      this.stats.totalBatches;
     this.stats.errorRate =
-      (this.stats.errorRate * (this.stats.totalBatches - 1) + response.metadata.errors / batch.requests.length) / this.stats.totalBatches;
+      (this.stats.errorRate * (this.stats.totalBatches - 1) +
+        response.metadata.errors / batch.requests.length) /
+      this.stats.totalBatches;
 
     // Estimate time saved (assuming each individual request would take ~200ms)
     const timeIfIndividual = batch.requests.length * 200;
@@ -447,7 +464,7 @@ export class BatchedIPCManager {
       averageExecutionTime: 0,
       cacheHitRate: 0,
       errorRate: 0,
-      timesSaved: 0
+      timesSaved: 0,
     };
   }
 
@@ -479,7 +496,7 @@ export class BatchedIPCManager {
     const {
       enableDifferential = this.enableDifferential,
       forceFullUpdate = false,
-      priority = 'medium'
+      priority = 'medium',
     } = options;
 
     if (!enableDifferential || forceFullUpdate) {
@@ -520,11 +537,10 @@ export class BatchedIPCManager {
           stateChange?: StateChange<T>;
           compressionRatio?: number;
           estimatedSavings?: number;
-        }>(
-          'state:get-differential',
-          [stateKey, localVersion],
-          { priority, batchKey: 'differential-state' }
-        );
+        }>('state:get-differential', [stateKey, localVersion], {
+          priority,
+          batchKey: 'differential-state',
+        });
 
         if (differential && differential.type === 'differential' && differential.stateChange) {
           // Apply differential update
@@ -538,7 +554,10 @@ export class BatchedIPCManager {
 
             if (updatedData) {
               this.stateVersions.set(stateKey, differential.version);
-              this.updateDifferentialStats(differential.compressionRatio, differential.estimatedSavings);
+              this.updateDifferentialStats(
+                differential.compressionRatio,
+                differential.estimatedSavings
+              );
 
               if (this.debugMode) {
                 console.log(
@@ -558,11 +577,7 @@ export class BatchedIPCManager {
         type: 'full';
         version: number;
         data: T;
-      }>(
-        'state:get',
-        [stateKey],
-        { priority, batchKey: 'state-operations' }
-      );
+      }>('state:get', [stateKey], { priority, batchKey: 'state-operations' });
 
       if (fullState && fullState.data) {
         // Update local state tracking
@@ -577,16 +592,11 @@ export class BatchedIPCManager {
       }
 
       throw new Error('No data received from state request');
-
     } catch (error) {
       console.error(`[Differential] Failed to get state ${stateKey}:`, error);
 
       // Final fallback to basic request
-      return this.executeRequest<T>(
-        `state:get`,
-        [stateKey],
-        { priority, bypassBatch: true }
-      );
+      return this.executeRequest<T>(`state:get`, [stateKey], { priority, bypassBatch: true });
     }
   }
 
@@ -610,11 +620,10 @@ export class BatchedIPCManager {
           stateChange: StateChange<T>;
           compressionRatio?: number;
           estimatedSavings?: number;
-        }>(
-          'state:update-differential',
-          [stateKey, localStateChange],
-          { priority, batchKey: 'differential-state' }
-        );
+        }>('state:update-differential', [stateKey, localStateChange], {
+          priority,
+          batchKey: 'differential-state',
+        });
 
         if (response) {
           this.stateVersions.set(stateKey, response.version);
@@ -634,18 +643,13 @@ export class BatchedIPCManager {
       // Fall back to full update
       const fullUpdate = await this.executeRequest<{
         version: number;
-      }>(
-        'state:update',
-        [stateKey, newData],
-        { priority, batchKey: 'state-operations' }
-      );
+      }>('state:update', [stateKey, newData], { priority, batchKey: 'state-operations' });
 
       if (fullUpdate) {
         this.stateVersions.set(stateKey, fullUpdate.version);
       }
 
       return newData;
-
     } catch (error) {
       console.error(`[Differential] Failed to update state ${stateKey}:`, error);
       throw error;
@@ -669,14 +673,14 @@ export class BatchedIPCManager {
       'health-status',
       'kb-stats',
       'recent-queries',
-      'storage-info'
+      'storage-info',
     ];
 
     const batchPromises = stateKeys.reduce((promises, stateKey) => {
       const promiseKey = stateKey.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       promises[promiseKey] = this.executeStateRequest(stateKey, 'get', undefined, {
         enableDifferential: true,
-        priority: 'high'
+        priority: 'high',
       });
       return promises;
     }, {} as any);
@@ -688,7 +692,7 @@ export class BatchedIPCManager {
         batchPromises.healthStatus.catch((e: any) => ({ error: e.message })),
         batchPromises.kbStats.catch((e: any) => ({ error: e.message })),
         batchPromises.recentQueries.catch((e: any) => ({ error: e.message })),
-        batchPromises.storageInfo.catch((e: any) => ({ error: e.message }))
+        batchPromises.storageInfo.catch((e: any) => ({ error: e.message })),
       ]);
 
       return {
@@ -697,7 +701,7 @@ export class BatchedIPCManager {
         healthStatus: results[2].status === 'fulfilled' ? results[2].value : undefined,
         kbStats: results[3].status === 'fulfilled' ? results[3].value : undefined,
         recentQueries: results[4].status === 'fulfilled' ? results[4].value : undefined,
-        storageInfo: results[5].status === 'fulfilled' ? results[5].value : undefined
+        storageInfo: results[5].status === 'fulfilled' ? results[5].value : undefined,
       };
     } catch (error) {
       console.error('[Differential] Dashboard batch execution failed:', error);
@@ -713,11 +717,10 @@ export class BatchedIPCManager {
     callback: (data: T, change?: StateChange<T>) => void
   ): Promise<string> {
     try {
-      const subscriptionId = await this.executeRequest<string>(
-        'state:subscribe',
-        [stateKey],
-        { bypassBatch: true, priority: 'high' }
-      );
+      const subscriptionId = await this.executeRequest<string>('state:subscribe', [stateKey], {
+        bypassBatch: true,
+        priority: 'high',
+      });
 
       // Set up IPC event listener for state changes
       if (window.electronAPI?.on) {
@@ -725,22 +728,25 @@ export class BatchedIPCManager {
           if (event.subscriptionId === subscriptionId && event.stateKey === stateKey) {
             if (event.stateChange) {
               // Apply differential update locally
-              differentialStateManager.applyDifferentialUpdate(
-                stateKey,
-                this.stateVersions.get(stateKey) || 0,
-                event.stateChange
-              ).then((updatedData) => {
-                if (updatedData) {
-                  this.stateVersions.set(stateKey, event.stateChange.currentVersion);
-                  callback(updatedData, event.stateChange);
-                }
-              }).catch((error) => {
-                console.error('Failed to apply state change:', error);
-                // Fall back to full state request
-                this.executeStateRequest<T>(stateKey, 'get', undefined, { forceFullUpdate: true })
-                  .then(data => callback(data))
-                  .catch(console.error);
-              });
+              differentialStateManager
+                .applyDifferentialUpdate(
+                  stateKey,
+                  this.stateVersions.get(stateKey) || 0,
+                  event.stateChange
+                )
+                .then(updatedData => {
+                  if (updatedData) {
+                    this.stateVersions.set(stateKey, event.stateChange.currentVersion);
+                    callback(updatedData, event.stateChange);
+                  }
+                })
+                .catch(error => {
+                  console.error('Failed to apply state change:', error);
+                  // Fall back to full state request
+                  this.executeStateRequest<T>(stateKey, 'get', undefined, { forceFullUpdate: true })
+                    .then(data => callback(data))
+                    .catch(console.error);
+                });
             }
           }
         });
@@ -758,11 +764,7 @@ export class BatchedIPCManager {
    */
   async unsubscribeFromState(subscriptionId: string): Promise<void> {
     try {
-      await this.executeRequest(
-        'state:unsubscribe',
-        [subscriptionId],
-        { bypassBatch: true }
-      );
+      await this.executeRequest('state:unsubscribe', [subscriptionId], { bypassBatch: true });
     } catch (error) {
       console.error('Failed to unsubscribe from state:', error);
     }
@@ -773,11 +775,7 @@ export class BatchedIPCManager {
    */
   async getDifferentialMetrics(): Promise<any> {
     try {
-      return this.executeRequest(
-        'state:get-metrics',
-        [],
-        { batchKey: 'metrics', priority: 'low' }
-      );
+      return this.executeRequest('state:get-metrics', [], { batchKey: 'metrics', priority: 'low' });
     } catch (error) {
       console.error('Failed to get differential metrics:', error);
       return null;

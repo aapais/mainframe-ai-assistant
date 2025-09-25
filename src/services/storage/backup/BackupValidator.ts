@@ -1,6 +1,6 @@
 /**
  * Backup Validator
- * 
+ *
  * Comprehensive validation and integrity checking for backups with support for
  * multiple validation strategies, performance monitoring, and detailed reporting.
  */
@@ -25,7 +25,7 @@ export interface ValidationConfig {
   enableRestoreValidation: boolean;
   validationSamplePercent: number;
   performance: {
-    maxValidationTime: number;  // in seconds
+    maxValidationTime: number; // in seconds
     enableParallelValidation: boolean;
     maxConcurrentValidations: number;
   };
@@ -80,7 +80,7 @@ export interface ValidationSummary {
   criticalIssues: number;
   timeToValidate: number;
   dataIntegrityScore: number; // 0-100
-  reliabilityScore: number;   // 0-100
+  reliabilityScore: number; // 0-100
 }
 
 export interface ValidationRuleResult {
@@ -150,7 +150,7 @@ export class StandardValidationRules {
       config: {},
       validator: async (context: ValidationContext): Promise<ValidationRuleResult> => {
         const startTime = Date.now();
-        
+
         try {
           if (!context.expectedChecksum) {
             return {
@@ -159,13 +159,13 @@ export class StandardValidationRules {
               status: 'skipped',
               severity: 'critical',
               duration: Date.now() - startTime,
-              details: 'No expected checksum provided'
+              details: 'No expected checksum provided',
             };
           }
 
           // Read and calculate checksum
           let data = fs.readFileSync(context.backupPath);
-          
+
           // Handle compressed files
           if (context.backupPath.endsWith('.gz')) {
             data = await gunzipAsync(data);
@@ -180,18 +180,18 @@ export class StandardValidationRules {
             status: match ? 'pass' : 'fail',
             severity: 'critical',
             duration: Date.now() - startTime,
-            details: match ? 'Checksum verification passed' : 
-              `Checksum mismatch: expected ${context.expectedChecksum}, got ${actualChecksum}`,
+            details: match
+              ? 'Checksum verification passed'
+              : `Checksum mismatch: expected ${context.expectedChecksum}, got ${actualChecksum}`,
             evidence: {
               expected: context.expectedChecksum,
-              actual: actualChecksum
+              actual: actualChecksum,
             },
             metrics: {
               dataSize: data.length,
-              checksumTime: Date.now() - startTime
-            }
+              checksumTime: Date.now() - startTime,
+            },
           };
-
         } catch (error) {
           return {
             ruleId: 'checksum-validation',
@@ -199,10 +199,10 @@ export class StandardValidationRules {
             status: 'error',
             severity: 'critical',
             duration: Date.now() - startTime,
-            details: `Checksum validation failed: ${error.message}`
+            details: `Checksum validation failed: ${error.message}`,
           };
         }
-      }
+      },
     };
   }
 
@@ -214,7 +214,7 @@ export class StandardValidationRules {
       severity: 'medium',
       enabled: true,
       config: {
-        tolerancePercent: 5 // Allow 5% variance
+        tolerancePercent: 5, // Allow 5% variance
       },
       validator: async (context: ValidationContext): Promise<ValidationRuleResult> => {
         const startTime = Date.now();
@@ -231,14 +231,16 @@ export class StandardValidationRules {
               severity: 'medium',
               duration: Date.now() - startTime,
               details: `Backup size: ${actualSize} bytes (no expected size provided)`,
-              metrics: { actualSize }
+              metrics: { actualSize },
             };
           }
 
-          const tolerancePercent = context.validationConfig.rules
-            .find(r => r.id === 'file-size-validation')?.config?.tolerancePercent || 5;
+          const tolerancePercent =
+            context.validationConfig.rules.find(r => r.id === 'file-size-validation')?.config
+              ?.tolerancePercent || 5;
 
-          const variance = Math.abs(actualSize - context.expectedSize) / context.expectedSize * 100;
+          const variance =
+            (Math.abs(actualSize - context.expectedSize) / context.expectedSize) * 100;
           const withinTolerance = variance <= tolerancePercent;
 
           return {
@@ -247,21 +249,20 @@ export class StandardValidationRules {
             status: withinTolerance ? 'pass' : 'warning',
             severity: 'medium',
             duration: Date.now() - startTime,
-            details: withinTolerance ? 
-              `File size within tolerance: ${actualSize} bytes` :
-              `File size variance: ${variance.toFixed(2)}% (${actualSize} vs ${context.expectedSize} bytes)`,
+            details: withinTolerance
+              ? `File size within tolerance: ${actualSize} bytes`
+              : `File size variance: ${variance.toFixed(2)}% (${actualSize} vs ${context.expectedSize} bytes)`,
             evidence: {
               expected: context.expectedSize,
               actual: actualSize,
-              variance: variance.toFixed(2)
+              variance: variance.toFixed(2),
             },
             metrics: {
               actualSize,
               expectedSize: context.expectedSize,
-              variancePercent: variance
-            }
+              variancePercent: variance,
+            },
           };
-
         } catch (error) {
           return {
             ruleId: 'file-size-validation',
@@ -269,10 +270,10 @@ export class StandardValidationRules {
             status: 'error',
             severity: 'medium',
             duration: Date.now() - startTime,
-            details: `File size validation failed: ${error.message}`
+            details: `File size validation failed: ${error.message}`,
           };
         }
-      }
+      },
     };
   }
 
@@ -290,9 +291,9 @@ export class StandardValidationRules {
         try {
           // Extract database from backup
           const tempDbPath = path.join(context.tempDirectory, `temp-${Date.now()}.db`);
-          
+
           let data = fs.readFileSync(context.backupPath);
-          
+
           // Handle compressed and packaged formats
           if (context.backupPath.endsWith('.gz')) {
             data = await gunzipAsync(data);
@@ -312,19 +313,25 @@ export class StandardValidationRules {
 
           // Open and check database
           const db = new Database(tempDbPath, { readonly: true });
-          
+
           try {
             // Run SQLite integrity check
-            const result = db.prepare('PRAGMA integrity_check').get() as { integrity_check: string };
+            const result = db.prepare('PRAGMA integrity_check').get() as {
+              integrity_check: string;
+            };
             const isOk = result.integrity_check === 'ok';
 
             // Additional checks
-            const tableCount = db.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'").get() as { count: number };
-            
+            const tableCount = db
+              .prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'")
+              .get() as { count: number };
+
             let recordCount = 0;
             if (tableCount.count > 0) {
               try {
-                const kbCount = db.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as { count: number };
+                const kbCount = db.prepare('SELECT COUNT(*) as count FROM kb_entries').get() as {
+                  count: number;
+                };
                 recordCount = kbCount.count;
               } catch {
                 // kb_entries table might not exist
@@ -337,21 +344,20 @@ export class StandardValidationRules {
               status: isOk ? 'pass' : 'fail',
               severity: 'critical',
               duration: Date.now() - startTime,
-              details: isOk ? 
-                `Database integrity check passed (${tableCount.count} tables, ${recordCount} records)` :
-                `Database integrity check failed: ${result.integrity_check}`,
+              details: isOk
+                ? `Database integrity check passed (${tableCount.count} tables, ${recordCount} records)`
+                : `Database integrity check failed: ${result.integrity_check}`,
               evidence: {
                 integrityResult: result.integrity_check,
                 tableCount: tableCount.count,
-                recordCount
+                recordCount,
               },
               metrics: {
                 tableCount: tableCount.count,
                 recordCount,
-                integrityCheckTime: Date.now() - startTime
-              }
+                integrityCheckTime: Date.now() - startTime,
+              },
             };
-
           } finally {
             db.close();
             // Cleanup temp file
@@ -359,7 +365,6 @@ export class StandardValidationRules {
               fs.unlinkSync(tempDbPath);
             }
           }
-
         } catch (error) {
           return {
             ruleId: 'database-integrity',
@@ -367,10 +372,10 @@ export class StandardValidationRules {
             status: 'error',
             severity: 'critical',
             duration: Date.now() - startTime,
-            details: `Database integrity check failed: ${error.message}`
+            details: `Database integrity check failed: ${error.message}`,
           };
         }
-      }
+      },
     };
   }
 
@@ -384,21 +389,21 @@ export class StandardValidationRules {
       config: {
         requiredTables: ['kb_entries'],
         requiredColumns: {
-          'kb_entries': ['id', 'title', 'problem', 'solution', 'category']
-        }
+          kb_entries: ['id', 'title', 'problem', 'solution', 'category'],
+        },
       },
       validator: async (context: ValidationContext): Promise<ValidationRuleResult> => {
         const startTime = Date.now();
 
         try {
-          const config = context.validationConfig.rules
-            .find(r => r.id === 'schema-validation')?.config || {};
+          const config =
+            context.validationConfig.rules.find(r => r.id === 'schema-validation')?.config || {};
 
           // Extract and open database
           const tempDbPath = path.join(context.tempDirectory, `schema-check-${Date.now()}.db`);
-          
+
           let data = fs.readFileSync(context.backupPath);
-          
+
           if (context.backupPath.endsWith('.gz')) {
             data = await gunzipAsync(data);
           }
@@ -419,9 +424,11 @@ export class StandardValidationRules {
 
           try {
             // Check required tables
-            const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[];
+            const tables = db
+              .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+              .all() as { name: string }[];
             const tableNames = tables.map(t => t.name);
-            
+
             validationDetails.foundTables = tableNames;
 
             for (const requiredTable of config.requiredTables || []) {
@@ -431,11 +438,15 @@ export class StandardValidationRules {
             }
 
             // Check required columns
-            for (const [tableName, requiredColumns] of Object.entries(config.requiredColumns || {})) {
+            for (const [tableName, requiredColumns] of Object.entries(
+              config.requiredColumns || {}
+            )) {
               if (tableNames.includes(tableName)) {
-                const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as { name: string }[];
+                const columns = db.prepare(`PRAGMA table_info(${tableName})`).all() as {
+                  name: string;
+                }[];
                 const columnNames = columns.map(c => c.name);
-                
+
                 validationDetails[`${tableName}_columns`] = columnNames;
 
                 for (const requiredColumn of requiredColumns as string[]) {
@@ -454,23 +465,21 @@ export class StandardValidationRules {
               status: isValid ? 'pass' : 'fail',
               severity: 'high',
               duration: Date.now() - startTime,
-              details: isValid ? 
-                `Schema validation passed (${tableNames.length} tables found)` :
-                `Schema validation failed: ${issues.join(', ')}`,
+              details: isValid
+                ? `Schema validation passed (${tableNames.length} tables found)`
+                : `Schema validation failed: ${issues.join(', ')}`,
               evidence: validationDetails,
               metrics: {
                 tableCount: tableNames.length,
-                issueCount: issues.length
-              }
+                issueCount: issues.length,
+              },
             };
-
           } finally {
             db.close();
             if (fs.existsSync(tempDbPath)) {
               fs.unlinkSync(tempDbPath);
             }
           }
-
         } catch (error) {
           return {
             ruleId: 'schema-validation',
@@ -478,10 +487,10 @@ export class StandardValidationRules {
             status: 'error',
             severity: 'high',
             duration: Date.now() - startTime,
-            details: `Schema validation failed: ${error.message}`
+            details: `Schema validation failed: ${error.message}`,
           };
         }
-      }
+      },
     };
   }
 
@@ -494,14 +503,15 @@ export class StandardValidationRules {
       enabled: true,
       config: {
         maxValidationTimeSeconds: 300,
-        minCompressionRatio: 0.1
+        minCompressionRatio: 0.1,
       },
       validator: async (context: ValidationContext): Promise<ValidationRuleResult> => {
         const startTime = Date.now();
 
         try {
-          const config = context.validationConfig.rules
-            .find(r => r.id === 'performance-validation')?.config || {};
+          const config =
+            context.validationConfig.rules.find(r => r.id === 'performance-validation')?.config ||
+            {};
 
           const stats = fs.statSync(context.backupPath);
           const fileSize = stats.size;
@@ -514,13 +524,14 @@ export class StandardValidationRules {
             // Estimate compression ratio by comparing compressed vs uncompressed size
             const compressedData = fs.readFileSync(context.backupPath);
             const uncompressedData = await gunzipAsync(compressedData);
-            compressionRatio = (compressedData.length - uncompressedData.length) / uncompressedData.length;
+            compressionRatio =
+              (compressedData.length - uncompressedData.length) / uncompressedData.length;
           }
 
           const issues: string[] = [];
           const metrics: Record<string, number> = {
             fileSize,
-            compressionRatio: compressionRatio * 100
+            compressionRatio: compressionRatio * 100,
           };
 
           // Check compression efficiency
@@ -529,9 +540,11 @@ export class StandardValidationRules {
           }
 
           // Check file size reasonableness
-          if (fileSize < 1024) { // < 1KB
+          if (fileSize < 1024) {
+            // < 1KB
             issues.push('Backup file suspiciously small');
-          } else if (fileSize > 10 * 1024 * 1024 * 1024) { // > 10GB
+          } else if (fileSize > 10 * 1024 * 1024 * 1024) {
+            // > 10GB
             issues.push('Backup file very large, consider compression');
           }
 
@@ -543,18 +556,18 @@ export class StandardValidationRules {
             status,
             severity: 'low',
             duration: Date.now() - startTime,
-            details: status === 'pass' ? 
-              `Performance check passed (${fileSize} bytes${isCompressed ? `, ${(compressionRatio * 100).toFixed(1)}% compression` : ''})` :
-              `Performance issues: ${issues.join(', ')}`,
+            details:
+              status === 'pass'
+                ? `Performance check passed (${fileSize} bytes${isCompressed ? `, ${(compressionRatio * 100).toFixed(1)}% compression` : ''})`
+                : `Performance issues: ${issues.join(', ')}`,
             evidence: {
               fileSize,
               isCompressed,
               compressionRatio: compressionRatio * 100,
-              issues
+              issues,
             },
-            metrics
+            metrics,
           };
-
         } catch (error) {
           return {
             ruleId: 'performance-validation',
@@ -562,10 +575,10 @@ export class StandardValidationRules {
             status: 'error',
             severity: 'low',
             duration: Date.now() - startTime,
-            details: `Performance validation failed: ${error.message}`
+            details: `Performance validation failed: ${error.message}`,
           };
         }
-      }
+      },
     };
   }
 
@@ -575,7 +588,7 @@ export class StandardValidationRules {
       this.createFileSizeRule(),
       this.createDatabaseIntegrityRule(),
       this.createSchemaValidationRule(),
-      this.createPerformanceRule()
+      this.createPerformanceRule(),
     ];
   }
 }
@@ -592,7 +605,7 @@ export class BackupValidator extends EventEmitter {
     super();
     this.config = {
       ...config,
-      rules: [...config.rules, ...StandardValidationRules.getAllStandardRules()]
+      rules: [...config.rules, ...StandardValidationRules.getAllStandardRules()],
     };
   }
 
@@ -601,7 +614,7 @@ export class BackupValidator extends EventEmitter {
   // ===========================
 
   async validate(
-    backupPath: string, 
+    backupPath: string,
     expectedChecksum?: string,
     options: {
       expectedSize?: number;
@@ -623,7 +636,7 @@ export class BackupValidator extends EventEmitter {
         currentRule: undefined,
         rulesCompleted: 0,
         totalRules: this.config.rules.filter(r => r.enabled).length,
-        issuesFound: 0
+        issuesFound: 0,
       };
 
       this.activeValidations.set(validationId, progress);
@@ -640,7 +653,7 @@ export class BackupValidator extends EventEmitter {
         backupMetadata: options.backupMetadata,
         tempDirectory,
         validationConfig: this.config,
-        progress
+        progress,
       };
 
       // Run all enabled validation rules
@@ -649,11 +662,11 @@ export class BackupValidator extends EventEmitter {
 
       for (let i = 0; i < enabledRules.length; i++) {
         const rule = enabledRules[i];
-        
+
         progress.phase = 'running_rules';
         progress.currentRule = rule.name;
         progress.percentage = (i / enabledRules.length) * 90; // Save 10% for finalization
-        
+
         if (options.progressCallback) {
           options.progressCallback(progress);
         }
@@ -669,7 +682,6 @@ export class BackupValidator extends EventEmitter {
           }
 
           this.emit('rule:completed', { validationId, rule: rule.name, result });
-
         } catch (error) {
           const errorResult: ValidationRuleResult = {
             ruleId: rule.id,
@@ -677,7 +689,7 @@ export class BackupValidator extends EventEmitter {
             status: 'error',
             severity: rule.severity,
             duration: 0,
-            details: `Rule execution failed: ${error.message}`
+            details: `Rule execution failed: ${error.message}`,
           };
           ruleResults.push(errorResult);
           progress.issuesFound++;
@@ -691,7 +703,7 @@ export class BackupValidator extends EventEmitter {
       // Finalize validation
       progress.phase = 'finalizing';
       progress.percentage = 95;
-      
+
       if (options.progressCallback) {
         options.progressCallback(progress);
       }
@@ -701,7 +713,7 @@ export class BackupValidator extends EventEmitter {
 
       progress.phase = 'completed';
       progress.percentage = 100;
-      
+
       if (options.progressCallback) {
         options.progressCallback(progress);
       }
@@ -713,7 +725,6 @@ export class BackupValidator extends EventEmitter {
       this.emit('validation:completed', { validationId, result });
 
       return result;
-
     } catch (error) {
       this.activeValidations.delete(validationId);
       this.emit('validation:failed', { validationId, error });
@@ -721,11 +732,14 @@ export class BackupValidator extends EventEmitter {
     }
   }
 
-  async quickValidate(backupPath: string, expectedChecksum?: string): Promise<{ valid: boolean; issues: string[] }> {
+  async quickValidate(
+    backupPath: string,
+    expectedChecksum?: string
+  ): Promise<{ valid: boolean; issues: string[] }> {
     try {
       // Run only critical checks
-      const quickRules = this.config.rules.filter(r => 
-        r.enabled && (r.type === 'checksum' || r.severity === 'critical')
+      const quickRules = this.config.rules.filter(
+        r => r.enabled && (r.type === 'checksum' || r.severity === 'critical')
       );
 
       const tempDirectory = this.createTempDirectory();
@@ -733,7 +747,7 @@ export class BackupValidator extends EventEmitter {
         backupPath,
         expectedChecksum,
         tempDirectory,
-        validationConfig: { ...this.config, rules: quickRules }
+        validationConfig: { ...this.config, rules: quickRules },
       };
 
       const issues: string[] = [];
@@ -755,7 +769,6 @@ export class BackupValidator extends EventEmitter {
       this.cleanupTempDirectory(tempDirectory);
 
       return { valid, issues };
-
     } catch (error) {
       return { valid: false, issues: [`Quick validation failed: ${error.message}`] };
     }
@@ -866,10 +879,12 @@ export class BackupValidator extends EventEmitter {
       passedChecks: ruleResults.filter(r => r.status === 'pass').length,
       warningChecks: ruleResults.filter(r => r.status === 'warning').length,
       failedChecks: ruleResults.filter(r => r.status === 'fail' || r.status === 'error').length,
-      criticalIssues: ruleResults.filter(r => (r.status === 'fail' || r.status === 'error') && r.severity === 'critical').length,
+      criticalIssues: ruleResults.filter(
+        r => (r.status === 'fail' || r.status === 'error') && r.severity === 'critical'
+      ).length,
       timeToValidate: totalDuration,
       dataIntegrityScore: this.calculateIntegrityScore(ruleResults),
-      reliabilityScore: this.calculateReliabilityScore(ruleResults)
+      reliabilityScore: this.calculateReliabilityScore(ruleResults),
     };
 
     // Determine overall status
@@ -889,9 +904,9 @@ export class BackupValidator extends EventEmitter {
       resourceUsage: {
         peakMemoryMb: process.memoryUsage().heapUsed / 1024 / 1024,
         avgCpuPercent: 0, // Would need process monitoring
-        diskIoMb: 0       // Would need I/O monitoring
+        diskIoMb: 0, // Would need I/O monitoring
       },
-      bottlenecks: this.identifyBottlenecks(ruleResults)
+      bottlenecks: this.identifyBottlenecks(ruleResults),
     };
 
     ruleResults.forEach(result => {
@@ -913,14 +928,16 @@ export class BackupValidator extends EventEmitter {
         path: backupPath,
         size: fs.statSync(backupPath).size,
         checksum: options.expectedChecksum || 'unknown',
-        strategy: options.backupMetadata?.strategy
+        strategy: options.backupMetadata?.strategy,
       },
       validationConfig: this.config,
       issues,
       passedRules: ruleResults.filter(r => r.status === 'pass').map(r => r.ruleName),
       warnings: ruleResults.filter(r => r.status === 'warning').map(r => r.details),
-      errors: ruleResults.filter(r => r.status === 'fail' || r.status === 'error').map(r => r.details),
-      recommendations
+      errors: ruleResults
+        .filter(r => r.status === 'fail' || r.status === 'error')
+        .map(r => r.details),
+      recommendations,
     };
 
     return {
@@ -930,13 +947,16 @@ export class BackupValidator extends EventEmitter {
       ruleResults,
       performance,
       recommendations,
-      report
+      report,
     };
   }
 
   private calculateIntegrityScore(results: ValidationRuleResult[]): number {
-    const integrityRules = results.filter(r => 
-      r.ruleId.includes('integrity') || r.ruleId.includes('checksum') || r.ruleId.includes('database')
+    const integrityRules = results.filter(
+      r =>
+        r.ruleId.includes('integrity') ||
+        r.ruleId.includes('checksum') ||
+        r.ruleId.includes('database')
     );
 
     if (integrityRules.length === 0) return 100;
@@ -951,9 +971,9 @@ export class BackupValidator extends EventEmitter {
 
     const passed = results.filter(r => r.status === 'pass').length;
     const warnings = results.filter(r => r.status === 'warning').length;
-    
+
     // Full points for pass, half points for warnings, zero for failures
-    const score = (passed + warnings * 0.5) / totalRules * 100;
+    const score = ((passed + warnings * 0.5) / totalRules) * 100;
     return Math.round(score);
   }
 
@@ -981,12 +1001,18 @@ export class BackupValidator extends EventEmitter {
       impact: this.getImpactDescription(result.severity),
       resolution: result.recommendations?.join('; ') || 'Manual investigation required',
       evidence: result.evidence,
-      detectedAt: new Date()
+      detectedAt: new Date(),
     };
   }
 
-  private categorizeRule(ruleId: string): 'integrity' | 'performance' | 'compatibility' | 'security' {
-    if (ruleId.includes('integrity') || ruleId.includes('checksum') || ruleId.includes('database')) {
+  private categorizeRule(
+    ruleId: string
+  ): 'integrity' | 'performance' | 'compatibility' | 'security' {
+    if (
+      ruleId.includes('integrity') ||
+      ruleId.includes('checksum') ||
+      ruleId.includes('database')
+    ) {
       return 'integrity';
     }
     if (ruleId.includes('performance') || ruleId.includes('size')) {
@@ -1000,27 +1026,40 @@ export class BackupValidator extends EventEmitter {
 
   private getImpactDescription(severity: string): string {
     switch (severity) {
-      case 'critical': return 'May cause data loss or corruption during restore';
-      case 'high': return 'May cause restore failures or data inconsistencies';
-      case 'medium': return 'May cause performance issues or minor data problems';
-      case 'low': return 'May cause minor performance or usability issues';
-      default: return 'Unknown impact';
+      case 'critical':
+        return 'May cause data loss or corruption during restore';
+      case 'high':
+        return 'May cause restore failures or data inconsistencies';
+      case 'medium':
+        return 'May cause performance issues or minor data problems';
+      case 'low':
+        return 'May cause minor performance or usability issues';
+      default:
+        return 'Unknown impact';
     }
   }
 
-  private generateRecommendations(results: ValidationRuleResult[], summary: ValidationSummary): string[] {
+  private generateRecommendations(
+    results: ValidationRuleResult[],
+    summary: ValidationSummary
+  ): string[] {
     const recommendations: string[] = [];
 
     if (summary.criticalIssues > 0) {
-      recommendations.push('Address all critical issues before using this backup for restore operations');
+      recommendations.push(
+        'Address all critical issues before using this backup for restore operations'
+      );
     }
 
     if (summary.failedChecks > summary.passedChecks) {
       recommendations.push('Consider recreating this backup due to multiple validation failures');
     }
 
-    if (summary.timeToValidate > 300000) { // > 5 minutes
-      recommendations.push('Validation time is excessive - consider optimizing backup size or validation rules');
+    if (summary.timeToValidate > 300000) {
+      // > 5 minutes
+      recommendations.push(
+        'Validation time is excessive - consider optimizing backup size or validation rules'
+      );
     }
 
     if (summary.dataIntegrityScore < 80) {
@@ -1047,33 +1086,33 @@ export function createDefaultValidationConfig(): ValidationConfig {
     enableIntegrityChecks: true,
     enableChecksumValidation: true,
     enableRestoreValidation: false, // Expensive, enable only when needed
-    validationSamplePercent: 100,   // Validate everything by default
+    validationSamplePercent: 100, // Validate everything by default
     performance: {
-      maxValidationTime: 300,       // 5 minutes
+      maxValidationTime: 300, // 5 minutes
       enableParallelValidation: false,
-      maxConcurrentValidations: 1
+      maxConcurrentValidations: 1,
     },
-    rules: StandardValidationRules.getAllStandardRules()
+    rules: StandardValidationRules.getAllStandardRules(),
   };
 }
 
 export function createQuickValidationConfig(): ValidationConfig {
   const config = createDefaultValidationConfig();
-  
+
   // Disable expensive checks for quick validation
-  config.rules = config.rules.filter(r => 
-    r.type === 'checksum' || r.type === 'size' || r.severity === 'critical'
+  config.rules = config.rules.filter(
+    r => r.type === 'checksum' || r.type === 'size' || r.severity === 'critical'
   );
-  
+
   config.performance.maxValidationTime = 60; // 1 minute
-  config.validationSamplePercent = 10;       // Sample only
-  
+  config.validationSamplePercent = 10; // Sample only
+
   return config;
 }
 
 export function formatValidationReport(result: ValidationResult): string {
   const { summary, report } = result;
-  
+
   const lines = [
     '='.repeat(60),
     `BACKUP VALIDATION REPORT`,
@@ -1092,7 +1131,7 @@ export function formatValidationReport(result: ValidationResult): string {
     `  Critical Issues: ${summary.criticalIssues}`,
     `  Data Integrity Score: ${summary.dataIntegrityScore}%`,
     `  Reliability Score: ${summary.reliabilityScore}%`,
-    ``
+    ``,
   ];
 
   if (report.errors.length > 0) {

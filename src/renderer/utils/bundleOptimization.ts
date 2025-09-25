@@ -91,30 +91,42 @@ export class LazyLoader {
     }
 
     return function LazyComponentWrapper(props: React.ComponentProps<T>) {
-      const fallbackComponent = Fallback ?
-        React.createElement(Fallback) :
-        React.createElement('div', {
-          className: 'lazy-loading-fallback',
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '200px',
-            fontSize: '0.875rem',
-            color: '#6b7280',
-          }
-        }, 'Loading component...');
+      const fallbackComponent = Fallback
+        ? React.createElement(Fallback)
+        : React.createElement(
+            'div',
+            {
+              className: 'lazy-loading-fallback',
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: '200px',
+                fontSize: '0.875rem',
+                color: '#6b7280',
+              },
+            },
+            'Loading component...'
+          );
 
       if (ErrorBoundary) {
-        return React.createElement(ErrorBoundary, {
-          error: new Error('Component failed to load'),
-          retry: () => window.location.reload()
-        }, React.createElement(Suspense, { fallback: fallbackComponent },
-          React.createElement(LazyComponent, props)
-        ));
+        return React.createElement(
+          ErrorBoundary,
+          {
+            error: new Error('Component failed to load'),
+            retry: () => window.location.reload(),
+          },
+          React.createElement(
+            Suspense,
+            { fallback: fallbackComponent },
+            React.createElement(LazyComponent, props)
+          )
+        );
       }
 
-      return React.createElement(Suspense, { fallback: fallbackComponent },
+      return React.createElement(
+        Suspense,
+        { fallback: fallbackComponent },
         React.createElement(LazyComponent, props)
       );
     };
@@ -160,9 +172,12 @@ export class LazyLoader {
           preloadPromises.push(this.preloadComponent(importFn));
         } else {
           // Delay lower priority preloads
-          setTimeout(() => {
-            this.preloadComponent(importFn);
-          }, strategy.priority === 'medium' ? 2000 : 5000);
+          setTimeout(
+            () => {
+              this.preloadComponent(importFn);
+            },
+            strategy.priority === 'medium' ? 2000 : 5000
+          );
         }
       }
     }
@@ -245,7 +260,8 @@ export class BundleAnalyzer {
     const recommendations: string[] = [];
 
     // Check total bundle size
-    if (analysis.totalSize > 2 * 1024 * 1024) { // 2MB
+    if (analysis.totalSize > 2 * 1024 * 1024) {
+      // 2MB
       recommendations.push('Consider implementing more aggressive code splitting');
     }
 
@@ -257,8 +273,11 @@ export class BundleAnalyzer {
 
     // Check for large chunks
     for (const module of analysis.largeModules) {
-      if (module.size > 500 * 1024) { // 500KB
-        recommendations.push(`Consider splitting large module: ${module.name} (${this.formatBytes(module.size)})`);
+      if (module.size > 500 * 1024) {
+        // 500KB
+        recommendations.push(
+          `Consider splitting large module: ${module.name} (${this.formatBytes(module.size)})`
+        );
       }
     }
 
@@ -279,7 +298,7 @@ export class BundleAnalyzer {
     if (bytes === 0) return '0 Bytes';
 
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   }
 }
 
@@ -293,11 +312,13 @@ export class ResourcePreloader {
   /**
    * Preload critical resources
    */
-  static preloadCriticalResources(resources: Array<{
-    href: string;
-    as: 'script' | 'style' | 'font' | 'image';
-    crossOrigin?: 'anonymous' | 'use-credentials';
-  }>): void {
+  static preloadCriticalResources(
+    resources: Array<{
+      href: string;
+      as: 'script' | 'style' | 'font' | 'image';
+      crossOrigin?: 'anonymous' | 'use-credentials';
+    }>
+  ): void {
     for (const resource of resources) {
       if (this.preloadedResources.has(resource.href)) {
         continue;
@@ -414,7 +435,9 @@ export class DynamicImporter {
         lastError = error as Error;
 
         if (i < retries) {
-          console.warn(`Import failed for ${modulePath}, retrying... (${retries - i} attempts left)`);
+          console.warn(
+            `Import failed for ${modulePath}, retrying... (${retries - i} attempts left)`
+          );
           await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
         }
       }
@@ -460,7 +483,7 @@ export class SmartLoader {
     }
 
     this.intersectionObserver = new IntersectionObserver(
-      (entries) => {
+      entries => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
             const target = entry.target as HTMLElement;
@@ -485,10 +508,7 @@ export class SmartLoader {
   /**
    * Load component when element enters viewport
    */
-  static loadOnVisible(
-    element: HTMLElement,
-    loadFn: () => Promise<void>
-  ): void {
+  static loadOnVisible(element: HTMLElement, loadFn: () => Promise<void>): void {
     if (!this.intersectionObserver) {
       // Fallback to immediate loading
       loadFn();
@@ -560,21 +580,13 @@ export const bundleOptimizationConfig = {
   ],
 
   // Resources to prefetch for future navigation
-  prefetchResources: [
-    '/js/dashboard.chunk.js',
-    '/js/settings.chunk.js',
-  ],
+  prefetchResources: ['/js/dashboard.chunk.js', '/js/settings.chunk.js'],
 
   // External domains to preconnect
-  preconnectDomains: [
-    'https://fonts.googleapis.com',
-    'https://api.example.com',
-  ],
+  preconnectDomains: ['https://fonts.googleapis.com', 'https://api.example.com'],
 
   // DNS prefetch domains
-  dnsPrefetchDomains: [
-    'https://cdn.example.com',
-  ],
+  dnsPrefetchDomains: ['https://cdn.example.com'],
 
   // Component preload strategies
   preloadStrategies: [
@@ -600,13 +612,7 @@ if (typeof window !== 'undefined') {
 // Export utilities
 // ===========================================
 
-export {
-  LazyLoader,
-  BundleAnalyzer,
-  ResourcePreloader,
-  DynamicImporter,
-  SmartLoader,
-};
+export { LazyLoader, BundleAnalyzer, ResourcePreloader, DynamicImporter, SmartLoader };
 
 export default {
   LazyLoader,

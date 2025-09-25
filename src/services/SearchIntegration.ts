@@ -42,7 +42,7 @@ export class SearchIntegration {
       this.geminiService = new GeminiService({
         apiKey: config.geminiApiKey,
         model: 'gemini-pro',
-        temperature: 0.3
+        temperature: 0.3,
       });
     }
 
@@ -55,8 +55,8 @@ export class SearchIntegration {
       performance: {
         searchTimeout: config?.performanceTargets?.maxResponseTime || 800,
         maxConcurrentSearches: 10,
-        circuitBreakerThreshold: 0.5
-      }
+        circuitBreakerThreshold: 0.5,
+      },
     });
 
     // Initialize Cache Manager
@@ -64,44 +64,38 @@ export class SearchIntegration {
       l1Config: {
         maxSize: 1000,
         ttl: 300000, // 5 minutes
-        algorithm: 'lru'
+        algorithm: 'lru',
       },
       l2Config: {
         maxSize: 10000,
         ttl: 3600000, // 1 hour
-        persistent: true
+        persistent: true,
       },
       l3Config: {
         enabled: true,
         path: './cache/search',
-        maxSize: 100000
-      }
+        maxSize: 100000,
+      },
     });
 
     // Initialize Cache Warming Engine
-    this.warmingEngine = new CacheWarmingEngine(
-      this.cacheManager,
-      {
-        predictive: true,
-        preemptive: true,
-        scheduled: true
-      }
-    );
+    this.warmingEngine = new CacheWarmingEngine(this.cacheManager, {
+      predictive: true,
+      preemptive: true,
+      scheduled: true,
+    });
 
     // Initialize Monitoring
     this.monitor = new MonitoringOrchestrator({
-      enabledComponents: config?.monitoringEnabled !== false ? [
-        'performance',
-        'dashboard',
-        'alerting',
-        'logging',
-        'profiling'
-      ] : [],
+      enabledComponents:
+        config?.monitoringEnabled !== false
+          ? ['performance', 'dashboard', 'alerting', 'logging', 'profiling']
+          : [],
       performanceTargets: {
         responseTime: config?.performanceTargets?.maxResponseTime || 1000,
         cacheHitRate: config?.performanceTargets?.minCacheHitRate || 0.8,
-        errorRate: config?.performanceTargets?.maxErrorRate || 0.01
-      }
+        errorRate: config?.performanceTargets?.maxErrorRate || 0.01,
+      },
     });
   }
 
@@ -114,13 +108,13 @@ export class SearchIntegration {
     try {
       // Load knowledge base entries
       const entries = await this.knowledgeDB.getAllEntries();
-      
+
       // Initialize search engine with entries
       await this.searchEngine.initialize(entries);
 
       // Start cache warming
       await this.warmingEngine.initialize();
-      
+
       // Warm up popular queries
       const popularQueries = await this.knowledgeDB.getPopularQueries(20);
       for (const query of popularQueries) {
@@ -181,14 +175,14 @@ export class SearchIntegration {
       // Check cache first
       const cacheKey = this.generateCacheKey(query, options);
       const cachedResult = await this.cacheManager.get(cacheKey);
-      
+
       if (cachedResult) {
         const responseTime = performance.now() - startTime;
         this.monitor.recordSearchComplete(searchId, {
           responseTime,
           resultCount: cachedResult.results.length,
           cacheHit: true,
-          searchType: 'cached'
+          searchType: 'cached',
         });
 
         return {
@@ -197,8 +191,8 @@ export class SearchIntegration {
             responseTime,
             totalResults: cachedResult.results.length,
             cacheHit: true,
-            searchType: 'cached'
-          }
+            searchType: 'cached',
+          },
         };
       }
 
@@ -215,7 +209,7 @@ export class SearchIntegration {
         searchType = 'fuzzy';
         results = await this.searchEngine.search(query, {
           ...options,
-          fuzzyThreshold: 0.7
+          fuzzyThreshold: 0.7,
         });
       } else {
         // Standard search
@@ -236,10 +230,14 @@ export class SearchIntegration {
       const limitedResults = results.slice(0, options?.limit || 20);
 
       // Cache the results
-      await this.cacheManager.set(cacheKey, {
-        results: limitedResults,
-        timestamp: Date.now()
-      }, 300000); // 5 minute TTL
+      await this.cacheManager.set(
+        cacheKey,
+        {
+          results: limitedResults,
+          timestamp: Date.now(),
+        },
+        300000
+      ); // 5 minute TTL
 
       // Record metrics
       const responseTime = performance.now() - startTime;
@@ -247,7 +245,7 @@ export class SearchIntegration {
         responseTime,
         resultCount: limitedResults.length,
         cacheHit: false,
-        searchType
+        searchType,
       });
 
       // Ensure <1s response time
@@ -256,7 +254,7 @@ export class SearchIntegration {
         this.monitor.triggerAlert('slow_search', {
           query,
           responseTime,
-          searchType
+          searchType,
         });
       }
 
@@ -266,25 +264,25 @@ export class SearchIntegration {
           responseTime,
           totalResults: results.length,
           cacheHit: false,
-          searchType
-        }
+          searchType,
+        },
       };
     } catch (error) {
       const responseTime = performance.now() - startTime;
       this.monitor.recordSearchError(searchId, error);
-      
+
       // Fallback to basic search
       console.error('Search error, falling back to basic search:', error);
       const fallbackResults = await this.knowledgeDB.search(query, options?.limit || 20);
-      
+
       return {
         results: fallbackResults,
         metrics: {
           responseTime,
           totalResults: fallbackResults.length,
           cacheHit: false,
-          searchType: 'fallback'
-        }
+          searchType: 'fallback',
+        },
       };
     }
   }
@@ -299,16 +297,16 @@ export class SearchIntegration {
 
     // Get all entries for semantic matching
     const allEntries = await this.knowledgeDB.getAllEntries();
-    
+
     // Use Gemini to find semantically similar entries
     const semanticResults = await this.geminiService.findSimilar(query, allEntries);
-    
+
     // Combine with standard search results for hybrid approach
     const standardResults = await this.searchEngine.search(query, options);
-    
+
     // Merge and deduplicate results
     const mergedResults = this.mergeSearchResults(semanticResults, standardResults);
-    
+
     return mergedResults;
   }
 
@@ -320,21 +318,21 @@ export class SearchIntegration {
       if (filters.category && result.category !== filters.category) {
         return false;
       }
-      
+
       if (filters.tags && filters.tags.length > 0) {
         const resultTags = result.tags || [];
         if (!filters.tags.some((tag: string) => resultTags.includes(tag))) {
           return false;
         }
       }
-      
+
       if (filters.dateRange) {
         const resultDate = new Date(result.updated_at || result.created_at);
         if (resultDate < filters.dateRange.start || resultDate > filters.dateRange.end) {
           return false;
         }
       }
-      
+
       return true;
     });
   }
@@ -344,7 +342,7 @@ export class SearchIntegration {
    */
   private sortResults(results: any[], sortBy: string): any[] {
     const sorted = [...results];
-    
+
     switch (sortBy) {
       case 'date':
         return sorted.sort((a, b) => {
@@ -352,14 +350,14 @@ export class SearchIntegration {
           const dateB = new Date(b.updated_at || b.created_at).getTime();
           return dateB - dateA;
         });
-        
+
       case 'popularity':
         return sorted.sort((a, b) => {
           const popA = (a.usage_count || 0) * (a.success_rate || 0);
           const popB = (b.usage_count || 0) * (b.success_rate || 0);
           return popB - popA;
         });
-        
+
       case 'relevance':
       default:
         // Already sorted by relevance from search engine
@@ -372,15 +370,15 @@ export class SearchIntegration {
    */
   private mergeSearchResults(semantic: any[], standard: any[]): any[] {
     const merged = new Map();
-    
+
     // Add semantic results with boost
     semantic.forEach(result => {
       merged.set(result.id, {
         ...result,
-        score: (result.score || 0) * 1.2 // Boost semantic matches
+        score: (result.score || 0) * 1.2, // Boost semantic matches
       });
     });
-    
+
     // Add standard results
     standard.forEach(result => {
       if (!merged.has(result.id)) {
@@ -390,11 +388,11 @@ export class SearchIntegration {
         const existing = merged.get(result.id);
         merged.set(result.id, {
           ...existing,
-          score: (existing.score + result.score) / 2
+          score: (existing.score + result.score) / 2,
         });
       }
     });
-    
+
     // Sort by combined score
     return Array.from(merged.values()).sort((a, b) => b.score - a.score);
   }
@@ -419,10 +417,10 @@ export class SearchIntegration {
 
     // Get suggestions from search engine
     const suggestions = await this.searchEngine.getSuggestions(prefix);
-    
+
     // Cache for 1 minute
     await this.cacheManager.set(cacheKey, suggestions.slice(0, limit), 60000);
-    
+
     return suggestions.slice(0, limit);
   }
 
@@ -434,7 +432,7 @@ export class SearchIntegration {
       performance: await this.monitor.getPerformanceMetrics(),
       cache: await this.cacheManager.getStatistics(),
       popular: await this.knowledgeDB.getPopularQueries(10),
-      metrics: await this.monitor.getBusinessMetrics()
+      metrics: await this.monitor.getBusinessMetrics(),
     };
   }
 
@@ -455,7 +453,7 @@ export class SearchIntegration {
     const checks = await Promise.all([
       this.searchEngine.healthCheck(),
       this.cacheManager.healthCheck(),
-      this.monitor.healthCheck()
+      this.monitor.healthCheck(),
     ]);
 
     const allHealthy = checks.every(c => c.status === 'healthy');
@@ -466,8 +464,8 @@ export class SearchIntegration {
       details: {
         searchEngine: checks[0],
         cache: checks[1],
-        monitoring: checks[2]
-      }
+        monitoring: checks[2],
+      },
     };
   }
 
@@ -491,7 +489,7 @@ export const searchService = new SearchIntegration({
   monitoringEnabled: true,
   performanceTargets: {
     maxResponseTime: 1000, // <1s guarantee
-    minCacheHitRate: 0.8,  // 80% cache hit target
-    maxErrorRate: 0.01     // <1% error rate
-  }
+    minCacheHitRate: 0.8, // 80% cache hit target
+    maxErrorRate: 0.01, // <1% error rate
+  },
 });

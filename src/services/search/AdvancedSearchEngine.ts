@@ -114,12 +114,12 @@ export class AdvancedSearchEngine {
   private fuzzyMatcher: FuzzyMatcher;
   private rankingEngine: RankingEngine;
   private cache: SearchCache;
-  
+
   private config: SearchEngineConfig;
   private isInitialized = false;
   private searchQueue: Array<{ resolve: Function; reject: Function; operation: Function }> = [];
   private activeSearches = 0;
-  
+
   // Performance monitoring
   private metrics = {
     totalSearches: 0,
@@ -127,7 +127,7 @@ export class AdvancedSearchEngine {
     cacheHitRate: 0,
     errorRate: 0,
     indexSize: 0,
-    lastIndexUpdate: 0
+    lastIndexUpdate: 0,
   };
 
   constructor(config?: Partial<SearchEngineConfig>) {
@@ -142,7 +142,7 @@ export class AdvancedSearchEngine {
         searchTimeout: 800, // Leave 200ms buffer
         maxConcurrentSearches: 10,
         memoryThreshold: 512 * 1024 * 1024, // 512MB
-        optimizationLevel: 'balanced'
+        optimizationLevel: 'balanced',
       },
       features: {
         semanticSearch: true,
@@ -150,9 +150,9 @@ export class AdvancedSearchEngine {
         spellCorrection: true,
         queryExpansion: false,
         resultClustering: false,
-        personalizedRanking: false
+        personalizedRanking: false,
       },
-      ...config
+      ...config,
     };
 
     this.initializeComponents();
@@ -163,25 +163,24 @@ export class AdvancedSearchEngine {
    */
   async initialize(entries: KBEntry[]): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`Initializing search engine with ${entries.length} entries...`);
-      
+
       // Build inverted index
       await this.index.buildIndex(entries);
-      
+
       // Warm up cache with popular terms
       if (this.config.cacheEnabled) {
         await this.warmUpCache(entries);
       }
-      
+
       this.isInitialized = true;
       this.metrics.indexSize = entries.length;
       this.metrics.lastIndexUpdate = Date.now();
-      
+
       const initTime = Date.now() - startTime;
       console.log(`Search engine initialized in ${initTime}ms`);
-      
     } catch (error) {
       throw new ServiceError(
         `Failed to initialize search engine: ${error.message}`,
@@ -196,12 +195,12 @@ export class AdvancedSearchEngine {
    * Perform comprehensive search with all features
    */
   async search(
-    query: string, 
-    options: SearchOptions = {}, 
+    query: string,
+    options: SearchOptions = {},
     context: SearchContext = {}
   ): Promise<SearchResponse> {
     const startTime = Date.now();
-    
+
     // Validate initialization
     if (!this.isInitialized) {
       throw new SearchError('Search engine not initialized', query);
@@ -219,7 +218,7 @@ export class AdvancedSearchEngine {
     }
 
     this.activeSearches++;
-    
+
     try {
       return await this.executeSearchWithTimeout(query, options, context, timeout);
     } finally {
@@ -246,10 +245,10 @@ export class AdvancedSearchEngine {
 
       // Generate suggestions
       const suggestions = this.index.findTermsWithPrefix(prefix, limit);
-      
+
       // Cache results
       await this.cache.set(cacheKey, suggestions, 300000); // 5 minutes
-      
+
       return suggestions;
     } catch (error) {
       console.error('Suggestion generation failed:', error);
@@ -268,13 +267,13 @@ export class AdvancedSearchEngine {
     try {
       const terms = this.textProcessor.tokenizeQuery(query);
       const corrections: string[] = [];
-      
+
       // Get vocabulary from index
       const vocabulary = Array.from(this.index.findTermsWithPrefix('', 10000));
-      
+
       for (const term of terms) {
         if (vocabulary.includes(term)) continue;
-        
+
         const suggestions = this.fuzzyMatcher.suggest(term, vocabulary, 3);
         if (suggestions.length > 0) {
           corrections.push(suggestions[0]);
@@ -282,7 +281,7 @@ export class AdvancedSearchEngine {
           corrections.push(term);
         }
       }
-      
+
       return corrections.length > 0 ? [corrections.join(' ')] : [];
     } catch (error) {
       console.error('Spell correction failed:', error);
@@ -295,10 +294,10 @@ export class AdvancedSearchEngine {
    */
   async addDocument(entry: KBEntry): Promise<void> {
     await this.index.addDocument(entry);
-    
+
     // Invalidate related cache entries
     await this.cache.deletePattern(`*${entry.id}*`);
-    
+
     this.metrics.indexSize++;
     this.metrics.lastIndexUpdate = Date.now();
   }
@@ -308,15 +307,15 @@ export class AdvancedSearchEngine {
    */
   async removeDocument(docId: string): Promise<boolean> {
     const removed = await this.index.removeDocument(docId);
-    
+
     if (removed) {
       // Invalidate related cache entries
       await this.cache.deletePattern(`*${docId}*`);
-      
+
       this.metrics.indexSize--;
       this.metrics.lastIndexUpdate = Date.now();
     }
-    
+
     return removed;
   }
 
@@ -328,7 +327,7 @@ export class AdvancedSearchEngine {
     const cacheStats = this.cache.getStats();
     const processorStats = this.textProcessor.getStats();
     const rankingStats = this.rankingEngine.getStats();
-    
+
     return {
       engine: this.metrics,
       index: indexStats,
@@ -339,8 +338,8 @@ export class AdvancedSearchEngine {
         initialized: this.isInitialized,
         activeSearches: this.activeSearches,
         queueLength: this.searchQueue.length,
-        memoryUsage: process.memoryUsage?.() || {}
-      }
+        memoryUsage: process.memoryUsage?.() || {},
+      },
     };
   }
 
@@ -349,15 +348,15 @@ export class AdvancedSearchEngine {
    */
   async optimize(): Promise<void> {
     console.log('Optimizing search engine...');
-    
+
     // Clear caches
     await this.cache.clear();
     this.fuzzyMatcher.clearCache();
     this.rankingEngine.clearCache();
-    
+
     // Optimize index
     await this.index.optimizeIndex();
-    
+
     console.log('Search engine optimization completed');
   }
 
@@ -366,18 +365,18 @@ export class AdvancedSearchEngine {
    */
   async shutdown(): Promise<void> {
     console.log('Shutting down search engine...');
-    
+
     this.isInitialized = false;
-    
+
     // Complete pending searches
     while (this.searchQueue.length > 0) {
       const { reject } = this.searchQueue.shift()!;
       reject(new SearchError('Search engine shutting down', ''));
     }
-    
+
     // Cleanup components
     await this.cache.close();
-    
+
     console.log('Search engine shutdown completed');
   }
 
@@ -393,7 +392,7 @@ export class AdvancedSearchEngine {
     this.rankingEngine = new RankingEngine();
     this.cache = new SearchCache({
       maxSize: 50 * 1024 * 1024, // 50MB
-      defaultTTL: 300000 // 5 minutes
+      defaultTTL: 300000, // 5 minutes
     });
   }
 
@@ -433,7 +432,7 @@ export class AdvancedSearchEngine {
       resultCount: 0,
       cacheHit: false,
       algorithm: this.config.rankingAlgorithm,
-      optimizations: []
+      optimizations: [],
     };
 
     try {
@@ -441,7 +440,7 @@ export class AdvancedSearchEngine {
       if (this.config.cacheEnabled) {
         const cacheKey = this.cache.generateQueryCacheKey(query, options);
         const cached = await this.cache.get<SearchResponse>(cacheKey);
-        
+
         if (cached) {
           metrics.cacheHit = true;
           metrics.totalTime = Date.now() - startTime;
@@ -455,20 +454,16 @@ export class AdvancedSearchEngine {
       const queryStart = Date.now();
       const parsedQuery = this.queryParser.parse(query, {
         defaultOperator: 'OR',
-        fuzzyDistance: this.config.fuzzyEnabled ? 2 : 0
+        fuzzyDistance: this.config.fuzzyEnabled ? 2 : 0,
       });
       metrics.queryTime = Date.now() - queryStart;
 
       // Extract search terms
       const searchTerms = this.queryParser.extractSearchTerms(parsedQuery);
-      
+
       // Get posting lists from index
       const indexStart = Date.now();
-      const allTerms = [
-        ...searchTerms.required,
-        ...searchTerms.optional,
-        ...searchTerms.phrases
-      ];
+      const allTerms = [...searchTerms.required, ...searchTerms.optional, ...searchTerms.phrases];
       const postingLists = this.index.search(allTerms);
       metrics.indexTime = Date.now() - indexStart;
 
@@ -480,18 +475,17 @@ export class AdvancedSearchEngine {
       // Rank documents
       const rankingStart = Date.now();
       const collection = {
-        documents: new Map(Array.from(this.index.getStats().totalDocuments).map(doc => [doc.id, doc])),
+        documents: new Map(
+          Array.from(this.index.getStats().totalDocuments).map(doc => [doc.id, doc])
+        ),
         totalDocuments: this.index.getStats().totalDocuments,
         averageDocumentLength: this.index.getStats().averageDocumentLength,
-        fieldAverageLength: {}
+        fieldAverageLength: {},
       };
-      
-      const rankings = this.rankingEngine.rankDocuments(
-        parsedQuery,
-        postingLists,
-        collection,
-        { algorithm: this.config.rankingAlgorithm }
-      );
+
+      const rankings = this.rankingEngine.rankDocuments(parsedQuery, postingLists, collection, {
+        algorithm: this.config.rankingAlgorithm,
+      });
       metrics.rankingTime = Date.now() - rankingStart;
 
       // Convert rankings to search results
@@ -499,13 +493,9 @@ export class AdvancedSearchEngine {
       metrics.resultCount = results.length;
 
       // Generate suggestions and corrections
-      const suggestions = this.config.features.autoComplete 
-        ? await this.suggest(query, 5) 
-        : [];
-      
-      const corrections = this.config.features.spellCorrection 
-        ? await this.correct(query) 
-        : [];
+      const suggestions = this.config.features.autoComplete ? await this.suggest(query, 5) : [];
+
+      const corrections = this.config.features.spellCorrection ? await this.correct(query) : [];
 
       // Build response
       const response: SearchResponse = {
@@ -520,17 +510,17 @@ export class AdvancedSearchEngine {
           processingTime: Date.now() - startTime,
           resultWindow: {
             offset: options.offset || 0,
-            limit: options.limit || this.config.maxResults
+            limit: options.limit || this.config.maxResults,
           },
           sortBy: options.sortBy || 'relevance',
-          filters: {}
+          filters: {},
         },
         metrics,
-        context
+        context,
       };
 
       metrics.totalTime = Date.now() - startTime;
-      
+
       // Cache successful results
       if (this.config.cacheEnabled && results.length > 0) {
         const cacheKey = this.cache.generateQueryCacheKey(query, options);
@@ -539,12 +529,11 @@ export class AdvancedSearchEngine {
 
       this.updateMetrics(metrics);
       return response;
-
     } catch (error) {
       this.metrics.errorRate++;
       throw new SearchError(`Search execution failed: ${error.message}`, query, {
         originalError: error,
-        metrics
+        metrics,
       });
     }
   }
@@ -557,10 +546,10 @@ export class AdvancedSearchEngine {
     const results: SearchResult[] = [];
     const limit = Math.min(options.limit || this.config.maxResults, this.config.maxResults);
     const offset = options.offset || 0;
-    
+
     for (let i = offset; i < Math.min(offset + limit, rankings.length); i++) {
       const ranking = rankings[i];
-      
+
       // Get document from index
       const doc = this.index.getDocument(ranking.docId);
       if (!doc) continue;
@@ -577,7 +566,7 @@ export class AdvancedSearchEngine {
         updated_at: new Date(doc.lastModified),
         usage_count: 0,
         success_count: 0,
-        failure_count: 0
+        failure_count: 0,
       };
 
       results.push({
@@ -589,34 +578,34 @@ export class AdvancedSearchEngine {
           processingTime: 0,
           source: 'database',
           confidence: ranking.score / 100,
-          fallback: false
-        }
+          fallback: false,
+        },
       });
     }
-    
+
     return results;
   }
 
   private async generateFacets(results: SearchResult[]): Promise<SearchFacet[]> {
     const facets: SearchFacet[] = [];
-    
+
     // Category facet
     const categoryCount = new Map<string, number>();
     for (const result of results) {
       const category = result.entry.category;
       categoryCount.set(category, (categoryCount.get(category) || 0) + 1);
     }
-    
+
     if (categoryCount.size > 1) {
       facets.push({
         field: 'category',
         values: Array.from(categoryCount.entries()).map(([value, count]) => ({
           value,
-          count
-        }))
+          count,
+        })),
       });
     }
-    
+
     return facets;
   }
 
@@ -639,53 +628,51 @@ export class AdvancedSearchEngine {
         processingTime: metrics.totalTime,
         resultWindow: {
           offset: options.offset || 0,
-          limit: options.limit || this.config.maxResults
+          limit: options.limit || this.config.maxResults,
         },
         sortBy: options.sortBy || 'relevance',
-        filters: {}
+        filters: {},
       },
       metrics,
-      context
+      context,
     };
   }
 
   private async warmUpCache(entries: KBEntry[]): Promise<void> {
     // Extract popular terms for cache warming
     const termFrequency = new Map<string, number>();
-    
+
     for (const entry of entries) {
       const tokens = this.textProcessor.processText(
         `${entry.title} ${entry.problem} ${entry.solution}`
       );
-      
+
       for (const token of tokens) {
-        termFrequency.set(
-          token.stemmed, 
-          (termFrequency.get(token.stemmed) || 0) + 1
-        );
+        termFrequency.set(token.stemmed, (termFrequency.get(token.stemmed) || 0) + 1);
       }
     }
-    
+
     // Get top 100 most frequent terms
     const popularTerms = Array.from(termFrequency.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 100)
       .map(([term]) => term);
-    
+
     await this.cache.warmCache({
       popularQueries: popularTerms,
       recentSearches: [],
-      predictedTerms: popularTerms
+      predictedTerms: popularTerms,
     });
   }
 
   private updateMetrics(searchMetrics: SearchMetrics): void {
     this.metrics.totalSearches++;
-    
+
     // Update average response time
     const total = this.metrics.averageResponseTime * (this.metrics.totalSearches - 1);
-    this.metrics.averageResponseTime = (total + searchMetrics.totalTime) / this.metrics.totalSearches;
-    
+    this.metrics.averageResponseTime =
+      (total + searchMetrics.totalTime) / this.metrics.totalSearches;
+
     // Update cache hit rate
     const cacheStats = this.cache.getStats();
     this.metrics.cacheHitRate = cacheStats.hitRate;
@@ -700,18 +687,19 @@ export class AdvancedSearchEngine {
       this.searchQueue.push({
         resolve,
         reject,
-        operation: () => this.executeSearch(query, options, context)
+        operation: () => this.executeSearch(query, options, context),
       });
     });
   }
 
   private processQueue(): void {
-    if (this.searchQueue.length > 0 && 
-        this.activeSearches < this.config.performance.maxConcurrentSearches) {
-      
+    if (
+      this.searchQueue.length > 0 &&
+      this.activeSearches < this.config.performance.maxConcurrentSearches
+    ) {
       const { resolve, reject, operation } = this.searchQueue.shift()!;
       this.activeSearches++;
-      
+
       operation()
         .then(resolve)
         .catch(reject)

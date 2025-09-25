@@ -53,7 +53,7 @@ describe('Database Error Recovery Tests', () => {
       // Create a valid database first
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
-        enableWAL: false
+        enableWAL: false,
       });
 
       kb = new KnowledgeDB(testDbPath);
@@ -72,7 +72,7 @@ describe('Database Error Recovery Tests', () => {
       try {
         dbManager = await TestDatabaseFactory.createTestDatabaseManager({
           path: testDbPath,
-          enableWAL: false
+          enableWAL: false,
         });
       } catch (error) {
         corruptionDetected = true;
@@ -95,7 +95,7 @@ describe('Database Error Recovery Tests', () => {
     it('should recover from backup when corruption detected', async () => {
       // Create database with data
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       kb = new KnowledgeDB(testDbPath);
@@ -107,7 +107,7 @@ describe('Database Error Recovery Tests', () => {
       // Create backup
       const backupManager = new BackupManager(testDbPath, {
         backupDir: path.join(__dirname, '..', 'temp', 'backups'),
-        retentionDays: 7
+        retentionDays: 7,
       });
 
       const backupPath = await backupManager.createBackup();
@@ -123,7 +123,7 @@ describe('Database Error Recovery Tests', () => {
 
       // Verify recovery
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
       kb = new KnowledgeDB(testDbPath);
 
@@ -136,12 +136,12 @@ describe('Database Error Recovery Tests', () => {
 
     it('should handle partial corruption gracefully', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       kb = new KnowledgeDB(testDbPath);
       const testEntries = TestDatabaseFactory.createTestKBEntries();
-      
+
       // Add entries in transaction to ensure atomicity
       await dbManager.transaction(async () => {
         for (const entry of testEntries) {
@@ -150,7 +150,7 @@ describe('Database Error Recovery Tests', () => {
       });
 
       const originalCount = await kb.getEntryCount();
-      
+
       // Simulate partial corruption by writing invalid data to the end of the file
       kb.close();
       await dbManager.shutdown();
@@ -162,14 +162,14 @@ describe('Database Error Recovery Tests', () => {
       // Try to recover
       try {
         dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-          path: testDbPath
+          path: testDbPath,
         });
         kb = new KnowledgeDB(testDbPath);
 
         // SQLite might be able to read the valid data before corruption
         const recoveredCount = await kb.getEntryCount();
         expect(recoveredCount).toBeGreaterThanOrEqual(0);
-        
+
         // If some data is recoverable, verify it's consistent
         if (recoveredCount > 0) {
           const searchResults = await kb.search('test');
@@ -185,7 +185,7 @@ describe('Database Error Recovery Tests', () => {
   describe('Transaction Failure Recovery', () => {
     beforeEach(async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
       kb = new KnowledgeDB(testDbPath);
     });
@@ -199,11 +199,11 @@ describe('Database Error Recovery Tests', () => {
         await dbManager.transaction(async () => {
           // Add entry
           await kb.addEntry(testEntry, 'test-user');
-          
+
           // Verify entry was added within transaction
           const midTransactionCount = await kb.getEntryCount();
           expect(midTransactionCount).toBe(initialCount + 1);
-          
+
           // Force transaction to fail
           throw new Error('Simulated transaction failure');
         });
@@ -226,14 +226,14 @@ describe('Database Error Recovery Tests', () => {
     it('should handle nested transaction failures', async () => {
       const entry1 = TestDatabaseFactory.createTestKBEntries()[0];
       const entry2 = TestDatabaseFactory.createTestKBEntries()[1];
-      
+
       const initialCount = await kb.getEntryCount();
 
       let outerTransactionError: Error | null = null;
       try {
         await dbManager.transaction(async () => {
           await kb.addEntry(entry1, 'test-user');
-          
+
           try {
             await dbManager.transaction(async () => {
               await kb.addEntry(entry2, 'test-user');
@@ -243,7 +243,7 @@ describe('Database Error Recovery Tests', () => {
             // Inner transaction failed, but outer should continue
             expect((innerError as Error).message).toBe('Inner transaction failure');
           }
-          
+
           // This should still cause complete rollback
           throw new Error('Outer transaction failure');
         });
@@ -252,7 +252,7 @@ describe('Database Error Recovery Tests', () => {
       }
 
       expect(outerTransactionError!.message).toBe('Outer transaction failure');
-      
+
       // All changes should be rolled back
       const finalCount = await kb.getEntryCount();
       expect(finalCount).toBe(initialCount);
@@ -262,11 +262,11 @@ describe('Database Error Recovery Tests', () => {
       // Add an entry with tags
       const entryWithTags = {
         ...TestDatabaseFactory.createTestKBEntries()[0],
-        tags: ['test-tag-1', 'test-tag-2', 'test-tag-3']
+        tags: ['test-tag-1', 'test-tag-2', 'test-tag-3'],
       };
 
       const entryId = await kb.addEntry(entryWithTags, 'test-user');
-      
+
       // Verify tags were added
       const initialTags = await kb.getTagsForEntry(entryId);
       expect(initialTags).toHaveLength(3);
@@ -274,12 +274,16 @@ describe('Database Error Recovery Tests', () => {
       // Attempt a transaction that modifies both entry and tags, then fails
       try {
         await dbManager.transaction(async () => {
-          await kb.updateEntry(entryId, {
-            ...entryWithTags,
-            title: 'Modified title',
-            tags: ['new-tag-1', 'new-tag-2']
-          }, 'test-user');
-          
+          await kb.updateEntry(
+            entryId,
+            {
+              ...entryWithTags,
+              title: 'Modified title',
+              tags: ['new-tag-1', 'new-tag-2'],
+            },
+            'test-user'
+          );
+
           throw new Error('Transaction failure after modifications');
         });
       } catch (error) {
@@ -289,7 +293,7 @@ describe('Database Error Recovery Tests', () => {
       // Verify original state is preserved
       const recoveredEntry = await kb.getEntryById(entryId);
       expect(recoveredEntry!.title).toBe(entryWithTags.title); // Original title
-      
+
       const recoveredTags = await kb.getTagsForEntry(entryId);
       expect(recoveredTags).toHaveLength(3); // Original tags
       expect(recoveredTags).toEqual(expect.arrayContaining(entryWithTags.tags!));
@@ -298,10 +302,10 @@ describe('Database Error Recovery Tests', () => {
     it('should handle deadlock scenarios', async () => {
       // This is more relevant for databases that support true concurrent transactions
       // For SQLite, we'll simulate concurrent operations that might conflict
-      
+
       const entry1 = TestDatabaseFactory.createTestKBEntries()[0];
       const entry2 = TestDatabaseFactory.createTestKBEntries()[1];
-      
+
       const id1 = await kb.addEntry(entry1, 'user1');
       const id2 = await kb.addEntry(entry2, 'user2');
 
@@ -322,7 +326,7 @@ describe('Database Error Recovery Tests', () => {
 
       // Both operations should complete (SQLite handles this with locking)
       const results = await Promise.allSettled([update1Promise, update2Promise]);
-      
+
       // At least one should succeed
       const successfulResults = results.filter(r => r.status === 'fulfilled');
       expect(successfulResults.length).toBeGreaterThan(0);
@@ -330,7 +334,7 @@ describe('Database Error Recovery Tests', () => {
       // Database should remain consistent
       const finalEntry1 = await kb.getEntryById(id1);
       const finalEntry2 = await kb.getEntryById(id2);
-      
+
       expect(finalEntry1).toBeDefined();
       expect(finalEntry2).toBeDefined();
     });
@@ -341,7 +345,7 @@ describe('Database Error Recovery Tests', () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
         maxConnections: 5,
-        timeout: 1000
+        timeout: 1000,
       });
 
       // Perform initial operations
@@ -356,7 +360,7 @@ describe('Database Error Recovery Tests', () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
         maxConnections: 5,
-        timeout: 1000
+        timeout: 1000,
       });
 
       // Should be able to perform operations again
@@ -371,23 +375,21 @@ describe('Database Error Recovery Tests', () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
         maxConnections: 2, // Very small pool for testing
-        timeout: 1000
+        timeout: 1000,
       });
 
       kb = new KnowledgeDB(testDbPath);
 
       // Create operations that will exhaust connection pool
-      const operations = Array(5).fill(0).map((_, i) => 
-        async () => {
+      const operations = Array(5)
+        .fill(0)
+        .map((_, i) => async () => {
           await TestDatabaseFactory.wait(100); // Hold connection briefly
           return await kb.search(`query ${i}`);
-        }
-      );
+        });
 
       // Run operations concurrently
-      const results = await Promise.allSettled(
-        operations.map(op => op())
-      );
+      const results = await Promise.allSettled(operations.map(op => op()));
 
       // Most operations should succeed despite pool exhaustion
       const successfulOps = results.filter(r => r.status === 'fulfilled');
@@ -402,20 +404,20 @@ describe('Database Error Recovery Tests', () => {
       // Create first database manager
       const dbManager1 = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
-        enableWAL: false // Disable WAL to test locking
+        enableWAL: false, // Disable WAL to test locking
       });
 
       // Create second database manager to same file
       const dbManager2 = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
         enableWAL: false,
-        timeout: 500
+        timeout: 500,
       });
 
       // Both should be able to read
       const result1 = await dbManager1.execute('SELECT 1 as test');
       const result2 = await dbManager2.execute('SELECT 1 as test');
-      
+
       expect(result1[0].test).toBe(1);
       expect(result2[0].test).toBe(1);
 
@@ -429,7 +431,7 @@ describe('Database Error Recovery Tests', () => {
     beforeEach(async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
-        enableForeignKeys: true
+        enableForeignKeys: true,
       });
       kb = new KnowledgeDB(testDbPath);
     });
@@ -440,9 +442,7 @@ describe('Database Error Recovery Tests', () => {
       const entryId = await kb.addEntry(testEntry, 'test-user');
 
       // Try to add usage record with non-existent entry ID
-      await expect(
-        kb.recordUsage('non-existent-entry-id', 'view', 'test-user')
-      ).rejects.toThrow();
+      await expect(kb.recordUsage('non-existent-entry-id', 'view', 'test-user')).rejects.toThrow();
 
       // Verify original entry is unaffected
       const originalEntry = await kb.getEntryById(entryId);
@@ -455,12 +455,10 @@ describe('Database Error Recovery Tests', () => {
         title: 'Test Entry',
         problem: 'Test problem',
         solution: 'Test solution',
-        category: 'INVALID_CATEGORY' // This should violate the check constraint
+        category: 'INVALID_CATEGORY', // This should violate the check constraint
       };
 
-      await expect(
-        kb.addEntry(invalidEntry as any, 'test-user')
-      ).rejects.toThrow();
+      await expect(kb.addEntry(invalidEntry as any, 'test-user')).rejects.toThrow();
 
       // Verify no partial data was inserted
       const count = await kb.getEntryCount();
@@ -478,25 +476,24 @@ describe('Database Error Recovery Tests', () => {
       `);
 
       // Insert initial record
-      await dbManager.execute(
-        'INSERT INTO unique_test (unique_value, other_data) VALUES (?, ?)',
-        ['unique_val', 'data1']
-      );
+      await dbManager.execute('INSERT INTO unique_test (unique_value, other_data) VALUES (?, ?)', [
+        'unique_val',
+        'data1',
+      ]);
 
       // Try to insert duplicate
       await expect(
-        dbManager.execute(
-          'INSERT INTO unique_test (unique_value, other_data) VALUES (?, ?)',
-          ['unique_val', 'data2']
-        )
+        dbManager.execute('INSERT INTO unique_test (unique_value, other_data) VALUES (?, ?)', [
+          'unique_val',
+          'data2',
+        ])
       ).rejects.toThrow(/UNIQUE constraint failed/);
 
       // Verify original record is unchanged
-      const result = await dbManager.execute(
-        'SELECT * FROM unique_test WHERE unique_value = ?',
-        ['unique_val']
-      );
-      
+      const result = await dbManager.execute('SELECT * FROM unique_test WHERE unique_value = ?', [
+        'unique_val',
+      ]);
+
       expect(result).toHaveLength(1);
       expect(result[0].other_data).toBe('data1');
     });
@@ -504,12 +501,15 @@ describe('Database Error Recovery Tests', () => {
     it('should handle not null constraint violations', async () => {
       // Try to add entry with null required field
       await expect(
-        kb.addEntry({
-          title: null,
-          problem: 'Test problem',
-          solution: 'Test solution',
-          category: 'VSAM'
-        } as any, 'test-user')
+        kb.addEntry(
+          {
+            title: null,
+            problem: 'Test problem',
+            solution: 'Test solution',
+            category: 'VSAM',
+          } as any,
+          'test-user'
+        )
       ).rejects.toThrow();
 
       // Verify no data was inserted
@@ -522,9 +522,9 @@ describe('Database Error Recovery Tests', () => {
     it('should handle disk full scenarios gracefully', async () => {
       // This is difficult to test without actually filling disk
       // We'll simulate by testing large data insertions and monitoring behavior
-      
+
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
       kb = new KnowledgeDB(testDbPath);
 
@@ -533,7 +533,7 @@ describe('Database Error Recovery Tests', () => {
         title: 'Large Entry',
         problem: 'A'.repeat(1000000), // 1MB of text
         solution: 'B'.repeat(1000000), // 1MB of text
-        category: 'VSAM'
+        category: 'VSAM',
       };
 
       let insertSucceeded = false;
@@ -548,7 +548,7 @@ describe('Database Error Recovery Tests', () => {
       // Database should remain functional regardless
       const smallEntry = TestDatabaseFactory.createTestKBEntries()[0];
       await kb.addEntry(smallEntry, 'test-user');
-      
+
       const count = await kb.getEntryCount();
       expect(count).toBeGreaterThan(0);
     });
@@ -556,15 +556,15 @@ describe('Database Error Recovery Tests', () => {
     it('should handle file permission errors', async () => {
       // Create database in a temporary location
       const tempDbPath = path.join(__dirname, '..', 'temp', 'permission-test.db');
-      
+
       try {
         dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-          path: tempDbPath
+          path: tempDbPath,
         });
 
         // Perform normal operations
         await dbManager.execute('SELECT 1');
-        
+
         await dbManager.shutdown();
 
         // Try to open read-only file (simulation of permission issues)
@@ -575,7 +575,7 @@ describe('Database Error Recovery Tests', () => {
         let permissionError = false;
         try {
           dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-            path: tempDbPath
+            path: tempDbPath,
           });
           await dbManager.execute('CREATE TABLE test_write (id INTEGER)');
         } catch (error) {
@@ -600,7 +600,7 @@ describe('Database Error Recovery Tests', () => {
   describe('Migration Failure Recovery', () => {
     it('should rollback failed migrations', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       const migrationsDir = path.join(__dirname, '..', 'temp', 'error-migrations');
@@ -608,17 +608,14 @@ describe('Database Error Recovery Tests', () => {
         fs.mkdirSync(migrationsDir, { recursive: true });
       }
 
-      const migrationManager = new MigrationManager(
-        dbManager.getConnection(),
-        migrationsDir
-      );
+      const migrationManager = new MigrationManager(dbManager.getConnection(), migrationsDir);
 
       // Create a valid migration
       const validMigration = {
         version: 1,
         description: 'valid-migration',
         up: 'CREATE TABLE test_table (id INTEGER PRIMARY KEY);',
-        down: 'DROP TABLE test_table;'
+        down: 'DROP TABLE test_table;',
       };
 
       // Create an invalid migration
@@ -626,7 +623,7 @@ describe('Database Error Recovery Tests', () => {
         version: 2,
         description: 'invalid-migration',
         up: 'INVALID SQL STATEMENT THAT WILL FAIL;',
-        down: 'SELECT 1;'
+        down: 'SELECT 1;',
       };
 
       fs.writeFileSync(
@@ -641,7 +638,7 @@ describe('Database Error Recovery Tests', () => {
 
       // Run migrations
       const results = await migrationManager.runPendingMigrations();
-      
+
       expect(results).toHaveLength(2);
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(false);
@@ -663,7 +660,7 @@ describe('Database Error Recovery Tests', () => {
 
     it('should handle migration file corruption', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       const migrationsDir = path.join(__dirname, '..', 'temp', 'corrupt-migrations');
@@ -677,10 +674,7 @@ describe('Database Error Recovery Tests', () => {
         '{ "version": 1, "description": "corrupt", invalid json syntax'
       );
 
-      const migrationManager = new MigrationManager(
-        dbManager.getConnection(),
-        migrationsDir
-      );
+      const migrationManager = new MigrationManager(dbManager.getConnection(), migrationsDir);
 
       // Should throw when trying to load corrupted migration
       expect(() => migrationManager.getMigrations()).toThrow();
@@ -694,7 +688,7 @@ describe('Database Error Recovery Tests', () => {
   describe('Backup and Recovery Failures', () => {
     it('should handle backup creation failures', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       kb = new KnowledgeDB(testDbPath);
@@ -704,7 +698,7 @@ describe('Database Error Recovery Tests', () => {
       // Try to create backup in non-existent directory
       const backupManager = new BackupManager(testDbPath, {
         backupDir: '/non/existent/directory',
-        retentionDays: 7
+        retentionDays: 7,
       });
 
       await expect(backupManager.createBackup()).rejects.toThrow();
@@ -719,7 +713,7 @@ describe('Database Error Recovery Tests', () => {
 
     it('should handle backup restoration failures', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       kb = new KnowledgeDB(testDbPath);
@@ -728,13 +722,11 @@ describe('Database Error Recovery Tests', () => {
 
       const backupManager = new BackupManager(testDbPath, {
         backupDir: path.join(__dirname, '..', 'temp', 'backup-test'),
-        retentionDays: 7
+        retentionDays: 7,
       });
 
       // Try to restore from non-existent backup
-      await expect(
-        backupManager.restoreBackup('/non/existent/backup.db')
-      ).rejects.toThrow();
+      await expect(backupManager.restoreBackup('/non/existent/backup.db')).rejects.toThrow();
 
       // Original database should be unaffected
       const count = await kb.getEntryCount();
@@ -743,7 +735,7 @@ describe('Database Error Recovery Tests', () => {
 
     it('should handle corrupted backup files', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
-        path: testDbPath
+        path: testDbPath,
       });
 
       const backupDir = path.join(__dirname, '..', 'temp', 'corrupt-backup-test');
@@ -757,13 +749,11 @@ describe('Database Error Recovery Tests', () => {
 
       const backupManager = new BackupManager(testDbPath, {
         backupDir,
-        retentionDays: 7
+        retentionDays: 7,
       });
 
       // Should fail to restore corrupted backup
-      await expect(
-        backupManager.restoreBackup(corruptBackupPath)
-      ).rejects.toThrow();
+      await expect(backupManager.restoreBackup(corruptBackupPath)).rejects.toThrow();
     });
   });
 
@@ -771,19 +761,21 @@ describe('Database Error Recovery Tests', () => {
     it('should handle memory pressure gracefully', async () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
-        cacheSize: 1 // Very small cache
+        cacheSize: 1, // Very small cache
       });
 
       kb = new KnowledgeDB(testDbPath);
 
       // Create memory pressure by inserting many large entries
-      const largeEntries = Array(100).fill(0).map((_, i) => ({
-        title: `Large Entry ${i}`,
-        problem: `Problem description ${'x'.repeat(1000)} ${i}`,
-        solution: `Solution text ${'y'.repeat(1000)} ${i}`,
-        category: 'VSAM' as const,
-        tags: [`tag${i}`, `category${i % 5}`, `type${i % 3}`]
-      }));
+      const largeEntries = Array(100)
+        .fill(0)
+        .map((_, i) => ({
+          title: `Large Entry ${i}`,
+          problem: `Problem description ${'x'.repeat(1000)} ${i}`,
+          solution: `Solution text ${'y'.repeat(1000)} ${i}`,
+          category: 'VSAM' as const,
+          tags: [`tag${i}`, `category${i % 5}`, `type${i % 3}`],
+        }));
 
       let insertErrors = 0;
       for (const entry of largeEntries) {
@@ -812,24 +804,25 @@ describe('Database Error Recovery Tests', () => {
       dbManager = await TestDatabaseFactory.createTestDatabaseManager({
         path: testDbPath,
         maxConnections: 2, // Very limited connections
-        timeout: 500
+        timeout: 500,
       });
 
       // Create many concurrent operations
-      const operations = Array(20).fill(0).map((_, i) => 
-        () => dbManager.execute(`SELECT ${i} as test`)
-      );
+      const operations = Array(20)
+        .fill(0)
+        .map((_, i) => () => dbManager.execute(`SELECT ${i} as test`));
 
-      const results = await Promise.allSettled(
-        operations.map(op => op())
-      );
+      const results = await Promise.allSettled(operations.map(op => op()));
 
       // Some operations should succeed
       const successes = results.filter(r => r.status === 'fulfilled');
       expect(successes.length).toBeGreaterThan(0);
 
       // Failed operations should have meaningful error messages
-      const failures = results.filter(r => r.status === 'rejected') as Array<{status: 'rejected'; reason: Error}>;
+      const failures = results.filter(r => r.status === 'rejected') as Array<{
+        status: 'rejected';
+        reason: Error;
+      }>;
       failures.forEach(failure => {
         expect(failure.reason.message).toMatch(/timeout|busy|locked/i);
       });

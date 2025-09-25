@@ -60,7 +60,7 @@ const DEFAULT_OPTIONS: Required<SearchHistoryOptions> = {
   persist: true,
   retentionDays: 30,
   groupSimilar: true,
-  trackSuccess: true
+  trackSuccess: true,
 };
 
 /**
@@ -105,7 +105,7 @@ function loadFromStorage(storageKey: string): SearchHistoryItem[] {
     const parsed = JSON.parse(stored);
     return parsed.map((item: any) => ({
       ...item,
-      timestamp: new Date(item.timestamp)
+      timestamp: new Date(item.timestamp),
     }));
   } catch (error) {
     console.warn('Failed to load search history:', error);
@@ -120,7 +120,7 @@ function saveToStorage(storageKey: string, history: SearchHistoryItem[]): void {
   try {
     const serializable = history.map(item => ({
       ...item,
-      timestamp: item.timestamp.toISOString()
+      timestamp: item.timestamp.toISOString(),
     }));
     localStorage.setItem(storageKey, JSON.stringify(serializable));
   } catch (error) {
@@ -159,51 +159,56 @@ export function useSearchHistory(options: SearchHistoryOptions = {}) {
   }, [history, config.storageKey, config.persist, loading]);
 
   // Add search to history
-  const addSearch = useCallback((
-    query: string,
-    resultsCount: number,
-    executionTime: number,
-    options: {
-      selectedResult?: string;
-      filters?: Record<string, any>;
-      category?: string;
-      success?: boolean;
-    } = {}
-  ) => {
-    if (!query.trim()) return;
+  const addSearch = useCallback(
+    (
+      query: string,
+      resultsCount: number,
+      executionTime: number,
+      options: {
+        selectedResult?: string;
+        filters?: Record<string, any>;
+        category?: string;
+        success?: boolean;
+      } = {}
+    ) => {
+      if (!query.trim()) return;
 
-    const newItem: SearchHistoryItem = {
-      id: generateId(),
-      query: query.trim(),
-      timestamp: new Date(),
-      resultsCount,
-      executionTime,
-      ...options
-    };
+      const newItem: SearchHistoryItem = {
+        id: generateId(),
+        query: query.trim(),
+        timestamp: new Date(),
+        resultsCount,
+        executionTime,
+        ...options,
+      };
 
-    setHistory(prev => {
-      let updated = [newItem, ...prev];
+      setHistory(prev => {
+        let updated = [newItem, ...prev];
 
-      // Group similar queries if enabled
-      if (config.groupSimilar) {
-        const similar = updated.find((item, index) =>
-          index > 0 && calculateSimilarity(item.query, newItem.query) > 0.8
-        );
+        // Group similar queries if enabled
+        if (config.groupSimilar) {
+          const similar = updated.find(
+            (item, index) => index > 0 && calculateSimilarity(item.query, newItem.query) > 0.8
+          );
 
-        if (similar) {
-          // Update the existing similar item instead of adding new one
-          updated = updated.map(item =>
-            item.id === similar.id
-              ? { ...item, timestamp: newItem.timestamp, resultsCount: newItem.resultsCount }
-              : item
-          ).filter(item => item.id !== newItem.id);
+          if (similar) {
+            // Update the existing similar item instead of adding new one
+            updated = updated
+              .map(item =>
+                item.id === similar.id
+                  ? { ...item, timestamp: newItem.timestamp, resultsCount: newItem.resultsCount }
+                  : item
+              )
+              .filter(item => item.id !== newItem.id);
+          }
         }
-      }
 
-      // Limit history size
-      return updated.slice(0, config.maxItems);
-    });
-  }, [config.groupSimilar, config.maxItems]);
+        // Limit history size
+        return updated.slice(0, config.maxItems);
+      });
+    },
+    [config.groupSimilar, config.maxItems]
+  );
 
   // Clear all history
   const clearHistory = useCallback(() => {
@@ -219,145 +224,158 @@ export function useSearchHistory(options: SearchHistoryOptions = {}) {
   }, []);
 
   // Get recent searches
-  const getRecentSearches = useCallback((count: number = 10): SearchHistoryItem[] => {
-    return history
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, count);
-  }, [history]);
+  const getRecentSearches = useCallback(
+    (count: number = 10): SearchHistoryItem[] => {
+      return history.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, count);
+    },
+    [history]
+  );
 
   // Get popular searches
-  const getPopularSearches = useCallback((count: number = 5): SearchSuggestion[] => {
-    const queryGroups = new Map<string, SearchHistoryItem[]>();
+  const getPopularSearches = useCallback(
+    (count: number = 5): SearchSuggestion[] => {
+      const queryGroups = new Map<string, SearchHistoryItem[]>();
 
-    // Group by normalized query
-    history.forEach(item => {
-      const normalized = normalizeQuery(item.query);
-      if (!queryGroups.has(normalized)) {
-        queryGroups.set(normalized, []);
-      }
-      queryGroups.get(normalized)!.push(item);
-    });
-
-    // Calculate popularity metrics
-    const suggestions: SearchSuggestion[] = [];
-
-    queryGroups.forEach((items, normalizedQuery) => {
-      if (items.length === 0) return;
-
-      const frequency = items.length;
-      const lastUsed = new Date(Math.max(...items.map(item => item.timestamp.getTime())));
-      const avgResultsCount = items.reduce((sum, item) => sum + item.resultsCount, 0) / items.length;
-      const successCount = config.trackSuccess
-        ? items.filter(item => item.success !== false).length
-        : items.length;
-      const successRate = successCount / frequency;
-
-      // Use the most recent version of the query for display
-      const mostRecent = items.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
-      );
-
-      suggestions.push({
-        query: mostRecent.query,
-        frequency,
-        lastUsed,
-        avgResultsCount,
-        successRate,
-        category: mostRecent.category
+      // Group by normalized query
+      history.forEach(item => {
+        const normalized = normalizeQuery(item.query);
+        if (!queryGroups.has(normalized)) {
+          queryGroups.set(normalized, []);
+        }
+        queryGroups.get(normalized)!.push(item);
       });
-    });
 
-    // Sort by popularity score (frequency * success rate * recency factor)
-    return suggestions
-      .map(suggestion => {
-        const daysSinceLastUsed = (Date.now() - suggestion.lastUsed.getTime()) / (1000 * 60 * 60 * 24);
-        const recencyFactor = Math.max(0.1, 1 - daysSinceLastUsed / 30); // Decay over 30 days
-        const popularityScore = suggestion.frequency * suggestion.successRate * recencyFactor;
+      // Calculate popularity metrics
+      const suggestions: SearchSuggestion[] = [];
 
-        return { ...suggestion, popularityScore };
-      })
-      .sort((a: any, b: any) => b.popularityScore - a.popularityScore)
-      .slice(0, count);
-  }, [history, config.trackSuccess]);
+      queryGroups.forEach((items, normalizedQuery) => {
+        if (items.length === 0) return;
+
+        const frequency = items.length;
+        const lastUsed = new Date(Math.max(...items.map(item => item.timestamp.getTime())));
+        const avgResultsCount =
+          items.reduce((sum, item) => sum + item.resultsCount, 0) / items.length;
+        const successCount = config.trackSuccess
+          ? items.filter(item => item.success !== false).length
+          : items.length;
+        const successRate = successCount / frequency;
+
+        // Use the most recent version of the query for display
+        const mostRecent = items.reduce((latest, current) =>
+          current.timestamp > latest.timestamp ? current : latest
+        );
+
+        suggestions.push({
+          query: mostRecent.query,
+          frequency,
+          lastUsed,
+          avgResultsCount,
+          successRate,
+          category: mostRecent.category,
+        });
+      });
+
+      // Sort by popularity score (frequency * success rate * recency factor)
+      return suggestions
+        .map(suggestion => {
+          const daysSinceLastUsed =
+            (Date.now() - suggestion.lastUsed.getTime()) / (1000 * 60 * 60 * 24);
+          const recencyFactor = Math.max(0.1, 1 - daysSinceLastUsed / 30); // Decay over 30 days
+          const popularityScore = suggestion.frequency * suggestion.successRate * recencyFactor;
+
+          return { ...suggestion, popularityScore };
+        })
+        .sort((a: any, b: any) => b.popularityScore - a.popularityScore)
+        .slice(0, count);
+    },
+    [history, config.trackSuccess]
+  );
 
   // Get search suggestions based on partial query
-  const getSuggestions = useCallback((
-    partialQuery: string,
-    count: number = 5
-  ): SearchSuggestion[] => {
-    if (!partialQuery.trim()) {
-      return getPopularSearches(count);
-    }
+  const getSuggestions = useCallback(
+    (partialQuery: string, count: number = 5): SearchSuggestion[] => {
+      if (!partialQuery.trim()) {
+        return getPopularSearches(count);
+      }
 
-    const normalized = normalizeQuery(partialQuery);
-    const matches = history
-      .filter(item => normalizeQuery(item.query).includes(normalized))
-      .reduce<Map<string, SearchHistoryItem[]>>((acc, item) => {
-        const key = normalizeQuery(item.query);
-        if (!acc.has(key)) {
-          acc.set(key, []);
-        }
-        acc.get(key)!.push(item);
-        return acc;
-      }, new Map());
+      const normalized = normalizeQuery(partialQuery);
+      const matches = history
+        .filter(item => normalizeQuery(item.query).includes(normalized))
+        .reduce<Map<string, SearchHistoryItem[]>>((acc, item) => {
+          const key = normalizeQuery(item.query);
+          if (!acc.has(key)) {
+            acc.set(key, []);
+          }
+          acc.get(key)!.push(item);
+          return acc;
+        }, new Map());
 
-    const suggestions: SearchSuggestion[] = [];
+      const suggestions: SearchSuggestion[] = [];
 
-    matches.forEach((items, normalizedQuery) => {
-      const mostRecent = items.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
-      );
+      matches.forEach((items, normalizedQuery) => {
+        const mostRecent = items.reduce((latest, current) =>
+          current.timestamp > latest.timestamp ? current : latest
+        );
 
-      const frequency = items.length;
-      const avgResultsCount = items.reduce((sum, item) => sum + item.resultsCount, 0) / items.length;
-      const successCount = config.trackSuccess
-        ? items.filter(item => item.success !== false).length
-        : items.length;
-      const successRate = successCount / frequency;
+        const frequency = items.length;
+        const avgResultsCount =
+          items.reduce((sum, item) => sum + item.resultsCount, 0) / items.length;
+        const successCount = config.trackSuccess
+          ? items.filter(item => item.success !== false).length
+          : items.length;
+        const successRate = successCount / frequency;
 
-      suggestions.push({
-        query: mostRecent.query,
-        frequency,
-        lastUsed: mostRecent.timestamp,
-        avgResultsCount,
-        successRate,
-        category: mostRecent.category
+        suggestions.push({
+          query: mostRecent.query,
+          frequency,
+          lastUsed: mostRecent.timestamp,
+          avgResultsCount,
+          successRate,
+          category: mostRecent.category,
+        });
       });
-    });
 
-    // Sort by relevance (exact match first, then by frequency and success rate)
-    return suggestions
-      .sort((a, b) => {
-        const aExact = normalizeQuery(a.query) === normalized ? 1 : 0;
-        const bExact = normalizeQuery(b.query) === normalized ? 1 : 0;
+      // Sort by relevance (exact match first, then by frequency and success rate)
+      return suggestions
+        .sort((a, b) => {
+          const aExact = normalizeQuery(a.query) === normalized ? 1 : 0;
+          const bExact = normalizeQuery(b.query) === normalized ? 1 : 0;
 
-        if (aExact !== bExact) return bExact - aExact;
+          if (aExact !== bExact) return bExact - aExact;
 
-        const aScore = a.frequency * a.successRate;
-        const bScore = b.frequency * b.successRate;
+          const aScore = a.frequency * a.successRate;
+          const bScore = b.frequency * b.successRate;
 
-        return bScore - aScore;
-      })
-      .slice(0, count);
-  }, [history, getPopularSearches, config.trackSuccess]);
+          return bScore - aScore;
+        })
+        .slice(0, count);
+    },
+    [history, getPopularSearches, config.trackSuccess]
+  );
 
   // Get search statistics
-  const getStatistics = useMemo(() => ({
-    totalSearches: history.length,
-    uniqueQueries: new Set(history.map(item => normalizeQuery(item.query))).size,
-    avgExecutionTime: history.length > 0
-      ? history.reduce((sum, item) => sum + item.executionTime, 0) / history.length
-      : 0,
-    avgResultsCount: history.length > 0
-      ? history.reduce((sum, item) => sum + item.resultsCount, 0) / history.length
-      : 0,
-    successRate: config.trackSuccess && history.length > 0
-      ? history.filter(item => item.success !== false).length / history.length
-      : 1,
-    categories: Array.from(
-      new Set(history.filter(item => item.category).map(item => item.category))
-    )
-  }), [history, config.trackSuccess]);
+  const getStatistics = useMemo(
+    () => ({
+      totalSearches: history.length,
+      uniqueQueries: new Set(history.map(item => normalizeQuery(item.query))).size,
+      avgExecutionTime:
+        history.length > 0
+          ? history.reduce((sum, item) => sum + item.executionTime, 0) / history.length
+          : 0,
+      avgResultsCount:
+        history.length > 0
+          ? history.reduce((sum, item) => sum + item.resultsCount, 0) / history.length
+          : 0,
+      successRate:
+        config.trackSuccess && history.length > 0
+          ? history.filter(item => item.success !== false).length / history.length
+          : 1,
+      categories: Array.from(
+        new Set(history.filter(item => item.category).map(item => item.category))
+      ),
+    }),
+    [history, config.trackSuccess]
+  );
 
   return {
     history,
@@ -368,6 +386,6 @@ export function useSearchHistory(options: SearchHistoryOptions = {}) {
     getRecentSearches,
     getPopularSearches,
     getSuggestions,
-    statistics: getStatistics
+    statistics: getStatistics,
   };
 }

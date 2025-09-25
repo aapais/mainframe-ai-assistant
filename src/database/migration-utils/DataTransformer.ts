@@ -54,10 +54,10 @@ export class DataTransformer extends EventEmitter {
 
     for (const rule of sortedRules) {
       // Count records that will be transformed
-      const countQuery = rule.condition 
+      const countQuery = rule.condition
         ? `SELECT COUNT(*) as count FROM ${rule.sourceTable} WHERE ${rule.condition}`
         : `SELECT COUNT(*) as count FROM ${rule.sourceTable}`;
-      
+
       const result = this.db.prepare(countQuery).get() as { count: number };
       const recordCount = result.count;
       totalRecords += recordCount;
@@ -77,7 +77,7 @@ export class DataTransformer extends EventEmitter {
       transformations: sortedRules,
       estimatedDuration: Math.ceil(estimatedDuration / 60), // Convert to minutes
       totalRecords,
-      requiresDowntime
+      requiresDowntime,
     };
   }
 
@@ -93,7 +93,6 @@ export class DataTransformer extends EventEmitter {
       maxConcurrency?: number;
     } = {}
   ): Promise<TransformationResult[]> {
-    
     if (this.isRunning) {
       throw new Error('Transformation already running');
     }
@@ -105,19 +104,16 @@ export class DataTransformer extends EventEmitter {
       this.emit('transformationStarted', {
         totalRules: plan.transformations.length,
         estimatedRecords: plan.totalRecords,
-        dryRun: options.dryRun || false
+        dryRun: options.dryRun || false,
       });
 
       for (const rule of plan.transformations) {
         this.emit('ruleStarted', { ruleId: rule.id, description: rule.description });
 
-        const result = await this.executeTransformationRule(
-          rule,
-          {
-            ...options,
-            dryRun: options.dryRun
-          }
-        );
+        const result = await this.executeTransformationRule(rule, {
+          ...options,
+          dryRun: options.dryRun,
+        });
 
         results.push(result);
 
@@ -126,7 +122,7 @@ export class DataTransformer extends EventEmitter {
           processed: result.processed,
           successful: result.successful,
           failed: result.failed,
-          duration: result.duration
+          duration: result.duration,
         });
 
         // Stop on critical errors if not continuing on error
@@ -139,9 +135,8 @@ export class DataTransformer extends EventEmitter {
         totalResults: results.length,
         totalProcessed: results.reduce((sum, r) => sum + r.processed, 0),
         totalSuccessful: results.reduce((sum, r) => sum + r.successful, 0),
-        totalFailed: results.reduce((sum, r) => sum + r.failed, 0)
+        totalFailed: results.reduce((sum, r) => sum + r.failed, 0),
       });
-
     } finally {
       this.isRunning = false;
       this.currentBatch = 0;
@@ -162,7 +157,6 @@ export class DataTransformer extends EventEmitter {
       dryRun?: boolean;
     }
   ): Promise<TransformationResult> {
-    
     const startTime = Date.now();
     const result: TransformationResult = {
       ruleId: rule.id,
@@ -170,18 +164,18 @@ export class DataTransformer extends EventEmitter {
       successful: 0,
       failed: 0,
       errors: [],
-      duration: 0
+      duration: 0,
     };
 
     try {
       // Get total record count
-      const countQuery = rule.condition 
+      const countQuery = rule.condition
         ? `SELECT COUNT(*) as count FROM ${rule.sourceTable} WHERE ${rule.condition}`
         : `SELECT COUNT(*) as count FROM ${rule.sourceTable}`;
-      
+
       const countResult = this.db.prepare(countQuery).get() as { count: number };
       const totalRecords = countResult.count;
-      
+
       if (totalRecords === 0) {
         result.duration = Date.now() - startTime;
         return result;
@@ -195,23 +189,23 @@ export class DataTransformer extends EventEmitter {
       const selectQuery = rule.condition
         ? `SELECT * FROM ${rule.sourceTable} WHERE ${rule.condition} LIMIT ? OFFSET ?`
         : `SELECT * FROM ${rule.sourceTable} LIMIT ? OFFSET ?`;
-      
+
       const selectStmt = this.db.prepare(selectQuery);
 
       // Process in batches
       for (let offset = 0; offset < totalRecords; offset += batchSize) {
         this.currentBatch++;
-        
+
         this.emit('batchStarted', {
           ruleId: rule.id,
           batch: this.currentBatch,
           totalBatches: this.totalBatches,
           offset,
-          batchSize
+          batchSize,
         });
 
         const rows = selectStmt.all(batchSize, offset);
-        
+
         if (options.dryRun) {
           // In dry run, just validate the transformation function
           for (const row of rows) {
@@ -222,7 +216,7 @@ export class DataTransformer extends EventEmitter {
               result.failed++;
               result.errors.push({
                 row,
-                error: error.message
+                error: error.message,
               });
             }
             result.processed++;
@@ -241,14 +235,13 @@ export class DataTransformer extends EventEmitter {
           batch: this.currentBatch,
           processed: rows.length,
           successful: result.successful,
-          failed: result.failed
+          failed: result.failed,
         });
       }
-
     } catch (error) {
       this.emit('ruleError', {
         ruleId: rule.id,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -273,12 +266,11 @@ export class DataTransformer extends EventEmitter {
     failed: number;
     errors: Array<{ row: any; error: string }>;
   }> {
-    
     const batchResult = {
       processed: 0,
       successful: 0,
       failed: 0,
-      errors: [] as Array<{ row: any; error: string }>
+      errors: [] as Array<{ row: any; error: string }>,
     };
 
     const transaction = this.db.transaction((rows: any[]) => {
@@ -286,7 +278,7 @@ export class DataTransformer extends EventEmitter {
         try {
           // Apply transformation
           const transformedRow = rule.transformFunction(row);
-          
+
           // Validate transformation if required
           if (options.validateEach && rule.validation) {
             if (!rule.validation(row, transformedRow)) {
@@ -308,7 +300,7 @@ export class DataTransformer extends EventEmitter {
           batchResult.failed++;
           batchResult.errors.push({
             row,
-            error: error.message
+            error: error.message,
           });
 
           if (!options.continueOnError) {
@@ -325,10 +317,12 @@ export class DataTransformer extends EventEmitter {
       // If transaction fails, mark all as failed
       batchResult.failed = rows.length;
       batchResult.successful = 0;
-      batchResult.errors = [{
-        row: { batch: 'entire_batch' },
-        error: error.message
-      }];
+      batchResult.errors = [
+        {
+          row: { batch: 'entire_batch' },
+          error: error.message,
+        },
+      ];
     }
 
     return batchResult;
@@ -390,14 +384,14 @@ export class DataTransformer extends EventEmitter {
           id: 'mvp2_link_kb_incidents',
           description: 'Link existing KB entries with historical incidents',
           sourceTable: 'kb_entries',
-          transformFunction: (row) => ({
+          transformFunction: row => ({
             ...row,
             // Add any MVP2 specific transformations
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           }),
           batchSize: 500,
-          priority: 1
-        }
+          priority: 1,
+        },
       ],
 
       mvp3: [
@@ -406,18 +400,18 @@ export class DataTransformer extends EventEmitter {
           id: 'mvp3_prepare_code_links',
           description: 'Prepare KB entries for code analysis integration',
           sourceTable: 'kb_entries',
-          transformFunction: (row) => ({
+          transformFunction: row => ({
             ...row,
             // Extract potential error codes for auto-linking
             extracted_error_codes: this.extractErrorCodes(row.problem + ' ' + row.solution),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           }),
           validation: (original, transformed) => {
             return transformed.id === original.id;
           },
           batchSize: 200,
-          priority: 1
-        }
+          priority: 1,
+        },
       ],
 
       mvp4: [
@@ -426,15 +420,15 @@ export class DataTransformer extends EventEmitter {
           id: 'mvp4_enhance_code_metadata',
           description: 'Enhance code files with project metadata',
           sourceTable: 'code_files',
-          transformFunction: (row) => ({
+          transformFunction: row => ({
             ...row,
             // Add project classification
             potential_project_type: this.classifyCodeFile(row.filename, row.file_type),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           }),
           batchSize: 100,
-          priority: 2
-        }
+          priority: 2,
+        },
       ],
 
       mvp5: [
@@ -443,17 +437,17 @@ export class DataTransformer extends EventEmitter {
           id: 'mvp5_prepare_ml_features',
           description: 'Extract features from incidents for ML training',
           sourceTable: 'incidents',
-          transformFunction: (row) => ({
+          transformFunction: row => ({
             ...row,
             // Extract features for ML
             text_features: this.extractTextFeatures(row.description),
             temporal_features: this.extractTemporalFeatures(row.created_at),
-            severity_numeric: this.mapSeverityToNumeric(row.severity)
+            severity_numeric: this.mapSeverityToNumeric(row.severity),
           }),
           batchSize: 1000,
-          priority: 1
-        }
-      ]
+          priority: 1,
+        },
+      ],
     };
   }
 
@@ -473,19 +467,24 @@ export class DataTransformer extends EventEmitter {
     errors: string[];
     warnings: string[];
   }> {
-    
     const errors: string[] = [];
     const warnings: string[] = [];
 
     try {
       // Basic row count validation
-      const sourceCount = this.db.prepare(`SELECT COUNT(*) as count FROM ${sourceTable}`).get() as { count: number };
-      
+      const sourceCount = this.db.prepare(`SELECT COUNT(*) as count FROM ${sourceTable}`).get() as {
+        count: number;
+      };
+
       if (targetTable && targetTable !== sourceTable) {
-        const targetCount = this.db.prepare(`SELECT COUNT(*) as count FROM ${targetTable}`).get() as { count: number };
-        
+        const targetCount = this.db
+          .prepare(`SELECT COUNT(*) as count FROM ${targetTable}`)
+          .get() as { count: number };
+
         if (sourceCount.count !== targetCount.count) {
-          errors.push(`Row count mismatch: ${sourceTable}(${sourceCount.count}) vs ${targetTable}(${targetCount.count})`);
+          errors.push(
+            `Row count mismatch: ${sourceTable}(${sourceCount.count}) vs ${targetTable}(${targetCount.count})`
+          );
         }
       }
 
@@ -494,9 +493,11 @@ export class DataTransformer extends EventEmitter {
         for (const rule of validationRules) {
           try {
             const result = this.db.prepare(rule.query).get();
-            
+
             if (JSON.stringify(result) !== JSON.stringify(rule.expectedResult)) {
-              errors.push(`Validation rule '${rule.name}' failed: expected ${JSON.stringify(rule.expectedResult)}, got ${JSON.stringify(result)}`);
+              errors.push(
+                `Validation rule '${rule.name}' failed: expected ${JSON.stringify(rule.expectedResult)}, got ${JSON.stringify(result)}`
+              );
             }
           } catch (error) {
             warnings.push(`Validation rule '${rule.name}' could not be executed: ${error.message}`);
@@ -508,18 +509,21 @@ export class DataTransformer extends EventEmitter {
       const schemaInfo = this.db.prepare(`PRAGMA table_info(${sourceTable})`).all();
       for (const column of schemaInfo as any[]) {
         if (column.notnull === 1) {
-          const nullCount = this.db.prepare(`
+          const nullCount = this.db
+            .prepare(
+              `
             SELECT COUNT(*) as count 
             FROM ${sourceTable} 
             WHERE ${column.name} IS NULL
-          `).get() as { count: number };
-          
+          `
+            )
+            .get() as { count: number };
+
           if (nullCount.count > 0) {
             errors.push(`Found ${nullCount.count} NULL values in NOT NULL column ${column.name}`);
           }
         }
       }
-
     } catch (error) {
       errors.push(`Validation failed: ${error.message}`);
     }
@@ -527,7 +531,7 @@ export class DataTransformer extends EventEmitter {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -539,7 +543,7 @@ export class DataTransformer extends EventEmitter {
       /IEF\d{3}[A-Z]/g,
       /VSAM STATUS \d{2}/g,
       /SQLCODE -?\d+/g,
-      /WER\d{3}[A-Z]/g
+      /WER\d{3}[A-Z]/g,
     ];
 
     const errorCodes: string[] = [];
@@ -555,13 +559,13 @@ export class DataTransformer extends EventEmitter {
 
   private static classifyCodeFile(filename: string, fileType: string): string {
     const name = filename.toLowerCase();
-    
+
     if (name.includes('batch') || name.includes('job')) return 'batch';
     if (name.includes('online') || name.includes('cics')) return 'online';
     if (name.includes('util') || name.includes('tool')) return 'utility';
     if (name.includes('copy') || fileType === 'copybook') return 'copybook';
     if (name.includes('jcl') || fileType === 'jcl') return 'jcl';
-    
+
     return 'application';
   }
 
@@ -572,7 +576,7 @@ export class DataTransformer extends EventEmitter {
       has_error_code: /[A-Z]\d{3,4}/.test(text),
       has_sql: /SQL/i.test(text),
       has_file_reference: /FILE|DSN|DATASET/i.test(text),
-      urgency_keywords: (text.match(/urgent|critical|emergency|immediate/gi) || []).length
+      urgency_keywords: (text.match(/urgent|critical|emergency|immediate/gi) || []).length,
     };
   }
 
@@ -582,16 +586,16 @@ export class DataTransformer extends EventEmitter {
       hour_of_day: date.getHours(),
       day_of_week: date.getDay(),
       is_weekend: date.getDay() === 0 || date.getDay() === 6,
-      is_business_hours: date.getHours() >= 8 && date.getHours() <= 18
+      is_business_hours: date.getHours() >= 8 && date.getHours() <= 18,
     };
   }
 
   private static mapSeverityToNumeric(severity: string): number {
     const mapping: { [key: string]: number } = {
-      'low': 1,
-      'medium': 2,
-      'high': 3,
-      'critical': 4
+      low: 1,
+      medium: 2,
+      high: 3,
+      critical: 4,
     };
     return mapping[severity.toLowerCase()] || 0;
   }
@@ -609,7 +613,7 @@ export class DataTransformer extends EventEmitter {
       isRunning: this.isRunning,
       currentBatch: this.currentBatch,
       totalBatches: this.totalBatches,
-      progressPercentage: this.totalBatches > 0 ? (this.currentBatch / this.totalBatches) * 100 : 0
+      progressPercentage: this.totalBatches > 0 ? (this.currentBatch / this.totalBatches) * 100 : 0,
     };
   }
 

@@ -22,7 +22,9 @@ console.log(`SELECT title, category, severity FROM kb_entries WHERE category = '
 console.log('');
 
 console.log('2. Find High-Usage Entries:');
-console.log(`SELECT title, usage_count, success_rate FROM v_entry_stats WHERE usage_count > 20 ORDER BY usage_count DESC;`);
+console.log(
+  `SELECT title, usage_count, success_rate FROM v_entry_stats WHERE usage_count > 20 ORDER BY usage_count DESC;`
+);
 console.log('');
 
 console.log('3. Search by Error Code:');
@@ -30,7 +32,9 @@ console.log(`SELECT title, problem, error_codes FROM kb_entries WHERE error_code
 console.log('');
 
 console.log('4. Full-Text Search:');
-console.log(`SELECT id, title, rank FROM kb_fts WHERE kb_fts MATCH 'ABEND OR COBOL' ORDER BY rank;`);
+console.log(
+  `SELECT id, title, rank FROM kb_fts WHERE kb_fts MATCH 'ABEND OR COBOL' ORDER BY rank;`
+);
 console.log('');
 
 console.log('💰 AI Cost Tracking Queries');
@@ -42,7 +46,9 @@ console.log(`SELECT * FROM v_daily_costs ORDER BY cost_date DESC LIMIT 7;`);
 console.log('');
 
 console.log('6. Most Expensive Operations:');
-console.log(`SELECT operation_type, total_cost, timestamp FROM ai_cost_tracking ORDER BY total_cost DESC LIMIT 10;`);
+console.log(
+  `SELECT operation_type, total_cost, timestamp FROM ai_cost_tracking ORDER BY total_cost DESC LIMIT 10;`
+);
 console.log('');
 
 console.log('7. Budget Status:');
@@ -203,7 +209,7 @@ const sampleEntries = [
   'RACF ICH408I Authority Check Failed',
   'TSO Allocation Error IGD17101I Dataset Not Found',
   'ISPF Edit Macro Execution Error',
-  'Control-M Job Scheduling Dependencies'
+  'Control-M Job Scheduling Dependencies',
 ];
 
 console.log('Sample Knowledge Base Entries:');

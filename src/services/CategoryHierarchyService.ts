@@ -26,12 +26,17 @@ import { z } from 'zod';
 export const CategoryNodeSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(50),
-  slug: z.string().regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   description: z.string().max(500).optional(),
   parent_id: z.string().uuid().nullable(),
   level: z.number().int().min(0).max(5), // Max 5 levels deep
   sort_order: z.number().int().min(0).optional(),
-  color: z.string().regex(/^#[0-9a-f]{6}$/i).optional(), // Hex color code
+  color: z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i)
+    .optional(), // Hex color code
   icon: z.string().max(50).optional(), // Icon name or emoji
   is_system: z.boolean().default(false), // System categories cannot be deleted
   is_active: z.boolean().default(true),
@@ -101,7 +106,7 @@ export class CategoryHierarchyService extends EventEmitter {
       autoGenerateSlugs: true,
       enableCaching: true,
       validateOnMove: true,
-      ...options
+      ...options,
     };
 
     this.initializeSystemCategories();
@@ -114,12 +119,14 @@ export class CategoryHierarchyService extends EventEmitter {
   /**
    * Create a new category node
    */
-  async createCategory(categoryData: Omit<CategoryNode, 'id' | 'level' | 'created_at' | 'updated_at'>): Promise<CategoryNode> {
+  async createCategory(
+    categoryData: Omit<CategoryNode, 'id' | 'level' | 'created_at' | 'updated_at'>
+  ): Promise<CategoryNode> {
     const validation = CategoryNodeSchema.omit({
       id: true,
       level: true,
       created_at: true,
-      updated_at: true
+      updated_at: true,
     }).safeParse(categoryData);
 
     if (!validation.success) {
@@ -196,8 +203,9 @@ export class CategoryHierarchyService extends EventEmitter {
 
     // Recalculate level if parent changed
     if (updates.parent_id !== undefined) {
-      updated.level = updates.parent_id ?
-        (this.categories.get(updates.parent_id)?.level ?? 0) + 1 : 0;
+      updated.level = updates.parent_id
+        ? (this.categories.get(updates.parent_id)?.level ?? 0) + 1
+        : 0;
     }
 
     await this.updateCategoryInStorage(updated);
@@ -221,7 +229,9 @@ export class CategoryHierarchyService extends EventEmitter {
 
     const children = this.getChildren(id);
     if (children.length > 0 && !force) {
-      throw new Error(`Category has ${children.length} child categories. Use force=true to delete.`);
+      throw new Error(
+        `Category has ${children.length} child categories. Use force=true to delete.`
+      );
     }
 
     // Check if category has entries
@@ -378,28 +388,26 @@ export class CategoryHierarchyService extends EventEmitter {
   /**
    * Search categories by name or description
    */
-  searchCategories(query: string, options: {
-    includeDescendants?: boolean;
-    activeOnly?: boolean;
-    maxResults?: number;
-  } = {}): CategoryNode[] {
-    const {
-      includeDescendants = false,
-      activeOnly = true,
-      maxResults = 50
-    } = options;
+  searchCategories(
+    query: string,
+    options: {
+      includeDescendants?: boolean;
+      activeOnly?: boolean;
+      maxResults?: number;
+    } = {}
+  ): CategoryNode[] {
+    const { includeDescendants = false, activeOnly = true, maxResults = 50 } = options;
 
     const lowerQuery = query.toLowerCase();
-    let results = Array.from(this.categories.values())
-      .filter(category => {
-        if (activeOnly && !category.is_active) return false;
+    let results = Array.from(this.categories.values()).filter(category => {
+      if (activeOnly && !category.is_active) return false;
 
-        const nameMatch = category.name.toLowerCase().includes(lowerQuery);
-        const descMatch = category.description?.toLowerCase().includes(lowerQuery);
-        const slugMatch = category.slug.toLowerCase().includes(lowerQuery);
+      const nameMatch = category.name.toLowerCase().includes(lowerQuery);
+      const descMatch = category.description?.toLowerCase().includes(lowerQuery);
+      const slugMatch = category.slug.toLowerCase().includes(lowerQuery);
 
-        return nameMatch || descMatch || slugMatch;
-      });
+      return nameMatch || descMatch || slugMatch;
+    });
 
     if (includeDescendants) {
       const additionalResults: CategoryNode[] = [];
@@ -503,17 +511,20 @@ export class CategoryHierarchyService extends EventEmitter {
         total_count: this.categories.size,
         max_depth: Math.max(...Array.from(this.categories.values()).map(c => c.level)),
         system_categories: Array.from(this.categories.values()).filter(c => c.is_system).length,
-      }
+      },
     };
   }
 
   /**
    * Import category structure from JSON
    */
-  async importCategories(data: any, options: {
-    mergeStrategy?: 'replace' | 'merge' | 'skip';
-    validateStructure?: boolean;
-  } = {}): Promise<{ imported: number; skipped: number; errors: string[] }> {
+  async importCategories(
+    data: any,
+    options: {
+      mergeStrategy?: 'replace' | 'merge' | 'skip';
+      validateStructure?: boolean;
+    } = {}
+  ): Promise<{ imported: number; skipped: number; errors: string[] }> {
     const { mergeStrategy = 'merge', validateStructure = true } = options;
     const results = { imported: 0, skipped: 0, errors: [] as string[] };
 
@@ -537,7 +548,8 @@ export class CategoryHierarchyService extends EventEmitter {
             } else if (mergeStrategy === 'replace') {
               await this.updateCategory(existing.id, categoryData);
               results.imported++;
-            } else { // merge
+            } else {
+              // merge
               const merged = { ...existing, ...categoryData, id: existing.id };
               await this.updateCategory(existing.id, merged);
               results.imported++;
@@ -633,7 +645,10 @@ export class CategoryHierarchyService extends EventEmitter {
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   }
 
-  private async validateParentChange(categoryId: string, newParentId: string | null): Promise<void> {
+  private async validateParentChange(
+    categoryId: string,
+    newParentId: string | null
+  ): Promise<void> {
     if (!newParentId) return; // Moving to root is always valid
 
     const category = this.categories.get(categoryId);

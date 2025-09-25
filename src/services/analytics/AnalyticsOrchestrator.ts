@@ -4,9 +4,18 @@
  */
 
 import { EventEmitter } from 'events';
-import { ResultEffectivenessTracker, ClickEvent, ImpressionEvent, EngagementEvent } from './ResultEffectivenessTracker';
+import {
+  ResultEffectivenessTracker,
+  ClickEvent,
+  ImpressionEvent,
+  EngagementEvent,
+} from './ResultEffectivenessTracker';
 import { RelevanceScorer, ScoringResult, UserFeedback } from './RelevanceScorer';
-import { UserSatisfactionMetrics, SatisfactionSurvey, ImplicitFeedback } from './UserSatisfactionMetrics';
+import {
+  UserSatisfactionMetrics,
+  SatisfactionSurvey,
+  ImplicitFeedback,
+} from './UserSatisfactionMetrics';
 import { ConversionTracker, ConversionEvent, ConversionGoal } from './ConversionTracker';
 import { ABTestingFramework, ABTestConfig, ABTestEvent } from './ABTestingFramework';
 import { QueryAnalyzer, QueryPattern, QueryCluster, QueryAnalysisReport } from './QueryAnalyzer';
@@ -133,7 +142,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
         enableBayesianAnalysis: true,
         enableMultivariateTesting: true,
         enableCohortAnalysis: true,
-        enableStatisticalSignificanceTesting: true
+        enableStatisticalSignificanceTesting: true,
       },
       queryAnalytics: {
         enablePatternDetection: true,
@@ -142,9 +151,9 @@ export class AnalyticsOrchestrator extends EventEmitter {
         enableFailureDetection: true,
         enableBehaviorTracking: true,
         patternCacheSize: 1000,
-        complexityThreshold: 0.7
+        complexityThreshold: 0.7,
       },
-      ...config
+      ...config,
     };
 
     this.initializeServices();
@@ -164,31 +173,31 @@ export class AnalyticsOrchestrator extends EventEmitter {
     this.queryAnalyzer = new QueryAnalyzer({
       enableRealTimeProcessing: this.config.queryAnalytics.enablePatternDetection,
       patternCacheSize: this.config.queryAnalytics.patternCacheSize,
-      enableMLFeatures: this.config.enablePredictiveAnalytics
+      enableMLFeatures: this.config.enablePredictiveAnalytics,
     });
 
     this.intentClassifier = new SearchIntentClassifier({
       enableRealTimeClassification: this.config.queryAnalytics.enableIntentClassification,
       confidenceThreshold: 0.7,
-      enableLearning: this.config.enablePredictiveAnalytics
+      enableLearning: this.config.enablePredictiveAnalytics,
     });
 
     this.complexityAnalyzer = new QueryComplexityAnalyzer({
       enableRealTimeAnalysis: this.config.queryAnalytics.enableComplexityAnalysis,
       complexityThreshold: this.config.queryAnalytics.complexityThreshold,
-      enableAdaptiveLearning: this.config.enablePredictiveAnalytics
+      enableAdaptiveLearning: this.config.enablePredictiveAnalytics,
     });
 
     this.failureDetector = new FailedSearchDetector({
       enableRealTimeDetection: this.config.queryAnalytics.enableFailureDetection,
       enablePredictiveFailureDetection: this.config.enablePredictiveAnalytics,
-      autoSuggestImprovements: true
+      autoSuggestImprovements: true,
     });
 
     this.behaviorTracker = new UserBehaviorTracker({
       enableRealTimeTracking: this.config.queryAnalytics.enableBehaviorTracking,
       sessionTimeout: 30 * 60 * 1000, // 30 minutes
-      enablePredictiveAnalysis: this.config.enablePredictiveAnalytics
+      enablePredictiveAnalysis: this.config.enablePredictiveAnalytics,
     });
 
     // Set up event listeners for cross-service coordination
@@ -257,13 +266,10 @@ export class AnalyticsOrchestrator extends EventEmitter {
     switch (eventType) {
       case 'effectiveness_click':
         // Update conversion tracking when users click
-        this.conversionTracker.trackEvent(
-          data.userId,
-          'search_click',
-          'click',
-          1,
-          { resultId: data.resultId, query: data.query }
-        );
+        this.conversionTracker.trackEvent(data.userId, 'search_click', 'click', 1, {
+          resultId: data.resultId,
+          query: data.query,
+        });
         break;
 
       case 'relevance_scored':
@@ -271,7 +277,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
         this.emit('relevanceUpdate', {
           resultId: data.resultId,
           score: data.overallScore,
-          confidence: data.confidence
+          confidence: data.confidence,
         });
         break;
 
@@ -282,7 +288,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
           userId: data.userId,
           query: data.query,
           rating: data.responses.overallSatisfaction,
-          feedback: data.responses.overallSatisfaction >= 4 ? 'relevant' : 'not_relevant'
+          feedback: data.responses.overallSatisfaction >= 4 ? 'relevant' : 'not_relevant',
         });
         break;
 
@@ -293,7 +299,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
           sessionId: data.sessionId,
           resultId: 'conversion',
           eventType: 'conversion',
-          data: { value: data.value, goalId: data.goalId }
+          data: { value: data.value, goalId: data.goalId },
         });
         break;
 
@@ -357,7 +363,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
         visibleResults: Math.min(experience.results.length, 10),
         searchType: 'full',
         loadTime: 150, // Would come from actual timing
-        viewport: { width: 1920, height: 1080 }
+        viewport: { width: 1920, height: 1080 },
       });
 
       // Track interactions
@@ -374,7 +380,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
               resultType: 'knowledge',
               clickType: 'primary',
               timeToClick: interaction.timestamp - Date.now(),
-              viewport: { width: 1920, height: 1080, scrollY: 0 }
+              viewport: { width: 1920, height: 1080, scrollY: 0 },
             });
           }
         } else {
@@ -383,7 +389,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
             sessionId: experience.sessionId,
             resultId: interaction.resultId || 'general',
             eventType: interaction.type,
-            duration: interaction.data?.duration
+            duration: interaction.data?.duration,
           });
         }
       }
@@ -396,7 +402,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
             {
               title: result.title,
               snippet: result.snippet,
-              metadata: { url: result.url, position: result.position }
+              metadata: { url: result.url, position: result.position },
             },
             experience.query,
             {
@@ -404,7 +410,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
                 searchHistory: [],
                 preferences: {},
                 expertise: 'intermediate',
-                language: 'en'
+                language: 'en',
               },
               sessionContext: {
                 previousQueries: [],
@@ -412,12 +418,12 @@ export class AnalyticsOrchestrator extends EventEmitter {
                   .filter(i => i.resultId)
                   .map(i => i.resultId!),
                 timeSpentOnResults: {},
-                sessionDuration: 0
+                sessionDuration: 0,
               },
               temporalContext: {
                 timeOfDay: new Date().getHours(),
-                dayOfWeek: new Date().getDay()
-              }
+                dayOfWeek: new Date().getDay(),
+              },
             }
           );
 
@@ -436,20 +442,20 @@ export class AnalyticsOrchestrator extends EventEmitter {
             resultRelevance: experience.satisfaction.rating,
             searchSpeed: 4, // Default values
             interfaceUsability: 4,
-            wouldRecommend: experience.satisfaction.rating >= 4
+            wouldRecommend: experience.satisfaction.rating >= 4,
           },
           feedback: {
             positiveAspects: experience.satisfaction.rating >= 4 ? ['relevant results'] : [],
             improvementAreas: experience.satisfaction.rating < 4 ? ['result quality'] : [],
-            comments: experience.satisfaction.feedback
+            comments: experience.satisfaction.feedback,
           },
           metadata: {
             searchType: 'full',
             resultCount: experience.results.length,
             searchDuration: 1000,
             platform: 'web',
-            userAgent: 'unknown'
-          }
+            userAgent: 'unknown',
+          },
         });
       }
 
@@ -465,14 +471,13 @@ export class AnalyticsOrchestrator extends EventEmitter {
             {
               query: experience.query,
               resultCount: experience.results.length,
-              configuration: assignment.configuration
+              configuration: assignment.configuration,
             }
           );
         }
       }
 
       this.emit('searchExperienceTracked', experience);
-
     } catch (error) {
       this.emit('trackingError', { experience, error });
       throw error;
@@ -493,12 +498,12 @@ export class AnalyticsOrchestrator extends EventEmitter {
         sessionContext: {
           previousQueries: [],
           sessionDuration: 0,
-          searchCount: 1
+          searchCount: 1,
         },
         resultMetadata: {
           totalResults: results.length,
-          topResultScore: results[0]?.relevanceScore || 0
-        }
+          topResultScore: results[0]?.relevanceScore || 0,
+        },
       });
       this.emit('queryAnalyzed', queryAnalysis);
     }
@@ -509,17 +514,17 @@ export class AnalyticsOrchestrator extends EventEmitter {
         userProfile: {
           searchHistory: [],
           preferences: {},
-          expertise: 'intermediate'
+          expertise: 'intermediate',
         },
         sessionContext: {
           previousQueries: [],
           currentStep: 1,
-          sessionGoals: []
+          sessionGoals: [],
         },
         contextualHints: {
           timeOfDay: new Date().getHours(),
-          userLocation: 'unknown'
-        }
+          userLocation: 'unknown',
+        },
       });
       this.emit('intentClassified', intentClassification);
     }
@@ -530,7 +535,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
         domainContext: 'mainframe',
         userExpertise: 'intermediate',
         sessionHistory: [],
-        availableResources: []
+        availableResources: [],
       });
       this.emit('complexityAnalyzed', complexityScore);
     }
@@ -550,19 +555,21 @@ export class AnalyticsOrchestrator extends EventEmitter {
             id: r.id,
             title: r.title,
             relevanceScore: r.relevanceScore || 0,
-            position: r.position
+            position: r.position,
           })),
           userInteractions: interactions.map(i => ({
             type: i.type,
             timestamp: i.timestamp,
-            data: i.data
+            data: i.data,
           })),
           searchContext: {
             searchType: 'standard',
             filters: [],
-            sortOrder: 'relevance'
+            sortOrder: 'relevance',
           },
-          timeSpent: Math.max(...interactions.map(i => i.timestamp)) - Math.min(...interactions.map(i => i.timestamp))
+          timeSpent:
+            Math.max(...interactions.map(i => i.timestamp)) -
+            Math.min(...interactions.map(i => i.timestamp)),
         });
         this.emit('failureAnalyzed', failureAnalysis);
       }
@@ -575,30 +582,32 @@ export class AnalyticsOrchestrator extends EventEmitter {
         userId,
         startTime: Date.now(),
         endTime: Date.now() + 300000, // Assume 5-minute session
-        queries: [{
-          query,
-          timestamp: Date.now(),
-          results: results.map(r => ({
-            id: r.id,
-            position: r.position,
-            clicked: interactions.some(i => i.type === 'click' && i.resultId === r.id)
-          }))
-        }],
+        queries: [
+          {
+            query,
+            timestamp: Date.now(),
+            results: results.map(r => ({
+              id: r.id,
+              position: r.position,
+              clicked: interactions.some(i => i.type === 'click' && i.resultId === r.id),
+            })),
+          },
+        ],
         interactions: interactions.map(i => ({
           type: i.type,
           timestamp: i.timestamp,
           query,
-          data: i.data
+          data: i.data,
         })),
         deviceInfo: {
           type: 'desktop',
           browser: 'unknown',
-          screen: { width: 1920, height: 1080 }
+          screen: { width: 1920, height: 1080 },
         },
         context: {
           referrer: 'direct',
-          location: 'unknown'
-        }
+          location: 'unknown',
+        },
       };
 
       await this.behaviorTracker.trackSession(userSession);
@@ -618,7 +627,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
       satisfactionMetrics,
       conversionMetrics,
       abTestingData,
-      queryAnalyticsData
+      queryAnalyticsData,
     ] = await Promise.all([
       this.effectivenessTracker.calculateCTRMetrics(filters),
       this.effectivenessTracker.calculateEngagementMetrics(filters),
@@ -629,12 +638,12 @@ export class AnalyticsOrchestrator extends EventEmitter {
         precisionAtK: { 1: 0.85, 3: 0.78, 5: 0.72, 10: 0.68 },
         ndcg: { 1: 0.85, 3: 0.79, 5: 0.74, 10: 0.71 },
         meanReciprocalRank: 0.73,
-        qualityDistribution: { excellent: 0.25, good: 0.45, fair: 0.25, poor: 0.05 }
+        qualityDistribution: { excellent: 0.25, good: 0.45, fair: 0.25, poor: 0.05 },
       }),
       this.satisfactionMetrics.calculateSatisfactionMetrics(filters),
       this.conversionTracker.calculateConversionMetrics(filters),
       this.abTestingFramework.getDashboardData(),
-      this.getQueryAnalyticsData(filters)
+      this.getQueryAnalyticsData(filters),
     ]);
 
     // Calculate unified effectiveness scores
@@ -643,7 +652,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
       engagement: engagementMetrics.interactionRate,
       relevance: relevanceMetrics.averageRelevance,
       satisfaction: satisfactionMetrics.overall.satisfaction / 100,
-      conversion: conversionMetrics.overall.conversionRate / 100
+      conversion: conversionMetrics.overall.conversionRate / 100,
     };
 
     // Generate trends data
@@ -666,8 +675,8 @@ export class AnalyticsOrchestrator extends EventEmitter {
       recommendations: [
         'Test new ranking algorithm for relevance improvement',
         'A/B test mobile interface optimizations',
-        'Experiment with personalized result ordering'
-      ]
+        'Experiment with personalized result ordering',
+      ],
     };
 
     return {
@@ -675,7 +684,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
       queryAnalytics: queryAnalyticsData,
       trends,
       insights,
-      experiments
+      experiments,
     };
   }
 
@@ -705,12 +714,12 @@ export class AnalyticsOrchestrator extends EventEmitter {
         configuration: {
           searchAlgorithm: 'custom',
           rankingWeights: variant.algorithmConfig,
-          customParameters: variant.algorithmConfig
-        }
+          customParameters: variant.algorithmConfig,
+        },
       })),
       targeting: {
         userTypes: ['new', 'returning'],
-        devices: ['desktop', 'mobile', 'tablet']
+        devices: ['desktop', 'mobile', 'tablet'],
       },
       primaryMetric: 'click_through_rate',
       secondaryMetrics: ['conversion_rate', 'average_time_spent', 'user_satisfaction'],
@@ -718,19 +727,19 @@ export class AnalyticsOrchestrator extends EventEmitter {
         minimumDetectableEffect: 5, // 5% improvement
         confidenceLevel: 0.95,
         statisticalPower: 0.8,
-        minimumSampleSize: 1000
+        minimumSampleSize: 1000,
       },
       settings: {
         randomizationUnit: 'user',
         autoPromoteWinner: true,
         autoPromoteThreshold: 0.95,
-        maxDuration: 30 * 24 * 60 * 60 * 1000 // 30 days
+        maxDuration: 30 * 24 * 60 * 60 * 1000, // 30 days
       },
       metadata: {
         description,
         priority: 'high',
-        isActive: true
-      }
+        isActive: true,
+      },
     };
 
     const testId = this.abTestingFramework.createTest(testConfig);
@@ -770,9 +779,9 @@ export class AnalyticsOrchestrator extends EventEmitter {
       // Convert to CSV format
       const csvLines = [
         'metric,value,timestamp',
-        ...Object.entries(analytics.effectiveness).map(([metric, value]) =>
-          `${metric},${value},${Date.now()}`
-        )
+        ...Object.entries(analytics.effectiveness).map(
+          ([metric, value]) => `${metric},${value},${Date.now()}`
+        ),
       ];
       return csvLines.join('\n');
     }
@@ -800,8 +809,8 @@ export class AnalyticsOrchestrator extends EventEmitter {
         actionItems: [
           'Review result ranking algorithm',
           'Improve snippet quality',
-          'A/B test result presentation'
-        ]
+          'A/B test result presentation',
+        ],
       });
     }
 
@@ -815,8 +824,8 @@ export class AnalyticsOrchestrator extends EventEmitter {
         actionItems: [
           'Improve first result quality',
           'Add related suggestions',
-          'Optimize page load speed'
-        ]
+          'Optimize page load speed',
+        ],
       });
     }
 
@@ -830,8 +839,8 @@ export class AnalyticsOrchestrator extends EventEmitter {
         actionItems: [
           'Conduct user interviews',
           'Improve search relevance',
-          'Enhance user interface'
-        ]
+          'Enhance user interface',
+        ],
       });
     }
 
@@ -845,8 +854,8 @@ export class AnalyticsOrchestrator extends EventEmitter {
         actionItems: [
           'Improve result titles and snippets',
           'Add visual elements',
-          'Test different result layouts'
-        ]
+          'Test different result layouts',
+        ],
       });
     }
 
@@ -871,8 +880,8 @@ export class AnalyticsOrchestrator extends EventEmitter {
         ctr: Math.random() * 0.1 + 0.05,
         engagement: Math.random() * 0.3 + 0.4,
         satisfaction: Math.random() * 20 + 70,
-        conversion: Math.random() * 0.05 + 0.1
-      }
+        conversion: Math.random() * 0.05 + 0.1,
+      },
     }));
   }
 
@@ -910,7 +919,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
     this.batchQueue.push({
       type,
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Prevent memory leaks by limiting queue size
@@ -928,7 +937,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
       this.intentClassifier.getIntentDistribution(filters?.timeRange),
       this.complexityAnalyzer.getAverageComplexity(filters?.timeRange),
       this.failureDetector.getFailureAnalysis(filters?.timeRange),
-      this.behaviorTracker.getTopBehaviorPatterns(5)
+      this.behaviorTracker.getTopBehaviorPatterns(5),
     ]);
 
     return {
@@ -937,7 +946,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
       averageComplexity: complexity,
       failureRate: failures.overallFailureRate,
       mostCommonFailures: failures.topFailureReasons.map(f => f.reason),
-      behaviorPatterns: behaviors
+      behaviorPatterns: behaviors,
     };
   }
 
@@ -954,21 +963,21 @@ export class AnalyticsOrchestrator extends EventEmitter {
     const [patterns, intent, complexity] = await Promise.all([
       this.queryAnalyzer.findSimilarPatterns(query, 5),
       this.intentClassifier.classifyIntent(query),
-      this.complexityAnalyzer.analyzeComplexity(query)
+      this.complexityAnalyzer.analyzeComplexity(query),
     ]);
 
     const predictedFailure = await this.failureDetector.predictFailure({
       query,
       complexity: complexity.overallScore,
       intent: intent.primaryIntent,
-      userProfile: {}
+      userProfile: {},
     });
 
     const recommendations = this.generateQueryRecommendations({
       patterns,
       intent,
       complexity,
-      predictedFailure
+      predictedFailure,
     });
 
     return {
@@ -976,7 +985,7 @@ export class AnalyticsOrchestrator extends EventEmitter {
       intent,
       complexity,
       predictedFailure: predictedFailure.isPredictedFailure,
-      recommendations
+      recommendations,
     };
   }
 
@@ -1004,7 +1013,9 @@ export class AnalyticsOrchestrator extends EventEmitter {
 
     // Pattern-based recommendations
     if (data.patterns.length > 0) {
-      recommendations.push(`Similar queries found - consider using pattern: "${data.patterns[0].pattern}"`);
+      recommendations.push(
+        `Similar queries found - consider using pattern: "${data.patterns[0].pattern}"`
+      );
     }
 
     // Failure prediction recommendations

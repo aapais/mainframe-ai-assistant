@@ -1,6 +1,6 @@
 /**
  * Backup Services Index
- * 
+ *
  * Comprehensive backup system exports for the Mainframe AI Assistant.
  * Provides enterprise-grade backup, restore, scheduling, and validation capabilities.
  */
@@ -12,7 +12,7 @@ export { BackupScheduler } from './BackupScheduler';
 export { BackupValidator } from './BackupValidator';
 
 // Strategy Pattern Implementation
-export { 
+export {
   BackupStrategy,
   AbstractBackupStrategy,
   FullBackupStrategy,
@@ -21,7 +21,7 @@ export {
   createBackupStrategy,
   isValidBackupStrategyType,
   getBackupStrategyDescription,
-  getRecommendedStrategy
+  getRecommendedStrategy,
 } from './BackupStrategy';
 
 // Type Definitions - BackupService
@@ -34,7 +34,7 @@ export type {
   BackupMetrics,
   ValidationResult,
   RestoreRequest,
-  BackupInventory
+  BackupInventory,
 } from './BackupService';
 
 // Type Definitions - BackupStrategy
@@ -43,7 +43,7 @@ export type {
   BackupProgress,
   BackupExecutionContext,
   BackupMetadata,
-  BackupDelta
+  BackupDelta,
 } from './BackupStrategy';
 
 // Type Definitions - BackupScheduler
@@ -55,7 +55,7 @@ export type {
   NotificationConfig,
   ScheduleExecution,
   ScheduleStats,
-  PerformanceConfig
+  PerformanceConfig,
 } from './BackupScheduler';
 
 // Type Definitions - RestoreService
@@ -67,7 +67,7 @@ export type {
   RestoreValidationResult,
   RestoreMetrics,
   RestorePoint,
-  BackupChain
+  BackupChain,
 } from './RestoreService';
 
 // Type Definitions - BackupValidator
@@ -81,7 +81,7 @@ export type {
   ValidationRuleResult,
   ValidationPerformance,
   ValidationReport,
-  ValidationIssue
+  ValidationIssue,
 } from './BackupValidator';
 
 // Utility Functions
@@ -89,20 +89,20 @@ export {
   createCronExpression,
   validateCronExpression,
   getNextExecutionTime,
-  COMMON_SCHEDULES
+  COMMON_SCHEDULES,
 } from './BackupScheduler';
 
 export {
   calculateRestoreTime,
   getRestoreComplexity,
-  formatRestoreEstimate
+  formatRestoreEstimate,
 } from './RestoreService';
 
 export {
   StandardValidationRules,
   createDefaultValidationConfig,
   createQuickValidationConfig,
-  formatValidationReport
+  formatValidationReport,
 } from './BackupValidator';
 
 // Factory Functions and Builders
@@ -112,38 +112,40 @@ export const BackupServiceFactory = {
    */
   createDefault: (adapter: any): BackupService => {
     const defaultConfig = {
-      destinations: [{
-        id: 'local-default',
-        name: 'Local Default',
-        type: 'local' as const,
-        path: './backups',
-        priority: 1,
-        enabled: true,
-        config: {
-          maxRetentionDays: 30,
-          maxBackupCount: 100,
-          compressionLevel: 6,
-          encryptionEnabled: false
-        }
-      }],
+      destinations: [
+        {
+          id: 'local-default',
+          name: 'Local Default',
+          type: 'local' as const,
+          path: './backups',
+          priority: 1,
+          enabled: true,
+          config: {
+            maxRetentionDays: 30,
+            maxBackupCount: 100,
+            compressionLevel: 6,
+            encryptionEnabled: false,
+          },
+        },
+      ],
       defaultStrategy: 'full' as const,
       globalRetentionPolicy: {
         keepDaily: 7,
         keepWeekly: 4,
         keepMonthly: 12,
-        keepYearly: 5
+        keepYearly: 5,
       },
       performance: {
         maxConcurrentBackups: 3,
         maxParallelDestinations: 2,
         progressReportingInterval: 5000,
-        timeoutMinutes: 60
+        timeoutMinutes: 60,
       },
       validation: {
         enableIntegrityChecks: true,
         enableChecksumValidation: true,
         enableRestoreValidation: false,
-        validationSamplePercent: 100
+        validationSamplePercent: 100,
       },
       monitoring: {
         enableMetrics: true,
@@ -151,9 +153,9 @@ export const BackupServiceFactory = {
         alertThresholds: {
           failureRate: 85,
           responseTime: 300000,
-          storageUsage: 90
-        }
-      }
+          storageUsage: 90,
+        },
+      },
     };
 
     return new BackupService(adapter, defaultConfig);
@@ -162,7 +164,11 @@ export const BackupServiceFactory = {
   /**
    * Create a BackupService optimized for enterprise use
    */
-  createEnterprise: (adapter: any, primaryDestination: any, secondaryDestination?: any): BackupService => {
+  createEnterprise: (
+    adapter: any,
+    primaryDestination: any,
+    secondaryDestination?: any
+  ): BackupService => {
     const destinations = [primaryDestination];
     if (secondaryDestination) {
       destinations.push(secondaryDestination);
@@ -175,19 +181,19 @@ export const BackupServiceFactory = {
         keepDaily: 30,
         keepWeekly: 12,
         keepMonthly: 24,
-        keepYearly: 10
+        keepYearly: 10,
       },
       performance: {
         maxConcurrentBackups: 5,
         maxParallelDestinations: destinations.length,
         progressReportingInterval: 2000,
-        timeoutMinutes: 120
+        timeoutMinutes: 120,
       },
       validation: {
         enableIntegrityChecks: true,
         enableChecksumValidation: true,
         enableRestoreValidation: true,
-        validationSamplePercent: 100
+        validationSamplePercent: 100,
       },
       monitoring: {
         enableMetrics: true,
@@ -195,9 +201,9 @@ export const BackupServiceFactory = {
         alertThresholds: {
           failureRate: 95,
           responseTime: 180000,
-          storageUsage: 85
-        }
-      }
+          storageUsage: 85,
+        },
+      },
     };
 
     return new BackupService(adapter, enterpriseConfig);
@@ -208,38 +214,40 @@ export const BackupServiceFactory = {
    */
   createDevelopment: (adapter: any): BackupService => {
     const devConfig = {
-      destinations: [{
-        id: 'dev-local',
-        name: 'Development Local',
-        type: 'local' as const,
-        path: './dev-backups',
-        priority: 1,
-        enabled: true,
-        config: {
-          maxRetentionDays: 7,
-          maxBackupCount: 20,
-          compressionLevel: 1,
-          encryptionEnabled: false
-        }
-      }],
+      destinations: [
+        {
+          id: 'dev-local',
+          name: 'Development Local',
+          type: 'local' as const,
+          path: './dev-backups',
+          priority: 1,
+          enabled: true,
+          config: {
+            maxRetentionDays: 7,
+            maxBackupCount: 20,
+            compressionLevel: 1,
+            encryptionEnabled: false,
+          },
+        },
+      ],
       defaultStrategy: 'full' as const,
       globalRetentionPolicy: {
         keepDaily: 3,
         keepWeekly: 2,
         keepMonthly: 1,
-        keepYearly: 0
+        keepYearly: 0,
       },
       performance: {
         maxConcurrentBackups: 1,
         maxParallelDestinations: 1,
         progressReportingInterval: 10000,
-        timeoutMinutes: 30
+        timeoutMinutes: 30,
       },
       validation: {
         enableIntegrityChecks: true,
         enableChecksumValidation: true,
         enableRestoreValidation: false,
-        validationSamplePercent: 50
+        validationSamplePercent: 50,
       },
       monitoring: {
         enableMetrics: false,
@@ -247,13 +255,13 @@ export const BackupServiceFactory = {
         alertThresholds: {
           failureRate: 70,
           responseTime: 600000,
-          storageUsage: 95
-        }
-      }
+          storageUsage: 95,
+        },
+      },
     };
 
     return new BackupService(adapter, devConfig);
-  }
+  },
 };
 
 // Common Backup Configurations
@@ -264,7 +272,7 @@ export const BackupConfigurations = {
   NIGHTLY_FULL: {
     cronExpression: '0 2 * * *',
     strategy: 'full' as const,
-    description: 'Full backup nightly at 2 AM'
+    description: 'Full backup nightly at 2 AM',
   },
 
   /**
@@ -273,7 +281,7 @@ export const BackupConfigurations = {
   BUSINESS_HOURS_DIFFERENTIAL: {
     cronExpression: '0 6,12,18 * * 1-5',
     strategy: 'differential' as const,
-    description: 'Differential backup every 6 hours on weekdays'
+    description: 'Differential backup every 6 hours on weekdays',
   },
 
   /**
@@ -282,7 +290,7 @@ export const BackupConfigurations = {
   HOURLY_INCREMENTAL: {
     cronExpression: '0 * * * *',
     strategy: 'incremental' as const,
-    description: 'Incremental backup every hour'
+    description: 'Incremental backup every hour',
   },
 
   /**
@@ -292,40 +300,53 @@ export const BackupConfigurations = {
     {
       cronExpression: '0 2 * * 0',
       strategy: 'full' as const,
-      description: 'Full backup Sunday 2 AM'
+      description: 'Full backup Sunday 2 AM',
     },
     {
       cronExpression: '0 2 * * 1-6',
       strategy: 'differential' as const,
-      description: 'Differential backup weekdays 2 AM'
-    }
-  ]
+      description: 'Differential backup weekdays 2 AM',
+    },
+  ],
 };
 
 // Error Classes
 export class BackupServiceError extends Error {
-  constructor(message: string, public readonly code: string, public readonly details?: any) {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly details?: any
+  ) {
     super(message);
     this.name = 'BackupServiceError';
   }
 }
 
 export class BackupValidationError extends BackupServiceError {
-  constructor(message: string, public readonly validationResult: any) {
+  constructor(
+    message: string,
+    public readonly validationResult: any
+  ) {
     super(message, 'VALIDATION_FAILED', validationResult);
     this.name = 'BackupValidationError';
   }
 }
 
 export class RestoreError extends BackupServiceError {
-  constructor(message: string, public readonly restoreJob?: any) {
+  constructor(
+    message: string,
+    public readonly restoreJob?: any
+  ) {
     super(message, 'RESTORE_FAILED', restoreJob);
     this.name = 'RestoreError';
   }
 }
 
 export class ScheduleError extends BackupServiceError {
-  constructor(message: string, public readonly schedule?: any) {
+  constructor(
+    message: string,
+    public readonly schedule?: any
+  ) {
     super(message, 'SCHEDULE_ERROR', schedule);
     this.name = 'ScheduleError';
   }
@@ -338,45 +359,45 @@ export const BACKUP_CONSTANTS = {
     COMPRESSED: '.gz',
     ENCRYPTED: '.enc',
     BACKUP: '.bak',
-    DATABASE: '.db'
+    DATABASE: '.db',
   },
 
   // Default timeouts (in milliseconds)
   TIMEOUTS: {
-    DEFAULT_BACKUP: 30 * 60 * 1000,    // 30 minutes
-    DEFAULT_RESTORE: 60 * 60 * 1000,   // 1 hour
+    DEFAULT_BACKUP: 30 * 60 * 1000, // 30 minutes
+    DEFAULT_RESTORE: 60 * 60 * 1000, // 1 hour
     DEFAULT_VALIDATION: 5 * 60 * 1000, // 5 minutes
-    QUICK_VALIDATION: 60 * 1000        // 1 minute
+    QUICK_VALIDATION: 60 * 1000, // 1 minute
   },
 
   // Size limits
   LIMITS: {
     MAX_BACKUP_SIZE: 10 * 1024 * 1024 * 1024, // 10 GB
-    MIN_BACKUP_SIZE: 1024,                      // 1 KB
-    MAX_RETENTION_DAYS: 3650,                  // 10 years
+    MIN_BACKUP_SIZE: 1024, // 1 KB
+    MAX_RETENTION_DAYS: 3650, // 10 years
     MAX_CONCURRENT_BACKUPS: 10,
-    MAX_SCHEDULE_COUNT: 100
+    MAX_SCHEDULE_COUNT: 100,
   },
 
   // Performance thresholds
   PERFORMANCE: {
-    GOOD_BACKUP_TIME: 5 * 60 * 1000,     // 5 minutes
+    GOOD_BACKUP_TIME: 5 * 60 * 1000, // 5 minutes
     ACCEPTABLE_BACKUP_TIME: 30 * 60 * 1000, // 30 minutes
-    GOOD_COMPRESSION_RATIO: 0.3,          // 30% reduction
-    MIN_TRANSFER_RATE: 1024 * 1024        // 1 MB/s
-  }
+    GOOD_COMPRESSION_RATIO: 0.3, // 30% reduction
+    MIN_TRANSFER_RATE: 1024 * 1024, // 1 MB/s
+  },
 };
 
 /**
  * Comprehensive backup system usage example:
- * 
+ *
  * ```typescript
  * import { BackupServiceFactory, BackupConfigurations } from './backup';
- * 
+ *
  * // Create service
  * const backupService = BackupServiceFactory.createEnterprise(adapter, primaryDest, secondaryDest);
  * await backupService.initialize();
- * 
+ *
  * // Schedule regular backups
  * await backupService.scheduleBackup(
  *   BackupConfigurations.NIGHTLY_FULL.cronExpression,
@@ -385,18 +406,18 @@ export const BACKUP_CONSTANTS = {
  *     description: 'Automated nightly full backup'
  *   }
  * );
- * 
+ *
  * // Manual backup
  * const jobId = await backupService.createBackup({
  *   strategy: 'full',
  *   description: 'Pre-migration backup',
  *   validateAfterBackup: true
  * });
- * 
+ *
  * // Monitor progress
  * const job = await backupService.getBackupJob(jobId);
  * console.log(`Progress: ${job.progress.percentage}%`);
- * 
+ *
  * // Restore when needed
  * const restoreService = new RestoreService(adapter, config);
  * const restoreJobId = await restoreService.restore({

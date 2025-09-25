@@ -50,7 +50,10 @@ export class PerformanceMiddleware implements IPCMiddleware {
   private readonly metrics: Map<string, PerformanceStats> = new Map();
   private readonly slowQueryThreshold: number;
 
-  constructor(private readonly metricsService: any, slowQueryThreshold = 1000) {
+  constructor(
+    private readonly metricsService: any,
+    slowQueryThreshold = 1000
+  ) {
     this.slowQueryThreshold = slowQueryThreshold;
   }
 
@@ -63,7 +66,7 @@ export class PerformanceMiddleware implements IPCMiddleware {
       ...request.metadata,
       operationId,
       startTime,
-      performanceTracing: true
+      performanceTracing: true,
     };
 
     // Set up completion handler
@@ -78,7 +81,7 @@ export class PerformanceMiddleware implements IPCMiddleware {
       if (duration > this.slowQueryThreshold) {
         this.recordSlowOperation(request.channel, duration, {
           operationId,
-          requestData: this.sanitizeRequestData(request.data)
+          requestData: this.sanitizeRequestData(request.data),
         });
       }
 
@@ -131,7 +134,7 @@ export class PerformanceMiddleware implements IPCMiddleware {
       minDuration: Infinity,
       maxDuration: 0,
       successCount: 0,
-      errorCount: 0
+      errorCount: 0,
     };
   }
 
@@ -202,16 +205,14 @@ export class SecurityMiddleware implements IPCMiddleware {
       ...request.metadata,
       securityValidated: true,
       sanitized: true,
-      clientId
+      clientId,
     };
 
     return request;
   }
 
   private extractClientId(request: IPCRequest): string {
-    return request.metadata?.clientId ||
-           request.metadata?.userId ||
-           'anonymous';
+    return request.metadata?.clientId || request.metadata?.userId || 'anonymous';
   }
 
   private async checkRateLimit(channel: string, clientId: string): Promise<void> {
@@ -221,7 +222,7 @@ export class SecurityMiddleware implements IPCMiddleware {
       throw new RateLimitError(`Rate limit exceeded for channel: ${channel}`, {
         channel,
         clientId,
-        limit: this.rateLimiter.getLimit(channel)
+        limit: this.rateLimiter.getLimit(channel),
       });
     }
   }
@@ -231,7 +232,7 @@ export class SecurityMiddleware implements IPCMiddleware {
     if (this.containsSuspiciousContent(request)) {
       throw new SecurityError('Suspicious content detected', {
         channel: request.channel,
-        operationId: request.metadata?.operationId
+        operationId: request.metadata?.operationId,
       });
     }
 
@@ -240,7 +241,7 @@ export class SecurityMiddleware implements IPCMiddleware {
     if (requestSize > this.securityConfig.maxRequestSize) {
       throw new SecurityError('Request size exceeds limit', {
         size: requestSize,
-        limit: this.securityConfig.maxRequestSize
+        limit: this.securityConfig.maxRequestSize,
       });
     }
   }
@@ -251,7 +252,7 @@ export class SecurityMiddleware implements IPCMiddleware {
       /javascript:/gi,
       /vbscript:/gi,
       /onload\s*=/gi,
-      /onerror\s*=/gi
+      /onerror\s*=/gi,
     ];
 
     const content = JSON.stringify(request.data);
@@ -285,7 +286,7 @@ export class ValidationMiddleware implements IPCMiddleware {
         throw new ValidationError('Request validation failed', {
           errors: result.errors,
           channel: request.channel,
-          operationId: request.metadata?.operationId
+          operationId: request.metadata?.operationId,
         });
       }
 
@@ -296,7 +297,7 @@ export class ValidationMiddleware implements IPCMiddleware {
     request.metadata = {
       ...request.metadata,
       validated: true,
-      schemaUsed: schema ? true : false
+      schemaUsed: schema ? true : false,
     };
 
     return request;
@@ -331,13 +332,13 @@ export class LoggingMiddleware implements IPCMiddleware {
         channel: request.channel,
         timestamp: new Date(),
         clientId: request.metadata?.clientId,
-        requestSize: this.calculateRequestSize(request.data)
+        requestSize: this.calculateRequestSize(request.data),
       });
 
       if (this.config.logRequestData) {
         this.logger.debug('Request data', {
           operationId,
-          data: this.sanitizeData(request.data)
+          data: this.sanitizeData(request.data),
         });
       }
     }
@@ -353,19 +354,24 @@ export class LoggingMiddleware implements IPCMiddleware {
         if (originalOnComplete) {
           originalOnComplete(response);
         }
-      }
+      },
     };
 
     return request;
   }
 
-  private logResponse(operationId: string, channel: string, response: IPCResponse, duration: number): void {
+  private logResponse(
+    operationId: string,
+    channel: string,
+    response: IPCResponse,
+    duration: number
+  ): void {
     const logData = {
       operationId,
       channel,
       success: response.success,
       duration,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     if (response.success) {
@@ -376,14 +382,14 @@ export class LoggingMiddleware implements IPCMiddleware {
       this.logger.error('Request failed', response.error, {
         ...logData,
         errorCode: response.error?.code,
-        errorMessage: response.error?.message
+        errorMessage: response.error?.message,
       });
     }
 
     if (this.config.logResponseData && response.data) {
       this.logger.debug('Response data', {
         operationId,
-        dataSize: this.calculateResponseSize(response.data)
+        dataSize: this.calculateResponseSize(response.data),
       });
     }
   }
@@ -447,7 +453,7 @@ export class CachingMiddleware implements IPCMiddleware {
         ...request.metadata,
         cacheHit: true,
         skipProcessing: true,
-        cachedResponse
+        cachedResponse,
       };
 
       return request;
@@ -467,7 +473,7 @@ export class CachingMiddleware implements IPCMiddleware {
         if (originalOnComplete) {
           originalOnComplete(response);
         }
-      }
+      },
     };
 
     return request;
@@ -481,7 +487,7 @@ export class CachingMiddleware implements IPCMiddleware {
     const keyData = {
       channel: request.channel,
       data: request.data,
-      userId: request.metadata?.userId
+      userId: request.metadata?.userId,
     };
 
     return `middleware_cache:${this.hashObject(keyData)}`;
@@ -516,8 +522,8 @@ export class CachingMiddleware implements IPCMiddleware {
 
   private async cacheResponse(key: string, response: IPCResponse): Promise<void> {
     try {
-      const ttl = this.config.channelTtls?.[response.metadata?.channel as string] ||
-                  this.config.defaultTtl;
+      const ttl =
+        this.config.channelTtls?.[response.metadata?.channel as string] || this.config.defaultTtl;
 
       await this.cache.set(key, response, ttl);
     } catch (error) {
@@ -575,10 +581,12 @@ export class RateLimiter {
   }
 
   private getChannelLimit(channel: string): ChannelLimit {
-    return this.limits.get(channel) || {
-      maxRequests: this.config.defaultMaxRequests,
-      windowMs: this.config.defaultWindowMs
-    };
+    return (
+      this.limits.get(channel) || {
+        maxRequests: this.config.defaultMaxRequests,
+        windowMs: this.config.defaultWindowMs,
+      }
+    );
   }
 
   setChannelLimit(channel: string, limit: ChannelLimit): void {
@@ -589,8 +597,9 @@ export class RateLimiter {
     if (channel && clientId) {
       this.requests.delete(`${channel}:${clientId}`);
     } else if (channel) {
-      const keysToDelete = Array.from(this.requests.keys())
-        .filter(key => key.startsWith(`${channel}:`));
+      const keysToDelete = Array.from(this.requests.keys()).filter(key =>
+        key.startsWith(`${channel}:`)
+      );
       keysToDelete.forEach(key => this.requests.delete(key));
     } else {
       this.requests.clear();
@@ -738,21 +747,30 @@ interface SanitizationConfig {
 // ==============================
 
 class RateLimitError extends Error {
-  constructor(message: string, public metadata: any = {}) {
+  constructor(
+    message: string,
+    public metadata: any = {}
+  ) {
     super(message);
     this.name = 'RateLimitError';
   }
 }
 
 class SecurityError extends Error {
-  constructor(message: string, public metadata: any = {}) {
+  constructor(
+    message: string,
+    public metadata: any = {}
+  ) {
     super(message);
     this.name = 'SecurityError';
   }
 }
 
 class ValidationError extends Error {
-  constructor(message: string, public metadata: any = {}) {
+  constructor(
+    message: string,
+    public metadata: any = {}
+  ) {
     super(message);
     this.name = 'ValidationError';
   }
@@ -765,7 +783,7 @@ class ValidationError extends Error {
 const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
   maxRequestSize: 10 * 1024 * 1024, // 10MB
   enableContentFiltering: true,
-  suspiciousPatterns: []
+  suspiciousPatterns: [],
 };
 
 const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
@@ -773,7 +791,7 @@ const DEFAULT_LOGGING_CONFIG: LoggingConfig = {
   logResponses: false,
   logRequestData: false,
   logResponseData: false,
-  logErrors: true
+  logErrors: true,
 };
 
 const DEFAULT_CACHING_CONFIG: CachingConfig = {
@@ -781,14 +799,14 @@ const DEFAULT_CACHING_CONFIG: CachingConfig = {
   cacheableChannels: ['kb.search', 'kb.categories', 'kb.tags'],
   defaultTtl: 300000, // 5 minutes
   maxCacheSize: 1024 * 1024, // 1MB
-  cacheErrors: false
+  cacheErrors: false,
 };
 
 const DEFAULT_SANITIZATION_CONFIG: SanitizationConfig = {
   removeHtmlTags: false,
   escapeHtml: true,
   trimWhitespace: true,
-  sanitizeKeys: false
+  sanitizeKeys: false,
 };
 
 // ==============================
@@ -819,7 +837,10 @@ interface ICacheService {
 }
 
 interface IValidator {
-  validate(data: any, schema: ValidationSchema): Promise<{ isValid: boolean; data?: any; errors: any[] }>;
+  validate(
+    data: any,
+    schema: ValidationSchema
+  ): Promise<{ isValid: boolean; data?: any; errors: any[] }>;
 }
 
 interface ILogger {

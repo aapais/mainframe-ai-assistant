@@ -14,16 +14,52 @@ export interface SimilarityWeights {
 
 export class RelatedIncidentService {
   private readonly weights: SimilarityWeights = {
-    title: 3.0,      // Title matches are most important
+    title: 3.0, // Title matches are most important
     description: 1.0, // Description matches have normal weight
-    category: 2.0     // Category matches are important
+    category: 2.0, // Category matches are important
   };
 
   private readonly stopWords = new Set([
-    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
-    'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
-    'to', 'was', 'will', 'with', 'o', 'os', 'as', 'um', 'uma', 'do',
-    'da', 'de', 'para', 'com', 'em', 'no', 'na', 'por', 'se', 'que'
+    'a',
+    'an',
+    'and',
+    'are',
+    'as',
+    'at',
+    'be',
+    'by',
+    'for',
+    'from',
+    'has',
+    'he',
+    'in',
+    'is',
+    'it',
+    'its',
+    'of',
+    'on',
+    'that',
+    'the',
+    'to',
+    'was',
+    'will',
+    'with',
+    'o',
+    'os',
+    'as',
+    'um',
+    'uma',
+    'do',
+    'da',
+    'de',
+    'para',
+    'com',
+    'em',
+    'no',
+    'na',
+    'por',
+    'se',
+    'que',
   ]);
 
   /**
@@ -39,8 +75,8 @@ export class RelatedIncidentService {
     limit: number = 5
   ): RelatedIncident[] {
     // Filter to only resolved incidents, excluding current incident
-    const resolvedIncidents = allIncidents.filter(incident =>
-      incident.status === 'resolvido' && incident.id !== currentIncident.id
+    const resolvedIncidents = allIncidents.filter(
+      incident => incident.status === 'resolvido' && incident.id !== currentIncident.id
     );
 
     if (resolvedIncidents.length === 0) {
@@ -53,7 +89,7 @@ export class RelatedIncidentService {
       return {
         incident,
         similarityScore: similarity.score,
-        matchedTerms: similarity.matchedTerms
+        matchedTerms: similarity.matchedTerms,
       };
     });
 
@@ -67,7 +103,10 @@ export class RelatedIncidentService {
   /**
    * Calculate similarity between two incidents
    */
-  private calculateSimilarity(incident1: Incident, incident2: Incident): {
+  private calculateSimilarity(
+    incident1: Incident,
+    incident2: Incident
+  ): {
     score: number;
     matchedTerms: string[];
   } {
@@ -75,42 +114,37 @@ export class RelatedIncidentService {
     const tokens2 = this.tokenizeIncident(incident2);
 
     // Calculate weighted similarity scores
-    const titleSimilarity = this.calculateJaccardSimilarity(
-      tokens1.title,
-      tokens2.title
-    );
+    const titleSimilarity = this.calculateJaccardSimilarity(tokens1.title, tokens2.title);
 
     const descriptionSimilarity = this.calculateJaccardSimilarity(
       tokens1.description,
       tokens2.description
     );
 
-    const categorySimilarity = this.calculateJaccardSimilarity(
-      tokens1.category,
-      tokens2.category
-    );
+    const categorySimilarity = this.calculateJaccardSimilarity(tokens1.category, tokens2.category);
 
     // Calculate weighted total score
-    const totalScore = (
-      titleSimilarity.score * this.weights.title +
-      descriptionSimilarity.score * this.weights.description +
-      categorySimilarity.score * this.weights.category
-    ) / (this.weights.title + this.weights.description + this.weights.category);
+    const totalScore =
+      (titleSimilarity.score * this.weights.title +
+        descriptionSimilarity.score * this.weights.description +
+        categorySimilarity.score * this.weights.category) /
+      (this.weights.title + this.weights.description + this.weights.category);
 
     // Combine matched terms from all fields
     const allMatchedTerms = [
       ...titleSimilarity.matchedTerms,
       ...descriptionSimilarity.matchedTerms,
-      ...categorySimilarity.matchedTerms
+      ...categorySimilarity.matchedTerms,
     ];
 
     // Remove duplicates and sort by length (longer terms first)
-    const uniqueMatchedTerms = Array.from(new Set(allMatchedTerms))
-      .sort((a, b) => b.length - a.length);
+    const uniqueMatchedTerms = Array.from(new Set(allMatchedTerms)).sort(
+      (a, b) => b.length - a.length
+    );
 
     return {
       score: totalScore,
-      matchedTerms: uniqueMatchedTerms
+      matchedTerms: uniqueMatchedTerms,
     };
   }
 
@@ -125,7 +159,7 @@ export class RelatedIncidentService {
     return {
       title: this.tokenizeText(incident.title || ''),
       description: this.tokenizeText(incident.description || ''),
-      category: this.tokenizeText(incident.category || '')
+      category: this.tokenizeText(incident.category || ''),
     };
   }
 
@@ -141,10 +175,8 @@ export class RelatedIncidentService {
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
       .split(/\s+/)
-      .filter(token =>
-        token.length > 2 &&
-        !this.stopWords.has(token) &&
-        !/^\d+$/.test(token) // Exclude pure numbers
+      .filter(
+        token => token.length > 2 && !this.stopWords.has(token) && !/^\d+$/.test(token) // Exclude pure numbers
       );
 
     return new Set(tokens);
@@ -153,7 +185,10 @@ export class RelatedIncidentService {
   /**
    * Calculate Jaccard similarity between two sets of tokens
    */
-  private calculateJaccardSimilarity(set1: Set<string>, set2: Set<string>): {
+  private calculateJaccardSimilarity(
+    set1: Set<string>,
+    set2: Set<string>
+  ): {
     score: number;
     matchedTerms: string[];
   } {
@@ -174,7 +209,7 @@ export class RelatedIncidentService {
 
     return {
       score: jaccardScore,
-      matchedTerms
+      matchedTerms,
     };
   }
 

@@ -56,13 +56,15 @@ export class MigrationOrchestrator extends EventEmitter {
    */
   async createMigrationPlan(targetVersion: number): Promise<MigrationPlan> {
     const currentVersion = this.migrationManager.getCurrentVersion();
-    
+
     if (targetVersion <= currentVersion) {
-      throw new Error(`Target version ${targetVersion} must be greater than current version ${currentVersion}`);
+      throw new Error(
+        `Target version ${targetVersion} must be greater than current version ${currentVersion}`
+      );
     }
 
     const migrations = await this.loadMigrationsForPlan(currentVersion, targetVersion);
-    
+
     const plan: MigrationPlan = {
       currentVersion,
       targetVersion,
@@ -70,7 +72,7 @@ export class MigrationOrchestrator extends EventEmitter {
       estimatedDuration: this.estimateMigrationDuration(migrations),
       riskLevel: this.assessRiskLevel(migrations),
       requiresDowntime: this.assessDowntimeRequirement(migrations),
-      rollbackPlan: this.generateRollbackPlan(migrations)
+      rollbackPlan: this.generateRollbackPlan(migrations),
     };
 
     // Validate the migration plan
@@ -85,13 +87,15 @@ export class MigrationOrchestrator extends EventEmitter {
   /**
    * Execute migration plan with zero-downtime strategy when possible
    */
-  async executeMigrationPlan(plan: MigrationPlan, options: {
-    dryRun?: boolean;
-    pauseBetweenSteps?: number;
-    maxRetries?: number;
-    continueOnWarning?: boolean;
-  } = {}): Promise<MigrationResult[]> {
-    
+  async executeMigrationPlan(
+    plan: MigrationPlan,
+    options: {
+      dryRun?: boolean;
+      pauseBetweenSteps?: number;
+      maxRetries?: number;
+      continueOnWarning?: boolean;
+    } = {}
+  ): Promise<MigrationResult[]> {
     if (options.dryRun) {
       return this.executeDryRun(plan);
     }
@@ -102,7 +106,7 @@ export class MigrationOrchestrator extends EventEmitter {
       status: 'running',
       startTime: new Date(),
       errors: [],
-      warnings: []
+      warnings: [],
     };
 
     this.emit('migrationStarted', this.currentProgress);
@@ -120,26 +124,25 @@ export class MigrationOrchestrator extends EventEmitter {
         const migration = plan.migrations[i];
         this.currentProgress.currentStep = i + 1;
         this.currentProgress.currentMigration = migration.version;
-        
+
         this.emit('migrationStepStarted', {
           step: i + 1,
           migration: migration.version,
-          description: migration.description
+          description: migration.description,
         });
 
         // Pre-migration validation
         const preValidation = await this.validator.validatePreMigration(migration);
         if (!preValidation.isValid) {
-          this.currentProgress.errors.push(`Pre-migration validation failed for ${migration.version}: ${preValidation.errors.join(', ')}`);
+          this.currentProgress.errors.push(
+            `Pre-migration validation failed for ${migration.version}: ${preValidation.errors.join(', ')}`
+          );
           throw new Error(`Pre-migration validation failed for ${migration.version}`);
         }
 
         // Execute migration with retries
-        const result = await this.executeMigrationWithRetries(
-          migration,
-          options.maxRetries || 3
-        );
-        
+        const result = await this.executeMigrationWithRetries(migration, options.maxRetries || 3);
+
         results.push(result);
 
         if (!result.success) {
@@ -150,7 +153,9 @@ export class MigrationOrchestrator extends EventEmitter {
         // Post-migration validation
         const postValidation = await this.validator.validatePostMigration(migration);
         if (!postValidation.isValid) {
-          this.currentProgress.errors.push(`Post-migration validation failed for ${migration.version}: ${postValidation.errors.join(', ')}`);
+          this.currentProgress.errors.push(
+            `Post-migration validation failed for ${migration.version}: ${postValidation.errors.join(', ')}`
+          );
           if (!options.continueOnWarning) {
             rollbackRequired = true;
             break;
@@ -163,7 +168,7 @@ export class MigrationOrchestrator extends EventEmitter {
           step: i + 1,
           migration: migration.version,
           success: result.success,
-          duration: result.duration
+          duration: result.duration,
         });
 
         // Pause between steps if requested
@@ -181,24 +186,23 @@ export class MigrationOrchestrator extends EventEmitter {
         this.emit('migrationCompleted', {
           totalMigrations: results.length,
           totalDuration: results.reduce((sum, r) => sum + r.duration, 0),
-          success: true
+          success: true,
         });
       }
-
     } catch (error) {
       this.currentProgress.status = 'failed';
       this.currentProgress.errors.push(error.message);
-      
+
       if (results.length > 0) {
         await this.executeRollback(results);
         this.currentProgress.status = 'rolled_back';
       }
-      
+
       this.emit('migrationFailed', {
         error: error.message,
-        rollbackPerformed: results.length > 0
+        rollbackPerformed: results.length > 0,
       });
-      
+
       throw error;
     } finally {
       this.progressTracker.finish();
@@ -240,19 +244,24 @@ export class MigrationOrchestrator extends EventEmitter {
       }
 
       // Check for risky migrations
-      const highRiskMigrations = pendingMigrations.filter(m => 
-        m.description.toLowerCase().includes('breaking') ||
-        m.description.toLowerCase().includes('major')
+      const highRiskMigrations = pendingMigrations.filter(
+        m =>
+          m.description.toLowerCase().includes('breaking') ||
+          m.description.toLowerCase().includes('major')
       );
 
       if (highRiskMigrations.length > 0) {
-        warnings.push(`${highRiskMigrations.length} high-risk migrations detected - backup recommended`);
+        warnings.push(
+          `${highRiskMigrations.length} high-risk migrations detected - backup recommended`
+        );
       }
 
       // Check version gaps
       const versionGaps = this.findVersionGaps(pendingMigrations);
       if (versionGaps.length > 0) {
-        warnings.push(`Version gaps detected: ${versionGaps.join(', ')} - review migration sequence`);
+        warnings.push(
+          `Version gaps detected: ${versionGaps.join(', ')} - review migration sequence`
+        );
       }
     }
 
@@ -261,7 +270,7 @@ export class MigrationOrchestrator extends EventEmitter {
       latestVersion,
       pendingMigrations,
       recommendedAction,
-      warnings
+      warnings,
     };
   }
 
@@ -270,24 +279,26 @@ export class MigrationOrchestrator extends EventEmitter {
    */
   async resumeFromCheckpoint(checkpointPath: string): Promise<MigrationResult[]> {
     const checkpoint = this.loadCheckpoint(checkpointPath);
-    
+
     if (!checkpoint) {
       throw new Error('Invalid or missing checkpoint file');
     }
 
     const remainingMigrations = checkpoint.plan.migrations.slice(checkpoint.completedSteps);
-    
+
     // Validate database state matches checkpoint
     const currentVersion = this.migrationManager.getCurrentVersion();
     if (currentVersion !== checkpoint.lastCompletedVersion) {
-      throw new Error(`Database version mismatch. Expected: ${checkpoint.lastCompletedVersion}, Found: ${currentVersion}`);
+      throw new Error(
+        `Database version mismatch. Expected: ${checkpoint.lastCompletedVersion}, Found: ${currentVersion}`
+      );
     }
 
     // Continue migration from checkpoint
     const updatedPlan: MigrationPlan = {
       ...checkpoint.plan,
       migrations: remainingMigrations,
-      currentVersion: checkpoint.lastCompletedVersion
+      currentVersion: checkpoint.lastCompletedVersion,
     };
 
     return this.executeMigrationPlan(updatedPlan);
@@ -295,7 +306,10 @@ export class MigrationOrchestrator extends EventEmitter {
 
   // Private methods
 
-  private async loadMigrationsForPlan(fromVersion: number, toVersion: number): Promise<Migration[]> {
+  private async loadMigrationsForPlan(
+    fromVersion: number,
+    toVersion: number
+  ): Promise<Migration[]> {
     const allMigrations = await this.loadAllMigrations();
     return allMigrations
       .filter(m => m.version > fromVersion && m.version <= toVersion)
@@ -310,7 +324,8 @@ export class MigrationOrchestrator extends EventEmitter {
       return migrations;
     }
 
-    const files = fs.readdirSync(migrationsPath)
+    const files = fs
+      .readdirSync(migrationsPath)
       .filter(file => file.endsWith('.sql'))
       .sort();
 
@@ -331,7 +346,7 @@ export class MigrationOrchestrator extends EventEmitter {
         version,
         description,
         up,
-        down
+        down,
       });
     }
 
@@ -341,38 +356,38 @@ export class MigrationOrchestrator extends EventEmitter {
   private estimateMigrationDuration(migrations: Migration[]): number {
     // Estimate based on migration complexity
     let totalMinutes = 0;
-    
+
     for (const migration of migrations) {
       const upLines = migration.up.split('\n').length;
       const downLines = migration.down.split('\n').length;
-      
+
       // Base time: 30 seconds per migration
       let migrationMinutes = 0.5;
-      
+
       // Add time based on complexity
       if (upLines > 50) migrationMinutes += 1;
       if (upLines > 100) migrationMinutes += 2;
       if (upLines > 200) migrationMinutes += 5;
-      
+
       // Add time for data transformations
       if (migration.up.includes('INSERT INTO') || migration.up.includes('UPDATE')) {
         migrationMinutes += 2;
       }
-      
+
       // Add time for index creation
       if (migration.up.includes('CREATE INDEX')) {
         migrationMinutes += 1;
       }
-      
+
       totalMinutes += migrationMinutes;
     }
-    
+
     return Math.ceil(totalMinutes);
   }
 
   private assessRiskLevel(migrations: Migration[]): 'low' | 'medium' | 'high' | 'critical' {
     let riskScore = 0;
-    
+
     for (const migration of migrations) {
       // Check for risky operations
       if (migration.up.includes('DROP TABLE')) riskScore += 10;
@@ -383,7 +398,7 @@ export class MigrationOrchestrator extends EventEmitter {
       if (migration.description.toLowerCase().includes('breaking')) riskScore += 8;
       if (migration.description.toLowerCase().includes('major')) riskScore += 6;
     }
-    
+
     if (riskScore >= 20) return 'critical';
     if (riskScore >= 10) return 'high';
     if (riskScore >= 5) return 'medium';
@@ -410,45 +425,44 @@ export class MigrationOrchestrator extends EventEmitter {
 
   private async executeDryRun(plan: MigrationPlan): Promise<MigrationResult[]> {
     const results: MigrationResult[] = [];
-    
+
     this.emit('dryRunStarted', { plan });
-    
+
     for (const migration of plan.migrations) {
       // Simulate migration execution
       const startTime = Date.now();
-      
+
       try {
         // Validate SQL syntax without execution
         await this.validator.validateSqlSyntax(migration.up);
-        
+
         results.push({
           success: true,
           version: migration.version,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
-        
+
         this.emit('dryRunStep', {
           migration: migration.version,
           success: true,
-          message: 'SQL syntax valid'
+          message: 'SQL syntax valid',
         });
-        
       } catch (error) {
         results.push({
           success: false,
           version: migration.version,
           error: error.message,
-          duration: Date.now() - startTime
+          duration: Date.now() - startTime,
         });
-        
+
         this.emit('dryRunStep', {
           migration: migration.version,
           success: false,
-          error: error.message
+          error: error.message,
         });
       }
     }
-    
+
     this.emit('dryRunCompleted', { results });
     return results;
   }
@@ -459,19 +473,19 @@ export class MigrationOrchestrator extends EventEmitter {
       path.dirname(this.db.name),
       `backup_pre_migration_v${plan.currentVersion}_to_v${plan.targetVersion}_${timestamp}.db`
     );
-    
+
     this.db.backup(backupPath);
-    
+
     this.emit('backupCreated', { backupPath });
     return backupPath;
   }
 
   private async executeMigrationWithRetries(
-    migration: Migration, 
+    migration: Migration,
     maxRetries: number
   ): Promise<MigrationResult> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const result = await this.migrationManager['applyMigration'](migration);
@@ -481,51 +495,51 @@ export class MigrationOrchestrator extends EventEmitter {
         lastError = new Error(result.error);
       } catch (error) {
         lastError = error;
-        
+
         if (attempt < maxRetries) {
           this.emit('migrationRetry', {
             migration: migration.version,
             attempt,
-            error: error.message
+            error: error.message,
           });
-          
+
           // Wait before retry (exponential backoff)
           await this.sleep(Math.pow(2, attempt) * 1000);
         }
       }
     }
-    
-    throw lastError || new Error(`Migration ${migration.version} failed after ${maxRetries} attempts`);
+
+    throw (
+      lastError || new Error(`Migration ${migration.version} failed after ${maxRetries} attempts`)
+    );
   }
 
   private async executeRollback(completedMigrations: MigrationResult[]): Promise<void> {
     this.emit('rollbackStarted', { migrationsToRollback: completedMigrations.length });
-    
-    const successfulMigrations = completedMigrations
-      .filter(r => r.success)
-      .reverse();
-      
+
+    const successfulMigrations = completedMigrations.filter(r => r.success).reverse();
+
     for (const migration of successfulMigrations) {
       try {
         await this.rollbackManager.rollbackMigration(migration.version);
         this.emit('rollbackStep', { version: migration.version, success: true });
       } catch (error) {
-        this.emit('rollbackStep', { 
-          version: migration.version, 
-          success: false, 
-          error: error.message 
+        this.emit('rollbackStep', {
+          version: migration.version,
+          success: false,
+          error: error.message,
         });
         // Continue with other rollbacks even if one fails
       }
     }
-    
+
     this.emit('rollbackCompleted');
   }
 
   private findVersionGaps(migrations: Migration[]): number[] {
     const gaps: number[] = [];
     const versions = migrations.map(m => m.version).sort((a, b) => a - b);
-    
+
     for (let i = 1; i < versions.length; i++) {
       if (versions[i] - versions[i - 1] > 1) {
         for (let gap = versions[i - 1] + 1; gap < versions[i]; gap++) {
@@ -533,7 +547,7 @@ export class MigrationOrchestrator extends EventEmitter {
         }
       }
     }
-    
+
     return gaps;
   }
 
