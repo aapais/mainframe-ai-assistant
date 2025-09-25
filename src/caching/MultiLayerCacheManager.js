@@ -95,7 +95,7 @@ class MultiLayerCacheManager extends events_1.EventEmitter {
       return computeFn();
     }
   }
-  async warmCache(strategy) {
+  async warmCacheStrategy(strategy) {
     console.log('🔥 Starting intelligent cache warming...');
     const startTime = performance.now();
     let warmedEntries = 0;
@@ -596,7 +596,7 @@ class MultiLayerCacheManager extends events_1.EventEmitter {
     this.enforceInstantCacheLimit();
     this.enforceHotCacheLimit();
     this.enforceWarmCacheLimit();
-    this.warmCache('popular-entries');
+    this.warmCacheStrategy('popular-entries');
     console.log('✅ Cache maintenance completed');
   }
   monitorPerformance() {

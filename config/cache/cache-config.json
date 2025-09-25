@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "cacheConfig": {
+    "unifiedPath": "/mnt/c/mainframe-ai-assistant/config/cache",
+    "ttl": {
+      "default": 86400,
+      "metrics": 604800,
+      "sessions": 2592000,
+      "temporary": 3600
+    },
+    "maxSize": {
+      "total": "100MB",
+      "singleFile": "10MB"
+    },
+    "cleanupPolicy": {
+      "autoCleanup": true,
+      "cleanupInterval": "daily",
+      "maxAge": 30,
+      "compressionEnabled": true
+    },
+    "directories": {
+      "metrics": "metrics/",
+      "sessions": "sessions/",
+      "temporary": "temp/",
+      "memory": "memory/"
+    }
+  },
+  "migration": {
+    "consolidatedFrom": [
+      ".claude/cache",
+      ".hive-mind/cache",
+      "data/cache",
+      ".claude-flow/cache"
+    ],
+    "migrationDate": "2025-09-24T11:45:00Z"
+  }
+}

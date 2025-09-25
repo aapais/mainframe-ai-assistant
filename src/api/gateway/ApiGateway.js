@@ -190,7 +190,7 @@ class ApiGateway {
         message: 'Muitas requisições. Tente novamente mais tarde.',
         code: 'RATE_LIMIT_EXCEEDED',
       },
-      onLimitReached: (req, res, options) => {
+      onLimitReached: (req, res) => {
         logger.warn(`Rate limit atingido para ${req.user?.id || req.ip}: ${req.method} ${req.url}`);
         this.recordMetric('rate_limit_exceeded', {
           userId: req.user?.id,
@@ -402,6 +402,7 @@ class ApiGateway {
     });
 
     // Error handler global
+    // eslint-disable-next-line no-unused-vars
     this.app.use((error, req, res, next) => {
       const statusCode = error.statusCode || error.status || 500;
 
@@ -536,6 +537,7 @@ class ApiGateway {
       }
 
       // Fechar circuit breakers
+      // eslint-disable-next-line no-unused-vars
       for (const [name, cb] of this.circuitBreakers) {
         await cb.shutdown();
       }

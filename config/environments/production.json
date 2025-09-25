@@ -1,0 +1,174 @@
+{
+  "environment": "production",
+  "security": {
+    "enableHttps": true,
+    "forceHttps": true,
+    "hsts": {
+      "maxAge": 31536000,
+      "includeSubDomains": true,
+      "preload": true
+    },
+    "csp": {
+      "defaultSrc": ["'self'"],
+      "scriptSrc": ["'self'", "'unsafe-inline'"],
+      "styleSrc": ["'self'", "'unsafe-inline'"],
+      "imgSrc": ["'self'", "data:", "https:"],
+      "connectSrc": ["'self'"],
+      "fontSrc": ["'self'"],
+      "mediaSrc": ["'none'"],
+      "objectSrc": ["'none'"],
+      "frameSrc": ["'none'"]
+    },
+    "rateLimiting": {
+      "enabled": true,
+      "windowMs": 900000,
+      "maxRequests": 100,
+      "skipFailedRequests": false,
+      "skipSuccessfulRequests": false
+    },
+    "sessionSecurity": {
+      "secure": true,
+      "httpOnly": true,
+      "sameSite": "strict",
+      "maxAge": 3600000,
+      "name": "mainframe_session"
+    }
+  },
+  "sso": {
+    "provider": "azure-ad",
+    "endpoints": {
+      "authorization": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize",
+      "token": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+      "userInfo": "https://graph.microsoft.com/v1.0/me"
+    },
+    "scopes": ["openid", "profile", "email", "User.Read"],
+    "timeout": 30000,
+    "retries": 3,
+    "cache": {
+      "enabled": true,
+      "ttl": 300,
+      "maxSize": 1000
+    }
+  },
+  "database": {
+    "pool": {
+      "min": 5,
+      "max": 20,
+      "idle": 10000,
+      "acquire": 60000,
+      "evict": 1000
+    },
+    "ssl": {
+      "require": true,
+      "rejectUnauthorized": true
+    },
+    "backup": {
+      "enabled": true,
+      "schedule": "0 2 * * *",
+      "retention": 30,
+      "encryption": true
+    }
+  },
+  "monitoring": {
+    "healthCheck": {
+      "enabled": true,
+      "path": "/health",
+      "interval": 30000
+    },
+    "metrics": {
+      "enabled": true,
+      "path": "/metrics",
+      "collectDefaultMetrics": true
+    },
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "auditEnabled": true,
+      "retention": 90
+    },
+    "alerts": {
+      "enabled": true,
+      "channels": ["email", "slack"],
+      "thresholds": {
+        "errorRate": 0.01,
+        "responseTime": 2000,
+        "cpuUsage": 80,
+        "memoryUsage": 85
+      }
+    }
+  },
+  "performance": {
+    "caching": {
+      "enabled": true,
+      "redis": {
+        "enabled": true,
+        "ttl": 3600
+      },
+      "memoryCache": {
+        "enabled": true,
+        "maxSize": 100,
+        "ttl": 300
+      }
+    },
+    "compression": {
+      "enabled": true,
+      "level": 6,
+      "threshold": 1024
+    },
+    "clustering": {
+      "enabled": true,
+      "workers": "auto"
+    }
+  },
+  "deployment": {
+    "strategy": "blue-green",
+    "replicas": 3,
+    "resources": {
+      "requests": {
+        "cpu": "200m",
+        "memory": "256Mi"
+      },
+      "limits": {
+        "cpu": "500m",
+        "memory": "512Mi"
+      }
+    },
+    "readinessProbe": {
+      "httpGet": {
+        "path": "/ready",
+        "port": 3000
+      },
+      "initialDelaySeconds": 10,
+      "periodSeconds": 5,
+      "timeoutSeconds": 3,
+      "failureThreshold": 3
+    },
+    "livenessProbe": {
+      "httpGet": {
+        "path": "/health",
+        "port": 3000
+      },
+      "initialDelaySeconds": 30,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5,
+      "failureThreshold": 3
+    }
+  },
+  "compliance": {
+    "gdpr": {
+      "enabled": true,
+      "dataRetention": 2555,
+      "anonymization": true
+    },
+    "soc2": {
+      "enabled": true,
+      "auditLogging": true,
+      "accessControls": true
+    },
+    "iso27001": {
+      "enabled": true,
+      "riskAssessment": true,
+      "incidentResponse": true
+    }
+  }
+}

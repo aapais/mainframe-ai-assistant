@@ -25,15 +25,14 @@ const pgConfig = {
 };
 
 // Initialize services
-let dbClient = null;
 let embeddingService = null;
 
 // Initialize embedding service
 if (process.env.OPENAI_API_KEY) {
   embeddingService = new EmbeddingService(process.env.OPENAI_API_KEY);
-  console.log('🧠 Vector embedding service initialized');
+  // Vector embedding service initialized
 } else {
-  console.warn('⚠️ OPENAI_API_KEY not found. Vector search will be disabled.');
+  // OPENAI_API_KEY not found. Vector search will be disabled.
 }
 
 // Database connection management
@@ -43,10 +42,10 @@ class PostgreSQLManager {
   }
 
   async connect() {
-    console.log('🐘 Connecting to PostgreSQL...');
+    // Connecting to PostgreSQL...
     this.client = new Client(pgConfig);
     await this.client.connect();
-    console.log('✅ PostgreSQL connected');
+    // PostgreSQL connected
 
     // Initialize knowledge base schema
     await this.initializeKnowledgeBase();

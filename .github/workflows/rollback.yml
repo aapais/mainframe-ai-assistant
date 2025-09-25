@@ -1,0 +1,70 @@
+name: Emergency Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to rollback to (optional - uses last known good)'
+        required: false
+        type: string
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    name: Emergency Rollback
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup deployment tools
+        run: |
+          curl -LO https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Configure kubectl
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > kubeconfig
+          else
+            echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > kubeconfig
+          fi
+          export KUBECONFIG=kubeconfig
+
+      - name: Create emergency backup
+        run: ./scripts/backup/emergency-backup.sh ${{ github.event.inputs.environment }}
+        env:
+          DATABASE_URL: ${{ github.event.inputs.environment == 'production' && secrets.PRODUCTION_DATABASE_URL || secrets.STAGING_DATABASE_URL }}
+
+      - name: Execute rollback
+        run: ./scripts/deployment/rollback.sh ${{ github.event.inputs.environment }} "${{ github.event.inputs.version }}"
+        env:
+          ROLLBACK_REASON: "${{ github.event.inputs.reason }}"
+
+      - name: Verify rollback
+        run: ./scripts/deployment/verify-rollback.sh ${{ github.event.inputs.environment }}
+
+      - name: Notify rollback
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#incidents'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          text: |
+            🚨 EMERGENCY ROLLBACK EXECUTED
+            Environment: ${{ github.event.inputs.environment }}
+            Version: ${{ github.event.inputs.version || 'last known good' }}
+            Reason: ${{ github.event.inputs.reason }}
+            Status: ${{ job.status }}

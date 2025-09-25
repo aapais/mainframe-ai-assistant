@@ -1,0 +1,188 @@
+{
+  "environment": "staging",
+  "security": {
+    "enableHttps": true,
+    "forceHttps": false,
+    "hsts": {
+      "maxAge": 86400,
+      "includeSubDomains": true,
+      "preload": false
+    },
+    "csp": {
+      "defaultSrc": ["'self'"],
+      "scriptSrc": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      "styleSrc": ["'self'", "'unsafe-inline'"],
+      "imgSrc": ["'self'", "data:", "https:", "http:"],
+      "connectSrc": ["'self'", "ws:", "wss:"],
+      "fontSrc": ["'self'"],
+      "mediaSrc": ["'self'"],
+      "objectSrc": ["'none'"],
+      "frameSrc": ["'self'"]
+    },
+    "rateLimiting": {
+      "enabled": true,
+      "windowMs": 900000,
+      "maxRequests": 1000,
+      "skipFailedRequests": true,
+      "skipSuccessfulRequests": false
+    },
+    "sessionSecurity": {
+      "secure": false,
+      "httpOnly": true,
+      "sameSite": "lax",
+      "maxAge": 3600000,
+      "name": "mainframe_session_staging"
+    }
+  },
+  "sso": {
+    "provider": "azure-ad",
+    "endpoints": {
+      "authorization": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize",
+      "token": "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token",
+      "userInfo": "https://graph.microsoft.com/v1.0/me"
+    },
+    "scopes": ["openid", "profile", "email", "User.Read"],
+    "timeout": 30000,
+    "retries": 2,
+    "cache": {
+      "enabled": true,
+      "ttl": 300,
+      "maxSize": 500
+    },
+    "debug": true
+  },
+  "database": {
+    "pool": {
+      "min": 2,
+      "max": 10,
+      "idle": 10000,
+      "acquire": 60000,
+      "evict": 1000
+    },
+    "ssl": {
+      "require": false,
+      "rejectUnauthorized": false
+    },
+    "backup": {
+      "enabled": true,
+      "schedule": "0 6 * * *",
+      "retention": 7,
+      "encryption": false
+    }
+  },
+  "monitoring": {
+    "healthCheck": {
+      "enabled": true,
+      "path": "/health",
+      "interval": 30000
+    },
+    "metrics": {
+      "enabled": true,
+      "path": "/metrics",
+      "collectDefaultMetrics": true,
+      "detailed": true
+    },
+    "logging": {
+      "level": "debug",
+      "format": "pretty",
+      "auditEnabled": true,
+      "retention": 30
+    },
+    "alerts": {
+      "enabled": true,
+      "channels": ["slack"],
+      "thresholds": {
+        "errorRate": 0.05,
+        "responseTime": 5000,
+        "cpuUsage": 90,
+        "memoryUsage": 90
+      }
+    }
+  },
+  "performance": {
+    "caching": {
+      "enabled": true,
+      "redis": {
+        "enabled": false,
+        "ttl": 1800
+      },
+      "memoryCache": {
+        "enabled": true,
+        "maxSize": 50,
+        "ttl": 300
+      }
+    },
+    "compression": {
+      "enabled": true,
+      "level": 4,
+      "threshold": 1024
+    },
+    "clustering": {
+      "enabled": false,
+      "workers": 1
+    }
+  },
+  "deployment": {
+    "strategy": "rolling-update",
+    "replicas": 2,
+    "resources": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "300m",
+        "memory": "256Mi"
+      }
+    },
+    "readinessProbe": {
+      "httpGet": {
+        "path": "/ready",
+        "port": 3000
+      },
+      "initialDelaySeconds": 5,
+      "periodSeconds": 5,
+      "timeoutSeconds": 3,
+      "failureThreshold": 3
+    },
+    "livenessProbe": {
+      "httpGet": {
+        "path": "/health",
+        "port": 3000
+      },
+      "initialDelaySeconds": 15,
+      "periodSeconds": 10,
+      "timeoutSeconds": 5,
+      "failureThreshold": 3
+    }
+  },
+  "testing": {
+    "enabled": true,
+    "mockServices": true,
+    "coverage": {
+      "enabled": true,
+      "threshold": 80
+    },
+    "e2e": {
+      "enabled": true,
+      "headless": true
+    }
+  },
+  "compliance": {
+    "gdpr": {
+      "enabled": true,
+      "dataRetention": 365,
+      "anonymization": false
+    },
+    "soc2": {
+      "enabled": false,
+      "auditLogging": true,
+      "accessControls": true
+    },
+    "iso27001": {
+      "enabled": false,
+      "riskAssessment": false,
+      "incidentResponse": true
+    }
+  }
+}

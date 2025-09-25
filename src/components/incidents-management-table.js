@@ -1,5 +1,6 @@
 // Incidents Management Table with Sorting and Pagination
 // Enhanced table component for incidents with full sorting and pagination capabilities
+/* global React */
 
 window.IncidentsManagementTable = function({ incidents, onView, onEdit }) {
     const [currentPage, setCurrentPage] = React.useState(1);

@@ -1,0 +1,160 @@
+{
+  "name": "sso-auth-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive SSO authentication test suite",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:security": "jest --testPathPattern=security",
+    "test:performance": "jest --testPathPattern=performance",
+    "test:e2e": "jest --testPathPattern=e2e",
+    "test:load": "jest --testPathPattern=load",
+    "test:penetration": "jest --testPathPattern=penetration",
+    "test:snapshots": "jest --testPathPattern=snapshots",
+    "test:coverage": "jest --coverage --coverageReporters=text-lcov --coverageReporters=html",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:debug": "jest --runInBand --detectOpenHandles",
+    "test:security-audit": "npm run test:security && npm run test:penetration",
+    "test:performance-suite": "npm run test:performance && npm run test:load",
+    "validate-coverage": "jest --coverage --coverageThreshold='{ \"global\": { \"branches\": 90, \"functions\": 90, \"lines\": 90, \"statements\": 90 } }'",
+    "update-snapshots": "jest --updateSnapshot"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "@babel/preset-react": "^7.22.0",
+    "@faker-js/faker": "^8.2.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.5.0",
+    "babel-jest": "^29.7.0",
+    "express": "^4.18.2",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "supertest": "^6.3.3"
+  },
+  "jest": {
+    "projects": [
+      {
+        "displayName": "Unit Tests",
+        "testMatch": ["<rootDir>/unit/**/*.test.{js,ts}"],
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js"]
+      },
+      {
+        "displayName": "Integration Tests",
+        "testMatch": ["<rootDir>/integration/**/*.test.{js,ts}"],
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js"]
+      },
+      {
+        "displayName": "Security Tests",
+        "testMatch": ["<rootDir>/security/**/*.test.{js,ts}"],
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js"],
+        "testTimeout": 30000
+      },
+      {
+        "displayName": "Performance Tests",
+        "testMatch": ["<rootDir>/performance/**/*.test.{js,ts}"],
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js"],
+        "testTimeout": 60000
+      },
+      {
+        "displayName": "E2E Tests",
+        "testMatch": ["<rootDir>/e2e/**/*.test.{js,ts}"],
+        "testEnvironment": "jsdom",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js", "@testing-library/jest-dom"]
+      },
+      {
+        "displayName": "Load Tests",
+        "testMatch": ["<rootDir>/load/**/*.test.{js,ts}"],
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js"],
+        "testTimeout": 120000,
+        "maxWorkers": "50%"
+      },
+      {
+        "displayName": "Penetration Tests",
+        "testMatch": ["<rootDir>/penetration/**/*.test.{js,ts}"],
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js"],
+        "testTimeout": 45000
+      },
+      {
+        "displayName": "Snapshot Tests",
+        "testMatch": ["<rootDir>/snapshots/**/*.test.{js,ts}"],
+        "testEnvironment": "jsdom",
+        "setupFilesAfterEnv": ["<rootDir>/../config/setup.js", "@testing-library/jest-dom"]
+      }
+    ],
+    "collectCoverageFrom": [
+      "../../services/auth/**/*.{js,ts}",
+      "../../api/middleware/**/*.{js,ts}",
+      "../../components/auth/**/*.{js,ts}",
+      "!**/*.d.ts",
+      "!**/node_modules/**",
+      "!**/vendor/**",
+      "!**/__tests__/**",
+      "!**/coverage/**"
+    ],
+    "coverageDirectory": "./coverage",
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "html",
+      "lcov",
+      "json"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      },
+      "./services/auth/": {
+        "branches": 95,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    },
+    "transform": {
+      "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
+    },
+    "moduleNameMapping": {
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+    },
+    "globalSetup": "<rootDir>/config/globalSetup.js",
+    "globalTeardown": "<rootDir>/config/globalTeardown.js"
+  },
+  "babel": {
+    "presets": [
+      ["@babel/preset-env", { "targets": { "node": "current" } }],
+      "@babel/preset-react"
+    ]
+  },
+  "keywords": [
+    "sso",
+    "authentication",
+    "oauth",
+    "jwt",
+    "security",
+    "testing",
+    "jest",
+    "penetration-testing",
+    "load-testing",
+    "integration-testing"
+  ],
+  "author": "Development Team",
+  "license": "ISC"
+}

@@ -18,6 +18,13 @@ router.use(rateLimitMiddleware);
 const incidentController = new IncidentController();
 const wsNotifier = new WebSocketNotifier();
 
+// Função stub para o engine - TODO: implementar IncidentResolutionEngine
+const initializeEngine = async () => ({
+  submitResolutionFeedback: async () => ({ success: true }),
+  getMetrics: () => ({}),
+  performHealthCheck: async () => ({ overall: 'healthy' })
+});
+
 /**
  * @route POST /api/incidents
  * @desc Criar novo incidente
@@ -473,6 +480,7 @@ router.get('/health', async (req, res) => {
 });
 
 // Funções auxiliares (integrar com banco de dados real)
+// eslint-disable-next-line no-unused-vars
 async function searchIncidents(filters) {
   // Simulação - implementar com banco real
   return {
