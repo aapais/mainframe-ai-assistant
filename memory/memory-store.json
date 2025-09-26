@@ -167,6 +167,36 @@
       "value": "Limpeza de ficheiros obsoletos concluída e commit criado. Removidos: ficheiros de teste, debug, scripts obsoletos e ficheiros map desnecessários. Commit hash: 69c1418. Total de mudanças: 1592 ficheiros modificados, grande limpeza do projeto com remoção de código legacy.",
       "namespace": "default",
       "timestamp": 1758781968378
+    },
+    {
+      "key": "settings-persistence-fix",
+      "value": "PROBLEMA: Configurações não persistiam entre login/logout. SOLUÇÕES: 1) Padronização props user/userId 2) Remover router conflitante settings-api.js 3) POST em vez de PUT 4) settings_json para dados complexos. ARQUIVOS: postgresql-only-server.js, menu-modals.js, advanced-settings-modal.js",
+      "namespace": "default",
+      "timestamp": 1758797657796
+    },
+    {
+      "key": "best-practices-settings",
+      "value": "1) IDs únicos sem fallback hardcoded 2) Props flexíveis (aceitar user e userId) 3) Validação correta de tipos UUID vs numeric 4) JSONB para dados evolutivos 5) Logs úteis durante desenvolvimento",
+      "namespace": "default",
+      "timestamp": 1758797668757
+    },
+    {
+      "key": "claude-md-update",
+      "value": "CRITICAL UPDATE: CLAUDE.md now mandates parallel tool orchestration for ALL tasks. Must use Claude Flow swarms, Flow Nexus workflows, MCP Puppeteer, Sublinear Solver, and Task tool in parallel. NO manual debugging allowed. Every problem requires full multi-tool deployment.",
+      "namespace": "default",
+      "timestamp": 1758798009705
+    },
+    {
+      "key": "mainframe-lessons",
+      "value": "Document chunking for >35KB files with document_chunks table. SSO users identified by email only @local.local. API keys encrypted with crypto-service AES-256-GCM. FormData auth for file uploads. pgvector multi-provider embeddings.",
+      "namespace": "default",
+      "timestamp": 1758903775667
+    },
+    {
+      "key": "mainframe-chunking-fix",
+      "value": "CRITICAL FIX: document-processor-api.js line 278 must use RETURNING id not RETURNING uuid for proper document_id reference in chunks table",
+      "namespace": "default",
+      "timestamp": 1758903817224
     }
   ]
 }

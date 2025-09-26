@@ -20,11 +20,31 @@ This project **REQUIRES** comprehensive utilization of ALL available tools for o
 ## 🚀 **Available Commands & Workflows**
 
 ### **Primary Spec-Driven Commands**
-- `/specify "[feature description]"` - Create comprehensive specifications
-- `/plan "[technical stack and architecture]"` - Generate implementation plans
-- `/tasks` - Break down into executable TDD tasks
-- `/implement specs/001-feature/plan.md` - Execute implementation
-- `/constitution` - Update project governance principles
+**NOTA: Os comandos slash não funcionam nativamente no Claude Code. Use os comandos Python abaixo:**
+
+```bash
+# Constitution - Definir princípios do projeto
+python3 .specify/scripts/constitution.py
+
+# Specify - Criar especificações detalhadas
+python3 .specify/scripts/specify.py "[descrição da funcionalidade]"
+
+# Plan - Gerar plano técnico
+python3 .specify/scripts/plan.py
+
+# Tasks - Quebrar em tarefas executáveis
+python3 .specify/scripts/tasks.py
+
+# Implement - Executar implementação
+python3 .specify/scripts/implement.py
+```
+
+**Alternativa com aliases (execute `source .specify/aliases.sh` primeiro):**
+- `constitution` - Princípios do projeto
+- `specify "[feature]"` - Criar especificações
+- `plan` - Plano técnico
+- `tasks` - Gerar lista de tarefas
+- `implement` - Implementar código
 
 ### **Claude Flow 2.0 Alpha Commands**
 ```bash

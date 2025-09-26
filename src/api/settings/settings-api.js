@@ -6,30 +6,54 @@ const router = express.Router();
 
 // PostgreSQL connection configuration
 const pool = new Pool({
-  host: 'localhost',
-  port: 5432,
-  database: 'mainframe_ai',
-  user: 'mainframe_user',
-  password: 'mainframe_pass',
-  ssl: false,
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'mainframe_ai',
+  user: process.env.DB_USER || 'mainframe_user',
+  password: process.env.DB_PASSWORD || 'mainframe_pass',
+  ssl: process.env.DB_SSL === 'true',
 });
 
 // Encryption key for API keys (use environment variable in production)
 const ENCRYPTION_KEY = process.env.SETTINGS_ENCRYPTION_KEY || 'default_key_change_in_production';
 
+// Create a 32-byte key from the encryption key
+const getKey = () => {
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+};
+
 // Utility functions for encryption/decryption
 const encrypt = text => {
-  const cipher = crypto.createCipher('aes-256-cbc', ENCRYPTION_KEY);
+  const iv = crypto.randomBytes(16);
+  const key = getKey();
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return encrypted;
+  return iv.toString('hex') + ':' + encrypted;
 };
 
 const decrypt = encryptedText => {
-  const decipher = crypto.createDecipher('aes-256-cbc', ENCRYPTION_KEY);
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
+  try {
+    const parts = encryptedText.split(':');
+    if (parts.length !== 2) {
+      // Try legacy decryption for old format
+      const key = getKey();
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.alloc(16));
+      let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    }
+    const iv = Buffer.from(parts[0], 'hex');
+    const encrypted = parts[1];
+    const key = getKey();
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.warn('Failed to decrypt:', error.message);
+    return null;
+  }
 };
 
 // GET /api/settings/:userId - Get or create default settings
@@ -51,19 +75,31 @@ router.get('/:userId', async (req, res) => {
 
     const settings = result.rows[0];
 
-    // Decrypt API keys if they exist
-    if (settings.api_keys && Object.keys(settings.api_keys).length > 0) {
-      const decryptedKeys = {};
-      for (const [key, value] of Object.entries(settings.api_keys)) {
+    // Get API keys from the dedicated api_keys table
+    const keysQuery = `
+      SELECT service, key_encrypted, masked
+      FROM api_keys
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY service
+    `;
+    const keysResult = await pool.query(keysQuery, [userId]);
+
+    // Build API keys object with decrypted values
+    const apiKeys = {};
+    if (keysResult.rows && keysResult.rows.length > 0) {
+      for (const row of keysResult.rows) {
         try {
-          decryptedKeys[key] = value ? decrypt(value) : '';
+          // Return masked version for display (shows only last 4 characters)
+          apiKeys[row.service] = row.masked || '••••••••';
         } catch (error) {
-          console.warn(`Failed to decrypt API key ${key}:`, error.message);
-          decryptedKeys[key] = '';
+          console.warn(`Failed to process API key for service ${row.service}:`, error.message);
+          apiKeys[row.service] = '';
         }
       }
-      settings.api_keys = decryptedKeys;
     }
+
+    // Add API keys to settings response
+    settings.api_keys = apiKeys;
 
     res.json({
       success: true,
@@ -134,13 +170,11 @@ router.put('/:userId', async (req, res) => {
       return res.status(400).json({ error: 'No valid fields to update' });
     }
 
-    // Encrypt API keys if provided
+    // Handle API keys separately - store in dedicated api_keys table
+    let apiKeysToUpdate = null;
     if (validUpdates.api_keys) {
-      const encryptedKeys = {};
-      for (const [key, value] of Object.entries(validUpdates.api_keys)) {
-        encryptedKeys[key] = value ? encrypt(value) : null;
-      }
-      validUpdates.api_keys = JSON.stringify(encryptedKeys);
+      apiKeysToUpdate = validUpdates.api_keys;
+      delete validUpdates.api_keys; // Remove from main settings update
     }
 
     // Convert JSON fields to strings
@@ -164,8 +198,15 @@ router.put('/:userId', async (req, res) => {
             RETURNING *
         `;
 
-    const values = [userId, ...Object.values(validUpdates)];
-    const result = await pool.query(query, values);
+    // Update main settings if there are fields to update
+    let result;
+    if (Object.keys(validUpdates).length > 0) {
+      const values = [userId, ...Object.values(validUpdates)];
+      result = await pool.query(query, values);
+    } else {
+      // If only API keys are being updated, just fetch current settings
+      result = await pool.query('SELECT * FROM user_settings WHERE user_id = $1', [userId]);
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Settings not found for user' });
@@ -173,19 +214,54 @@ router.put('/:userId', async (req, res) => {
 
     const updatedSettings = result.rows[0];
 
-    // Decrypt API keys for response
-    if (updatedSettings.api_keys && Object.keys(updatedSettings.api_keys).length > 0) {
-      const decryptedKeys = {};
-      for (const [key, value] of Object.entries(updatedSettings.api_keys)) {
-        try {
-          decryptedKeys[key] = value ? decrypt(value) : '';
-        } catch (error) {
-          console.warn(`Failed to decrypt API key ${key}:`, error.message);
-          decryptedKeys[key] = '';
+    // Update API keys in the dedicated table if provided
+    if (apiKeysToUpdate) {
+      for (const [service, key] of Object.entries(apiKeysToUpdate)) {
+        if (key && key !== '' && !key.includes('•')) { // Only update if not masked
+          // Encrypt the key
+          const encryptedKey = encrypt(key);
+          // Create masked version (show last 4 characters)
+          const masked = key.length > 4 ? '••••' + key.slice(-4) : '••••';
+
+          // Upsert API key
+          const upsertQuery = `
+            INSERT INTO api_keys (user_id, service, key_encrypted, masked, name, is_active)
+            VALUES ($1, $2, $3, $4, $5, true)
+            ON CONFLICT (user_id, service) DO UPDATE SET
+              key_encrypted = EXCLUDED.key_encrypted,
+              masked = EXCLUDED.masked,
+              last_used = CURRENT_TIMESTAMP,
+              is_active = true
+          `;
+
+          const keyName = service.charAt(0).toUpperCase() + service.slice(1) + ' API Key';
+          await pool.query(upsertQuery, [userId, service, encryptedKey, masked, keyName]);
+        } else if (key === null || key === '') {
+          // Delete API key if set to null or empty
+          await pool.query(
+            'DELETE FROM api_keys WHERE user_id = $1 AND service = $2',
+            [userId, service]
+          );
         }
       }
-      updatedSettings.api_keys = decryptedKeys;
     }
+
+    // Fetch updated API keys for response
+    const keysQuery = `
+      SELECT service, masked
+      FROM api_keys
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY service
+    `;
+    const keysResult = await pool.query(keysQuery, [userId]);
+
+    const apiKeys = {};
+    if (keysResult.rows) {
+      keysResult.rows.forEach(row => {
+        apiKeys[row.service] = row.masked || '••••••••';
+      });
+    }
+    updatedSettings.api_keys = apiKeys;
 
     res.json({
       success: true,
@@ -213,6 +289,9 @@ router.post('/:userId/reset', async (req, res) => {
 
     // Delete existing settings and recreate with defaults
     await pool.query('DELETE FROM user_settings WHERE user_id = $1', [userId]);
+
+    // Also delete all API keys for this user
+    await pool.query('DELETE FROM api_keys WHERE user_id = $1', [userId]);
 
     // Create new default settings
     const result = await pool.query('SELECT * FROM get_or_create_user_settings($1)', [userId]);

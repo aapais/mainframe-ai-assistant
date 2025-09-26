@@ -12,6 +12,7 @@ class MultiEmbeddingService {
       openai: config.openai,
       gemini: config.gemini,
       azure: config.azure,
+      anthropic: config.anthropic,
       provider: config.provider || 'openai', // default provider
       model: config.model || 'ada-002',
     };
@@ -47,6 +48,13 @@ class MultiEmbeddingService {
       });
       console.log('✅ Azure OpenAI embeddings initialized');
     }
+
+    // Anthropic - Note: Anthropic doesn't have native embedding API
+    // We'll use OpenAI or Gemini as fallback for embeddings if available
+    if (this.config.anthropic?.apiKey) {
+      console.log('⚠️ Anthropic configured but using fallback for embeddings (no native support)');
+      // Anthropic users need to also configure OpenAI or Gemini for embeddings
+    }
   }
 
   /**
@@ -64,6 +72,10 @@ class MultiEmbeddingService {
       },
       azure: {
         'ada-002': { dimensions: 1536, maxTokens: 8191, name: 'text-embedding-ada-002' },
+      },
+      anthropic: {
+        // Anthropic doesn't have native embedding models, use fallback dimensions
+        'fallback': { dimensions: 1536, maxTokens: 8191, name: 'fallback-embedding' },
       },
     };
 
@@ -111,6 +123,19 @@ class MultiEmbeddingService {
 
         case 'azure':
           embedding = await this.generateAzureEmbedding(cleanText, modelInfo);
+          break;
+
+        case 'anthropic':
+          // Anthropic doesn't have embeddings API, use fallback
+          if (this.openai) {
+            embedding = await this.generateOpenAIEmbedding(cleanText, this.getModelInfo('openai', 'ada-002'));
+            console.log('Using OpenAI fallback for Anthropic embedding request');
+          } else if (this.gemini) {
+            embedding = await this.generateGeminiEmbedding(cleanText, this.getModelInfo('gemini', 'embedding-001'));
+            console.log('Using Gemini fallback for Anthropic embedding request');
+          } else {
+            throw new Error('No embedding provider available for Anthropic fallback');
+          }
           break;
 
         default:

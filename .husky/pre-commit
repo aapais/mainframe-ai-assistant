@@ -9,12 +9,7 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-# First, run auto-fix script to correct all known issues
-echo "🔧 Running automatic error fixes..."
-node scripts/fix-all-errors.js
-
-# Re-stage fixed files
-git add -A
+# Skip auto-fix script (removed during cleanup)
 
 # Run lint-staged (includes ESLint, Prettier, and TypeScript checks)
 echo "📝 Running linters on staged files..."
