@@ -277,10 +277,18 @@
                 const data = await response.json();
 
                 console.log('Resposta do servidor:', data);
+                console.log('Token recebido:', data.token ? 'SIM' : 'NÃO');
+                console.log('Token value:', data.token ? data.token.substring(0, 50) + '...' : 'UNDEFINED');
 
                 if (data.success) {
-                    authToken = data.token;
+                    authToken = data.token || 'NO_TOKEN_RECEIVED';
                     currentUser = data.user;
+
+                    if (!data.token) {
+                        console.error('⚠️ AVISO: Token não recebido do servidor!');
+                        updateStatus('error', '❌ Erro: Token de autenticação não foi gerado.');
+                        return;
+                    }
 
                     // Salva no localStorage
                     localStorage.setItem('auth_token', authToken);

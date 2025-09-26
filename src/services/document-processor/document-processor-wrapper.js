@@ -6,6 +6,7 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs').promises;
+const PDFProcessor = require('./pdf-processor-node');
 
 class DocumentProcessorWrapper {
   constructor() {
@@ -27,6 +28,7 @@ class DocumentProcessorWrapper {
    * @returns {Promise<Array>} Array of KnowledgeBase entries
    */
   async processDocument(filePath, options = {}) {
+    // Use Python processor for all files now that PyPDF2 is installed
     return new Promise((resolve, reject) => {
       const outputFile = path.join(this.outputDir, `${Date.now()}_output.json`);
 

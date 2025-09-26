@@ -8,9 +8,14 @@ const { Client } = require('pg');
 const path = require('path');
 const fs = require('fs').promises;
 const EmbeddingService = require('../services/embedding-service');
-// const documentProcessorRouter = require('./document-processor-api');
+const MultiEmbeddingService = require('../services/multi-embedding-service');
+const documentProcessorRouter = require('./document-processor-api');
 // const settingsRouter = require('../api/settings/settings-api');  // Commented out - using local routes instead
 const { WindowsAuthService } = require('../auth/WindowsAuthService');
+const cryptoService = require('../services/crypto-service');
+const { chatRouter, initializeChatRoutes } = require('./routes/chatRoutes');
+const { authenticateUser } = require('./middleware/auth');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
@@ -19,10 +24,10 @@ const PORT = process.env.PORT || 3001;
 // PostgreSQL configuration
 const pgConfig = {
   host: process.env.POSTGRES_HOST || process.env.DB_HOST || 'localhost',
-  port: process.env.POSTGRES_PORT || process.env.DB_PORT || 5432,
+  port: process.env.POSTGRES_PORT || process.env.DB_PORT || 5433,
   database: process.env.POSTGRES_DB || process.env.DB_NAME || 'mainframe_ai',
   user: process.env.POSTGRES_USER || process.env.DB_USER || 'mainframe_user',
-  password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || 'your_secure_password_123',
+  password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || 'mainframe_pass',
 };
 
 // Initialize services
@@ -32,13 +37,10 @@ let windowsAuthService = null;
 // Initialize Windows Auth Service
 windowsAuthService = new WindowsAuthService();
 
-// Initialize embedding service
-if (process.env.OPENAI_API_KEY) {
-  embeddingService = new EmbeddingService(process.env.OPENAI_API_KEY);
-  // Vector embedding service initialized
-} else {
-  // OPENAI_API_KEY not found. Vector search will be disabled.
-}
+// Initialize embedding service - will be created per-request with user's API keys
+// No hardcoded keys or environment variables should be used here
+embeddingService = null;
+console.log('🔐 Embedding service will be initialized per-request with user credentials');
 
 // Database connection management
 class PostgreSQLManager {
@@ -125,11 +127,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// Document processor routes
-// app.use('/api/documents', documentProcessorRouter);
+// Document processor routes (the /process route has its own authentication)
+app.use('/api/documents', documentProcessorRouter);
 
 // Settings API routes
 // app.use('/api/settings', settingsRouter);  // Commented out - using local routes instead
+
+// JWT Secret
+const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-this-in-production';
+
+// Function to generate JWT token
+function generateJWTToken(user) {
+  return jwt.sign(
+    {
+      id: user.id || user.user_id,
+      email: user.email,
+      username: user.username,
+      role: user.role || 'user'
+    },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
 
 // Windows Authentication Routes
 app.post('/api/auth/windows/login', async (req, res) => {
@@ -138,6 +157,24 @@ app.post('/api/auth/windows/login', async (req, res) => {
 
     // Ensure user exists in the database
     if (result.success && result.user) {
+      // Check if user already exists by email ONLY (email is the unique identifier)
+      let existingUser = null;
+
+      // Check by email - this is the ONLY way to identify users
+      if (result.user.email) {
+        const emailCheck = await db.query(
+          'SELECT id, email, username FROM users WHERE LOWER(email) = LOWER($1)',
+          [result.user.email]
+        );
+        if (emailCheck.rows.length > 0) {
+          existingUser = emailCheck.rows[0];
+          console.log(`Found existing user by email: ${existingUser.email}`);
+        }
+      }
+
+      // Use existing user ID if found, otherwise use the generated one
+      const userId = existingUser ? existingUser.id : result.user.id;
+
       const userQuery = `
         INSERT INTO users (id, username, email, display_name, domain, computer, role, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -153,15 +190,18 @@ app.post('/api/auth/windows/login', async (req, res) => {
 
       try {
         await db.query(userQuery, [
-          result.user.id,
+          userId, // Use the existing user ID if found
           result.user.username,
-          result.user.email,
+          existingUser ? existingUser.email : result.user.email, // Keep existing email if found
           result.user.displayName || result.user.username,
           result.user.domain,
           result.user.computer,
-          'user'
+          'user',
         ]);
-        console.log(`User ${result.user.username} synced to database`);
+        console.log(`User ${result.user.username} synced to database (ID: ${userId})`);
+
+        // Update the result with the correct user ID for the token
+        result.user.id = userId;
       } catch (dbError) {
         console.error('Error syncing user to database:', dbError);
         // Continue even if database sync fails
@@ -172,7 +212,7 @@ app.post('/api/auth/windows/login', async (req, res) => {
         const settingsQuery = `
           SELECT * FROM user_preferences WHERE user_id = $1
         `;
-        const settingsResult = await db.query(settingsQuery, [result.user.id]);
+        const settingsResult = await db.query(settingsQuery, [userId]);
 
         if (settingsResult.rows.length > 0) {
           const settings = settingsResult.rows[0];
@@ -185,15 +225,16 @@ app.post('/api/auth/windows/login', async (req, res) => {
             auto_login: settings.auto_login !== undefined ? settings.auto_login : true,
             session_timeout: settings.session_timeout || 28800,
             display_name: settings.display_name,
-            email: settings.email
+            email: settings.email,
           };
 
           // Merge with settings_json if it exists
           if (settings.settings_json) {
             try {
-              const savedSettings = typeof settings.settings_json === 'string'
-                ? JSON.parse(settings.settings_json)
-                : settings.settings_json;
+              const savedSettings =
+                typeof settings.settings_json === 'string'
+                  ? JSON.parse(settings.settings_json)
+                  : settings.settings_json;
 
               console.log('Loaded settings_json:', savedSettings);
 
@@ -229,6 +270,17 @@ app.post('/api/auth/windows/login', async (req, res) => {
         console.error('Error loading user settings:', settingsError);
         // Continue even if settings load fails
       }
+
+      // Generate JWT token for the authenticated user
+      const token = generateJWTToken({
+        id: result.user.id || result.user.user_id,
+        email: result.user.email,
+        username: result.user.username,
+        role: result.user.role
+      });
+
+      // Add token to result
+      result.token = token;
     }
 
     res.json(result);
@@ -236,7 +288,7 @@ app.post('/api/auth/windows/login', async (req, res) => {
     console.error('Windows auth error:', error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Authentication failed'
+      error: error.message || 'Authentication failed',
     });
   }
 });
@@ -246,12 +298,12 @@ app.get('/api/auth/windows/current', (req, res) => {
     const userInfo = windowsAuthService.getCurrentWindowsUser();
     res.json({
       success: true,
-      user: userInfo
+      user: userInfo,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -267,16 +319,16 @@ app.get('/api/users/:id', async (req, res) => {
     res.json({
       id: userId,
       username: userInfo.username,
-      email: `${userInfo.username}@${userInfo.domain}.local`,
+      email: `${userInfo.username}@local.local`, // Fixed email format to avoid hostname variations
       displayName: userInfo.username,
       preferences: {
         theme: 'light',
         language: 'pt',
-        notifications: true
+        notifications: true,
       },
       role: 'user',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -297,8 +349,8 @@ app.put('/api/users/:id', async (req, res) => {
       success: true,
       user: {
         id: userId,
-        ...updates
-      }
+        ...updates,
+      },
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -316,11 +368,14 @@ app.patch('/api/users/:id', async (req, res) => {
     // Save preferences to database if provided
     if (updates.preferences) {
       // First ensure user exists in users table
-      await db.query(`
+      await db.query(
+        `
         INSERT INTO users (id, username, email, display_name, created_at)
         VALUES ($1, $2, $3, $2, CURRENT_TIMESTAMP)
         ON CONFLICT (id) DO NOTHING
-      `, [userId, 'user_' + userId.substring(0, 8), userId + '@local']);
+      `,
+        [userId, 'user_' + userId.substring(0, 8), userId + '@local']
+      );
 
       const query = `
         INSERT INTO user_settings (user_id, theme, language, notifications, settings_json)
@@ -340,7 +395,7 @@ app.patch('/api/users/:id', async (req, res) => {
         prefs.theme || 'light',
         prefs.language || 'pt-BR',
         prefs.notifications !== undefined ? prefs.notifications : true,
-        JSON.stringify(prefs)
+        JSON.stringify(prefs),
       ]);
     }
 
@@ -348,12 +403,283 @@ app.patch('/api/users/:id', async (req, res) => {
       success: true,
       user: {
         id: userId,
-        ...updates
-      }
+        ...updates,
+      },
     });
   } catch (error) {
     console.error('Error patching user:', error);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// API Keys Management Routes
+app.get('/api/keys/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Get all API keys for user (decrypted)
+    const query = `
+      SELECT id, name, service, masked, created_at, last_used, is_active
+      FROM api_keys
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY created_at DESC
+    `;
+
+    const result = await db.query(query, [userId]);
+
+    res.json({
+      success: true,
+      keys: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching API keys:', error);
+    res.status(500).json({ error: 'Failed to fetch API keys' });
+  }
+});
+
+app.post('/api/keys/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { openai, anthropic, google } = req.body.api_keys || {};
+
+    // First, ensure user exists in users table
+    const userExistsQuery = `
+      INSERT INTO users (id, username, display_name, email, created_at)
+      VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+      ON CONFLICT (id) DO NOTHING
+    `;
+
+    await db.query(userExistsQuery, [
+      userId,
+      `user_${userId.substring(0, 8)}`,
+      `User ${userId.substring(0, 8)}`,
+      `${userId}@temp.local`
+    ]);
+
+    // Process each API key
+    const services = [
+      { service: 'openai', key: openai, name: 'OpenAI API Key' },
+      { service: 'anthropic', key: anthropic, name: 'Anthropic API Key' },
+      { service: 'google', key: google, name: 'Google AI API Key' }
+    ];
+
+    for (const { service, key, name } of services) {
+      if (!key) continue;
+
+      // Encrypt the API key
+      const encrypted = cryptoService.encrypt(key);
+      const masked = cryptoService.maskApiKey(key);
+
+      // Check if key exists for this service
+      const existsQuery = `
+        SELECT id FROM api_keys
+        WHERE user_id = $1 AND service = $2
+      `;
+      const existing = await db.query(existsQuery, [userId, service]);
+
+      if (existing.rows.length > 0) {
+        // Update existing key
+        const updateQuery = `
+          UPDATE api_keys
+          SET key_encrypted = $1, masked = $2, last_used = CURRENT_TIMESTAMP
+          WHERE user_id = $3 AND service = $4
+        `;
+        await db.query(updateQuery, [encrypted, masked, userId, service]);
+      } else {
+        // Insert new key
+        const insertQuery = `
+          INSERT INTO api_keys (user_id, name, service, key_encrypted, masked)
+          VALUES ($1, $2, $3, $4, $5)
+        `;
+        await db.query(insertQuery, [userId, name, service, encrypted, masked]);
+      }
+    }
+
+    // Also update settings_json to remove plain text keys
+    const updateSettingsQuery = `
+      UPDATE user_settings
+      SET settings_json = jsonb_set(
+        COALESCE(settings_json, '{}'::jsonb),
+        '{api_keys}',
+        '{"secured": true}'::jsonb
+      )
+      WHERE user_id = $1
+    `;
+    await db.query(updateSettingsQuery, [userId]);
+
+    res.json({
+      success: true,
+      message: 'API keys armazenadas com segurança e criptografia'
+    });
+  } catch (error) {
+    console.error('Error saving API keys:', error);
+
+    // Provide detailed error messages
+    let errorMessage = 'Erro ao gravar API keys';
+    let errorDetails = '';
+
+    if (error.code === '23503') {
+      // Foreign key constraint violation
+      if (error.constraint === 'api_keys_user_id_fkey') {
+        errorMessage = 'Utilizador não encontrado';
+        errorDetails = 'Por favor, faça login novamente antes de configurar as API keys.';
+      }
+    } else if (error.code === '23505') {
+      // Unique constraint violation
+      errorMessage = 'API key já existe';
+      errorDetails = 'Esta API key já foi configurada para este utilizador.';
+    } else if (error.message && error.message.includes('encrypt')) {
+      errorMessage = 'Erro na criptografia';
+      errorDetails = 'Não foi possível criptografar a API key. Verifique se a chave está no formato correto.';
+    }
+
+    res.status(500).json({
+      error: errorMessage,
+      details: errorDetails,
+      code: error.code || 'UNKNOWN_ERROR'
+    });
+  }
+});
+
+// Deactivate specific API key (soft delete)
+app.delete('/api/keys/:userId/:service', async (req, res) => {
+  try {
+    const { userId, service } = req.params;
+
+    const deactivateQuery = `
+      UPDATE api_keys
+      SET is_active = false, last_used = CURRENT_TIMESTAMP
+      WHERE user_id = $1 AND service = $2 AND is_active = true
+      RETURNING id, service, masked
+    `;
+
+    const result = await db.query(deactivateQuery, [userId, service]);
+
+    if (result.rows.length > 0) {
+      res.json({
+        success: true,
+        message: `API key ${service} inativada com sucesso`,
+        details: `Chave ${result.rows[0].masked} foi inativada (pode ser reativada posteriormente)`,
+        deactivated: result.rows[0]
+      });
+    } else {
+      res.status(404).json({
+        error: 'API key não encontrada',
+        details: `Nenhuma chave ${service} ativa encontrada para este utilizador`
+      });
+    }
+  } catch (error) {
+    console.error('Error deactivating API key:', error);
+    res.status(500).json({
+      error: 'Erro ao inativar API key',
+      details: error.message
+    });
+  }
+});
+
+// Deactivate ALL API keys for user (soft delete all)
+app.delete('/api/keys/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const deactivateAllQuery = `
+      UPDATE api_keys
+      SET is_active = false, last_used = CURRENT_TIMESTAMP
+      WHERE user_id = $1 AND is_active = true
+      RETURNING service, masked
+    `;
+
+    const result = await db.query(deactivateAllQuery, [userId]);
+
+    if (result.rows.length > 0) {
+      res.json({
+        success: true,
+        message: 'Todas as API keys foram inativadas',
+        details: `${result.rows.length} chave(s) inativada(s). Podem ser reativadas posteriormente.`,
+        deactivated: result.rows.map(row => ({ service: row.service, masked: row.masked }))
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'Nenhuma API key ativa para inativar',
+        details: 'Não foram encontradas chaves ativas para este utilizador'
+      });
+    }
+  } catch (error) {
+    console.error('Error deactivating all API keys:', error);
+    res.status(500).json({
+      error: 'Erro ao inativar API keys',
+      details: error.message
+    });
+  }
+});
+
+// Reactivate specific API key
+app.patch('/api/keys/:userId/:service/reactivate', async (req, res) => {
+  try {
+    const { userId, service } = req.params;
+
+    const reactivateQuery = `
+      UPDATE api_keys
+      SET is_active = true, last_used = CURRENT_TIMESTAMP
+      WHERE user_id = $1 AND service = $2 AND is_active = false
+      RETURNING id, service, masked
+    `;
+
+    const result = await db.query(reactivateQuery, [userId, service]);
+
+    if (result.rows.length > 0) {
+      res.json({
+        success: true,
+        message: `API key ${service} reativada com sucesso`,
+        details: `Chave ${result.rows[0].masked} está novamente ativa`,
+        reactivated: result.rows[0]
+      });
+    } else {
+      res.status(404).json({
+        error: 'API key não encontrada',
+        details: `Nenhuma chave ${service} inativa encontrada para reativar`
+      });
+    }
+  } catch (error) {
+    console.error('Error reactivating API key:', error);
+    res.status(500).json({
+      error: 'Erro ao reativar API key',
+      details: error.message
+    });
+  }
+});
+
+app.get('/api/keys/:userId/decrypt', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Get encrypted keys and decrypt them
+    const query = `
+      SELECT service, key_encrypted
+      FROM api_keys
+      WHERE user_id = $1 AND is_active = true
+    `;
+
+    const result = await db.query(query, [userId]);
+
+    const decryptedKeys = {};
+    for (const row of result.rows) {
+      try {
+        decryptedKeys[row.service] = cryptoService.decrypt(row.key_encrypted);
+      } catch (err) {
+        console.error(`Failed to decrypt key for ${row.service}:`, err);
+        decryptedKeys[row.service] = '';
+      }
+    }
+
+    res.json({
+      success: true,
+      api_keys: decryptedKeys
+    });
+  } catch (error) {
+    console.error('Error decrypting API keys:', error);
+    res.status(500).json({ error: 'Failed to decrypt API keys' });
   }
 });
 
@@ -385,9 +711,10 @@ app.get('/api/settings/:userId', async (req, res) => {
       // Parse settings_json if it exists to get complex notification settings
       if (settings.settings_json) {
         try {
-          const jsonSettings = typeof settings.settings_json === 'string'
-            ? JSON.parse(settings.settings_json)
-            : settings.settings_json;
+          const jsonSettings =
+            typeof settings.settings_json === 'string'
+              ? JSON.parse(settings.settings_json)
+              : settings.settings_json;
 
           // If notifications is a complex object in settings_json, use it
           if (jsonSettings.notifications && typeof jsonSettings.notifications === 'object') {
@@ -400,7 +727,7 @@ app.get('/api/settings/:userId', async (req, res) => {
 
       res.json({
         success: true,
-        settings: settings
+        settings: settings,
       });
     } else {
       // Return default settings if none exist
@@ -412,8 +739,8 @@ app.get('/api/settings/:userId', async (req, res) => {
           language: 'pt-BR',
           notifications: true,
           auto_login: true,
-          session_timeout: 28800
-        }
+          session_timeout: 28800,
+        },
       });
     }
   } catch (error) {
@@ -460,14 +787,17 @@ app.post('/api/settings/:userId', async (req, res) => {
 
       // Handle notifications properly - if it's an object, store it in settings_json
       // If it's a simple boolean, use that for the notifications column
-      const notificationsValue = typeof settings.notifications === 'object'
-        ? true  // Default to true if we have a complex object
-        : (settings.notifications !== undefined ? settings.notifications : true);
+      const notificationsValue =
+        typeof settings.notifications === 'object'
+          ? true // Default to true if we have a complex object
+          : settings.notifications !== undefined
+            ? settings.notifications
+            : true;
 
       // Include the full notifications object in settings_json
       const fullSettings = {
         ...settings,
-        notifications: settings.notifications || true
+        notifications: settings.notifications || true,
       };
 
       const result = await db.query(query, [
@@ -479,12 +809,12 @@ app.post('/api/settings/:userId', async (req, res) => {
         settings.session_timeout || 28800,
         settings.display_name || settings.userData?.display_name || null,
         settings.email || settings.userData?.email || null,
-        JSON.stringify(fullSettings)
+        JSON.stringify(fullSettings),
       ]);
 
       res.json({
         success: true,
-        settings: result.rows[0]
+        settings: result.rows[0],
       });
     } else {
       // Fallback to user_settings table with different approach
@@ -505,12 +835,12 @@ app.post('/api/settings/:userId', async (req, res) => {
         settings.notifications !== undefined ? settings.notifications : true,
         settings.auto_login !== undefined ? settings.auto_login : true,
         settings.session_timeout || 28800,
-        JSON.stringify(settings)
+        JSON.stringify(settings),
       ]);
 
       res.json({
         success: true,
-        settings: result.rows[0]
+        settings: result.rows[0],
       });
     }
   } catch (error) {
@@ -1038,8 +1368,8 @@ app.get('/api/sessions/:userId', async (req, res) => {
         user_agent: req.headers['user-agent'] || 'Unknown',
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 28800000).toISOString(), // 8 hours
-        is_active: true
-      }
+        is_active: true,
+      },
     ];
 
     res.json({ success: true, sessions });
@@ -1060,22 +1390,22 @@ app.get('/api/logs', async (req, res) => {
         timestamp: new Date().toISOString(),
         level: 'INFO',
         message: 'System started successfully',
-        source: 'Backend'
+        source: 'Backend',
       },
       {
         id: 2,
         timestamp: new Date(Date.now() - 3600000).toISOString(),
         level: 'WARNING',
         message: 'High memory usage detected',
-        source: 'Monitor'
+        source: 'Monitor',
       },
       {
         id: 3,
         timestamp: new Date(Date.now() - 7200000).toISOString(),
         level: 'ERROR',
         message: 'Failed to connect to external service',
-        source: 'API'
-      }
+        source: 'API',
+      },
     ];
 
     res.json({ success: true, logs });
@@ -1084,6 +1414,85 @@ app.get('/api/logs', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch logs' });
   }
 });
+
+// Simple chat endpoint with JWT authentication
+app.post('/api/chat/simple', authenticateUser, async (req, res) => {
+  try {
+    const { message, content } = req.body;
+    const messageText = message || content; // Support both field names
+    const userId = req.user.id; // Get from authenticated user
+
+    if (!messageText) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Get API keys from database
+    const keysQuery = `
+      SELECT service, key_encrypted
+      FROM api_keys
+      WHERE user_id = $1 AND is_active = true
+    `;
+
+    const keysResult = await db.query(keysQuery, [userId]);
+    const apiKeys = {};
+
+    for (const row of keysResult.rows) {
+      const decryptedKey = cryptoService.decrypt(row.key_encrypted);
+      if (row.service === 'google') {
+        apiKeys.gemini_api_key = decryptedKey;
+      } else if (row.service === 'openai') {
+        apiKeys.openai_api_key = decryptedKey;
+      }
+    }
+
+    // Use Gemini API if available
+    if (apiKeys.gemini_api_key) {
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKeys.gemini_api_key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+      const result = await model.generateContent(messageText);
+      const response = result.response.text();
+
+      return res.json({
+        success: true,
+        response: response,
+        provider: 'gemini'
+      });
+    } else if (apiKeys.openai_api_key) {
+      // Fallback to OpenAI if Gemini not available
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: apiKeys.openai_api_key });
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: messageText }],
+      });
+
+      return res.json({
+        success: true,
+        response: completion.choices[0].message.content,
+        provider: 'openai'
+      });
+    } else {
+      return res.status(400).json({
+        error: 'No API keys configured. Please configure Gemini or OpenAI API keys in settings.'
+      });
+    }
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({
+      error: 'Failed to process message',
+      details: error.message
+    });
+  }
+});
+
+// Initialize chat routes
+initializeChatRoutes(db, embeddingService, null); // Will initialize RAGService later
+
+// Mount chat routes
+app.use('/api/chat', chatRouter);
 
 // Fallback for unmatched API routes
 // app.all('/api/(.*)', (req, res) => {
@@ -1095,11 +1504,16 @@ async function startServer() {
   try {
     await db.connect();
 
+    // Setup RAG chat endpoint
+    const { setupRAGChatRoute } = require('./routes/chat-rag-route');
+    await setupRAGChatRoute(app, db, authenticateUser);
+
     app.listen(PORT, () => {
       console.log(`🚀 PostgreSQL-only server running on http://localhost:${PORT}`);
       console.log(`📊 API endpoints available at http://localhost:${PORT}/api/`);
       console.log(`💾 Database: PostgreSQL (${pgConfig.database})`);
       console.log(`🧠 Vector search: ${embeddingService ? 'Enabled' : 'Disabled'}`);
+      console.log(`📚 RAG endpoint: http://localhost:${PORT}/api/chat/rag`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

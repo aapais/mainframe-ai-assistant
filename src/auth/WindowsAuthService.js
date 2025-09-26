@@ -45,7 +45,7 @@ class WindowsAuthService {
       domain: domain,
       computer: hostname,
       isInDomain: domain !== 'WORKGROUP' && domain !== hostname,
-      upn: `${userInfo.username}@${domain.toLowerCase()}.local`,
+      upn: `${userInfo.username}@local.local`, // Fixed email format to avoid hostname variations
       uid: userInfo.uid,
       gid: userInfo.gid,
       home: userInfo.homedir,

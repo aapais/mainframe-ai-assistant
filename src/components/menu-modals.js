@@ -30,13 +30,15 @@ window.ProfileModal = function ({ isOpen, onClose, user }) {
         window.currentUser = updatedUser;
 
         // Also save to settings in database for persistence
+        // Remove email from the data being sent (email cannot be changed)
+        const { email, ...profileDataWithoutEmail } = profileData;
         await fetch(`http://localhost:3001/api/settings/${user.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             display_name: profileData.display_name,
-            email: profileData.email,
-            userData: profileData
+            // email is intentionally excluded - it cannot be changed
+            userData: profileDataWithoutEmail,
           }),
         });
 
@@ -133,18 +135,20 @@ window.ProfileModal = function ({ isOpen, onClose, user }) {
               }),
             ]),
 
-            // Email
+            // Email (read-only - cannot be changed after SSO login)
             React.createElement('div', { key: 'email-field' }, [
               React.createElement(
                 'label',
                 { className: 'block text-sm font-medium text-gray-700 mb-1' },
-                'Email'
+                'Email (não editável - usado para autenticação SSO)'
               ),
               React.createElement('input', {
                 type: 'email',
                 value: profileData.email,
-                onChange: e => setProfileData({ ...profileData, email: e.target.value }),
-                className: 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500',
+                readOnly: true,
+                disabled: true,
+                className: 'w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed',
+                title: 'O email não pode ser alterado pois é usado para identificação no SSO',
               }),
             ]),
 
@@ -254,7 +258,8 @@ window.NotificationsModal = function ({ isOpen, onClose, user, userId }) {
       if (response.ok) {
         // Show success message
         const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
+        toast.className =
+          'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
         toast.textContent = 'Notificações atualizadas com sucesso!';
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);

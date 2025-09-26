@@ -26,14 +26,28 @@ window.AdvancedSettingsModal = function ({ isOpen, onClose, userId }) {
           let fullSettings = result.settings;
           if (result.settings.settings_json) {
             try {
-              const jsonSettings = typeof result.settings.settings_json === 'string'
-                ? JSON.parse(result.settings.settings_json)
-                : result.settings.settings_json;
+              const jsonSettings =
+                typeof result.settings.settings_json === 'string'
+                  ? JSON.parse(result.settings.settings_json)
+                  : result.settings.settings_json;
               fullSettings = { ...fullSettings, ...jsonSettings };
             } catch (e) {
               console.error('Error parsing settings_json:', e);
             }
           }
+
+          // Load API keys from secure endpoint
+          try {
+            const keysResponse = await fetch(`http://localhost:3001/api/keys/${userId}/decrypt`);
+            const keysResult = await keysResponse.json();
+            if (keysResult.success && keysResult.api_keys) {
+              fullSettings.api_keys = keysResult.api_keys;
+            }
+          } catch (e) {
+            console.error('Error loading API keys:', e);
+            fullSettings.api_keys = {};
+          }
+
           setSettings(fullSettings);
         } else {
           setSettings(window.SettingsService.getDefaultSettings());
@@ -53,11 +67,27 @@ window.AdvancedSettingsModal = function ({ isOpen, onClose, userId }) {
 
     setLoading(true);
     try {
-      // Save directly to backend
+      // Save API keys to secure endpoint first
+      if (settings.api_keys) {
+        const keysResponse = await fetch(`http://localhost:3001/api/keys/${userId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_keys: settings.api_keys }),
+        });
+
+        if (!keysResponse.ok) {
+          throw new Error('Failed to save API keys securely');
+        }
+      }
+
+      // Save other settings (without API keys)
+      const settingsToSave = { ...settings };
+      delete settingsToSave.api_keys; // Remove API keys from general settings
+
       const response = await fetch(`http://localhost:3001/api/settings/${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(settingsToSave),
       });
 
       if (response.ok) {
@@ -71,12 +101,49 @@ window.AdvancedSettingsModal = function ({ isOpen, onClose, userId }) {
         const toast = document.createElement('div');
         toast.className =
           'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
-        toast.textContent = 'Configurações avançadas salvas!';
+        toast.textContent = 'Configurações avançadas salvas com segurança!';
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
+
+      // Show detailed error message
+      let errorMessage = 'Erro ao salvar configurações';
+      let errorDetails = '';
+
+      // Check if it's an API key error with detailed response
+      if (error.message && error.message.includes('Failed to save API keys securely')) {
+        try {
+          // Try to get more details from the response
+          const response = await fetch(`http://localhost:3001/api/keys/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_keys: settings.api_keys }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || 'Erro ao gravar API keys';
+            errorDetails = errorData.details || '';
+          }
+        } catch (detailError) {
+          console.error('Error getting details:', detailError);
+        }
+      }
+
+      const toast = document.createElement('div');
+      toast.className =
+        'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in max-w-md';
+
+      // Show main error and details if available
+      toast.innerHTML = `
+        <div class="font-semibold">${errorMessage}</div>
+        ${errorDetails ? `<div class="text-sm mt-1 opacity-90">${errorDetails}</div>` : ''}
+      `;
+
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000); // Show longer for detailed errors
     }
     setLoading(false);
   };
@@ -126,7 +193,88 @@ window.AdvancedSettingsModal = function ({ isOpen, onClose, userId }) {
 
       // API Keys
       React.createElement('div', { key: 'api-keys', className: 'space-y-4' }, [
-        React.createElement('h4', { className: 'font-medium text-gray-700' }, 'API Keys'),
+        React.createElement('div', { className: 'flex items-center justify-between mb-2' }, [
+          React.createElement('h4', { className: 'font-medium text-gray-700' }, 'API Keys'),
+          React.createElement('div', { className: 'flex gap-2' }, [
+            React.createElement(
+              'button',
+              {
+                onClick: async () => {
+                  if (confirm('Limpar uma chave específica? (As chaves podem ser reativadas depois)')) {
+                    const service = prompt('Que serviço limpar? (openai, anthropic, google)');
+                    if (service && ['openai', 'anthropic', 'google'].includes(service)) {
+                      try {
+                        const response = await fetch(`http://localhost:3001/api/keys/${userId}/${service}`, {
+                          method: 'DELETE',
+                        });
+                        const result = await response.json();
+
+                        if (result.success) {
+                          const newApiKeys = { ...settings.api_keys };
+                          delete newApiKeys[service];
+                          updateSetting('api_keys', newApiKeys);
+
+                          const toast = document.createElement('div');
+                          toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
+                          toast.textContent = `Chave ${service} foi inativada (pode ser reativada)`;
+                          document.body.appendChild(toast);
+                          setTimeout(() => toast.remove(), 3000);
+                        } else {
+                          throw new Error(result.error || 'Erro ao limpar chave');
+                        }
+                      } catch (error) {
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
+                        toast.textContent = `Erro: ${error.message}`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                      }
+                    }
+                  }
+                },
+                className: 'px-3 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700',
+                title: 'Limpar chave específica (soft delete)',
+              },
+              '🗑️ Uma'
+            ),
+            React.createElement(
+              'button',
+              {
+                onClick: async () => {
+                  if (confirm('Limpar TODAS as API keys? (Podem ser reativadas depois)')) {
+                    try {
+                      const response = await fetch(`http://localhost:3001/api/keys/${userId}`, {
+                        method: 'DELETE',
+                      });
+                      const result = await response.json();
+
+                      if (result.success) {
+                        updateSetting('api_keys', {});
+
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
+                        toast.textContent = 'Todas as chaves foram inativadas (podem ser reativadas)';
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                      } else {
+                        throw new Error(result.error || 'Erro ao limpar chaves');
+                      }
+                    } catch (error) {
+                      const toast = document.createElement('div');
+                      toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
+                      toast.textContent = `Erro: ${error.message}`;
+                      document.body.appendChild(toast);
+                      setTimeout(() => toast.remove(), 3000);
+                    }
+                  }
+                },
+                className: 'px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700',
+                title: 'Limpar todas as chaves (soft delete)',
+              },
+              '🗑️ Todas'
+            ),
+          ]),
+        ]),
 
         // OpenAI
         React.createElement('div', { key: 'openai' }, [
